@@ -3,6 +3,7 @@ package packages
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
@@ -11,6 +12,8 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	vulnModel "github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
@@ -27,6 +30,7 @@ type InfoRunParams struct {
 type Info struct {
 	out  output.Outputer
 	proj *project.Project
+	auth *authentication.Auth
 }
 
 // NewInfo prepares an information execution context for use.
@@ -34,6 +38,7 @@ func NewInfo(prime primeable) *Info {
 	return &Info{
 		out:  prime.Output(),
 		proj: prime.Project(),
+		auth: prime.Auth(),
 	}
 }
 
@@ -86,11 +91,29 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 		return locale.WrapError(err, "package_err_cannot_obtain_authors_info", "Cannot obtain authors info")
 	}
 
+	var vulns []vulnModel.VulnerableIngredientsFilter
+	if i.auth.Authenticated() {
+		vulnerabilityIngredients := make([]*model.VulnerabilityIngredient, len(pkg.Versions))
+		for i, p := range pkg.Versions {
+			vulnerabilityIngredients[i] = &model.VulnerabilityIngredient{
+				Name:      *pkg.Ingredient.Name,
+				Namespace: *pkg.Ingredient.PrimaryNamespace,
+				Version:   p.Version,
+			}
+		}
+
+		vulns, err = model.FetchVulnerabilitiesForIngredients(i.auth, vulnerabilityIngredients)
+		if err != nil {
+			return locale.WrapError(err, "package_err_cannot_obtain_vulnerabilities_info", "Cannot obtain vulnerabilities info")
+		}
+	}
+
 	i.out.Print(&infoOutput{i.out, structuredOutput{
 		pkg.Ingredient,
 		ingredientVersion,
 		authors,
 		pkg.Versions,
+		vulns,
 	}})
 
 	return nil
@@ -113,67 +136,130 @@ func specificIngredientVersion(ingredientID *strfmt.UUID, version string) (*inve
 
 // PkgDetailsTable describes package details.
 type PkgDetailsTable struct {
-	Authors   []string `locale:"package_authors,Authors" json:"authors"`
-	Website   string   `locale:"package_website,Website" json:"website"`
-	copyright string   // `locale:"package_copyright,Copyright" json:"copyright"`
-	license   string   // `locale:"package_license,License" json:"license"`
+	Description string `opts:"omitEmpty" locale:"package_description,[HEADING]Description[/RESET]" json:"description"`
+	Author      string `opts:"omitEmpty" locale:"package_author,[HEADING]Author[/RESET]" json:"author"`
+	Authors     string `opts:"omitEmpty" locale:"package_authors,[HEADING]Authors[/RESET]" json:"authors"`
+	Website     string `opts:"omitEmpty" locale:"package_website,[HEADING]Website[/RESET]" json:"website"`
+	License     string `opts:"omitEmpty" locale:"package_license,[HEADING]License[/RESET]" json:"license"`
 }
 
 type infoResult struct {
-	name            string
-	version         string
-	Description     string `locale:"," json:"description"`
-	PkgDetailsTable `locale:"," opts:"verticalTable"`
-	Versions        []string `locale:"," json:"versions"`
+	name                 string
+	version              string
+	pkgVersionVulnsTotal int
+	pkgVersionVulns      []string
+	versionVulns         []string
+	*PkgDetailsTable     `locale:"," opts:"verticalTable,omitEmpty"`
+	Versions             []string `locale:"," opts:"omitEmpty" json:"versions"`
 }
 
-func newInfoResult(ingredient *inventory_models.Ingredient, ingredientVersion *inventory_models.IngredientVersion, authors model.Authors, versions []*inventory_models.SearchIngredientsResponseVersion) *infoResult {
+func newInfoResult(so structuredOutput) *infoResult {
 	res := infoResult{
-		name:    locale.T("unknown_value"),
-		version: locale.T("unknown_value"),
-		PkgDetailsTable: PkgDetailsTable{
-			Website:   locale.T("unknown_value"),
-			copyright: locale.T("unknown_value"),
-			license:   locale.T("unknown_value"),
-		},
+		PkgDetailsTable: &PkgDetailsTable{},
 	}
 
-	if ingredient.Name != nil {
-		res.name = *ingredient.Name
+	if so.Ingredient.Name != nil {
+		res.name = *so.Ingredient.Name
 	}
 
-	if ingredient.Description != nil {
-		res.Description = *ingredient.Description
+	if so.IngredientVersion.Version != nil {
+		res.version = *so.IngredientVersion.Version
 	}
 
-	website := ingredient.Website.String()
-	if website != "" {
-		res.PkgDetailsTable.Website = website
+	if so.Ingredient.Description != nil {
+		res.PkgDetailsTable.Description = *so.Ingredient.Description
 	}
 
-	if ingredientVersion.Version != nil {
-		res.version = *ingredientVersion.Version
+	if so.Ingredient.Website != "" {
+		res.PkgDetailsTable.Website = so.Ingredient.Website.String()
 	}
 
-	if ingredientVersion.CopyrightText != nil {
-		res.PkgDetailsTable.copyright = *ingredientVersion.CopyrightText
+	if so.IngredientVersion.LicenseExpression != nil {
+		res.PkgDetailsTable.License = *so.IngredientVersion.LicenseExpression
 	}
 
-	if ingredientVersion.LicenseExpression != nil {
-		res.PkgDetailsTable.license = *ingredientVersion.LicenseExpression
-	}
-
-	for _, version := range versions {
+	for _, version := range so.Versions {
 		res.Versions = append(res.Versions, version.Version)
 	}
 
-	for _, author := range authors {
-		if author.Name != nil {
-			res.Authors = append(res.Authors, *author.Name)
+	if len(so.Authors) == 1 {
+		if so.Authors[0].Name != nil {
+			res.Author = fmt.Sprintf("[ACTIONABLE]%s[/RESET]", *so.Authors[0].Name)
 		}
+	} else if len(so.Authors) > 1 {
+		var authorsOutput []string
+		for _, author := range so.Authors {
+			if author.Name != nil {
+				authorsOutput = append(authorsOutput, *author.Name)
+			}
+		}
+		res.Authors = fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(authorsOutput, ", "))
 	}
-	if len(res.Authors) == 0 {
-		res.Authors = []string{locale.T("unknown_value")}
+
+	if len(so.Vulnerabilities) > 0 {
+		currentVersionVulns := make(map[string][]string)
+		alternateVersionVulsn := make(map[string]map[string]int)
+		for _, v := range so.Vulnerabilities {
+			if _, ok := alternateVersionVulsn[v.Version]; !ok {
+				alternateVersionVulsn[v.Version] = make(map[string]int)
+			}
+			alternateVersionVulsn[v.Version][v.Vulnerability.Severity]++
+
+			if v.Version != res.version {
+				continue
+			}
+
+			res.pkgVersionVulnsTotal++
+			currentVersionVulns[v.Vulnerability.Severity] = append(currentVersionVulns[v.Vulnerability.Severity], v.Vulnerability.CVEIdentifier)
+		}
+
+		if len(currentVersionVulns[vulnModel.SeverityCritical]) > 0 {
+			criticalOutput := fmt.Sprintf("[ERROR]%d Critical: [/RESET]", len(currentVersionVulns[vulnModel.SeverityCritical]))
+			criticalOutput += fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(currentVersionVulns[vulnModel.SeverityCritical], ", "))
+			res.pkgVersionVulns = append(res.pkgVersionVulns, criticalOutput)
+		}
+
+		if len(currentVersionVulns[vulnModel.SeverityHigh]) > 0 {
+			highOutput := fmt.Sprintf("[CAUTION]%d High: [/RESET]", len(currentVersionVulns[vulnModel.SeverityHigh]))
+			highOutput += fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(currentVersionVulns[vulnModel.SeverityHigh], ", "))
+			res.pkgVersionVulns = append(res.pkgVersionVulns, highOutput)
+		}
+
+		if len(currentVersionVulns[vulnModel.SeverityMedium]) > 0 {
+			mediumOutput := fmt.Sprintf("[WARNING]%d Medium: [/RESET]", len(currentVersionVulns[vulnModel.SeverityMedium]))
+			mediumOutput += fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(currentVersionVulns[vulnModel.SeverityMedium], ", "))
+			res.pkgVersionVulns = append(res.pkgVersionVulns, mediumOutput)
+		}
+
+		if len(currentVersionVulns[vulnModel.SeverityLow]) > 0 {
+			lowOutput := fmt.Sprintf("[ALERT]%d Low: [/RESET]", len(currentVersionVulns[vulnModel.SeverityCritical]))
+			lowOutput += fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(currentVersionVulns[vulnModel.SeverityLow], ", "))
+			res.pkgVersionVulns = append(res.pkgVersionVulns, lowOutput)
+		}
+
+		for _, version := range so.Versions {
+			if len(alternateVersionVulsn[version.Version]) == 0 {
+				res.versionVulns = append(res.versionVulns, fmt.Sprintf("[SUCCESS]%s[/RESET]", version.Version))
+				continue
+			}
+
+			var vulnTotals []string
+			if alternateVersionVulsn[version.Version][vulnModel.SeverityCritical] > 0 {
+				vulnTotals = append(vulnTotals, fmt.Sprintf("[ERROR]%d Critical[/RESET]", alternateVersionVulsn[version.Version][vulnModel.SeverityCritical]))
+			}
+			if alternateVersionVulsn[version.Version][vulnModel.SeverityHigh] > 0 {
+				vulnTotals = append(vulnTotals, fmt.Sprintf("[CAUTION]%d High[/RESET]", alternateVersionVulsn[version.Version][vulnModel.SeverityHigh]))
+			}
+			if alternateVersionVulsn[version.Version][vulnModel.SeverityMedium] > 0 {
+				vulnTotals = append(vulnTotals, fmt.Sprintf("[WARNING]%d Medium[/RESET]", alternateVersionVulsn[version.Version][vulnModel.SeverityMedium]))
+			}
+			if alternateVersionVulsn[version.Version][vulnModel.SeverityLow] > 0 {
+				vulnTotals = append(vulnTotals, fmt.Sprintf("[ALERT]%d Low[/RESET]", alternateVersionVulsn[version.Version][vulnModel.SeverityLow]))
+			}
+
+			output := fmt.Sprintf("%s (CVE: %s)", version.Version, strings.Join(vulnTotals, ", "))
+			res.versionVulns = append(res.versionVulns, output)
+		}
 	}
 
 	return &res
@@ -184,6 +270,7 @@ type structuredOutput struct {
 	IngredientVersion *inventory_models.IngredientVersion                  `json:"ingredient_version"`
 	Authors           model.Authors                                        `json:"authors"`
 	Versions          []*inventory_models.SearchIngredientsResponseVersion `json:"versions"`
+	Vulnerabilities   []vulnModel.VulnerableIngredientsFilter              `json:"vulnerabilities,omitempty"`
 }
 
 type infoOutput struct {
@@ -192,34 +279,53 @@ type infoOutput struct {
 }
 
 func (o *infoOutput) MarshalOutput(_ output.Format) interface{} {
-	res := newInfoResult(o.so.Ingredient, o.so.IngredientVersion, o.so.Authors, o.so.Versions)
+	res := newInfoResult(o.so)
 	print := o.out.Print
 	{
 		print(output.Title(
 			locale.Tl(
 				"package_info_description_header",
-				"Details for version {{.V0}}",
+				"[HEADING]Pacakge Information:[/RESET] [ACTIONABLE]{{.V0}}@{{.V1}}[/RESET]",
+				res.name,
 				res.version,
 			),
 		))
-		print(res.Description)
-		print("")
 		print(
 			struct {
-				PkgDetailsTable `opts:"verticalTable"`
+				*PkgDetailsTable `opts:"verticalTable"`
 			}{res.PkgDetailsTable},
 		)
+		print("")
 	}
 
 	{
-		print(output.Title(
-			locale.Tl(
-				"packages_info_versions_available",
-				"{{.V0}} Version(s) Available",
-				strconv.Itoa(len(res.Versions)),
-			),
-		))
-		print(res.Versions)
+		if len(o.so.Vulnerabilities) > 0 {
+			if res.pkgVersionVulnsTotal > 0 {
+				print(output.Title(
+					locale.Tl(
+						"package_info_vulnerabilities_header",
+						"[HEADING]This package has {{.V0}} Vulnerabilities (CVEs):[/RESET]",
+						strconv.Itoa(res.pkgVersionVulnsTotal),
+					),
+				))
+				print(res.pkgVersionVulns)
+				print("")
+			}
+		}
+	}
+
+	{
+		if len(res.versionVulns) > 0 {
+			print(output.Title(
+				locale.Tl(
+					"packages_info_versions_available",
+					"{{.V0}} Version(s) Available:",
+					strconv.Itoa(len(res.versionVulns)),
+				),
+			))
+			print(res.versionVulns)
+			print("")
+		}
 	}
 
 	{

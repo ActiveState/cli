@@ -17,7 +17,7 @@ var colorRx *regexp.Regexp
 func init() {
 	defer profile.Measure("colorize:init", time.Now())
 	var err error
-	colorRx, err = regexp.Compile(`\[(HEADING|NOTICE|SUCCESS|ERROR|WARNING|DISABLED|ACTIONABLE|/RESET)!?\]`)
+	colorRx, err = regexp.Compile(`\[(HEADING|NOTICE|SUCCESS|ERROR|WARNING|CAUTION|ALERT|DISABLED|ACTIONABLE|/RESET)!?\]`)
 	if err != nil {
 		panic(fmt.Sprintf("Could not compile regex: %v", err))
 	}
@@ -31,6 +31,8 @@ type ColorTheme interface {
 	Warning(writer io.Writer)
 	Disabled(writer io.Writer)
 	Actionable(writer io.Writer)
+	Caution(writer io.Writer)
+	Alert(writer io.Writer)
 	Reset(writer io.Writer)
 }
 
@@ -71,6 +73,16 @@ func (dct defaultColorTheme) Disabled(writer io.Writer) {
 // Actionable switches to teal foreground
 func (dct defaultColorTheme) Actionable(writer io.Writer) {
 	colorstyle.New(writer).SetStyle(colorstyle.Cyan, true)
+}
+
+// Caution switches to orange foreground
+func (dct defaultColorTheme) Caution(writer io.Writer) {
+	colorstyle.New(writer).SetStyle(colorstyle.Orange, true)
+}
+
+// Alert switches to magenta foreground
+func (dct defaultColorTheme) Alert(writer io.Writer) {
+	colorstyle.New(writer).SetStyle(colorstyle.Magenta, true)
 }
 
 // Reset re-sets all color settings
@@ -140,6 +152,10 @@ func colorize(ct ColorTheme, writer io.Writer, arg string) {
 		ct.Disabled(writer)
 	case `ACTIONABLE`:
 		ct.Actionable(writer)
+	case `CAUTION`:
+		ct.Caution(writer)
+	case `ALERT`:
+		ct.Alert(writer)
 	case `/RESET`:
 		ct.Reset(writer)
 	}
