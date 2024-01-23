@@ -74,8 +74,7 @@ type ParentIngredient struct {
 	IngredientID        strfmt.UUID
 	IngredientVersionID strfmt.UUID
 	Version             string
-	// dependencies
-	Dependencies []inventory_models.Dependency `json:"dependencies"`
+	Dependencies        []inventory_models.Dependency `json:"dependencies"`
 }
 
 func (r *Runner) Run(params *Params) error {
