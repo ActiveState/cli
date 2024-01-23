@@ -119,6 +119,17 @@ func GetServiceURL(service Service) *url.URL {
 		}
 	}
 
+	sname := strings.Replace(strings.ToUpper(string(service)), "-", "_", -1)
+	envname := constants.APIServiceOverrideEnvVarName + sname
+	if override := os.Getenv(envname); override != "" {
+		u, err := url.Parse(override)
+		if err != nil {
+			logging.Error("Could not apply %s: %s", envname, err)
+		} else {
+			return u
+		}
+	}
+
 	return serviceURL
 }
 
