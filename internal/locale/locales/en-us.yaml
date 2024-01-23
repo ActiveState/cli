@@ -1263,6 +1263,8 @@ progress_fail:
   other: " [ERROR]x Failed[/RESET]"
 progress_commit:
   other: " • Creating commit"
+progress_dependencies:
+  other: " • Resolving dependencies"
 progress_pkg_nolang:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] across all languages in the ActiveState Catalog"
 progress_build_log:

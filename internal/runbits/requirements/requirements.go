@@ -2,6 +2,7 @@ package requirements
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -270,6 +271,17 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
 
+	// If applicable, output a list of additional dependencies (if any) being installed along with the
+	// requested package or bundle.
+	if operation == bpModel.OperationAdded &&
+		ns != nil && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle) &&
+		hasParentCommit {
+		err := r.outputAdditionalRequirements(parentCommitID, commitID, name)
+		if err != nil {
+			return errs.Wrap(err, "Unable to compute additional dependencies")
+		}
+	}
+
 	var trigger target.Trigger
 	switch ns.Type() {
 	case model.NamespaceLanguage:
@@ -487,4 +499,72 @@ func packageCommitMessage(op bpModel.Operation, name, version string) string {
 		version = locale.Tl("package_version_auto", "auto")
 	}
 	return locale.Tr(msgL10nKey, name, version)
+}
+
+// outputAdditionalRequirements computes and lists the additional dependencies being installed for the given package name.
+// This should only be called if a package or bundle is being added. Otherwise, the results may be nonsensical.
+func (r *RequirementOperation) outputAdditionalRequirements(parentCommitId, commitId strfmt.UUID, packageName string) (rerr error) {
+	pg := output.StartSpinner(r.Output, locale.T("progress_dependencies"), constants.TerminalAnimationInterval)
+	bp := model.NewBuildPlannerModel(r.Auth)
+
+	// Fetch old build plan with sources to compare against.
+	oldBuildPlan, err := bp.FetchBuildResult(parentCommitId, r.Project.Owner(), r.Project.Name())
+	if err != nil {
+		pg.Stop(locale.T("progress_fail"))
+		return errs.Wrap(err, "Unable to fetch previous build plan to compare against")
+	}
+	resolvedRequirementsBefore := make(map[string]*bpModel.Source)
+	for _, req := range oldBuildPlan.Build.Sources {
+		resolvedRequirementsBefore[req.Name] = req
+	}
+
+	// Fetch new build plan with sources to compare with.
+	newBuildPlan, err := bp.FetchBuildResult(commitId, r.Project.Owner(), r.Project.Name())
+	if err != nil {
+		pg.Stop(locale.T("progress_fail"))
+		return errs.Wrap(err, "Unable to fetch new build plan to compare with")
+	}
+
+	// Perform the comparison and also get the resolved version number of the package being added.
+	packageVersion := ""
+	additions := make([]*bpModel.Source, 0)
+	for _, req := range newBuildPlan.Build.Sources {
+		if req.Name == packageName {
+			packageVersion = req.Version
+			continue
+		}
+
+		if !model.NamespaceMatch(req.Namespace, model.NamespaceBundlesMatch) &&
+			!model.NamespaceMatch(req.Namespace, model.NamespacePackageMatch) {
+			continue
+		}
+
+		if _, exists := resolvedRequirementsBefore[req.Name]; !exists {
+			additions = append(additions, req)
+		}
+	}
+	sort.SliceStable(additions, func(i, j int) bool {
+		return additions[i].Name < additions[j].Name
+	})
+
+	pg.Stop(locale.T("progress_success"))
+	if len(additions) == 0 {
+		return nil
+	}
+
+	// List additional dependencies with indentation to match bullets.
+	r.Output.Notice(locale.Tl(
+		"changesummary_title",
+		"   Installing [NOTICE]{{.V0}}@{{.V1}}[/RESET] will result in adding {{.V2}} additional dependencies.",
+		packageName, packageVersion, strconv.Itoa(len(additions)),
+	))
+	for i, req := range additions {
+		prefix := "   ├─"
+		if i == len(additions)-1 {
+			prefix = "   └─"
+		}
+		r.Output.Notice(fmt.Sprintf("  [DISABLED]%s[/RESET] %s@%s", prefix, req.Name, req.Version))
+	}
+
+	return nil
 }
