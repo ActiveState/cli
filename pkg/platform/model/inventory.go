@@ -234,6 +234,19 @@ func FetchPlatforms() ([]*Platform, error) {
 	return platformCache, nil
 }
 
+func FetchPlatformsMap() (map[strfmt.UUID]*Platform, error) {
+	platforms, err := FetchPlatforms()
+	if err != nil {
+		return nil, err
+	}
+
+	platformMap := make(map[strfmt.UUID]*Platform)
+	for _, p := range platforms {
+		platformMap[*p.PlatformID] = p
+	}
+	return platformMap, nil
+}
+
 func FetchPlatformsForCommit(commitID strfmt.UUID) ([]*Platform, error) {
 	checkpt, _, err := FetchCheckpointForCommit(commitID)
 	if err != nil {

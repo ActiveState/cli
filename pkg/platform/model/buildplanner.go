@@ -75,6 +75,7 @@ func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
 	logging.Debug("Using build planner at: %s", bpURL)
 
 	client := gqlclient.NewWithOpts(bpURL, 0, graphql.WithHTTPClient(api.NewHTTPClient()))
+	client.EnableDebugLog()
 
 	if auth != nil && auth.Authenticated() {
 		client.SetTokenProvider(auth)
