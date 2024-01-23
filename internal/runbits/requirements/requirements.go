@@ -273,12 +273,10 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	switch ns.Type() {
 	case model.NamespaceLanguage:
 		trigger = target.TriggerLanguage
-	case model.NamespacePackage, model.NamespaceBundle:
-		trigger = target.TriggerPackage
 	case model.NamespacePlatform:
 		trigger = target.TriggerPlatform
 	default:
-		return errs.Wrap(err, "Unsupported namespace type: %s", ns.Type().String())
+		trigger = target.TriggerPackage
 	}
 
 	// Re-enable in DX-2307.
