@@ -111,6 +111,9 @@ const APIHostEnvVarName = "ACTIVESTATE_API_HOST"
 // APIInsecureEnvVarName is the name of the environment variable that specifies whether the API hostURI should be insecure.
 const APIInsecureEnvVarName = "ACTIVESTATE_API_INSECURE"
 
+// APIServiceOverrideEnvVarName is the name of the environment variable that specifies an optional override of the full API URL, the service name will be appended.
+const APIServiceOverrideEnvVarName = "ACTIVESTATE_API_SERVICE_OVERRIDE_"
+
 // CPUProfileEnvVarName is the name of the environment variable that specifies whether CPU profiling should be run.
 const CPUProfileEnvVarName = "ACTIVESTATE_PROFILE_CPU"
 
