@@ -18,6 +18,10 @@ import (
 func (r *Projects) RunRemote(params *Params) error {
 	projectfile.CleanProjectMapping(r.config)
 
+	if !r.auth.Authenticated() {
+		return locale.NewInputError("err_api_not_authenticated")
+	}
+
 	remoteProjects, err := r.newRemoteProjectsOutput(params.Local)
 	if err != nil {
 		return locale.WrapError(err, "project_err")
