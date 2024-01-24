@@ -1507,6 +1507,6 @@ uploadingredient_editor_opening:
 uploadingredient_success:
   other: |
     Successfully published as:
-    Ingredient ID: [[ACTIONABLE]{{.V0}}[/RESET]
+    Ingredient ID: [ACTIONABLE]{{.V0}}[/RESET]
     Ingredient Version ID: [ACTIONABLE]{{.V1}}[/RESET]
     Revision: [ACTIONABLE]{{.V2}}[/RESET]
