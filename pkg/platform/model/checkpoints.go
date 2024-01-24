@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -13,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
@@ -100,35 +98,6 @@ func GqlReqsToMonoCheckpoint(requirements []*gqlModel.Requirement) []*mono_model
 		result = append(result, &req.Checkpoint)
 	}
 	return result
-}
-
-func GqlReqVersionConstraintsString(requirement *gqlModel.Requirement) string {
-	if requirement.VersionConstraints == nil || len(requirement.VersionConstraints) == 0 {
-		return ""
-	}
-
-	parts := []string{}
-	for _, req := range requirement.VersionConstraints {
-		if req.Version == "" || req.Comparator == "" {
-			multilog.Error("Invalid req, has empty values: %v", req)
-			continue
-		}
-		switch req.Comparator {
-		case inventory_models.RequirementComparatorEq:
-			parts = append(parts, req.Version)
-		case inventory_models.RequirementComparatorGt:
-			parts = append(parts, fmt.Sprintf(">%s", req.Version))
-		case inventory_models.RequirementComparatorGte:
-			parts = append(parts, fmt.Sprintf(">=%s", req.Version))
-		case inventory_models.RequirementComparatorLt:
-			parts = append(parts, fmt.Sprintf("<%s", req.Version))
-		case inventory_models.RequirementComparatorLte:
-			parts = append(parts, fmt.Sprintf("<=%s", req.Version))
-		case inventory_models.RequirementComparatorNe:
-			parts = append(parts, fmt.Sprintf("!%s", req.Version))
-		}
-	}
-	return strings.Join(parts, ",")
 }
 
 // FilterCheckpointNamespace filters a Checkpoint removing requirements that do not match the given namespace.
