@@ -259,6 +259,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		RequirementVersion:   requirements,
 		RequirementNamespace: *ns,
 		Operation:            operation,
+		TimeStamp:            ts,
 	}
 
 	bp := model.NewBuildPlannerModel(r.Auth)
