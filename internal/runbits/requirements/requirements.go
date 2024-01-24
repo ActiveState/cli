@@ -209,6 +209,34 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		pg = nil
 	}
 
+	if r.Auth.Authenticated() && operation == bpModel.OperationAdded && ns.Type() == model.NamespacePackage {
+		pg = output.StartSpinner(out, locale.Tr("progress_pkg_nolang", requirementName), constants.TerminalAnimationInterval)
+
+		vulnerabilities, err := model.FetchVulnerabilitiesForIngredients(r.Auth, []*model.VulnerabilityIngredient{
+			{
+				Namespace: ns.String(),
+				Name:      requirementName,
+				Version:   requirementVersion,
+			},
+		})
+		if err != nil {
+			return errs.Wrap(err, "Failed to retrieve vulnerabilities")
+		}
+
+		if len(vulnerabilities) > 0 {
+			pg.Stop(locale.T("progress_vulnerable"))
+			// TODO: Iterate over vulnerabilities and tally up the counts for each severity
+			for _, vuln := range vulnerabilities {
+
+			}
+			out.Print(locale.Tr("warning_vulnerable", strconv.Itoa(len(vulnerabilities))))
+		} else {
+			pg.Stop(locale.T("progress_safe"))
+		}
+
+		pg = nil
+	}
+
 	parentCommitID, err := commitmediator.Get(r.Project)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")

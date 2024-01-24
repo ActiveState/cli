@@ -1251,6 +1251,8 @@ package_ingredient_alternatives_nolang:
     This may be because you have not installed a language for your project. Install a language by running "[ACTIONABLE]state languages install <language-name>[/RESET]".
 progress_search:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalog"
+progress_cve_search:
+  other: " • Searching for vulnerabilities (CVEs) on [ACTIONABLE]{{.V0}}[/RESET] and its dependencies"
 setup_runtime:
   other: "Setting Up Runtime"
 progress_solve:
@@ -1261,6 +1263,10 @@ progress_found:
   other: " [SUCCESS]✔ Found[/RESET]"
 progress_fail:
   other: " [ERROR]x Failed[/RESET]"
+progress_safe:
+  other: " [SUCCESS]✔ Safe[/RESET]"
+progress_unsafe:
+  other: " [ERROR]x Unsafe[/RESET]"
 progress_commit:
   other: " • Creating commit"
 progress_pkg_nolang:
@@ -1275,6 +1281,9 @@ progress_nothing_to_do:
   other: "Runtime is already up to date"
 unstable_feature_banner:
   other: "[NOTICE]Beta Feature: This feature is still in beta and may be unstable.[/RESET]\n"
+warning_vulnerable:
+  other: |
+        • [ERROR]Warning:[/RESET] Dependency has [ERROR]{{.V0}} known vulnerabilities (CVEs)[/RESET]. Severity: {{.V1}}. Run `[ACTIONABLE]state security[/RESET]` for more info.
 unstable_command_warning:
   other: |
     This command is still in beta. If you want to opt-in to unstable features, run the following command:
