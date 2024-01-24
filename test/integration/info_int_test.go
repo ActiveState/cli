@@ -19,7 +19,7 @@ func (suite *InfoIntegrationTestSuite) TestInfo_LatestVersion() {
 
 	cp := ts.Spawn("info", "pylint", "--language", "python")
 	cp.Expect("Package Information")
-	cp.Expect("Authors")
+	cp.Expect("Author")
 	cp.Expect("Version(s) Available")
 	cp.ExpectExitCode(0)
 }
@@ -31,7 +31,7 @@ func (suite *InfoIntegrationTestSuite) TestInfo_SpecificVersion() {
 
 	cp := ts.Spawn("info", "pylint@0.28.0", "--language", "python")
 	cp.Expect("Package Information: pylint@0.28.0")
-	cp.Expect("Authors")
+	cp.Expect("Author")
 	cp.Expect("Logilab")
 	cp.ExpectExitCode(0)
 }

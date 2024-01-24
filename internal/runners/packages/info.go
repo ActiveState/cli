@@ -146,11 +146,11 @@ type PkgDetailsTable struct {
 type infoResult struct {
 	name                 string
 	version              string
-	pkgVersionVulnsTotal int
-	pkgVersionVulns      []string
-	versionVulns         []string
+	plainVersions        []string
+	PkgVersionVulnsTotal int      `opts:"omitEmpty" locale:"package_vulnerabilities,[HEADING]Vulnerabilities[/RESET]"`
+	PkgVersionVulns      []string `opts:"omitEmpty" locale:"package_cves,[HEADING]CVEs[/RESET]"`
 	*PkgDetailsTable     `locale:"," opts:"verticalTable,omitEmpty"`
-	Versions             []string `locale:"," opts:"omitEmpty" json:"versions"`
+	Versions             []string `locale:"," json:"versions"`
 }
 
 func newInfoResult(so structuredOutput) *infoResult {
@@ -179,7 +179,7 @@ func newInfoResult(so structuredOutput) *infoResult {
 	}
 
 	for _, version := range so.Versions {
-		res.Versions = append(res.Versions, version.Version)
+		res.plainVersions = append(res.plainVersions, version.Version)
 	}
 
 	if len(so.Authors) == 1 {
@@ -197,8 +197,14 @@ func newInfoResult(so structuredOutput) *infoResult {
 	}
 
 	if len(so.Vulnerabilities) > 0 {
+		// currentVersionVulns is a map of severity level to CVEs for the specific version requested.
 		currentVersionVulns := make(map[string][]string)
+
+		// alternateVersionVulsn is a map of version number to the number of vulnerabilities per severity level.
+		// This is used to build the output for the alternate versions of this package.
 		alternateVersionVulsn := make(map[string]map[string]int)
+
+		// Iterate over the vulnerabilities to populate the maps above.
 		for _, v := range so.Vulnerabilities {
 			if _, ok := alternateVersionVulsn[v.Version]; !ok {
 				alternateVersionVulsn[v.Version] = make(map[string]int)
@@ -209,37 +215,41 @@ func newInfoResult(so structuredOutput) *infoResult {
 				continue
 			}
 
-			res.pkgVersionVulnsTotal++
+			res.PkgVersionVulnsTotal++
 			currentVersionVulns[v.Vulnerability.Severity] = append(currentVersionVulns[v.Vulnerability.Severity], v.Vulnerability.CVEIdentifier)
 		}
 
+		// Build the vulnerabilities output for the specific version requested.
+		// This is organized by severity level.
 		if len(currentVersionVulns[vulnModel.SeverityCritical]) > 0 {
 			criticalOutput := fmt.Sprintf("[ERROR]%d Critical: [/RESET]", len(currentVersionVulns[vulnModel.SeverityCritical]))
 			criticalOutput += fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(currentVersionVulns[vulnModel.SeverityCritical], ", "))
-			res.pkgVersionVulns = append(res.pkgVersionVulns, criticalOutput)
+			res.PkgVersionVulns = append(res.PkgVersionVulns, criticalOutput)
 		}
 
 		if len(currentVersionVulns[vulnModel.SeverityHigh]) > 0 {
 			highOutput := fmt.Sprintf("[CAUTION]%d High: [/RESET]", len(currentVersionVulns[vulnModel.SeverityHigh]))
 			highOutput += fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(currentVersionVulns[vulnModel.SeverityHigh], ", "))
-			res.pkgVersionVulns = append(res.pkgVersionVulns, highOutput)
+			res.PkgVersionVulns = append(res.PkgVersionVulns, highOutput)
 		}
 
 		if len(currentVersionVulns[vulnModel.SeverityMedium]) > 0 {
 			mediumOutput := fmt.Sprintf("[WARNING]%d Medium: [/RESET]", len(currentVersionVulns[vulnModel.SeverityMedium]))
 			mediumOutput += fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(currentVersionVulns[vulnModel.SeverityMedium], ", "))
-			res.pkgVersionVulns = append(res.pkgVersionVulns, mediumOutput)
+			res.PkgVersionVulns = append(res.PkgVersionVulns, mediumOutput)
 		}
 
 		if len(currentVersionVulns[vulnModel.SeverityLow]) > 0 {
 			lowOutput := fmt.Sprintf("[ALERT]%d Low: [/RESET]", len(currentVersionVulns[vulnModel.SeverityCritical]))
 			lowOutput += fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(currentVersionVulns[vulnModel.SeverityLow], ", "))
-			res.pkgVersionVulns = append(res.pkgVersionVulns, lowOutput)
+			res.PkgVersionVulns = append(res.PkgVersionVulns, lowOutput)
 		}
 
+		// Build the output for the alternate versions of this package.
+		// This output counts the number of vulnerabilities per severity level.
 		for _, version := range so.Versions {
 			if len(alternateVersionVulsn[version.Version]) == 0 {
-				res.versionVulns = append(res.versionVulns, fmt.Sprintf("[SUCCESS]%s[/RESET]", version.Version))
+				res.Versions = append(res.Versions, fmt.Sprintf("[SUCCESS]%s[/RESET]", version.Version))
 				continue
 			}
 
@@ -258,7 +268,12 @@ func newInfoResult(so structuredOutput) *infoResult {
 			}
 
 			output := fmt.Sprintf("%s (CVE: %s)", version.Version, strings.Join(vulnTotals, ", "))
-			res.versionVulns = append(res.versionVulns, output)
+			res.Versions = append(res.Versions, output)
+		}
+	} else {
+		// If we do not have vulnerability information, we still want to display the available versions.
+		for _, version := range so.Versions {
+			res.Versions = append(res.Versions, version.Version)
 		}
 	}
 
@@ -299,38 +314,36 @@ func (o *infoOutput) MarshalOutput(_ output.Format) interface{} {
 	}
 
 	{
-		if len(o.so.Vulnerabilities) > 0 {
-			if res.pkgVersionVulnsTotal > 0 {
-				print(output.Title(
-					locale.Tl(
-						"package_info_vulnerabilities_header",
-						"[HEADING]This package has {{.V0}} Vulnerabilities (CVEs):[/RESET]",
-						strconv.Itoa(res.pkgVersionVulnsTotal),
-					),
-				))
-				print(res.pkgVersionVulns)
-				print("")
-			}
+		if res.PkgVersionVulnsTotal > 0 {
+			print(output.Title(
+				locale.Tl(
+					"package_info_vulnerabilities_header",
+					"[HEADING]This package has {{.V0}} Vulnerabilities (CVEs):[/RESET]",
+					strconv.Itoa(res.PkgVersionVulnsTotal),
+				),
+			))
+			print(res.PkgVersionVulns)
+			print("")
 		}
 	}
 
 	{
-		if len(res.versionVulns) > 0 {
+		if len(res.Versions) > 0 {
 			print(output.Title(
 				locale.Tl(
 					"packages_info_versions_available",
 					"{{.V0}} Version(s) Available:",
-					strconv.Itoa(len(res.versionVulns)),
+					strconv.Itoa(len(res.Versions)),
 				),
 			))
-			print(res.versionVulns)
+			print(res.Versions)
 			print("")
 		}
 	}
 
 	{
 		print(output.Title(locale.Tl("packages_info_next_header", "What's next?")))
-		print(whatsNextMessages(res.name, res.Versions))
+		print(whatsNextMessages(res.name, res.plainVersions))
 	}
 
 	return output.Suppress
