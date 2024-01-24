@@ -285,7 +285,7 @@ func (o *infoOutput) MarshalOutput(_ output.Format) interface{} {
 		print(output.Title(
 			locale.Tl(
 				"package_info_description_header",
-				"[HEADING]Pacakge Information:[/RESET] [ACTIONABLE]{{.V0}}@{{.V1}}[/RESET]",
+				"[HEADING]Package Information:[/RESET] [ACTIONABLE]{{.V0}}@{{.V1}}[/RESET]",
 				res.name,
 				res.version,
 			),
