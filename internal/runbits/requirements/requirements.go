@@ -2,7 +2,6 @@ package requirements
 
 import (
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -30,7 +29,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
-	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
@@ -500,88 +498,4 @@ func packageCommitMessage(op bpModel.Operation, name, version string) string {
 		version = locale.Tl("package_version_auto", "auto")
 	}
 	return locale.Tr(msgL10nKey, name, version)
-}
-
-// outputAdditionalRequirements computes and lists the additional dependencies being installed for
-// the given package name.
-// This should only be called if a package or bundle is being added or updated. Otherwise, the
-// results may be nonsensical.
-func (r *RequirementOperation) outputAdditionalRequirements(parentCommitId, commitId strfmt.UUID, packageName string) (rerr error) {
-	pg := output.StartSpinner(r.Output, locale.T("progress_dependencies"), constants.TerminalAnimationInterval)
-	defer func() {
-		if rerr == nil {
-			return
-		}
-		pg.Stop(locale.T("progress_fail"))
-	}()
-	bp := model.NewBuildPlannerModel(r.Auth)
-
-	// Fetch old build plan with sources to compare against.
-	tgt := target.NewProjectTarget(r.Project, &parentCommitId, target.TriggerPackage)
-	oldBuildPlan, err := store.New(tgt.Dir()).BuildPlan()
-	if err != nil {
-		if errs.Matches(err, store.ErrNoBuildPlanFile) {
-			var oldBuildResult *model.BuildResult
-			oldBuildResult, err = bp.FetchBuildResult(parentCommitId, r.Project.Owner(), r.Project.Name())
-			oldBuildPlan = oldBuildResult.Build
-		}
-		if err != nil {
-			return errs.Wrap(err, "Unable to fetch previous build plan to compare against")
-		}
-	}
-	resolvedRequirementsBefore := make(map[string]*bpModel.Source)
-	for _, req := range oldBuildPlan.Sources {
-		resolvedRequirementsBefore[req.Name] = req
-	}
-
-	// Fetch new build plan with sources to compare with.
-	newBuildPlan, err := bp.FetchBuildResult(commitId, r.Project.Owner(), r.Project.Name())
-	if err != nil {
-		return errs.Wrap(err, "Unable to fetch new build plan to compare with")
-	}
-
-	// Perform the comparison and also get the resolved version number of the package being added.
-	packageVersion := ""
-	additions := make([]*bpModel.Source, 0)
-	for _, req := range newBuildPlan.Build.Sources {
-		if req.Name == packageName {
-			packageVersion = req.Version
-			continue
-		}
-
-		if !model.NamespaceMatch(req.Namespace, model.NamespaceBundlesMatch) &&
-			!model.NamespaceMatch(req.Namespace, model.NamespacePackageMatch) {
-			continue
-		}
-
-		if _, exists := resolvedRequirementsBefore[req.Name]; !exists {
-			additions = append(additions, req)
-		}
-	}
-	sort.SliceStable(additions, func(i, j int) bool {
-		return additions[i].Name < additions[j].Name
-	})
-
-	pg.Stop(locale.T("progress_success"))
-	if len(additions) == 0 {
-		return nil
-	}
-
-	// List additional dependencies.
-	r.Output.Notice("") // blank line
-	r.Output.Notice(locale.Tl(
-		"changesummary_title",
-		"Installing [ACTIONABLE]{{.V0}}@{{.V1}}[/RESET] includes [ACTIONABLE]{{.V2}}[/RESET] dependencies.",
-		packageName, packageVersion, strconv.Itoa(len(additions)),
-	))
-	for i, req := range additions {
-		prefix := "├─"
-		if i == len(additions)-1 {
-			prefix = "└─"
-		}
-		r.Output.Notice(fmt.Sprintf("  [DISABLED]%s[/RESET] [ACTIONABLE]%s@%s[/RESET]", prefix, req.Name, req.Version))
-	}
-	r.Output.Notice("") // blank line
-
-	return nil
 }
