@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	vulnModel "github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
+	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -91,11 +91,11 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 		return locale.WrapError(err, "package_err_cannot_obtain_authors_info", "Cannot obtain authors info")
 	}
 
-	var vulns []vulnModel.VulnerableIngredientsFilter
+	var vulns []model.VulnerabilityIngredient
 	if i.auth.Authenticated() {
-		vulnerabilityIngredients := make([]*model.VulnerabilityIngredient, len(pkg.Versions))
+		vulnerabilityIngredients := make([]*request.Ingredient, len(pkg.Versions))
 		for i, p := range pkg.Versions {
-			vulnerabilityIngredients[i] = &model.VulnerabilityIngredient{
+			vulnerabilityIngredients[i] = &request.Ingredient{
 				Name:      *pkg.Ingredient.Name,
 				Namespace: *pkg.Ingredient.PrimaryNamespace,
 				Version:   p.Version,
@@ -175,7 +175,7 @@ func newInfoResult(so structuredOutput) *infoResult {
 	}
 
 	if so.IngredientVersion.LicenseExpression != nil {
-		res.PkgDetailsTable.License = *so.IngredientVersion.LicenseExpression
+		res.PkgDetailsTable.License = fmt.Sprintf("[ACTIONABLE]%s[/RESET]", *so.IngredientVersion.LicenseExpression)
 	}
 
 	for _, version := range so.Versions {
@@ -197,74 +197,65 @@ func newInfoResult(so structuredOutput) *infoResult {
 	}
 
 	if len(so.Vulnerabilities) > 0 {
-		// currentVersionVulns is a map of severity level to CVEs for the specific version requested.
-		currentVersionVulns := make(map[string][]string)
-
-		// alternateVersionVulsn is a map of version number to the number of vulnerabilities per severity level.
-		// This is used to build the output for the alternate versions of this package.
-		alternateVersionVulsn := make(map[string]map[string]int)
-
+		var currentVersionVulns model.VulnerabilityIngredient
 		// Iterate over the vulnerabilities to populate the maps above.
 		for _, v := range so.Vulnerabilities {
-			if _, ok := alternateVersionVulsn[v.Version]; !ok {
-				alternateVersionVulsn[v.Version] = make(map[string]int)
+			if v.Version == res.version {
+				currentVersionVulns = v
+				break
 			}
-			alternateVersionVulsn[v.Version][v.Vulnerability.Severity]++
-
-			if v.Version != res.version {
-				continue
-			}
-
-			res.PkgVersionVulnsTotal++
-			currentVersionVulns[v.Vulnerability.Severity] = append(currentVersionVulns[v.Vulnerability.Severity], v.Vulnerability.CVEIdentifier)
 		}
 
 		// Build the vulnerabilities output for the specific version requested.
 		// This is organized by severity level.
-		if len(currentVersionVulns[vulnModel.SeverityCritical]) > 0 {
-			criticalOutput := fmt.Sprintf("[ERROR]%d Critical: [/RESET]", len(currentVersionVulns[vulnModel.SeverityCritical]))
-			criticalOutput += fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(currentVersionVulns[vulnModel.SeverityCritical], ", "))
+		if len(currentVersionVulns.Vulnerabilities.Critical) > 0 {
+			criticalOutput := fmt.Sprintf("[ERROR]%d Critical: [/RESET]", len(currentVersionVulns.Vulnerabilities.Critical))
+			criticalOutput += fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(currentVersionVulns.Vulnerabilities.Critical, ", "))
 			res.PkgVersionVulns = append(res.PkgVersionVulns, criticalOutput)
+			res.PkgVersionVulnsTotal += len(currentVersionVulns.Vulnerabilities.Critical)
 		}
 
-		if len(currentVersionVulns[vulnModel.SeverityHigh]) > 0 {
-			highOutput := fmt.Sprintf("[CAUTION]%d High: [/RESET]", len(currentVersionVulns[vulnModel.SeverityHigh]))
-			highOutput += fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(currentVersionVulns[vulnModel.SeverityHigh], ", "))
+		if len(currentVersionVulns.Vulnerabilities.High) > 0 {
+			highOutput := fmt.Sprintf("[CAUTION]%d High: [/RESET]", len(currentVersionVulns.Vulnerabilities.High))
+			highOutput += fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(currentVersionVulns.Vulnerabilities.High, ", "))
 			res.PkgVersionVulns = append(res.PkgVersionVulns, highOutput)
+			res.PkgVersionVulnsTotal += len(currentVersionVulns.Vulnerabilities.High)
 		}
 
-		if len(currentVersionVulns[vulnModel.SeverityMedium]) > 0 {
-			mediumOutput := fmt.Sprintf("[WARNING]%d Medium: [/RESET]", len(currentVersionVulns[vulnModel.SeverityMedium]))
-			mediumOutput += fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(currentVersionVulns[vulnModel.SeverityMedium], ", "))
+		if len(currentVersionVulns.Vulnerabilities.Medium) > 0 {
+			mediumOutput := fmt.Sprintf("[WARNING]%d Medium: [/RESET]", len(currentVersionVulns.Vulnerabilities.Medium))
+			mediumOutput += fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(currentVersionVulns.Vulnerabilities.Medium, ", "))
 			res.PkgVersionVulns = append(res.PkgVersionVulns, mediumOutput)
+			res.PkgVersionVulnsTotal += len(currentVersionVulns.Vulnerabilities.Medium)
 		}
 
-		if len(currentVersionVulns[vulnModel.SeverityLow]) > 0 {
-			lowOutput := fmt.Sprintf("[ALERT]%d Low: [/RESET]", len(currentVersionVulns[vulnModel.SeverityCritical]))
-			lowOutput += fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(currentVersionVulns[vulnModel.SeverityLow], ", "))
+		if len(currentVersionVulns.Vulnerabilities.Low) > 0 {
+			lowOutput := fmt.Sprintf("[ALERT]%d Low: [/RESET]", len(currentVersionVulns.Vulnerabilities.Low))
+			lowOutput += fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(currentVersionVulns.Vulnerabilities.Low, ", "))
 			res.PkgVersionVulns = append(res.PkgVersionVulns, lowOutput)
+			res.PkgVersionVulnsTotal += len(currentVersionVulns.Vulnerabilities.Low)
 		}
 
 		// Build the output for the alternate versions of this package.
 		// This output counts the number of vulnerabilities per severity level.
-		for _, version := range so.Versions {
-			if len(alternateVersionVulsn[version.Version]) == 0 {
+		for _, version := range so.Vulnerabilities {
+			if version.Vulnerabilities.Length() == 0 {
 				res.Versions = append(res.Versions, fmt.Sprintf("[SUCCESS]%s[/RESET]", version.Version))
 				continue
 			}
 
 			var vulnTotals []string
-			if alternateVersionVulsn[version.Version][vulnModel.SeverityCritical] > 0 {
-				vulnTotals = append(vulnTotals, fmt.Sprintf("[ERROR]%d Critical[/RESET]", alternateVersionVulsn[version.Version][vulnModel.SeverityCritical]))
+			if len(version.Vulnerabilities.Critical) > 0 {
+				vulnTotals = append(vulnTotals, fmt.Sprintf("[ERROR]%d Critical[/RESET]", len(version.Vulnerabilities.Critical)))
 			}
-			if alternateVersionVulsn[version.Version][vulnModel.SeverityHigh] > 0 {
-				vulnTotals = append(vulnTotals, fmt.Sprintf("[CAUTION]%d High[/RESET]", alternateVersionVulsn[version.Version][vulnModel.SeverityHigh]))
+			if len(version.Vulnerabilities.High) > 0 {
+				vulnTotals = append(vulnTotals, fmt.Sprintf("[CAUTION]%d High[/RESET]", len(version.Vulnerabilities.High)))
 			}
-			if alternateVersionVulsn[version.Version][vulnModel.SeverityMedium] > 0 {
-				vulnTotals = append(vulnTotals, fmt.Sprintf("[WARNING]%d Medium[/RESET]", alternateVersionVulsn[version.Version][vulnModel.SeverityMedium]))
+			if len(version.Vulnerabilities.Medium) > 0 {
+				vulnTotals = append(vulnTotals, fmt.Sprintf("[WARNING]%d Medium[/RESET]", len(version.Vulnerabilities.Medium)))
 			}
-			if alternateVersionVulsn[version.Version][vulnModel.SeverityLow] > 0 {
-				vulnTotals = append(vulnTotals, fmt.Sprintf("[ALERT]%d Low[/RESET]", alternateVersionVulsn[version.Version][vulnModel.SeverityLow]))
+			if len(version.Vulnerabilities.Low) > 0 {
+				vulnTotals = append(vulnTotals, fmt.Sprintf("[ALERT]%d Low[/RESET]", len(version.Vulnerabilities.Low)))
 			}
 
 			output := fmt.Sprintf("%s (CVE: %s)", version.Version, strings.Join(vulnTotals, ", "))
@@ -285,7 +276,7 @@ type structuredOutput struct {
 	IngredientVersion *inventory_models.IngredientVersion                  `json:"ingredient_version"`
 	Authors           model.Authors                                        `json:"authors"`
 	Versions          []*inventory_models.SearchIngredientsResponseVersion `json:"versions"`
-	Vulnerabilities   []vulnModel.VulnerableIngredientsFilter              `json:"vulnerabilities,omitempty"`
+	Vulnerabilities   []model.VulnerabilityIngredient                      `json:"vulnerabilities,omitempty"`
 }
 
 type infoOutput struct {
@@ -323,6 +314,8 @@ func (o *infoOutput) MarshalOutput(_ output.Format) interface{} {
 				),
 			))
 			print(res.PkgVersionVulns)
+			print("")
+			print(locale.Tl("package_info_vulnerabilities_help", "  To view details for these CVE's run '[ACTIONABLE]state cve open <ID>[/RESET]'"))
 			print("")
 		}
 	}

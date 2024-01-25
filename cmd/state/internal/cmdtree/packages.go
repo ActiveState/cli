@@ -178,7 +178,7 @@ func newInfoCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"info",
-		locale.Tl("package_info_title", "Displaying Package Information"),
+		"",
 		locale.T("package_info_cmd_description"),
 		prime,
 		[]*captain.Flag{
