@@ -332,7 +332,7 @@ func prepareEditRequest(ingredient *ParentIngredient, r *request.PublishVariable
 				request.PublishVariableDep{request.Dependency{
 					Name:                ptr.From(dep.Feature, ""),
 					Namespace:           ptr.From(dep.Namespace, ""),
-					VersionRequirements: model.RequirementsToString(dep.Requirements),
+					VersionRequirements: model.InventoryRequirementsToString(dep.Requirements),
 				}, []request.Dependency{}},
 			)
 		}
