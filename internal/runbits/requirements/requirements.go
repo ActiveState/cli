@@ -508,6 +508,12 @@ func packageCommitMessage(op bpModel.Operation, name, version string) string {
 // results may be nonsensical.
 func (r *RequirementOperation) outputAdditionalRequirements(parentCommitId, commitId strfmt.UUID, packageName string) (rerr error) {
 	pg := output.StartSpinner(r.Output, locale.T("progress_dependencies"), constants.TerminalAnimationInterval)
+	defer func() {
+		if rerr == nil {
+			return
+		}
+		pg.Stop(locale.T("progress_fail"))
+	}()
 	bp := model.NewBuildPlannerModel(r.Auth)
 
 	// Fetch old build plan with sources to compare against.
@@ -520,7 +526,6 @@ func (r *RequirementOperation) outputAdditionalRequirements(parentCommitId, comm
 			oldBuildPlan = oldBuildResult.Build
 		}
 		if err != nil {
-			pg.Stop(locale.T("progress_fail"))
 			return errs.Wrap(err, "Unable to fetch previous build plan to compare against")
 		}
 	}
@@ -532,7 +537,6 @@ func (r *RequirementOperation) outputAdditionalRequirements(parentCommitId, comm
 	// Fetch new build plan with sources to compare with.
 	newBuildPlan, err := bp.FetchBuildResult(commitId, r.Project.Owner(), r.Project.Name())
 	if err != nil {
-		pg.Stop(locale.T("progress_fail"))
 		return errs.Wrap(err, "Unable to fetch new build plan to compare with")
 	}
 
@@ -567,7 +571,7 @@ func (r *RequirementOperation) outputAdditionalRequirements(parentCommitId, comm
 	r.Output.Notice("") // blank line
 	r.Output.Notice(locale.Tl(
 		"changesummary_title",
-		"Installing [NOTICE]{{.V0}}@{{.V1}}[/RESET] includes [NOTICE]{{.V2}}[/RESET] dependencies.",
+		"Installing [ACTIONABLE]{{.V0}}@{{.V1}}[/RESET] includes [ACTIONABLE]{{.V2}}[/RESET] dependencies.",
 		packageName, packageVersion, strconv.Itoa(len(additions)),
 	))
 	for i, req := range additions {
@@ -575,7 +579,7 @@ func (r *RequirementOperation) outputAdditionalRequirements(parentCommitId, comm
 		if i == len(additions)-1 {
 			prefix = "└─"
 		}
-		r.Output.Notice(fmt.Sprintf("  [DISABLED]%s[/RESET] [NOTICE]%s@%s[/RESET]", prefix, req.Name, req.Version))
+		r.Output.Notice(fmt.Sprintf("  [DISABLED]%s[/RESET] [ACTIONABLE]%s@%s[/RESET]", prefix, req.Name, req.Version))
 	}
 	r.Output.Notice("") // blank line
 
