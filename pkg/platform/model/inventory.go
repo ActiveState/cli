@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -473,33 +472,4 @@ func FetchNormalizedName(namespace Namespace, name string) (string, error) {
 		return "", errs.New("Normalized name for %s not found", name)
 	}
 	return *res.Payload.NormalizedNames[0].Normalized, nil
-}
-
-func RequirementsToString(requirements inventory_models.Requirements) string {
-	if requirements == nil || len(requirements) == 0 {
-		return ""
-	}
-
-	parts := []string{}
-	for _, requirement := range requirements {
-		if requirement.Version == nil || requirement.Comparator == nil {
-			multilog.Error("Invalid requirement, has nil values: %v", requirement)
-			continue
-		}
-		switch *requirement.Comparator {
-		case inventory_models.RequirementComparatorEq:
-			parts = append(parts, *requirement.Version)
-		case inventory_models.RequirementComparatorGt:
-			parts = append(parts, fmt.Sprintf(">%s", *requirement.Version))
-		case inventory_models.RequirementComparatorGte:
-			parts = append(parts, fmt.Sprintf(">=%s", *requirement.Version))
-		case inventory_models.RequirementComparatorLt:
-			parts = append(parts, fmt.Sprintf("<%s", *requirement.Version))
-		case inventory_models.RequirementComparatorLte:
-			parts = append(parts, fmt.Sprintf("<=%s", *requirement.Version))
-		case inventory_models.RequirementComparatorNe:
-			parts = append(parts, fmt.Sprintf("!%s", *requirement.Version))
-		}
-	}
-	return strings.Join(parts, ",")
 }
