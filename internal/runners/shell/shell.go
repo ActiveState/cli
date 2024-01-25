@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/activation"
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
-	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -73,7 +72,7 @@ func (u *Shell) Run(params *Params) error {
 		if errs.Matches(err, &projectfile.ErrorNoDefaultProject{}) {
 			return locale.WrapError(err, "err_use_default_project_does_not_exist")
 		}
-		return rationalize.ErrNoProject
+		return locale.WrapError(err, "err_shell_cannot_load_project")
 	}
 
 	commitID, err := commitmediator.Get(proj)

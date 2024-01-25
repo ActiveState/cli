@@ -1304,6 +1304,8 @@ err_shell_commit_id_mismatch:
   other: "Cannot start a shell/prompt for the given commit ID. Please use '[ACTIONABLE]state checkout[/RESET]' to check out a specific commit ID and then try again."
 err_activate_commit_id_mismatch:
   other: "Cannot activate a project with the given commit ID. Please use '[ACTIONABLE]state checkout[/RESET]' to check out a specific commit ID and then try again."
+err_shell_cannot_load_project:
+  other: Cannot load project to start a shell/prompt in.
 err_shell_already_active:
   other: |
     You are already in a shell for '[ACTIONABLE]{{.V0}}[/RESET]', located at '[ACTIONABLE]{{.V1}}[/RESET]'. You cannot enter a new shell when you are already in one.

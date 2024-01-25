@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/git"
-	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -72,7 +71,7 @@ func (u *Use) Run(params *Params) error {
 		if !findproject.IsLocalProjectDoesNotExistError(err) {
 			return locale.WrapError(err, "err_use", "Unable to use project")
 		}
-		return rationalize.ErrNoProject
+		return locale.WrapInputError(err, "err_use_cannot_find_local_project", "Local project cannot be found.")
 	}
 
 	commitID, err := commitmediator.Get(proj)
