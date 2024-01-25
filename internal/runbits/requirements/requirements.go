@@ -30,6 +30,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
+	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
@@ -273,7 +274,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 
 	// If applicable, output a list of additional dependencies (if any) being installed along with the
 	// requested package or bundle.
-	if operation == bpModel.OperationAdded &&
+	if (operation == bpModel.OperationAdded || operation == bpModel.OperationUpdated) &&
 		ns != nil && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle) &&
 		hasParentCommit {
 		err := r.outputAdditionalRequirements(parentCommitID, commitID, name)
@@ -501,20 +502,30 @@ func packageCommitMessage(op bpModel.Operation, name, version string) string {
 	return locale.Tr(msgL10nKey, name, version)
 }
 
-// outputAdditionalRequirements computes and lists the additional dependencies being installed for the given package name.
-// This should only be called if a package or bundle is being added. Otherwise, the results may be nonsensical.
+// outputAdditionalRequirements computes and lists the additional dependencies being installed for
+// the given package name.
+// This should only be called if a package or bundle is being added or updated. Otherwise, the
+// results may be nonsensical.
 func (r *RequirementOperation) outputAdditionalRequirements(parentCommitId, commitId strfmt.UUID, packageName string) (rerr error) {
 	pg := output.StartSpinner(r.Output, locale.T("progress_dependencies"), constants.TerminalAnimationInterval)
 	bp := model.NewBuildPlannerModel(r.Auth)
 
 	// Fetch old build plan with sources to compare against.
-	oldBuildPlan, err := bp.FetchBuildResult(parentCommitId, r.Project.Owner(), r.Project.Name())
+	tgt := target.NewProjectTarget(r.Project, &parentCommitId, target.TriggerPackage)
+	oldBuildPlan, err := store.New(tgt.Dir()).BuildPlan()
 	if err != nil {
-		pg.Stop(locale.T("progress_fail"))
-		return errs.Wrap(err, "Unable to fetch previous build plan to compare against")
+		if errs.Matches(err, store.ErrNoBuildPlanFile) {
+			var oldBuildResult *model.BuildResult
+			oldBuildResult, err = bp.FetchBuildResult(parentCommitId, r.Project.Owner(), r.Project.Name())
+			oldBuildPlan = oldBuildResult.Build
+		}
+		if err != nil {
+			pg.Stop(locale.T("progress_fail"))
+			return errs.Wrap(err, "Unable to fetch previous build plan to compare against")
+		}
 	}
 	resolvedRequirementsBefore := make(map[string]*bpModel.Source)
-	for _, req := range oldBuildPlan.Build.Sources {
+	for _, req := range oldBuildPlan.Sources {
 		resolvedRequirementsBefore[req.Name] = req
 	}
 
@@ -552,19 +563,21 @@ func (r *RequirementOperation) outputAdditionalRequirements(parentCommitId, comm
 		return nil
 	}
 
-	// List additional dependencies with indentation to match bullets.
+	// List additional dependencies.
+	r.Output.Notice("") // blank line
 	r.Output.Notice(locale.Tl(
 		"changesummary_title",
-		"   Installing [NOTICE]{{.V0}}@{{.V1}}[/RESET] will result in adding {{.V2}} additional dependencies.",
+		"Installing [NOTICE]{{.V0}}@{{.V1}}[/RESET] includes [NOTICE]{{.V2}}[/RESET] dependencies.",
 		packageName, packageVersion, strconv.Itoa(len(additions)),
 	))
 	for i, req := range additions {
-		prefix := "   ├─"
+		prefix := "├─"
 		if i == len(additions)-1 {
-			prefix = "   └─"
+			prefix = "└─"
 		}
-		r.Output.Notice(fmt.Sprintf("  [DISABLED]%s[/RESET] %s@%s", prefix, req.Name, req.Version))
+		r.Output.Notice(fmt.Sprintf("  [DISABLED]%s[/RESET] [NOTICE]%s@%s[/RESET]", prefix, req.Name, req.Version))
 	}
+	r.Output.Notice("") // blank line
 
 	return nil
 }
