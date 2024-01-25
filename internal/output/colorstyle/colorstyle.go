@@ -17,4 +17,5 @@ const (
 	Magenta
 	Cyan
 	White
+	Orange
 )
