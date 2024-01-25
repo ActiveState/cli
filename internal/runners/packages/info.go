@@ -206,60 +206,53 @@ func newInfoResult(so structuredOutput) *infoResult {
 			}
 		}
 
+		res.PkgVersionVulnsTotal = currentVersionVulns.Vulnerabilities.Length()
+
 		// Build the vulnerabilities output for the specific version requested.
 		// This is organized by severity level.
 		if len(currentVersionVulns.Vulnerabilities.Critical) > 0 {
 			criticalOutput := fmt.Sprintf("[RED]%d Critical: [/RESET]", len(currentVersionVulns.Vulnerabilities.Critical))
 			criticalOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(currentVersionVulns.Vulnerabilities.Critical, ", "))
 			res.PkgVersionVulns = append(res.PkgVersionVulns, criticalOutput)
-			res.PkgVersionVulnsTotal += len(currentVersionVulns.Vulnerabilities.Critical)
 		}
 
 		if len(currentVersionVulns.Vulnerabilities.High) > 0 {
 			highOutput := fmt.Sprintf("[ORANGE]%d High: [/RESET]", len(currentVersionVulns.Vulnerabilities.High))
 			highOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(currentVersionVulns.Vulnerabilities.High, ", "))
 			res.PkgVersionVulns = append(res.PkgVersionVulns, highOutput)
-			res.PkgVersionVulnsTotal += len(currentVersionVulns.Vulnerabilities.High)
 		}
 
 		if len(currentVersionVulns.Vulnerabilities.Medium) > 0 {
 			mediumOutput := fmt.Sprintf("[YELLOW]%d Medium: [/RESET]", len(currentVersionVulns.Vulnerabilities.Medium))
 			mediumOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(currentVersionVulns.Vulnerabilities.Medium, ", "))
 			res.PkgVersionVulns = append(res.PkgVersionVulns, mediumOutput)
-			res.PkgVersionVulnsTotal += len(currentVersionVulns.Vulnerabilities.Medium)
 		}
 
 		if len(currentVersionVulns.Vulnerabilities.Low) > 0 {
 			lowOutput := fmt.Sprintf("[MAGENTA]%d Low: [/RESET]", len(currentVersionVulns.Vulnerabilities.Low))
 			lowOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(currentVersionVulns.Vulnerabilities.Low, ", "))
 			res.PkgVersionVulns = append(res.PkgVersionVulns, lowOutput)
-			res.PkgVersionVulnsTotal += len(currentVersionVulns.Vulnerabilities.Low)
 		}
 
 		// Build the output for the alternate versions of this package.
 		// This output counts the number of vulnerabilities per severity level.
 		for _, version := range so.Vulnerabilities {
 			if version.Vulnerabilities.Length() == 0 {
-				// Green
 				res.Versions = append(res.Versions, fmt.Sprintf("[GREEN]%s[/RESET]", version.Version))
 				continue
 			}
 
 			var vulnTotals []string
 			if len(version.Vulnerabilities.Critical) > 0 {
-				// Red
 				vulnTotals = append(vulnTotals, fmt.Sprintf("[RED]%d Critical[/RESET]", len(version.Vulnerabilities.Critical)))
 			}
 			if len(version.Vulnerabilities.High) > 0 {
-				// Orange
 				vulnTotals = append(vulnTotals, fmt.Sprintf("[ORANGE]%d High[/RESET]", len(version.Vulnerabilities.High)))
 			}
 			if len(version.Vulnerabilities.Medium) > 0 {
-				// Yellow
 				vulnTotals = append(vulnTotals, fmt.Sprintf("[YELLOW]%d Medium[/RESET]", len(version.Vulnerabilities.Medium)))
 			}
 			if len(version.Vulnerabilities.Low) > 0 {
-				// Magenta
 				vulnTotals = append(vulnTotals, fmt.Sprintf("[MAGENTA]%d Low[/RESET]", len(version.Vulnerabilities.Low)))
 			}
 
