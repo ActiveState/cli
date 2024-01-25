@@ -17,7 +17,9 @@ var colorRx *regexp.Regexp
 func init() {
 	defer profile.Measure("colorize:init", time.Now())
 	var err error
-	colorRx, err = regexp.Compile(`\[(HEADING|NOTICE|SUCCESS|ERROR|WARNING|CAUTION|ALERT|DISABLED|ACTIONABLE|/RESET)!?\]`)
+	colorRx, err = regexp.Compile(
+		`\[(HEADING|NOTICE|SUCCESS|ERROR|WARNING|DISABLED|ACTIONABLE|CYAN|GREEN|RED|ORANGE|YELLOW|MAGENTA|/RESET)!?\]`,
+	)
 	if err != nil {
 		panic(fmt.Sprintf("Could not compile regex: %v", err))
 	}
@@ -31,8 +33,12 @@ type ColorTheme interface {
 	Warning(writer io.Writer)
 	Disabled(writer io.Writer)
 	Actionable(writer io.Writer)
-	Caution(writer io.Writer)
-	Alert(writer io.Writer)
+	Cyan(writer io.Writer)
+	Green(writer io.Writer)
+	Red(writer io.Writer)
+	Orange(writer io.Writer)
+	Yellow(writer io.Writer)
+	Magenta(writer io.Writer)
 	Reset(writer io.Writer)
 }
 
@@ -75,14 +81,34 @@ func (dct defaultColorTheme) Actionable(writer io.Writer) {
 	colorstyle.New(writer).SetStyle(colorstyle.Cyan, true)
 }
 
-// Caution switches to orange foreground
-func (dct defaultColorTheme) Caution(writer io.Writer) {
-	colorstyle.New(writer).SetStyle(colorstyle.Orange, true)
+// Blue switches to blue foreground
+func (dct defaultColorTheme) Cyan(writer io.Writer) {
+	colorstyle.New(writer).SetStyle(colorstyle.Cyan, false)
 }
 
-// Alert switches to magenta foreground
-func (dct defaultColorTheme) Alert(writer io.Writer) {
-	colorstyle.New(writer).SetStyle(colorstyle.Magenta, true)
+// Green switches to green foreground
+func (dct defaultColorTheme) Green(writer io.Writer) {
+	colorstyle.New(writer).SetStyle(colorstyle.Green, false)
+}
+
+// Red switches to red foreground
+func (dct defaultColorTheme) Red(writer io.Writer) {
+	colorstyle.New(writer).SetStyle(colorstyle.Red, false)
+}
+
+// Orange switches to orange foreground
+func (dct defaultColorTheme) Orange(writer io.Writer) {
+	colorstyle.New(writer).SetStyle(colorstyle.Orange, false)
+}
+
+// Yellow switches to yellow foreground
+func (dct defaultColorTheme) Yellow(writer io.Writer) {
+	colorstyle.New(writer).SetStyle(colorstyle.Yellow, false)
+}
+
+// Magenta switches to magenta foreground
+func (dct defaultColorTheme) Magenta(writer io.Writer) {
+	colorstyle.New(writer).SetStyle(colorstyle.Magenta, false)
 }
 
 // Reset re-sets all color settings
@@ -152,10 +178,18 @@ func colorize(ct ColorTheme, writer io.Writer, arg string) {
 		ct.Disabled(writer)
 	case `ACTIONABLE`:
 		ct.Actionable(writer)
-	case `CAUTION`:
-		ct.Caution(writer)
-	case `ALERT`:
-		ct.Alert(writer)
+	case `CYAN`:
+		ct.Cyan(writer)
+	case `GREEN`:
+		ct.Green(writer)
+	case `RED`:
+		ct.Red(writer)
+	case `ORANGE`:
+		ct.Orange(writer)
+	case `YELLOW`:
+		ct.Yellow(writer)
+	case `MAGENTA`:
+		ct.Magenta(writer)
 	case `/RESET`:
 		ct.Reset(writer)
 	}

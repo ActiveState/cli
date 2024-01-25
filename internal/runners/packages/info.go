@@ -175,7 +175,7 @@ func newInfoResult(so structuredOutput) *infoResult {
 	}
 
 	if so.IngredientVersion.LicenseExpression != nil {
-		res.PkgDetailsTable.License = fmt.Sprintf("[ACTIONABLE]%s[/RESET]", *so.IngredientVersion.LicenseExpression)
+		res.PkgDetailsTable.License = fmt.Sprintf("[CYAN]%s[/RESET]", *so.IngredientVersion.LicenseExpression)
 	}
 
 	for _, version := range so.Versions {
@@ -184,7 +184,7 @@ func newInfoResult(so structuredOutput) *infoResult {
 
 	if len(so.Authors) == 1 {
 		if so.Authors[0].Name != nil {
-			res.Author = fmt.Sprintf("[ACTIONABLE]%s[/RESET]", *so.Authors[0].Name)
+			res.Author = fmt.Sprintf("[CYAN]%s[/RESET]", *so.Authors[0].Name)
 		}
 	} else if len(so.Authors) > 1 {
 		var authorsOutput []string
@@ -193,7 +193,7 @@ func newInfoResult(so structuredOutput) *infoResult {
 				authorsOutput = append(authorsOutput, *author.Name)
 			}
 		}
-		res.Authors = fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(authorsOutput, ", "))
+		res.Authors = fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(authorsOutput, ", "))
 	}
 
 	if len(so.Vulnerabilities) > 0 {
@@ -209,29 +209,29 @@ func newInfoResult(so structuredOutput) *infoResult {
 		// Build the vulnerabilities output for the specific version requested.
 		// This is organized by severity level.
 		if len(currentVersionVulns.Vulnerabilities.Critical) > 0 {
-			criticalOutput := fmt.Sprintf("[ERROR]%d Critical: [/RESET]", len(currentVersionVulns.Vulnerabilities.Critical))
-			criticalOutput += fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(currentVersionVulns.Vulnerabilities.Critical, ", "))
+			criticalOutput := fmt.Sprintf("[RED]%d Critical: [/RESET]", len(currentVersionVulns.Vulnerabilities.Critical))
+			criticalOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(currentVersionVulns.Vulnerabilities.Critical, ", "))
 			res.PkgVersionVulns = append(res.PkgVersionVulns, criticalOutput)
 			res.PkgVersionVulnsTotal += len(currentVersionVulns.Vulnerabilities.Critical)
 		}
 
 		if len(currentVersionVulns.Vulnerabilities.High) > 0 {
-			highOutput := fmt.Sprintf("[CAUTION]%d High: [/RESET]", len(currentVersionVulns.Vulnerabilities.High))
-			highOutput += fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(currentVersionVulns.Vulnerabilities.High, ", "))
+			highOutput := fmt.Sprintf("[ORANGE]%d High: [/RESET]", len(currentVersionVulns.Vulnerabilities.High))
+			highOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(currentVersionVulns.Vulnerabilities.High, ", "))
 			res.PkgVersionVulns = append(res.PkgVersionVulns, highOutput)
 			res.PkgVersionVulnsTotal += len(currentVersionVulns.Vulnerabilities.High)
 		}
 
 		if len(currentVersionVulns.Vulnerabilities.Medium) > 0 {
-			mediumOutput := fmt.Sprintf("[WARNING]%d Medium: [/RESET]", len(currentVersionVulns.Vulnerabilities.Medium))
-			mediumOutput += fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(currentVersionVulns.Vulnerabilities.Medium, ", "))
+			mediumOutput := fmt.Sprintf("[YELLOW]%d Medium: [/RESET]", len(currentVersionVulns.Vulnerabilities.Medium))
+			mediumOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(currentVersionVulns.Vulnerabilities.Medium, ", "))
 			res.PkgVersionVulns = append(res.PkgVersionVulns, mediumOutput)
 			res.PkgVersionVulnsTotal += len(currentVersionVulns.Vulnerabilities.Medium)
 		}
 
 		if len(currentVersionVulns.Vulnerabilities.Low) > 0 {
-			lowOutput := fmt.Sprintf("[ALERT]%d Low: [/RESET]", len(currentVersionVulns.Vulnerabilities.Low))
-			lowOutput += fmt.Sprintf("[ACTIONABLE]%s[/RESET]", strings.Join(currentVersionVulns.Vulnerabilities.Low, ", "))
+			lowOutput := fmt.Sprintf("[MAGENTA]%d Low: [/RESET]", len(currentVersionVulns.Vulnerabilities.Low))
+			lowOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(currentVersionVulns.Vulnerabilities.Low, ", "))
 			res.PkgVersionVulns = append(res.PkgVersionVulns, lowOutput)
 			res.PkgVersionVulnsTotal += len(currentVersionVulns.Vulnerabilities.Low)
 		}
@@ -240,22 +240,27 @@ func newInfoResult(so structuredOutput) *infoResult {
 		// This output counts the number of vulnerabilities per severity level.
 		for _, version := range so.Vulnerabilities {
 			if version.Vulnerabilities.Length() == 0 {
-				res.Versions = append(res.Versions, fmt.Sprintf("[SUCCESS]%s[/RESET]", version.Version))
+				// Green
+				res.Versions = append(res.Versions, fmt.Sprintf("[GREEN]%s[/RESET]", version.Version))
 				continue
 			}
 
 			var vulnTotals []string
 			if len(version.Vulnerabilities.Critical) > 0 {
-				vulnTotals = append(vulnTotals, fmt.Sprintf("[ERROR]%d Critical[/RESET]", len(version.Vulnerabilities.Critical)))
+				// Red
+				vulnTotals = append(vulnTotals, fmt.Sprintf("[RED]%d Critical[/RESET]", len(version.Vulnerabilities.Critical)))
 			}
 			if len(version.Vulnerabilities.High) > 0 {
-				vulnTotals = append(vulnTotals, fmt.Sprintf("[CAUTION]%d High[/RESET]", len(version.Vulnerabilities.High)))
+				// Orange
+				vulnTotals = append(vulnTotals, fmt.Sprintf("[ORANGE]%d High[/RESET]", len(version.Vulnerabilities.High)))
 			}
 			if len(version.Vulnerabilities.Medium) > 0 {
-				vulnTotals = append(vulnTotals, fmt.Sprintf("[WARNING]%d Medium[/RESET]", len(version.Vulnerabilities.Medium)))
+				// Yellow
+				vulnTotals = append(vulnTotals, fmt.Sprintf("[YELLOW]%d Medium[/RESET]", len(version.Vulnerabilities.Medium)))
 			}
 			if len(version.Vulnerabilities.Low) > 0 {
-				vulnTotals = append(vulnTotals, fmt.Sprintf("[ALERT]%d Low[/RESET]", len(version.Vulnerabilities.Low)))
+				// Magenta
+				vulnTotals = append(vulnTotals, fmt.Sprintf("[MAGENTA]%d Low[/RESET]", len(version.Vulnerabilities.Low)))
 			}
 
 			output := fmt.Sprintf("%s (CVE: %s)", version.Version, strings.Join(vulnTotals, ", "))
@@ -291,7 +296,7 @@ func (o *infoOutput) MarshalOutput(_ output.Format) interface{} {
 		print(output.Title(
 			locale.Tl(
 				"package_info_description_header",
-				"[HEADING]Package Information:[/RESET] [ACTIONABLE]{{.V0}}@{{.V1}}[/RESET]",
+				"[HEADING]Package Information:[/RESET] [CYAN]{{.V0}}@{{.V1}}[/RESET]",
 				res.name,
 				res.version,
 			),
