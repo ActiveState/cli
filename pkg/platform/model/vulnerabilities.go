@@ -29,7 +29,7 @@ func (v Vulnerabilites) Length() int {
 	return len(v.Critical) + len(v.High) + len(v.Medium) + len(v.Low)
 }
 
-func FetchVulnerabilitiesForIngredients(auth *authentication.Auth, ingredients []*request.Ingredient) ([]VulnerabilityIngredient, error) {
+func FetchVulnerabilitiesForIngredients(auth *authentication.Auth, ingredients []*request.Ingredient) ([]*VulnerabilityIngredient, error) {
 	requestIngredients := make([]*request.Ingredient, len(ingredients))
 	for i, ingredient := range ingredients {
 		requestIngredients[i] = &request.Ingredient{
@@ -48,11 +48,11 @@ func FetchVulnerabilitiesForIngredients(auth *authentication.Auth, ingredients [
 		return nil, errs.Wrap(err, "Failed to run vulnerabilities request")
 	}
 
-	vulnerabilities := make(map[string]VulnerabilityIngredient)
+	vulnerabilities := make(map[string]*VulnerabilityIngredient)
 	for _, v := range resp.Vulnerabilities {
 		key := fmt.Sprintf("%s/%s/%s", v.PrimaryNamespace, v.Name, v.Version)
 		if _, ok := vulnerabilities[key]; !ok {
-			vulnerabilities[key] = VulnerabilityIngredient{
+			vulnerabilities[key] = &VulnerabilityIngredient{
 				Name:             v.Name,
 				PrimaryNamespace: v.PrimaryNamespace,
 				Version:          v.Version,
@@ -78,7 +78,7 @@ func FetchVulnerabilitiesForIngredients(auth *authentication.Auth, ingredients [
 		}
 	}
 
-	var result []VulnerabilityIngredient
+	var result []*VulnerabilityIngredient
 	for _, v := range vulnerabilities {
 		result = append(result, v)
 	}
