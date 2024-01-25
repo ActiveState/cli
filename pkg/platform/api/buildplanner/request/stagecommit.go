@@ -3,13 +3,14 @@ package request
 import (
 	"time"
 
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
 
 func StageCommit(owner, project, parentCommit, description string, atTime *time.Time, expression *buildexpression.BuildExpression) *buildPlanByStageCommit {
-	timestamp := ""
+	var timestamp *string
 	if atTime != nil {
-		timestamp = atTime.Format(time.RFC3339)
+		timestamp = ptr.To(atTime.Format(time.RFC3339))
 	}
 	return &buildPlanByStageCommit{map[string]interface{}{
 		"organization": owner,
