@@ -371,8 +371,19 @@ func buildRuntimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]
 	return result, nil
 }
 
-// RecursiveDependenciesFor computes the recursive dependencies for an ArtifactID a using artifacts as a lookup table
+// RecursiveDependenciesFor computes the (direct) dependencies for an ArtifactID a using artifacts
+// as a lookup table
+func DependenciesFor(a artifact.ArtifactID, artifacts artifact.Map) []artifact.ArtifactID {
+	return dependenciesFor(a, artifacts, false)
+}
+
+// RecursiveDependenciesFor computes the recursive (direct and indirect) dependencies for an
+// ArtifactID a using artifacts as a lookup table
 func RecursiveDependenciesFor(a artifact.ArtifactID, artifacts artifact.Map) []artifact.ArtifactID {
+	return dependenciesFor(a, artifacts, true)
+}
+
+func dependenciesFor(a artifact.ArtifactID, artifacts artifact.Map, recursive bool) []artifact.ArtifactID {
 	allDeps := make(map[artifact.ArtifactID]struct{})
 	artf, ok := artifacts[a]
 	if !ok {
@@ -390,7 +401,9 @@ func RecursiveDependenciesFor(a artifact.ArtifactID, artifacts artifact.Map) []a
 			if !ok {
 				continue
 			}
-			newToCheck = append(newToCheck, artf.Dependencies...)
+			if recursive {
+				newToCheck = append(newToCheck, artf.Dependencies...)
+			}
 			allDeps[a] = struct{}{}
 		}
 		toCheck = newToCheck
