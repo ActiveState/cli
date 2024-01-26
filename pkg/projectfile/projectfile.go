@@ -841,8 +841,9 @@ func getProjectFilePathFromDefault() (_ string, rerr error) {
 func Get() *Project {
 	project, err := GetSafe()
 	if err != nil {
+		multilog.Error("projectfile.Get() failed with: %s", err.Error())
 		fmt.Fprint(os.Stderr, locale.T("err_project_file_unavailable"))
-		panic(fmt.Sprintf("projectfile.Get() failed with: %s", err.Error()))
+		os.Exit(1)
 	}
 
 	return project
@@ -1214,8 +1215,9 @@ func Reset() {
 // Only one project can persist at a time.
 func (p *Project) Persist() {
 	if p.Project == "" {
+		multilog.Error("projectfile.Persist() failed because no project is defined")
 		fmt.Fprint(os.Stderr, locale.T("err_invalid_project"))
-		panic("projectfile.Persist() failed because no project is defined")
+		os.Exit(1)
 	}
 	persistentProject = p
 	os.Setenv(constants.ProjectEnvVarName, p.Path())

@@ -288,9 +288,8 @@ func Get() *Project {
 	pj := projectfile.Get()
 	project, err := New(pj, output.Get())
 	if err != nil {
-		message := locale.Tr("err_project_unavailable", err.Error())
-		fmt.Fprint(os.Stderr, message)
-		panic(message)
+		fmt.Fprint(os.Stderr, locale.Tr("err_project_unavailable", err.Error()))
+		os.Exit(1)
 	}
 	return project
 }

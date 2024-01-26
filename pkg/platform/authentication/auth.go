@@ -62,7 +62,8 @@ func LegacyGet() *Auth {
 		cfg, err := config.New()
 		if err != nil {
 			// TODO: We need to get rid of this Get() function altogether...
-			panic(fmt.Sprintf("Could not get configuration required by auth: %v", err))
+			multilog.Error("Could not get configuration required by auth: %v", err)
+			os.Exit(1)
 		}
 
 		persist = New(cfg)
@@ -352,7 +353,7 @@ func (s *Auth) Client() *mono_client.Mono {
 	if err != nil {
 		multilog.Error("Trying to get the Client while not authenticated")
 		fmt.Fprintln(os.Stderr, colorize.StripColorCodes(locale.T("err_api_not_authenticated")))
-		panic("Trying to get the Client while not authenticated")
+		exit(1)
 	}
 
 	return client
