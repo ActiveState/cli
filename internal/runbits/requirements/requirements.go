@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -26,6 +27,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
+	vulnModel "github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -34,6 +36,11 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
+
+func init() {
+	configMediator.RegisterOption(constants.SecurityPromptConfig, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
+	configMediator.RegisterOption(constants.SecurityPromptLevelConfig, configMediator.String, configMediator.EmptyEvent, configMediator.EmptyEvent)
+}
 
 type PackageVersion struct {
 	captain.NameVersionValue
@@ -244,7 +251,21 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 
 		if !safe {
 			pg.Stop(locale.T("progress_unsafe"))
-			out.Print("    " + locale.Tr("warning_vulnerable", strconv.Itoa(vulnerabilities.Vulnerabilities.Length()), strings.Join(severityBreakdown, ", ")))
+			pg = nil
+
+			if r.shouldPromptForSecurity(vulnerabilities) {
+				out.Print("")
+				cont, err := r.promptForSecurity(out, vulnerabilities)
+				if err != nil {
+					return errs.Wrap(err, "Failed to prompt for security")
+				}
+
+				if !cont {
+					return locale.NewError("err_pkgop_security_prompt", "Operation aborted due to security prompt")
+				}
+			} else {
+				out.Print("    " + locale.Tr("warning_vulnerable", strconv.Itoa(vulnerabilities.Vulnerabilities.Length()), strings.Join(severityBreakdown, ", ")))
+			}
 		} else {
 			pg.Stop(locale.T("progress_safe"))
 		}
@@ -396,6 +417,85 @@ func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 	}
 
 	return nil
+}
+
+func (r *RequirementOperation) shouldPromptForSecurity(vulnerabilities *model.VulnerabilityIngredient) bool {
+	if !r.Config.IsSet(constants.SecurityPromptConfig) {
+		if err := r.Config.Set(constants.SecurityPromptConfig, true); err != nil {
+			multilog.Error("Failed to set security prompt config: %v", err)
+		}
+	}
+
+	if !r.Config.IsSet(constants.SecurityPromptLevelConfig) {
+		if err := r.Config.Set(constants.SecurityPromptLevelConfig, vulnModel.SeverityCritical); err != nil {
+			multilog.Error("Failed to set security prompt level config: %v", err)
+		}
+	}
+
+	prompt := r.Config.GetBool(constants.SecurityPromptConfig)
+	promptLevel := r.Config.GetString(constants.SecurityPromptLevelConfig)
+
+	switch promptLevel {
+	case vulnModel.SeverityCritical:
+		return prompt && len(vulnerabilities.Vulnerabilities.Critical) > 0
+	case vulnModel.SeverityHigh:
+		return prompt &&
+			(len(vulnerabilities.Vulnerabilities.Critical) > 0 ||
+				len(vulnerabilities.Vulnerabilities.High) > 0)
+	case vulnModel.SeverityMedium:
+		return prompt &&
+			(len(vulnerabilities.Vulnerabilities.Critical) > 0 ||
+				len(vulnerabilities.Vulnerabilities.High) > 0 ||
+				len(vulnerabilities.Vulnerabilities.Medium) > 0)
+	case vulnModel.SeverityLow:
+		return prompt &&
+			(len(vulnerabilities.Vulnerabilities.Critical) > 0 ||
+				len(vulnerabilities.Vulnerabilities.High) > 0 ||
+				len(vulnerabilities.Vulnerabilities.Medium) > 0 ||
+				len(vulnerabilities.Vulnerabilities.Low) > 0)
+	}
+
+	return r.Config.GetBool(constants.SecurityPromptConfig)
+}
+
+func (r *RequirementOperation) promptForSecurity(out output.Outputer, vulnerabilities *model.VulnerabilityIngredient) (bool, error) {
+	out.Print(locale.Tr("warning_vulnerable_simple", strconv.Itoa(vulnerabilities.Vulnerabilities.Length())))
+
+	var pkgVersionVulns []string
+	if len(vulnerabilities.Vulnerabilities.Critical) > 0 {
+		criticalOutput := fmt.Sprintf("[RED]%d Critical: [/RESET]", len(vulnerabilities.Vulnerabilities.Critical))
+		criticalOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(vulnerabilities.Vulnerabilities.Critical, ", "))
+		pkgVersionVulns = append(pkgVersionVulns, criticalOutput)
+	}
+
+	if len(vulnerabilities.Vulnerabilities.High) > 0 {
+		highOutput := fmt.Sprintf("[ORANGE]%d High: [/RESET]", len(vulnerabilities.Vulnerabilities.High))
+		highOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(vulnerabilities.Vulnerabilities.High, ", "))
+		pkgVersionVulns = append(pkgVersionVulns, highOutput)
+	}
+
+	if len(vulnerabilities.Vulnerabilities.Medium) > 0 {
+		mediumOutput := fmt.Sprintf("[YELLOW]%d Medium: [/RESET]", len(vulnerabilities.Vulnerabilities.Medium))
+		mediumOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(vulnerabilities.Vulnerabilities.Medium, ", "))
+		pkgVersionVulns = append(pkgVersionVulns, mediumOutput)
+	}
+
+	if len(vulnerabilities.Vulnerabilities.Low) > 0 {
+		lowOutput := fmt.Sprintf("[MAGENTA]%d Low: [/RESET]", len(vulnerabilities.Vulnerabilities.Low))
+		lowOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(vulnerabilities.Vulnerabilities.Low, ", "))
+		pkgVersionVulns = append(pkgVersionVulns, lowOutput)
+	}
+
+	out.Print(pkgVersionVulns)
+	out.Print("")
+	out.Print(locale.T("more_info_vulnerabilities"))
+
+	confirm, err := r.Prompt.Confirm("", locale.Tr("prompt_continue_pkg_operation"), ptr.To(false))
+	if err != nil {
+		return false, locale.WrapError(err, "err_pkgop_confirm", "Need a confirmation.")
+	}
+
+	return confirm, nil
 }
 
 func supportedLanguageByName(supported []medmodel.SupportedLanguage, langName string) medmodel.SupportedLanguage {
