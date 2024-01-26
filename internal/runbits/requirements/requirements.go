@@ -276,7 +276,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	if (operation == bpModel.OperationAdded || operation == bpModel.OperationUpdated) &&
 		ns != nil && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle) &&
 		hasParentCommit {
-		err := r.outputAdditionalRequirements(parentCommitID, commitID, name)
+		err := r.outputAdditionalRequirements(parentCommitID, commitID, name, ns)
 		if err != nil {
 			return errs.Wrap(err, "Unable to compute additional dependencies")
 		}

@@ -31,7 +31,7 @@ const showUpdatedPackages = true
 // the given package name.
 // This should only be called if a package or bundle is being added or updated. Otherwise, the
 // results may be nonsensical.
-func (r *RequirementOperation) outputAdditionalRequirements(parentCommitId, commitId strfmt.UUID, packageName string) (rerr error) {
+func (r *RequirementOperation) outputAdditionalRequirements(parentCommitId, commitId strfmt.UUID, packageName string, ns *model.Namespace) (rerr error) {
 	pg := output.StartSpinner(r.Output, locale.T("progress_dependencies"), constants.TerminalAnimationInterval)
 	defer func() {
 		if rerr == nil {
@@ -78,9 +78,7 @@ func (r *RequirementOperation) outputAdditionalRequirements(parentCommitId, comm
 	// Find the resolved version of the newly added or updated package.
 	packageVersion := locale.T("constraint_auto")
 	for _, source := range newBuildResult.Build.Sources {
-		if source.Name == packageName &&
-			(model.NamespaceMatch(source.Namespace, model.NamespaceBundlesMatch) ||
-				model.NamespaceMatch(source.Namespace, model.NamespacePackageMatch)) {
+		if source.Name == packageName && source.Namespace == ns.String() {
 			packageVersion = source.Version
 			break
 		}
@@ -162,7 +160,7 @@ func (r *RequirementOperation) outputAdditionalRequirements(parentCommitId, comm
 
 		item := fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET]%s", dep.Name, version, subdependencies) // intentional omission of space before last %s
 		if oldVersion, exists := oldRequirements[fmt.Sprintf("%s/%s", dep.Namespace, dep.Name)]; exists && version != "" && oldVersion != version {
-			item = fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET] → %s (%s)", dep.Name, oldVersion, item, locale.Tl("updated", "Updated"))
+			item = fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET] → %s (%s)", dep.Name, oldVersion, item, locale.Tl("updated", "updated"))
 		}
 
 		if i == maxListLength && i < len(directDependencies)-1 {
