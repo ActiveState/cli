@@ -234,21 +234,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 			safe = true
 		}
 
-		// There should only be one ingredient in the list
-		var severityBreakdown []string
-		if len(vulnerabilities.Vulnerabilities.Critical) > 0 {
-			severityBreakdown = append(severityBreakdown, fmt.Sprintf("[RED]%d Critical[/RESET]", len(vulnerabilities.Vulnerabilities.Critical)))
-		}
-		if len(vulnerabilities.Vulnerabilities.High) > 0 {
-			severityBreakdown = append(severityBreakdown, fmt.Sprintf("[ORANGE]%d high[/RESET]", len(vulnerabilities.Vulnerabilities.High)))
-		}
-		if len(vulnerabilities.Vulnerabilities.Medium) > 0 {
-			severityBreakdown = append(severityBreakdown, fmt.Sprintf("[YELLOW]%d medium[/RESET]", len(vulnerabilities.Vulnerabilities.Medium)))
-		}
-		if len(vulnerabilities.Vulnerabilities.Low) > 0 {
-			severityBreakdown = append(severityBreakdown, fmt.Sprintf("[MAGENTA]%d low[/RESET]", len(vulnerabilities.Vulnerabilities.Low)))
-		}
-
 		if !safe {
 			pg.Stop(locale.T("progress_unsafe"))
 			pg = nil
@@ -264,6 +249,20 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 					return locale.NewError("err_pkgop_security_prompt", "Operation aborted due to security prompt")
 				}
 			} else {
+				var severityBreakdown []string
+				if len(vulnerabilities.Vulnerabilities.Critical) > 0 {
+					severityBreakdown = append(severityBreakdown, fmt.Sprintf("[RED]%d Critical[/RESET]", len(vulnerabilities.Vulnerabilities.Critical)))
+				}
+				if len(vulnerabilities.Vulnerabilities.High) > 0 {
+					severityBreakdown = append(severityBreakdown, fmt.Sprintf("[ORANGE]%d high[/RESET]", len(vulnerabilities.Vulnerabilities.High)))
+				}
+				if len(vulnerabilities.Vulnerabilities.Medium) > 0 {
+					severityBreakdown = append(severityBreakdown, fmt.Sprintf("[YELLOW]%d medium[/RESET]", len(vulnerabilities.Vulnerabilities.Medium)))
+				}
+				if len(vulnerabilities.Vulnerabilities.Low) > 0 {
+					severityBreakdown = append(severityBreakdown, fmt.Sprintf("[MAGENTA]%d low[/RESET]", len(vulnerabilities.Vulnerabilities.Low)))
+				}
+
 				out.Print("    " + locale.Tr("warning_vulnerable", strconv.Itoa(vulnerabilities.Vulnerabilities.Length()), strings.Join(severityBreakdown, ", ")))
 			}
 		} else {
