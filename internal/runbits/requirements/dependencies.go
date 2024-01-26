@@ -25,7 +25,7 @@ const maxListLength = 10
 // showUpdatedPackages specifies whether or not to include updated dependencies in the direct
 // dependencies list, and whether or not to include updated dependencies when calculating indirect
 // dependency numbers.
-const showUpdatedPackages = false
+const showUpdatedPackages = true
 
 // outputAdditionalRequirements computes and lists the additional dependencies being installed for
 // the given package name.
