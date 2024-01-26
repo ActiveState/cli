@@ -18,10 +18,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 )
 
-// maxListLength is the maximum number of direct dependencies to show before adding a "more..."
-// sentinel.
-const maxListLength = 10
-
 // showUpdatedPackages specifies whether or not to include updated dependencies in the direct
 // dependencies list, and whether or not to include updated dependencies when calculating indirect
 // dependency numbers.
@@ -142,11 +138,8 @@ func (r *RequirementOperation) outputAdditionalRequirements(parentCommitId, comm
 	// depending on whether or not it has subdependencies, and whether or not showUpdatedPackages is
 	// `true`.
 	for i, artifactId := range directDependencies {
-		if i > maxListLength {
-			break
-		}
 		prefix := "├─"
-		if i == len(directDependencies)-1 || i == maxListLength {
+		if i == len(directDependencies)-1 {
 			prefix = "└─"
 		}
 		dep := newArtifactMap[artifactId]
@@ -164,10 +157,6 @@ func (r *RequirementOperation) outputAdditionalRequirements(parentCommitId, comm
 		item := fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET]%s", dep.Name, version, subdependencies) // intentional omission of space before last %s
 		if oldVersion, exists := oldRequirements[fmt.Sprintf("%s/%s", dep.Namespace, dep.Name)]; exists && version != "" && oldVersion != version {
 			item = fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET] → %s (%s)", dep.Name, oldVersion, item, locale.Tl("updated", "updated"))
-		}
-
-		if i == maxListLength && i < len(directDependencies)-1 {
-			item = locale.Tl("more_dependencies", "{{.V0}} more...", strconv.Itoa(len(directDependencies)-1-i))
 		}
 
 		r.Output.Notice(fmt.Sprintf("  [DISABLED]%s[/RESET] %s", prefix, item))
