@@ -259,7 +259,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_info() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("info", "pexpect")
-	cp.Expect("Details for version")
+	cp.Expect("Package Information")
 	cp.Expect("Authors")
 	cp.Expect("Version")
 	cp.Expect("Available")
