@@ -56,6 +56,14 @@ func (r *RequirementOperation) outputAdditionalRequirements(parentCommitId, comm
 	}
 
 	// Process old build plan's requirements into something we can easily compare against.
+	oldArtifacts, err := buildplan.NewArtifactListing(oldBuildPlan, false, r.Config)
+	if err != nil {
+		return errs.Wrap(err, "Unable to create artifact listing for old buidl plan")
+	}
+	oldArtifactMap, err := oldArtifacts.RuntimeClosure()
+	if err != nil {
+		return errs.Wrap(err, "Unable to compute runtime closure for new build plan")
+	}
 	oldRequirements := make(map[string]string)
 	for _, source := range oldBuildPlan.Sources {
 		oldRequirements[fmt.Sprintf("%s/%s", source.Namespace, source.Name)] = source.Version
@@ -95,27 +103,22 @@ func (r *RequirementOperation) outputAdditionalRequirements(parentCommitId, comm
 	}
 
 	// Determine the package's direct and indirect dependencies.
-	var directDependencies []artifact.ArtifactID
-	numDependencies := make(map[artifact.ArtifactID]int)
-	totalDependencies := 0
+	var dependencies map[artifact.ArtifactID][]artifact.ArtifactID
 	for _, a := range newArtifactMap {
-		if a.Name != packageName {
-			continue
+		if a.Name == packageName {
+			dependencies = buildplan.DependencyTreeFor(a.ArtifactID, newArtifactMap, oldArtifactMap, showUpdatedPackages)
+			break
 		}
-		directDependencies = buildplan.DependenciesFor(a.ArtifactID, newArtifactMap)
-		directDependencies = filterDependencies(directDependencies, newArtifactMap, oldRequirements, showUpdatedPackages)
-		sort.SliceStable(directDependencies, func(i, j int) bool {
-			return newArtifactMap[directDependencies[i]].Name < newArtifactMap[directDependencies[j]].Name
-		})
-		totalDependencies = len(directDependencies)
-		for _, artifactId := range directDependencies {
-			indirectDependencies := buildplan.RecursiveDependenciesFor(artifactId, newArtifactMap)
-			indirectDependencies = filterDependencies(indirectDependencies, newArtifactMap, oldRequirements, showUpdatedPackages)
-			numDependencies[artifactId] = len(indirectDependencies)
-			totalDependencies += len(indirectDependencies)
-		}
-		break
 	}
+	directDependencies := make([]artifact.ArtifactID, 0, len(dependencies))
+	totalDependencies := len(dependencies)
+	for artifactId, indirectDependencies := range dependencies {
+		directDependencies = append(directDependencies, artifactId)
+		totalDependencies += len(indirectDependencies)
+	}
+	sort.SliceStable(directDependencies, func(i, j int) bool {
+		return newArtifactMap[directDependencies[i]].Name < newArtifactMap[directDependencies[j]].Name
+	})
 
 	pg.Stop(locale.T("progress_success"))
 	if len(directDependencies) == 0 {
@@ -154,7 +157,7 @@ func (r *RequirementOperation) outputAdditionalRequirements(parentCommitId, comm
 		}
 
 		subdependencies := ""
-		if numSubs := numDependencies[dep.ArtifactID]; numSubs > 0 {
+		if numSubs := len(dependencies[dep.ArtifactID]); numSubs > 0 {
 			subdependencies = fmt.Sprintf(" ([ACTIONABLE]%s[/RESET] dependencies)", strconv.Itoa(numSubs)) // intentional leading space
 		}
 
@@ -173,21 +176,4 @@ func (r *RequirementOperation) outputAdditionalRequirements(parentCommitId, comm
 	r.Output.Notice("") // blank line
 
 	return nil
-}
-
-// filterDependencies removes from the given dependency list any dependencies seen in the given
-// existing dependency map.
-// When `keepUpdated` is true, dependencies that changed version (i.e. they were updated updated)
-// are not filtered out.
-func filterDependencies(dependencies []artifact.ArtifactID, artifacts artifact.Map, existingArtifacts map[string]string, keepUpdated bool) []artifact.ArtifactID {
-	added := make([]artifact.ArtifactID, 0)
-	for _, artifactId := range dependencies {
-		dep := artifacts[artifactId]
-		key := fmt.Sprintf("%s/%s", dep.Namespace, dep.Name)
-		oldVersion, exists := existingArtifacts[key]
-		if !exists || (keepUpdated && dep.Version != nil && oldVersion != *dep.Version) {
-			added = append(added, artifactId)
-		}
-	}
-	return added
 }
