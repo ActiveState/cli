@@ -455,6 +455,12 @@ const ReportAnalyticsConfig = "report.analytics"
 // PreferredGlibcVersionConfig is the config key used to determine the preferred glibc version
 const PreferredGlibcVersionConfig = "runtime.preferred.glibc"
 
+// SecurityPromptConfig is the config key used to determine if we will prompt the user for security related actions
+const SecurityPromptConfig = "security.prompt.enabled"
+
+// SecurityPromptLevelConfig is the config key used to determine the level of security prompts
+const SecurityPromptLevelConfig = "security.prompt.level"
+
 // SvcAppName is the name we give our state-svc application
 const SvcAppName = "State Service"
 

@@ -26,6 +26,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
+	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
@@ -210,26 +211,40 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	}
 
 	if r.Auth.Authenticated() && operation == bpModel.OperationAdded && ns.Type() == model.NamespacePackage {
-		pg = output.StartSpinner(out, locale.Tr("progress_pkg_nolang", requirementName), constants.TerminalAnimationInterval)
+		pg = output.StartSpinner(out, locale.Tr("progress_cve_search", requirementName), constants.TerminalAnimationInterval)
 
-		vulnerabilities, err := model.FetchVulnerabilitiesForIngredients(r.Auth, []*model.VulnerabilityIngredient{
-			{
-				Namespace: ns.String(),
-				Name:      requirementName,
-				Version:   requirementVersion,
-			},
+		vulnerabilities, err := model.FetchVulnerabilitiesForIngredient(r.Auth, &request.Ingredient{
+			Namespace: ns.String(),
+			Name:      requirementName,
+			Version:   requirementVersion,
 		})
 		if err != nil {
 			return errs.Wrap(err, "Failed to retrieve vulnerabilities")
 		}
 
-		if len(vulnerabilities) > 0 {
-			pg.Stop(locale.T("progress_vulnerable"))
-			// TODO: Iterate over vulnerabilities and tally up the counts for each severity
-			for _, vuln := range vulnerabilities {
+		var safe bool
+		if vulnerabilities == nil || (vulnerabilities != nil && vulnerabilities.Vulnerabilities.Length() == 0) {
+			safe = true
+		}
 
-			}
-			out.Print(locale.Tr("warning_vulnerable", strconv.Itoa(len(vulnerabilities))))
+		// There should only be one ingredient in the list
+		var severityBreakdown []string
+		if len(vulnerabilities.Vulnerabilities.Critical) > 0 {
+			severityBreakdown = append(severityBreakdown, fmt.Sprintf("[RED]%d Critical[/RESET]", len(vulnerabilities.Vulnerabilities.Critical)))
+		}
+		if len(vulnerabilities.Vulnerabilities.High) > 0 {
+			severityBreakdown = append(severityBreakdown, fmt.Sprintf("[ORANGE]%d high[/RESET]", len(vulnerabilities.Vulnerabilities.High)))
+		}
+		if len(vulnerabilities.Vulnerabilities.Medium) > 0 {
+			severityBreakdown = append(severityBreakdown, fmt.Sprintf("[YELLOW]%d medium[/RESET]", len(vulnerabilities.Vulnerabilities.Medium)))
+		}
+		if len(vulnerabilities.Vulnerabilities.Low) > 0 {
+			severityBreakdown = append(severityBreakdown, fmt.Sprintf("[MAGENTA]%d low[/RESET]", len(vulnerabilities.Vulnerabilities.Low)))
+		}
+
+		if !safe {
+			pg.Stop(locale.T("progress_unsafe"))
+			out.Print("    " + locale.Tr("warning_vulnerable", strconv.Itoa(vulnerabilities.Vulnerabilities.Length()), strings.Join(severityBreakdown, ", ")))
 		} else {
 			pg.Stop(locale.T("progress_safe"))
 		}
