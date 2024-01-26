@@ -1,5 +1,12 @@
 package model
 
+const (
+	SeverityCritical = "critical"
+	SeverityHigh     = "high"
+	SeverityMedium   = "medium"
+	SeverityLow      = "low"
+)
+
 type VulnerabilitiesResponse struct {
 	Vulnerabilities []VulnerableIngredientsFilter `json:"vulnerabilities"`
 }

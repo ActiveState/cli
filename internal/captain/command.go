@@ -292,6 +292,7 @@ func (c *Command) Execute(args []string) error {
 	c.cobra.SetArgs(args)
 	err := c.cobra.Execute()
 	c.cobra.SetArgs(nil)
+	rationalizeError(&err)
 	return setupSensibleErrors(err, args)
 }
 

@@ -1,15 +1,24 @@
 package request
 
-import "github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
+import (
+	"time"
 
-func StageCommit(owner, project, parentCommit, description string, expression *buildexpression.BuildExpression) *buildPlanByStageCommit {
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
+)
+
+func StageCommit(owner, project, parentCommit, description string, atTime *time.Time, expression *buildexpression.BuildExpression) *buildPlanByStageCommit {
+	var timestamp *string
+	if atTime != nil {
+		timestamp = ptr.To(atTime.Format(time.RFC3339))
+	}
 	return &buildPlanByStageCommit{map[string]interface{}{
 		"organization": owner,
 		"project":      project,
 		"parentCommit": parentCommit,
 		"description":  description,
 		"expr":         expression,
-		"atTime":       "", // default to the latest timestamp
+		"atTime":       timestamp, // default to the latest timestamp
 	}}
 }
 
@@ -19,9 +28,9 @@ type buildPlanByStageCommit struct {
 
 func (b *buildPlanByStageCommit) Query() string {
 	return `
-mutation ($organization: String!, $project: String!, $parentCommit: ID!, $description: String!, $expr: BuildExpr!) {
+mutation ($organization: String!, $project: String!, $parentCommit: ID!, $description: String!, $atTime: DateTime, $expr: BuildExpr!) {
   stageCommit(
-    input: {organization: $organization, project: $project, parentCommitId: $parentCommit, description: $description, expr: $expr}
+    input: {organization: $organization, project: $project, parentCommitId: $parentCommit, description: $description, atTime: $atTime, expr: $expr}
   ) {
     ... on Commit {
       __typename

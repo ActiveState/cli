@@ -36,6 +36,8 @@ const (
 	HidePlain PlainOpts = "hidePlain"
 	// ShiftColsPrefix starts the column after the set qty
 	ShiftColsPrefix PlainOpts = "shiftCols="
+	// OmitEmpty omits empty values from output
+	OmitEmpty PlainOpts = "omitEmpty"
 )
 
 const dash = "\u2500"
@@ -292,13 +294,17 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 				continue
 			}
 
-			if firstIteration && !funk.Contains(field.opts, string(SeparateLineOpt)) {
-				headers = append(headers, localizedField(field.l10n))
-			}
-
 			stringValue, err := sprint(field.value)
 			if err != nil {
 				return "", err
+			}
+
+			if funk.Contains(field.opts, string(OmitEmpty)) && stringValue == "" {
+				continue
+			}
+
+			if firstIteration && !funk.Contains(field.opts, string(SeparateLineOpt)) {
+				headers = append(headers, localizedField(field.l10n))
 			}
 
 			if funk.Contains(field.opts, string(EmptyNil)) && stringValue == nilText {

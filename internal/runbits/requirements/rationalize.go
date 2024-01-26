@@ -51,13 +51,7 @@ func (r *RequirementOperation) rationalizeError(err *error) {
 			buildPlannerErr.LocalizedError(),
 			errs.SetIf(buildPlannerErr.InputError(), errs.SetInput()))
 
-		// Project not found
-	case errors.Is(*err, rationalize.ErrNoProject):
-		*err = errs.WrapUserFacing(*err,
-			locale.Tr("err_no_project"),
-			errs.SetInput())
-
-		// Headless
+	// Headless
 	case errors.Is(*err, rationalize.ErrHeadless):
 		*err = errs.WrapUserFacing(*err,
 			locale.Tl(

@@ -229,6 +229,7 @@ type StageCommitParams struct {
 	// compute its changes into a series of above operations. Instead, we just pass the new
 	// expression directly.
 	Expression *buildexpression.BuildExpression
+	TimeStamp  *time.Time
 }
 
 func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {
@@ -265,7 +266,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	}
 
 	// With the updated build expression call the stage commit mutation
-	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, params.Description, expression)
+	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, params.Description, params.TimeStamp, expression)
 	resp := &bpModel.StageCommitResult{}
 	err := bp.client.Run(request, resp)
 	if err != nil {
