@@ -666,6 +666,55 @@ func (suite *PackageIntegrationTestSuite) TestResolved() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *PackageIntegrationTestSuite) TestCVE_NoPrompt() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("install", "urllib3@2.0.2"),
+	)
+	cp.Expect("Warning: Dependency has 2 known vulnerabilities")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *PackageIntegrationTestSuite) TestCVE_Prompt() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "set", "security.prompt.level", "high")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "set", "security.prompt.enabled", "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("install", "urllib3@2.0.2"),
+	)
+	cp.Expect("Warning: Dependency has 2 known vulnerabilities")
+	cp.Expect("Do you want to continue")
+	cp.SendLine("y")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "set", "security.prompt.enabled", "false")
+	cp.ExpectExitCode(0)
+}
+
 func TestPackageIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(PackageIntegrationTestSuite))
 }
