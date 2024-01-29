@@ -628,8 +628,8 @@ type Build struct {
 	Status      string         `json:"status"`
 	Terminals   []*NamedTarget `json:"terminals"`
 	Artifacts   []*Artifact    `json:"artifacts"`
-	Steps       Steps          `json:"steps"`
-	Sources     Sources        `json:"sources"`
+	Steps       []*Step        `json:"steps"`
+	Sources     []*Source      `json:"sources"`
 	BuildLogIDs []*BuildLogID  `json:"buildLogIds"`
 	*Error
 	*PlanningError
@@ -677,32 +677,12 @@ type Step struct {
 	Outputs []string       `json:"outputs"`
 }
 
-type Steps []*Step
-
-func (s Steps) ToMap() map[strfmt.UUID]*Step {
-	m := map[strfmt.UUID]*Step{}
-	for _, step := range s {
-		m[step.StepID] = step
-	}
-	return m
-}
-
 // Source represents the source of an artifact.
 type Source struct {
 	NodeID    strfmt.UUID `json:"nodeId"`
 	Name      string      `json:"name"`
 	Namespace string      `json:"namespace"`
 	Version   string      `json:"version"`
-}
-
-type Sources []*Source
-
-func (s Sources) ToMap() map[strfmt.UUID]*Source {
-	m := map[strfmt.UUID]*Source{}
-	for _, source := range s {
-		m[source.NodeID] = source
-	}
-	return m
 }
 
 // NotFoundError represents an error that occurred because a resource was not found.
@@ -807,22 +787,4 @@ type SolveErrorPackageIncompatibility struct {
 type SolveErrorPlatformIncompatibility struct {
 	PlatformID     string `json:"platformID"`
 	PlatformKernel string `json:"platformKernel"`
-}
-
-func FilterArtifactsRecursive(artifacts []*Artifact, filterIDs []strfmt.UUID) []*Artifact {
-	// Convert to map for cheaper lookups
-	filter := map[strfmt.UUID]struct{}{}
-	for _, id := range filterIDs {
-		filter[id] = struct{}{}
-	}
-
-	var flattened []*Artifact
-	for _, artifact := range artifacts {
-		if _, ok := filter[artifact.NodeID]; !ok {
-			continue
-		}
-		flattened = append(flattened, artifact)
-		flattened = append(flattened, FilterArtifactsRecursive(artifacts, artifact.RuntimeDependencies)...)
-	}
-	return flattened
 }

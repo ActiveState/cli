@@ -384,17 +384,3 @@ func (r *Runtime) ResolvedArtifacts() ([]*artifact.Artifact, error) {
 
 	return r.resolvedArtifacts, nil
 }
-
-func (r *Runtime) BuildArtifacts() ([]*bpModel.Artifact, error) {
-	runtimeStore := r.store
-	if runtimeStore == nil {
-		runtimeStore = store.New(r.target.Dir())
-	}
-
-	plan, err := runtimeStore.BuildPlan()
-	if err != nil {
-		return nil, errs.Wrap(err, "Unable to fetch build plan")
-	}
-
-	return plan.Artifacts, nil
-}
