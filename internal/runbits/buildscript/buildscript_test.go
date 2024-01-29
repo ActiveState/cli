@@ -75,9 +75,9 @@ in:
 //   - The local project pulls from the Platform project, resulting in conflicting times and version
 //     requirements for requests.
 func TestRealWorld(t *testing.T) {
-	script1, err := buildscript.NewScript(fileutils.ReadFileUnsafe(filepath.Join("testdata", "buildscript1.yaml")))
+	script1, err := buildscript.NewScript(fileutils.ReadFileUnsafe(filepath.Join("testdata", "buildscript1.as")))
 	require.NoError(t, err)
-	script2, err := buildscript.NewScript(fileutils.ReadFileUnsafe(filepath.Join("testdata", "buildscript2.yaml")))
+	script2, err := buildscript.NewScript(fileutils.ReadFileUnsafe(filepath.Join("testdata", "buildscript2.as")))
 	require.NoError(t, err)
 	result, err := generateDiff(script1, script2.Expr)
 	require.NoError(t, err)
