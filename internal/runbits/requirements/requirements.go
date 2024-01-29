@@ -235,7 +235,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		}
 
 		var safe bool
-		if vulnerabilities == nil || (vulnerabilities != nil && vulnerabilities.Vulnerabilities.Length() == 0) {
+		if vulnerabilities == nil || vulnerabilities.Vulnerabilities.Length() == 0 {
 			safe = true
 		}
 
@@ -243,9 +243,9 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 			pg.Stop(locale.T("progress_unsafe"))
 			pg = nil
 
-			if r.shouldPromptForSecurity(vulnerabilities) {
-				out.Print("")
-				cont, err := r.promptForSecurity(out, vulnerabilities)
+			if r.shouldPromptForSecurity(vulnerabilities.Vulnerabilities) {
+				out.Notice("")
+				cont, err := r.promptForSecurity(out, vulnerabilities.Vulnerabilities)
 				if err != nil {
 					return errs.Wrap(err, "Failed to prompt for security")
 				}
@@ -268,7 +268,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 					severityBreakdown = append(severityBreakdown, fmt.Sprintf("[MAGENTA]%d low[/RESET]", len(vulnerabilities.Vulnerabilities.Low)))
 				}
 
-				out.Print("    " + strings.TrimSpace(locale.Tr("warning_vulnerable", strconv.Itoa(vulnerabilities.Vulnerabilities.Length()), strings.Join(severityBreakdown, ", "))))
+				out.Notice("    " + strings.TrimSpace(locale.Tr("warning_vulnerable", strconv.Itoa(vulnerabilities.Vulnerabilities.Length()), strings.Join(severityBreakdown, ", "))))
 			}
 		} else {
 			pg.Stop(locale.T("progress_safe"))
@@ -423,7 +423,11 @@ func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 	return nil
 }
 
-func (r *RequirementOperation) shouldPromptForSecurity(vulnerabilities *model.VulnerabilityIngredient) bool {
+func (r *RequirementOperation) shouldPromptForSecurity(vulnerabilities *model.Vulnerabilites) bool {
+	if (r.Config.IsSet(constants.SecurityPromptConfig) && !r.Config.GetBool(constants.SecurityPromptConfig)) || vulnerabilities == nil {
+		return false
+	}
+
 	if !r.Config.IsSet(constants.SecurityPromptConfig) {
 		if err := r.Config.Set(constants.SecurityPromptConfig, promptDefault); err != nil {
 			multilog.Error("Failed to set security prompt config: %v", err)
@@ -436,63 +440,60 @@ func (r *RequirementOperation) shouldPromptForSecurity(vulnerabilities *model.Vu
 		}
 	}
 
-	prompt := r.Config.GetBool(constants.SecurityPromptConfig)
 	promptLevel := r.Config.GetString(constants.SecurityPromptLevelConfig)
 
+	logging.Debug("Prompt level: ", promptLevel)
 	switch promptLevel {
 	case vulnModel.SeverityCritical:
-		return prompt && len(vulnerabilities.Vulnerabilities.Critical) > 0
+		return len(vulnerabilities.Critical) > 0
 	case vulnModel.SeverityHigh:
-		return prompt &&
-			(len(vulnerabilities.Vulnerabilities.Critical) > 0 ||
-				len(vulnerabilities.Vulnerabilities.High) > 0)
+		return (len(vulnerabilities.Critical) > 0 ||
+			len(vulnerabilities.High) > 0)
 	case vulnModel.SeverityMedium:
-		return prompt &&
-			(len(vulnerabilities.Vulnerabilities.Critical) > 0 ||
-				len(vulnerabilities.Vulnerabilities.High) > 0 ||
-				len(vulnerabilities.Vulnerabilities.Medium) > 0)
+		return (len(vulnerabilities.Critical) > 0 ||
+			len(vulnerabilities.High) > 0 ||
+			len(vulnerabilities.Medium) > 0)
 	case vulnModel.SeverityLow:
-		return prompt &&
-			(len(vulnerabilities.Vulnerabilities.Critical) > 0 ||
-				len(vulnerabilities.Vulnerabilities.High) > 0 ||
-				len(vulnerabilities.Vulnerabilities.Medium) > 0 ||
-				len(vulnerabilities.Vulnerabilities.Low) > 0)
+		return (len(vulnerabilities.Critical) > 0 ||
+			len(vulnerabilities.High) > 0 ||
+			len(vulnerabilities.Medium) > 0 ||
+			len(vulnerabilities.Low) > 0)
 	}
 
-	return r.Config.GetBool(constants.SecurityPromptConfig)
+	return false
 }
 
-func (r *RequirementOperation) promptForSecurity(out output.Outputer, vulnerabilities *model.VulnerabilityIngredient) (bool, error) {
-	out.Print(locale.Tr("warning_vulnerable_simple", strconv.Itoa(vulnerabilities.Vulnerabilities.Length())))
+func (r *RequirementOperation) promptForSecurity(out output.Outputer, vulnerabilities *model.Vulnerabilites) (bool, error) {
+	out.Notice(locale.Tr("warning_vulnerable_simple", strconv.Itoa(vulnerabilities.Length())))
 
 	var pkgVersionVulns []string
-	if len(vulnerabilities.Vulnerabilities.Critical) > 0 {
-		criticalOutput := fmt.Sprintf("[RED]%d Critical: [/RESET]", len(vulnerabilities.Vulnerabilities.Critical))
-		criticalOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(vulnerabilities.Vulnerabilities.Critical, ", "))
+	if len(vulnerabilities.Critical) > 0 {
+		criticalOutput := fmt.Sprintf("[RED]%d Critical: [/RESET]", len(vulnerabilities.Critical))
+		criticalOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(vulnerabilities.Critical, ", "))
 		pkgVersionVulns = append(pkgVersionVulns, criticalOutput)
 	}
 
-	if len(vulnerabilities.Vulnerabilities.High) > 0 {
-		highOutput := fmt.Sprintf("[ORANGE]%d High: [/RESET]", len(vulnerabilities.Vulnerabilities.High))
-		highOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(vulnerabilities.Vulnerabilities.High, ", "))
+	if len(vulnerabilities.High) > 0 {
+		highOutput := fmt.Sprintf("[ORANGE]%d High: [/RESET]", len(vulnerabilities.High))
+		highOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(vulnerabilities.High, ", "))
 		pkgVersionVulns = append(pkgVersionVulns, highOutput)
 	}
 
-	if len(vulnerabilities.Vulnerabilities.Medium) > 0 {
-		mediumOutput := fmt.Sprintf("[YELLOW]%d Medium: [/RESET]", len(vulnerabilities.Vulnerabilities.Medium))
-		mediumOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(vulnerabilities.Vulnerabilities.Medium, ", "))
+	if len(vulnerabilities.Medium) > 0 {
+		mediumOutput := fmt.Sprintf("[YELLOW]%d Medium: [/RESET]", len(vulnerabilities.Medium))
+		mediumOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(vulnerabilities.Medium, ", "))
 		pkgVersionVulns = append(pkgVersionVulns, mediumOutput)
 	}
 
-	if len(vulnerabilities.Vulnerabilities.Low) > 0 {
-		lowOutput := fmt.Sprintf("[MAGENTA]%d Low: [/RESET]", len(vulnerabilities.Vulnerabilities.Low))
-		lowOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(vulnerabilities.Vulnerabilities.Low, ", "))
+	if len(vulnerabilities.Low) > 0 {
+		lowOutput := fmt.Sprintf("[MAGENTA]%d Low: [/RESET]", len(vulnerabilities.Low))
+		lowOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(vulnerabilities.Low, ", "))
 		pkgVersionVulns = append(pkgVersionVulns, lowOutput)
 	}
 
 	out.Print(pkgVersionVulns)
-	out.Print("")
-	out.Print(locale.T("more_info_vulnerabilities"))
+	out.Notice("")
+	out.Notice(locale.T("more_info_vulnerabilities"))
 
 	confirm, err := r.Prompt.Confirm("", locale.Tr("prompt_continue_pkg_operation"), ptr.To(false))
 	if err != nil {
