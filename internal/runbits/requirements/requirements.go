@@ -42,6 +42,11 @@ func init() {
 	configMediator.RegisterOption(constants.SecurityPromptLevelConfig, configMediator.String, configMediator.EmptyEvent, configMediator.EmptyEvent)
 }
 
+const (
+	promptDefault      = true
+	promptDefaultLevel = vulnModel.SeverityCritical
+)
+
 type PackageVersion struct {
 	captain.NameVersionValue
 }
@@ -420,13 +425,13 @@ func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 
 func (r *RequirementOperation) shouldPromptForSecurity(vulnerabilities *model.VulnerabilityIngredient) bool {
 	if !r.Config.IsSet(constants.SecurityPromptConfig) {
-		if err := r.Config.Set(constants.SecurityPromptConfig, true); err != nil {
+		if err := r.Config.Set(constants.SecurityPromptConfig, promptDefault); err != nil {
 			multilog.Error("Failed to set security prompt config: %v", err)
 		}
 	}
 
 	if !r.Config.IsSet(constants.SecurityPromptLevelConfig) {
-		if err := r.Config.Set(constants.SecurityPromptLevelConfig, vulnModel.SeverityCritical); err != nil {
+		if err := r.Config.Set(constants.SecurityPromptLevelConfig, promptDefaultLevel); err != nil {
 			multilog.Error("Failed to set security prompt level config: %v", err)
 		}
 	}
