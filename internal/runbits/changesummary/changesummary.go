@@ -63,6 +63,7 @@ func (cs *ChangeSummary) ChangeSummary(changeset artifact.ArtifactChangeset, art
 	sort.SliceStable(directDependencies, func(i, j int) bool {
 		return artifacts[directDependencies[i]].Name < artifacts[directDependencies[j]].Name
 	})
+	hasAdditionalIndirectDependencies := len(directDependencies) < len(uniqueDependencies)
 
 	logging.Debug("%s has %d direct dependencies and %d total, unique dependencies", added.Name, len(directDependencies), len(uniqueDependencies))
 	if len(directDependencies) == 0 {
@@ -79,7 +80,7 @@ func (cs *ChangeSummary) ChangeSummary(changeset artifact.ArtifactChangeset, art
 	cs.out.Notice("") // blank line
 
 	localeKey := "additional_dependencies"
-	if len(directDependencies) < len(uniqueDependencies) {
+	if hasAdditionalIndirectDependencies {
 		localeKey = "additional_total_dependencies"
 	}
 	version := ""
@@ -108,7 +109,7 @@ func (cs *ChangeSummary) ChangeSummary(changeset artifact.ArtifactChangeset, art
 		}
 
 		subdependencies := ""
-		if numSubs := len(dependencies[dep.ArtifactID]); numSubs > 0 {
+		if numSubs := len(dependencies[dep.ArtifactID]); numSubs > 0 && hasAdditionalIndirectDependencies {
 			subdependencies = fmt.Sprintf(" ([ACTIONABLE]%s[/RESET] dependencies)", strconv.Itoa(numSubs)) // intentional leading space
 		}
 
