@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
@@ -34,7 +35,7 @@ func (cs *ChangeSummary) ChangeSummary(changeset artifact.ArtifactChangeset, art
 	// Determine which package was installed.
 	var addedId *artifact.ArtifactID
 	for _, candidateId := range changeset.Added {
-		if !hasDependant(candidateId, changeset, artifacts) {
+		if !isDependency(candidateId, changeset, artifacts) {
 			if addedId != nil {
 				return // more than two independent packages were added
 			}
@@ -46,6 +47,7 @@ func (cs *ChangeSummary) ChangeSummary(changeset artifact.ArtifactChangeset, art
 		return // no single, independent package was added
 	}
 	added := artifacts[*addedId]
+	logging.Debug("Determined that runtime update was triggered by adding package '%s/%s'", added.Namespace, added.Name)
 
 	// Determine the package's direct and indirect dependencies.
 	dependencies := buildplan.DependencyTreeFor(*addedId, artifacts, filter, showUpdatedPackages)
@@ -61,6 +63,8 @@ func (cs *ChangeSummary) ChangeSummary(changeset artifact.ArtifactChangeset, art
 	sort.SliceStable(directDependencies, func(i, j int) bool {
 		return artifacts[directDependencies[i]].Name < artifacts[directDependencies[j]].Name
 	})
+
+	logging.Debug("%s has %d direct dependencies and %d total, unique dependencies", added.Name, len(directDependencies), len(uniqueDependencies))
 	if len(directDependencies) == 0 {
 		return
 	}
@@ -119,10 +123,10 @@ func (cs *ChangeSummary) ChangeSummary(changeset artifact.ArtifactChangeset, art
 	cs.out.Notice("") // blank line
 }
 
-// hasDependant iterates over all artifacts and their dependencies in the given changeset, and
-// returns whether or not the given artifact is a dependant of any of those artifacts or
+// isDependency iterates over all artifacts and their dependencies in the given changeset, and
+// returns whether or not the given artifact is a dependency of any of those artifacts or
 // dependencies.
-func hasDependant(a artifact.ArtifactID, changeset artifact.ArtifactChangeset, artifacts artifact.Map) bool {
+func isDependency(a artifact.ArtifactID, changeset artifact.ArtifactChangeset, artifacts artifact.Map) bool {
 	for _, artifactId := range changeset.Added {
 		if artifactId == a {
 			continue
