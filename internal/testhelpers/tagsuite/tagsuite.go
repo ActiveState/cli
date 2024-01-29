@@ -17,6 +17,7 @@ const (
 	Automation      = "automation"
 	Branches        = "branches"
 	Bundle          = "bundle"
+	Builds          = "builds"
 	Carlisle        = "carlisle"
 	Checkout        = "checkout"
 	CLIDeploy       = "cli-deploy"

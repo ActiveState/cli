@@ -1510,3 +1510,5 @@ uploadingredient_success:
     Ingredient ID: [[ACTIONABLE]{{.V0}}[/RESET]
     Ingredient Version ID: [ACTIONABLE]{{.V1}}[/RESET]
     Revision: [ACTIONABLE]{{.V2}}[/RESET]
+err_runtime_cache_invalid:
+  other: Your runtime needs to be updated, please run '[ACTIONABLE]state refresh[/RESET]'.
