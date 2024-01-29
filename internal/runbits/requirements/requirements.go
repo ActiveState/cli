@@ -263,7 +263,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 					severityBreakdown = append(severityBreakdown, fmt.Sprintf("[MAGENTA]%d low[/RESET]", len(vulnerabilities.Vulnerabilities.Low)))
 				}
 
-				out.Print("    " + locale.Tr("warning_vulnerable", strconv.Itoa(vulnerabilities.Vulnerabilities.Length()), strings.Join(severityBreakdown, ", ")))
+				out.Print("    " + strings.TrimSpace(locale.Tr("warning_vulnerable", strconv.Itoa(vulnerabilities.Vulnerabilities.Length()), strings.Join(severityBreakdown, ", "))))
 			}
 		} else {
 			pg.Stop(locale.T("progress_safe"))

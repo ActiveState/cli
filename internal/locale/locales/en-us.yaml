@@ -1283,7 +1283,7 @@ unstable_feature_banner:
   other: "[NOTICE]Beta Feature: This feature is still in beta and may be unstable.[/RESET]\n"
 warning_vulnerable:
   other: |
-        • [ERROR]Warning:[/RESET] Dependency has [ERROR]{{.V0}} known vulnerabilities (CVEs)[/RESET]. Severity: {{.V1}}. Run `[ACTIONABLE]state security[/RESET]` for more info.
+    • [ERROR]Warning:[/RESET] Dependency has [ERROR]{{.V0}} known vulnerabilities (CVEs)[/RESET]. Severity: {{.V1}}. Run `[ACTIONABLE]state security[/RESET]` for more info.
 warning_vulnerable_simple:
   other: |
     [ERROR]Warning: Dependency has {{.V0}} known vulnerabilities (CVEs)[/RESET]
