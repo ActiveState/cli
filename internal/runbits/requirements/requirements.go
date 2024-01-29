@@ -271,17 +271,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
 
-	// If applicable, output a list of additional dependencies (if any) being installed along with the
-	// requested package or bundle.
-	if (operation == bpModel.OperationAdded || operation == bpModel.OperationUpdated) &&
-		ns != nil && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle) &&
-		hasParentCommit {
-		err := r.outputAdditionalRequirements(parentCommitID, commitID, name, ns)
-		if err != nil {
-			return errs.Wrap(err, "Unable to compute additional dependencies")
-		}
-	}
-
 	var trigger target.Trigger
 	switch ns.Type() {
 	case model.NamespaceLanguage:

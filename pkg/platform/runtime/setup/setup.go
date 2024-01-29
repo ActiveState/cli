@@ -24,9 +24,11 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/runbits/changesummary"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
@@ -138,6 +140,7 @@ type Setup struct {
 	analytics     analytics.Dispatcher
 	artifactCache *artifactcache.ArtifactCache
 	cfg           apimodel.Configurable
+	out           output.Outputer
 }
 
 type Setuper interface {
@@ -161,12 +164,12 @@ type artifactInstaller func(artifact.ArtifactID, string, ArtifactSetuper) error
 type artifactUninstaller func() error
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
-func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth, an analytics.Dispatcher, cfg apimodel.Configurable) *Setup {
+func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth, an analytics.Dispatcher, cfg apimodel.Configurable, out output.Outputer) *Setup {
 	cache, err := artifactcache.New()
 	if err != nil {
 		multilog.Error("Could not create artifact cache: %v", err)
 	}
-	return &Setup{auth, target, eventHandler, store.New(target.Dir()), an, cache, cfg}
+	return &Setup{auth, target, eventHandler, store.New(target.Dir()), an, cache, cfg, out}
 }
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
@@ -492,10 +495,21 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		logging.Debug("Could not load existing build plan. Maybe it is a new installation: %v", err)
 	}
 
+	var oldBuildPlanArtifacts artifact.Map
+
 	if oldBuildPlan != nil {
 		changedArtifacts, err = buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false, includeBuildtimeClosure, s.cfg)
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "Could not compute artifact changeset")
+		}
+
+		artifactListing, err := buildplan.NewArtifactListing(oldBuildPlan, false, s.cfg)
+		if err != nil {
+			return nil, nil, errs.Wrap(err, "Unable to create artifact listing for old build plan")
+		}
+		oldBuildPlanArtifacts, err = artifactListing.RuntimeClosure()
+		if err != nil {
+			return nil, nil, errs.Wrap(err, "Unable to compute runtime closure for old build plan")
 		}
 	}
 
@@ -583,6 +597,11 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	if len(artifactsToInstall) > 0 {
 		// if we get here, we download artifacts
 		s.analytics.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeDownload, dimensions)
+	}
+
+	// Output a change summary if applicable.
+	if len(oldBuildPlanArtifacts) > 0 {
+		changesummary.New(s.out).ChangeSummary(changedArtifacts, artifactsToBuild, oldBuildPlanArtifacts)
 	}
 
 	err = s.installArtifactsFromBuild(buildResult, requestedArtifacts, artifact.ArtifactIDsToMap(artifactsToInstall), downloadablePrebuiltResults, setup, resolver, installFunc, logFilePath)
