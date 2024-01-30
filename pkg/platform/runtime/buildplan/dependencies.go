@@ -112,11 +112,11 @@ func buildBuildClosureDependencies(artifactID strfmt.UUID, lookup map[strfmt.UUI
 	return deps, nil
 }
 
-// DependencyTreeFor returns for the given artifact ID a map of dependencies to a list of unique
+// DependencyMapFor returns for the given artifact ID a map of dependencies to a list of unique
 // subdependencies. The returned map excludes any dependencies in the given filter, unless there is
 // a version mismatch and `keepUpdated` is true (this signifies a dependency's version was
 // updated).
-func DependencyTreeFor(a artifact.ArtifactID, artifacts artifact.Map, filter artifact.Map, keepUpdated bool) map[artifact.ArtifactID][]artifact.ArtifactID {
+func DependencyMapFor(a artifact.ArtifactID, artifacts artifact.Map, filter artifact.Map, keepUpdated bool) map[artifact.ArtifactID][]artifact.ArtifactID {
 	// Construct a lookup map to easily see if a given artifact ID should be filtered out.
 	filterMap := make(map[string]string)
 	for _, artifactToFilter := range filter {

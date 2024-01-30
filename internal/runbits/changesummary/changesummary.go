@@ -50,7 +50,7 @@ func (cs *ChangeSummary) ChangeSummary(changeset artifact.ArtifactChangeset, art
 	logging.Debug("Determined that runtime update was triggered by adding package '%s/%s'", added.Namespace, added.Name)
 
 	// Determine the package's direct and indirect dependencies.
-	dependencies := buildplan.DependencyTreeFor(*addedId, artifacts, filter, showUpdatedPackages)
+	dependencies := buildplan.DependencyMapFor(*addedId, artifacts, filter, showUpdatedPackages)
 	directDependencies := make([]artifact.ArtifactID, 0, len(dependencies))
 	uniqueDependencies := make(map[artifact.ArtifactID]bool)
 	for artifactId, indirectDependencies := range dependencies {
