@@ -368,7 +368,10 @@ type SourceInfo struct {
 //
 //	Artifact (GeneratedBy) -> Step (Input) -> Source
 func getSourceInfo(sourceID strfmt.UUID, lookup map[strfmt.UUID]interface{}) (SourceInfo, error) {
-	node := lookup[sourceID]
+	node, ok := lookup[sourceID]
+	if !ok {
+		return SourceInfo{}, errs.New("Could not find source with id %s", sourceID.String())
+	}
 
 	source, ok := node.(*model.Source)
 	if ok {
