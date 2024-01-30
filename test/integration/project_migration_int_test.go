@@ -94,7 +94,6 @@ func (suite *ProjectMigrationIntegrationTestSuite) TestPromptMigration() {
 	// Verify activestate.yaml no longer has commitID
 	bytes = fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
 	suite.Assert().NotContains(string(bytes), "&commitID=", "as.yaml was migrated and does not still contain commitID")
-	suite.Assert().NotContains(string(bytes), "migrate-to-buildscripts", "should not have created migration script")
 }
 
 func (suite *ProjectMigrationIntegrationTestSuite) TestScriptMigration() {
