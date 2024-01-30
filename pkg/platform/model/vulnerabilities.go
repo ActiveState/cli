@@ -29,6 +29,23 @@ func (v Vulnerabilites) Length() int {
 	return len(v.Critical) + len(v.High) + len(v.Medium) + len(v.Low)
 }
 
+func FetchVulnerabilitiesForIngredient(auth *authentication.Auth, ingredient *request.Ingredient) (*VulnerabilityIngredient, error) {
+	vulnerabilities, err := FetchVulnerabilitiesForIngredients(auth, []*request.Ingredient{ingredient})
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to fetch vulnerabilities")
+	}
+
+	if len(vulnerabilities) == 0 {
+		return nil, nil
+	}
+
+	if len(vulnerabilities) > 1 {
+		return nil, errs.New("Expected 1 vulnerability, got %d", len(vulnerabilities))
+	}
+
+	return vulnerabilities[0], nil
+}
+
 func FetchVulnerabilitiesForIngredients(auth *authentication.Auth, ingredients []*request.Ingredient) ([]*VulnerabilityIngredient, error) {
 	requestIngredients := make([]*request.Ingredient, len(ingredients))
 	for i, ingredient := range ingredients {
