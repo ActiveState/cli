@@ -156,6 +156,8 @@ func CreateMigrateScript(proj projecter) error {
 	scriptsPos := scriptsRx.FindIndex(asB)
 	if scriptsPos != nil {
 		asB = append(asB[:scriptsPos[1]], append(scriptB, asB[scriptsPos[1]:]...)...)
+	} else {
+		asB = append(asB, append([]byte("\nscripts:\n"), scriptB...)...)
 	}
 
 	if err := fileutils.WriteFile(proj.Source().Path(), asB); err != nil {
