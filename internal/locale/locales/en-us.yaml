@@ -1492,6 +1492,11 @@ err_uploadingredient_edit_description_not_supported:
 uploadingredient_editor_opening:
   other: |
     Opening editor to edit ingredient meta information. Alternatively you may manually edit the following file: [ACTIONABLE]{{.V0}}[/RESET].
+uploadingredient_editor_header_comment:
+  other: |
+    # Edit the following file and confirm in your terminal when done
+    # The 'namespace' field should be in "org/project" format.
+    # The 'version' field should follow semantic versioning and match the version in the filename (if any).
 uploadingredient_success:
   other: |
     Successfully published as:

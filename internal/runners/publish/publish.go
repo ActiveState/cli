@@ -347,7 +347,7 @@ func (r *Runner) OpenInEditor(pr *request.PublishVariables) error {
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not marshal publish request")
 	}
-	b = append([]byte("# Edit the following file and confirm in your terminal when done\n"), b...)
+	b = append([]byte(locale.T("uploadingredient_editor_header_comment")), b...)
 	fn, err := fileutils.WriteTempFile("*.ingredient.yaml", b)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not write publish request to file")
