@@ -565,6 +565,11 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, nil, errs.Wrap(err, "Failed to compute artifacts to build")
 	}
 
+	// Output a change summary if applicable.
+	if len(oldBuildPlanArtifacts) > 0 {
+		changesummary.New(s.out).ChangeSummary(changedArtifacts, artifactsToBuild, oldBuildPlanArtifacts)
+	}
+
 	// The log file we want to use for builds
 	logFilePath := logging.FilePathFor(fmt.Sprintf("build-%s.log", s.target.CommitUUID().String()+"-"+time.Now().Format("20060102150405")))
 
@@ -597,11 +602,6 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	if len(artifactsToInstall) > 0 {
 		// if we get here, we download artifacts
 		s.analytics.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeDownload, dimensions)
-	}
-
-	// Output a change summary if applicable.
-	if len(oldBuildPlanArtifacts) > 0 {
-		changesummary.New(s.out).ChangeSummary(changedArtifacts, artifactsToBuild, oldBuildPlanArtifacts)
 	}
 
 	err = s.installArtifactsFromBuild(buildResult, requestedArtifacts, artifact.ArtifactIDsToMap(artifactsToInstall), downloadablePrebuiltResults, setup, resolver, installFunc, logFilePath)
