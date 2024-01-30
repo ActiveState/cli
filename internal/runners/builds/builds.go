@@ -17,8 +17,6 @@ import (
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	auth "github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
-	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
@@ -96,22 +94,14 @@ func (b *Builds) Run(params *Params) (rerr error) {
 		return rationalize.ErrNoProject
 	}
 
-	// We don't use the runtime returned here, because builds needs more advanced runtime info, but we still want to call
-	// it in case our runtime isn't up-to date.
-	_, err := runtime.NewFromProject(b.project, target.TriggerBuilds, b.analytics, b.svcModel, b.out, b.auth, b.config)
+	rt, err := runtime.NewFromProject(b.project, target.TriggerBuilds, b.analytics, b.svcModel, b.out, b.auth, b.config)
 	if err != nil {
 		return locale.WrapInputError(err, "err_refresh_runtime_new", "Could not update runtime for this project.")
 	}
 
-	runtimeStore := store.New(target.NewProjectTarget(b.project, nil, target.TriggerBuilds).Dir())
-	bp, err := runtimeStore.BuildPlan()
+	terminalArtfMap, err := rt.TerminalArtifactMap(false)
 	if err != nil {
-		return errs.Wrap(err, "Could not get build plan")
-	}
-
-	terminalArtfMap, err := buildplan.NewMapFromBuildPlan(bp, false, false, nil)
-	if err != nil {
-		return errs.Wrap(err, "Could not get build plan map")
+		return errs.Wrap(err, "Could not get terminal artifact map")
 	}
 
 	platformMap, err := model.FetchPlatformsMap()
