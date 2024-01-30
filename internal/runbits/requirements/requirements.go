@@ -251,6 +251,12 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 				}
 
 				if !cont {
+					if !r.Prompt.IsInteractive() {
+						return errs.AddTips(
+							locale.NewInputError("err_pkgop_security_prompt", "Operation aborted due to security prompt"),
+							locale.Tl("more_info_prompt", "To disable security prompting run: [ACTIONABLE]state config set security.prompt.enabled false[/RESET]"),
+						)
+					}
 					return locale.NewError("err_pkgop_security_prompt", "Operation aborted due to security prompt")
 				}
 			} else {
