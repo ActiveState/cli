@@ -126,6 +126,7 @@ func newFilteredMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure b
 
 type TerminalArtifactMap map[string]artifact.Map
 
+// NewMapFromBuildPlan returns an artifact map keyed by the terminal (ie. platform).
 // Setting calculateBuildtimeClosure as true calculates the artifact map with the buildtime
 // dependencies. This is different from the runtime dependency calculation as it
 // includes ALL of the input artifacts of the step that generated each artifact.
