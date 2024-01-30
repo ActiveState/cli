@@ -100,11 +100,10 @@ func (al *ArtifactListing) ArtifactIDs(buildtimeClosure bool) ([]artifact.Artifa
 	return al.artifactIDs, nil
 }
 
-// newMapFromBuildPlan creates an artifact map from a build plan. It creates a
+// newFilteredMapFromBuildPlan creates an artifact map from a build plan. It creates a
 // lookup table and calls the recursive function buildMap to build up the
 // artifact map by traversing the build plan from the terminal targets through
 // all of the runtime dependencies for each of the artifacts in the DAG.
-
 func newFilteredMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool, cfg platformModel.Configurable) (artifact.Map, error) {
 	filtered, err := filterPlatformTerminal(build, cfg)
 	if err != nil {
