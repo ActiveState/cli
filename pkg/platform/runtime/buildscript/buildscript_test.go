@@ -48,6 +48,7 @@ func TestBasic(t *testing.T) {
   )
 in:
   runtime
+version: 1
 `))
 	require.NoError(t, err)
 
@@ -89,6 +90,7 @@ in:
 		},
 		&In{Name: ptr.To("runtime")},
 		expr,
+		1,
 	}, script)
 }
 
@@ -117,6 +119,8 @@ in:
         win_installer(win_runtime),
         tar_installer(linux_runtime)
     )
+
+version: 1
 `))
 	require.NoError(t, err)
 
@@ -165,6 +169,7 @@ in:
 			{FuncCall: &FuncCall{"tar_installer", []*Value{{Ident: ptr.To("linux_runtime")}}}},
 		}}},
 		expr,
+		1,
 	}, script)
 }
 
@@ -191,7 +196,8 @@ const example = `let:
     solver_version = 0
   )
 in:
-  runtime`
+  runtime
+version: 1`
 
 func TestExample(t *testing.T) {
 	script, err := NewScript([]byte(example))
@@ -241,6 +247,7 @@ func TestExample(t *testing.T) {
 		},
 		&In{Name: ptr.To("runtime")},
 		expr,
+		1,
 	}, script)
 }
 
@@ -253,6 +260,7 @@ func TestString(t *testing.T) {
     )
 in:
     runtime
+version: 1
 `))
 	require.NoError(t, err)
 
@@ -271,7 +279,9 @@ in:
 	)
 
 in:
-	runtime`, script.String())
+	runtime
+
+version: 1`, script.String())
 }
 
 func TestRoundTrip(t *testing.T) {
@@ -304,6 +314,7 @@ func TestJson(t *testing.T) {
     )
 in:
     runtime
+version: 1
 `))
 	require.NoError(t, err)
 
@@ -386,6 +397,7 @@ func TestBuildExpression(t *testing.T) {
 	script, err := NewScriptFromBuildExpression(expr)
 	require.NoError(t, err)
 	require.NotNil(t, script)
+	assert.Equal(t, CurrentVersion, script.Version)
 	newExpr := script.Expr
 	exprBytes, err := json.Marshal(expr)
 	require.NoError(t, err)

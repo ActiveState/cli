@@ -14,15 +14,19 @@ import (
 	"github.com/alecthomas/participle/v2"
 )
 
+// Version is the current buildscript version.
+const CurrentVersion int = 1
+
 // Script's tagged fields will be initially filled in by Participle.
 // Expr will be constructed later and is this script's buildexpression. We keep a copy of the build
 // expression here with any changes that have been applied before either writing it to disk or
 // submitting it to the build planner. It's easier to operate on build expressions directly than to
 // modify or manually populate the Participle-produced fields and re-generate a build expression.
 type Script struct {
-	Let  *Let `parser:"'let' ':' @@"`
-	In   *In  `parser:"'in' ':' @@"`
-	Expr *buildexpression.BuildExpression
+	Let     *Let `parser:"'let' ':' @@"`
+	In      *In  `parser:"'in' ':' @@"`
+	Expr    *buildexpression.BuildExpression
+	Version int `parser:"'version' ':' @Int"`
 }
 
 type Let struct {
@@ -82,11 +86,23 @@ func NewScript(data []byte) (*Script, error) {
 	}
 	script.Expr = expr
 
+	// Migrate from older buildscript versions if necessary.
+	if script.Version < CurrentVersion {
+		err := migrateOldBuildScript(script)
+		if err != nil {
+			return nil, errs.Wrap(err, "Unable to migrate old build script")
+		}
+	}
+
 	return script, nil
 }
 
+func migrateOldBuildScript(script *Script) error {
+	return nil // Noop for now until we need to migrate
+}
+
 func NewScriptFromBuildExpression(expr *buildexpression.BuildExpression) (*Script, error) {
-	return &Script{Expr: expr}, nil
+	return &Script{Expr: expr, Version: CurrentVersion}, nil
 }
 
 func indent(s string) string {
@@ -108,6 +124,9 @@ func (s *Script) String() string {
 	case s.Expr.Let.In.Name != nil:
 		buf.WriteString(indent(*s.Expr.Let.In.Name))
 	}
+	buf.WriteString("\n\n")
+	buf.WriteString("version: ")
+	buf.WriteString(strconv.Itoa(s.Version))
 	return buf.String()
 }
 

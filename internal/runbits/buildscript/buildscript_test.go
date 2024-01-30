@@ -30,7 +30,9 @@ func TestDiff(t *testing.T) {
 	)
 
 in:
-	runtime`))
+	runtime
+
+version: 1`))
 	require.NoError(t, err)
 
 	// Make a copy of the original expression.
@@ -64,7 +66,9 @@ in:
 	)
 
 in:
-	runtime`, result)
+	runtime
+
+version: 1`, result)
 }
 
 // TestRealWorld tests a real-world case where:
@@ -130,5 +134,7 @@ func TestRealWorld(t *testing.T) {
 	)
 
 in:
-	runtime`, result)
+	runtime
+
+version: 1`, result)
 }
