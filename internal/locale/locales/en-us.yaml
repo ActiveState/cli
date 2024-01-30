@@ -1257,6 +1257,10 @@ setup_runtime:
   other: "Setting Up Runtime"
 progress_solve:
   other: "Resolving Dependencies"
+additional_dependencies:
+  other: Installing [ACTIONABLE]{{.V0}}@{{.V1}}[/RESET] includes [ACTIONABLE]{{.V2}}[/RESET] direct dependencies.
+additional_total_dependencies:
+  other: Installing [ACTIONABLE]{{.V0}}@{{.V1}}[/RESET] includes [ACTIONABLE]{{.V2}}[/RESET] direct dependencies, and a total of [ACTIONABLE]{{.V3}}[/RESET] direct and indirect dependencies.
 progress_success:
   other: " [SUCCESS]✔ Done[/RESET]"
 progress_found:

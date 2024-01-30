@@ -34,7 +34,7 @@ func NewFromProject(
 		return nil, rationalize.ErrHeadless
 	}
 
-	rti, err := rt.New(target.NewProjectTarget(proj, nil, trigger), an, svcModel, auth, cfg)
+	rti, err := rt.New(target.NewProjectTarget(proj, nil, trigger), an, svcModel, auth, cfg, out)
 	if err == nil {
 		return rti, nil
 	}
