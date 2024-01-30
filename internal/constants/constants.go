@@ -30,7 +30,7 @@ const ConfigFileName = "activestate.yaml"
 const ProjectConfigDirName = ".activestate"
 
 // BuildScriptFileName holds the name of the file that represents the build script used to generate the runtime
-const BuildScriptFileName = "buildscript.yaml"
+const BuildScriptFileName = "buildscript.as"
 
 // CommitIdFileName is the name of the file in ProjectConfigDirName that contains a project's commit ID.
 const CommitIdFileName = "commit"
