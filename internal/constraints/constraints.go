@@ -74,6 +74,7 @@ func NewConditional(a *authentication.Auth) *Conditional {
 }
 
 type projectable interface {
+	Source() *projectfile.Project
 	Owner() string
 	Name() string
 	NamespaceString() string
@@ -81,7 +82,9 @@ type projectable interface {
 	Path() string
 	Dir() string
 	URL() string
-	LegacyCommitID() string       // for commitmediator.Get
+	LegacyCommitID() string // for commitmediator.Get
+	StripLegacyCommitID() error
+	SetLegacyCommit(string) error
 }
 
 func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName string) *Conditional {
