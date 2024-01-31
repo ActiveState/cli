@@ -92,7 +92,7 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 	var artifact *artifact.Artifact
 	for _, artifacts := range terminalArtfMap {
 		for _, a := range artifacts {
-			if strings.Contains(strings.ToLower(string(a.ArtifactID)), strings.ToLower(params.BuildID)) {
+			if strings.HasPrefix(strings.ToLower(string(a.ArtifactID)), strings.ToLower(params.BuildID)) {
 				artifact = &a
 				break
 			}
@@ -100,7 +100,7 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 	}
 
 	if artifact == nil {
-		return locale.WrapInputError(err, "err_build_id_not_found", "Could not find build ID {{.V0}}", params.BuildID)
+		return locale.NewInputError("err_build_id_not_found", "Could not find artifact with ID {{.V0}}", params.BuildID)
 	}
 
 	if err := d.downloadArtifact(pg, artifact, params.OutputDir); err != nil {
