@@ -40,7 +40,7 @@ func newBuildsDownloadCommand(prime *primer.Values) *captain.Command {
 	params := &builds.DownloadParams{}
 
 	cmd := captain.NewCommand(
-		"download",
+		"dl",
 		locale.Tl("builds_download_title", "Download build artifacts"),
 		locale.Tl("builds_download_description", "Download build artifacts for a given build"),
 		prime,

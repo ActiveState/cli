@@ -1,7 +1,6 @@
 package builds
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -75,17 +74,6 @@ func New(p primeable) *Builds {
 		svcModel:  p.SvcModel(),
 		config:    p.Config(),
 		analytics: p.Analytics(),
-	}
-}
-
-func rationalizeError(err *error) {
-	switch {
-	case err == nil:
-		return
-	case errors.Is(*err, rationalize.ErrNoProject):
-		*err = errs.WrapUserFacing(*err,
-			locale.Tr("err_no_project"),
-			errs.SetInput())
 	}
 }
 

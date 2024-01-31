@@ -2,6 +2,7 @@ package integration
 
 import (
 	"encoding/json"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runners/builds"
 	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -97,6 +99,28 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds() {
 			suite.Greater(len(platform.Packages), 0)
 		}
 	})
+}
+
+func (suite *BuildsIntegrationTestSuite) TestBuilds_Download() {
+	suite.OnlyRunForTags(tagsuite.Builds)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI/Python-With-Custom-Builds", "993454c7-6613-4b1a-8981-1cee43cc249e")
+
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("refresh"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("builds", "dl", "16291D17", "."),
+	)
+	cp.Expect("Downloading", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Downloaded")
+	cp.ExpectExitCode(0)
+	require.FileExists(suite.T(), filepath.Join(ts.Dirs.Work, "activestate-cli-python-with-custom-builds-docker-993454c7.tar.gz"))
 }
 
 func TestBuildsIntegrationTestSuite(t *testing.T) {

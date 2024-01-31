@@ -2,6 +2,7 @@ package builds
 
 import (
 	"net/url"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -80,13 +81,13 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 		return errs.Wrap(err, "Could not get build plan")
 	}
 
-	if err := pg.Handle(events.SolveSuccess{}); err != nil {
-		return errs.Wrap(err, "Failed to handle SolveSuccess event")
-	}
-
 	terminalArtfMap, err := buildplan.NewMapFromBuildPlan(bp, false, false, nil)
 	if err != nil {
 		return errs.Wrap(err, "Could not get build plan map")
+	}
+
+	if err := pg.Handle(events.SolveSuccess{}); err != nil {
+		return errs.Wrap(err, "Failed to handle SolveSuccess event")
 	}
 
 	// Find the given node ID in the artifact list
@@ -100,55 +101,53 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 		}
 	}
 
-	// Use the artifact URL to download the artifact
 	if artifact == nil {
 		return locale.WrapInputError(err, "err_build_id_not_found", "Could not find build ID {{.V0}}", params.BuildID)
 	}
 
-	b, err := d.downloadArtifact(pg, artifact)
-	if err != nil {
+	if err := d.downloadArtifact(pg, artifact, params.OutputDir); err != nil {
 		return errs.Wrap(err, "Could not download artifact %s", artifact.ArtifactID.String())
 	}
 
-	targetFile := filepath.Join(params.OutputDir, artifact.ArtifactID.String())
-	if err := fileutils.WriteFile(targetFile, b); err != nil {
-		return errs.Wrap(err, "Writing download to target file %s failed", targetFile)
-	}
-
-	d.out.Notice(locale.Tl("msg_download_success", "Downloaded {{.V0}} to {{.V1}}", artifact.ArtifactID.String(), targetFile))
+	d.out.Notice(locale.Tl("msg_download_success", "Downloaded {{.V0}} to {{.V1}}", artifact.ArtifactID.String(), params.OutputDir))
 	return nil
 }
 
-func (d *Download) downloadArtifact(pg events.Handler, artifact *artifact.Artifact) (result []byte, rerr error) {
+func (d *Download) downloadArtifact(pg events.Handler, artifact *artifact.Artifact, targetDir string) (rerr error) {
 	defer func() {
-		var ev events.Eventer = events.Success{}
-		if rerr != nil {
-			ev = events.Failure{}
+		evs := []events.Eventer{
+			events.ArtifactDownloadSuccess{artifact.ArtifactID},
+			events.Success{},
 		}
 
-		err := pg.Handle(ev)
-		if err != nil {
-			multilog.Error("Could not handle Success/Failure event: %s", errs.JoinMessage(err))
+		if rerr != nil {
+			evs = []events.Eventer{
+				events.ArtifactDownloadFailure{artifact.ArtifactID, rerr},
+				events.Failure{},
+			}
+		}
+
+		for _, e := range evs {
+			err := pg.Handle(e)
+			if err != nil {
+				multilog.Error("Could not handle Success/Failure event: %s", errs.JoinMessage(err))
+			}
 		}
 	}()
 
 	if err := pg.Handle(events.Start{
-		RecipeID:         "",
-		RequiresBuild:    false,
-		ArtifactNames:    map[strfmt.UUID]string{artifact.ArtifactID: artifact.Name},
-		LogFilePath:      "",
-		ArtifactsToBuild: nil,
+		RequiresBuild: false,
+		ArtifactNames: map[strfmt.UUID]string{artifact.ArtifactID: artifact.Name},
 		ArtifactsToDownload: []strfmt.UUID{
 			artifact.ArtifactID,
 		},
-		ArtifactsToInstall: nil,
 	}); err != nil {
-		return nil, errs.Wrap(err, "Failed to handle Start event")
+		return errs.Wrap(err, "Failed to handle Start event")
 	}
 
 	artifactURL, err := url.Parse(artifact.URL)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not parse artifact URL %s.", artifact.URL)
+		return errs.Wrap(err, "Could not parse artifact URL %s.", artifact.URL)
 	}
 
 	b, err := httputil.GetWithProgress(artifactURL.String(), &progress.Report{
@@ -166,8 +165,13 @@ func (d *Download) downloadArtifact(pg events.Handler, artifact *artifact.Artifa
 		},
 	})
 	if err != nil {
-		return nil, errs.Wrap(err, "Download %s failed", artifactURL.String())
+		return errs.Wrap(err, "Download %s failed", artifactURL.String())
 	}
 
-	return b, nil
+	downloadPath := filepath.Join(targetDir, path.Base(artifactURL.Path))
+	if err := fileutils.WriteFile(downloadPath, b); err != nil {
+		return errs.Wrap(err, "Writing download to target file %s failed", downloadPath)
+	}
+
+	return nil
 }
