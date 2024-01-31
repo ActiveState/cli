@@ -85,6 +85,7 @@ scripts:
         GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.0
       fi
   - name: preprocess
+    standalone: true
     language: bash
     description: Generates assets required by the project that aren't just specific to the build
     value: |
@@ -96,6 +97,7 @@ scripts:
         go run scripts/versioninfo-generator/main.go version.txt cmd/state-svc/versioninfo.json "State Service"
       fi
   - name: build
+    standalone: true
     language: bash
     description: Builds the project with the host OS as the target OS.
     value: |
