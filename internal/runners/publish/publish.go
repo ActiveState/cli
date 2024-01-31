@@ -3,6 +3,7 @@ package publish
 import (
 	"net/http"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -249,12 +250,17 @@ func (r *Runner) Run(params *Params) error {
 	return nil
 }
 
+var versionRegexp = regexp.MustCompile(`\d+\.\d+(\.\d+)?`)
+
 func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRevision bool) error {
 	if params.Version != "" {
 		r.Version = params.Version
 	}
 	if r.Version == "" {
 		r.Version = "0.0.1"
+		if matches := versionRegexp.FindAllString(params.Filepath, 1); matches != nil {
+			r.Version = matches[0]
+		}
 	}
 
 	if params.Description != "" {
@@ -332,7 +338,7 @@ func prepareEditRequest(ingredient *ParentIngredient, r *request.PublishVariable
 				request.PublishVariableDep{request.Dependency{
 					Name:                ptr.From(dep.Feature, ""),
 					Namespace:           ptr.From(dep.Namespace, ""),
-					VersionRequirements: model.RequirementsToString(dep.Requirements),
+					VersionRequirements: model.InventoryRequirementsToString(dep.Requirements),
 				}, []request.Dependency{}},
 			)
 		}

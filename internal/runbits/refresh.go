@@ -32,7 +32,7 @@ func RefreshRuntime(
 	}
 	target := target.NewProjectTarget(proj, resolveCommitID(proj, &commitID), trigger)
 	isCached := true
-	rt, err := runtime.New(target, an, svcm, auth, cfg)
+	rt, err := runtime.New(target, an, svcm, auth, cfg, out)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			isCached = false
