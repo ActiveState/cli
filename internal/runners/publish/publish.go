@@ -78,6 +78,8 @@ type ParentIngredient struct {
 	Dependencies        []inventory_models.Dependency `json:"dependencies"`
 }
 
+var nameRegexp = regexp.MustCompile(`\w+([_-]\w+)*`)
+
 func (r *Runner) Run(params *Params) error {
 	if !r.auth.Authenticated() {
 		return locale.NewInputError("err_auth_required")
@@ -124,7 +126,16 @@ func (r *Runner) Run(params *Params) error {
 	if params.Name != "" { // Validate & Set name
 		reqVars.Name = params.Name
 	} else if reqVars.Name == "" {
-		reqVars.Name = filepath.Base(params.Filepath)
+		// Attempt to extract a usable name from the filename.
+		name := filepath.Base(params.Filepath)
+		if ext := filepath.Ext(params.Filepath); ext != "" {
+			name = name[:len(name)-len(ext)] // strip extension
+		}
+		name = versionRegexp.ReplaceAllString(name, "") // strip version number
+		if matches := nameRegexp.FindAllString(name, 1); matches != nil {
+			name = matches[0] // extract name-part
+		}
+		reqVars.Name = name
 	}
 
 	var ingredient *ParentIngredient
