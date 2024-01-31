@@ -48,13 +48,13 @@ func newBuildsDownloadCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{
 			{
 				Name:        "ID",
-				Description: "Build ID",
+				Description: locale.Tl("builds_download_arg_id", "The ID of the artifact to download"),
 				Value:       &params.BuildID,
 				Required:    true,
 			},
 			{
 				Name:        "target",
-				Description: "Target directory",
+				Description: locale.Tl("builds_download_arg_target", "The target directory to download the artifact to"),
 				Value:       &params.OutputDir,
 				Required:    true,
 			},

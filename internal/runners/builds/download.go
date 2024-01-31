@@ -69,7 +69,6 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 		return errs.Wrap(err, "Failed to handle SolveStart event")
 	}
 
-	// Source the build plan
 	_, err := runtime.NewFromProject(d.project, target.TriggerBuilds, d.analytics, d.svcModel, d.out, d.auth, d.config)
 	if err != nil {
 		return locale.WrapInputError(err, "err_refresh_runtime_new", "Could not update runtime for this project.")
@@ -90,7 +89,6 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 		return errs.Wrap(err, "Failed to handle SolveSuccess event")
 	}
 
-	// Find the given node ID in the artifact list
 	var artifact *artifact.Artifact
 	for _, artifacts := range terminalArtfMap {
 		for _, a := range artifacts {
