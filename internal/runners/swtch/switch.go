@@ -76,6 +76,7 @@ func New(prime primeable) *Switch {
 		project:   prime.Project(),
 		analytics: prime.Analytics(),
 		svcModel:  prime.SvcModel(),
+		cfg:       prime.Config(),
 	}
 }
 
