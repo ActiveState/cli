@@ -28,20 +28,20 @@ type primeable interface {
 	primer.Projecter
 }
 
-// RunParams defines the parameters needed to execute a given runner. These
+// Params defines the parameters needed to execute a given runner. These
 // values are typically collected from flags and arguments entered into the
 // cli, but there is no reason that they couldn't be set in another manner.
-type RunParams struct {
+type Params struct {
 	Name  string
 	Echo  Text
 	Extra bool
 }
 
-// NewRunParams contains a scope in which default or construction-time values
+// NewParams contains a scope in which default or construction-time values
 // can be set. If no default or construction-time values are necessary, direct
-// construction of RunParams is fine, and this construction func may be dropped.
-func NewRunParams() *RunParams {
-	return &RunParams{}
+// construction of Params is fine, and this construction func may be dropped.
+func NewParams() *Params {
+	return &Params{}
 }
 
 // Hello defines the app-level dependencies that are accessible within the Run
@@ -85,7 +85,7 @@ func rationalizeError(err *error) {
 }
 
 // Run contains the scope in which the hello runner logic is executed.
-func (h *Hello) Run(params *RunParams) (rerr error) {
+func (h *Hello) Run(params *Params) (rerr error) {
 	defer rationalizeError(&rerr)
 
 	h.out.Print(locale.Tl("hello_notice", "This command is for example use only"))

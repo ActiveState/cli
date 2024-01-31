@@ -46,6 +46,7 @@ const (
 	TriggerUse                Trigger = "use"
 	TriggerOfflineInstaller   Trigger = "offline-installer"
 	TriggerOfflineUninstaller Trigger = "offline-uninstaller"
+	TriggerBuilds             Trigger = "builds"
 	triggerUnknown            Trigger = "unknown"
 )
 
