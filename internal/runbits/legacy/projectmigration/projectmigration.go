@@ -119,8 +119,6 @@ func CreateMigrateScript(proj projecter) error {
 			Value: string(scriptValue),
 		},
 		projectfile.ScriptFields{
-			// No localized since this is a legacy migration mechanic and we'll remove this long before we'll introduce
-			// another language.
 			Description: locale.T("projectmigration_script_description"),
 			Standalone:  true,
 			Language:    scriptLanguage,

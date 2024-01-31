@@ -581,7 +581,6 @@ func (p *Project) StripLegacyCommitID() error {
 
 // SetLegacyCommit sets the commit id within the current project file. This is done
 // in-place so that line order is preserved.
-// If headless is true, the project is defined by a commit-id only
 func (p *Project) SetLegacyCommit(commitID string) error {
 	pf := NewProjectField()
 	if err := pf.LoadProject(p.Project); err != nil {
