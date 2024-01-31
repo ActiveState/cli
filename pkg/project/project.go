@@ -219,6 +219,14 @@ func (p *Project) LegacyCommitID() string {
 	return p.projectfile.LegacyCommitID()
 }
 
+func (p *Project) StripLegacyCommitID() error {
+	return p.projectfile.StripLegacyCommitID()
+}
+
+func (p *Project) SetLegacyCommit(commitID string) error {
+	return p.projectfile.SetLegacyCommit(commitID)
+}
+
 func (p *Project) IsHeadless() bool {
 	match := projectfile.CommitURLRe.FindStringSubmatch(p.URL())
 	return len(match) > 1

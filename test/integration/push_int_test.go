@@ -71,12 +71,12 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	suite.Require().FileExists(pjfilepath)
 
 	// Check that languages were reset
-	pjfile, err := projectfile.Parse(pjfilepath)
+	pj, err := project.FromPath(pjfilepath)
 	suite.Require().NoError(err)
-	commitID, err := commitmediator.Get(pjfile)
+	commitID, err := commitmediator.Get(pj)
 	suite.Require().NoError(err)
 	suite.Require().NotEmpty(commitID.String(), "commitID was not set after running push for project creation")
-	suite.Require().NotEmpty(pjfile.BranchName(), "branch was not set after running push for project creation")
+	suite.Require().NotEmpty(pj.BranchName(), "branch was not set after running push for project creation")
 
 	// ensure that we are logged out
 	cp = ts.Spawn(tagsuite.Auth, "logout")
@@ -92,10 +92,10 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 		cp.ExpectExitCode(0)
 	}
 
-	pjfile, err = projectfile.Parse(pjfilepath)
+	pj, err = project.FromPath(pjfilepath)
 	suite.Require().NoError(err)
-	if !strings.Contains(pjfile.Project, fmt.Sprintf("/%s?", namespace)) {
-		suite.FailNow("project field should include project (not headless): " + pjfile.Project)
+	if !strings.Contains(pj.Source().Project, fmt.Sprintf("/%s?", namespace)) {
+		suite.FailNow("project field should include project (not headless): " + pj.Source().Project)
 	}
 
 	ts.LoginAsPersistentUser()

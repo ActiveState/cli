@@ -1,0 +1,5 @@
+$file_path = "$project.path()/activestate.yaml"
+$content = Get-Content $file_path
+$content = $content -replace '(\?|&)commitID=[a-zA-Z0-9-]*', ''
+Set-Content -Path $file_path -Value $content
+echo "Project successfully migrated. You can now delete the migrate-to-buildscripts script from your activestate.yaml"
