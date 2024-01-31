@@ -44,19 +44,21 @@ func newBuildsDownloadCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("builds_download_title", "Download build artifacts"),
 		locale.Tl("builds_download_description", "Download build artifacts for a given build"),
 		prime,
-		[]*captain.Flag{
+		[]*captain.Flag{},
+		[]*captain.Argument{
 			{
-				Name:        "build",
-				Description: "Build ID to download artifacts for",
+				Name:        "ID",
+				Description: "Build ID",
 				Value:       &params.BuildID,
+				Required:    true,
 			},
 			{
 				Name:        "target",
-				Description: "Target directory to download artifacts to",
+				Description: "Target directory",
 				Value:       &params.OutputDir,
+				Required:    true,
 			},
 		},
-		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
 		},

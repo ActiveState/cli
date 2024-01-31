@@ -161,6 +161,9 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	refreshCmd := newRefreshCommand(prime)
 
 	buildsCmd := newBuildsCommand(prime)
+	buildsCmd.AddChildren(
+		newBuildsDownloadCommand(prime),
+	)
 
 	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
