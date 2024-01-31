@@ -107,6 +107,7 @@ func buildBuildClosureDependencies(artifactID strfmt.UUID, lookup map[strfmt.UUI
 		GeneratedBy:      currentArtifact.GeneratedBy,
 		Dependencies:     uniqueDeps,
 		URL:              currentArtifact.URL,
+		MimeType:         currentArtifact.MimeType,
 	}
 
 	return deps, nil
