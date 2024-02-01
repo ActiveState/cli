@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
@@ -32,7 +33,7 @@ func New(out output.Outputer, pj projecter) *migrator {
 // setupProject will ensure that the stored project matches the path that was requested. In most cases this should match,
 // and setting up a new project instance will be rare.
 func (m *migrator) setupProject(pjpath string) error {
-	if m.proj != nil && m.proj.Dir() == pjpath {
+	if !ptr.IsNil(m.proj) && m.proj.Dir() == pjpath {
 		return nil
 	}
 	var err error
