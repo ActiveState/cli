@@ -1516,8 +1516,6 @@ projectmigration_asyaml_comment:
     # Your project field is using the deprecated "commitID" query parameter. You can continue to use it as is, but it is
     # recommended you drop this query parameter in order to make usage with version control systems easier.
     # Please ensure that your team and workflows are updated to State Tool version 0.44.0 or later before dropping this field.
-projectmigration_script_description:
-  other: Run this script to migrate to the new project format ('state run migrate-to-buildscripts'). You can safely delete this script once you have migrated your project.
 err_searchingredient_toomany:
   other: Too many ingredients match the query '[ACTIONABLE]{{.V0}}[/RESET]', please try to be more specific.
 alternative_unknown_pkg_name:

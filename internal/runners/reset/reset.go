@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -66,7 +66,7 @@ func (r *Reset) Run(params *Params) error {
 		if err != nil {
 			return locale.WrapError(err, "err_reset_latest_commit", "Could not get latest commit ID")
 		}
-		localCommitID, err := commitmediator.Get(r.project)
+		localCommitID, err := localcommit.Get(r.project.Dir())
 		if err != nil {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
@@ -79,7 +79,7 @@ func (r *Reset) Run(params *Params) error {
 			return locale.NewInputError("Invalid commit ID")
 		}
 		commitID = strfmt.UUID(params.CommitID)
-		localCommitID, err := commitmediator.Get(r.project)
+		localCommitID, err := localcommit.Get(r.project.Dir())
 		if err != nil {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
@@ -103,7 +103,7 @@ func (r *Reset) Run(params *Params) error {
 		return locale.NewInputError("err_reset_aborted", "Reset aborted by user")
 	}
 
-	err = commitmediator.Set(r.project, commitID.String())
+	err = localcommit.Set(r.project.Dir(), commitID.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to set local commit")
 	}

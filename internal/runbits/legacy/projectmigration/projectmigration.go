@@ -2,67 +2,78 @@ package projectmigration
 
 import (
 	_ "embed"
-	"errors"
-	"io/fs"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/pkg/localcommit"
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
 )
 
 type projecter interface {
-	Source() *projectfile.Project
 	Dir() string
-	URL() string
-	Path() string
 	LegacyCommitID() string
-	StripLegacyCommitID() error
+	SetLegacyCommit(commitID string) error
 }
 
-var prompter prompt.Prompter
-var out output.Outputer
-
-// Register exists to avoid boilerplate in passing prompt and out to every caller of
-// commitmediator.Get() for retrieving legacy commitId from activestate.yaml.
-// This is an anti-pattern and is only used to make this legacy feature palatable.
-func Register(prompter_ prompt.Prompter, out_ output.Outputer) {
-	prompter = prompter_
-	out = out_
+type migrator struct {
+	out  output.Outputer
+	proj projecter
 }
 
-func Migrate(proj projecter) error {
-	if err := localcommit.Set(proj.Dir(), proj.LegacyCommitID()); err != nil {
-		return errs.Wrap(err, "Could not create local commit file")
+func New(out output.Outputer, pj projecter) *migrator {
+	return &migrator{out: out, proj: pj}
+}
+
+// setupProject will ensure that the stored project matches the path that was requested. In most cases this should match,
+// and setting up a new project instance will be rare.
+func (m *migrator) setupProject(pjpath string) error {
+	if m.proj != nil && m.proj.Dir() == pjpath {
+		return nil
 	}
-	for dir := proj.Dir(); filepath.Dir(dir) != dir; dir = filepath.Dir(dir) {
-		if !fileutils.DirExists(filepath.Join(dir, ".git")) {
-			continue
-		}
-		err := localcommit.AddToGitIgnore(dir)
-		if err != nil {
-			if !errors.Is(err, fs.ErrPermission) {
-				multilog.Error("Unable to add local commit file to .gitignore: %v", err)
-			}
-			out.Notice(locale.T("notice_commit_id_gitignore"))
-		}
-		break
+	var err error
+	m.proj, err = project.FromPath(pjpath)
+	return err
+}
+
+// Migrate returns the given project's commit ID in either the new format (commit file), or the old
+// format (activestate.yaml).
+// If you require the commit file, use localcommit.Get().
+func (m *migrator) Migrate(pjpath string) (strfmt.UUID, error) {
+	logging.Debug("Migrating project to new localcommit format: %s", pjpath)
+	if err := m.setupProject(pjpath); err != nil {
+		return "", err
 	}
+
+	configPath := filepath.Join(m.proj.Dir(), constants.ConfigFileName)
 
 	// Add comment to activestate.yaml explaining migration
-	asB, err := fileutils.ReadFile(proj.Source().Path())
+	asB, err := fileutils.ReadFile(configPath)
 	if err != nil {
-		return errs.Wrap(err, "Could not read activestate.yaml")
+		return "", errs.Wrap(err, "Could not read activestate.yaml")
 	}
 
 	asB = append([]byte(locale.T("projectmigration_asyaml_comment")), asB...)
-	if err := fileutils.WriteFile(proj.Source().Path(), asB); err != nil {
-		return errs.Wrap(err, "Could not write to activestate.yaml")
+	if err := fileutils.WriteFile(configPath, asB); err != nil {
+		return "", errs.Wrap(err, "Could not write to activestate.yaml")
+	}
+
+	return strfmt.UUID(m.proj.LegacyCommitID()), nil
+}
+
+func (m *migrator) Set(pjpath string, commitID string) error {
+	if err := m.setupProject(pjpath); err != nil {
+		return err
+	}
+
+	if m.proj.LegacyCommitID() != "" {
+		if err := m.proj.SetLegacyCommit(commitID); err != nil {
+			return errs.Wrap(err, "Could not set legacy commit")
+		}
 	}
 	return nil
 }

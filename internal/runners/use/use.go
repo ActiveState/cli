@@ -13,11 +13,11 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/checkout"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -74,7 +74,7 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapInputError(err, "err_use_cannot_find_local_project", "Local project cannot be found.")
 	}
 
-	commitID, err := commitmediator.Get(proj)
+	commitID, err := localcommit.Get(proj.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}

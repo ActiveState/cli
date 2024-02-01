@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -109,7 +109,7 @@ func (r *Cve) fetchVulnerabilities(namespaceOverride project.Namespaced) (*medmo
 		commitID = namespaceOverride.CommitID.String()
 	} else {
 		var err error
-		commitUUID, err := commitmediator.Get(r.proj)
+		commitUUID, err := localcommit.Get(r.proj.Dir())
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to get local commit")
 		}

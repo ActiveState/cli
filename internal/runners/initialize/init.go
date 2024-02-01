@@ -19,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -82,7 +81,7 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 	if err != nil {
 		return "", "", false
 	}
-	commitID, err := commitmediator.Get(defaultProj)
+	commitID, err := localcommit.Get(defaultProj.Dir())
 	if err != nil {
 		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
 		return "", "", false
@@ -244,7 +243,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return locale.WrapError(err, "err_init_commit", "Could not create project")
 	}
 
-	if err := commitmediator.Set(proj, commitID.String()); err != nil {
+	if err := localcommit.Set(proj.Dir(), commitID.String()); err != nil {
 		return errs.Wrap(err, "Unable to create local commit file")
 	}
 	if emptyDir || fileutils.DirExists(filepath.Join(path, ".git")) {
