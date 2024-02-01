@@ -1511,19 +1511,11 @@ err_local_commit_file:
     To view your projects commits run '[ACTIONABLE]state history[/RESET]'.
 
     Please avoid deleting or editing this file directly.
-projectmigration_confirm:
+projectmigration_asyaml_comment:
   other: |
-    State Tool has introduced a new project format to provide enhanced functionality. You have been partially migrated, but a full migration is still required to avoid usability issues.
-    
-    [ERROR]WARNING:[/RESET] Migrating is backward incompatible with previous State Tool versions. Please ensure anyone you share this project with has updated to State Tool version 0.44.0 or later. Alternatively you can choose not to fully migrate now, and instead manually finish the migration once your team has updated. State Tool will continue to operate in backward compatibility mode.
-    
-    Would you like to perform the migration now?
-projectmigration_declined:
-  other: Understood, you can manually upgrade later. Please run '[ACTIONABLE]state run migrate-to-buildscripts[/RESET]' whenever you're ready.
-projectmigration_warning:
-  other: |
-    Your project file at [ACTIONABLE]{{.V0}}[/RESET] is using an outdated format. Please ensure your team has updated to State Tool v0.44.0 or later, and run '[ACTIONABLE]state run migrate-to-buildscripts[/RESET]' to update your project. 
-    If you no longer have this script, you can instead manually remove the '[ACTIONABLE]&commitID=<value>[/RESET]' field from your  activestate.yaml.
+    # Your project field is using the deprecated "commitID" query parameter. You can continue to use it as is, but it is
+    # recommended you drop this query parameter in order to make usage with version control systems easier.
+    # Please ensure that your team and workflows are updated to State Tool version 0.44.0 or later before dropping this field.
 projectmigration_script_description:
   other: Run this script to migrate to the new project format ('state run migrate-to-buildscripts'). You can safely delete this script once you have migrated your project.
 err_searchingredient_toomany:

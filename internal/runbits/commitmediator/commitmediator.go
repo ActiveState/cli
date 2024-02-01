@@ -24,15 +24,10 @@ type projecter interface {
 // If you require the commit file, use localcommit.Get().
 func Get(proj projecter) (strfmt.UUID, error) {
 	if commitID, err := localcommit.Get(proj.Dir()); err == nil {
-		if proj.LegacyCommitID() != "" {
-			if err := projectmigration.Warn(proj); err != nil {
-				return "", errs.Wrap(err, "Could not warn about migration")
-			}
-		}
 		return commitID, nil
 	} else if localcommit.IsFileDoesNotExistError(err) {
-		if err := projectmigration.PromptAndMigrate(proj); err != nil {
-			return "", errs.Wrap(err, "Could not prompt and/or migrate project")
+		if err := projectmigration.Migrate(proj); err != nil {
+			return "", errs.Wrap(err, "Could not migrate project")
 		}
 		return localcommit.Get(proj.Dir())
 	} else {
