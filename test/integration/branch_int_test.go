@@ -21,7 +21,7 @@ func (suite *BranchIntegrationTestSuite) TestBranch_List() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/Branches", "")
+	ts.PrepareProject("ActiveState-CLI/Branches", "35af7414-b44b-4fd7-aa93-2ecad337ed2b")
 
 	cp := ts.SpawnWithOpts(e2e.OptArgs("branch"), e2e.OptTermTest(termtest.OptVerboseLogger()))
 	// Sometimes there's a space before the line break, unsure exactly why, but hence the regex

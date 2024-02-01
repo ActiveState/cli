@@ -63,6 +63,10 @@ func (m *migrator) Migrate(pjpath string) (strfmt.UUID, error) {
 		return "", errs.Wrap(err, "Could not write to activestate.yaml")
 	}
 
+	if !strfmt.IsUUID(m.proj.LegacyCommitID()) {
+		return "", locale.NewInputError("err_commit_id_invalid", m.proj.LegacyCommitID())
+	}
+
 	return strfmt.UUID(m.proj.LegacyCommitID()), nil
 }
 
