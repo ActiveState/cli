@@ -56,10 +56,6 @@ func PromptAndMigrate(proj projecter) error {
 		return errs.New("projectmigration.Register() has not been called")
 	}
 
-	if os.Getenv(constants.DisableProjectMigrationPrompt) == "true" {
-		return nil
-	}
-
 	// We always set the local commit, the migration only touches on what happens with the commit in the activestate.yaml
 	if err := localcommit.Set(proj.Dir(), proj.LegacyCommitID()); err != nil {
 		return errs.Wrap(err, "Could not create local commit file")
@@ -80,6 +76,11 @@ func PromptAndMigrate(proj projecter) error {
 
 	// Prevent also showing the warning when we already prompt
 	warned = true
+
+	// Skip full migration if env var is set
+	if os.Getenv(constants.DisableProjectMigrationPrompt) == "true" {
+		return nil
+	}
 
 	defaultChoice := false
 	if migrate, err := prompter.Confirm("", locale.T("projectmigration_confirm"), &defaultChoice); err == nil && !migrate {
