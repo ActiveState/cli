@@ -109,7 +109,11 @@ func ParseNamespace(raw string) (*Namespaced, error) {
 	}
 
 	if len(groups) > 3 && len(groups[3]) > 0 {
-		uuid := strfmt.UUID(groups[3])
+		uuidString := groups[3]
+		if !strfmt.IsUUID(uuidString) {
+			return nil, locale.NewInputError("err_invalid_commit_id", "", uuidString)
+		}
+		uuid := strfmt.UUID(uuidString)
 		names.CommitID = &uuid
 	}
 
@@ -129,7 +133,11 @@ func ParseProjectNoOwner(raw string) (*Namespaced, error) {
 	}
 
 	if len(groups) > 2 && len(groups[2]) > 0 {
-		uuid := strfmt.UUID(groups[2])
+		uuidString := groups[2]
+		if !strfmt.IsUUID(uuidString) {
+			return nil, locale.NewInputError("err_invalid_commit_id", "", uuidString)
+		}
+		uuid := strfmt.UUID(uuidString)
 		names.CommitID = &uuid
 	}
 
