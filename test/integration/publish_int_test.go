@@ -394,6 +394,9 @@ authors:
 					}
 
 					cp.Expect("Successfully published")
+					cp.Expect("Name: " + meta.Name)
+					cp.Expect("Namespace: " + meta.Namespace)
+					cp.Expect("Version: " + meta.Version)
 					cp.ExpectExitCode(inv.expect.exitCode)
 
 					cp = ts.Spawn("search", meta.Namespace+"/"+meta.Name, "--ts=now")
