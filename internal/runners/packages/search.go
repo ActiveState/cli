@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -87,7 +87,7 @@ func targetedLanguage(languageOpt string, proj *project.Project) (string, error)
 		)
 	}
 
-	commitID, err := commitmediator.Get(proj)
+	commitID, err := localcommit.Get(proj.Dir())
 	if err != nil {
 		return "", errs.Wrap(err, "Unable to get local commit")
 	}

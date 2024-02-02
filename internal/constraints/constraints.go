@@ -13,7 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -82,8 +82,7 @@ type projectable interface {
 	Path() string
 	Dir() string
 	URL() string
-	LegacyCommitID() string // for commitmediator.Get
-	StripLegacyCommitID() error
+	LegacyCommitID() string
 	SetLegacyCommit(string) error
 }
 
@@ -102,7 +101,7 @@ func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName
 		pjName = pj.Name()
 		pjNamespace = pj.NamespaceString()
 		pjURL = pj.URL()
-		commitID, err := commitmediator.Get(pj)
+		commitID, err := localcommit.Get(pj.Dir())
 		if err != nil {
 			multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
 		}

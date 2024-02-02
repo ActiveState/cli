@@ -3,183 +3,87 @@ package projectmigration
 import (
 	"bytes"
 	_ "embed"
-	"errors"
-	"io/fs"
-	"os"
 	"path/filepath"
-	"regexp"
-	"runtime"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/pkg/localcommit"
-	"github.com/ActiveState/cli/pkg/projectfile"
-	"gopkg.in/yaml.v3"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
 )
 
-//go:embed migrate.mac.bash
-var migrateMacScript []byte
-
-//go:embed migrate.nix.bash
-var migrateNixScript []byte
-
-//go:embed migrate.win.ps
-var migrateWinScript []byte
-
 type projecter interface {
-	Source() *projectfile.Project
 	Dir() string
-	URL() string
-	Path() string
 	LegacyCommitID() string
-	StripLegacyCommitID() error
+	SetLegacyCommit(commitID string) error
 }
 
-var prompter prompt.Prompter
-var out output.Outputer
-
-// Register exists to avoid boilerplate in passing prompt and out to every caller of
-// commitmediator.Get() for retrieving legacy commitId from activestate.yaml.
-// This is an anti-pattern and is only used to make this legacy feature palatable.
-func Register(prompter_ prompt.Prompter, out_ output.Outputer) {
-	prompter = prompter_
-	out = out_
+type migrator struct {
+	out  output.Outputer
+	proj projecter
 }
 
-func PromptAndMigrate(proj projecter) error {
-	if prompter == nil || out == nil {
-		return errs.New("projectmigration.Register() has not been called")
-	}
+func New(out output.Outputer, pj projecter) *migrator {
+	return &migrator{out: out, proj: pj}
+}
 
-	if os.Getenv(constants.DisableProjectMigrationPrompt) == "true" {
+// setupProject will ensure that the stored project matches the path that was requested. In most cases this should match,
+// and setting up a new project instance will be rare.
+func (m *migrator) setupProject(pjpath string) error {
+	if !ptr.IsNil(m.proj) && m.proj.Dir() == pjpath {
 		return nil
 	}
-
-	// We always set the local commit, the migration only touches on what happens with the commit in the activestate.yaml
-	if err := localcommit.Set(proj.Dir(), proj.LegacyCommitID()); err != nil {
-		return errs.Wrap(err, "Could not create local commit file")
+	var err error
+	m.proj, err = project.FromPath(pjpath)
+	if err != nil {
+		return errs.Wrap(err, "Could not get project info to set up project")
 	}
-	for dir := proj.Dir(); filepath.Dir(dir) != dir; dir = filepath.Dir(dir) {
-		if !fileutils.DirExists(filepath.Join(dir, ".git")) {
-			continue
-		}
-		err := localcommit.AddToGitIgnore(dir)
-		if err != nil {
-			if !errors.Is(err, fs.ErrPermission) {
-				multilog.Error("Unable to add local commit file to .gitignore: %v", err)
-			}
-			out.Notice(locale.T("notice_commit_id_gitignore"))
-		}
-		break
-	}
-
-	// Prevent also showing the warning when we already prompt
-	warned = true
-
-	defaultChoice := false
-	if migrate, err := prompter.Confirm("", locale.T("projectmigration_confirm"), &defaultChoice); err == nil && !migrate {
-		if out.Config().Interactive {
-			out.Notice(locale.T("projectmigration_declined"))
-		}
-		return CreateMigrateScript(proj)
-	} else if err != nil {
-		return errs.Wrap(err, "Could not confirm migration choice")
-	}
-
-	if err := proj.StripLegacyCommitID(); err != nil {
-		return errs.Wrap(err, "Could not strip legacy commit ID")
-	}
-
-	out.Notice(locale.Tl("projectmigration_success", "Your project was successfully migrated"))
-
 	return nil
 }
 
-var scriptsRx = regexp.MustCompile(`(?m)^scripts:\n`)
-
-func CreateMigrateScript(proj projecter) error {
-	scriptValue := migrateNixScript
-	scriptLanguage := "bash"
-	switch runtime.GOOS {
-	case "darwin":
-		scriptValue = migrateMacScript
-	case "windows":
-		scriptValue = migrateWinScript
-		scriptLanguage = "powershell"
+// Migrate returns the legacy commit ID and updates the activestate.yaml with instructions on dropping the legacy commit.
+func (m *migrator) Migrate(pjpath string) (strfmt.UUID, error) {
+	logging.Debug("Migrating project to new localcommit format: %s", pjpath)
+	if err := m.setupProject(pjpath); err != nil {
+		return "", errs.Wrap(err, "Failed to setupProject prior to migrating")
 	}
 
-	script := projectfile.Script{
-		projectfile.NameVal{
-			Name:  "migrate-to-buildscripts",
-			Value: string(scriptValue),
-		},
-		projectfile.ScriptFields{
-			Description: locale.T("projectmigration_script_description"),
-			Standalone:  true,
-			Language:    scriptLanguage,
-		},
+	if !strfmt.IsUUID(m.proj.LegacyCommitID()) {
+		return "", locale.NewInputError("err_commit_id_invalid", m.proj.LegacyCommitID())
 	}
 
-	// We have to get a bit creative in writing the script, because calling `pjfile.Save()` will lead to reformatting
-	// of user curated yaml.
-	scriptB, err := yaml.Marshal(script)
+	configPath := filepath.Join(m.proj.Dir(), constants.ConfigFileName)
+
+	// Add comment to activestate.yaml explaining migration
+	asB, err := fileutils.ReadFile(configPath)
 	if err != nil {
-		return errs.Wrap(err, "Could not marshal script")
+		return "", errs.Wrap(err, "Could not read activestate.yaml")
 	}
 
-	// Indent our script block
-	scriptB = bytes.Trim(scriptB, "\n")
-	lines := bytes.Split(scriptB, []byte("\n"))
-	for i, line := range lines {
-		prefix := "    "
-		if i == 0 {
-			prefix = "  - "
+	appendB := locale.T("projectmigration_asyaml_comment")
+	if !bytes.Contains(asB, []byte(appendB)) {
+		asB = append([]byte(locale.T("projectmigration_asyaml_comment")), asB...)
+		if err := fileutils.WriteFile(configPath, asB); err != nil {
+			return "", errs.Wrap(err, "Could not write to activestate.yaml")
 		}
-		lines[i] = append([]byte(prefix), line...)
-	}
-	scriptB = bytes.Join(lines, []byte("\n"))
-	scriptB = append(scriptB, []byte("\n")...)
-
-	// Splice it into the activestate.yaml
-	asB, err := fileutils.ReadFile(proj.Source().Path())
-	if err != nil {
-		return errs.Wrap(err, "Could not read activestate.yaml")
 	}
 
-	scriptsPos := scriptsRx.FindIndex(asB)
-	if scriptsPos != nil {
-		asB = append(asB[:scriptsPos[1]], append(scriptB, asB[scriptsPos[1]:]...)...)
-	} else {
-		asB = append(asB, append([]byte("\nscripts:\n"), scriptB...)...)
-	}
-
-	if err := fileutils.WriteFile(proj.Source().Path(), asB); err != nil {
-		return errs.Wrap(err, "Could not write activestate.yaml")
-	}
-
-	return nil
+	return strfmt.UUID(m.proj.LegacyCommitID()), nil
 }
 
-// Only show once per state tool invocation
-var warned = false
-
-func Warn(proj projecter) error {
-	if warned {
-		return nil
+func (m *migrator) Set(pjpath string, commitID string) error {
+	if err := m.setupProject(pjpath); err != nil {
+		return errs.Wrap(err, "Failed to setupProject prior to setting commit")
 	}
 
-	if prompter == nil || out == nil {
-		return errs.New("projectmigration.Register() has not been called")
+	if m.proj.LegacyCommitID() != "" {
+		if err := m.proj.SetLegacyCommit(commitID); err != nil {
+			return errs.Wrap(err, "Could not set legacy commit")
+		}
 	}
-
-	warned = true
-
-	out.Notice(locale.Tr("projectmigration_warning", proj.Source().Path()))
-
 	return nil
 }

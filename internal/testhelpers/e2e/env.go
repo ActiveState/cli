@@ -37,7 +37,6 @@ func sandboxedTestEnvironment(t *testing.T, dirs *Dirs, updatePath bool, extraEn
 		constants.ProjectEnvVarName + "=",
 		constants.E2ETestEnvVarName + "=true",
 		constants.DisableUpdates + "=true",
-		constants.DisableProjectMigrationPrompt + "=true",
 		constants.OptinUnstableEnvVarName + "=true",
 		constants.ServiceSockDir + "=" + dirs.SockRoot,
 		constants.HomeEnvVarName + "=" + dirs.HomeDir,

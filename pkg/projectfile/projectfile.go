@@ -558,25 +558,10 @@ func (p *Project) Path() string {
 	return p.path
 }
 
-// LegacyCommitID is for use by commitmediator.Get() ONLY.
+// LegacyCommitID is for use by legacy mechanics ONLY
 // It returns a pre-migrated project's commit ID from activestate.yaml.
 func (p *Project) LegacyCommitID() string {
 	return p.parsedURL.LegacyCommitID
-}
-
-func (p *Project) StripLegacyCommitID() error {
-	pf := NewProjectField()
-	if err := pf.LoadProject(p.Project); err != nil {
-		return errs.Wrap(err, "Could not load activestate.yaml")
-	}
-	pf.StripLegacyCommitID()
-	if err := pf.Save(p.path); err != nil {
-		return errs.Wrap(err, "Could not save activestate.yaml")
-	}
-
-	p.parsedURL.LegacyCommitID = ""
-	p.Project = pf.String()
-	return nil
 }
 
 // SetLegacyCommit sets the commit id within the current project file. This is done

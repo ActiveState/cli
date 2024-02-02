@@ -12,9 +12,9 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/rxutils"
 	"github.com/ActiveState/cli/internal/scriptfile"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -238,7 +238,7 @@ func ProjectExpander(_ string, name string, _ string, isFunction bool, ctx *Expa
 	case "url":
 		return project.URL(), nil
 	case "commit":
-		commitID, err := commitmediator.Get(project)
+		commitID, err := localcommit.Get(project.Dir())
 		if err != nil {
 			return "", errs.Wrap(err, "Unable to get local commit")
 		}

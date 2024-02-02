@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/thoas/go-funk"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
@@ -23,7 +24,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
@@ -133,7 +133,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	if nsType != nil {
 		switch *nsType {
 		case model.NamespacePackage, model.NamespaceBundle:
-			commitID, err := commitmediator.Get(r.Project)
+			commitID, err := localcommit.Get(r.Project.Dir())
 			if err != nil {
 				return errs.Wrap(err, "Unable to get local commit")
 			}
@@ -283,7 +283,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		pg = nil
 	}
 
-	parentCommitID, err := commitmediator.Get(r.Project)
+	parentCommitID, err := localcommit.Get(r.Project.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -410,7 +410,7 @@ func (r *RequirementOperation) handleRefreshError(err error, parentCommitID strf
 }
 
 func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
-	if err := commitmediator.Set(r.Project, commitID.String()); err != nil {
+	if err := localcommit.Set(r.Project.Dir(), commitID.String()); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
