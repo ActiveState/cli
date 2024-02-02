@@ -1495,6 +1495,8 @@ uploadingredient_editor_opening:
 uploadingredient_success:
   other: |
     Successfully published as:
-    Ingredient ID: [ACTIONABLE]{{.V0}}[/RESET]
-    Ingredient Version ID: [ACTIONABLE]{{.V1}}[/RESET]
-    Revision: [ACTIONABLE]{{.V2}}[/RESET]
+    Name: [ACTIONABLE]{{.V0}}[/RESET]
+    Namespace: [ACTIONABLE]{{.V1}}[/RESET]
+    Version: [ACTIONABLE]{{.V2}}[/RESET]
+
+    You can install this package by running `[ACTIONABLE]state install {{.V1}}/{{.V0}} --ts now`[/RESET].

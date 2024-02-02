@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -248,12 +248,28 @@ func (r *Runner) Run(params *Params) error {
 		return locale.NewError("err_uploadingredient_publish_api", "API responded with error: {{.V0}}", result.Publish.Error)
 	}
 
+	logging.Debug("Published ingredient ID: %s", result.Publish.IngredientID)
+	logging.Debug("Published ingredient version ID: %s", result.Publish.IngredientVersionID)
+	logging.Debug("Published ingredient revision: %d", result.Publish.Revision)
+
+	ingredientID := strfmt.UUID(result.Publish.IngredientID)
+	publishedIngredient, err := model.FetchIngredient(&ingredientID)
+	if err != nil {
+		return locale.WrapError(err, "err_uploadingredient_fetch", "Unable to fetch newly published ingredient")
+	}
+	versionID := strfmt.UUID(result.Publish.IngredientVersionID)
+	atTime := strfmt.DateTime(time.Now())
+	publishedVersion, err := model.FetchIngredientVersion(&ingredientID, &versionID, true, &atTime)
+	if err != nil {
+		return locale.WrapError(err, "err_uploadingingredient_fetch_version", "Unable to fetch newly published ingredient version")
+	}
+
 	r.out.Print(output.Prepare(
 		locale.Tl(
 			"uploadingredient_success", "",
-			result.Publish.IngredientID,
-			result.Publish.IngredientVersionID,
-			strconv.Itoa(result.Publish.Revision),
+			publishedIngredient.NormalizedName,
+			*publishedIngredient.PrimaryNamespace,
+			*publishedVersion.Version,
 		),
 		result.Publish,
 	))
