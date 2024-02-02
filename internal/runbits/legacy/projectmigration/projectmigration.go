@@ -38,7 +38,10 @@ func (m *migrator) setupProject(pjpath string) error {
 	}
 	var err error
 	m.proj, err = project.FromPath(pjpath)
-	return err
+	if err != nil {
+		return errs.Wrap(err, "Could not get project info to set up project")
+	}
+	return nil
 }
 
 // Migrate returns the legacy commit ID and updates the activestate.yaml with instructions on dropping the legacy commit.
