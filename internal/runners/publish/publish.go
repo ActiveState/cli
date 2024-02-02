@@ -205,10 +205,10 @@ func (r *Runner) Run(params *Params) error {
 		if reqVars.Description != "" {
 			return locale.NewInputError("err_uploadingredient_edit_description_not_supported")
 		}
+	}
 
-		if reqVars.Namespace == "" {
-			return locale.NewInputError("err_uploadingredient_namespace_required", "You have to supply the namespace when working outside of a project context")
-		}
+	if reqVars.Namespace == "" {
+		return locale.NewInputError("err_uploadingredient_namespace_required", "You have to supply the namespace when working outside of a project context")
 	}
 
 	b, err := reqVars.MarshalYaml(false)
