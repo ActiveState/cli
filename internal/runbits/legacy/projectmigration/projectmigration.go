@@ -41,9 +41,7 @@ func (m *migrator) setupProject(pjpath string) error {
 	return err
 }
 
-// Migrate returns the given project's commit ID in either the new format (commit file), or the old
-// format (activestate.yaml).
-// If you require the commit file, use localcommit.Get().
+// Migrate returns the legacy commit ID and updates the activestate.yaml with instructions on dropping the legacy commit.
 func (m *migrator) Migrate(pjpath string) (strfmt.UUID, error) {
 	logging.Debug("Migrating project to new localcommit format: %s", pjpath)
 	if err := m.setupProject(pjpath); err != nil {
