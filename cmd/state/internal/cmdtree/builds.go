@@ -56,7 +56,6 @@ func newBuildsDownloadCommand(prime *primer.Values) *captain.Command {
 				Name:        "target",
 				Description: locale.Tl("builds_download_arg_target", "The target directory to download the artifact to"),
 				Value:       &params.OutputDir,
-				Required:    true,
 			},
 		},
 		func(_ *captain.Command, _ []string) error {

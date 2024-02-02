@@ -94,7 +94,15 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 		return locale.NewInputError("err_build_id_not_found", "Could not find artifact with ID {{.V0}}", params.BuildID)
 	}
 
-	if err := d.downloadArtifact(artifact, params.OutputDir); err != nil {
+	targetDir := params.OutputDir
+	if targetDir == "" {
+		targetDir, err = os.Getwd()
+		if err != nil {
+			return errs.Wrap(err, "Could not get current working directory")
+		}
+	}
+
+	if err := d.downloadArtifact(artifact, targetDir); err != nil {
 		return errs.Wrap(err, "Could not download artifact %s", artifact.ArtifactID.String())
 	}
 
@@ -162,7 +170,7 @@ func (d *Download) downloadArtifact(artifact *artifact.Artifact, targetDir strin
 		return errs.Wrap(err, "Writing download to target file %s failed", downloadPath)
 	}
 
-	d.out.Notice(locale.Tl("msg_download_success", "Downloaded {{.V0}} to {{.V1}}", artifact.Name, downloadPath))
+	d.out.Notice(locale.Tl("msg_download_success", "[SUCCESS]Downloaded {{.V0}} to {{.V1}}[/RESET]", artifact.Name, downloadPath))
 
 	return nil
 }
