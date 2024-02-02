@@ -49,7 +49,7 @@ func (m *migrator) setupProject(pjpath string) error {
 func (m *migrator) Migrate(pjpath string) (strfmt.UUID, error) {
 	logging.Debug("Migrating project to new localcommit format: %s", pjpath)
 	if err := m.setupProject(pjpath); err != nil {
-		return "", err
+		return "", errs.Wrap(err, "Failed to setupProject prior to migrating")
 	}
 
 	if !strfmt.IsUUID(m.proj.LegacyCommitID()) {
@@ -71,13 +71,13 @@ func (m *migrator) Migrate(pjpath string) (strfmt.UUID, error) {
 			return "", errs.Wrap(err, "Could not write to activestate.yaml")
 		}
 	}
-	
+
 	return strfmt.UUID(m.proj.LegacyCommitID()), nil
 }
 
 func (m *migrator) Set(pjpath string, commitID string) error {
 	if err := m.setupProject(pjpath); err != nil {
-		return err
+		return errs.Wrap(err, "Failed to setupProject prior to setting commit")
 	}
 
 	if m.proj.LegacyCommitID() != "" {
