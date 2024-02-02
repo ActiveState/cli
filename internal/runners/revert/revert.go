@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/commit"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	gqlmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -72,7 +72,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 	if !strfmt.IsUUID(commitID) && !strings.EqualFold(commitID, headCommitID) {
 		return locale.NewInputError("err_invalid_commit_id", "Invalid commit ID")
 	}
-	latestCommit, err := commitmediator.Get(r.project)
+	latestCommit, err := localcommit.Get(r.project.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -139,7 +139,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 			locale.T("tip_private_project_auth"))
 	}
 
-	err = commitmediator.Set(r.project, revertCommit.String())
+	err = localcommit.Set(r.project.Dir(), revertCommit.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to set local commit")
 	}

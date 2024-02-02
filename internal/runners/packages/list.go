@@ -15,8 +15,8 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	runbitsRuntime "github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -204,7 +204,7 @@ func targetFromProjectFile(proj *project.Project) (*strfmt.UUID, error) {
 	if proj == nil {
 		return nil, locale.NewInputError("err_no_project")
 	}
-	commit, err := commitmediator.Get(proj)
+	commit, err := localcommit.Get(proj.Dir())
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get local commit")
 	}

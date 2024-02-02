@@ -20,7 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits"
 	buildscriptRunbits "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/commit"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -103,7 +103,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 	}
 
 	var localCommit *strfmt.UUID
-	localCommitID, err := commitmediator.Get(p.project)
+	localCommitID, err := localcommit.Get(p.project.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -149,13 +149,13 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		p.notifyMergeStrategy(string(strategy), *localCommit, remoteProject)
 	}
 
-	commitID, err := commitmediator.Get(p.project)
+	commitID, err := localcommit.Get(p.project.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 
 	if commitID != *resultingCommit {
-		err := commitmediator.Set(p.project, resultingCommit.String())
+		err := localcommit.Set(p.project.Dir(), resultingCommit.String())
 		if err != nil {
 			return errs.Wrap(err, "Unable to set local commit")
 		}
