@@ -78,7 +78,9 @@ require github.com/ActiveState/graphql v0.0.0-20230719154233-6949037a6e48
 require (
 	github.com/ActiveState/pty v0.0.0-20230628221854-6fb90eb08a14 // indirect
 	github.com/hinshun/vt10x v0.0.0-20220301184237-5011da428d02 // indirect
+	github.com/maruel/natural v1.1.0 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
+	github.com/zijiren233/yaml-comment v0.2.1 // indirect
 )
 
 require (
