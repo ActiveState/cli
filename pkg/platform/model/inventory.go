@@ -454,6 +454,39 @@ func FetchLanguages() ([]Language, error) {
 	return languages, nil
 }
 
+func FetchIngredient(ingredientID *strfmt.UUID) (*inventory_models.Ingredient, error) {
+	client := inventory.Get()
+
+	params := inventory_operations.NewGetIngredientParams()
+	params.SetIngredientID(*ingredientID)
+	params.SetHTTPClient(api.NewHTTPClient())
+
+	res, err := client.GetIngredient(params, authentication.ClientAuth())
+	if err != nil {
+		return nil, errs.Wrap(err, "GetIngredient failed")
+	}
+
+	return res.Payload, nil
+}
+
+func FetchIngredientVersion(ingredientID *strfmt.UUID, versionID *strfmt.UUID, allowUnstable bool, atTime *strfmt.DateTime) (*inventory_models.FullIngredientVersion, error) {
+	client := inventory.Get()
+
+	params := inventory_operations.NewGetIngredientVersionParams()
+	params.SetIngredientID(*ingredientID)
+	params.SetIngredientVersionID(*versionID)
+	params.SetAllowUnstable(&allowUnstable)
+	params.SetStateAt(atTime)
+	params.SetHTTPClient(api.NewHTTPClient())
+
+	res, err := client.GetIngredientVersion(params, authentication.ClientAuth())
+	if err != nil {
+		return nil, errs.Wrap(err, "GetIngredientVersion failed")
+	}
+
+	return res.Payload, nil
+}
+
 func FetchIngredientVersions(ingredientID *strfmt.UUID) ([]*inventory_models.IngredientVersion, error) {
 	client := inventory.Get()
 
