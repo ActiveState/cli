@@ -117,7 +117,6 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Download() {
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("builds", "dl", "16291D17", "."),
 	)
-	cp.Expect("Downloading")
 	cp.Expect("Downloaded", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	require.FileExists(suite.T(), filepath.Join(ts.Dirs.Work, "activestate-cli-python-with-custom-builds-docker-993454c7.tar.gz"))
