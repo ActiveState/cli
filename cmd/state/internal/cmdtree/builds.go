@@ -62,9 +62,7 @@ func newBuildsDownloadCommand(prime *primer.Values) *captain.Command {
 			return runner.Run(params)
 		},
 	)
-	cmd.SetGroup(ProjectUsageGroup)
 	cmd.SetSupportsStructuredOutput()
 	cmd.SetUnstable(true)
-	cmd.DeprioritizeInHelpListing()
 	return cmd
 }
