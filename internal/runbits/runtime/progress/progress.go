@@ -102,7 +102,7 @@ func NewProgressIndicator(w io.Writer, out output.Outputer) *ProgressDigester {
 		artifactBars:  map[artifactStepID]*bar{},
 
 		cancelMpb:    cancel,
-		maxNameWidth: maxNameWidth(),
+		maxNameWidth: MaxNameWidth(),
 
 		out: out,
 

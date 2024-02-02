@@ -1,33 +1,35 @@
 package builds
 
 import (
+	"context"
+	"io"
 	"net/url"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
 	auth "github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events/progress"
+	rtProgress "github.com/ActiveState/cli/pkg/platform/runtime/setup/events/progress"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/go-openapi/strfmt"
+	"github.com/vbauerster/mpb/v7"
+	"github.com/vbauerster/mpb/v7/decor"
 )
 
 type DownloadParams struct {
@@ -62,13 +64,6 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 		return rationalize.ErrNoProject
 	}
 
-	pg := runbits.NewRuntimeProgressIndicator(d.out)
-	defer rtutils.Closer(pg.Close, &rerr)
-
-	if err := pg.Handle(events.SolveStart{}); err != nil {
-		return errs.Wrap(err, "Failed to handle SolveStart event")
-	}
-
 	_, err := runtime.NewFromProject(d.project, target.TriggerBuilds, d.analytics, d.svcModel, d.out, d.auth, d.config)
 	if err != nil {
 		return locale.WrapInputError(err, "err_refresh_runtime_new", "Could not update runtime for this project.")
@@ -85,10 +80,6 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 		return errs.Wrap(err, "Could not get build plan map")
 	}
 
-	if err := pg.Handle(events.SolveSuccess{}); err != nil {
-		return errs.Wrap(err, "Failed to handle SolveSuccess event")
-	}
-
 	var artifact *artifact.Artifact
 	for _, artifacts := range terminalArtfMap {
 		for _, a := range artifacts {
@@ -103,44 +94,47 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 		return locale.NewInputError("err_build_id_not_found", "Could not find artifact with ID {{.V0}}", params.BuildID)
 	}
 
-	if err := d.downloadArtifact(pg, artifact, params.OutputDir); err != nil {
+	if err := d.downloadArtifact(artifact, params.OutputDir); err != nil {
 		return errs.Wrap(err, "Could not download artifact %s", artifact.ArtifactID.String())
 	}
 
-	d.out.Notice(locale.Tl("msg_download_success", "Downloaded {{.V0}} to {{.V1}}", artifact.ArtifactID.String(), params.OutputDir))
 	return nil
 }
 
-func (d *Download) downloadArtifact(pg events.Handler, artifact *artifact.Artifact, targetDir string) (rerr error) {
-	defer func() {
-		evs := []events.Eventer{
-			events.ArtifactDownloadSuccess{artifact.ArtifactID},
-			events.Success{},
-		}
+func (d *Download) downloadArtifact(artifact *artifact.Artifact, targetDir string) (rerr error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	var w io.Writer = os.Stdout
+	if d.out.Type() != output.PlainFormatName {
+		w = nil
+	}
 
-		if rerr != nil {
-			evs = []events.Eventer{
-				events.ArtifactDownloadFailure{artifact.ArtifactID, rerr},
-				events.Failure{},
-			}
-		}
+	pg := mpb.NewWithContext(
+		ctx,
+		mpb.WithOutput(w),
+		mpb.WithWidth(40),
+		mpb.WithRefreshRate(constants.TerminalAnimationInterval),
+	)
+	defer cancel()
 
-		for _, e := range evs {
-			err := pg.Handle(e)
-			if err != nil {
-				multilog.Error("Could not handle Success/Failure event: %s", errs.JoinMessage(err))
-			}
-		}
-	}()
+	name := artifact.Name
+	if len(name) > progress.MaxNameWidth() {
+		name = name[0:progress.MaxNameWidth()]
+	}
 
-	if err := pg.Handle(events.Start{
-		RequiresBuild: false,
-		ArtifactNames: map[strfmt.UUID]string{artifact.ArtifactID: artifact.Name},
-		ArtifactsToDownload: []strfmt.UUID{
-			artifact.ArtifactID,
-		},
-	}); err != nil {
-		return errs.Wrap(err, "Failed to handle Start event")
+	prependDecorators := []decor.Decorator{
+		decor.Name(name, decor.WC{W: progress.MaxNameWidth(), C: decor.DidentRight}),
+		decor.OnComplete(
+			decor.Spinner(progress.SpinnerFrames, decor.WCSyncSpace), "",
+		),
+		decor.CountersKiloByte("%.1f/%.1f", decor.WC{W: 17}),
+	}
+
+	options := []mpb.BarOption{
+		mpb.BarFillerClearOnComplete(),
+		mpb.PrependDecorators(prependDecorators...),
+		mpb.AppendDecorators(
+			decor.OnComplete(decor.Percentage(decor.WC{W: 5}), ""),
+		),
 	}
 
 	artifactURL, err := url.Parse(artifact.URL)
@@ -148,17 +142,14 @@ func (d *Download) downloadArtifact(pg events.Handler, artifact *artifact.Artifa
 		return errs.Wrap(err, "Could not parse artifact URL %s.", artifact.URL)
 	}
 
-	b, err := httputil.GetWithProgress(artifactURL.String(), &progress.Report{
+	var downloadBar *mpb.Bar
+	b, err := httputil.GetWithProgress(artifactURL.String(), &rtProgress.Report{
 		ReportSizeCb: func(size int) error {
-			if err := pg.Handle(events.ArtifactDownloadStarted{artifact.ArtifactID, size}); err != nil {
-				return errs.Wrap(err, "Could not handle ArtifactDownloadStarted event")
-			}
+			downloadBar = pg.AddBar(int64(size), options...)
 			return nil
 		},
 		ReportIncrementCb: func(inc int) error {
-			if err := pg.Handle(events.ArtifactDownloadProgress{artifact.ArtifactID, inc}); err != nil {
-				return errs.Wrap(err, "Could not handle ArtifactDownloadProgress event")
-			}
+			downloadBar.IncrBy(inc)
 			return nil
 		},
 	})
@@ -170,6 +161,8 @@ func (d *Download) downloadArtifact(pg events.Handler, artifact *artifact.Artifa
 	if err := fileutils.WriteFile(downloadPath, b); err != nil {
 		return errs.Wrap(err, "Writing download to target file %s failed", downloadPath)
 	}
+
+	d.out.Notice(locale.Tl("msg_download_success", "Downloaded {{.V0}} to {{.V1}}", artifact.Name, downloadPath))
 
 	return nil
 }

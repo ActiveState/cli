@@ -16,7 +16,7 @@ import (
 
 const progressBarWidth = 40
 
-var spinnerFrames = []string{`|`, `/`, `-`, `\`}
+var SpinnerFrames = []string{`|`, `/`, `-`, `\`}
 
 var refreshRate = constants.TerminalAnimationInterval
 
@@ -60,7 +60,7 @@ func (p *ProgressDigester) addSpinnerBar(name string, options ...mpb.BarOption) 
 	logging.Debug("Adding spinner bar: %s", name)
 	return &bar{
 		p.mainProgress.Add(1,
-			mpb.NewBarFiller(mpb.SpinnerStyle(spinnerFrames...)),
+			mpb.NewBarFiller(mpb.SpinnerStyle(SpinnerFrames...)),
 			append(options,
 				mpb.BarFillerClearOnComplete(),
 				mpb.PrependDecorators(
@@ -130,7 +130,7 @@ func (p *ProgressDigester) addBar(name string, total int64, countsBytes bool, op
 	prependDecorators := []decor.Decorator{
 		decor.Name(name, decor.WC{W: p.maxNameWidth, C: decor.DidentRight}),
 		decor.OnComplete(
-			decor.Spinner(spinnerFrames, decor.WCSyncSpace), "",
+			decor.Spinner(SpinnerFrames, decor.WCSyncSpace), "",
 		),
 	}
 	if countsBytes {
@@ -149,8 +149,8 @@ func (p *ProgressDigester) addBar(name string, total int64, countsBytes bool, op
 	return &bar{p.mainProgress.AddBar(total, options...), time.Now(), total}
 }
 
-// maxNameWidth returns the maximum width to be used for a name in a progress bar
-func maxNameWidth() int {
+// MaxNameWidth returns the maximum width to be used for a name in a progress bar
+func MaxNameWidth() int {
 	tw := termutils.GetWidth()
 
 	// calculate the maximum width for a name displayed to the left of the progress bar
