@@ -3,7 +3,7 @@ package publish
 import (
 	"net/http"
 	"path/filepath"
-	"strconv"
+	"regexp"
 	"strings"
 	"time"
 
@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -77,6 +78,8 @@ type ParentIngredient struct {
 	Dependencies        []inventory_models.Dependency `json:"dependencies"`
 }
 
+var nameRegexp = regexp.MustCompile(`\w+([_-]\w+)*`)
+
 func (r *Runner) Run(params *Params) error {
 	if !r.auth.Authenticated() {
 		return locale.NewInputError("err_auth_required")
@@ -123,7 +126,16 @@ func (r *Runner) Run(params *Params) error {
 	if params.Name != "" { // Validate & Set name
 		reqVars.Name = params.Name
 	} else if reqVars.Name == "" {
-		reqVars.Name = filepath.Base(params.Filepath)
+		// Attempt to extract a usable name from the filename.
+		name := filepath.Base(params.Filepath)
+		if ext := filepath.Ext(params.Filepath); ext != "" {
+			name = name[:len(name)-len(ext)] // strip extension
+		}
+		name = versionRegexp.ReplaceAllString(name, "") // strip version number
+		if matches := nameRegexp.FindAllString(name, 1); matches != nil {
+			name = matches[0] // extract name-part
+		}
+		reqVars.Name = name
 	}
 
 	var ingredient *ParentIngredient
@@ -236,12 +248,28 @@ func (r *Runner) Run(params *Params) error {
 		return locale.NewError("err_uploadingredient_publish_api", "API responded with error: {{.V0}}", result.Publish.Error)
 	}
 
+	logging.Debug("Published ingredient ID: %s", result.Publish.IngredientID)
+	logging.Debug("Published ingredient version ID: %s", result.Publish.IngredientVersionID)
+	logging.Debug("Published ingredient revision: %d", result.Publish.Revision)
+
+	ingredientID := strfmt.UUID(result.Publish.IngredientID)
+	publishedIngredient, err := model.FetchIngredient(&ingredientID)
+	if err != nil {
+		return locale.WrapError(err, "err_uploadingredient_fetch", "Unable to fetch newly published ingredient")
+	}
+	versionID := strfmt.UUID(result.Publish.IngredientVersionID)
+	atTime := strfmt.DateTime(time.Now())
+	publishedVersion, err := model.FetchIngredientVersion(&ingredientID, &versionID, true, &atTime)
+	if err != nil {
+		return locale.WrapError(err, "err_uploadingingredient_fetch_version", "Unable to fetch newly published ingredient version")
+	}
+
 	r.out.Print(output.Prepare(
 		locale.Tl(
 			"uploadingredient_success", "",
-			result.Publish.IngredientID,
-			result.Publish.IngredientVersionID,
-			strconv.Itoa(result.Publish.Revision),
+			publishedIngredient.NormalizedName,
+			*publishedIngredient.PrimaryNamespace,
+			*publishedVersion.Version,
 		),
 		result.Publish,
 	))
@@ -249,12 +277,17 @@ func (r *Runner) Run(params *Params) error {
 	return nil
 }
 
+var versionRegexp = regexp.MustCompile(`\d+\.\d+(\.\d+)?`)
+
 func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRevision bool) error {
 	if params.Version != "" {
 		r.Version = params.Version
 	}
 	if r.Version == "" {
 		r.Version = "0.0.1"
+		if matches := versionRegexp.FindAllString(params.Filepath, 1); matches != nil {
+			r.Version = matches[0]
+		}
 	}
 
 	if params.Description != "" {
@@ -332,7 +365,7 @@ func prepareEditRequest(ingredient *ParentIngredient, r *request.PublishVariable
 				request.PublishVariableDep{request.Dependency{
 					Name:                ptr.From(dep.Feature, ""),
 					Namespace:           ptr.From(dep.Namespace, ""),
-					VersionRequirements: model.RequirementsToString(dep.Requirements),
+					VersionRequirements: model.InventoryRequirementsToString(dep.Requirements),
 				}, []request.Dependency{}},
 			)
 		}

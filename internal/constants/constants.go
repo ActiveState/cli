@@ -30,7 +30,7 @@ const ConfigFileName = "activestate.yaml"
 const ProjectConfigDirName = ".activestate"
 
 // BuildScriptFileName holds the name of the file that represents the build script used to generate the runtime
-const BuildScriptFileName = "buildscript.yaml"
+const BuildScriptFileName = "buildscript.as"
 
 // CommitIdFileName is the name of the file in ProjectConfigDirName that contains a project's commit ID.
 const CommitIdFileName = "commit"
@@ -454,6 +454,12 @@ const ReportAnalyticsConfig = "report.analytics"
 
 // PreferredGlibcVersionConfig is the config key used to determine the preferred glibc version
 const PreferredGlibcVersionConfig = "runtime.preferred.glibc"
+
+// SecurityPromptConfig is the config key used to determine if we will prompt the user for security related actions
+const SecurityPromptConfig = "security.prompt.enabled"
+
+// SecurityPromptLevelConfig is the config key used to determine the level of security prompts
+const SecurityPromptLevelConfig = "security.prompt.level"
 
 // SvcAppName is the name we give our state-svc application
 const SvcAppName = "State Service"

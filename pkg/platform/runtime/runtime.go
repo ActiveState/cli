@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
 	"golang.org/x/net/context"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -22,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -45,6 +47,7 @@ type Runtime struct {
 	auth              *authentication.Auth
 	completed         bool
 	cfg               model.Configurable
+	out               output.Outputer
 	resolvedArtifacts []*artifact.Artifact
 }
 
@@ -64,7 +67,7 @@ func IsNeedsCommitError(err error) bool {
 	return errs.Matches(err, &NeedsCommitError{})
 }
 
-func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel, auth *authentication.Auth, cfg model.Configurable) (*Runtime, error) {
+func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel, auth *authentication.Auth, cfg model.Configurable, out output.Outputer) (*Runtime, error) {
 	rt := &Runtime{
 		target:    target,
 		store:     store.New(target.Dir()),
@@ -72,6 +75,7 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 		svcm:      svcModel,
 		auth:      auth,
 		cfg:       cfg,
+		out:       out,
 	}
 
 	err := rt.validateCache()
@@ -83,7 +87,7 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 }
 
 // New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
-func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, auth *authentication.Auth, cfg model.Configurable) (*Runtime, error) {
+func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, auth *authentication.Auth, cfg model.Configurable, out output.Outputer) (*Runtime, error) {
 	logging.Debug("Initializing runtime for: %s/%s@%s", target.Owner(), target.Name(), target.CommitUUID())
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
@@ -98,7 +102,7 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, a
 		InstanceID:       ptr.To(instanceid.ID()),
 	})
 
-	r, err := newRuntime(target, an, svcm, auth, cfg)
+	r, err := newRuntime(target, an, svcm, auth, cfg, out)
 	if err == nil {
 		an.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeCache, &dimensions.Values{
 			CommitID: ptr.To(target.CommitUUID().String()),
@@ -173,12 +177,12 @@ func (r *Runtime) Update(eventHandler events.Handler) (rerr error) {
 		r.recordCompletion(rerr)
 	}()
 
-	if err := setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg).Update(); err != nil {
+	if err := setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out).Update(); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}
 
 	// Reinitialize
-	rt, err := newRuntime(r.target, r.analytics, r.svcm, r.auth, r.cfg)
+	rt, err := newRuntime(r.target, r.analytics, r.svcm, r.auth, r.cfg, r.out)
 	if err != nil {
 		return errs.Wrap(err, "Could not reinitialize runtime after update")
 	}
@@ -357,6 +361,20 @@ func (r *Runtime) ExecutableDirs() (envdef.ExecutablePaths, error) {
 
 func IsRuntimeDir(dir string) bool {
 	return store.New(dir).HasMarker()
+}
+
+func (r *Runtime) TerminalArtifactMap(filterStatToolArtifacts bool) (buildplan.TerminalArtifactMap, error) {
+	runtimeStore := r.store
+	if runtimeStore == nil {
+		runtimeStore = store.New(r.target.Dir())
+	}
+
+	plan, err := runtimeStore.BuildPlan()
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to fetch build plan")
+	}
+
+	return buildplan.NewMapFromBuildPlan(plan, false, filterStatToolArtifacts, nil)
 }
 
 func (r *Runtime) ResolvedArtifacts() ([]*artifact.Artifact, error) {

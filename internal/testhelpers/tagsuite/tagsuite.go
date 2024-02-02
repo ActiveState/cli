@@ -51,6 +51,7 @@ const (
 	JSON            = "json"
 	Languages       = "languages"
 	Messaging       = "messaging"
+	Migrations      = "migrations"
 	Organizations   = "organizations"
 	Output          = "output"
 	Package         = "package"

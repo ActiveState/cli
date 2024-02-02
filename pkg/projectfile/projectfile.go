@@ -113,7 +113,7 @@ type Build map[string]string
 // ConstantFields are the common fields for the Constant type. This is required
 // for type composition related to its yaml.Unmarshaler implementation.
 type ConstantFields struct {
-	Conditional Conditional `yaml:"if"`
+	Conditional Conditional `yaml:"if,omitempty"`
 }
 
 // Constant covers the constant structure, which goes under Project
@@ -175,7 +175,7 @@ type SecretScopes struct {
 type Secret struct {
 	Name        string      `yaml:"name"`
 	Description string      `yaml:"description"`
-	Conditional Conditional `yaml:"if"`
+	Conditional Conditional `yaml:"if,omitempty"`
 }
 
 var _ ConstrainedEntity = &Secret{}
@@ -227,7 +227,7 @@ type ConstrainedEntity interface {
 type Package struct {
 	Name        string      `yaml:"name"`
 	Version     string      `yaml:"version"`
-	Conditional Conditional `yaml:"if"`
+	Conditional Conditional `yaml:"if,omitempty"`
 	Build       Build       `yaml:"build,omitempty"`
 }
 
@@ -268,7 +268,7 @@ func MakePackagesFromConstrainedEntities(items []ConstrainedEntity) (packages []
 // for type composition related to its yaml.Unmarshaler implementation.
 type EventFields struct {
 	Scope       []string    `yaml:"scope"`
-	Conditional Conditional `yaml:"if"`
+	Conditional Conditional `yaml:"if,omitempty"`
 	id          string
 }
 
@@ -337,7 +337,7 @@ type ScriptFields struct {
 	Filename    string      `yaml:"filename,omitempty"`
 	Standalone  bool        `yaml:"standalone,omitempty"`
 	Language    string      `yaml:"language,omitempty"`
-	Conditional Conditional `yaml:"if"`
+	Conditional Conditional `yaml:"if,omitempty"`
 }
 
 // Script covers the script structure, which goes under Project
@@ -564,6 +564,38 @@ func (p *Project) LegacyCommitID() string {
 	return p.parsedURL.LegacyCommitID
 }
 
+func (p *Project) StripLegacyCommitID() error {
+	pf := NewProjectField()
+	if err := pf.LoadProject(p.Project); err != nil {
+		return errs.Wrap(err, "Could not load activestate.yaml")
+	}
+	pf.StripLegacyCommitID()
+	if err := pf.Save(p.path); err != nil {
+		return errs.Wrap(err, "Could not save activestate.yaml")
+	}
+
+	p.parsedURL.LegacyCommitID = ""
+	p.Project = pf.String()
+	return nil
+}
+
+// SetLegacyCommit sets the commit id within the current project file. This is done
+// in-place so that line order is preserved.
+func (p *Project) SetLegacyCommit(commitID string) error {
+	pf := NewProjectField()
+	if err := pf.LoadProject(p.Project); err != nil {
+		return errs.Wrap(err, "Could not load activestate.yaml")
+	}
+	pf.SetLegacyCommitID(commitID)
+	if err := pf.Save(p.path); err != nil {
+		return errs.Wrap(err, "Could not save activestate.yaml")
+	}
+
+	p.parsedURL.LegacyCommitID = commitID
+	p.Project = pf.String()
+	return nil
+}
+
 func (p *Project) Dir() string {
 	return filepath.Dir(p.path)
 }
@@ -692,7 +724,9 @@ func (p *Project) save(cfg ConfigGetter, path string) error {
 		return errs.Wrap(err, "f.Write %s failed", path)
 	}
 
-	StoreProjectMapping(cfg, fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
+	if cfg != nil {
+		StoreProjectMapping(cfg, fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
+	}
 
 	return nil
 }

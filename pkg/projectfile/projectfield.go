@@ -44,8 +44,12 @@ func (p *projectField) SetBranch(branch string) {
 	p.setQuery("branch", branch)
 }
 
-func (p *projectField) StripCommitID() {
+func (p *projectField) StripLegacyCommitID() {
 	p.unsetQuery("commitID") // legacy
+}
+
+func (p *projectField) SetLegacyCommitID(commitID string) {
+	p.setQuery("commitID", commitID)
 }
 
 func (p *projectField) setPath(path string) {
