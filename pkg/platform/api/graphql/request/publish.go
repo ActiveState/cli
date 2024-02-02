@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
+	yamlcomment "github.com/zijiren233/yaml-comment"
 	"gopkg.in/yaml.v3"
 )
 
@@ -44,15 +45,15 @@ func Publish(vars PublishVariables, filepath string) (*PublishInput, error) {
 // which is done with yaml. As such the yaml tags are used for representing data to the user, and the json is used for
 // inputs to graphql.
 type PublishVariables struct {
-	Name        string `yaml:"name" json:"-"`      // User representation only
-	Namespace   string `yaml:"namespace" json:"-"` // User representation only
-	Version     string `yaml:"version" json:"version"`
-	Description string `yaml:"description" json:"description"`
+	Name        string `yaml:"name" json:"-" hc:"The name of the ingredient"`                                                                                                           // User representation only
+	Namespace   string `yaml:"namespace" json:"-" hc:"The namespace field should be in the format org/folder. Org can simply be your username or any organization you're a member of."` // User representation only
+	Version     string `yaml:"version" json:"version" hc:"The version field should follow semantic versioning and match the version in the filename (if any)."`
+	Description string `yaml:"description" json:"description" hc:"The description field should be a short description of the ingredient."`
 
 	// Optional
-	Authors      []PublishVariableAuthor  `yaml:"authors,omitempty" json:"authors,omitempty"`
-	Dependencies []PublishVariableDep     `yaml:"dependencies,omitempty" json:"dependencies,omitempty"`
-	Features     []PublishVariableFeature `yaml:"features,omitempty" json:"features,omitempty"`
+	Authors      []PublishVariableAuthor  `yaml:"authors,omitempty" json:"authors,omitempty" hc:"A list of authors who contributed to the ingredient."`
+	Dependencies []PublishVariableDep     `yaml:"dependencies,omitempty" json:"dependencies,omitempty" hc:"A list of dependencies that the ingredient requires."`
+	Features     []PublishVariableFeature `yaml:"features,omitempty" json:"features,omitempty" hc:"A list of features that the ingredient provides."`
 
 	// GraphQL input only
 	Path         string  `yaml:"-" json:"path"`
@@ -94,14 +95,14 @@ type ExampleDepVariables struct {
 }
 
 func (p PublishVariables) MarshalYaml(includeExample bool) ([]byte, error) {
-	v, err := yaml.Marshal(p)
+	v, err := yamlcomment.Marshal(p)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not marshal publish request")
 	}
 
 	if includeExample {
 		if len(p.Authors) == 0 {
-			exampleAuthorYaml, err := yaml.Marshal(exampleAuthor)
+			exampleAuthorYaml, err := yamlcomment.Marshal(exampleAuthor)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not marshal example author")
 			}
@@ -111,7 +112,7 @@ func (p PublishVariables) MarshalYaml(includeExample bool) ([]byte, error) {
 		}
 
 		if len(p.Dependencies) == 0 {
-			exampleDepYaml, err := yaml.Marshal(exampleDep)
+			exampleDepYaml, err := yamlcomment.Marshal(exampleDep)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not marshal example deps")
 			}
