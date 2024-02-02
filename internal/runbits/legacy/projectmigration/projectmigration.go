@@ -1,6 +1,7 @@
 package projectmigration
 
 import (
+	"bytes"
 	_ "embed"
 	"path/filepath"
 
@@ -51,6 +52,10 @@ func (m *migrator) Migrate(pjpath string) (strfmt.UUID, error) {
 		return "", err
 	}
 
+	if !strfmt.IsUUID(m.proj.LegacyCommitID()) {
+		return "", locale.NewInputError("err_commit_id_invalid", m.proj.LegacyCommitID())
+	}
+
 	configPath := filepath.Join(m.proj.Dir(), constants.ConfigFileName)
 
 	// Add comment to activestate.yaml explaining migration
@@ -59,15 +64,14 @@ func (m *migrator) Migrate(pjpath string) (strfmt.UUID, error) {
 		return "", errs.Wrap(err, "Could not read activestate.yaml")
 	}
 
-	asB = append([]byte(locale.T("projectmigration_asyaml_comment")), asB...)
-	if err := fileutils.WriteFile(configPath, asB); err != nil {
-		return "", errs.Wrap(err, "Could not write to activestate.yaml")
+	appendB := locale.T("projectmigration_asyaml_comment")
+	if !bytes.Contains(asB, []byte(appendB)) {
+		asB = append([]byte(locale.T("projectmigration_asyaml_comment")), asB...)
+		if err := fileutils.WriteFile(configPath, asB); err != nil {
+			return "", errs.Wrap(err, "Could not write to activestate.yaml")
+		}
 	}
-
-	if !strfmt.IsUUID(m.proj.LegacyCommitID()) {
-		return "", locale.NewInputError("err_commit_id_invalid", m.proj.LegacyCommitID())
-	}
-
+	
 	return strfmt.UUID(m.proj.LegacyCommitID()), nil
 }
 
