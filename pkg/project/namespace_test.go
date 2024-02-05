@@ -19,8 +19,11 @@ func TestParseNamespace(t *testing.T) {
 	_, err := ParseNamespace("valid/namespace")
 	assert.NoError(t, err, "should parse a valid namespace")
 
-	_, err = ParseNamespace("valid/namespace#a10-b11c12-d13e14-f15")
+	_, err = ParseNamespace("valid/namespace#00000000-0000-0000-0000-000000000000")
 	assert.NoError(t, err, "should parse a valid namespace with 'uuid'")
+
+	_, err = ParseNamespace("valid/namespace#a10-b11c12-d13e14-f15")
+	assert.Error(t, err, "should fail to parse an invalid 'uuid'")
 
 	_, err = ParseNamespace("valid/namespace#")
 	assert.NoError(t, err, "should parse a valid namespace with empty uuid")
