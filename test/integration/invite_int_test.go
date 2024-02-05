@@ -18,7 +18,7 @@ func (suite *InviteIntegrationTestSuite) TestInvite_NotAuthenticated() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/Invite-Test", "")
+	ts.PrepareProject("ActiveState-CLI/Invite-Test", "00000000-0000-0000-0000-000000000000")
 
 	cp := ts.Spawn("invite", "test-user@test.com")
 	cp.Expect("You need to authenticate")

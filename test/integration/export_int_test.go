@@ -21,7 +21,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_Export() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("cli-integration-tests/Export", "")
+	ts.PrepareProject("cli-integration-tests/Export", "efe4433a-4c27-4b13-b27f-da0b3646d98e")
 	cp := ts.Spawn("export", "recipe")
 	cp.Expect("{\"camel_flags\":")
 	cp.ExpectExitCode(0)
@@ -32,7 +32,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_ExportArg() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("cli-integration-tests/Export", "")
+	ts.PrepareProject("cli-integration-tests/Export", "efe4433a-4c27-4b13-b27f-da0b3646d98e")
 	cp := ts.Spawn("export", "recipe")
 	cp.Expect("{\"camel_flags\":")
 	cp.ExpectExitCode(0)
@@ -43,7 +43,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_ExportPlatform() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("cli-integration-tests/Export", "")
+	ts.PrepareProject("cli-integration-tests/Export", "efe4433a-4c27-4b13-b27f-da0b3646d98e")
 	cp := ts.Spawn("export", "recipe", "--platform", "linux")
 	cp.Expect("{\"camel_flags\":")
 	cp.ExpectExitCode(0)
@@ -54,7 +54,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_InvalidPlatform() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("cli-integration-tests/Export", "")
+	ts.PrepareProject("cli-integration-tests/Export", "efe4433a-4c27-4b13-b27f-da0b3646d98e")
 	cp := ts.Spawn("export", "recipe", "--platform", "junk")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
@@ -65,7 +65,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_ConfigDir() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("cli-integration-tests/Export", "")
+	ts.PrepareProject("cli-integration-tests/Export", "00000000-0000-0000-0000-000000000000")
 	cp := ts.Spawn("export", "config", "--filter", "junk")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
@@ -76,7 +76,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_Config() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("cli-integration-tests/Export", "")
+	ts.PrepareProject("cli-integration-tests/Export", "00000000-0000-0000-0000-000000000000")
 	cp := ts.Spawn("export", "config")
 	cp.Expect(`dir: `)
 	cp.Expect(ts.Dirs.Config, termtest.OptExpectTimeout(time.Second))

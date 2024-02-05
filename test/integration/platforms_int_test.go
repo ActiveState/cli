@@ -19,7 +19,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_searchSimple() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("cli-integration-tests/ExercisePlatforms", "")
+	ts.PrepareProject("cli-integration-tests/ExercisePlatforms", "00000000-0000-0000-0000-000000000000")
 
 	cp := ts.Spawn("platforms", "search")
 	expectations := []string{
@@ -41,7 +41,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_listSimple() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("cli-integration-tests/ExercisePlatforms", "")
+	ts.PrepareProject("cli-integration-tests/ExercisePlatforms", "f5a2494d-1b76-4a77-bafa-97b3562c5304")
 
 	cmds := [][]string{
 		[]string{"platforms"},

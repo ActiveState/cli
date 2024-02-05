@@ -36,7 +36,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_listNoCommitID() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/Languages", "")
+	ts.PrepareProject("ActiveState-CLI/Languages", "00000000-0000-0000-0000-000000000000")
 
 	cp := ts.Spawn("languages")
 	cp.ExpectNotExitCode(0)
@@ -101,7 +101,7 @@ func (suite *LanguagesIntegrationTestSuite) TestJSON() {
 	cp = ts.Spawn("languages", "search", "--output", "json")
 	cp.Expect(`[{"name":"perl","version":`)
 	cp.ExpectExitCode(0)
-	//AssertValidJSON(suite.T(), cp) // currently too big to fit in the terminal window for validation
+	// AssertValidJSON(suite.T(), cp) // currently too big to fit in the terminal window for validation
 }
 
 func (suite *LanguagesIntegrationTestSuite) TestSearch() {
