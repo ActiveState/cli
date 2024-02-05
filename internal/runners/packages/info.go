@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
@@ -63,7 +64,12 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 		ns = ptr.To(model.NewNamespacePkgOrBundle(language, nstype))
 	}
 
-	packages, err := model.SearchIngredientsStrict(ns.String(), params.Package.Name, true, true, params.Timestamp.Time)
+	normalized, err := model.FetchNormalizedName(*ns, params.Package.Name)
+	if err != nil {
+		multilog.Error("Failed to normalize '%s': %v", params.Package.Name, err)
+	}
+
+	packages, err := model.SearchIngredientsStrict(ns.String(), normalized, false, false, params.Timestamp.Time) // ideally case-sensitive would be true (PB-4371)
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 	}
