@@ -164,11 +164,20 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		return "", errs.Wrap(err, "Could not create local commit file")
 	}
 	if emptyDir || fileutils.DirExists(filepath.Join(path, ".git")) {
-		err = localcommit.AddToGitIgnore(path)
-		if err != nil {
-			r.Outputer.Notice(locale.Tr("notice_commit_id_gitignore", constants.ProjectConfigDirName, constants.CommitIdFileName))
-			multilog.Error("Unable to add local commit file to .gitignore: %v", err)
-		}
+		fileutils.MkdirUnlessExists(filepath.Join(path, ".git", "hooks"))
+		fileutils.WriteFile(filepath.Join(path, ".git", "hooks", "pre-commit"), []byte(`#!/bin/sh
+
+echo "running pre-commit git hook"
+
+if git diff --name-only HEAD@{1} HEAD -- | grep -q 'buildscript.as'; then
+	echo "buildscript.as changed, running 'state commit'"
+	/c/users/me/cli/build/state.exe commit
+	if [ ! -z "`+"`git diff .activestate/commit`"+`" ]; then
+		echo "adding new commit id"
+		git add .activestate/commit
+	fi
+fi
+		`))
 	}
 
 	return path, nil
