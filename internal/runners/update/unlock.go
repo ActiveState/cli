@@ -56,12 +56,15 @@ func (u *Unlock) Run(params *UnlockParams) error {
 		multilog.Error("Failed to invalidate installer version lock on `state update lock` invocation: %v", err)
 	}
 
+	err = u.cfg.Set(constants.AutoUpdateConfigKey, "true")
+	if err != nil {
+		return locale.WrapError(err, "err_unlock_enable_autoupdate", "Unable to re-enable automatic updates prior to unlocking")
+	}
+
 	err = projectfile.RemoveLockInfo(u.project.Source().Path())
 	if err != nil {
 		return locale.WrapError(err, "err_update_projectfile", "Could not update projectfile")
 	}
-
-	u.cfg.Set(constants.AutoUpdateConfigKey, "true")
 
 	u.out.Notice(locale.Tl("version_unlocked", "State Tool version unlocked"))
 	return nil

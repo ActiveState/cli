@@ -104,12 +104,15 @@ func (l *Lock) Run(params *LockParams) error {
 		lockVersion = exactVersion
 	}
 
+	err = l.cfg.Set(constants.AutoUpdateConfigKey, "false")
+	if err != nil {
+		return locale.WrapError(err, "err_lock_disable_autoupdate", "Unable to disable automatic updates prior to locking")
+	}
+
 	err = projectfile.AddLockInfo(l.project.Source().Path(), channel, lockVersion)
 	if err != nil {
 		return locale.WrapError(err, "err_update_projectfile", "Could not update projectfile")
 	}
-
-	l.cfg.Set(constants.AutoUpdateConfigKey, "false")
 
 	l.out.Print(output.Prepare(
 		locale.Tl("version_locked", "Version locked at {{.V0}}@{{.V1}}", channel, lockVersion),
