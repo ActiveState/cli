@@ -1,6 +1,7 @@
 package update
 
 import (
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
@@ -59,6 +60,8 @@ func (u *Unlock) Run(params *UnlockParams) error {
 	if err != nil {
 		return locale.WrapError(err, "err_update_projectfile", "Could not update projectfile")
 	}
+
+	u.cfg.Set(constants.AutoUpdateConfigKey, "true")
 
 	u.out.Notice(locale.Tl("version_unlocked", "State Tool version unlocked"))
 	return nil

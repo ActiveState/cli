@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -107,6 +108,8 @@ func (l *Lock) Run(params *LockParams) error {
 	if err != nil {
 		return locale.WrapError(err, "err_update_projectfile", "Could not update projectfile")
 	}
+
+	l.cfg.Set(constants.AutoUpdateConfigKey, "false")
 
 	l.out.Print(output.Prepare(
 		locale.Tl("version_locked", "Version locked at {{.V0}}@{{.V1}}", channel, lockVersion),
