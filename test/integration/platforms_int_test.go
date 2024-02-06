@@ -19,7 +19,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_searchSimple() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("cli-integration-tests/ExercisePlatforms", "00000000-0000-0000-0000-000000000000")
+	ts.PrepareProject("cli-integration-tests/ExercisePlatforms", e2e.CommitIDNotChecked)
 
 	cp := ts.Spawn("platforms", "search")
 	expectations := []string{

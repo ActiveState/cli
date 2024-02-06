@@ -65,7 +65,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_ConfigDir() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("cli-integration-tests/Export", "00000000-0000-0000-0000-000000000000")
+	ts.PrepareProject("cli-integration-tests/Export", e2e.CommitIDNotChecked)
 	cp := ts.Spawn("export", "config", "--filter", "junk")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
@@ -76,7 +76,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_Config() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("cli-integration-tests/Export", "00000000-0000-0000-0000-000000000000")
+	ts.PrepareProject("cli-integration-tests/Export", e2e.CommitIDNotChecked)
 	cp := ts.Spawn("export", "config")
 	cp.Expect(`dir: `)
 	cp.Expect(ts.Dirs.Config, termtest.OptExpectTimeout(time.Second))

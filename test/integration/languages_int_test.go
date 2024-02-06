@@ -36,7 +36,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_listNoCommitID() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/Languages", "00000000-0000-0000-0000-000000000000")
+	ts.PrepareProject("ActiveState-CLI/Languages", e2e.CommitIDNotChecked)
 
 	cp := ts.Spawn("languages")
 	cp.ExpectNotExitCode(0)

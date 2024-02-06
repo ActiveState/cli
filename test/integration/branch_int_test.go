@@ -29,7 +29,7 @@ func (suite *BranchIntegrationTestSuite) TestBranch_List() {
 	cp.Expect("To switch to another branch,")
 	cp.ExpectExitCode(0)
 
-	ts.PrepareProject("ActiveState-CLI/small-python", "00000000-0000-0000-0000-000000000000")
+	ts.PrepareProject("ActiveState-CLI/small-python", e2e.CommitIDNotChecked)
 	cp = ts.Spawn("branch")
 	cp.Expect("main")
 	suite.Assert().NotContains(cp.Snapshot(), "To switch to another branch,") // only shows when multiple branches are listed
@@ -42,7 +42,7 @@ func (suite *BranchIntegrationTestSuite) TestBranch_Add() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/Branch", "00000000-0000-0000-0000-000000000000")
+	ts.PrepareProject("ActiveState-CLI/Branch", e2e.CommitIDNotChecked)
 
 	ts.LoginAsPersistentUser()
 
