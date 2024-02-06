@@ -67,6 +67,7 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	normalized, err := model.FetchNormalizedName(*ns, params.Package.Name)
 	if err != nil {
 		multilog.Error("Failed to normalize '%s': %v", params.Package.Name, err)
+		normalized = params.Package.Name
 	}
 
 	packages, err := model.SearchIngredientsStrict(ns.String(), normalized, false, false, params.Timestamp.Time) // ideally case-sensitive would be true (PB-4371)
