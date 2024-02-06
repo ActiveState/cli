@@ -117,9 +117,9 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Download() {
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("builds", "dl", "1f924587", "."),
 	)
-	cp.Expect("Downloaded", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Downloaded sqlite3", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
-	require.FileExists(suite.T(), filepath.Join(ts.Dirs.Work, "activestate-cli-python-with-custom-builds-docker-993454c7.tar.gz"))
+	require.FileExists(suite.T(), filepath.Join(ts.Dirs.Work, "artifact.tar.gz"))
 }
 
 func TestBuildsIntegrationTestSuite(t *testing.T) {
