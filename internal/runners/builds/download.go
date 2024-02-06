@@ -152,9 +152,11 @@ func (d *Download) downloadArtifact(artifact *artifact.Artifact, targetDir strin
 	}
 
 	var downloadBar *mpb.Bar
+	var downloadSize int
 	b, err := httputil.GetWithProgress(artifactURL.String(), &rtProgress.Report{
 		ReportSizeCb: func(size int) error {
 			downloadBar = pg.AddBar(int64(size), options...)
+			downloadSize = size
 			return nil
 		},
 		ReportIncrementCb: func(inc int) error {
@@ -170,7 +172,7 @@ func (d *Download) downloadArtifact(artifact *artifact.Artifact, targetDir strin
 	// The download bar is complete at this point. It must be removed
 	// so that the Wait call does not hang.
 	if !downloadBar.Completed() {
-		downloadBar.Abort(false)
+		downloadBar.IncrBy(downloadSize - int(downloadBar.Current()))
 	}
 	pg.Wait()
 
