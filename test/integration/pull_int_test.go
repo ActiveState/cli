@@ -35,10 +35,6 @@ func (suite *PullIntegrationTestSuite) TestPull() {
 	cp.Expect("activestate.yaml has been updated")
 	cp.ExpectExitCode(0)
 
-	projectConfigDir := filepath.Join(ts.Dirs.Work, constants.ProjectConfigDirName)
-	suite.Require().True(fileutils.DirExists(projectConfigDir))
-	suite.Assert().True(fileutils.FileExists(filepath.Join(projectConfigDir, constants.CommitIdFileName)))
-
 	suite.assertMergeStrategyNotification(ts, string(bpModel.MergeCommitStrategyFastForward))
 
 	cp = ts.Spawn("pull")
@@ -48,37 +44,29 @@ func (suite *PullIntegrationTestSuite) TestPull() {
 
 func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	suite.OnlyRunForTags(tagsuite.Pull)
-	projectLine := "project: https://platform.activestate.com/ActiveState-CLI/cli"
 	unPulledCommit := "882ae76e-fbb7-4989-acc9-9a8b87d49388"
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	wd := filepath.Join(ts.Dirs.Work, "cli")
-	pjfilepath := filepath.Join(ts.Dirs.Work, "cli", constants.ConfigFileName)
-	err := fileutils.WriteFile(pjfilepath, []byte(projectLine))
-	suite.Require().NoError(err)
-	commitIdFile := filepath.Join(ts.Dirs.Work, "cli", constants.ProjectConfigDirName, constants.CommitIdFileName)
-	err = fileutils.WriteFile(commitIdFile, []byte(unPulledCommit))
-	suite.Require().NoError(err)
+	ts.PrepareProject("ActiveState-CLI/cli", unPulledCommit)
 
 	ts.LoginAsPersistentUser()
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("push"), e2e.OptWD(wd))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
 	cp.Expect("Your project has new changes available")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 
-	cp = ts.SpawnWithOpts(e2e.OptArgs("pull"), e2e.OptWD(wd))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("pull"))
 	cp.Expect("Merging history")
 	cp.ExpectExitCode(0)
 
 	exe := ts.ExecutablePath()
 	if runtime.GOOS == "windows" {
-		wd = filepath.ToSlash(wd)
 		exe = filepath.ToSlash(exe)
 	}
-	cp = ts.SpawnCmd("bash", "-c", fmt.Sprintf("cd %s && %s history | head -n 10", wd, exe))
+	cp = ts.SpawnCmd("bash", "-c", fmt.Sprintf("%s history | head -n 10", exe))
 	cp.Expect("Merged")
 	cp.ExpectExitCode(0)
 

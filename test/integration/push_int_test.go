@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -358,20 +357,15 @@ func (suite *PushIntegrationTestSuite) TestPush_PullNeeded() {
 
 func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
 	suite.OnlyRunForTags(tagsuite.Push)
-	projectLine := "project: https://platform.activestate.com/ActiveState-CLI/cli?branch=main"
 	unPushedCommit := "882ae76e-fbb7-4989-acc9-9a8b87d49388"
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	wd := filepath.Join(ts.Dirs.Work, "cli")
-	pjfilepath := filepath.Join(ts.Dirs.Work, "cli", constants.ConfigFileName)
-	suite.Require().NoError(fileutils.WriteFile(pjfilepath, []byte(projectLine)))
-	commitIdFile := filepath.Join(ts.Dirs.Work, "cli", constants.ProjectConfigDirName, constants.CommitIdFileName)
-	suite.Require().NoError(fileutils.WriteFile(commitIdFile, []byte(unPushedCommit)))
+	ts.PrepareProject("ActiveState-CLI/cli", unPushedCommit)
 
 	ts.LoginAsPersistentUser()
-	cp := ts.SpawnWithOpts(e2e.OptArgs("push"), e2e.OptWD(wd))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
 	cp.Expect("Your project has new changes available")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
