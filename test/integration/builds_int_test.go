@@ -115,7 +115,7 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Download() {
 	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("builds", "dl", "16291D17", "."),
+		e2e.OptArgs("builds", "dl", "1f924587", "."),
 	)
 	cp.Expect("Downloaded", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
