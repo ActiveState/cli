@@ -226,3 +226,23 @@ type SolveSuccess struct{}
 func (SolveSuccess) IsEvent() Event {
 	return Event{}
 }
+
+type RuntimeInUseCheckStart struct{}
+
+func (RuntimeInUseCheckStart) IsEvent() Event {
+	return Event{}
+}
+
+type RuntimeInUseCheckError struct {
+	Error error
+}
+
+func (RuntimeInUseCheckError) IsEvent() Event {
+	return Event{}
+}
+
+type RuntimeInUseCheckSuccess struct{}
+
+func (RuntimeInUseCheckSuccess) IsEvent() Event {
+	return Event{}
+}

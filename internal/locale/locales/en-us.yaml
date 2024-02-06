@@ -1259,6 +1259,8 @@ setup_runtime:
   other: "Setting Up Runtime"
 progress_solve:
   other: "Resolving Dependencies"
+progress_runtime_in_use_check:
+  other: Verifying runtime executables are not currently in use
 additional_dependencies:
   other: Installing [ACTIONABLE]{{.V0}}@{{.V1}}[/RESET] includes [ACTIONABLE]{{.V2}}[/RESET] direct dependencies.
 additional_total_dependencies:

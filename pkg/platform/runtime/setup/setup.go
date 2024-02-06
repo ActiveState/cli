@@ -559,13 +559,22 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	// If artifacts are being installed over existing artifacts in this runtime, verify the runtime is
 	// not currently in use.
 	if oldBuildPlan != nil && len(artifactsToInstall) > 0 && fileutils.DirExists(s.target.Dir()) {
+		if err := s.handleEvent(events.RuntimeInUseCheckStart{}); err != nil {
+			return nil, nil, errs.Wrap(err, "Could not handle RuntimeInUseCheckStart event")
+		}
 		procs := osutils.GetProcessesInUse(s.target.Dir())
 		if len(procs) > 0 {
 			list := []string{}
 			for exe, pid := range procs {
 				list = append(list, fmt.Sprintf("   - %s (process: %d)", exe, pid))
 			}
+			if err := s.handleEvent(events.RuntimeInUseCheckError{}); err != nil {
+				return nil, nil, errs.Wrap(err, "Could not handle RuntimeInUseCheckError event")
+			}
 			return nil, nil, &RuntimeInUseError{locale.NewInputError("runtime_setup_in_use_err", "", strings.Join(list, "\n")), procs}
+		}
+		if err := s.handleEvent(events.RuntimeInUseCheckSuccess{}); err != nil {
+			return nil, nil, errs.Wrap(err, "Could not handle RuntimeInUseCheckSuccess event")
 		}
 	}
 

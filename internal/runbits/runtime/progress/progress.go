@@ -173,6 +173,23 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		p.solveSpinner.Stop(locale.T("progress_success"))
 		p.solveSpinner = nil
 
+	case events.RuntimeInUseCheckStart:
+		p.solveSpinner = output.StartSpinner(p.out, locale.T("progress_runtime_in_use_check"), refreshRate)
+
+	case events.RuntimeInUseCheckError:
+		if p.solveSpinner == nil {
+			return errs.New("SolveError called before solveBar was initialized")
+		}
+		p.solveSpinner.Stop(locale.T("progress_fail"))
+		p.solveSpinner = nil
+
+	case events.RuntimeInUseCheckSuccess:
+		if p.solveSpinner == nil {
+			return errs.New("SolveSuccess called before solveBar was initialized")
+		}
+		p.solveSpinner.Stop(locale.T("progress_success"))
+		p.solveSpinner = nil
+
 	case events.BuildSkipped:
 		if p.buildBar != nil {
 			return errs.New("BuildSkipped called, but buildBar was initialized.. this should not happen as they should be mutually exclusive")
