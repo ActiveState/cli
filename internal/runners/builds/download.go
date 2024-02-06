@@ -2,7 +2,6 @@ package builds
 
 import (
 	"context"
-	"io"
 	"net/url"
 	"os"
 	"path"
@@ -118,28 +117,47 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 	return nil
 }
 
-func (d *Download) downloadArtifact(artifact *artifact.Artifact, targetDir string) (rerr error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	var w io.Writer = os.Stdout
-	if d.out.Type() != output.PlainFormatName {
-		w = nil
+type downloadProgress interface {
+	Start(size int64)
+	Inc(inc int)
+	Stop()
+}
+
+type plainDownloadProgress struct {
+	pg           *mpb.Progress
+	bar          *mpb.Bar
+	artifactName string
+}
+
+func newDownloadProgress(ctx context.Context, out output.Outputer, artifactName, downloadPath string) downloadProgress {
+	if out.Type().IsStructured() {
+		return &simpleDownloadProgress{
+			artifactName: artifactName,
+			downloadPath: downloadPath,
+			out:          out,
+		}
 	}
 
 	pg := mpb.NewWithContext(
 		ctx,
-		mpb.WithOutput(w),
+		mpb.WithOutput(os.Stdout),
 		mpb.WithWidth(40),
 		mpb.WithRefreshRate(constants.TerminalAnimationInterval),
 	)
-	defer cancel()
 
-	name := artifact.Name
-	if len(name) > progress.MaxNameWidth() {
-		name = name[0:progress.MaxNameWidth()]
+	if len(artifactName) > progress.MaxNameWidth() {
+		artifactName = artifactName[0:progress.MaxNameWidth()]
 	}
 
+	return &plainDownloadProgress{
+		pg:           pg,
+		artifactName: artifactName,
+	}
+}
+
+func (p *plainDownloadProgress) Start(size int64) {
 	prependDecorators := []decor.Decorator{
-		decor.Name(name, decor.WC{W: progress.MaxNameWidth(), C: decor.DidentRight}),
+		decor.Name(p.artifactName, decor.WC{W: progress.MaxNameWidth(), C: decor.DidentRight}),
 		decor.OnComplete(
 			decor.Spinner(output.SpinnerFrames, decor.WCSyncSpace), "",
 		),
@@ -154,19 +172,51 @@ func (d *Download) downloadArtifact(artifact *artifact.Artifact, targetDir strin
 		),
 	}
 
+	p.bar = p.pg.AddBar(size, options...)
+}
+
+func (p *plainDownloadProgress) Inc(inc int) {
+	p.bar.IncrBy(inc)
+}
+
+func (p *plainDownloadProgress) Stop() {
+	p.pg.Wait()
+}
+
+type simpleDownloadProgress struct {
+	spinner      *output.Spinner
+	artifactName string
+	downloadPath string
+	out          output.Outputer
+}
+
+func (p *simpleDownloadProgress) Start(_ int64) {
+	p.spinner = output.StartSpinner(p.out, "Downloading", constants.TerminalAnimationInterval)
+}
+
+func (p *simpleDownloadProgress) Inc(inc int) {}
+
+func (p *simpleDownloadProgress) Stop() {
+	p.spinner.Stop(locale.Tl("msg_download_success", "[SUCCESS]Downloaded {{.V0}} to {{.V1}}[/RESET]", p.artifactName, p.downloadPath))
+}
+
+func (d *Download) downloadArtifact(artifact *artifact.Artifact, targetDir string) (rerr error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	pg := newDownloadProgress(ctx, d.out, artifact.Name, targetDir)
+	defer cancel()
+
 	artifactURL, err := url.Parse(artifact.URL)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse artifact URL %s.", artifact.URL)
 	}
 
-	var downloadBar *mpb.Bar
 	b, err := httputil.GetWithProgress(artifactURL.String(), &rtProgress.Report{
 		ReportSizeCb: func(size int) error {
-			downloadBar = pg.AddBar(int64(size), options...)
+			pg.Start(int64(size))
 			return nil
 		},
 		ReportIncrementCb: func(inc int) error {
-			downloadBar.IncrBy(inc)
+			pg.Inc(inc)
 			return nil
 		},
 	})
