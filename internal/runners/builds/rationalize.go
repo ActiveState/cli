@@ -8,10 +8,8 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 )
 
-func rationalizeError(err *error) {
+func rationalizeCommonError(err *error) {
 	switch {
-	case err == nil:
-		return
 	case errors.Is(*err, rationalize.ErrNoProject):
 		*err = errs.WrapUserFacing(*err,
 			locale.Tr("err_no_project"),

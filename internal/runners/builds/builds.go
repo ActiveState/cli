@@ -75,8 +75,17 @@ func New(p primeable) *Builds {
 	}
 }
 
+func rationalizeBuildsError(err *error) {
+	switch {
+	case err == nil:
+		return
+	default:
+		rationalizeCommonError(err)
+	}
+}
+
 func (b *Builds) Run(params *Params) (rerr error) {
-	defer rationalizeError(&rerr)
+	defer rationalizeBuildsError(&rerr)
 
 	if b.project == nil {
 		return rationalize.ErrNoProject

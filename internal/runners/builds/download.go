@@ -57,8 +57,17 @@ func NewDownload(prime primeable) *Download {
 	}
 }
 
+func rationalizeDownloadError(err *error) {
+	switch {
+	case err == nil:
+		return
+	default:
+		rationalizeCommonError(err)
+	}
+}
+
 func (d *Download) Run(params *DownloadParams) (rerr error) {
-	defer rationalizeError(&rerr)
+	defer rationalizeDownloadError(&rerr)
 
 	if d.project == nil {
 		return rationalize.ErrNoProject
@@ -132,7 +141,7 @@ func (d *Download) downloadArtifact(artifact *artifact.Artifact, targetDir strin
 	prependDecorators := []decor.Decorator{
 		decor.Name(name, decor.WC{W: progress.MaxNameWidth(), C: decor.DidentRight}),
 		decor.OnComplete(
-			decor.Spinner(progress.SpinnerFrames, decor.WCSyncSpace), "",
+			decor.Spinner(output.SpinnerFrames, decor.WCSyncSpace), "",
 		),
 		decor.CountersKiloByte("%.1f/%.1f", decor.WC{W: 17}),
 	}

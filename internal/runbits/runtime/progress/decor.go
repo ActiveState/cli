@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/termutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/vbauerster/mpb/v7"
@@ -15,8 +16,6 @@ import (
 )
 
 const progressBarWidth = 40
-
-var SpinnerFrames = []string{`|`, `/`, `-`, `\`}
 
 var refreshRate = constants.TerminalAnimationInterval
 
@@ -60,7 +59,7 @@ func (p *ProgressDigester) addSpinnerBar(name string, options ...mpb.BarOption) 
 	logging.Debug("Adding spinner bar: %s", name)
 	return &bar{
 		p.mainProgress.Add(1,
-			mpb.NewBarFiller(mpb.SpinnerStyle(SpinnerFrames...)),
+			mpb.NewBarFiller(mpb.SpinnerStyle(output.SpinnerFrames...)),
 			append(options,
 				mpb.BarFillerClearOnComplete(),
 				mpb.PrependDecorators(
@@ -130,7 +129,7 @@ func (p *ProgressDigester) addBar(name string, total int64, countsBytes bool, op
 	prependDecorators := []decor.Decorator{
 		decor.Name(name, decor.WC{W: p.maxNameWidth, C: decor.DidentRight}),
 		decor.OnComplete(
-			decor.Spinner(SpinnerFrames, decor.WCSyncSpace), "",
+			decor.Spinner(output.SpinnerFrames, decor.WCSyncSpace), "",
 		),
 	}
 	if countsBytes {
