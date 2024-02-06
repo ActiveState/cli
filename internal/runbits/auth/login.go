@@ -214,26 +214,27 @@ func authenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 	}
 
 	verificationURL := *response.VerificationURIComplete
+	parsedURL, err := url.Parse(verificationURL)
+	if err != nil {
+		return errs.Wrap(err, "Verification URL is not valid")
+	}
 	if signup {
 		// verificationURL is of the form:
 		//   https://platform.activestate.com/authorize/device?user-code=...
 		// Transform it to the form:
 		//   https://platform.activestate.com/create-account?nextRoute=%2Fauthorize%2Fdevice%3Fuser-code%3D...
-		parsedURL, err := url.Parse(verificationURL)
-		if err != nil {
-			return errs.Wrap(err, "Verification URL is not valid")
-		}
-
 		signupURL := api.GetPlatformURL(constants.PlatformSignupPath)
 		query := signupURL.Query()
 		query.Add("nextRoute", parsedURL.RequestURI())
 		signupURL.RawQuery = query.Encode()
-
-		verificationURL = signupURL.String()
+		parsedURL = signupURL
 	}
 	if webclientId := cfg.GetString(anaConst.CfgSessionToken); webclientId != "" {
-		verificationURL += "&webclient_id=" + webclientId
+		query := parsedURL.Query()
+		query.Add("webclient_id", webclientId)
+		parsedURL.RawQuery = query.Encode()
 	}
+	verificationURL = parsedURL.String()
 
 	// Print code to user
 	if response.UserCode == nil {
