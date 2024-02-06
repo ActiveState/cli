@@ -106,7 +106,7 @@ func (p *nonInteractiveProgress) Start(_ int64) {
 	p.spinner = output.StartSpinner(p.out, locale.Tl("builds_dl_downloading", "Downloading {{.V0}}", p.artifactName), constants.TerminalAnimationInterval)
 }
 
-func (p *nonInteractiveProgress) Inc(inc int) {}
+func (p *nonInteractiveProgress) Inc(_ int) {}
 
 func (p *nonInteractiveProgress) Abort() {}
 
