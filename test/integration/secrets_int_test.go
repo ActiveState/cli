@@ -22,7 +22,7 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("cli-integration-tests/Python3", "")
+	ts.PrepareProject("cli-integration-tests/Python3", "00000000-0000-0000-0000-000000000000")
 
 	secret := secrets.SecretExport{
 		Name:        "test-secret",
