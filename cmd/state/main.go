@@ -30,11 +30,9 @@ import (
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/errors"
-	"github.com/ActiveState/cli/internal/runbits/legacy/projectmigration"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcctl"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -198,10 +196,6 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 	// Set up prompter
 	prompter := prompt.New(isInteractive, an)
-
-	// This is an anti-pattern. DO NOT DO THIS! For legacy migration use only.
-	migrator := projectmigration.New(out, pj)
-	localcommit.RegisterMigrator(migrator)
 
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)
