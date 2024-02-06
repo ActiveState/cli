@@ -115,9 +115,9 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Download() {
 	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("builds", "dl", "1f924587", "."),
+		e2e.OptArgs("builds", "dl", "a46a74e9", "."),
 	)
-	cp.Expect("Downloaded sqlite3", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Downloaded bzip2", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	require.FileExists(suite.T(), filepath.Join(ts.Dirs.Work, "artifact.tar.gz"))
 }
