@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"time"
 
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
@@ -108,7 +109,7 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 
 	switch choice {
 	case locale.T("prompt_login_browser_action"):
-		if err := AuthenticateWithBrowser(out, auth, prompt); err != nil {
+		if err := AuthenticateWithBrowser(out, auth, prompt, cfg); err != nil {
 			return errs.Wrap(err, "Authenticate failed")
 		}
 	case locale.T("prompt_login_action"):
@@ -116,7 +117,7 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 			return errs.Wrap(err, "Authenticate failed")
 		}
 	case locale.T("prompt_signup_browser_action"):
-		if err := SignupWithBrowser(out, auth, prompt); err != nil {
+		if err := SignupWithBrowser(out, auth, prompt, cfg); err != nil {
 			return errs.Wrap(err, "Signup failed")
 		}
 	}
@@ -188,10 +189,10 @@ func promptToken(credentials *mono_models.Credentials, out output.Outputer, prom
 }
 
 // AuthenticateWithBrowser attempts to authenticate this device with the Platform.
-func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth, prompt prompt.Prompter) error {
+func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth, prompt prompt.Prompter, cfg keypairs.Configurable) error {
 	logging.Debug("Authenticating with browser")
 
-	err := authenticateWithBrowser(out, auth, prompt, false)
+	err := authenticateWithBrowser(out, auth, prompt, cfg, false)
 	if err != nil {
 		return errs.Wrap(err, "Error authenticating with browser")
 	}
@@ -202,7 +203,7 @@ func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 }
 
 // authenticateWithBrowser authenticates after signup if applicable.
-func authenticateWithBrowser(out output.Outputer, auth *authentication.Auth, prompt prompt.Prompter, signup bool) error {
+func authenticateWithBrowser(out output.Outputer, auth *authentication.Auth, prompt prompt.Prompter, cfg keypairs.Configurable, signup bool) error {
 	response, err := model.RequestDeviceAuthorization()
 	if err != nil {
 		return locale.WrapError(err, "err_auth_device")
@@ -213,23 +214,27 @@ func authenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 	}
 
 	verificationURL := *response.VerificationURIComplete
+	parsedURL, err := url.Parse(verificationURL)
+	if err != nil {
+		return errs.Wrap(err, "Verification URL is not valid")
+	}
 	if signup {
 		// verificationURL is of the form:
 		//   https://platform.activestate.com/authorize/device?user-code=...
 		// Transform it to the form:
 		//   https://platform.activestate.com/create-account?nextRoute=%2Fauthorize%2Fdevice%3Fuser-code%3D...
-		parsedURL, err := url.Parse(verificationURL)
-		if err != nil {
-			return errs.Wrap(err, "Verification URL is not valid")
-		}
-
 		signupURL := api.GetPlatformURL(constants.PlatformSignupPath)
 		query := signupURL.Query()
 		query.Add("nextRoute", parsedURL.RequestURI())
 		signupURL.RawQuery = query.Encode()
-
-		verificationURL = signupURL.String()
+		parsedURL = signupURL
 	}
+	if webclientId := cfg.GetString(anaConst.CfgSessionToken); webclientId != "" {
+		query := parsedURL.Query()
+		query.Add("webclient_id", webclientId)
+		parsedURL.RawQuery = query.Encode()
+	}
+	verificationURL = parsedURL.String()
 
 	// Print code to user
 	if response.UserCode == nil {

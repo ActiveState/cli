@@ -29,5 +29,5 @@ func (s *Signup) Run(params *SignupParams) error {
 		return locale.NewInputError("err_auth_authenticated", "You are already authenticated as: {{.V0}}. You can log out by running '[ACTIONABLE]state auth logout[/RESET]'.", s.Auth.WhoAmI())
 	}
 
-	return auth.SignupWithBrowser(s.Outputer, s.Auth, s.Prompter)
+	return auth.SignupWithBrowser(s.Outputer, s.Auth, s.Prompter, s.Configurable)
 }
