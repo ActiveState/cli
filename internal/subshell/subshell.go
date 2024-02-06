@@ -84,12 +84,6 @@ type SubShell interface {
 
 	// IsAvailable returns whether the shell is available on the system
 	IsAvailable() bool
-
-	// TurnOffEcho turns off input echoing.
-	TurnOffEcho()
-
-	// TurnOnEcho turns on input echoing.
-	TurnOnEcho()
 }
 
 // New returns the subshell relevant to the current process, but does not activate it
