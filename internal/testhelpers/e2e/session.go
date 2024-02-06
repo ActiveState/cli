@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
@@ -326,7 +327,9 @@ func (s *Session) PrepareActiveStateYAML(contents string) {
 }
 
 func (s *Session) PrepareCommitIdFile(commitID string) {
-	require.NoError(s.T, fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.ProjectConfigDirName, constants.CommitIdFileName), []byte(commitID)))
+	pjfile, err := projectfile.Parse(filepath.Join(s.Dirs.Work, constants.ConfigFileName))
+	require.NoError(s.T, err)
+	require.NoError(s.T, pjfile.SetLegacyCommit(commitID))
 }
 
 // PrepareProject creates a very simple activestate.yaml file for the given org/project and, if a
