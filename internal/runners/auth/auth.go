@@ -95,7 +95,7 @@ func (a *Auth) authenticate(params *AuthParams) error {
 		return locale.NewInputError("err_auth_needinput")
 	}
 
-	return auth.AuthenticateWithBrowser(a.Outputer, a.Auth, a.Prompter)
+	return auth.AuthenticateWithBrowser(a.Outputer, a.Auth, a.Prompter, a.Cfg)
 }
 
 func (a *Auth) verifyAuthentication() error {

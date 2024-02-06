@@ -1,6 +1,7 @@
 package update
 
 import (
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
@@ -53,6 +54,11 @@ func (u *Unlock) Run(params *UnlockParams) error {
 	err := u.cfg.Set(updater.CfgKeyInstallVersion, "")
 	if err != nil {
 		multilog.Error("Failed to invalidate installer version lock on `state update lock` invocation: %v", err)
+	}
+
+	err = u.cfg.Set(constants.AutoUpdateConfigKey, "true")
+	if err != nil {
+		return locale.WrapError(err, "err_unlock_enable_autoupdate", "Unable to re-enable automatic updates prior to unlocking")
 	}
 
 	err = projectfile.RemoveLockInfo(u.project.Source().Path())
