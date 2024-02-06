@@ -348,7 +348,11 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	pathList, ok := env["PATH"]
 	inPathList, err := fileutils.PathInList(listSep, pathList, currExecAbsDir)
 	if !ok || !inPathList {
-		rcData["ExecAlias"] = currExec // alias {ExecName}={ExecAlias}
+		safeExec := currExec
+		if strings.ContainsAny(currExec, " ") {
+			safeExec = fmt.Sprintf(`"%s"`, currExec) // quote for alias
+		}
+		rcData["ExecAlias"] = safeExec // alias {ExecName}={ExecAlias}
 	}
 
 	t := template.New("rcfile")
