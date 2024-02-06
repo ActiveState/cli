@@ -23,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
@@ -108,11 +107,6 @@ func (a *ArtifactSetupErrors) LocalizedError() string {
 // ProgressReportError designates an error in the event handler for reporting progress.
 type ProgressReportError struct {
 	*errs.WrapperError
-}
-
-type RuntimeInUseError struct {
-	*locale.LocalizedError
-	Processes map[string]int32 // exe path to process ID
 }
 
 type Targeter interface {
@@ -206,15 +200,6 @@ func (s *Setup) Update() (rerr error) {
 	// paths like "/." and "/opt/.." resolve to simply "/" at this time.
 	if rt.GOOS != "windows" && s.target.Dir() == "/" {
 		return locale.NewInputError("err_runtime_setup_root", "Cannot set up a runtime in the root directory. Please specify or run from a user-writable directory.")
-	}
-
-	procs := osutils.GetProcessesInUse(ExecDir(s.target.Dir()))
-	if len(procs) > 0 {
-		list := []string{}
-		for exe, pid := range procs {
-			list = append(list, fmt.Sprintf("   - %s (process: %d)", exe, pid))
-		}
-		return &RuntimeInUseError{locale.NewInputError("runtime_setup_in_use_err", "", strings.Join(list, "\n")), procs}
 	}
 
 	// Update all the runtime artifacts
