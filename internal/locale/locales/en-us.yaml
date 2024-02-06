@@ -1480,13 +1480,6 @@ err_country_blocked:
   other: This service is not available in your region.
 err_commit_id_invalid:
   other: "Expected commit ID to be UUID formatted, but got: {{.V0}}"
-commit_id_gitignore:
-  other: |
-    # Ignore {{.V0}}/{{.V1}} file; tracking this via VCS will cause users to have to resolve redundant conflicts
-    {{.V0}}/{{.V1}}
-notice_commit_id_gitignore:
-  other: |
-    The State Tool created an [ACTIONABLE]{{.V0}}/{{.V1}}[/RESET] file with your project's commit ID, but it was unable to add it to your [ACTIONABLE].gitignore[/RESET] file. Please add it manually.
 err_shortcutdir_writable:
   other: Could not continue as we don't have permission to create [ACTIONABLE]{{.V0}}[/RESET].
 move_prompt:
@@ -1503,21 +1496,6 @@ err_edit_project_mapping:
   other: Could not update project mapping
 notice_runtime_disabled:
   other: Skipping runtime setup because it was disabled by an environment variable
-err_local_commit_file:
-  other: |
-    Could not find or read the commit file for your project at '[ACTIONABLE]{{.V0}}[/RESET]'.
-
-    You can fix this by either running '[ACTIONABLE]state pull[/RESET]' to update to the latest commit, or manually switch to a specific
-    commit by running '[ACTIONABLE]state switch <commit-id>[/RESET]'.
-
-    To view your projects commits run '[ACTIONABLE]state history[/RESET]'.
-
-    Please avoid deleting or editing this file directly.
-projectmigration_asyaml_comment:
-  other: |
-    # Your project field is using the deprecated "commitID" query parameter. You can continue to use it as is, but it is
-    # recommended you drop this query parameter in order to make usage with version control systems easier.
-    # Please ensure that your team and workflows are updated to State Tool version 0.44.0 or later before dropping this field.
 err_searchingredient_toomany:
   other: Too many ingredients match the query '[ACTIONABLE]{{.V0}}[/RESET]', please try to be more specific.
 alternative_unknown_pkg_name:
