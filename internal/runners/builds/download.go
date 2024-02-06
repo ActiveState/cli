@@ -23,9 +23,7 @@ import (
 	auth "github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
 	rtProgress "github.com/ActiveState/cli/pkg/platform/runtime/setup/events/progress"
-	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/vbauerster/mpb/v7"
@@ -73,18 +71,12 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 		return rationalize.ErrNoProject
 	}
 
-	_, err := runtime.NewFromProject(d.project, target.TriggerBuilds, d.analytics, d.svcModel, d.out, d.auth, d.config)
+	rt, err := runtime.NewFromProject(d.project, target.TriggerBuilds, d.analytics, d.svcModel, d.out, d.auth, d.config)
 	if err != nil {
 		return locale.WrapInputError(err, "err_refresh_runtime_new", "Could not update runtime for this project.")
 	}
 
-	runtimeStore := store.New(target.NewProjectTarget(d.project, nil, target.TriggerBuilds).Dir())
-	bp, err := runtimeStore.BuildPlan()
-	if err != nil {
-		return errs.Wrap(err, "Could not get build plan")
-	}
-
-	terminalArtfMap, err := buildplan.NewMapFromBuildPlan(bp, false, false, nil)
+	terminalArtfMap, err := rt.TerminalArtifactMap(false)
 	if err != nil {
 		return errs.Wrap(err, "Could not get build plan map")
 	}
@@ -100,7 +92,7 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 	}
 
 	if artifact == nil {
-		return locale.NewInputError("err_build_id_not_found", "Could not find artifact with ID {{.V0}}", params.BuildID)
+		return locale.NewInputError("err_build_id_not_found", "Could not find artifact with ID: '[ACTIONABLE]{{.V0}}[/RESET]", params.BuildID)
 	}
 
 	targetDir := params.OutputDir
@@ -121,7 +113,7 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 func (d *Download) downloadArtifact(artifact *artifact.Artifact, targetDir string) (rerr error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	var w io.Writer = os.Stdout
-	if d.out.Type() != output.PlainFormatName {
+	if d.out.Type().IsStructured() {
 		w = nil
 	}
 
@@ -171,8 +163,16 @@ func (d *Download) downloadArtifact(artifact *artifact.Artifact, targetDir strin
 		},
 	})
 	if err != nil {
+		// Abort, remove the download bar, and display the error message
+		downloadBar.Abort(true)
 		return errs.Wrap(err, "Download %s failed", artifactURL.String())
 	}
+	// The download bar is complete at this point. It must be removed
+	// so that the Wait call does not hang.
+	if !downloadBar.Completed() {
+		downloadBar.Abort(false)
+	}
+	pg.Wait()
 
 	downloadPath := filepath.Join(targetDir, path.Base(artifactURL.Path))
 	if err := fileutils.WriteFile(downloadPath, b); err != nil {
