@@ -11,6 +11,7 @@ import (
 // Using globals in this way is an anti-pattern, but because the commit mechanic is going through a lot of changes
 // we're currently handling it this way to help further refactors. Once we've landed the go-forward mechanic we should
 // remove this anti-pattern.
+// https://activestatef.atlassian.net/browse/DX-2524
 var proj *project.Project
 
 func setupProject(pjpath string) error {
