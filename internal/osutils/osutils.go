@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"sync"
 
 	"github.com/shirou/gopsutil/v3/process"
 
@@ -139,30 +138,21 @@ func GetProcessesInUse(dir string) map[string]int32 {
 		return inUse
 	}
 
-	var wg sync.WaitGroup
-	var mutex sync.Mutex
 	if runtime.GOOS != "linux" {
 		dir = strings.ToLower(dir) // Windows and macOS filesystems are case-insensitive
 	}
 	for _, p := range procs {
-		wg.Add(1)
-		go func(p *process.Process) {
-			defer wg.Done()
-			exe, err := p.Exe()
-			if err != nil {
-				return // probably a permission error; ignore
-			}
-			exeToCompare := exe
-			if runtime.GOOS != "linux" {
-				exeToCompare = strings.ToLower(exeToCompare) // Windows and macOS filesystems are case-insensitive
-			}
-			if strings.Contains(exeToCompare, dir) {
-				mutex.Lock()
-				inUse[exe] = p.Pid
-				mutex.Unlock()
-			}
-		}(p)
+		exe, err := p.Exe()
+		if err != nil {
+			continue // probably a permission error; ignore
+		}
+		exeToCompare := exe
+		if runtime.GOOS != "linux" {
+			exeToCompare = strings.ToLower(exeToCompare) // Windows and macOS filesystems are case-insensitive
+		}
+		if strings.Contains(exeToCompare, dir) {
+			inUse[exe] = p.Pid
+		}
 	}
-	wg.Wait()
 	return inUse
 }
