@@ -189,11 +189,6 @@ run_description:
   other: Run your project scripts
 scripts_description:
   other: Show project scripts
-runtime_setup_in_use_err:
-  other: |
-    Could not update your runtime as it is currently in use. Please stop any active runtime processes and try again. State Tool found the following processes to be using the runtime:
-
-    {{.V0}}
 runtime_alternative_file_transforms_err:
   other: "Could not apply necessary file transformations after unpacking."
 scripts_no_scripts:
