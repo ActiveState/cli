@@ -332,6 +332,14 @@ func (s *Session) PrepareCommitIdFile(commitID string) {
 	require.NoError(s.T, pjfile.SetLegacyCommit(commitID))
 }
 
+// CommitID is used to grab the current commit ID for the project in our working directory. This is distinct
+// from localcommit.Get() and pjfile.LegacyCommitID() in that it always produces a fresh result from the on-disk file.
+func (s *Session) CommitID() string {
+	pjfile, err := projectfile.Parse(filepath.Join(s.Dirs.Work, constants.ConfigFileName))
+	require.NoError(s.T, err)
+	return pjfile.LegacyCommitID()
+}
+
 // PrepareProject creates a very simple activestate.yaml file for the given org/project and, if a
 // commit ID is given, an .activestate/commit file.
 func (s *Session) PrepareProject(namespace, commitID string) {
