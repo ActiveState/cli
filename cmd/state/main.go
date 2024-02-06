@@ -231,13 +231,11 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	cmds.OnExecStop(msger.OnExecStop)
 
 	if childCmd != nil && !childCmd.SkipChecks() && !out.Type().IsStructured() {
-		if pj == nil || !pj.IsLocked() {
-			// Auto update to latest state tool version
-			if updated, err := autoUpdate(svcmodel, args, cfg, an, out); err == nil && updated {
-				return nil // command will be run by updated exe
-			} else if err != nil {
-				multilog.Error("Failed to autoupdate: %v", err)
-			}
+		// Auto update to latest state tool version
+		if updated, err := autoUpdate(svcmodel, args, cfg, an, out); err == nil && updated {
+			return nil // command will be run by updated exe
+		} else if err != nil {
+			multilog.Error("Failed to autoupdate: %v", err)
 		}
 
 		if childCmd.Name() != "update" && pj != nil && pj.IsLocked() {
