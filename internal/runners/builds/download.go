@@ -2,7 +2,6 @@ package builds
 
 import (
 	"context"
-	"io"
 	"net/url"
 	"os"
 	"path"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/httputil"
@@ -19,15 +17,12 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
-	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
 	auth "github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	rtProgress "github.com/ActiveState/cli/pkg/platform/runtime/setup/events/progress"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/vbauerster/mpb/v7"
-	"github.com/vbauerster/mpb/v7/decor"
 )
 
 type DownloadParams struct {
@@ -112,69 +107,30 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 
 func (d *Download) downloadArtifact(artifact *artifact.Artifact, targetDir string) (rerr error) {
 	ctx, cancel := context.WithCancel(context.Background())
-	var w io.Writer = os.Stdout
-	if d.out.Type().IsStructured() {
-		w = nil
-	}
-
-	pg := mpb.NewWithContext(
-		ctx,
-		mpb.WithOutput(w),
-		mpb.WithWidth(40),
-		mpb.WithRefreshRate(constants.TerminalAnimationInterval),
-	)
+	pg := newDownloadProgress(ctx, d.out, artifact.Name, targetDir)
 	defer cancel()
-
-	name := artifact.Name
-	if len(name) > progress.MaxNameWidth() {
-		name = name[0:progress.MaxNameWidth()]
-	}
-
-	prependDecorators := []decor.Decorator{
-		decor.Name(name, decor.WC{W: progress.MaxNameWidth(), C: decor.DidentRight}),
-		decor.OnComplete(
-			decor.Spinner(output.SpinnerFrames, decor.WCSyncSpace), "",
-		),
-		decor.CountersKiloByte("%.1f/%.1f", decor.WC{W: 17}),
-	}
-
-	options := []mpb.BarOption{
-		mpb.BarFillerClearOnComplete(),
-		mpb.PrependDecorators(prependDecorators...),
-		mpb.AppendDecorators(
-			decor.OnComplete(decor.Percentage(decor.WC{W: 5}), ""),
-		),
-	}
 
 	artifactURL, err := url.Parse(artifact.URL)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse artifact URL %s.", artifact.URL)
 	}
 
-	var downloadBar *mpb.Bar
-	var downloadSize int
 	b, err := httputil.GetWithProgress(artifactURL.String(), &rtProgress.Report{
 		ReportSizeCb: func(size int) error {
-			downloadBar = pg.AddBar(int64(size), options...)
-			downloadSize = size
+			pg.Start(int64(size))
 			return nil
 		},
 		ReportIncrementCb: func(inc int) error {
-			downloadBar.IncrBy(inc)
+			pg.Inc(inc)
 			return nil
 		},
 	})
 	if err != nil {
-		// Abort, remove the download bar, and display the error message
-		downloadBar.Abort(true)
+		// Abort and display the error message
+		pg.Abort()
 		return errs.Wrap(err, "Download %s failed", artifactURL.String())
 	}
-	// The download bar is complete at this point. It must be removed
-	// so that the Wait call does not hang.
-	if !downloadBar.Completed() {
-		downloadBar.IncrBy(downloadSize - int(downloadBar.Current()))
-	}
-	pg.Wait()
+	pg.Stop()
 
 	downloadPath := filepath.Join(targetDir, path.Base(artifactURL.Path))
 	if err := fileutils.WriteFile(downloadPath, b); err != nil {
