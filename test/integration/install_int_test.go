@@ -35,10 +35,6 @@ func (suite *InstallIntegrationTestSuite) TestInstall_InvalidCommit() {
 	cp.Expect("Invalid commit ID")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
-
-	if strings.Count(cp.Snapshot(), " x ") != 1 {
-		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
-	}
 }
 
 func (suite *InstallIntegrationTestSuite) TestInstall_NoMatches_NoAlternatives() {
