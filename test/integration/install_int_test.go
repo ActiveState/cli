@@ -32,7 +32,7 @@ func (suite *InstallIntegrationTestSuite) TestInstall_InvalidCommit() {
 
 	ts.PrepareProject("ActiveState-CLI/small-python", "malformed-commit-id")
 	cp := ts.SpawnWithOpts(e2e.OptArgs("install", "trender"))
-	cp.Expect("Could not find or read the commit file")
+	cp.Expect("Invalid commit ID")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 
