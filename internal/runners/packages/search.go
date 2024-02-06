@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 // SearchRunParams tracks the info required for running search.
@@ -41,37 +42,50 @@ func NewSearch(prime primeable) *Search {
 func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteSearch")
 
-	var ns model.Namespace
-	if params.Ingredient.Namespace == "" {
-		language, err := targetedLanguage(params.Language, s.proj)
-		if err != nil {
-			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
+	v := NewView()
+
+	p := tea.NewProgram(v)
+
+	go func() {
+		var ns model.Namespace
+		if params.Ingredient.Namespace == "" {
+			language, err := targetedLanguage(params.Language, s.proj)
+			if err != nil {
+				v.err = locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
+				return
+			}
+
+			ns = model.NewNamespacePkgOrBundle(language, nstype)
+		} else {
+			ns = model.NewRawNamespace(params.Ingredient.Namespace)
 		}
 
-		ns = model.NewNamespacePkgOrBundle(language, nstype)
-	} else {
-		ns = model.NewRawNamespace(params.Ingredient.Namespace)
+		var err error
+		var packages []*model.IngredientAndVersion
+		if params.ExactTerm {
+			packages, err = model.SearchIngredientsStrict(ns.String(), params.Ingredient.Name, true, true, params.Timestamp.Time)
+		} else {
+			packages, err = model.SearchIngredients(ns.String(), params.Ingredient.Name, true, params.Timestamp.Time)
+		}
+		if err != nil {
+			v.err = locale.WrapError(err, "package_err_cannot_obtain_search_results")
+			return
+		}
+		if len(packages) == 0 {
+			v.err = errs.AddTips(
+				locale.NewInputError("err_search_no_"+ns.Type().String(), "", params.Ingredient.Name),
+				locale.Tl("search_try_term", "Try a different search term"),
+				locale.Tl("search_request_"+ns.Type().String(), ""),
+			)
+			return
+		}
+	}()
+
+	if _, err := p.Run(); err != nil {
+		return err
 	}
 
-	var err error
-	var packages []*model.IngredientAndVersion
-	if params.ExactTerm {
-		packages, err = model.SearchIngredientsStrict(ns.String(), params.Ingredient.Name, true, true, params.Timestamp.Time)
-	} else {
-		packages, err = model.SearchIngredients(ns.String(), params.Ingredient.Name, true, params.Timestamp.Time)
-	}
-	if err != nil {
-		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
-	}
-	if len(packages) == 0 {
-		return errs.AddTips(
-			locale.NewInputError("err_search_no_"+ns.Type().String(), "", params.Ingredient.Name),
-			locale.Tl("search_try_term", "Try a different search term"),
-			locale.Tl("search_request_"+ns.Type().String(), ""),
-		)
-	}
-
-	s.out.Print(output.Prepare(formatSearchResults(packages, params.Ingredient.Namespace != ""), packages))
+	// s.out.Print(output.Prepare(formatSearchResults(packages, params.Ingredient.Namespace != ""), packages))
 
 	return nil
 }
