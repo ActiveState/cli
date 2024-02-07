@@ -6,11 +6,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strings"
-	"sync"
-
-	"github.com/shirou/gopsutil/v3/process"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -126,43 +122,4 @@ func ExecutableName() string {
 	name := filepath.Base(Executable())
 	name = strings.TrimSuffix(name, path.Ext(name))
 	return name
-}
-
-// GetProcessesInUse returns a map of currently running executables to their process IDs where
-// those executables are in the given directory or a subdirectory of that given directory.
-func GetProcessesInUse(dir string) map[string]int32 {
-	inUse := map[string]int32{}
-
-	procs, err := process.Processes()
-	if err != nil {
-		multilog.Error("Unable to get running processes: %v", err)
-		return inUse
-	}
-
-	var wg sync.WaitGroup
-	var mutex sync.Mutex
-	if runtime.GOOS != "linux" {
-		dir = strings.ToLower(dir) // Windows and macOS filesystems are case-insensitive
-	}
-	for _, p := range procs {
-		wg.Add(1)
-		go func(p *process.Process) {
-			defer wg.Done()
-			exe, err := p.Exe()
-			if err != nil {
-				return // probably a permission error; ignore
-			}
-			exeToCompare := exe
-			if runtime.GOOS != "linux" {
-				exeToCompare = strings.ToLower(exeToCompare) // Windows and macOS filesystems are case-insensitive
-			}
-			if strings.Contains(exeToCompare, dir) {
-				mutex.Lock()
-				inUse[exe] = p.Pid
-				mutex.Unlock()
-			}
-		}(p)
-	}
-	wg.Wait()
-	return inUse
 }

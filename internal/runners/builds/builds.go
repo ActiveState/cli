@@ -1,7 +1,6 @@
 package builds
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -76,19 +75,17 @@ func New(p primeable) *Builds {
 	}
 }
 
-func rationalizeError(err *error) {
+func rationalizeBuildsError(err *error) {
 	switch {
 	case err == nil:
 		return
-	case errors.Is(*err, rationalize.ErrNoProject):
-		*err = errs.WrapUserFacing(*err,
-			locale.Tr("err_no_project"),
-			errs.SetInput())
+	default:
+		rationalizeCommonError(err)
 	}
 }
 
 func (b *Builds) Run(params *Params) (rerr error) {
-	defer rationalizeError(&rerr)
+	defer rationalizeBuildsError(&rerr)
 
 	if b.project == nil {
 		return rationalize.ErrNoProject
