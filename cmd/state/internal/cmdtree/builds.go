@@ -34,3 +34,35 @@ func newBuildsCommand(prime *primer.Values) *captain.Command {
 	cmd.DeprioritizeInHelpListing()
 	return cmd
 }
+
+func newBuildsDownloadCommand(prime *primer.Values) *captain.Command {
+	runner := builds.NewDownload(prime)
+	params := &builds.DownloadParams{}
+
+	cmd := captain.NewCommand(
+		"dl",
+		locale.Tl("builds_download_title", "Download build artifacts"),
+		locale.Tl("builds_download_description", "Download build artifacts for a given build"),
+		prime,
+		[]*captain.Flag{},
+		[]*captain.Argument{
+			{
+				Name:        "ID",
+				Description: locale.Tl("builds_download_arg_id", "The ID of the artifact to download"),
+				Value:       &params.BuildID,
+				Required:    true,
+			},
+			{
+				Name:        "target",
+				Description: locale.Tl("builds_download_arg_target", "The target directory to download the artifact to"),
+				Value:       &params.OutputDir,
+			},
+		},
+		func(_ *captain.Command, _ []string) error {
+			return runner.Run(params)
+		},
+	)
+	cmd.SetSupportsStructuredOutput()
+	cmd.SetUnstable(true)
+	return cmd
+}
