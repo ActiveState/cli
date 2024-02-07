@@ -12,11 +12,9 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -55,34 +53,31 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	ts.LoginAsPersistentUser()
 	pname := strutils.UUID()
 	namespace := fmt.Sprintf("%s/%s", suite.username, pname)
-	wd := filepath.Join(ts.Dirs.Work, namespace)
 	cp := ts.Spawn(
 		"init",
 		"--language",
 		suite.languageFull,
 		namespace,
-		wd,
+		".",
 	)
 	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(suite.username, pname.String())
 
-	pjfilepath := filepath.Join(ts.Dirs.Work, namespace, constants.ConfigFileName)
+	pjfilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 	suite.Require().FileExists(pjfilepath)
 
 	// Check that languages were reset
 	pj, err := project.FromPath(pjfilepath)
 	suite.Require().NoError(err)
-	commitID, err := localcommit.Get(pj.Dir())
-	suite.Require().NoError(err)
-	suite.Require().NotEmpty(commitID.String(), "commitID was not set after running push for project creation")
+	suite.Require().NotEmpty(ts.CommitID(), "commitID was not set after running push for project creation")
 	suite.Require().NotEmpty(pj.BranchName(), "branch was not set after running push for project creation")
 
 	// ensure that we are logged out
 	cp = ts.Spawn(tagsuite.Auth, "logout")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(e2e.OptArgs("install", suite.extraPackage), e2e.OptWD(wd))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("install", suite.extraPackage))
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|being built", termtest.OptExpectTimeout(60*time.Second)) // while cold storage is off
@@ -100,7 +95,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 
 	ts.LoginAsPersistentUser()
 
-	cp = ts.SpawnWithOpts(e2e.OptArgs("push", namespace), e2e.OptWD(wd))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("push", namespace))
 	cp.Expect("Pushing to project")
 	cp.ExpectExitCode(0)
 }
@@ -358,20 +353,15 @@ func (suite *PushIntegrationTestSuite) TestPush_PullNeeded() {
 
 func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
 	suite.OnlyRunForTags(tagsuite.Push)
-	projectLine := "project: https://platform.activestate.com/ActiveState-CLI/cli?branch=main"
 	unPushedCommit := "882ae76e-fbb7-4989-acc9-9a8b87d49388"
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	wd := filepath.Join(ts.Dirs.Work, "cli")
-	pjfilepath := filepath.Join(ts.Dirs.Work, "cli", constants.ConfigFileName)
-	suite.Require().NoError(fileutils.WriteFile(pjfilepath, []byte(projectLine)))
-	commitIdFile := filepath.Join(ts.Dirs.Work, "cli", constants.ProjectConfigDirName, constants.CommitIdFileName)
-	suite.Require().NoError(fileutils.WriteFile(commitIdFile, []byte(unPushedCommit)))
+	ts.PrepareProject("ActiveState-CLI/cli", unPushedCommit)
 
 	ts.LoginAsPersistentUser()
-	cp := ts.SpawnWithOpts(e2e.OptArgs("push"), e2e.OptWD(wd))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
 	cp.Expect("Your project has new changes available")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()

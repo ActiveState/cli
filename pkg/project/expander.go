@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rxutils"
 	"github.com/ActiveState/cli/internal/scriptfile"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -238,11 +237,8 @@ func ProjectExpander(_ string, name string, _ string, isFunction bool, ctx *Expa
 	case "url":
 		return project.URL(), nil
 	case "commit":
-		commitID, err := localcommit.Get(project.Dir())
-		if err != nil {
-			return "", errs.Wrap(err, "Unable to get local commit")
-		}
-		return commitID.String(), nil
+		commitID := project.LegacyCommitID() // Not using localcommit due to import cycle. See anti-pattern comment in localcommit pkg.
+		return commitID, nil
 	case "branch":
 		return project.BranchName(), nil
 	case "owner":

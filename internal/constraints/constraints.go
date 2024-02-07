@@ -8,12 +8,10 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -101,11 +99,7 @@ func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName
 		pjName = pj.Name()
 		pjNamespace = pj.NamespaceString()
 		pjURL = pj.URL()
-		commitID, err := localcommit.Get(pj.Dir())
-		if err != nil {
-			multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
-		}
-		pjCommit = commitID.String()
+		pjCommit = pj.LegacyCommitID() // Not using localcommit due to import cycle. See anti-pattern comment in localcommit pkg.
 		pjBranch = pj.BranchName()
 		pjDir = pj.Dir()
 	}
