@@ -34,18 +34,21 @@ import (
 )
 
 type Params struct {
-	Name         string
-	Version      string
-	Namespace    string
-	Owner        string
-	Description  string
-	Authors      captain.UsersValue
-	Depends      captain.PackagesValue
-	Features     captain.PackagesValue
-	Filepath     string
-	MetaFilepath string
-	Edit         bool
-	Editor       bool
+	Name           string
+	Version        string
+	Namespace      string
+	Owner          string
+	Description    string
+	Authors        captain.UsersValue
+	Depends        captain.PackagesValue
+	DependsRuntime captain.PackagesValue
+	DependsBuild   captain.PackagesValue
+	DependsTest    captain.PackagesValue
+	Features       captain.PackagesValue
+	Filepath       string
+	MetaFilepath   string
+	Edit           bool
+	Editor         bool
 }
 
 type Runner struct {
@@ -320,7 +323,49 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRev
 		for _, dep := range params.Depends {
 			r.Dependencies = append(
 				r.Dependencies,
-				request.PublishVariableDep{request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version}, []request.Dependency{}},
+				request.PublishVariableDep{
+					request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version},
+					[]request.Dependency{},
+				},
+			)
+		}
+	}
+
+	if len(params.DependsRuntime) != 0 {
+		r.Dependencies = []request.PublishVariableDep{}
+		for _, dep := range params.DependsRuntime {
+			r.Dependencies = append(
+				r.Dependencies,
+				request.PublishVariableDep{
+					request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version, Type: request.TypeRuntime},
+					[]request.Dependency{},
+				},
+			)
+		}
+	}
+
+	if len(params.DependsBuild) != 0 {
+		r.Dependencies = []request.PublishVariableDep{}
+		for _, dep := range params.DependsBuild {
+			r.Dependencies = append(
+				r.Dependencies,
+				request.PublishVariableDep{
+					request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version, Type: request.TypeBuild},
+					[]request.Dependency{},
+				},
+			)
+		}
+	}
+
+	if len(params.DependsTest) != 0 {
+		r.Dependencies = []request.PublishVariableDep{}
+		for _, dep := range params.DependsTest {
+			r.Dependencies = append(
+				r.Dependencies,
+				request.PublishVariableDep{
+					request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version, Type: request.TypeTest},
+					[]request.Dependency{},
+				},
 			)
 		}
 	}

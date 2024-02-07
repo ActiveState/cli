@@ -78,10 +78,15 @@ type PublishVariableFeature struct {
 	Version   string `yaml:"version" json:"version"`
 }
 
+const TypeRuntime string = "runtime"
+const TypeBuild string = "build"
+const TypeTest string = "test"
+
 type Dependency struct {
 	Name                string `yaml:"name" json:"name"`
 	Namespace           string `yaml:"namespace" json:"namespace"`
 	VersionRequirements string `yaml:"versionRequirements,omitempty" json:"versionRequirements,omitempty"`
+	Type                string `yaml:"type,omitempty" json:"type,omitempty"`
 }
 
 // ExampleAuthorVariables is used for presenting sample data to the user, it's not used for graphql input
