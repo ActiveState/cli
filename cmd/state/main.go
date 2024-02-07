@@ -205,13 +205,6 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)
-	if isInteractive {
-		// Disable terminal echo while State Tool is running.
-		// Other than in prompts and subshells (which temporarily re-enable echo), user typing should
-		// not interfere with output (e.g. runtime progress bars).
-		sshell.TurnOffEcho()
-		defer sshell.TurnOnEcho()
-	}
 
 	conditional := constraints.NewPrimeConditional(auth, pj, sshell.Shell())
 	project.RegisterConditional(conditional)

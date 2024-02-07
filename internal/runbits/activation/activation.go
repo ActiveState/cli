@@ -67,8 +67,6 @@ func ActivateAndWait(
 	if err := ss.Activate(proj, cfg, out); err != nil {
 		return locale.WrapError(err, "error_could_not_activate_subshell", "Could not activate a new subshell.")
 	}
-	ss.TurnOnEcho() // temporarily re-enable echo while the subshell is active
-	defer ss.TurnOffEcho()
 
 	a, err := process.NewActivation(cfg, os.Getpid())
 	if err != nil {

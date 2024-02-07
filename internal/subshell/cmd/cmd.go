@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
-	"github.com/ActiveState/cli/internal/subshell/termecho"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -203,12 +202,4 @@ func (v *SubShell) IsActive() bool {
 
 func (v *SubShell) IsAvailable() bool {
 	return runtime.GOOS == "windows"
-}
-
-func (v *SubShell) TurnOffEcho() {
-	termecho.Off()
-}
-
-func (v *SubShell) TurnOnEcho() {
-	termecho.On()
 }
