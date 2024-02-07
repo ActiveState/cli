@@ -1371,11 +1371,11 @@ svcctl_wait_timeout:
     If this problem persists please report it on our forums: [ACTIONABLE]{{.V2}}[/RESET]
 svcctl_file_not_found:
   other: |
-    Could not find the State Tool service executable.
+    Could not find the State Tool service executable at [ACTIONABLE]{{.V0}}[/RESET].
 
     Please try running your command again.
 
-    If this problem persists please report it on our forums: [ACTIONABLE]{{.V0}}[/RESET]
+    If this problem persists please report it on our forums: [ACTIONABLE]{{.V1}}[/RESET]
 err_autostart_app:
   other: Could not create new autostart app
 err_install_state_exe_does_not_exist:

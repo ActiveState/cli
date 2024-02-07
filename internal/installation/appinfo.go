@@ -44,12 +44,11 @@ func newExecFromDir(baseDir string, exec executableType) (string, error) {
 		path = filepath.Dir(osutils.Executable())
 	}
 
-	// Work around dlv debugger giving an unexpected executable path
-	if !condition.BuiltViaCI() && len(os.Args) > 1 && strings.Contains(os.Args[0], "__debug_bin") {
+	// Work around dlv and goland debugger giving an unexpected executable path
+	if !condition.BuiltViaCI() && len(os.Args) > 1 &&
+		(strings.Contains(os.Args[0], "__debug_bin") || strings.Contains(filepath.ToSlash(os.Args[0]), "GoLand/___")) {
 		rootPath := filepath.Clean(environment.GetRootPathUnsafe())
-		if rootPath == filepath.Clean(path) {
-			path = filepath.Join(path, "build")
-		}
+		path = filepath.Join(rootPath, "build")
 	}
 
 	return filepath.Join(path, execData[exec]), nil
