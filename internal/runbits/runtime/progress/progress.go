@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/go-openapi/strfmt"
 	"github.com/vbauerster/mpb/v7"
 	"golang.org/x/net/context"
@@ -14,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
