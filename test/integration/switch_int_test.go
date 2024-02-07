@@ -18,7 +18,7 @@ type SwitchIntegrationTestSuite struct {
 
 func (suite *SwitchIntegrationTestSuite) TestSwitch_Branch() {
 	suite.OnlyRunForTags(tagsuite.Switch)
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	err := ts.ClearCache()
