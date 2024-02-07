@@ -53,19 +53,18 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	ts.LoginAsPersistentUser()
 	pname := strutils.UUID()
 	namespace := fmt.Sprintf("%s/%s", suite.username, pname)
-	wd := filepath.Join(ts.Dirs.Work, namespace)
 	cp := ts.Spawn(
 		"init",
 		"--language",
 		suite.languageFull,
 		namespace,
-		wd,
+		".",
 	)
 	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(suite.username, pname.String())
 
-	pjfilepath := filepath.Join(ts.Dirs.Work, namespace, constants.ConfigFileName)
+	pjfilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 	suite.Require().FileExists(pjfilepath)
 
 	// Check that languages were reset
@@ -78,7 +77,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp = ts.Spawn(tagsuite.Auth, "logout")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(e2e.OptArgs("install", suite.extraPackage), e2e.OptWD(wd))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("install", suite.extraPackage))
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|being built", termtest.OptExpectTimeout(60*time.Second)) // while cold storage is off
@@ -96,7 +95,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 
 	ts.LoginAsPersistentUser()
 
-	cp = ts.SpawnWithOpts(e2e.OptArgs("push", namespace), e2e.OptWD(wd))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("push", namespace))
 	cp.Expect("Pushing to project")
 	cp.ExpectExitCode(0)
 }
