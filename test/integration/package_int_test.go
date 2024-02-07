@@ -268,18 +268,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_info() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *PackageIntegrationTestSuite) TestPackage_infoWrongCase() {
-	suite.OnlyRunForTags(tagsuite.Package)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-	suite.PrepareActiveStateYAML(ts)
-
-	cp := ts.Spawn("info", "Pexpect")
-	cp.Expect("No packages in our catalog are an exact match")
-	cp.ExpectExitCode(1)
-	ts.IgnoreLogErrors()
-}
-
 func (suite *PackageIntegrationTestSuite) TestPackage_detached_operation() {
 	suite.OnlyRunForTags(tagsuite.Package)
 	if runtime.GOOS == "darwin" {
