@@ -143,12 +143,16 @@ func (r *Runner) Run(params *Params) error {
 	isRevision := false
 	if params.Version != "" {
 		// Attempt to get the version if it already exists, it not existing is not an error though
-		i, err := model.GetIngredientByNameAndVersion(params.Namespace, params.Name, params.Version)
+		i, err := model.GetIngredientByNameAndVersion(reqVars.Namespace, reqVars.Name, params.Version)
 		if err != nil {
-			return locale.WrapInputError(err, "err_uploadingredient_getversion", "Could not grab ingredient by version")
+			var notFound *inventory_operations.GetNamespaceIngredientVersionNotFound
+			if !errors.As(err, &notFound) {
+				return errs.Wrap(err, "could not get ingredient version")
+			}
+		} else {
+			ingredient = &ParentIngredient{*i.IngredientID, *i.IngredientVersionID, *i.Version, i.Dependencies}
+			isRevision = true
 		}
-		ingredient = &ParentIngredient{*i.IngredientID, *i.IngredientVersionID, *i.Version, i.Dependencies}
-		isRevision = true
 	}
 
 	if ingredient == nil {
