@@ -36,7 +36,10 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 		e2e.OptArgs("checkout", "ActiveState-CLI/Python-3.9", "."),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Checking out project: ActiveState-CLI/Python-3.9")
+	cp.Expect("Setting up the following dependencies:")
+	cp.Expect("All dependencies have been installed and verified", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Checked out project")
 	suite.Require().True(fileutils.DirExists(ts.Dirs.Work), "state checkout should have created "+ts.Dirs.Work)
 	suite.Require().True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, constants.ConfigFileName)), "ActiveState-CLI/Python3 was not checked out properly")
 

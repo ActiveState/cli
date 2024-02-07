@@ -27,7 +27,7 @@ import (
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/runbits/changesummary"
+	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
@@ -550,9 +550,11 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, nil, errs.Wrap(err, "Failed to compute artifacts to build")
 	}
 
-	// Output a change summary if applicable.
-	if len(oldBuildPlanArtifacts) > 0 {
-		changesummary.New(s.out).ChangeSummary(changedArtifacts, artifactsToBuild, oldBuildPlanArtifacts)
+	// Output a dependency summary if applicable.
+	if !fileutils.DirExists(s.target.Dir()) {
+		dependencies.OutputSummary(s.out, changedArtifacts.Added, artifactsToBuild)
+	} else {
+		dependencies.OutputChangeSummary(s.out, changedArtifacts, artifactsToBuild, oldBuildPlanArtifacts)
 	}
 
 	// The log file we want to use for builds
