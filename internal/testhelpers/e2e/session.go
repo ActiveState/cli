@@ -332,8 +332,9 @@ func (s *Session) PrepareCommitIdFile(commitID string) {
 	require.NoError(s.T, pjfile.SetLegacyCommit(commitID))
 }
 
-// CommitID is used to grab the current commit ID for the project in our working directory. This is distinct
-// from localcommit.Get() and pjfile.LegacyCommitID() in that it always produces a fresh result from the on-disk file.
+// CommitID is used to grab the current commit ID for the project in our working directory.
+// For integration tests you should use this function instead of localcommit.Get() and pjfile.LegacyCommitID() as it
+// is guaranteed to give a fresh result from disk, whereas the ones above use caching which tests don't like.
 func (s *Session) CommitID() string {
 	pjfile, err := projectfile.Parse(filepath.Join(s.Dirs.Work, constants.ConfigFileName))
 	require.NoError(s.T, err)
