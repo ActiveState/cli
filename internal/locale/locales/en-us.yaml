@@ -710,6 +710,9 @@ err_incompatible_move_file_dir:
     This indicates that the requested build may be corrupted.
 err_init_lang:
   other: "Invalid language: {{.V0}}@{{.V1}}"
+initializing_project:
+  other: |
+    Initializing Project
 init_success:
   other: |
     Project '[NOTICE]{{.V0}}[/RESET]' has been successfully initialized at '[NOTICE]{{.V1}}[/RESET]' and pushed to the Platform.
