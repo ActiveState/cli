@@ -6,15 +6,65 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-### 0.42.1
+## 0.43.0
+
+### Added
+
+* Added `state publish` command, which lets you publish your own ingredients to the ActiveState platform.
+* Added user configuration for setting the preferred glibc for projects which produce multiple glibc variants, eg.
+  `state config set runtime.preferred.glibc 2.17`.
+* You can now disable the behavior of State Tool updating your shell prompt to include the project name. Use 
+  `state config preserve.prompt false`.
+* Added the `state languages search` command, allowing you to discover what languages you may want to use.
+* Added a new `state export log` command, which lets you easily inspect the debug log.
+* State tool executables on Windows now provide sufficient meta information.
+
+### Changed
+
+* `state refresh` has been marked stable.
+* `state checkout` will now revert any changes made to the filesystem if the runtime fails to source.
+  * You can now specify the `--force` flag in order for it to always checkout the project even if it  cannot be installed. 
+    Allowing you to work on the project via the CLI and fix the underlying issue.
+* `state import` no longer overwrites your project with the imported requirements. Instead the requirements are appended.
+* `state platforms search` will no longer show platforms that are unsupported.
+* `state packages --filter` is now case-insensitive.
+* You can now revert to the head of a branch by specifying `state revert HEAD`, rather than having to figure out the commit ID yourself.
+* Constants defined in the activestate.yaml are no longer exported as environment variables unless you specify the `export: true` property.
+* We now clearly communicate that you are using a project runtime whenever you open a new shell.
+* If installation fails due to a networking issue we will now clearly communicate the cause.
+* We have introduced a new mechanic for handling errors, which should produce more actionable error messages. This mechanic
+  is being rolled out to various commands over time, as of right now we have targeted common commands like `init`, `checkout`, and `install`.
+* The installer will no longer refuse to install if you already have the State Tool installed, but the installed State 
+  Tool is not properly configured.
+* The installer will no longer leave behind temporary files in your system temp dir.
+* Structured output (ie. `--output json`) now includes tips when errors occur.
+* All our executables now support the `--version` flag.
+* Reduced the verbosity of the debug log.
+
+
+### Fixed
+
+* Fixed issue where specifying multiple version constraints (eg. `>1.0,<2.0`) only preserved the last constraint (eg. `<2.0`).
+* Fixed `state init` being unable to initialize a ruby project without an explicit version.
+* Fixed using `state shell` through `tcsh` not setting up environment correctly.
+* Fixed `state activate` checking out the wrong commit if the commit you specified does not exist. It will now error out.
+* Fixed issue where typing during a selection prompt would make the prompt disappear.
+* Fixed various localisation issues.
+
+### Removed
+
+* Removed the `--set-project` flag from `state pull` as it covered a use-case that no longer exists.
+
+## 0.42.1
 
 ### Fixed
 
 * Fixed `state import` no longer working due to important API changes.
 
-### 0.42.0
+## 0.42.0
 
 ### Added
+
 * The State Tool now has better user-facing errors. These should provide more context
   and actionable information when an error occurs. Currently, this is only implemented
   on a subset of commands, but will be expanded to all commands in the future.
@@ -65,7 +115,7 @@ and this project adheres to
 * Fixed an issue where the commit message would be missing on some commits when
   running `state history`.
 
-### 0.41.0
+## 0.41.0
 
 ### Added
 
@@ -113,7 +163,7 @@ and this project adheres to
 * Fixed issue where `state checkout` and `state init` would not respect the
   casing of the owner and/or project on the platform.
 
-### 0.40.1
+## 0.40.1
 
 ### Added
 
@@ -129,7 +179,7 @@ and this project adheres to
 * Fixed race condition during artifact installation that could lead to errors
   like "Could not unpack artifact .. file already exists".
 
-### 0.40.0
+## 0.40.0
 
 ### Added
 
@@ -170,7 +220,7 @@ and this project adheres to
   runtime.
 - Several localization improvements.
 
-### 0.39.0
+## 0.39.0
 
 ### Added
 
@@ -234,7 +284,7 @@ and this project adheres to
 - Fixed issue where State Tool would retry network requests that had no change
   of succeeding, resulting in longer wait times for the user.
 
-### 0.38.1
+## 0.38.1
 
 ### Fixed
 
@@ -244,7 +294,7 @@ and this project adheres to
 - Fixed reinstalling/updating on macOS resulting in a "Installation of service
   app failed" error.
 
-### 0.38.0
+## 0.38.0
 
 ### Added
 
@@ -327,7 +377,7 @@ and this project adheres to
 - Removed the `--force` flag from `state update lock` and `state update unlock`,
   as it is redundant with the `--non-interactive` flag.
 
-### 0.37.1
+## 0.37.1
 
 ### Fixed
 
@@ -336,7 +386,7 @@ and this project adheres to
 - Fixed `state update lock` throwing a panic when run outside of the context of
   a project.
 
-### 0.37.0
+## 0.37.0
 
 ### Changed
 
@@ -382,7 +432,7 @@ and this project adheres to
   not exist.
 - Fixed issue where a panic in the code would not be handled gracefully.
 
-### 0.36.0
+## 0.36.0
 
 ### Added
 
@@ -453,7 +503,7 @@ and this project adheres to
   projects
   without checking them out you can use the website.
 
-### 0.35.0
+## 0.35.0
 
 We are introducing a set of new environment management commands that will
 eventually replace `state activate`. The intend behind this is to make the
@@ -540,7 +590,7 @@ Note that `state activate` will still be available for the foreseeable future.
   arguments, instead of saying the command is unstable and you should opt in.
 - Fixed `state uninstall` with a non-existent package reporting the wrong error.
 
-### 0.34.1
+## 0.34.1
 
 ### Changed
 
@@ -558,7 +608,7 @@ Note that `state activate` will still be available for the foreseeable future.
   sometimes not resolve to the correct path.
 * Fixed issues where installer would sometimes give the update user experience.
 
-### 0.34.0
+## 0.34.0
 
 ### Added
 
