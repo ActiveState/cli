@@ -118,9 +118,17 @@ github.com/aymanbagabas/go-osc52/v2
 # github.com/blang/semver v3.5.1+incompatible
 ## explicit
 github.com/blang/semver
+# github.com/charmbracelet/bubbles v0.18.0
+## explicit; go 1.18
+github.com/charmbracelet/bubbles/key
+github.com/charmbracelet/bubbles/spinner
+github.com/charmbracelet/bubbles/viewport
 # github.com/charmbracelet/bubbletea v0.25.0
 ## explicit; go 1.17
 github.com/charmbracelet/bubbletea
+# github.com/charmbracelet/lipgloss v0.9.1
+## explicit; go 1.17
+github.com/charmbracelet/lipgloss
 # github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81
 ## explicit; go 1.13
 github.com/containerd/console
@@ -336,7 +344,7 @@ github.com/mattn/go-isatty
 # github.com/mattn/go-localereader v0.0.1
 ## explicit
 github.com/mattn/go-localereader
-# github.com/mattn/go-runewidth v0.0.14
+# github.com/mattn/go-runewidth v0.0.15
 ## explicit; go 1.9
 github.com/mattn/go-runewidth
 # github.com/mattn/go-sqlite3 v1.14.7
@@ -364,6 +372,8 @@ github.com/muesli/cancelreader
 ## explicit; go 1.13
 github.com/muesli/reflow/ansi
 github.com/muesli/reflow/truncate
+github.com/muesli/reflow/wordwrap
+github.com/muesli/reflow/wrap
 # github.com/muesli/termenv v0.15.2
 ## explicit; go 1.17
 github.com/muesli/termenv
@@ -415,8 +425,8 @@ github.com/power-devops/perfstat
 # github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0
 ## explicit; go 1.12
 github.com/remyoudompheng/bigfft
-# github.com/rivo/uniseg v0.2.0
-## explicit; go 1.12
+# github.com/rivo/uniseg v0.4.6
+## explicit; go 1.18
 github.com/rivo/uniseg
 # github.com/rollbar/rollbar-go v1.1.0
 ## explicit
@@ -568,7 +578,7 @@ golang.org/x/net/proxy
 # golang.org/x/sync v0.1.0
 ## explicit
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.11.0
+# golang.org/x/sys v0.12.0
 ## explicit; go 1.17
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs

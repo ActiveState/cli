@@ -137,7 +137,7 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"search",
-		locale.Tl("package_search_title", "Searching Packages"),
+		"",
 		locale.T("package_search_cmd_description"),
 		prime,
 		[]*captain.Flag{

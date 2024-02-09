@@ -2,7 +2,6 @@ package packages
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/captain"
@@ -11,6 +10,8 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	tea "github.com/charmbracelet/bubbletea"
@@ -28,6 +29,7 @@ type SearchRunParams struct {
 type Search struct {
 	out  output.Outputer
 	proj *project.Project
+	auth *authentication.Auth
 }
 
 // NewSearch prepares a searching execution context for use.
@@ -35,6 +37,7 @@ func NewSearch(prime primeable) *Search {
 	return &Search{
 		out:  prime.Output(),
 		proj: prime.Project(),
+		auth: prime.Auth(),
 	}
 }
 
@@ -42,50 +45,51 @@ func NewSearch(prime primeable) *Search {
 func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteSearch")
 
-	v := NewView()
+	s.out.Notice(output.Title(locale.Tl("search_title", "Searching for: [ACTIONABLE]{{.V0}}[/RESET]", params.Ingredient.Name)))
+
+	v, err := NewView()
+	if err != nil {
+		return errs.Wrap(err, "Could not create search view")
+	}
 
 	p := tea.NewProgram(v)
 
-	go func() {
-		var ns model.Namespace
-		if params.Ingredient.Namespace == "" {
-			language, err := targetedLanguage(params.Language, s.proj)
-			if err != nil {
-				v.err = locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
-				return
-			}
-
-			ns = model.NewNamespacePkgOrBundle(language, nstype)
-		} else {
-			ns = model.NewRawNamespace(params.Ingredient.Namespace)
-		}
-
-		var err error
-		var packages []*model.IngredientAndVersion
-		if params.ExactTerm {
-			packages, err = model.SearchIngredientsStrict(ns.String(), params.Ingredient.Name, true, true, params.Timestamp.Time)
-		} else {
-			packages, err = model.SearchIngredients(ns.String(), params.Ingredient.Name, true, params.Timestamp.Time)
-		}
+	var ns model.Namespace
+	if params.Ingredient.Namespace == "" {
+		language, err := targetedLanguage(params.Language, s.proj)
 		if err != nil {
-			v.err = locale.WrapError(err, "package_err_cannot_obtain_search_results")
-			return
+			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
 		}
-		if len(packages) == 0 {
-			v.err = errs.AddTips(
-				locale.NewInputError("err_search_no_"+ns.Type().String(), "", params.Ingredient.Name),
-				locale.Tl("search_try_term", "Try a different search term"),
-				locale.Tl("search_request_"+ns.Type().String(), ""),
-			)
-			return
-		}
-	}()
+
+		ns = model.NewNamespacePkgOrBundle(language, nstype)
+	} else {
+		ns = model.NewRawNamespace(params.Ingredient.Namespace)
+	}
+
+	var packages []*model.IngredientAndVersion
+	if params.ExactTerm {
+		packages, err = model.SearchIngredientsStrict(ns.String(), params.Ingredient.Name, true, true, params.Timestamp.Time)
+	} else {
+		packages, err = model.SearchIngredients(ns.String(), params.Ingredient.Name, true, params.Timestamp.Time)
+	}
+	if err != nil {
+		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
+	}
+	if len(packages) == 0 {
+		return errs.AddTips(
+			locale.NewInputError("err_search_no_"+ns.Type().String(), "", params.Ingredient.Name),
+			locale.Tl("search_try_term", "Try a different search term"),
+			locale.Tl("search_request_"+ns.Type().String(), ""),
+		)
+	}
+	v.content, err = s.buildSearchOutput(s.out, packages)
+	if err != nil {
+		return locale.WrapError(err, "Could not build search output")
+	}
 
 	if _, err := p.Run(); err != nil {
 		return err
 	}
-
-	// s.out.Print(output.Prepare(formatSearchResults(packages, params.Ingredient.Namespace != ""), packages))
 
 	return nil
 }
@@ -112,60 +116,18 @@ func targetedLanguage(languageOpt string, proj *project.Project) (string, error)
 	return lang.Name, nil
 }
 
-type modules []string
-
-func makeModules(normalizedName string, pack *model.IngredientAndVersion) modules {
-	var ms modules
-	for _, module := range pack.LatestVersion.ProvidedFeatures {
-		if module.Feature != nil && *module.Feature != normalizedName {
-			ms = append(ms, *module.Feature)
-		}
-
+func (s *Search) buildSearchOutput(out output.Outputer, packages []*model.IngredientAndVersion) (string, error) {
+	builder := &strings.Builder{}
+	internalOutput, err := output.New(string(out.Type()), &output.Config{
+		OutWriter:   builder,
+		ErrWriter:   builder,
+		Colored:     out.Config().Colored,
+		Interactive: out.Config().Interactive,
+		ShellName:   out.Config().ShellName,
+	})
+	if err != nil {
+		return "", errs.Wrap(err, "Could not create outputer")
 	}
-	return ms
-}
-
-func (ms modules) String() string {
-	if len(ms) == 0 {
-		return ""
-	}
-
-	var b strings.Builder
-
-	b.WriteString("[DISABLED]")
-	b.WriteString(locale.Tl("title_matching_modules", "Matching modules"))
-	b.WriteRune('\n')
-
-	prefix := '├'
-	for i, module := range ms {
-		if i == len(ms)-1 {
-			prefix = '└'
-		}
-
-		b.WriteRune(prefix)
-		b.WriteString("─ ")
-		b.WriteString(module)
-		b.WriteRune('\n')
-	}
-
-	b.WriteRune('\n')
-	b.WriteString("[/RESET]")
-
-	return b.String()
-}
-
-type searchPackageRow struct {
-	Pkg           string `json:"package" locale:"package_name,Name"`
-	Version       string `json:"version" locale:"package_version,Latest Version"`
-	OlderVersions string `json:"versions" locale:","`
-	versions      int
-	Modules       modules `json:"matching_modules,omitempty" opts:"emptyNil,separateLine,shiftCols=1"`
-}
-
-type searchOutput []searchPackageRow
-
-func formatSearchResults(packages []*model.IngredientAndVersion, showNamespace bool) *searchOutput {
-	rows := make(searchOutput, len(packages))
 
 	filterNilStr := func(s *string) string {
 		if s == nil {
@@ -174,51 +136,110 @@ func formatSearchResults(packages []*model.IngredientAndVersion, showNamespace b
 		return *s
 	}
 
-	for i, pack := range packages {
+	var rows []*packageDetailsTable
+	seen := make(map[string]bool)
+	for _, pack := range packages {
 		name := filterNilStr(pack.Ingredient.Name)
-		if showNamespace {
-			name = fmt.Sprintf("%s/%s", *pack.Ingredient.PrimaryNamespace, name)
-		}
-		row := searchPackageRow{
-			Pkg:      name,
-			Version:  pack.Version,
-			versions: len(pack.Versions),
-			Modules:  makeModules(pack.Ingredient.NormalizedName, pack),
-		}
-		rows[i] = row
-	}
-
-	return mergeSearchRows(rows)
-}
-
-func mergeSearchRows(rows searchOutput) *searchOutput {
-	var mergedRows searchOutput
-	var name string
-	for _, row := range rows {
-		// The search API returns results sorted by name and then descending version
-		// so we can use the first unique value as our latest version
-		if name == row.Pkg {
+		if name == "" || seen[name] {
 			continue
 		}
-		name = row.Pkg
 
-		newRow := searchPackageRow{
-			Pkg:      row.Pkg,
-			Version:  row.Version,
-			versions: row.versions,
-			Modules:  row.Modules,
+		authors, err := model.FetchAuthors(pack.Ingredient.IngredientID, pack.LatestVersion.IngredientVersionID)
+		if err != nil {
+			return "", errs.Wrap(err, "Could not fetch authors")
 		}
 
-		if row.versions > 1 {
-			olderVersions := row.versions - 1
-			newRow.OlderVersions = locale.Tl("search_older_versions", "+ {{.V0}} older versions", strconv.Itoa(olderVersions))
+		row := &packageDetailsTable{
+			Name: locale.Tl("search_package_name", "[CYAN]{{.V0}}[/RESET]", name),
 		}
-		mergedRows = append(mergedRows, newRow)
+
+		if pack.Ingredient.Description != nil {
+			row.Description = *pack.Ingredient.Description
+		}
+
+		var authorNames []string
+		for _, a := range authors {
+			if a.Name == nil {
+				continue
+			}
+			authorNames = append(authorNames, fmt.Sprintf("[CYAN]%s[/RESET]", *a.Name))
+		}
+		if len(authorNames) > 1 {
+			row.Authors = strings.Join(authorNames, ", ")
+		} else if len(authorNames) == 1 {
+			row.Author = authorNames[0]
+		}
+
+		if pack.Ingredient.Website != "" {
+			row.Website = pack.Ingredient.Website.String()
+		}
+
+		if pack.LatestVersion.LicenseExpression != nil {
+			row.License = *pack.LatestVersion.LicenseExpression
+		}
+
+		var versions []string
+		for i, v := range pack.Versions {
+			if i > 5 {
+				versions = append(versions, fmt.Sprintf("... (%d more)", len(pack.Versions)-5))
+				break
+			}
+			versions = append(versions, fmt.Sprintf(locale.Tl("search_version", "[CYAN]%s[/RESET]"), v.Version))
+		}
+		if len(versions) > 0 {
+			row.Versions = strings.Join(versions, ", ")
+		}
+
+		if s.auth.Authenticated() {
+			vulns, err := model.FetchVulnerabilitiesForIngredients(s.auth, []*request.Ingredient{
+				{
+					Name:      *pack.Ingredient.Name,
+					Namespace: *pack.Ingredient.PrimaryNamespace,
+					Version:   pack.Version,
+				},
+			})
+			if err != nil {
+				return "", errs.Wrap(err, "Could not fetch vulnerabilities")
+			}
+
+			var (
+				critical int
+				high     int
+				medium   int
+				low      int
+			)
+			for _, v := range vulns {
+				critical += len(v.Vulnerabilities.Critical)
+				high += len(v.Vulnerabilities.High)
+				medium += len(v.Vulnerabilities.Medium)
+				low += len(v.Vulnerabilities.Low)
+			}
+
+			vunlSummary := []string{}
+			if critical > 0 {
+				vunlSummary = append(vunlSummary, fmt.Sprintf(locale.Tl("search_critical", "[RED]%d[/RESET]"), critical))
+			}
+			if high > 0 {
+				vunlSummary = append(vunlSummary, fmt.Sprintf(locale.Tl("search_high", "[YELLOW]%d[/RESET]"), high))
+			}
+			if medium > 0 {
+				vunlSummary = append(vunlSummary, fmt.Sprintf(locale.Tl("search_medium", "[YELLOW]%d[/RESET]"), medium))
+			}
+			if low > 0 {
+				vunlSummary = append(vunlSummary, fmt.Sprintf(locale.Tl("search_low", "[GREEN]%d[/RESET]"), low))
+			}
+			row.Vulnerabilities = strings.Join(vunlSummary, ", ")
+		}
+
+		seen[name] = true
+		rows = append(rows, row)
 	}
 
-	return &mergedRows
-}
+	internalOutput.Print(struct {
+		Details []*packageDetailsTable `opts:"verticalTable"`
+	}{
+		Details: rows,
+	})
 
-func (o *searchOutput) MarshalStructured(format output.Format) interface{} {
-	return o
+	return builder.String(), nil
 }
