@@ -551,7 +551,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	// Output a dependency summary if applicable.
-	if !fileutils.DirExists(s.target.Dir()) {
+	if s.target.Trigger() == target.TriggerCheckout {
 		// For initial checkouts, show requested dependencies (i.e. project dependencies).
 		requestedArtifacts := make([]artifact.ArtifactID, 0)
 		for _, req := range buildResult.Build.ResolvedRequirements {
@@ -563,7 +563,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 			}
 		}
 		dependencies.OutputSummary(s.out, requestedArtifacts, artifactsToBuild)
-	} else {
+	} else if len(oldBuildPlanArtifacts) > 0 {
 		dependencies.OutputChangeSummary(s.out, changedArtifacts, artifactsToBuild, oldBuildPlanArtifacts)
 	}
 
