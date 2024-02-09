@@ -2,20 +2,26 @@ package packages
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/pkg/localcommit"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
@@ -32,6 +38,7 @@ type Info struct {
 	out  output.Outputer
 	proj *project.Project
 	auth *authentication.Auth
+	cfg  *config.Instance
 }
 
 // NewInfo prepares an information execution context for use.
@@ -40,6 +47,7 @@ func NewInfo(prime primeable) *Info {
 		out:  prime.Output(),
 		proj: prime.Project(),
 		auth: prime.Auth(),
+		cfg:  prime.Config(),
 	}
 }
 
@@ -115,15 +123,92 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 		}
 	}
 
+	dependencies, artifacts, err := i.fetchDependencies(*pkg.Ingredient.Name, ingredientVersion.Version, ns)
+	if err != nil {
+		return locale.WrapError(err, "package_err_cannot_fetch_dependencies", "Cannot fetch dependencies")
+	}
+
 	i.out.Print(&infoOutput{i.out, structuredOutput{
 		pkg.Ingredient,
 		ingredientVersion,
 		authors,
+		dependencies,
+		artifacts,
 		pkg.Versions,
 		vulns,
 	}})
 
 	return nil
+}
+
+func (i *Info) fetchDependencies(name string, version *string, ns *model.Namespace) (map[artifact.ArtifactID][]artifact.ArtifactID, artifact.Map, error) {
+	bp := model.NewBuildPlannerModel(i.auth)
+
+	commitID, err := localcommit.Get(i.proj.Dir())
+	if err != nil {
+		return nil, nil, errs.Wrap(err, "Unable to get project commit ID")
+	}
+
+	var requirements []bpModel.VersionRequirement
+	if version != nil && *version != "" {
+		requirements, err = model.VersionStringToRequirements(*version)
+		if err != nil {
+			return nil, nil, errs.Wrap(err, "Invalid version: %s", version)
+		}
+	}
+
+	params := model.StageCommitParams{
+		Owner:                i.proj.Owner(),
+		Project:              i.proj.Name(),
+		ParentCommit:         commitID.String(),
+		RequirementName:      name,
+		RequirementVersion:   requirements,
+		RequirementNamespace: *ns,
+		Operation:            bpModel.OperationAdded,
+	}
+
+	newCommitID, err := bp.StageCommit(params)
+	if err != nil {
+		return nil, nil, errs.Wrap(err, "Unable to stage commit to compute dependencies from")
+	}
+
+	buildResult, err := bp.FetchBuildResult(newCommitID, i.proj.Owner(), i.proj.Name())
+	if err != nil {
+		return nil, nil, errs.Wrap(err, "Unable to fetch build result to compute dependencies from")
+	}
+
+	artifactListing, err := buildplan.NewArtifactListing(buildResult.Build, false, i.cfg)
+	if err != nil {
+		return nil, nil, errs.Wrap(err, "Failed to create artifact listing")
+	}
+
+	artifacts, err := artifactListing.RuntimeClosure()
+	if err != nil {
+		return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
+	}
+
+	oldBuildPlan, err := bp.FetchBuildResult(commitID, i.proj.Owner(), i.proj.Name())
+	if err != nil {
+		return nil, nil, errs.Wrap(err, "Could not fetch previous build plan to compute new dependencies from")
+	}
+
+	oldArtifactListing, err := buildplan.NewArtifactListing(oldBuildPlan.Build, false, i.cfg)
+	if err != nil {
+		return nil, nil, errs.Wrap(err, "Could not fetch previous build plan artifacts")
+	}
+
+	oldArtifacts, err := oldArtifactListing.RuntimeClosure()
+	if err != nil {
+		return nil, nil, errs.Wrap(err, "Could not create old artifact listing")
+	}
+
+	for _, a := range artifacts {
+		if a.Name == name {
+			return buildplan.DependencyMapFor(a.ArtifactID, artifacts, oldArtifacts, false), artifacts, nil
+		}
+	}
+
+	return nil, nil, errs.New("Build plan did not have requested artifact")
 }
 
 func specificIngredientVersion(ingredientID *strfmt.UUID, version string) (*inventory_models.IngredientVersion, error) {
@@ -153,6 +238,7 @@ type PkgDetailsTable struct {
 type infoResult struct {
 	name                 string
 	version              string
+	dependencies         []string
 	plainVersions        []string
 	PkgVersionVulnsTotal int      `opts:"omitEmpty" locale:"package_vulnerabilities,[HEADING]Vulnerabilities[/RESET]"`
 	PkgVersionVulns      []string `opts:"verticalTable,omitEmpty" locale:"package_cves,[HEADING]CVEs[/RESET]"`
@@ -184,6 +270,37 @@ func newInfoResult(so structuredOutput) *infoResult {
 	if so.IngredientVersion.LicenseExpression != nil {
 		res.PkgDetailsTable.License = fmt.Sprintf("[CYAN]%s[/RESET]", *so.IngredientVersion.LicenseExpression)
 	}
+
+	dependencies := make([]artifact.ArtifactID, 0, len(so.dependencies))
+	for artifactId := range so.dependencies {
+		dependencies = append(dependencies, artifactId)
+	}
+	sort.SliceStable(dependencies, func(i, j int) bool {
+		return so.artifacts[dependencies[i]].Name < so.artifacts[dependencies[j]].Name
+	})
+	dependencyList := make([]string, len(dependencies))
+	for i, artifactId := range dependencies {
+		prefix := "├─"
+		if i == len(so.dependencies)-1 {
+			prefix = "└─"
+		}
+		dep := so.artifacts[artifactId]
+
+		version := ""
+		if dep.Version != nil {
+			version = *dep.Version
+		}
+
+		subdependencies := ""
+		if numSubs := len(so.dependencies[artifactId]); numSubs > 0 {
+			subdependencies = fmt.Sprintf("([ACTIONABLE]%s[/RESET] dependencies)", strconv.Itoa(numSubs))
+		}
+
+		item := fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET] %s", dep.Name, version, subdependencies)
+
+		dependencyList[i] = fmt.Sprintf("  [DISABLED]%s[/RESET] %s", prefix, item)
+	}
+	res.dependencies = dependencyList
 
 	for _, version := range so.Versions {
 		res.plainVersions = append(res.plainVersions, version.Version)
@@ -280,9 +397,11 @@ func newInfoResult(so structuredOutput) *infoResult {
 }
 
 type structuredOutput struct {
-	Ingredient        *inventory_models.Ingredient                         `json:"ingredient"`
-	IngredientVersion *inventory_models.IngredientVersion                  `json:"ingredient_version"`
-	Authors           model.Authors                                        `json:"authors"`
+	Ingredient        *inventory_models.Ingredient        `json:"ingredient"`
+	IngredientVersion *inventory_models.IngredientVersion `json:"ingredient_version"`
+	Authors           model.Authors                       `json:"authors"`
+	dependencies      map[artifact.ArtifactID][]artifact.ArtifactID
+	artifacts         artifact.Map
 	Versions          []*inventory_models.SearchIngredientsResponseVersion `json:"versions"`
 	Vulnerabilities   []*model.VulnerabilityIngredient                     `json:"vulnerabilities,omitempty"`
 }
@@ -309,6 +428,8 @@ func (o *infoOutput) MarshalOutput(_ output.Format) interface{} {
 				*PkgDetailsTable `opts:"verticalTable"`
 			}{res.PkgDetailsTable},
 		)
+		print(locale.Tl("package_info_dependencies", "  [HEADING]Dependencies[/RESET]"))
+		print(strings.Join(res.dependencies, "\n"))
 		print("")
 	}
 
