@@ -159,6 +159,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
 	}
+	cp.Send("q")
 	cp.ExpectExitCode(0)
 }
 
@@ -177,6 +178,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
 	}
+	cp.Send("q")
 	cp.ExpectExitCode(0)
 }
 
@@ -207,6 +209,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
 	cp.Expect("Moose")
 	cp.Expect("Moose-Autobox")
 	cp.Expect("MooseFS")
+	cp.Send("q")
 	cp.ExpectExitCode(0)
 }
 
@@ -219,8 +222,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchModules() {
 	cp := ts.Spawn("search", "leapsecond", "--language=perl")
 	cp.Expect("Date-Leapsecond")
 	cp.Expect("DateTime-LeapSecond")
-	cp.Expect("DateTime-LeapSecond")
 	cp.Expect("DateTime-Lite")
+	cp.Send("q")
 	cp.ExpectExitCode(0)
 }
 
