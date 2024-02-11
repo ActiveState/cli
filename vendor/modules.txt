@@ -121,7 +121,6 @@ github.com/blang/semver
 # github.com/charmbracelet/bubbles v0.18.0
 ## explicit; go 1.18
 github.com/charmbracelet/bubbles/key
-github.com/charmbracelet/bubbles/spinner
 github.com/charmbracelet/bubbles/viewport
 # github.com/charmbracelet/bubbletea v0.25.0
 ## explicit; go 1.17

@@ -2,37 +2,17 @@ package packages
 
 import "github.com/charmbracelet/lipgloss"
 
-var colorCTA = lipgloss.Color("#8860FF")
-var colorAction = lipgloss.Color("#FF457F")
-
-var styleDoc = lipgloss.NewStyle().Padding(1, 2, 1, 2)
-
-var styleNotice = lipgloss.NewStyle().
-	Bold(true).
-	Foreground(colorCTA)
-
-var styleAction = lipgloss.NewStyle().
-	Bold(true).
-	Underline(true).
-	Foreground(colorAction)
-
-var styleStatusBar = lipgloss.NewStyle().
-	Background(colorCTA).
-	Foreground(lipgloss.Color("#F0F0F0"))
-
-var listBullet = lipgloss.NewStyle().
-	Bold(true).
-	Foreground(colorAction).Render(" • ")
-
-var stylePad = lipgloss.NewStyle().Padding(1)
-
-var styleDialog = lipgloss.NewStyle().
-	Border(lipgloss.RoundedBorder()).
-	BorderForeground(colorCTA).
-	Padding(2, 10).
-	BorderTop(true).
-	BorderLeft(true).
-	BorderRight(true).
-	BorderBottom(true)
-
-var spinnerStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(colorCTA))
+var (
+	colorCyan       = lipgloss.Color("6")
+	colorRed        = lipgloss.Color("1")
+	colorOrange     = lipgloss.Color("3")
+	colorYellow     = lipgloss.Color("4")
+	colorMagenta    = lipgloss.Color("5")
+	styleCyan       = lipgloss.NewStyle().Foreground(colorCyan)
+	styleRed        = lipgloss.NewStyle().Foreground(colorRed)
+	styleOrange     = lipgloss.NewStyle().Foreground(colorOrange)
+	styleYellow     = lipgloss.NewStyle().Foreground(colorYellow)
+	styleMagenta    = lipgloss.NewStyle().Foreground(colorMagenta)
+	styleBold       = lipgloss.NewStyle().Bold(true)
+	styleActionable = lipgloss.NewStyle().Bold(true).Foreground(colorCyan)
+)

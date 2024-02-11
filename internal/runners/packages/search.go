@@ -2,6 +2,7 @@ package packages
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/captain"
@@ -15,6 +16,25 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+)
+
+var (
+	keyName        = locale.Tl("search_name", "  Name")
+	keyDescription = locale.Tl("search_description", "  Description")
+	keyWebsite     = locale.Tl("search_website", "  Website")
+	keyLicense     = locale.Tl("search_license", "  License")
+	keyVersions    = locale.Tl("search_versions", "  Versions")
+	keyVulns       = locale.Tl("search_vulnerabilities", "  Vulnerabilities (CVEs)")
+
+	keys = []string{
+		keyName,
+		keyDescription,
+		keyWebsite,
+		keyLicense,
+		keyVersions,
+		keyVulns,
+	}
 )
 
 // SearchRunParams tracks the info required for running search.
@@ -82,10 +102,36 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 			locale.Tl("search_request_"+ns.Type().String(), ""),
 		)
 	}
-	v.content, err = s.buildSearchOutput(s.out, packages)
-	if err != nil {
-		return locale.WrapError(err, "Could not build search output")
+
+	seen := make(map[string]bool)
+	var processedPackages []*model.IngredientAndVersion
+	for _, pack := range packages {
+		if pack.Ingredient.Name == nil {
+			logging.Error("Package has no name: %v", pack)
+			continue
+		}
+
+		if seen[*pack.Ingredient.Name] {
+			continue
+		}
+		processedPackages = append(processedPackages, pack)
+		seen[*pack.Ingredient.Name] = true
 	}
+
+	var vulns map[string][]*model.VulnerabilityIngredient
+	if s.auth.Authenticated() {
+		vulns, err = s.getVulns(processedPackages)
+		if err != nil {
+			return errs.Wrap(err, "Could not fetch vulnerabilities")
+		}
+	}
+
+	table, err := s.createSearchTable(v.width, v.height, processedPackages, vulns)
+	if err != nil {
+		return errs.Wrap(err, "Could not create search table")
+	}
+	v.content = table.content
+	v.packages = table.entries
 
 	if _, err := p.Run(); err != nil {
 		return err
@@ -116,99 +162,57 @@ func targetedLanguage(languageOpt string, proj *project.Project) (string, error)
 	return lang.Name, nil
 }
 
-func (s *Search) buildSearchOutput(out output.Outputer, packages []*model.IngredientAndVersion) (string, error) {
-	builder := &strings.Builder{}
-	internalOutput, err := output.New(string(out.Type()), &output.Config{
-		OutWriter:   builder,
-		ErrWriter:   builder,
-		Colored:     out.Config().Colored,
-		Interactive: out.Config().Interactive,
-		ShellName:   out.Config().ShellName,
-	})
-	if err != nil {
-		return "", errs.Wrap(err, "Could not create outputer")
+type table struct {
+	content string
+	entries []string
+}
+
+func (s *Search) createSearchTable(width, height int, packages []*model.IngredientAndVersion, vulns map[string][]*model.VulnerabilityIngredient) (*table, error) {
+	maxKeyLength := 0
+	for _, key := range keys {
+		renderedKey := styleBold.Render(key)
+		if len(renderedKey) > maxKeyLength {
+			maxKeyLength = len(renderedKey) + 2
+		}
 	}
 
-	filterNilStr := func(s *string) string {
-		if s == nil {
-			return ""
+	doc := strings.Builder{}
+	entries := []string{}
+	for _, pkg := range packages {
+		if pkg.Ingredient.Name != nil {
+			doc.WriteString(formatRow(styleBold.Render(keyName), *pkg.Ingredient.Name, maxKeyLength, width))
 		}
-		return *s
-	}
-
-	var rows []*packageDetailsTable
-	seen := make(map[string]bool)
-	for _, pack := range packages {
-		name := filterNilStr(pack.Ingredient.Name)
-		if name == "" || seen[name] {
-			continue
+		if pkg.Ingredient.Description != nil {
+			doc.WriteString(formatRow(styleBold.Render(keyDescription), *pkg.Ingredient.Description, maxKeyLength, width))
 		}
-
-		authors, err := model.FetchAuthors(pack.Ingredient.IngredientID, pack.LatestVersion.IngredientVersionID)
-		if err != nil {
-			return "", errs.Wrap(err, "Could not fetch authors")
+		if pkg.Ingredient.Website != "" {
+			doc.WriteString(formatRow(styleBold.Render(keyWebsite), styleCyan.Render(pkg.Ingredient.Website.String()), maxKeyLength, width))
 		}
-
-		row := &packageDetailsTable{
-			Name: locale.Tl("search_package_name", "[CYAN]{{.V0}}[/RESET]", name),
-		}
-
-		if pack.Ingredient.Description != nil {
-			row.Description = *pack.Ingredient.Description
-		}
-
-		var authorNames []string
-		for _, a := range authors {
-			if a.Name == nil {
-				continue
-			}
-			authorNames = append(authorNames, fmt.Sprintf("[CYAN]%s[/RESET]", *a.Name))
-		}
-		if len(authorNames) > 1 {
-			row.Authors = strings.Join(authorNames, ", ")
-		} else if len(authorNames) == 1 {
-			row.Author = authorNames[0]
-		}
-
-		if pack.Ingredient.Website != "" {
-			row.Website = pack.Ingredient.Website.String()
-		}
-
-		if pack.LatestVersion.LicenseExpression != nil {
-			row.License = *pack.LatestVersion.LicenseExpression
+		if pkg.LatestVersion.LicenseExpression != nil {
+			doc.WriteString(formatRow(styleBold.Render(keyLicense), *pkg.LatestVersion.LicenseExpression, maxKeyLength, width))
 		}
 
 		var versions []string
-		for i, v := range pack.Versions {
+		for i, v := range pkg.Versions {
 			if i > 5 {
-				versions = append(versions, fmt.Sprintf("... (%d more)", len(pack.Versions)-5))
+				versions = append(versions, fmt.Sprintf("... (%d more)", len(pkg.Versions)-5))
 				break
 			}
-			versions = append(versions, fmt.Sprintf(locale.Tl("search_version", "[CYAN]%s[/RESET]"), v.Version))
+			versions = append(versions, styleCyan.Render(v.Version))
 		}
 		if len(versions) > 0 {
-			row.Versions = strings.Join(versions, ", ")
+			doc.WriteString(formatRow(styleBold.Render(keyVersions), strings.Join(versions, ", "), maxKeyLength, width))
 		}
 
-		if s.auth.Authenticated() {
-			vulns, err := model.FetchVulnerabilitiesForIngredients(s.auth, []*request.Ingredient{
-				{
-					Name:      *pack.Ingredient.Name,
-					Namespace: *pack.Ingredient.PrimaryNamespace,
-					Version:   pack.Version,
-				},
-			})
-			if err != nil {
-				return "", errs.Wrap(err, "Could not fetch vulnerabilities")
-			}
-
+		ingredientVulns := vulns[ingredientVulnKey(*pkg.Ingredient.PrimaryNamespace, *pkg.Ingredient.Name, pkg.Version)]
+		if len(ingredientVulns) > 0 {
 			var (
 				critical int
 				high     int
 				medium   int
 				low      int
 			)
-			for _, v := range vulns {
+			for _, v := range ingredientVulns {
 				critical += len(v.Vulnerabilities.Critical)
 				high += len(v.Vulnerabilities.High)
 				medium += len(v.Vulnerabilities.Medium)
@@ -217,29 +221,74 @@ func (s *Search) buildSearchOutput(out output.Outputer, packages []*model.Ingred
 
 			vunlSummary := []string{}
 			if critical > 0 {
-				vunlSummary = append(vunlSummary, fmt.Sprintf(locale.Tl("search_critical", "[RED]%d[/RESET]"), critical))
+				vunlSummary = append(vunlSummary, styleRed.Render(locale.Tl("search_critical", "{{.V0}} Critical", strconv.Itoa(critical))))
 			}
 			if high > 0 {
-				vunlSummary = append(vunlSummary, fmt.Sprintf(locale.Tl("search_high", "[YELLOW]%d[/RESET]"), high))
+				vunlSummary = append(vunlSummary, styleOrange.Render(locale.Tl("search_high", "{{.V0}} High", strconv.Itoa(high))))
 			}
 			if medium > 0 {
-				vunlSummary = append(vunlSummary, fmt.Sprintf(locale.Tl("search_medium", "[YELLOW]%d[/RESET]"), medium))
+				vunlSummary = append(vunlSummary, styleYellow.Render(locale.Tl("search_medium", "{{.V0}} Medium", strconv.Itoa(medium))))
 			}
 			if low > 0 {
-				vunlSummary = append(vunlSummary, fmt.Sprintf(locale.Tl("search_low", "[GREEN]%d[/RESET]"), low))
+				vunlSummary = append(vunlSummary, styleMagenta.Render(locale.Tl("search_low", "{{.V0}} Low", strconv.Itoa(low))))
 			}
-			row.Vulnerabilities = strings.Join(vunlSummary, ", ")
+
+			if len(vunlSummary) > 0 {
+				doc.WriteString(formatRow(styleBold.Render(keyVulns), strings.Join(vunlSummary, ", "), maxKeyLength, width))
+			}
 		}
 
-		seen[name] = true
-		rows = append(rows, row)
+		doc.WriteString("\n")
+		entries = append(entries, *pkg.Ingredient.Name)
+	}
+	return &table{
+		content: doc.String(),
+		entries: entries,
+	}, nil
+}
+
+func formatRow(key, value string, maxKeyLength, width int) string {
+	rowStyle := lipgloss.NewStyle().Width(width)
+
+	// Pad key and wrap value
+	paddedKey := key + strings.Repeat(" ", maxKeyLength-len(key))
+	valueStyle := lipgloss.NewStyle().Width(width - len(paddedKey))
+
+	wrapped := valueStyle.Render(value)
+	indentedValue := strings.ReplaceAll(wrapped, "\n", "\n"+strings.Repeat(" ", len(paddedKey)-8))
+
+	formattedRow := fmt.Sprintf("%s%s", paddedKey, indentedValue)
+	return rowStyle.Render(formattedRow) + "\n"
+}
+
+func (s *Search) getVulns(packages []*model.IngredientAndVersion) (map[string][]*model.VulnerabilityIngredient, error) {
+	var ingredients []*request.Ingredient
+	for _, pack := range packages {
+		ingredients = append(ingredients, &request.Ingredient{
+			Name:      *pack.Ingredient.Name,
+			Namespace: *pack.Ingredient.PrimaryNamespace,
+			Version:   pack.Version,
+		})
 	}
 
-	internalOutput.Print(struct {
-		Details []*packageDetailsTable `opts:"verticalTable"`
-	}{
-		Details: rows,
-	})
+	vulns, err := model.FetchVulnerabilitiesForIngredients(s.auth, ingredients)
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to fetch vulnerabilities")
+	}
 
-	return builder.String(), nil
+	vulnMap := make(map[string][]*model.VulnerabilityIngredient)
+	for _, v := range vulns {
+		key := ingredientVulnKey(v.PrimaryNamespace, v.Name, v.Version)
+		vulnMap[key] = append(vulnMap[key], v)
+	}
+
+	return vulnMap, nil
+}
+
+func ingredientVulnKey(namespace, name, version string) string {
+	return fmt.Sprintf("%s/%s/%s",
+		strings.ToLower(namespace),
+		strings.ToLower(name),
+		strings.ToLower(version),
+	)
 }
