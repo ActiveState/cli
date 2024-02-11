@@ -117,7 +117,10 @@ func (v *view) initialRemaining() {
 }
 
 func (v *view) footerView() string {
-	footerText := fmt.Sprintf("... %d more matches, press Down to scroll", v.remaining)
+	var footerText string
+	if v.remaining != 0 {
+		footerText += fmt.Sprintf("... %d more matches, press Down to scroll", v.remaining)
+	}
 	footerText += fmt.Sprintf("\n%s'%s'", styleBold.Render("For more info run"), styleActionable.Render(" state info <name>"))
 	return lipgloss.NewStyle().Render(footerText)
 }

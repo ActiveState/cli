@@ -153,8 +153,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 	// Note that the expected strings might change due to inventory changes
 	cp := ts.Spawn("search", "requests")
 	expectations := []string{
-		"requests3",
-		"3.0.0a1",
+		"requests2",
+		"2.16.0",
 	}
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
@@ -172,7 +172,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 	expectations := []string{
 		"Name",
 		"requests",
-		"older versions",
+		"more",
 	}
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
@@ -205,8 +205,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
 	cp := ts.Spawn("search", "Moose", "--language=perl")
 	cp.Expect("Name")
 	cp.Expect("Moose")
+	cp.Expect("Moose-Autobox")
 	cp.Expect("MooseFS")
-	cp.Expect("MooseX-ABC")
 	cp.ExpectExitCode(0)
 }
 
@@ -217,14 +217,10 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchModules() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("search", "leapsecond", "--language=perl")
-	cp.Expect("Matching modules")
-	cp.Expect("Date::Leapsecond")
-	cp.Expect("Matching modules")
-	cp.Expect("DateTime::LeapSecond")
-	cp.Expect("Matching modules")
-	cp.Expect("DateTime::LeapSecond")
-	cp.Expect("Matching modules")
-	cp.Expect("DateTime::Lite::LeapSecond")
+	cp.Expect("Date-Leapsecond")
+	cp.Expect("DateTime-LeapSecond")
+	cp.Expect("DateTime-LeapSecond")
+	cp.Expect("DateTime-Lite")
 	cp.ExpectExitCode(0)
 }
 
