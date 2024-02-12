@@ -19,5 +19,3 @@ cmd/state/versioninfo.json
 cmd/state/resource.syso
 cmd/state-svc/versioninfo.json
 cmd/state-svc/resource.syso
-# Ignore .activestate/commit file; tracking this via VCS will cause users to have to resolve redundant conflicts
-.activestate/commit
