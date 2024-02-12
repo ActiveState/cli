@@ -2,7 +2,6 @@ package packages
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/captain"
@@ -16,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 var (
@@ -126,12 +124,17 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 		}
 	}
 
-	table, err := s.createSearchTable(v.width, v.height, processedPackages, vulns)
+	table, err := createSearchTable(v.width, v.height, processedPackages, vulns)
 	if err != nil {
 		return errs.Wrap(err, "Could not create search table")
 	}
-	v.content = table.content
+	v.content = table.Content()
 	v.packages = table.entries
+
+	if s.out.Type().IsStructured() {
+		s.out.Print(table)
+		return nil
+	}
 
 	if _, err := p.Run(); err != nil {
 		return err
@@ -160,105 +163,6 @@ func targetedLanguage(languageOpt string, proj *project.Project) (string, error)
 		return "", errs.Wrap(err, "LanguageByCommit failed")
 	}
 	return lang.Name, nil
-}
-
-type table struct {
-	content string
-	entries []string
-}
-
-func (s *Search) createSearchTable(width, height int, packages []*model.IngredientAndVersion, vulns map[string][]*model.VulnerabilityIngredient) (*table, error) {
-	maxKeyLength := 0
-	for _, key := range keys {
-		renderedKey := styleBold.Render(key)
-		if len(renderedKey) > maxKeyLength {
-			maxKeyLength = len(renderedKey) + 2
-		}
-	}
-
-	doc := strings.Builder{}
-	entries := []string{}
-	for _, pkg := range packages {
-		if pkg.Ingredient.Name != nil {
-			doc.WriteString(formatRow(styleBold.Render(keyName), *pkg.Ingredient.Name, maxKeyLength, width))
-		}
-		if pkg.Ingredient.Description != nil {
-			doc.WriteString(formatRow(styleBold.Render(keyDescription), *pkg.Ingredient.Description, maxKeyLength, width))
-		}
-		if pkg.Ingredient.Website != "" {
-			doc.WriteString(formatRow(styleBold.Render(keyWebsite), styleCyan.Render(pkg.Ingredient.Website.String()), maxKeyLength, width))
-		}
-		if pkg.LatestVersion.LicenseExpression != nil {
-			doc.WriteString(formatRow(styleBold.Render(keyLicense), *pkg.LatestVersion.LicenseExpression, maxKeyLength, width))
-		}
-
-		var versions []string
-		for i, v := range pkg.Versions {
-			if i > 5 {
-				versions = append(versions, fmt.Sprintf("... (%d more)", len(pkg.Versions)-5))
-				break
-			}
-			versions = append(versions, styleCyan.Render(v.Version))
-		}
-		if len(versions) > 0 {
-			doc.WriteString(formatRow(styleBold.Render(keyVersions), strings.Join(versions, ", "), maxKeyLength, width))
-		}
-
-		ingredientVulns := vulns[ingredientVulnKey(*pkg.Ingredient.PrimaryNamespace, *pkg.Ingredient.Name, pkg.Version)]
-		if len(ingredientVulns) > 0 {
-			var (
-				critical int
-				high     int
-				medium   int
-				low      int
-			)
-			for _, v := range ingredientVulns {
-				critical += len(v.Vulnerabilities.Critical)
-				high += len(v.Vulnerabilities.High)
-				medium += len(v.Vulnerabilities.Medium)
-				low += len(v.Vulnerabilities.Low)
-			}
-
-			vunlSummary := []string{}
-			if critical > 0 {
-				vunlSummary = append(vunlSummary, styleRed.Render(locale.Tl("search_critical", "{{.V0}} Critical", strconv.Itoa(critical))))
-			}
-			if high > 0 {
-				vunlSummary = append(vunlSummary, styleOrange.Render(locale.Tl("search_high", "{{.V0}} High", strconv.Itoa(high))))
-			}
-			if medium > 0 {
-				vunlSummary = append(vunlSummary, styleYellow.Render(locale.Tl("search_medium", "{{.V0}} Medium", strconv.Itoa(medium))))
-			}
-			if low > 0 {
-				vunlSummary = append(vunlSummary, styleMagenta.Render(locale.Tl("search_low", "{{.V0}} Low", strconv.Itoa(low))))
-			}
-
-			if len(vunlSummary) > 0 {
-				doc.WriteString(formatRow(styleBold.Render(keyVulns), strings.Join(vunlSummary, ", "), maxKeyLength, width))
-			}
-		}
-
-		doc.WriteString("\n")
-		entries = append(entries, *pkg.Ingredient.Name)
-	}
-	return &table{
-		content: doc.String(),
-		entries: entries,
-	}, nil
-}
-
-func formatRow(key, value string, maxKeyLength, width int) string {
-	rowStyle := lipgloss.NewStyle().Width(width)
-
-	// Pad key and wrap value
-	paddedKey := key + strings.Repeat(" ", maxKeyLength-len(key))
-	valueStyle := lipgloss.NewStyle().Width(width - len(paddedKey))
-
-	wrapped := valueStyle.Render(value)
-	indentedValue := strings.ReplaceAll(wrapped, "\n", "\n"+strings.Repeat(" ", len(paddedKey)-8))
-
-	formattedRow := fmt.Sprintf("%s%s", paddedKey, indentedValue)
-	return rowStyle.Render(formattedRow) + "\n"
 }
 
 func (s *Search) getVulns(packages []*model.IngredientAndVersion) (map[string][]*model.VulnerabilityIngredient, error) {
