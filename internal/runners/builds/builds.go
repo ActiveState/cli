@@ -173,7 +173,11 @@ func (b *Builds) outputPlain(out *StructuredOutput, fullID bool) error {
 	for _, platform := range out.Platforms {
 		b.out.Print(fmt.Sprintf("• [NOTICE]%s[/RESET]", platform.Name))
 		for _, artifact := range platform.Builds {
-			b.out.Print(fmt.Sprintf("  • %s (ID: [ACTIONABLE]%s[/RESET])", artifact.Name, strings.ToUpper(string(artifact.ID)[0:8])))
+			id := strings.ToUpper(artifact.ID)
+			if !fullID {
+				id = id[0:8]
+			}
+			b.out.Print(fmt.Sprintf("  • %s (ID: [ACTIONABLE]%s[/RESET])", artifact.Name, id))
 		}
 
 		if len(platform.Packages) > 0 {
