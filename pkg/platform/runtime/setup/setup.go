@@ -563,6 +563,8 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 			}
 		}
 		dependencies.OutputSummary(s.out, requestedArtifacts, artifactsToBuild)
+	} else if s.target.Trigger() == target.TriggerInit {
+		dependencies.OutputSummary(s.out, changedArtifacts.Added, artifactsToBuild)
 	} else if len(oldBuildPlanArtifacts) > 0 {
 		dependencies.OutputChangeSummary(s.out, changedArtifacts, artifactsToBuild, oldBuildPlanArtifacts)
 	}

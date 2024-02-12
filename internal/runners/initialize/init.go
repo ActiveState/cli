@@ -179,6 +179,8 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	}
 	namespace := project.Namespaced{Owner: owner, Project: params.Namespace.Project}
 
+	r.out.Notice(locale.T("initializing_project"))
+
 	createParams := &projectfile.CreateParams{
 		Owner:     namespace.Owner,
 		Project:   namespace.Project,
