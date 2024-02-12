@@ -101,6 +101,8 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 		)
 	}
 
+	// The search endpoint will return all versions of a package, so we need to
+	// use only the latest version of each package.
 	seen := make(map[string]bool)
 	var processedPackages []*model.IngredientAndVersion
 	for _, pack := range packages {
@@ -137,7 +139,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	}
 
 	if _, err := p.Run(); err != nil {
-		return err
+		return errs.Wrap(err, "Failed to run search view")
 	}
 
 	return nil

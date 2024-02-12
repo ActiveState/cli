@@ -136,7 +136,7 @@ func (s structuredSearchResults) Content() string {
 		var versions []string
 		for i, v := range pkg.Versions {
 			if i > 5 {
-				versions = append(versions, fmt.Sprintf("... (%d more)", len(pkg.Versions)-5))
+				versions = append(versions, locale.Tl("search_more_versions", "... ({{.V0}} more)", strconv.Itoa(len(pkg.Versions)-5)))
 				break
 			}
 			versions = append(versions, styleCyan.Render(v))
@@ -189,6 +189,9 @@ func formatRow(key, value string, maxKeyLength, width int) string {
 	valueStyle := lipgloss.NewStyle().Width(width - len(paddedKey))
 
 	wrapped := valueStyle.Render(value)
+
+	// The rendered line ends up being a bit too long, so we need to reduce the
+	// width that we are working with to ensure that the wrapped value fits
 	indentedValue := strings.ReplaceAll(wrapped, "\n", "\n"+strings.Repeat(" ", len(paddedKey)-8))
 
 	formattedRow := fmt.Sprintf("%s%s", paddedKey, indentedValue)

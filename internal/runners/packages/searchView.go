@@ -3,9 +3,11 @@ package packages
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -65,10 +67,11 @@ func (v *view) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			lines := v.viewport.LineDown(1)
 			for _, l := range lines {
 				if strings.Contains(l, "Name") {
-					if v.remaining < 0 {
+					if v.remaining <= 0 {
 						v.remaining = 0
+					} else {
+						v.remaining--
 					}
-					v.remaining--
 				}
 			}
 			return v, nil
@@ -119,8 +122,8 @@ func (v *view) initialRemaining() {
 func (v *view) footerView() string {
 	var footerText string
 	if v.remaining != 0 {
-		footerText += fmt.Sprintf("... %d more matches, press Down to scroll", v.remaining)
+		footerText += locale.Tl("search_more_matches", "... {{.V0}} more matches, press Down to scroll", strconv.Itoa(v.remaining))
 	}
-	footerText += fmt.Sprintf("\n%s'%s'", styleBold.Render("For more info run"), styleActionable.Render(" state info <name>"))
+	footerText += fmt.Sprintf("\n%s'%s'", styleBold.Render(locale.Tl("search_more_info", "For more info run")), styleActionable.Render(locale.Tl("search_more_info_command", " state info <name>")))
 	return lipgloss.NewStyle().Render(footerText)
 }
