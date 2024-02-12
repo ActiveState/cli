@@ -113,7 +113,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 		return errs.Wrap(err, "Could not create search table")
 	}
 	v.content = table.Content()
-	v.packages = table.entries
+	v.packageNames = table.packageNames
 
 	if s.out.Type().IsStructured() {
 		s.out.Print(table)

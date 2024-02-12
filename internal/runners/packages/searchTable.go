@@ -34,10 +34,10 @@ var (
 )
 
 type structuredSearchResults struct {
-	Results []*searchResult `json:"Results,omitempty"`
-	entries []string
-	width   int
-	height  int
+	Results      []*searchResult `json:"Results,omitempty"`
+	packageNames []string
+	width        int
+	height       int
 }
 
 type searchResult struct {
@@ -60,7 +60,7 @@ func createSearchTable(width, height int, packages []*model.IngredientAndVersion
 	}
 
 	var results []*searchResult
-	var entries []string
+	var packageNames []string
 	for _, pkg := range packages {
 		result := &searchResult{}
 		if pkg.Ingredient.Name != nil {
@@ -119,15 +119,15 @@ func createSearchTable(width, height int, packages []*model.IngredientAndVersion
 			}
 		}
 
-		entries = append(entries, *pkg.Ingredient.Name)
+		packageNames = append(packageNames, *pkg.Ingredient.Name)
 		results = append(results, result)
 	}
 
 	return &structuredSearchResults{
-		Results: results,
-		entries: entries,
-		width:   width,
-		height:  height,
+		Results:      results,
+		packageNames: packageNames,
+		width:        width,
+		height:       height,
 	}, nil
 }
 

@@ -17,14 +17,14 @@ import (
 type errMsg error
 
 type view struct {
-	width     int
-	height    int
-	content   string
-	remaining int
-	packages  []string
-	ready     bool
-	err       error
-	viewport  viewport.Model
+	width        int
+	height       int
+	content      string
+	remaining    int
+	packageNames []string
+	ready        bool
+	err          error
+	viewport     viewport.Model
 }
 
 func NewView() (*view, error) {
@@ -108,13 +108,13 @@ func (v *view) View() string {
 func (v *view) initialRemaining() {
 	currentEntryIndex := 0
 	visibleContent := v.viewport.View()
-	for i, entry := range v.packages {
+	for i, entry := range v.packageNames {
 		if strings.Contains(visibleContent, entry) && i > currentEntryIndex {
 			currentEntryIndex = i + 1
 		}
 	}
 
-	v.remaining = len(v.packages) - currentEntryIndex - 1
+	v.remaining = len(v.packageNames) - currentEntryIndex - 1
 	if v.remaining < 0 {
 		v.remaining = 0
 	}
