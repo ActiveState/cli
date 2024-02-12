@@ -33,6 +33,11 @@ func newBuildsCommand(prime *primer.Values) *captain.Command {
 				Description: locale.Tl("builds_flags_commit_description", "The commit ID to inspect builds for"),
 				Value:       &params.CommitID,
 			},
+			{
+				Name:        "full-id",
+				Description: "List builds with their full identifier",
+				Value:       &params.Full,
+			},
 		},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {

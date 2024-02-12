@@ -35,6 +35,7 @@ type Params struct {
 	All       bool
 	Namespace *project.Namespaced
 	CommitID  string
+	Full bool
 }
 
 type Builds struct {
@@ -157,10 +158,10 @@ func (b *Builds) Run(params *Params) (rerr error) {
 		return nil
 	}
 
-	return b.outputPlain(out)
+	return b.outputPlain(out, params.Full)
 }
 
-func (b *Builds) outputPlain(out *StructuredOutput) error {
+func (b *Builds) outputPlain(out *StructuredOutput, fullID bool) error {
 	for _, platform := range out.Platforms {
 		b.out.Print(fmt.Sprintf("• [NOTICE]%s[/RESET]", platform.Name))
 		for _, artifact := range platform.Builds {
@@ -171,7 +172,11 @@ func (b *Builds) outputPlain(out *StructuredOutput) error {
 			b.out.Print(fmt.Sprintf("  • %s", locale.Tl("builds_packages", "[NOTICE]Packages[/RESET]")))
 		}
 		for _, artifact := range platform.Packages {
-			b.out.Print(fmt.Sprintf("    • %s (ID: [ACTIONABLE]%s[/RESET])", artifact.Name, strings.ToUpper(string(artifact.ID)[0:8])))
+			id := strings.ToUpper(artifact.ID)
+			if !fullID {
+				id = id[0:8]
+			}
+			b.out.Print(fmt.Sprintf("    • %s (ID: [ACTIONABLE]%s[/RESET])", artifact.Name, id))
 		}
 
 		if len(platform.Builds) == 0 && len(platform.Packages) == 0 {
