@@ -27,7 +27,7 @@ import (
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/runbits/changesummary"
+	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
@@ -550,9 +550,21 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, nil, errs.Wrap(err, "Failed to compute artifacts to build")
 	}
 
-	// Output a change summary if applicable.
-	if len(oldBuildPlanArtifacts) > 0 {
-		changesummary.New(s.out).ChangeSummary(changedArtifacts, artifactsToBuild, oldBuildPlanArtifacts)
+	// Output a dependency summary if applicable.
+	if s.target.Trigger() == target.TriggerCheckout {
+		// For initial checkouts, show requested dependencies (i.e. project dependencies).
+		requestedArtifacts := make([]artifact.ArtifactID, 0)
+		for _, req := range buildResult.Build.ResolvedRequirements {
+			for artifactId, a := range artifactsToBuild {
+				if a.Name == req.Requirement.Name && a.Namespace == req.Requirement.Namespace {
+					requestedArtifacts = append(requestedArtifacts, artifactId)
+					break
+				}
+			}
+		}
+		dependencies.OutputSummary(s.out, requestedArtifacts, artifactsToBuild)
+	} else if len(oldBuildPlanArtifacts) > 0 {
+		dependencies.OutputChangeSummary(s.out, changedArtifacts, artifactsToBuild, oldBuildPlanArtifacts)
 	}
 
 	// The log file we want to use for builds

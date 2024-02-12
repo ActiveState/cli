@@ -69,6 +69,9 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 	logging.Debug("Checkout %v", params.Namespace)
 
 	logging.Debug("Checking out %s to %s", params.Namespace.String(), params.PreferredPath)
+
+	u.out.Notice(locale.Tr("checking_out", params.Namespace.String()))
+
 	var err error
 	projectDir, err := u.checkout.Run(params.Namespace, params.Branch, params.RuntimePath, params.PreferredPath, params.NoClone)
 	if err != nil {
@@ -101,6 +104,8 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 			}
 		}()
 	}
+
+	u.out.Notice(output.Title(locale.T("installing_runtime_title")))
 
 	rti, err := runtime.NewFromProject(proj, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth, u.config)
 	if err != nil {
