@@ -15,19 +15,18 @@ import (
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
-	auth "github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	rtProgress "github.com/ActiveState/cli/pkg/platform/runtime/setup/events/progress"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 type DownloadParams struct {
 	BuildID   string
 	OutputDir string
+	Namespace *project.Namespaced
+	CommitID  string
 }
 
 type Download struct {
@@ -35,7 +34,7 @@ type Download struct {
 	project   *project.Project
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
-	auth      *auth.Auth
+	auth      *authentication.Auth
 	config    *config.Instance
 }
 
@@ -62,16 +61,8 @@ func rationalizeDownloadError(err *error) {
 func (d *Download) Run(params *DownloadParams) (rerr error) {
 	defer rationalizeDownloadError(&rerr)
 
-	if d.project == nil {
-		return rationalize.ErrNoProject
-	}
-
-	rt, err := runtime.NewFromProject(d.project, target.TriggerBuilds, d.analytics, d.svcModel, d.out, d.auth, d.config)
-	if err != nil {
-		return locale.WrapInputError(err, "err_refresh_runtime_new", "Could not update runtime for this project.")
-	}
-
-	terminalArtfMap, err := rt.TerminalArtifactMap(false)
+	terminalArtfMap, err := getTerminalArtifactMap(
+		d.project, params.Namespace, params.CommitID, d.auth, d.analytics, d.svcModel, d.out, d.config)
 	if err != nil {
 		return errs.Wrap(err, "Could not get build plan map")
 	}

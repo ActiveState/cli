@@ -5,11 +5,12 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/builds"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 func newBuildsCommand(prime *primer.Values) *captain.Command {
 	runner := builds.New(prime)
-	params := &builds.Params{}
+	params := &builds.Params{Namespace: &project.Namespaced{}}
 
 	cmd := captain.NewCommand(
 		"builds",
@@ -19,8 +20,18 @@ func newBuildsCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Flag{
 			{
 				Name:        "all",
-				Description: "List all builds, including individual package artifacts",
+				Description: locale.Tl("builds_flags_all_description", "List all builds, including individual package artifacts"),
 				Value:       &params.All,
+			},
+			{
+				Name:        "namespace",
+				Description: locale.Tl("builds_flags_namespace_description", "The namespace of the project to inspect builds for"),
+				Value:       params.Namespace,
+			},
+			{
+				Name:        "commit",
+				Description: locale.Tl("builds_flags_commit_description", "The commit ID to inspect builds for"),
+				Value:       &params.CommitID,
 			},
 		},
 		[]*captain.Argument{},
@@ -37,14 +48,25 @@ func newBuildsCommand(prime *primer.Values) *captain.Command {
 
 func newBuildsDownloadCommand(prime *primer.Values) *captain.Command {
 	runner := builds.NewDownload(prime)
-	params := &builds.DownloadParams{}
+	params := &builds.DownloadParams{Namespace: &project.Namespaced{}}
 
 	cmd := captain.NewCommand(
 		"dl",
 		locale.Tl("builds_download_title", "Download build artifacts"),
 		locale.Tl("builds_download_description", "Download build artifacts for a given build"),
 		prime,
-		[]*captain.Flag{},
+		[]*captain.Flag{
+			{
+				Name:        "namespace",
+				Description: locale.Tl("builds_download_flags_namespace_description", "The namespace of the project to download artifacts from"),
+				Value:       params.Namespace,
+			},
+			{
+				Name:        "commit",
+				Description: locale.Tl("builds_download_flags_commit_description", "The commit ID to download artifacts from"),
+				Value:       &params.CommitID,
+			},
+		},
 		[]*captain.Argument{
 			{
 				Name:        "ID",
