@@ -35,7 +35,7 @@ type Params struct {
 	All       bool
 	Namespace *project.Namespaced
 	CommitID  string
-	Full bool
+	Full      bool
 }
 
 type Builds struct {
