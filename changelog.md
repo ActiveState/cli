@@ -45,8 +45,8 @@ and this project adheres to
 * Added `state publish` command, which lets you publish your own ingredients to the ActiveState platform.
 * Added user configuration for setting the preferred glibc for projects which produce multiple glibc variants, eg.
   `state config set runtime.preferred.glibc 2.17`.
-* You can now disable the behavior of State Tool updating your shell prompt to include the project name. Use 
-  `state config preserve.prompt false`.
+* You can now disable the behavior of State Tool updating your shell prompt to include the project name. Use
+  `state config shell.preserve.prompt false`.
 * Added the `state languages search` command, allowing you to discover what languages you may want to use.
 * Added a new `state export log` command, which lets you easily inspect the debug log.
 * State tool executables on Windows now provide sufficient meta information.
