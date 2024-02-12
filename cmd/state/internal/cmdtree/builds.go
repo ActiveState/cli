@@ -22,6 +22,11 @@ func newBuildsCommand(prime *primer.Values) *captain.Command {
 				Description: "List all builds, including individual package artifacts",
 				Value:       &params.All,
 			},
+			{
+				Name:        "full-id",
+				Description: "List builds with their full identifier",
+				Value:       &params.Full,
+			},
 		},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
