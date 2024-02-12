@@ -325,7 +325,8 @@ func (i *Initialize) getOwner(desiredOwner string) (string, error) {
 				return org.URLname, nil
 			}
 		}
-		return "", errNoOwner
+		// Return desiredOwner for error reporting
+		return desiredOwner, errNoOwner
 	}
 
 	lastUsed := i.config.GetString(constants.LastUsedNamespacePrefname)
