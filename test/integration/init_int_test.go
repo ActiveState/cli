@@ -201,11 +201,11 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrg() {
 	ts.LoginAsPersistentUser()
 	ts.IgnoreLogErrors()
 
-	org := "ActiveState-CLI"
+	org := e2e.PersistentUsername
 	projectName := "test-project"
 
 	// First, checkout project to set last used org.
-	cp := ts.Spawn("checkout", fmt.Sprintf("%s/Python3", org))
+	cp := ts.Spawn("checkout", fmt.Sprintf("%s/python", org))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 
@@ -224,10 +224,10 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrgAndProject() {
 	ts.LoginAsPersistentUser()
 	ts.IgnoreLogErrors()
 
-	org := "ActiveState-CLI"
+	org := e2e.PersistentUsername
 
 	// First, checkout project to set last used org.
-	cp := ts.Spawn("checkout", fmt.Sprintf("%s/Python3", org))
+	cp := ts.Spawn("checkout", fmt.Sprintf("%s/python", org))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 
