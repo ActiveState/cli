@@ -1,4 +1,4 @@
-package changesummary
+package dependencies
 
 import (
 	"fmt"
@@ -17,21 +17,12 @@ import (
 // dependency numbers.
 const showUpdatedPackages = true
 
-// ChangeSummary prints the summary of changes to the encapsulated outputer
-type ChangeSummary struct {
-	out output.Outputer
-}
-
-func New(out output.Outputer) *ChangeSummary {
-	return &ChangeSummary{out}
-}
-
-// ChangeSummary looks over the given artifact changeset and attempts to determine if a single
+// OutputChangeSummary looks over the given artifact changeset and attempts to determine if a single
 // package install request was made. If so, it computes and lists the additional dependencies being
 // installed for that package.
 // `artifacts` is an ArtifactMap containing artifacts in the changeset, and `filter` contains any
 // runtime requirements/artifacts already installed.
-func (cs *ChangeSummary) ChangeSummary(changeset artifact.ArtifactChangeset, artifacts artifact.Map, filter artifact.Map) {
+func OutputChangeSummary(out output.Outputer, changeset artifact.ArtifactChangeset, artifacts artifact.Map, filter artifact.Map) {
 	// Determine which package was installed.
 	var addedId *artifact.ArtifactID
 	for _, candidateId := range changeset.Added {
@@ -77,7 +68,7 @@ func (cs *ChangeSummary) ChangeSummary(changeset artifact.ArtifactChangeset, art
 	}
 
 	// List additional dependencies.
-	cs.out.Notice("") // blank line
+	out.Notice("") // blank line
 
 	localeKey := "additional_dependencies"
 	if hasAdditionalIndirectDependencies {
@@ -87,7 +78,7 @@ func (cs *ChangeSummary) ChangeSummary(changeset artifact.ArtifactChangeset, art
 	if added.Version != nil {
 		version = *added.Version
 	}
-	cs.out.Notice(locale.Tr(localeKey,
+	out.Notice(locale.Tr(localeKey,
 		added.Name, version, strconv.Itoa(len(directDependencies)), strconv.Itoa(len(uniqueDependencies))))
 
 	// A direct dependency list item is of the form:
@@ -110,18 +101,20 @@ func (cs *ChangeSummary) ChangeSummary(changeset artifact.ArtifactChangeset, art
 
 		subdependencies := ""
 		if numSubs := len(dependencies[dep.ArtifactID]); numSubs > 0 && hasAdditionalIndirectDependencies {
-			subdependencies = fmt.Sprintf(" ([ACTIONABLE]%s[/RESET] dependencies)", strconv.Itoa(numSubs)) // intentional leading space
+			subdependencies = fmt.Sprintf(" ([ACTIONABLE]%s[/RESET] dependencies)", // intentional leading space
+				strconv.Itoa(numSubs))
 		}
 
-		item := fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET]%s", dep.Name, version, subdependencies) // intentional omission of space before last %s
+		item := fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET]%s", // intentional omission of space before last %s
+			dep.Name, version, subdependencies)
 		if oldVersion, exists := oldRequirements[fmt.Sprintf("%s/%s", dep.Namespace, dep.Name)]; exists && version != "" && oldVersion != version {
 			item = fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET] → %s (%s)", dep.Name, oldVersion, item, locale.Tl("updated", "updated"))
 		}
 
-		cs.out.Notice(fmt.Sprintf("  [DISABLED]%s[/RESET] %s", prefix, item))
+		out.Notice(fmt.Sprintf("  [DISABLED]%s[/RESET] %s", prefix, item))
 	}
 
-	cs.out.Notice("") // blank line
+	out.Notice("") // blank line
 }
 
 // isDependency iterates over all artifacts and their dependencies in the given changeset, and

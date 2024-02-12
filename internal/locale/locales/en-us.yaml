@@ -1439,6 +1439,11 @@ shell_project_statement:
     Opening shell for project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
     This shell is operating inside a virtual environment.
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
+checking_out:
+  other: |
+    Checking out project: [NOTICE]{{.V0}}[/RESET]
+installing_runtime_title:
+  other: Installing Runtime
 checkout_project_statement:
   other: |
     Checked out project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].

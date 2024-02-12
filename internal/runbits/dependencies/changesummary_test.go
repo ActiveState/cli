@@ -1,4 +1,4 @@
-package changesummary
+package dependencies
 
 import (
 	"strings"
@@ -130,7 +130,7 @@ func TestChangeSummary(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			out := outputhelper.NewCatcher()
-			New(out).ChangeSummary(tt.changed, artifacts, tt.existing)
+			OutputChangeSummary(out, tt.changed, artifacts, tt.existing)
 
 			assert.Equal(t, output.WordWrap(tt.expected), strings.TrimSpace(out.CombinedOutput()))
 		})
