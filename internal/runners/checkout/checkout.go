@@ -106,7 +106,6 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 	}
 
 	u.out.Notice(output.Title(locale.T("installing_runtime_title")))
-	u.out.Notice(locale.T("installing_runtime_and_dependencies"))
 
 	rti, err := runtime.NewFromProject(proj, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth, u.config)
 	if err != nil {

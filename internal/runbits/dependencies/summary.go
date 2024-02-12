@@ -50,7 +50,7 @@ func OutputSummary(out output.Outputer, directDependencies []artifact.ArtifactID
 
 		item := fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET] %s", dep.Name, version, subdependencies)
 
-		out.Notice(fmt.Sprintf("  [DISABLED]%s[/RESET] %s", prefix, item))
+		out.Notice(fmt.Sprintf("[DISABLED]%s[/RESET] %s", prefix, item))
 	}
 
 	out.Notice("") // blank line

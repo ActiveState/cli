@@ -1447,9 +1447,6 @@ checking_out:
     Checking out project: [NOTICE]{{.V0}}[/RESET]
 installing_runtime_title:
   other: Installing Runtime
-installing_runtime_and_dependencies:
-  other: |
-    Installing your runtime and dependencies.
 checkout_project_statement:
   other: |
     Checked out project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
