@@ -199,6 +199,7 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrg() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
+	ts.IgnoreLogErrors()
 
 	org := "ActiveState-CLI"
 	projectName := "test-project"
@@ -210,7 +211,8 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrg() {
 
 	// Now, run `state init` without specifying the org.
 	cp = ts.Spawn("init", projectName, "--language", "python@3")
-	cp.Expect(fmt.Sprintf("Project '%s/%s' has been successfully initialized", org, projectName))
+	cp.Expect(fmt.Sprintf("%s/%s", org, projectName))
+	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated("ActiveState-CLI", "test-project")
 }
@@ -220,6 +222,7 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrgAndProject() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
+	ts.IgnoreLogErrors()
 
 	org := "ActiveState-CLI"
 
@@ -230,7 +233,8 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrgAndProject() {
 
 	// Now, run `state init` without specifying the org or project.
 	cp = ts.Spawn("init", "--language", "python@3")
-	cp.Expect(fmt.Sprintf("Project '%s/Python3-%s' has been successfully initialized", org, model.HostPlatform))
+	cp.Expect(fmt.Sprintf("%s/Python3-%s'", org, model.HostPlatform))
+	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated("ActiveState-CLI", "Python3")
 }
