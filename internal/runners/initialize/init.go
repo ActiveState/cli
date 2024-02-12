@@ -1,6 +1,7 @@
 package initialize
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,7 +32,7 @@ import (
 
 // RunParams stores run func parameters.
 type RunParams struct {
-	Namespace *project.Namespaced
+	Namespace string
 	Path      string
 	Language  string
 	Private   bool
@@ -97,8 +98,30 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 }
 
 func (r *Initialize) Run(params *RunParams) (rerr error) {
-	defer rationalizeError(params.Namespace, &rerr)
-	logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
+	logging.Debug("Init: %s %v", params.Namespace, params.Private)
+
+	var (
+		paramOwner          string
+		paramProjectName    string
+		resolvedOwner       string
+		resolvedProjectName string
+	)
+
+	if params.Namespace != "" {
+		ns, err := project.ParseNamespace(params.Namespace)
+		if err != nil {
+			logging.Error("Could not parse namespace: %v", err)
+			paramProjectName = params.Namespace
+		} else {
+			paramOwner = ns.Owner
+			paramProjectName = ns.Project
+
+		}
+	}
+
+	defer func() {
+		rationalizeError(resolvedOwner, resolvedProjectName, &rerr)
+	}()
 
 	if !r.auth.Authenticated() {
 		return rationalize.ErrNotAuthenticated
@@ -161,23 +184,12 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
-	// Match the case of the organization.
-	// Otherwise the incorrect case will be written to the project file.
-	var owner string
-	orgs, err := model.FetchOrganizations()
+	resolvedOwner, err = r.getOwner(paramOwner)
 	if err != nil {
-		return errs.Wrap(err, "Unable to get the user's writable orgs")
+		return locale.WrapError(err, "err_init_owner", "Could not determine owner")
 	}
-	for _, org := range orgs {
-		if strings.EqualFold(org.URLname, params.Namespace.Owner) {
-			owner = org.URLname
-			break
-		}
-	}
-	if owner == "" {
-		return errNoOwner
-	}
-	namespace := project.Namespaced{Owner: owner, Project: params.Namespace.Project}
+	resolvedProjectName = r.getProjectName(paramProjectName, lang.String())
+	namespace := project.Namespaced{Owner: resolvedOwner, Project: resolvedProjectName}
 
 	createParams := &projectfile.CreateParams{
 		Owner:     namespace.Owner,
@@ -299,4 +311,42 @@ func deriveVersion(lang language.Language, version string) (string, error) {
 	}
 
 	return version, nil
+}
+
+func (i *Initialize) getOwner(desiredOwner string) (string, error) {
+	orgs, err := model.FetchOrganizations()
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to get the user's writable orgs")
+	}
+
+	if desiredOwner != "" {
+		for _, org := range orgs {
+			if strings.EqualFold(org.URLname, desiredOwner) {
+				return org.URLname, nil
+			}
+		}
+	}
+
+	lastUsed := i.config.GetString(constants.LastUsedNamespacePrefname)
+	if lastUsed != "" {
+		ns, err := project.ParseNamespace(lastUsed)
+		if err != nil {
+			return "", errs.Wrap(err, "Unable to parse last used namespace")
+		}
+		return ns.Owner, nil
+	}
+
+	if len(orgs) > 0 {
+		return orgs[0].URLname, nil
+	}
+
+	return "", errNoOwner
+}
+
+func (i *Initialize) getProjectName(desiredProject string, lang string) string {
+	if desiredProject != "" {
+		return desiredProject
+	}
+
+	return fmt.Sprintf("%s-%s", lang, model.HostPlatform)
 }

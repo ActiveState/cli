@@ -429,6 +429,9 @@ const ForumsURL = "https://community.activestate.com/c/state-tool/"
 // GlobalDefaultPrefname is the pref that holds the path to the globally defaulted project
 const GlobalDefaultPrefname = "projects.active.path"
 
+// LastUsedNamespacePrefname is the pref that holds the last used org for `state init`
+const LastUsedNamespacePrefname = "last.used.namespace"
+
 // DefaultBranchName is the default branch name used on platform projects
 const DefaultBranchName = "main"
 

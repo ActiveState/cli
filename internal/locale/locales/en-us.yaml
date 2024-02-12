@@ -718,7 +718,7 @@ init_success:
 arg_state_init_namespace:
   other: org/project
 arg_state_init_namespace_description:
-  other: The namespace for the project that you wish to initialize
+  other: The namespace for the project that you wish to initialize. If not in the format of <org/project>, the value will be used as the project name.
 flag_state_init_language_description:
   other: "The Language[@version] that this project should use"
 arg_state_init_path:

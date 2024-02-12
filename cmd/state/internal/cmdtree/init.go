@@ -5,15 +5,12 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/initialize"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 func newInitCommand(prime *primer.Values) *captain.Command {
 	initRunner := initialize.New(prime)
 
-	params := initialize.RunParams{
-		Namespace: &project.Namespaced{},
-	}
+	params := initialize.RunParams{}
 
 	return captain.NewCommand(
 		"init",
@@ -36,8 +33,7 @@ func newInitCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        locale.T("arg_state_init_namespace"),
 				Description: locale.T("arg_state_init_namespace_description"),
-				Value:       params.Namespace,
-				Required:    true,
+				Value:       &params.Namespace,
 			},
 			{
 				Name:        locale.T("arg_state_init_path"),
