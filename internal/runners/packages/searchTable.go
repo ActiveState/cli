@@ -11,6 +11,28 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+const (
+	leftPad = 2
+)
+
+var (
+	keyName        = locale.Tl("search_name", "Name")
+	keyDescription = locale.Tl("search_description", "Description")
+	keyWebsite     = locale.Tl("search_website", "Website")
+	keyLicense     = locale.Tl("search_license", "License")
+	keyVersions    = locale.Tl("search_versions", "Versions")
+	keyVulns       = locale.Tl("search_vulnerabilities", "Vulnerabilities (CVEs)")
+
+	keys = []string{
+		keyName,
+		keyDescription,
+		keyWebsite,
+		keyLicense,
+		keyVersions,
+		keyVulns,
+	}
+)
+
 type structuredSearchResults struct {
 	Results []*searchResult `json:"Results,omitempty"`
 	entries []string
@@ -185,7 +207,7 @@ func formatRow(key, value string, maxKeyLength, width int) string {
 	rowStyle := lipgloss.NewStyle().Width(width)
 
 	// Pad key and wrap value
-	paddedKey := key + strings.Repeat(" ", maxKeyLength-len(key))
+	paddedKey := strings.Repeat(" ", leftPad) + key + strings.Repeat(" ", maxKeyLength-len(key))
 	valueStyle := lipgloss.NewStyle().Width(width - len(paddedKey))
 
 	wrapped := valueStyle.Render(value)

@@ -17,24 +17,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-var (
-	keyName        = locale.Tl("search_name", "  Name")
-	keyDescription = locale.Tl("search_description", "  Description")
-	keyWebsite     = locale.Tl("search_website", "  Website")
-	keyLicense     = locale.Tl("search_license", "  License")
-	keyVersions    = locale.Tl("search_versions", "  Versions")
-	keyVulns       = locale.Tl("search_vulnerabilities", "  Vulnerabilities (CVEs)")
-
-	keys = []string{
-		keyName,
-		keyDescription,
-		keyWebsite,
-		keyLicense,
-		keyVersions,
-		keyVulns,
-	}
-)
-
 // SearchRunParams tracks the info required for running search.
 type SearchRunParams struct {
 	Language   string
