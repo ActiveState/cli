@@ -14,6 +14,10 @@ import (
 	"golang.org/x/term"
 )
 
+const (
+	verticalMargin = 7
+)
+
 type errMsg error
 
 type view struct {
@@ -79,7 +83,7 @@ func (v *view) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		if !v.ready {
 			// Keep the searching message and command in view
-			v.viewport = viewport.New(msg.Width, msg.Height-7)
+			v.viewport = viewport.New(msg.Width, msg.Height-verticalMargin)
 			v.viewport.SetContent(v.content)
 			v.initialRemaining()
 			v.ready = true

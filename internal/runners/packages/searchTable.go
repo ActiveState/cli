@@ -207,6 +207,7 @@ func formatRow(key, value string, maxKeyLength, width int) string {
 	rowStyle := lipgloss.NewStyle().Width(width)
 
 	// Pad key and wrap value
+	// The viewport does not support padding so we need to pad the key manually
 	paddedKey := strings.Repeat(" ", leftPad) + key + strings.Repeat(" ", maxKeyLength-len(key))
 	valueStyle := lipgloss.NewStyle().Width(width - len(paddedKey))
 
