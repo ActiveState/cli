@@ -54,8 +54,11 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	data = bytes.ReplaceAll(data, []byte("casestyle"), []byte("case"))
 	suite.Require().NoError(fileutils.WriteFile(scriptPath, data), "Update buildscript")
 
-	cp = ts.Spawn("commit")
-	cp.Expect("Runtime updated")
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("commit"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Runtime updated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 
