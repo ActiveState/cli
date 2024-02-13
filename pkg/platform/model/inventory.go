@@ -106,6 +106,43 @@ func SearchIngredientsStrict(namespace string, name string, caseSensitive bool, 
 	return ingredients, nil
 }
 
+// SearchIngredientsLatest will return all ingredients+ingredientVersions that
+// fuzzily match the ingredient name, but only the latest version of each
+// ingredient.
+func SearchIngredientsLatest(namespace string, name string, includeVersions bool, ts *time.Time) ([]*IngredientAndVersion, error) {
+	results, err := searchIngredientsNamespace(namespace, name, includeVersions, false, ts)
+	if err != nil {
+		return nil, err
+	}
+
+	return processLatestIngredients(results), nil
+}
+
+func SearchIngredientsLatestStrict(namespace string, name string, caseSensitive bool, includeVersions bool, ts *time.Time) ([]*IngredientAndVersion, error) {
+	results, err := SearchIngredientsStrict(namespace, name, caseSensitive, includeVersions, ts)
+	if err != nil {
+		return nil, err
+	}
+
+	return processLatestIngredients(results), nil
+}
+
+func processLatestIngredients(ingredients []*IngredientAndVersion) []*IngredientAndVersion {
+	seen := make(map[string]bool)
+	var processedIngredients []*IngredientAndVersion
+	for _, ing := range ingredients {
+		if ing.Ingredient.Name == nil {
+			continue
+		}
+		if seen[*ing.Ingredient.Name] {
+			continue
+		}
+		processedIngredients = append(processedIngredients, ing)
+		seen[*ing.Ingredient.Name] = true
+	}
+	return processedIngredients
+}
+
 // FetchAuthors obtains author info for an ingredient at a particular version.
 func FetchAuthors(ingredID, ingredVersionID *strfmt.UUID) (Authors, error) {
 	if ingredID == nil {

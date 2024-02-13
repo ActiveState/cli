@@ -68,9 +68,9 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 
 	var packages []*model.IngredientAndVersion
 	if params.ExactTerm {
-		packages, err = model.SearchIngredientsStrict(ns.String(), params.Ingredient.Name, true, true, params.Timestamp.Time)
+		packages, err = model.SearchIngredientsLatestStrict(ns.String(), params.Ingredient.Name, true, true, params.Timestamp.Time)
 	} else {
-		packages, err = model.SearchIngredients(ns.String(), params.Ingredient.Name, true, params.Timestamp.Time)
+		packages, err = model.SearchIngredientsLatest(ns.String(), params.Ingredient.Name, true, params.Timestamp.Time)
 	}
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
@@ -83,32 +83,15 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 		)
 	}
 
-	// The search endpoint will return all versions of a package, so we need to
-	// use only the latest version of each package.
-	seen := make(map[string]bool)
-	var processedPackages []*model.IngredientAndVersion
-	for _, pack := range packages {
-		if pack.Ingredient.Name == nil {
-			logging.Error("Package has no name: %v", pack)
-			continue
-		}
-
-		if seen[*pack.Ingredient.Name] {
-			continue
-		}
-		processedPackages = append(processedPackages, pack)
-		seen[*pack.Ingredient.Name] = true
-	}
-
 	var vulns map[string][]*model.VulnerabilityIngredient
 	if s.auth.Authenticated() {
-		vulns, err = s.getVulns(processedPackages)
+		vulns, err = s.getVulns(packages)
 		if err != nil {
 			return errs.Wrap(err, "Could not fetch vulnerabilities")
 		}
 	}
 
-	table, err := createSearchTable(v.width, v.height, processedPackages, vulns)
+	table, err := createSearchTable(v.width, v.height, packages, vulns)
 	if err != nil {
 		return errs.Wrap(err, "Could not create search table")
 	}
