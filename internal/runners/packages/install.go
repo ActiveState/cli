@@ -7,8 +7,8 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
@@ -50,7 +50,7 @@ func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) (rerr
 			return errs.Wrap(err, "Unable to fetch latest Platform timestamp")
 		}
 
-		commitID, err := commitmediator.Get(a.prime.Project())
+		commitID, err := localcommit.Get(a.prime.Project().Dir())
 		if err != nil {
 			return errs.Wrap(err, "Unable to get commit ID")
 		}
