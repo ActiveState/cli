@@ -319,6 +319,7 @@ func (i *Initialize) getOwner(desiredOwner string) (string, error) {
 		return "", errs.Wrap(err, "Unable to get the user's writable orgs")
 	}
 
+	// Prefer the desired owner if it's valid
 	if desiredOwner != "" {
 		for _, org := range orgs {
 			if strings.EqualFold(org.URLname, desiredOwner) {
@@ -329,15 +330,22 @@ func (i *Initialize) getOwner(desiredOwner string) (string, error) {
 		return desiredOwner, errNoOwner
 	}
 
+	// Use the last used namespace if it's valid
 	lastUsed := i.config.GetString(constants.LastUsedNamespacePrefname)
 	if lastUsed != "" {
 		ns, err := project.ParseNamespace(lastUsed)
 		if err != nil {
 			return "", errs.Wrap(err, "Unable to parse last used namespace")
 		}
-		return ns.Owner, nil
+
+		for _, org := range orgs {
+			if strings.EqualFold(org.URLname, ns.Owner) {
+				return org.URLname, nil
+			}
+		}
 	}
 
+	// Use the first org if there is one
 	if len(orgs) > 0 {
 		return orgs[0].URLname, nil
 	}

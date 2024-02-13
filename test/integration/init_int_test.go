@@ -201,11 +201,11 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrg() {
 	ts.LoginAsPersistentUser()
 	ts.IgnoreLogErrors()
 
-	org := e2e.PersistentUsername
+	org := "ActiveState-CLI"
 	projectName := "test-project"
 
 	// First, checkout project to set last used org.
-	cp := ts.Spawn("checkout", fmt.Sprintf("%s/python", org))
+	cp := ts.Spawn("checkout", fmt.Sprintf("%s/Python3", org))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 
@@ -215,6 +215,9 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrg() {
 	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(org, projectName)
+
+	// Verify the config file has the correct project owner.
+	suite.Contains(string(fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))), "ActiveState-CLI")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_InferredOrgAndProject() {
@@ -224,10 +227,10 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrgAndProject() {
 	ts.LoginAsPersistentUser()
 	ts.IgnoreLogErrors()
 
-	org := e2e.PersistentUsername
+	org := "ActiveState-CLI"
 
 	// First, checkout project to set last used org.
-	cp := ts.Spawn("checkout", fmt.Sprintf("%s/python", org))
+	cp := ts.Spawn("checkout", fmt.Sprintf("%s/Python3", org))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 
@@ -237,6 +240,9 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrgAndProject() {
 	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(org, fmt.Sprintf("%s/python3-%s", org, model.HostPlatform))
+
+	// Verify the config file has the correct project owner.
+	suite.Contains(string(fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))), "language: python3")
 }
 
 func TestInitIntegrationTestSuite(t *testing.T) {
