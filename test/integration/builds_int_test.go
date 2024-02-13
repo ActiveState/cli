@@ -101,6 +101,40 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds() {
 	})
 }
 
+func (suite *BuildsIntegrationTestSuite) TestBuilds_Remote() {
+	suite.OnlyRunForTags(tagsuite.Builds)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.Run("Namespace only", func() {
+		cp := ts.Spawn("builds", "--namespace", "ActiveState-CLI/Python-With-Custom-Builds")
+		cp.Expect("CentOS")
+		cp.Expect("Docker Image")
+		cp.Expect("Installer")
+		cp.Expect("macOS")
+		cp.Expect("No builds")
+		cp.Expect("Windows")
+		cp.Expect("Signed Installer")
+		cp.Expect(".exe")
+		cp.Expect("To download builds run")
+		cp.ExpectExitCode(0)
+	})
+
+	suite.Run("Namespace and commit ID", func() {
+		cp := ts.Spawn("builds", "--namespace", "ActiveState-CLI/Python-With-Custom-Builds", "--commit", "993454c7-6613-4b1a-8981-1cee43cc249e")
+		cp.Expect("CentOS")
+		cp.Expect("Docker Image")
+		cp.Expect("Installer")
+		cp.Expect("macOS")
+		cp.Expect("No builds")
+		cp.Expect("Windows")
+		cp.Expect("Signed Installer")
+		cp.Expect(".exe")
+		cp.Expect("To download builds run")
+		cp.ExpectExitCode(0)
+	})
+}
+
 func (suite *BuildsIntegrationTestSuite) TestBuilds_Download() {
 	suite.OnlyRunForTags(tagsuite.Builds)
 	ts := e2e.New(suite.T(), false)
@@ -117,6 +151,17 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Download() {
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("builds", "dl", "a46a74e9", "."),
 	)
+	cp.Expect("Downloaded bzip2", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0)
+	require.FileExists(suite.T(), filepath.Join(ts.Dirs.Work, "artifact.tar.gz"))
+}
+
+func (suite *BuildsIntegrationTestSuite) TestBuilds_Download_Remote() {
+	suite.OnlyRunForTags(tagsuite.Builds)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("builds", "dl", "a46a74e9", ".", "--namespace", "ActiveState-CLI/Python-With-Custom-Builds")
 	cp.Expect("Downloaded bzip2", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	require.FileExists(suite.T(), filepath.Join(ts.Dirs.Work, "artifact.tar.gz"))
