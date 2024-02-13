@@ -110,6 +110,8 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	if params.Namespace != "" {
 		ns, err := project.ParseNamespace(params.Namespace)
 		if err != nil {
+			// If the namespace was invalid but an argument was passed, we
+			// assume it's a project name and not an owner.
 			logging.Error("Could not parse namespace: %v", err)
 			paramProjectName = params.Namespace
 		} else {

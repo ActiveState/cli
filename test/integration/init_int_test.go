@@ -228,6 +228,7 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrgAndProject() {
 	ts.IgnoreLogErrors()
 
 	org := "ActiveState-CLI"
+	project := fmt.Sprintf("%s/python3-%s", org, model.HostPlatform)
 
 	// First, checkout project to set last used org.
 	cp := ts.Spawn("checkout", fmt.Sprintf("%s/Python3", org))
@@ -236,10 +237,10 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrgAndProject() {
 
 	// Now, run `state init` without specifying the org or project.
 	cp = ts.Spawn("init", "--language", "python@3")
-	cp.Expect(fmt.Sprintf("%s/python3-%s'", org, model.HostPlatform))
+	cp.Expect(project)
 	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
-	ts.NotifyProjectCreated(org, fmt.Sprintf("%s/python3-%s", org, model.HostPlatform))
+	ts.NotifyProjectCreated(org, project)
 
 	// Verify the config file has the correct project owner.
 	suite.Contains(string(fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))), "language: python3")
