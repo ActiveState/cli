@@ -1,8 +1,6 @@
 package packages
 
 import (
-	"time"
-
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
@@ -55,13 +53,13 @@ func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) (rerr
 			return errs.Wrap(err, "Unable to get commit ID")
 		}
 
-		_, atTime, err := model.FetchCheckpointForCommit(commitID)
+		atTime, err := model.FetchTimeStampForCommit(commitID)
 		if err != nil {
 			return errs.Wrap(err, "Unable to get commit time")
 		}
 
-		if t := time.Time(atTime); t.After(latest) {
-			ts = &t
+		if atTime.After(latest) {
+			ts = atTime
 		}
 	}
 
