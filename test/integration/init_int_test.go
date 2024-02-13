@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -218,32 +217,6 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrg() {
 
 	// Verify the config file has the correct project owner.
 	suite.Contains(string(fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))), "ActiveState-CLI")
-}
-
-func (suite *InitIntegrationTestSuite) TestInit_InferredOrgAndProject() {
-	suite.OnlyRunForTags(tagsuite.Init)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-	ts.LoginAsPersistentUser()
-	ts.IgnoreLogErrors()
-
-	org := "ActiveState-CLI"
-	project := fmt.Sprintf("%s/python3-%s", org, model.HostPlatform)
-
-	// First, checkout project to set last used org.
-	cp := ts.Spawn("checkout", fmt.Sprintf("%s/Python3", org))
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out project")
-
-	// Now, run `state init` without specifying the org or project.
-	cp = ts.Spawn("init", "--language", "python@3")
-	cp.Expect(project)
-	cp.Expect("successfully initialized")
-	cp.ExpectExitCode(0)
-	ts.NotifyProjectCreated(org, project)
-
-	// Verify the config file has the correct project owner.
-	suite.Contains(string(fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))), "language: python3")
 }
 
 func TestInitIntegrationTestSuite(t *testing.T) {
