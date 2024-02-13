@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/go-openapi/strfmt"
 
@@ -92,6 +93,16 @@ func LanguageByCommit(commitID strfmt.UUID) (Language, error) {
 	}
 
 	return languages[0], nil
+}
+
+func FetchTimeStampForCommit(commitID strfmt.UUID) (*time.Time, error) {
+	_, atTime, err := FetchCheckpointForCommit(commitID)
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to fetch checkpoint for commit ID")
+	}
+
+	t := time.Time(atTime)
+	return &t, nil
 }
 
 // DefaultBranchForProjectName retrieves the default branch for the given project owner/name.
