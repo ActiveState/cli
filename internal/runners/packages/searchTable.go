@@ -2,6 +2,7 @@ package packages
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -45,7 +46,7 @@ type searchResult struct {
 	version         string
 }
 
-func createSearchResults(packages []*model.IngredientAndVersion, vulns map[string][]*model.VulnerabilityIngredient) (*structuredSearchResults, error) {
+func createSearchResults(packages []*model.IngredientAndVersion, vulns []*model.VulnerabilityIngredient) (*structuredSearchResults, error) {
 	maxKeyLength := 0
 	for _, key := range keys {
 		renderedKey := styleBold.Render(key)
@@ -84,34 +85,18 @@ func createSearchResults(packages []*model.IngredientAndVersion, vulns map[strin
 		}
 		result.version = pkg.Version
 
-		ingredientVulns := vulns[ingredientVulnKey(*pkg.Ingredient.PrimaryNamespace, *pkg.Ingredient.Name, pkg.Version)]
-		if len(ingredientVulns) > 0 {
-			var (
-				critical int
-				high     int
-				medium   int
-				low      int
-			)
-			for _, v := range ingredientVulns {
-				critical += len(v.Vulnerabilities.Critical)
-				high += len(v.Vulnerabilities.High)
-				medium += len(v.Vulnerabilities.Medium)
-				low += len(v.Vulnerabilities.Low)
+		var ingredientVulns *model.VulnerabilityIngredient
+		for _, v := range vulns {
+			if strings.EqualFold(v.Name, *pkg.Ingredient.Name) &&
+				strings.EqualFold(v.PrimaryNamespace, *pkg.Ingredient.PrimaryNamespace) &&
+				strings.EqualFold(v.Version, pkg.Version) {
+				ingredientVulns = v
+				break
 			}
+		}
 
-			result.Vulnerabilities = make(map[string]int)
-			if critical > 0 {
-				result.Vulnerabilities["Critical"] = critical
-			}
-			if high > 0 {
-				result.Vulnerabilities["High"] = high
-			}
-			if medium > 0 {
-				result.Vulnerabilities["Medium"] = medium
-			}
-			if low > 0 {
-				result.Vulnerabilities["Low"] = low
-			}
+		if ingredientVulns != nil {
+			result.Vulnerabilities = ingredientVulns.Vulnerabilities.Count()
 		}
 
 		packageNames = append(packageNames, *pkg.Ingredient.Name)

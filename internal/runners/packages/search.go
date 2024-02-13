@@ -2,7 +2,6 @@ package packages
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
@@ -77,7 +76,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 		)
 	}
 
-	var vulns map[string][]*model.VulnerabilityIngredient
+	var vulns []*model.VulnerabilityIngredient
 	if s.auth.Authenticated() {
 		vulns, err = s.getVulns(packages)
 		if err != nil {
@@ -131,34 +130,15 @@ func targetedLanguage(languageOpt string, proj *project.Project) (string, error)
 	return lang.Name, nil
 }
 
-func (s *Search) getVulns(packages []*model.IngredientAndVersion) (map[string][]*model.VulnerabilityIngredient, error) {
+func (s *Search) getVulns(packages []*model.IngredientAndVersion) ([]*model.VulnerabilityIngredient, error) {
 	var ingredients []*request.Ingredient
-	for _, pack := range packages {
+	for _, pkg := range packages {
 		ingredients = append(ingredients, &request.Ingredient{
-			Name:      *pack.Ingredient.Name,
-			Namespace: *pack.Ingredient.PrimaryNamespace,
-			Version:   pack.Version,
+			Name:      *pkg.Ingredient.Name,
+			Namespace: *pkg.Ingredient.PrimaryNamespace,
+			Version:   pkg.Version,
 		})
 	}
 
-	vulns, err := model.FetchVulnerabilitiesForIngredients(s.auth, ingredients)
-	if err != nil {
-		return nil, errs.Wrap(err, "Failed to fetch vulnerabilities")
-	}
-
-	vulnMap := make(map[string][]*model.VulnerabilityIngredient)
-	for _, v := range vulns {
-		key := ingredientVulnKey(v.PrimaryNamespace, v.Name, v.Version)
-		vulnMap[key] = append(vulnMap[key], v)
-	}
-
-	return vulnMap, nil
-}
-
-func ingredientVulnKey(namespace, name, version string) string {
-	return fmt.Sprintf("%s/%s/%s",
-		strings.ToLower(namespace),
-		strings.ToLower(name),
-		strings.ToLower(version),
-	)
+	return model.FetchVulnerabilitiesForIngredients(s.auth, ingredients)
 }
