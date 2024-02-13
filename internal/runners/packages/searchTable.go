@@ -6,6 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -59,18 +60,10 @@ func createSearchResults(packages []*model.IngredientAndVersion, vulns []*model.
 	var packageNames []string
 	for _, pkg := range packages {
 		result := &searchResult{}
-		if pkg.Ingredient.Name != nil {
-			result.Name = *pkg.Ingredient.Name
-		}
-		if pkg.Ingredient.Description != nil {
-			result.Description = *pkg.Ingredient.Description
-		}
-		if pkg.Ingredient.Website != "" {
-			result.Website = pkg.Ingredient.Website.String()
-		}
-		if pkg.LatestVersion.LicenseExpression != nil {
-			result.License = *pkg.LatestVersion.LicenseExpression
-		}
+		result.Name = ptr.From(pkg.Ingredient.Name, "")
+		result.Description = ptr.From(pkg.Ingredient.Description, "")
+		result.Website = pkg.Ingredient.Website.String()
+		result.License = ptr.From(pkg.LatestVersion.LicenseExpression, "")
 
 		var versions []string
 		for i, v := range pkg.Versions {
