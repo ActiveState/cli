@@ -233,7 +233,7 @@ func getTerminalArtifactMap(
 		// Return the artifact map for the latest commitID of the given project.
 		pj, err := model.FetchProjectByName(namespace.Owner, namespace.Project)
 		if err != nil {
-			return nil, locale.WrapError(err, "err_fetch_project", "", namespace.String())
+			return nil, locale.WrapInputError(err, "err_fetch_project", "", namespace.String())
 		}
 
 		branch, err := model.DefaultBranchForProject(pj)
