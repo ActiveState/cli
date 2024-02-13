@@ -47,13 +47,6 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 
 	s.out.Notice(output.Title(locale.Tl("search_title", "Searching for: [ACTIONABLE]{{.V0}}[/RESET]", params.Ingredient.Name)))
 
-	v, err := NewView()
-	if err != nil {
-		return errs.Wrap(err, "Could not create search view")
-	}
-
-	p := tea.NewProgram(v)
-
 	var ns model.Namespace
 	if params.Ingredient.Namespace == "" {
 		language, err := targetedLanguage(params.Language, s.proj)
@@ -67,6 +60,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	}
 
 	var packages []*model.IngredientAndVersion
+	var err error
 	if params.ExactTerm {
 		packages, err = model.SearchIngredientsLatestStrict(ns.String(), params.Ingredient.Name, true, true, params.Timestamp.Time)
 	} else {
@@ -91,17 +85,22 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 		}
 	}
 
-	table, err := createSearchTable(v.width, v.height, packages, vulns)
+	results, err := createSearchResults(packages, vulns)
 	if err != nil {
 		return errs.Wrap(err, "Could not create search table")
 	}
-	v.content = table.Content()
-	v.packageNames = table.packageNames
 
-	if s.out.Type().IsStructured() {
-		s.out.Print(table)
+	if s.out.Type().IsStructured() || !s.out.Config().Interactive {
+		s.out.Print(results)
 		return nil
 	}
+
+	v, err := NewView(results)
+	if err != nil {
+		return errs.Wrap(err, "Could not create search view")
+	}
+
+	p := tea.NewProgram(v)
 
 	if _, err := p.Run(); err != nil {
 		return errs.Wrap(err, "Failed to run search view")
