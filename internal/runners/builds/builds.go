@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -77,6 +78,11 @@ func New(p primeable) *Builds {
 		config:    p.Config(),
 		analytics: p.Analytics(),
 	}
+}
+
+type errInvalidCommitId struct {
+	error
+	id string
 }
 
 func rationalizeBuildsError(err *error) {
@@ -200,37 +206,52 @@ func getTerminalArtifactMap(
 	an analytics.Dispatcher,
 	svcModel *model.SvcModel,
 	out output.Outputer,
-	cfg model.Configurable) (buildplan.TerminalArtifactMap, error) {
+	cfg model.Configurable) (_ buildplan.TerminalArtifactMap, rerr error) {
 	if pj == nil && !namespace.IsValid() {
 		return nil, rationalize.ErrNoProject
 	}
 
 	commitID := strfmt.UUID(commit)
 	if commitID != "" && !strfmt.IsUUID(commitID.String()) {
-		return nil, locale.NewInputError("err_commit_id_invalid", "", commitID.String())
+		return nil, &errInvalidCommitId{errs.New("Invalid commit ID"), commitID.String()}
 	}
 
-	if !namespace.IsValid() {
-		if commitID != "" {
-			// Return artifact map from the given commitID for the current project.
-			bp := model.NewBuildPlannerModel(auth)
-			buildPlan, err := bp.FetchBuildResult(commitID, pj.Owner(), pj.Name())
-			if err != nil {
-				return nil, errs.Wrap(err, "Failed to fetch build plan")
-			}
-			return buildplan.NewMapFromBuildPlan(buildPlan.Build, false, false, nil)
-		}
+	namespaceProvided := namespace.IsValid()
+	commitIdProvided := commitID != ""
 
-		// Return the artifact map from this runtime.
+	if namespaceProvided || commitIdProvided {
+		// Show a spinner when fetching a terminal artifact map.
+		// Sourcing the local runtime for an artifact map has its own spinner.
+		pb := output.StartSpinner(out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
+		defer func() {
+			message := locale.T("progress_success")
+			if rerr != nil {
+				message = locale.T("progress_fail")
+			}
+			pb.Stop(message + "\n") // extra empty line
+		}()
+	}
+
+	switch {
+	// Return the artifact map from this runtime.
+	case !namespaceProvided && !commitIdProvided:
 		rt, err := runtime.NewFromProject(pj, target.TriggerBuilds, an, svcModel, out, auth, cfg)
 		if err != nil {
 			return nil, locale.WrapInputError(err, "err_refresh_runtime_new", "Could not update runtime for this project.")
 		}
 		return rt.TerminalArtifactMap(false)
-	}
 
-	if commitID == "" {
-		// Return the artifact map for the latest commitID of the given project.
+	// Return artifact map from the given commitID for the current project.
+	case !namespaceProvided && commitIdProvided:
+		bp := model.NewBuildPlannerModel(auth)
+		buildPlan, err := bp.FetchBuildResult(commitID, pj.Owner(), pj.Name())
+		if err != nil {
+			return nil, errs.Wrap(err, "Failed to fetch build plan")
+		}
+		return buildplan.NewMapFromBuildPlan(buildPlan.Build, false, false, nil)
+
+	// Return the artifact map for the latest commitID of the given project.
+	case namespaceProvided && !commitIdProvided:
 		pj, err := model.FetchProjectByName(namespace.Owner, namespace.Project)
 		if err != nil {
 			return nil, locale.WrapInputError(err, "err_fetch_project", "", namespace.String())
@@ -246,13 +267,24 @@ func getTerminalArtifactMap(
 			return nil, errs.Wrap(err, "Could not get commit ID for project")
 		}
 		commitID = *commitUUID
-	}
+
+		bp := model.NewBuildPlannerModel(auth)
+		buildPlan, err := bp.FetchBuildResult(commitID, namespace.Owner, namespace.Project)
+		if err != nil {
+			return nil, errs.Wrap(err, "Failed to fetch build plan")
+		}
+		return buildplan.NewMapFromBuildPlan(buildPlan.Build, false, false, nil)
 
 	// Return the artifact map for the given commitID of the given project.
-	bp := model.NewBuildPlannerModel(auth)
-	buildPlan, err := bp.FetchBuildResult(commitID, namespace.Owner, namespace.Project)
-	if err != nil {
-		return nil, errs.Wrap(err, "Failed to fetch build plan")
+	case namespaceProvided && commitIdProvided:
+		bp := model.NewBuildPlannerModel(auth)
+		buildPlan, err := bp.FetchBuildResult(commitID, namespace.Owner, namespace.Project)
+		if err != nil {
+			return nil, errs.Wrap(err, "Failed to fetch build plan")
+		}
+		return buildplan.NewMapFromBuildPlan(buildPlan.Build, false, false, nil)
+
+	default:
+		return nil, errs.New("Unhandled case")
 	}
-	return buildplan.NewMapFromBuildPlan(buildPlan.Build, false, false, nil)
 }
