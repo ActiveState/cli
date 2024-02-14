@@ -41,8 +41,6 @@ const (
 	scrollDown     = "down"
 )
 
-type errMsg error
-
 type view struct {
 	width         int
 	height        int
@@ -51,7 +49,6 @@ type view struct {
 	index         map[string]int
 	searchResults *structuredSearchResults
 	ready         bool
-	err           error
 	viewport      viewport.Model
 }
 
@@ -124,9 +121,6 @@ func (v *view) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			v.width = msg.Width
 			v.height = msg.Height
 		}
-	case errMsg:
-		v.err = msg
-		return v, nil
 	}
 
 	v.viewport, cmd = v.viewport.Update(msg)
@@ -136,9 +130,6 @@ func (v *view) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (v *view) View() string {
-	if v.err != nil {
-		return v.err.Error()
-	}
 	return v.viewport.View() + "\n\n" + v.footerView()
 }
 
