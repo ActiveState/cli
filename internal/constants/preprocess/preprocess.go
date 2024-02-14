@@ -22,7 +22,11 @@ func init() {
 	channelName, commitRef := channelName()
 	buildNumber := buildNumber()
 
-	if sha, exists := os.LookupEnv("GITHUB_SHA"); exists {
+	if sha, exists := os.LookupEnv("GITHUB_SHA_OVERRIDE"); exists {
+		fmt.Printf("Using GITHUB_SHA_OVERRIDE: %s", sha)
+		commitRef = sha
+	} else if sha, exists := os.LookupEnv("GITHUB_SHA"); exists {
+		fmt.Printf("Using GITHUB_SHA: %s", sha)
 		commitRef = sha
 	}
 

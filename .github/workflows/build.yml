@@ -49,6 +49,7 @@ jobs:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_SHA_OVERRIDE: ${{ github.event.pull_request.head.sha || github.sha }}
     concurrency:
       group: ${{ github.ref }}-${{ github.event_name }}-${{ matrix.sys.os }}
       cancel-in-progress: true
@@ -63,7 +64,9 @@ jobs:
 
       - # === Checkout Code ===
         name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - # === Install Go ===
         name: Install Go
@@ -396,6 +399,7 @@ jobs:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_SHA_OVERRIDE: ${{ github.event.pull_request.head.sha || github.sha }}
     timeout-minutes: 10
     if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref) || startsWith(github.event.pull_request.head.ref, 'version/')
 
@@ -404,7 +408,9 @@ jobs:
 
       - # === Checkout code ===
         name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - # === Install Go ===
         name: Install Go
