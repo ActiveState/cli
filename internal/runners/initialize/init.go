@@ -32,10 +32,12 @@ import (
 
 // RunParams stores run func parameters.
 type RunParams struct {
-	Namespace string
-	Path      string
-	Language  string
-	Private   bool
+	Namespace   string
+	ParsedNS    *project.Namespaced
+	ProjectName string
+	Path        string
+	Language    string
+	Private     bool
 }
 
 // Initialize stores scope-related dependencies.
@@ -106,19 +108,11 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		resolvedOwner       string
 		resolvedProjectName string
 	)
-
-	if params.Namespace != "" {
-		ns, err := project.ParseNamespace(params.Namespace)
-		if err != nil {
-			// If the namespace was invalid but an argument was passed, we
-			// assume it's a project name and not an owner.
-			logging.Error("Could not parse namespace: %v", err)
-			paramProjectName = params.Namespace
-		} else {
-			paramOwner = ns.Owner
-			paramProjectName = ns.Project
-
-		}
+	if params.ParsedNS != nil {
+		paramOwner = params.ParsedNS.Owner
+		paramProjectName = params.ParsedNS.Project
+	} else {
+		paramProjectName = params.Namespace
 	}
 
 	defer func() {

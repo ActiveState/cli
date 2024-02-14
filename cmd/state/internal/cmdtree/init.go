@@ -3,8 +3,10 @@ package cmdtree
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/initialize"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 func newInitCommand(prime *primer.Values) *captain.Command {
@@ -42,6 +44,17 @@ func newInitCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(ccmd *captain.Command, _ []string) error {
+			if params.Namespace == "" {
+				ns, err := project.ParseNamespace(params.Namespace)
+				if err != nil {
+					// If the namespace was invalid but an argument was passed, we
+					// assume it's a project name and not an owner.
+					logging.Error("Could not parse namespace: %v", err)
+					params.ProjectName = params.Namespace
+				} else {
+					params.ParsedNS = ns
+				}
+			}
 			return initRunner.Run(&params)
 		},
 	).SetGroup(EnvironmentSetupGroup).SetSupportsStructuredOutput()
