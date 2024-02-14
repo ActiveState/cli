@@ -112,7 +112,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		paramOwner = params.ParsedNS.Owner
 		paramProjectName = params.ParsedNS.Project
 	} else {
-		paramProjectName = params.Namespace
+		paramProjectName = params.ProjectName
 	}
 
 	defer func() {
