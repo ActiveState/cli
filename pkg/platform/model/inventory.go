@@ -118,6 +118,9 @@ func SearchIngredientsLatest(namespace string, name string, includeVersions bool
 	return processLatestIngredients(results), nil
 }
 
+// SearchIngredientsLatestStrict will return all ingredients+ingredientVersions that
+// strictly match the ingredient name, but only the latest version of each
+// ingredient.
 func SearchIngredientsLatestStrict(namespace string, name string, caseSensitive bool, includeVersions bool, ts *time.Time) ([]*IngredientAndVersion, error) {
 	results, err := SearchIngredientsStrict(namespace, name, caseSensitive, includeVersions, ts)
 	if err != nil {
