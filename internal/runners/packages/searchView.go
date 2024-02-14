@@ -46,9 +46,7 @@ const (
 type view struct {
 	width         int
 	height        int
-	remaining     int
 	content       string
-	index         map[string]int
 	searchResults *structuredSearchResults
 	ready         bool
 	viewport      viewport.Model
@@ -87,10 +85,10 @@ func (v *view) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.MouseMsg:
 		switch msg.Button {
 		case tea.MouseButtonWheelUp:
-			v.scroll(scrollUp, 3)
+			v.viewport.LineUp(3)
 			return v, nil
 		case tea.MouseButtonWheelDown:
-			v.scroll(scrollDown, 3)
+			v.viewport.LineDown(3)
 			return v, nil
 		}
 	case tea.KeyMsg:
@@ -99,16 +97,16 @@ func (v *view) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q", "ctrl+c":
 			return v, tea.Quit
 		case "up":
-			v.scroll(scrollUp, 1)
+			v.viewport.LineUp(1)
 			return v, nil
 		case "down":
-			v.scroll(scrollDown, 1)
+			v.viewport.LineDown(1)
 			return v, nil
 		case "pgup":
-			v.scroll(scrollUp, v.height-verticalMargin)
+			v.viewport.LineUp(v.height - verticalMargin)
 			return v, nil
 		case "pgdown":
-			v.scroll(scrollDown, v.height-verticalMargin)
+			v.viewport.LineDown(v.height - verticalMargin)
 			return v, nil
 		}
 	case tea.WindowSizeMsg:
@@ -117,7 +115,6 @@ func (v *view) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			v.viewport = viewport.New(msg.Width, msg.Height-verticalMargin)
 			v.content = v.processContent()
 			v.viewport.SetContent(v.processContent())
-			v.initialRemaining()
 			v.ready = true
 		} else {
 			v.width = msg.Width
@@ -203,61 +200,12 @@ func (v *view) processContent() string {
 	return doc.String()
 }
 
-func (v *view) initialRemaining() {
-	// Interate over all of the content and calculate the index.
-	// Each time we encounter a new package name, we determine how many
-	// remaining packages there are and store that in the index.
-	lines := strings.Split(v.content, "\n")
-	index := 1
-	v.index = make(map[string]int)
-	for _, l := range lines {
-		if strings.Contains(l, "Name") {
-			v.index[l] = index
-			index++
-		}
-	}
-
-	visibleContent := strings.Split(v.viewport.View(), "\n")
-	for _, l := range visibleContent {
-		if strings.Contains(l, "Name") {
-			v.remaining = len(v.searchResults.Results) - v.index[l]
-		}
-	}
-
-	if v.remaining < 0 {
-		v.remaining = 0
-	}
-}
-
 func (v *view) footerView() string {
 	var footerText string
-	if v.remaining != 0 {
-		footerText += locale.Tl("search_more_matches", "... {{.V0}} more matches, use arrow and page keys to scroll. Press Q to quit.", strconv.Itoa(v.remaining))
-	}
+	scrollValue := v.viewport.ScrollPercent() * 100
+	footerText += locale.Tl("search_more_matches", "... {{.V0}}% scrolled, use arrow and page keys to scroll. Press Q to quit.", strconv.Itoa(int(scrollValue)))
 	footerText += fmt.Sprintf("\n\n%s '%s'", colorize.StyleBold.Render(locale.Tl("search_more_info", "For more info run")), colorize.StyleActionable.Render(locale.Tl("search_more_info_command", "state info <name>")))
 	return lipgloss.NewStyle().Render(footerText)
-}
-
-func (v *view) scroll(direction string, amount int) {
-	if direction == "up" {
-		// LineUp returns the new lines. In order to update the remaining count
-		// we need to iterate over the visible lines and find the remaining count
-		// for the last visible package name.
-		_ = v.viewport.LineUp(amount)
-		lines := strings.Split(v.viewport.View(), "\n")
-		for _, l := range lines {
-			if strings.Contains(l, "Name") {
-				v.remaining = len(v.searchResults.packageNames) - v.index[l]
-			}
-		}
-	} else {
-		lines := v.viewport.LineDown(amount)
-		for _, l := range lines {
-			if strings.Contains(l, "Name") {
-				v.remaining = len(v.searchResults.packageNames) - v.index[l]
-			}
-		}
-	}
 }
 
 // formatRow formats a key-value pair into a single line of text
