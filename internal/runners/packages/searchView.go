@@ -208,7 +208,7 @@ func (v *view) footerView() string {
 	if v.remaining != 0 {
 		footerText += locale.Tl("search_more_matches", "... {{.V0}} more matches, press Down to scroll", strconv.Itoa(v.remaining))
 	}
-	footerText += fmt.Sprintf("\n%s'%s'", styleBold.Render(locale.Tl("search_more_info", "For more info run")), styleActionable.Render(locale.Tl("search_more_info_command", " state info <name>")))
+	footerText += fmt.Sprintf("\n\n%s'%s'", styleBold.Render(locale.Tl("search_more_info", "For more info run")), styleActionable.Render(locale.Tl("search_more_info_command", " state info <name>")))
 	return lipgloss.NewStyle().Render(footerText)
 }
 
