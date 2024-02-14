@@ -1,7 +1,7 @@
 package packages
 
 import (
-	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/locale"
@@ -68,7 +68,7 @@ func createSearchResults(packages []*model.IngredientAndVersion, vulns []*model.
 		var versions []string
 		for i, v := range pkg.Versions {
 			if i > 5 {
-				versions = append(versions, fmt.Sprintf("... (%d more)", len(pkg.Versions)-5))
+				versions = append(versions, locale.Tl("search_more_versions", "... ({{.V0}} more)", strconv.Itoa(len(pkg.Versions)-5)))
 				break
 			}
 			versions = append(versions, styleCyan.Render(v.Version))
