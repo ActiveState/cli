@@ -1,10 +1,8 @@
 package packages
 
 import (
-	"strconv"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -44,12 +42,8 @@ func createSearchResults(packages []*model.IngredientAndVersion, vulns []*model.
 		result.License = ptr.From(pkg.LatestVersion.LicenseExpression, "")
 
 		var versions []string
-		for i, v := range pkg.Versions {
-			if i > 5 {
-				versions = append(versions, locale.Tl("search_more_versions", "... ({{.V0}} more)", strconv.Itoa(len(pkg.Versions)-5)))
-				break
-			}
-			versions = append(versions, styleCyan.Render(v.Version))
+		for _, v := range pkg.Versions {
+			versions = append(versions, v.Version)
 		}
 		if len(versions) > 0 {
 			result.Versions = versions
