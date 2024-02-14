@@ -78,6 +78,7 @@ func (v *view) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "down":
 			v.scroll(stringMsg, 1)
 			return v, nil
+		}
 	case tea.WindowSizeMsg:
 		if !v.ready {
 			// Keep the searching message and command in view
