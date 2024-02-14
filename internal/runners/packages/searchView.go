@@ -182,19 +182,19 @@ func (v *view) initialRemaining() {
 	// Each time we encounter a new package name, we determine how many
 	// remaining packages there are and store that in the index.
 	lines := strings.Split(v.content, "\n")
-	remaining := len(v.searchResults.packageNames) - 1
+	index := 1
 	v.index = make(map[string]int)
 	for _, l := range lines {
 		if strings.Contains(l, "Name") {
-			v.index[l] = remaining
-			remaining--
+			v.index[l] = index
+			index++
 		}
 	}
 
 	visibleContent := strings.Split(v.viewport.View(), "\n")
 	for _, l := range visibleContent {
 		if strings.Contains(l, "Name") {
-			v.remaining = v.index[l]
+			v.remaining = len(v.searchResults.Results) - v.index[l]
 		}
 	}
 
@@ -221,14 +221,14 @@ func (v *view) scroll(direction string, amount int) {
 		lines := strings.Split(v.viewport.View(), "\n")
 		for _, l := range lines {
 			if strings.Contains(l, "Name") {
-				v.remaining = v.index[l]
+				v.remaining = len(v.searchResults.packageNames) - v.index[l]
 			}
 		}
 	} else {
 		lines := v.viewport.LineDown(amount)
 		for _, l := range lines {
 			if strings.Contains(l, "Name") {
-				v.remaining = v.index[l]
+				v.remaining = len(v.searchResults.packageNames) - v.index[l]
 			}
 		}
 	}
@@ -244,7 +244,7 @@ func (v *view) scroll(direction string, amount int) {
 //
 // After padding:
 //
-//   Name:   value
+//	Name:   value
 func formatRow(key, value string, maxKeyLength, width int) string {
 	rowStyle := lipgloss.NewStyle().Width(width)
 
