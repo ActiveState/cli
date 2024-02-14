@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -201,7 +202,7 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrg() {
 	ts.IgnoreLogErrors()
 
 	org := "ActiveState-CLI"
-	projectName := "test-project"
+	projectName := fmt.Sprintf("test-project-%s", model.HostPlatform)
 
 	// First, checkout project to set last used org.
 	cp := ts.Spawn("checkout", fmt.Sprintf("%s/Python3", org))
