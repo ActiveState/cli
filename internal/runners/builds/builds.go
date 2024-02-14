@@ -85,17 +85,8 @@ type errInvalidCommitId struct {
 	id string
 }
 
-func rationalizeBuildsError(err *error) {
-	switch {
-	case err == nil:
-		return
-	default:
-		rationalizeCommonError(err)
-	}
-}
-
 func (b *Builds) Run(params *Params) (rerr error) {
-	defer rationalizeBuildsError(&rerr)
+	defer rationalizeCommonError(&rerr, b.auth)
 
 	terminalArtfMap, err := getTerminalArtifactMap(
 		b.project, params.Namespace, params.CommitID, b.auth, b.analytics, b.svcModel, b.out, b.config)
