@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -136,7 +137,7 @@ func (v *view) View() string {
 func (v *view) processContent() string {
 	maxKeyLength := 0
 	for _, key := range keys {
-		renderedKey := styleBold.Render(key)
+		renderedKey := colorize.StyleBold.Render(key)
 		if len(renderedKey) > maxKeyLength {
 			maxKeyLength = len(renderedKey) + 2
 		}
@@ -145,16 +146,16 @@ func (v *view) processContent() string {
 	doc := strings.Builder{}
 	for _, pkg := range v.searchResults.Results {
 		if pkg.Name != "" {
-			doc.WriteString(formatRow(styleBold.Render(keyName), pkg.Name, maxKeyLength, v.width))
+			doc.WriteString(formatRow(colorize.StyleBold.Render(keyName), pkg.Name, maxKeyLength, v.width))
 		}
 		if pkg.Description != "" {
-			doc.WriteString(formatRow(styleBold.Render(keyDescription), pkg.Description, maxKeyLength, v.width))
+			doc.WriteString(formatRow(colorize.StyleBold.Render(keyDescription), pkg.Description, maxKeyLength, v.width))
 		}
 		if pkg.Website != "" {
-			doc.WriteString(formatRow(styleBold.Render(keyWebsite), styleCyan.Render(pkg.Website), maxKeyLength, v.width))
+			doc.WriteString(formatRow(colorize.StyleBold.Render(keyWebsite), colorize.StyleCyan.Render(pkg.Website), maxKeyLength, v.width))
 		}
 		if pkg.License != "" {
-			doc.WriteString(formatRow(styleBold.Render(keyLicense), pkg.License, maxKeyLength, v.width))
+			doc.WriteString(formatRow(colorize.StyleBold.Render(keyLicense), pkg.License, maxKeyLength, v.width))
 		}
 
 		var versions []string
@@ -163,10 +164,10 @@ func (v *view) processContent() string {
 				versions = append(versions, locale.Tl("search_more_versions", "... ({{.V0}} more)", strconv.Itoa(len(pkg.Versions)-5)))
 				break
 			}
-			versions = append(versions, styleCyan.Render(v))
+			versions = append(versions, colorize.StyleCyan.Render(v))
 		}
 		if len(versions) > 0 {
-			doc.WriteString(formatRow(styleBold.Render(keyVersions), strings.Join(versions, ", "), maxKeyLength, v.width))
+			doc.WriteString(formatRow(colorize.StyleBold.Render(keyVersions), strings.Join(versions, ", "), maxKeyLength, v.width))
 		}
 
 		if len(pkg.Vulnerabilities) > 0 {
@@ -179,20 +180,20 @@ func (v *view) processContent() string {
 
 			vunlSummary := []string{}
 			if critical > 0 {
-				vunlSummary = append(vunlSummary, styleRed.Render(locale.Tl("search_critical", "{{.V0}} Critical", strconv.Itoa(critical))))
+				vunlSummary = append(vunlSummary, colorize.StyleRed.Render(locale.Tl("search_critical", "{{.V0}} Critical", strconv.Itoa(critical))))
 			}
 			if high > 0 {
-				vunlSummary = append(vunlSummary, styleOrange.Render(locale.Tl("search_high", "{{.V0}} High", strconv.Itoa(high))))
+				vunlSummary = append(vunlSummary, colorize.StyleOrange.Render(locale.Tl("search_high", "{{.V0}} High", strconv.Itoa(high))))
 			}
 			if medium > 0 {
-				vunlSummary = append(vunlSummary, styleYellow.Render(locale.Tl("search_medium", "{{.V0}} Medium", strconv.Itoa(medium))))
+				vunlSummary = append(vunlSummary, colorize.StyleYellow.Render(locale.Tl("search_medium", "{{.V0}} Medium", strconv.Itoa(medium))))
 			}
 			if low > 0 {
-				vunlSummary = append(vunlSummary, styleMagenta.Render(locale.Tl("search_low", "{{.V0}} Low", strconv.Itoa(low))))
+				vunlSummary = append(vunlSummary, colorize.StyleMagenta.Render(locale.Tl("search_low", "{{.V0}} Low", strconv.Itoa(low))))
 			}
 
 			if len(vunlSummary) > 0 {
-				doc.WriteString(formatRow(styleBold.Render(keyVulns), strings.Join(vunlSummary, ", "), maxKeyLength, v.width))
+				doc.WriteString(formatRow(colorize.StyleBold.Render(keyVulns), strings.Join(vunlSummary, ", "), maxKeyLength, v.width))
 			}
 		}
 
@@ -232,7 +233,7 @@ func (v *view) footerView() string {
 	if v.remaining != 0 {
 		footerText += locale.Tl("search_more_matches", "... {{.V0}} more matches, use arrow and page keys to scroll. Press Q to quit.", strconv.Itoa(v.remaining))
 	}
-	footerText += fmt.Sprintf("\n\n%s '%s'", styleBold.Render(locale.Tl("search_more_info", "For more info run")), styleActionable.Render(locale.Tl("search_more_info_command", "state info <name>")))
+	footerText += fmt.Sprintf("\n\n%s '%s'", colorize.StyleBold.Render(locale.Tl("search_more_info", "For more info run")), colorize.StyleActionable.Render(locale.Tl("search_more_info_command", "state info <name>")))
 	return lipgloss.NewStyle().Render(footerText)
 }
 

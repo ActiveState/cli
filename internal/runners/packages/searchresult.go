@@ -24,14 +24,6 @@ type searchResult struct {
 }
 
 func createSearchResults(packages []*model.IngredientAndVersion, vulns []*model.VulnerabilityIngredient) (*structuredSearchResults, error) {
-	maxKeyLength := 0
-	for _, key := range keys {
-		renderedKey := styleBold.Render(key)
-		if len(renderedKey) > maxKeyLength {
-			maxKeyLength = len(renderedKey) + 2
-		}
-	}
-
 	var results []*searchResult
 	var packageNames []string
 	for _, pkg := range packages {
