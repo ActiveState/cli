@@ -316,6 +316,8 @@ func deriveVersion(lang language.Language, version string) (string, error) {
 }
 
 func (i *Initialize) getOwner(desiredOwner string) (string, error) {
+	// Match the case of the organization.
+	// Otherwise the incorrect case will be written to the project file.
 	orgs, err := model.FetchOrganizations()
 	if err != nil {
 		return "", errs.Wrap(err, "Unable to get the user's writable orgs")
