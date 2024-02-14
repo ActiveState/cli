@@ -31,10 +31,10 @@ func (v Vulnerabilites) Length() int {
 
 func (v *Vulnerabilites) Count() map[string]int {
 	return map[string]int{
-		"Critical": len(v.Critical),
-		"High":     len(v.High),
-		"Medium":   len(v.Medium),
-		"Low":      len(v.Low),
+		model.SeverityCritical: len(v.Critical),
+		model.SeverityHigh:     len(v.High),
+		model.SeverityMedium:   len(v.Medium),
+		model.SeverityLow:      len(v.Low),
 	}
 }
 

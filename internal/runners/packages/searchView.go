@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -172,10 +173,10 @@ func (v *view) processContent() string {
 
 		if len(pkg.Vulnerabilities) > 0 {
 			var (
-				critical = pkg.Vulnerabilities["Critical"]
-				high     = pkg.Vulnerabilities["High"]
-				medium   = pkg.Vulnerabilities["Medium"]
-				low      = pkg.Vulnerabilities["Low"]
+				critical = pkg.Vulnerabilities[model.SeverityCritical]
+				high     = pkg.Vulnerabilities[model.SeverityHigh]
+				medium   = pkg.Vulnerabilities[model.SeverityMedium]
+				low      = pkg.Vulnerabilities[model.SeverityLow]
 			)
 
 			vunlSummary := []string{}
