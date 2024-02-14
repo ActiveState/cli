@@ -108,7 +108,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		resolvedOwner       string
 		resolvedProjectName string
 	)
-	if params.ParsedNS.IsValid() {
+	if params.ParsedNS != nil && params.ParsedNS.IsValid() {
 		paramOwner = params.ParsedNS.Owner
 		paramProjectName = params.ParsedNS.Project
 	} else {
