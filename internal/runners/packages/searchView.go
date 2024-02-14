@@ -78,6 +78,12 @@ func (v *view) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "down":
 			v.scroll(stringMsg, 1)
 			return v, nil
+		case "pgup":
+			v.scroll("up", v.height-verticalMargin)
+			return v, nil
+		case "pgdown":
+			v.scroll("down", v.height-verticalMargin)
+			return v, nil
 		}
 	case tea.WindowSizeMsg:
 		if !v.ready {
