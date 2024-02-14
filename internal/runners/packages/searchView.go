@@ -8,6 +8,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -34,8 +36,14 @@ type view struct {
 	viewport      viewport.Model
 }
 
-func NewView(results *structuredSearchResults) (*view, error) {
-	width, height, err := term.GetSize(int(os.Stdout.Fd()))
+func NewView(results *structuredSearchResults, out output.Outputer) (*view, error) {
+	outFD, ok := out.Config().OutWriterFD()
+	if !ok {
+		logging.Error("Could not get output writer file descriptor, falling back to stdout")
+		outFD = os.Stdout.Fd()
+	}
+
+	width, height, err := term.GetSize(int(outFD))
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get terminal size")
 	}

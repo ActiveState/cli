@@ -94,7 +94,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 		return nil
 	}
 
-	v, err := NewView(results)
+	v, err := NewView(results, s.out)
 	if err != nil {
 		return errs.Wrap(err, "Could not create search view")
 	}
