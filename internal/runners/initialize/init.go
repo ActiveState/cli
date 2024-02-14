@@ -188,7 +188,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	resolvedOwner, err = r.getOwner(paramOwner)
 	if err != nil {
-		return locale.WrapError(err, "err_init_owner", "Could not determine owner")
+		return errs.Wrap(err, "Unable to determine owner")
 	}
 	resolvedProjectName = r.getProjectName(paramProjectName, lang.String())
 	namespace := project.Namespaced{Owner: resolvedOwner, Project: resolvedProjectName}
