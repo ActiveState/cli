@@ -44,7 +44,7 @@ func newInitCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(ccmd *captain.Command, _ []string) error {
-			if params.Namespace == "" {
+			if params.Namespace != "" {
 				ns, err := project.ParseNamespace(params.Namespace)
 				if err != nil {
 					// If the namespace was invalid but an argument was passed, we

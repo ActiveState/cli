@@ -108,7 +108,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		resolvedOwner       string
 		resolvedProjectName string
 	)
-	if params.ParsedNS != nil {
+	if params.ParsedNS.IsValid() {
 		paramOwner = params.ParsedNS.Owner
 		paramProjectName = params.ParsedNS.Project
 	} else {
@@ -321,11 +321,14 @@ func (i *Initialize) getOwner(desiredOwner string) (string, error) {
 	if err != nil {
 		return "", errs.Wrap(err, "Unable to get the user's writable orgs")
 	}
+	fmt.Println("Desired Owner: ", desiredOwner)
 
 	// Prefer the desired owner if it's valid
 	if desiredOwner != "" {
 		for _, org := range orgs {
+			fmt.Println("Org URL Name: ", org.URLname)
 			if strings.EqualFold(org.URLname, desiredOwner) {
+				fmt.Println("returning: ", org.URLname)
 				return org.URLname, nil
 			}
 		}
