@@ -266,8 +266,13 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	projectTarget := target.NewProjectTarget(proj, nil, "").Dir()
 	executables := setup.ExecDir(projectTarget)
 
+	initSuccessMsg := locale.Tr("init_success", namespace.String(), path, executables)
+	if !strings.EqualFold(paramOwner, resolvedOwner) {
+		initSuccessMsg = locale.Tr("init_success_resolved_owner", namespace.String(), path, executables)
+	}
+
 	r.out.Print(output.Prepare(
-		locale.Tr("init_success", namespace.String(), path, executables),
+		initSuccessMsg,
 		&struct {
 			Namespace   string `json:"namespace"`
 			Path        string `json:"path" `
