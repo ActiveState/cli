@@ -212,7 +212,7 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrg() {
 	// Now, run `state init` without specifying the org.
 	cp = ts.Spawn("init", projectName, "--language", "python@3")
 	cp.Expect(fmt.Sprintf("%s/%s", org, projectName))
-	cp.Expect("We've created")
+	cp.Expect("to track changes for this environment")
 	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(org, projectName)
