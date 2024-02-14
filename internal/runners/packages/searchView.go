@@ -234,17 +234,35 @@ func (v *view) scroll(direction string, amount int) {
 	}
 }
 
+// formatRow formats a key-value pair into a single line of text
+// It pads the key both left and right and ensures the value is wrapped to the
+// correct width.
+// Example:
+// Initially we would have:
+//
+// Name: value
+//
+// After padding:
+//
+//   Name:   value
 func formatRow(key, value string, maxKeyLength, width int) string {
 	rowStyle := lipgloss.NewStyle().Width(width)
 
-	// Pad key and wrap value
+	// Pad key and wrap the value
 	// The viewport does not support padding so we need to pad the key manually
+	// First, pad the key left to indent the entire view
+	// Then, pad the key right to ensure that the values are aligned with the
+	// other values in the view.
 	paddedKey := strings.Repeat(" ", leftPad) + key + strings.Repeat(" ", maxKeyLength-len(key))
-	valueStyle := lipgloss.NewStyle().Width(width - len(paddedKey))
 
+	// The value style is strictly for the information that a key maps to.
+	// ie. the description string, the website string, etc.
+	// We have a separate width here to ensure that the value is wrapped to the
+	// correct width.
+	valueStyle := lipgloss.NewStyle().Width(width - len(paddedKey))
 	wrapped := valueStyle.Render(value)
 
-	// The rendered line ends up being a bit too long, so we need to reduce the
+	// The rendered value ends up being a bit too wide, so we need to reduce the
 	// width that we are working with to ensure that the wrapped value fits
 	indentedValue := strings.ReplaceAll(wrapped, "\n", "\n"+strings.Repeat(" ", len(paddedKey)-8))
 
