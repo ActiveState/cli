@@ -99,7 +99,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 		return errs.Wrap(err, "Could not create search view")
 	}
 
-	p := tea.NewProgram(v)
+	p := tea.NewProgram(v, tea.WithMouseCellMotion())
 
 	if _, err := p.Run(); err != nil {
 		return errs.Wrap(err, "Failed to run search view")

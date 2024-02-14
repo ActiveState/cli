@@ -16,6 +16,8 @@ import (
 
 const (
 	verticalMargin = 7
+	scrollUp       = "up"
+	scrollDown     = "down"
 )
 
 type errMsg error
@@ -23,8 +25,9 @@ type errMsg error
 type view struct {
 	width         int
 	height        int
-	content       string
 	remaining     int
+	content       string
+	index         map[string]int
 	searchResults *structuredSearchResults
 	ready         bool
 	err           error
@@ -55,36 +58,31 @@ func (v *view) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	)
 
 	switch msg := msg.(type) {
+	case tea.MouseMsg:
+		switch msg.Button {
+		case tea.MouseButtonWheelUp:
+			v.scroll(scrollUp, 3)
+			return v, nil
+		case tea.MouseButtonWheelDown:
+			v.scroll(scrollDown, 3)
+			return v, nil
+		}
 	case tea.KeyMsg:
 		stringMsg := strings.ToLower(msg.String())
 		switch stringMsg {
 		case "q", "ctrl+c":
 			return v, tea.Quit
 		case "up":
-			lines := v.viewport.LineUp(1)
-			for _, l := range lines {
-				if strings.Contains(l, "Name") {
-					v.remaining++
-				}
-			}
+			v.scroll(stringMsg, 1)
 			return v, nil
 		case "down":
-			lines := v.viewport.LineDown(1)
-			for _, l := range lines {
-				if strings.Contains(l, "Name") {
-					if v.remaining <= 0 {
-						v.remaining = 0
-					} else {
-						v.remaining--
-					}
-				}
-			}
+			v.scroll(stringMsg, 1)
 			return v, nil
-		}
 	case tea.WindowSizeMsg:
 		if !v.ready {
 			// Keep the searching message and command in view
 			v.viewport = viewport.New(msg.Width, msg.Height-verticalMargin)
+			v.content = v.processContent()
 			v.viewport.SetContent(v.processContent())
 			v.initialRemaining()
 			v.ready = true
@@ -179,15 +177,26 @@ func (v *view) processContent() string {
 }
 
 func (v *view) initialRemaining() {
-	currentEntryIndex := 0
-	visibleContent := v.viewport.View()
-	for i, entry := range v.searchResults.packageNames {
-		if strings.Contains(visibleContent, entry) && i > currentEntryIndex {
-			currentEntryIndex = i + 1
+	// Interate over all of the content and calculate the index.
+	// Each time we encounter a new package name, we determine how many
+	// remaining packages there are and store that in the index.
+	lines := strings.Split(v.content, "\n")
+	remaining := len(v.searchResults.packageNames) - 1
+	v.index = make(map[string]int)
+	for _, l := range lines {
+		if strings.Contains(l, "Name") {
+			v.index[l] = remaining
+			remaining--
 		}
 	}
 
-	v.remaining = len(v.searchResults.packageNames) - currentEntryIndex - 1
+	visibleContent := strings.Split(v.viewport.View(), "\n")
+	for _, l := range visibleContent {
+		if strings.Contains(l, "Name") {
+			v.remaining = v.index[l]
+		}
+	}
+
 	if v.remaining < 0 {
 		v.remaining = 0
 	}
@@ -200,6 +209,28 @@ func (v *view) footerView() string {
 	}
 	footerText += fmt.Sprintf("\n%s'%s'", styleBold.Render(locale.Tl("search_more_info", "For more info run")), styleActionable.Render(locale.Tl("search_more_info_command", " state info <name>")))
 	return lipgloss.NewStyle().Render(footerText)
+}
+
+func (v *view) scroll(direction string, amount int) {
+	if direction == "up" {
+		// LineUp returns the new lines. In order to update the remaining count
+		// we need to iterate over the visible lines and find the remaining count
+		// for the last visible package name.
+		_ = v.viewport.LineUp(amount)
+		lines := strings.Split(v.viewport.View(), "\n")
+		for _, l := range lines {
+			if strings.Contains(l, "Name") {
+				v.remaining = v.index[l]
+			}
+		}
+	} else {
+		lines := v.viewport.LineDown(amount)
+		for _, l := range lines {
+			if strings.Contains(l, "Name") {
+				v.remaining = v.index[l]
+			}
+		}
+	}
 }
 
 func formatRow(key, value string, maxKeyLength, width int) string {
