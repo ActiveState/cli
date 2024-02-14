@@ -10,28 +10,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
-const (
-	leftPad = 2
-)
-
-var (
-	keyName        = locale.Tl("search_name", "Name")
-	keyDescription = locale.Tl("search_description", "Description")
-	keyWebsite     = locale.Tl("search_website", "Website")
-	keyLicense     = locale.Tl("search_license", "License")
-	keyVersions    = locale.Tl("search_versions", "Versions")
-	keyVulns       = locale.Tl("search_vulnerabilities", "Vulnerabilities (CVEs)")
-
-	keys = []string{
-		keyName,
-		keyDescription,
-		keyWebsite,
-		keyLicense,
-		keyVersions,
-		keyVulns,
-	}
-)
-
 type structuredSearchResults struct {
 	Results      []*searchResult `locale:"," opts:"verticalTable" json:"Results,omitempty"`
 	packageNames []string

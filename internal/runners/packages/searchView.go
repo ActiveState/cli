@@ -16,7 +16,26 @@ import (
 	"golang.org/x/term"
 )
 
+var (
+	keyName        = locale.Tl("search_name", "Name")
+	keyDescription = locale.Tl("search_description", "Description")
+	keyWebsite     = locale.Tl("search_website", "Website")
+	keyLicense     = locale.Tl("search_license", "License")
+	keyVersions    = locale.Tl("search_versions", "Versions")
+	keyVulns       = locale.Tl("search_vulnerabilities", "Vulnerabilities (CVEs)")
+
+	keys = []string{
+		keyName,
+		keyDescription,
+		keyWebsite,
+		keyLicense,
+		keyVersions,
+		keyVulns,
+	}
+)
+
 const (
+	leftPad        = 2
 	verticalMargin = 7
 	scrollUp       = "up"
 	scrollDown     = "down"
