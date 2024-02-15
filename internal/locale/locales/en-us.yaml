@@ -718,10 +718,16 @@ init_success:
     Project '[NOTICE]{{.V0}}[/RESET]' has been successfully initialized at '[NOTICE]{{.V1}}[/RESET]' and pushed to the Platform.
     You can start using your project with '[ACTIONABLE]state shell[/RESET]' and '[ACTIONABLE]state use[/RESET]'.
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
+init_success_resolved_owner:
+  other: |
+    We've created '[ACTIONABLE]{{.V0}}[/RESET]' to track changes for this environment. You can change the name at any point by running '[ACTIONABLE]state projects edit --name[/RESET]'.
+    Project '[NOTICE]{{.V0}}[/RESET]' has been successfully initialized at '[NOTICE]{{.V1}}[/RESET]' and pushed to the Platform.
+    You can start using your project with '[ACTIONABLE]state shell[/RESET]' and '[ACTIONABLE]state use[/RESET]'.
+    For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 arg_state_init_namespace:
   other: org/project
 arg_state_init_namespace_description:
-  other: The namespace for the project that you wish to initialize
+  other: The namespace for the project that you wish to initialize. If not in the format of <org/project>, the value will be used as the project name.
 flag_state_init_language_description:
   other: "The Language[@version] that this project should use"
 arg_state_init_path:

@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -192,6 +193,33 @@ func (suite *InitIntegrationTestSuite) TestInit_NoOrg() {
 	cp := ts.Spawn("init", "random-org/test-project", "--language", "python@3")
 	cp.Expect("The organization 'random-org' either does not exist, or you do not have permissions to create a project in it.")
 	cp.ExpectExitCode(1)
+}
+
+func (suite *InitIntegrationTestSuite) TestInit_InferredOrg() {
+	suite.OnlyRunForTags(tagsuite.Init)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	ts.LoginAsPersistentUser()
+	ts.IgnoreLogErrors()
+
+	org := "ActiveState-CLI"
+	projectName := fmt.Sprintf("test-project-%s", model.HostPlatform)
+
+	// First, checkout project to set last used org.
+	cp := ts.Spawn("checkout", fmt.Sprintf("%s/Python3", org))
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+
+	// Now, run `state init` without specifying the org.
+	cp = ts.Spawn("init", projectName, "--language", "python@3")
+	cp.Expect(fmt.Sprintf("%s/%s", org, projectName))
+	cp.Expect("to track changes for this environment")
+	cp.Expect("successfully initialized")
+	cp.ExpectExitCode(0)
+	ts.NotifyProjectCreated(org, projectName)
+
+	// Verify the config file has the correct project owner.
+	suite.Contains(string(fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))), "ActiveState-CLI")
 }
 
 func TestInitIntegrationTestSuite(t *testing.T) {
