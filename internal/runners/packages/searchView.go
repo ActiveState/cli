@@ -135,7 +135,7 @@ func (v *view) View() string {
 func (v *view) processContent() string {
 	maxKeyLength := 0
 	for _, key := range keys {
-		renderedKey := colorize.StyleBold.Render(key)
+		renderedKey := colorize.StyleLightGrey.Render(key)
 		if len(renderedKey) > maxKeyLength {
 			maxKeyLength = len(renderedKey) + 2
 		}
@@ -144,16 +144,16 @@ func (v *view) processContent() string {
 	doc := strings.Builder{}
 	for _, pkg := range v.searchResults.Results {
 		if pkg.Name != "" {
-			doc.WriteString(formatRow(colorize.StyleBold.Render(keyName), pkg.Name, maxKeyLength, v.width))
+			doc.WriteString(formatRow(colorize.StyleLightGrey.Render(keyName), colorize.StyleActionable.Render(pkg.Name), maxKeyLength, v.width))
 		}
 		if pkg.Description != "" {
-			doc.WriteString(formatRow(colorize.StyleBold.Render(keyDescription), pkg.Description, maxKeyLength, v.width))
+			doc.WriteString(formatRow(colorize.StyleLightGrey.Render(keyDescription), pkg.Description, maxKeyLength, v.width))
 		}
 		if pkg.Website != "" {
-			doc.WriteString(formatRow(colorize.StyleBold.Render(keyWebsite), colorize.StyleCyan.Render(pkg.Website), maxKeyLength, v.width))
+			doc.WriteString(formatRow(colorize.StyleLightGrey.Render(keyWebsite), colorize.StyleCyan.Render(pkg.Website), maxKeyLength, v.width))
 		}
 		if pkg.License != "" {
-			doc.WriteString(formatRow(colorize.StyleBold.Render(keyLicense), pkg.License, maxKeyLength, v.width))
+			doc.WriteString(formatRow(colorize.StyleLightGrey.Render(keyLicense), colorize.StyleCyan.Render(pkg.License), maxKeyLength, v.width))
 		}
 
 		var versions []string
@@ -165,7 +165,7 @@ func (v *view) processContent() string {
 			versions = append(versions, colorize.StyleCyan.Render(v))
 		}
 		if len(versions) > 0 {
-			doc.WriteString(formatRow(colorize.StyleBold.Render(keyVersions), strings.Join(versions, ", "), maxKeyLength, v.width))
+			doc.WriteString(formatRow(colorize.StyleLightGrey.Render(keyVersions), strings.Join(versions, ", "), maxKeyLength, v.width))
 		}
 
 		if len(pkg.Vulnerabilities) > 0 {
@@ -238,7 +238,7 @@ func formatRow(key, value string, maxKeyLength, width int) string {
 
 	// The rendered value ends up being a bit too wide, so we need to reduce the
 	// width that we are working with to ensure that the wrapped value fits
-	indentedValue := strings.ReplaceAll(wrapped, "\n", "\n"+strings.Repeat(" ", len(paddedKey)-8))
+	indentedValue := strings.ReplaceAll(wrapped, "\n", "\n"+strings.Repeat(" ", len(paddedKey)-15))
 
 	formattedRow := fmt.Sprintf("%s%s", paddedKey, indentedValue)
 	return rowStyle.Render(formattedRow) + "\n"
