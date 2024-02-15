@@ -184,6 +184,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "cli-integration-tests/"+projectName, "--path="+ts.Dirs.Work),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+		e2e.OptAppendEnv(constants.DebugServiceRequestsEnvVarName+"=true"),
 	)
 
 	if runtime.GOOS == "linux" {
