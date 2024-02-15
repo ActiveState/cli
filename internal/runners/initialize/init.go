@@ -187,6 +187,8 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	resolvedProjectName = r.getProjectName(paramProjectName, lang.String())
 	namespace := project.Namespaced{Owner: resolvedOwner, Project: resolvedProjectName}
 
+	r.out.Notice(locale.T("initializing_project"))
+
 	createParams := &projectfile.CreateParams{
 		Owner:     namespace.Owner,
 		Project:   namespace.Project,

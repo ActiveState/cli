@@ -62,6 +62,7 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, lang string, ex
 
 	// Run `state init`, creating the project.
 	cp := ts.Spawn(computedArgs...)
+	cp.Expect("Initializing Project")
 	cp.Expect("Skipping runtime setup")
 	cp.Expect(fmt.Sprintf("Project '%s' has been successfully initialized", namespace))
 	cp.ExpectExitCode(0)
