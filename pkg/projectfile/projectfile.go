@@ -1348,6 +1348,7 @@ func GetProjectPaths(cfg ConfigGetter, namespace string) []string {
 // StoreProjectMapping associates the namespace with the project
 // path in the config
 func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
+	SetRecentlyUsedNamespace(cfg, namespace)
 	err := cfg.GetThenSet(
 		LocalProjectsConfigKey,
 		func(v interface{}) (interface{}, error) {
@@ -1444,5 +1445,12 @@ func CleanProjectMapping(cfg ConfigGetter) {
 	)
 	if err != nil {
 		logging.Debug("Could not clean project mapping in config, error: %v", err)
+	}
+}
+
+func SetRecentlyUsedNamespace(cfg ConfigGetter, namespace string) {
+	err := cfg.Set(constants.LastUsedNamespacePrefname, namespace)
+	if err != nil {
+		logging.Debug("Could not set recently used namespace in config, error: %v", err)
 	}
 }
