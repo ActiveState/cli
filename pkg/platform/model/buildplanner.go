@@ -51,7 +51,7 @@ func (c *client) Run(req gqlclient.Request, resp interface{}) error {
 func logRequestVariables(req gqlclient.Request) {
 	vars, err := req.Vars()
 	if err != nil {
-		// Don't fail request because of this error
+		// Don't fail request because of this errors
 		logging.Error("Failed to get request vars: %s", err)
 		return
 	}
