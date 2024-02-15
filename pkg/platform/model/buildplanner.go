@@ -49,6 +49,10 @@ func (c *client) Run(req gqlclient.Request, resp interface{}) error {
 }
 
 func logRequestVariables(req gqlclient.Request) {
+	if !strings.EqualFold(os.Getenv(constants.DebugServiceRequestsEnvVarName), "true") {
+		return
+	}
+
 	vars, err := req.Vars()
 	if err != nil {
 		// Don't fail request because of this errors
