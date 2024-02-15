@@ -184,7 +184,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "cli-integration-tests/"+projectName, "--path="+ts.Dirs.Work),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-		e2e.OptAppendEnv(constants.DebugServiceRequestsEnvVarName+"=true"),
 	)
 
 	if runtime.GOOS == "linux" {
@@ -193,11 +192,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 		cp.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
 		cp.SendLine("exit")
 		cp.ExpectExitCode(0)
-	} else if runtime.GOOS == "windows" {
-		// We can definitely improve this error, but this particular test is testing that we can still activate on the
-		// platform that DOES match (ie. Linux)
-		cp.Expect("Could not update runtime installation")
-		cp.ExpectNotExitCode(0)
 	} else {
 		cp.Expect("Your current platform")
 		cp.Expect("does not appear to be configured")
