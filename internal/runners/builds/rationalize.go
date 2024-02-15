@@ -15,9 +15,6 @@ func rationalizeCommonError(err *error, auth *authentication.Auth) {
 	var projectNotFoundErr *model.ErrProjectNotFound
 
 	switch {
-	case err == nil:
-		return
-
 	case errors.Is(*err, rationalize.ErrNoProject):
 		*err = errs.WrapUserFacing(*err,
 			locale.Tr("err_no_project"),
