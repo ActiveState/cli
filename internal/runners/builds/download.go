@@ -49,17 +49,17 @@ func NewDownload(prime primeable) *Download {
 	}
 }
 
-func rationalizeDownloadError(err *error) {
+func rationalizeDownloadError(err *error, auth *authentication.Auth) {
 	switch {
 	case err == nil:
 		return
 	default:
-		rationalizeCommonError(err)
+		rationalizeCommonError(err, auth)
 	}
 }
 
 func (d *Download) Run(params *DownloadParams) (rerr error) {
-	defer rationalizeDownloadError(&rerr)
+	defer rationalizeDownloadError(&rerr, d.auth)
 
 	terminalArtfMap, err := getTerminalArtifactMap(
 		d.project, params.Namespace, params.CommitID, d.auth, d.analytics, d.svcModel, d.out, d.config)
