@@ -29,6 +29,15 @@ func (v Vulnerabilites) Length() int {
 	return len(v.Critical) + len(v.High) + len(v.Medium) + len(v.Low)
 }
 
+func (v *Vulnerabilites) Count() map[string]int {
+	return map[string]int{
+		model.SeverityCritical: len(v.Critical),
+		model.SeverityHigh:     len(v.High),
+		model.SeverityMedium:   len(v.Medium),
+		model.SeverityLow:      len(v.Low),
+	}
+}
+
 func FetchVulnerabilitiesForIngredient(auth *authentication.Auth, ingredient *request.Ingredient) (*VulnerabilityIngredient, error) {
 	vulnerabilities, err := FetchVulnerabilitiesForIngredients(auth, []*request.Ingredient{ingredient})
 	if err != nil {
