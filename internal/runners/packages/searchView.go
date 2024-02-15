@@ -191,7 +191,7 @@ func (v *view) processContent() string {
 			}
 
 			if len(vunlSummary) > 0 {
-				doc.WriteString(formatRow(colorize.StyleBold.Render(keyVulns), strings.Join(vunlSummary, ", "), maxKeyLength, v.width))
+				doc.WriteString(formatRow(colorize.StyleLightGrey.Render(keyVulns), strings.Join(vunlSummary, ", "), maxKeyLength, v.width))
 			}
 		}
 

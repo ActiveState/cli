@@ -4,10 +4,10 @@ import "github.com/charmbracelet/lipgloss"
 
 var (
 	ColorRed        = lipgloss.Color("1")
-	ColorOrange     = lipgloss.Color("3")
-	ColorYellow     = lipgloss.Color("4")
+	ColorYellow     = lipgloss.Color("3")
 	ColorMagenta    = lipgloss.Color("5")
 	ColorCyan       = lipgloss.Color("6")
+	ColorOrange     = lipgloss.Color("166")
 	ColorLightGrey  = lipgloss.Color("248")
 	StyleCyan       = lipgloss.NewStyle().Foreground(ColorCyan)
 	StyleRed        = lipgloss.NewStyle().Foreground(ColorRed)
