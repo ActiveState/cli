@@ -299,7 +299,7 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 				return "", err
 			}
 
-			if funk.Contains(field.opts, string(OmitEmpty)) && stringValue == "" {
+			if funk.Contains(field.opts, string(OmitEmpty)) && (stringValue == "" || stringValue == nilText) {
 				continue
 			}
 
