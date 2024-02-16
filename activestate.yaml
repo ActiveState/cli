@@ -414,3 +414,4 @@ events:
   - name: file-changed
     scope: ["internal/locale/locales"]
     value: build
+
