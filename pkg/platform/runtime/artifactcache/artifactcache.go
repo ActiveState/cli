@@ -112,9 +112,11 @@ func (cache *ArtifactCache) Store(a artifact.ArtifactID, archivePath string) err
 	if existingArtifact, found := cache.artifacts[a]; found {
 		path := existingArtifact.ArchivePath
 		logging.Debug("Replacing cached artifact '%s'", path)
-		err := os.Remove(path)
-		if err != nil {
-			return errs.Wrap(err, "Unable to overwrite existing artifact '%s'", path)
+		if fileutils.TargetExists(path) {
+			err := os.Remove(path)
+			if err != nil {
+				return errs.Wrap(err, "Unable to overwrite existing artifact '%s'", path)
+			}
 		}
 		delete(cache.artifacts, existingArtifact.Id)
 		cache.currentSize -= existingArtifact.Size
@@ -147,9 +149,11 @@ func (cache *ArtifactCache) Store(a artifact.ArtifactID, archivePath string) err
 		}
 
 		logging.Debug("Removing cached artifact '%s' last accessed on %s", lastAccessed.ArchivePath, time.Unix(lastAccessed.LastAccessTime, 0).Format(time.UnixDate))
-		err := os.Remove(lastAccessed.ArchivePath)
-		if err != nil {
-			return errs.Wrap(err, "Unable to remove cached artifact '%s'", lastAccessed.ArchivePath)
+		if fileutils.TargetExists(lastAccessed.ArchivePath) {
+			err := os.Remove(lastAccessed.ArchivePath)
+			if err != nil {
+				return errs.Wrap(err, "Unable to remove cached artifact '%s'", lastAccessed.ArchivePath)
+			}
 		}
 		delete(cache.artifacts, lastAccessed.Id)
 		cache.currentSize -= lastAccessed.Size
