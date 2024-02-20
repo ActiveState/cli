@@ -27,6 +27,7 @@ const (
 	RequirementNamespaceKey           = "namespace"
 	RequirementVersionRequirementsKey = "version_requirements"
 	RequirementVersionKey             = "version"
+	RequirementRevisionKey            = "revision"
 	RequirementComparatorKey          = "comparator"
 
 	ctxLet         = "let"
@@ -63,6 +64,7 @@ type Value struct {
 	Str   *string
 	Null  *Null
 	Float *float64
+	Int   *int
 
 	Assignment *Var
 	Object     *[]*Var
@@ -730,6 +732,10 @@ func (e *BuildExpression) addRequirement(requirement model.Requirement) error {
 		{Name: RequirementNamespaceKey, Value: &Value{Str: ptr.To(requirement.Namespace)}},
 	}
 
+	if requirement.Revision != nil {
+		obj = append(obj, &Var{Name: RequirementRevisionKey, Value: &Value{Int: requirement.Revision}})
+	}
+
 	if requirement.VersionRequirement != nil {
 		values := []*Value{}
 		for _, r := range requirement.VersionRequirement {
@@ -948,6 +954,8 @@ func (v *Value) MarshalJSON() ([]byte, error) {
 		return json.Marshal(v.Assignment)
 	case v.Float != nil:
 		return json.Marshal(*v.Float)
+	case v.Int != nil:
+		return json.Marshal(*v.Int)
 	case v.Object != nil:
 		m := make(map[string]interface{})
 		for _, assignment := range *v.Object {

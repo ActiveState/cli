@@ -2,6 +2,7 @@ package captain
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -255,4 +256,37 @@ func (u *TimeValue) Set(v string) error {
 
 func (u *TimeValue) Type() string {
 	return "timestamp"
+}
+
+type IntValue struct {
+	raw string
+	Int *int
+}
+
+var _ FlagMarshaler = &IntValue{}
+
+func (i *IntValue) String() string {
+	return i.raw
+}
+
+func (i *IntValue) Set(v string) error {
+	if v == "" {
+		return nil
+	}
+
+	iv, err := strconv.Atoi(v)
+	if err != nil {
+		return locale.WrapInputError(err, "intflag_format", "Invalid int: Should be an integer, got: {{.V0}}.", v)
+	}
+	i.raw = v
+	i.Int = &iv
+	return nil
+}
+
+func (i *IntValue) Type() string {
+	return "int"
+}
+
+func (i *IntValue) IsSet() bool {
+	return i.Int != nil
 }

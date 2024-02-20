@@ -64,6 +64,12 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 				Description: locale.T("package_flag_ts_description"),
 				Value:       &params.Timestamp,
 			},
+			{
+				Name:        "revision",
+				Shorthand:   "r",
+				Description: locale.T("package_flag_rev_description"),
+				Value:       &params.Revision,
+			},
 		},
 		[]*captain.Argument{
 			{
