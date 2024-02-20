@@ -90,7 +90,7 @@ type ErrNoMatches struct {
 // For now, be aware that you should never provide BOTH ns AND nsType, one or the other should always be nil, but never both.
 // The refactor should clean this up.
 func (r *RequirementOperation) ExecuteRequirementOperation(
-	requirementName, requirementVersion string,
+	requirementName, requirementVersion string, requirementRevision *int,
 	requirementBitWidth int, // this is only needed for platform install/uninstall
 	operation bpModel.Operation, ns *model.Namespace, nsType *model.NamespaceType, ts *time.Time) (rerr error) {
 	defer r.rationalizeError(&rerr)
@@ -257,6 +257,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		RequirementName:      name,
 		RequirementVersion:   requirements,
 		RequirementNamespace: *ns,
+		RequirementRevision: requirementRevision,
 		Operation:            operation,
 		TimeStamp:            ts,
 	}

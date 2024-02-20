@@ -73,6 +73,7 @@ func (u *Update) Run(params *UpdateParams) error {
 	err = op.ExecuteRequirementOperation(
 		lang.Name,
 		lang.Version,
+		nil,
 		0, // bit-width placeholder that does not apply here
 		bpModel.OperationAdded,
 		nil,
