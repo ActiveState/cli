@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -276,6 +277,7 @@ func (r *Runner) Run(params *Params) error {
 			publishedIngredient.NormalizedName,
 			*publishedIngredient.PrimaryNamespace,
 			*publishedVersion.Version,
+			strconv.Itoa(int(*publishedVersion.Revision)),
 		),
 		result.Publish,
 	))

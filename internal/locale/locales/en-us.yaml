@@ -612,6 +612,8 @@ package_search_flag_ns_description:
   other: The namespace to search within. This trumps the language flag.
 package_flag_ts_description:
   other: The timestamp at which you want to query. Can be either 'now' or RFC3339 formatted timestamp.
+package_flag_rev_description:
+  other: The revision you want to use, this ensures you get this exact revision and nothing else.
 package_search_flag_language_description:
   other: The language used to constrain search results
 package_search_flag_exact-term_description:
@@ -1520,7 +1522,8 @@ uploadingredient_success:
     Name: [ACTIONABLE]{{.V0}}[/RESET]
     Namespace: [ACTIONABLE]{{.V1}}[/RESET]
     Version: [ACTIONABLE]{{.V2}}[/RESET]
+    Revision: [ACTIONABLE]{{.V3}}[/RESET]
 
-    You can install this package by running `[ACTIONABLE]state install {{.V1}}/{{.V0}} --ts now`[/RESET].
+    You can install this package by running `[ACTIONABLE]state install {{.V1}}/{{.V0}} --r {{.V3}} --ts now`[/RESET].
 err_runtime_cache_invalid:
   other: Your runtime needs to be updated, please run '[ACTIONABLE]state refresh[/RESET]'.
