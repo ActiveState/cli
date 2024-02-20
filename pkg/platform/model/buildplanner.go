@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"regexp"
@@ -38,6 +39,41 @@ const (
 // HostPlatform stores a reference to current platform
 var HostPlatform string
 
+type client struct {
+	gqlClient *gqlclient.Client
+}
+
+func (c *client) Run(req gqlclient.Request, resp interface{}) error {
+	logRequestVariables(req)
+	return c.gqlClient.Run(req, resp)
+}
+
+func logRequestVariables(req gqlclient.Request) {
+	if !strings.EqualFold(os.Getenv(constants.DebugServiceRequestsEnvVarName), "true") {
+		return
+	}
+
+	vars, err := req.Vars()
+	if err != nil {
+		// Don't fail request because of this errors
+		logging.Error("Failed to get request vars: %s", err)
+		return
+	}
+
+	for _, v := range vars {
+		if _, ok := v.(*buildexpression.BuildExpression); !ok {
+			continue
+		}
+
+		beData, err := json.MarshalIndent(v, "", "  ")
+		if err != nil {
+			logging.Error("Failed to marshal build expression: %s", err)
+			return
+		}
+		logging.Debug("Build Expression: %s", string(beData))
+	}
+}
+
 func init() {
 	HostPlatform = sysinfo.OS().String()
 	if osName, ok := os.LookupEnv(constants.OverrideOSNameEnvVarName); ok {
@@ -67,22 +103,24 @@ func (b *BuildResult) OrderedArtifacts() []artifact.ArtifactID {
 
 type BuildPlanner struct {
 	auth   *authentication.Auth
-	client *gqlclient.Client
+	client *client
 }
 
 func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
 	bpURL := api.GetServiceURL(api.ServiceBuildPlanner).String()
 	logging.Debug("Using build planner at: %s", bpURL)
 
-	client := gqlclient.NewWithOpts(bpURL, 0, graphql.WithHTTPClient(api.NewHTTPClient()))
+	gqlClient := gqlclient.NewWithOpts(bpURL, 0, graphql.WithHTTPClient(api.NewHTTPClient()))
 
 	if auth != nil && auth.Authenticated() {
-		client.SetTokenProvider(auth)
+		gqlClient.SetTokenProvider(auth)
 	}
 
 	return &BuildPlanner{
-		auth:   auth,
-		client: client,
+		auth: auth,
+		client: &client{
+			gqlClient: gqlClient,
+		},
 	}
 }
 
