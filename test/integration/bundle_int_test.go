@@ -144,7 +144,14 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithLang() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("bundles", "search", "Utilities", "--language=perl")
-	cp.Expect("Utilities")
+	expectations := []string{
+		"Name",
+		"Utilities",
+		"1.00",
+	}
+	for _, expectation := range expectations {
+		cp.Expect(expectation)
+	}
 	cp.Send("q")
 	cp.ExpectExitCode(0)
 }
