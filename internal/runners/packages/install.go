@@ -15,6 +15,7 @@ import (
 type InstallRunParams struct {
 	Package   captain.PackageValue
 	Timestamp captain.TimeValue
+	Revision  captain.IntValue
 }
 
 // Install manages the installing execution context.
@@ -66,6 +67,7 @@ func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) (rerr
 	return requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(
 		params.Package.Name,
 		params.Package.Version,
+		params.Revision.Int,
 		0, // bit-width placeholder that does not apply here
 		bpModel.OperationAdded,
 		ns,

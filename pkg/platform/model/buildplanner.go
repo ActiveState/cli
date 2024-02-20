@@ -224,6 +224,7 @@ type StageCommitParams struct {
 	RequirementName      string
 	RequirementVersion   []bpModel.VersionRequirement
 	RequirementNamespace Namespace
+	RequirementRevision *int
 	Operation            bpModel.Operation
 	// ... or commits can have an expression (e.g. from pull). When pulling an expression, we do not
 	// compute its changes into a series of above operations. Instead, we just pass the new
@@ -252,6 +253,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 				Namespace:          params.RequirementNamespace.String(),
 				Name:               params.RequirementName,
 				VersionRequirement: params.RequirementVersion,
+				Revision:           params.RequirementRevision,
 			}
 
 			err = expression.UpdateRequirement(params.Operation, requirement)

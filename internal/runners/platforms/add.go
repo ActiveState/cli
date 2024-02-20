@@ -52,6 +52,7 @@ func (a *Add) Run(ps AddRunParams) error {
 	if err := requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(
 		params.name,
 		params.version,
+		nil,
 		params.BitWidth,
 		bpModel.OperationAdded,
 		nil,
