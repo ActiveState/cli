@@ -694,6 +694,16 @@ bundle_removed:
   other: "Bundle uninstalled: [NOTICE]{{.V0}}[/RESET]"
 err_update_build_script:
   other: Could not update runtime build script
+raw_version_added:
+  other: "Package added: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
+raw_added:
+  other: "Package added: [NOTICE]{{.V0}}[/RESET]"
+raw_version_updated:
+  other: "Package updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
+raw_updated:
+  other: "Package updated: [NOTICE]{{.V0}}[/RESET]"
+raw_removed:
+  other: "Package removed: [NOTICE]{{.V0}}[/NOTICE]"
 notice_commit_build_script:
   other: |
     Your local build script has changes that should be committed. Please run '[ACTIONABLE]state commit[/RESET]' to do so.
