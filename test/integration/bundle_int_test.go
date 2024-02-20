@@ -249,7 +249,7 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 		e2e.OptArgs("bundles", "uninstall", "Testing", "-o", "editor"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect(`"Name":"Testing"`, e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect(`"name":"Testing"`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 }
