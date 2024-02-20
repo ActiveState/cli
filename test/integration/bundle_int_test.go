@@ -102,6 +102,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchSimple() {
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
 	}
+	cp.Send("q")
 	cp.ExpectExitCode(0)
 }
 
@@ -120,6 +121,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithExactTerm() {
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
 	}
+	cp.Send("q")
 	cp.ExpectExitCode(0)
 }
 
@@ -143,6 +145,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithLang() {
 
 	cp := ts.Spawn("bundles", "search", "Utilities", "--language=perl")
 	cp.Expect("Utilities")
+	cp.Send("q")
 	cp.ExpectExitCode(0)
 }
 
@@ -223,7 +226,7 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 	defer ts.Close()
 
 	cp := ts.Spawn("bundles", "search", "Email", "--language", "Perl", "-o", "json")
-	cp.Expect(`"name":"Email"`)
+	cp.Expect(`"Name":"Email"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
@@ -246,7 +249,7 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 		e2e.OptArgs("bundles", "uninstall", "Testing", "-o", "editor"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect(`"name":"Testing"`, e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect(`"Name":"Testing"`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 }
