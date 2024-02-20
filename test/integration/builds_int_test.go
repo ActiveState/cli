@@ -153,7 +153,7 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Download() {
 	)
 	cp.Expect("Downloaded bzip2", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
-	require.FileExists(suite.T(), filepath.Join(ts.Dirs.Work, "artifact.tar.gz"))
+	require.FileExists(suite.T(), filepath.Join(ts.Dirs.Work, "bzip2-1.0.8.tar.gz"))
 }
 
 func (suite *BuildsIntegrationTestSuite) TestBuilds_Download_Remote() {
@@ -164,7 +164,7 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Download_Remote() {
 	cp := ts.Spawn("builds", "dl", "a46a74e9", ".", "--namespace", "ActiveState-CLI/Python-With-Custom-Builds")
 	cp.Expect("Downloaded bzip2", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
-	require.FileExists(suite.T(), filepath.Join(ts.Dirs.Work, "artifact.tar.gz"))
+	require.FileExists(suite.T(), filepath.Join(ts.Dirs.Work, "bzip2-1.0.8.tar.gz"))
 }
 
 func TestBuildsIntegrationTestSuite(t *testing.T) {

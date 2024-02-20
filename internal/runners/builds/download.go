@@ -116,7 +116,19 @@ func (d *Download) downloadArtifact(artifact *artifact.Artifact, targetDir strin
 		return errs.Wrap(err, "Could not parse artifact URL %s.", artifact.URL)
 	}
 
-	downloadPath := filepath.Join(targetDir, path.Base(artifactURL.Path))
+	// Determine an appropriate basename for the artifact.
+	// Most platform artifact URLs are just "artifact.tar.gz", so use "<name>-<version>.<ext>" format.
+	// Some URLs are more complex like "<name>-<hash>.<ext>", so just leave them alone.
+	basename := path.Base(artifactURL.Path)
+	var ext string
+	if pos := strings.Index(basename, "."); pos != -1 {
+		ext = basename[pos:] // cannot use filepath.Ext() because it doesn't return ".tar.gz"
+	}
+	if basename == "artifact.tar.gz" {
+		basename = strings.Replace(artifact.NameWithVersion(), "@", "-", -1) + ext
+	}
+
+	downloadPath := filepath.Join(targetDir, basename)
 	if fileutils.TargetExists(downloadPath) {
 		return &errArtifactExists{Path: downloadPath}
 	}
