@@ -2,6 +2,7 @@ package builds
 
 import (
 	"context"
+	"errors"
 	"net/url"
 	"os"
 	"path"
@@ -49,10 +50,23 @@ func NewDownload(prime primeable) *Download {
 	}
 }
 
+type errArtifactExists struct {
+	error
+	Path string
+}
+
 func rationalizeDownloadError(err *error, auth *authentication.Auth) {
+	var artifactExistsErr *errArtifactExists
+
 	switch {
 	case err == nil:
 		return
+
+	case errors.As(*err, &artifactExistsErr):
+		*err = errs.WrapUserFacing(*err,
+			locale.Tl("err_builds_download_artifact_exists", "The artifact '[ACTIONABLE]{{.V0}}[/RESET]' has already been downloaded", artifactExistsErr.Path),
+			errs.SetInput())
+
 	default:
 		rationalizeCommonError(err, auth)
 	}
@@ -97,14 +111,19 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 }
 
 func (d *Download) downloadArtifact(artifact *artifact.Artifact, targetDir string) (rerr error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	pg := newDownloadProgress(ctx, d.out, artifact.Name, targetDir)
-	defer cancel()
-
 	artifactURL, err := url.Parse(artifact.URL)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse artifact URL %s.", artifact.URL)
 	}
+
+	downloadPath := filepath.Join(targetDir, path.Base(artifactURL.Path))
+	if fileutils.TargetExists(downloadPath) {
+		return &errArtifactExists{Path: downloadPath}
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	pg := newDownloadProgress(ctx, d.out, artifact.Name, targetDir)
+	defer cancel()
 
 	b, err := httputil.GetWithProgress(artifactURL.String(), &rtProgress.Report{
 		ReportSizeCb: func(size int) error {
@@ -123,7 +142,6 @@ func (d *Download) downloadArtifact(artifact *artifact.Artifact, targetDir strin
 	}
 	pg.Stop()
 
-	downloadPath := filepath.Join(targetDir, path.Base(artifactURL.Path))
 	if err := fileutils.WriteFile(downloadPath, b); err != nil {
 		return errs.Wrap(err, "Writing download to target file %s failed", downloadPath)
 	}
