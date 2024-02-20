@@ -129,7 +129,7 @@ func (o *OutputError) MarshalStructured(f output.Format) interface{} {
 
 // normalizeError ensures the given erorr message ends with a period.
 func normalizeError(msg string) string {
-	msg = strings.TrimRight(msg, " ")
+	msg = strings.TrimRight(msg, " \r\n")
 	if !strings.HasSuffix(msg, ".") {
 		msg = msg + "."
 	}
