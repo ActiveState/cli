@@ -247,7 +247,7 @@ func (r *Runner) Run(params *Params) error {
 	result := graphModel.PublishResult{}
 
 	if err := r.client.Run(pr, &result); err != nil {
-		return locale.WrapInputError(err, "err_uploadingredient_publish", "", err.Error())
+		return locale.WrapError(err, "err_uploadingredient_publish", "", err.Error())
 	}
 
 	if result.Publish.Error != "" {
