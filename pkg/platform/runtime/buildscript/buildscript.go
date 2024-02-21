@@ -91,6 +91,11 @@ func indent(s string) string {
 func (s *Script) String() string {
 	buf := strings.Builder{}
 	for _, assignment := range s.Expr.Let.Assignments {
+		if assignment.Name == "requirements" {
+			buf.WriteString(requirementsString(assignment))
+			buf.WriteString("\n")
+			continue
+		}
 		buf.WriteString(assignmentString(assignment))
 		buf.WriteString("\n")
 	}
@@ -105,7 +110,75 @@ func (s *Script) String() string {
 	return buf.String()
 }
 
+func requirementsString(reqs *buildexpression.Var) string {
+	buf := bytes.Buffer{}
+	buf.WriteString("requirements = [\n")
+
+	for i, req := range *reqs.Value.List {
+		buf.WriteString(indent("Req("))
+		var name, version string
+		for _, arg := range *req.Object {
+			switch arg.Name {
+			case "name":
+				if name != "" {
+					name = fmt.Sprintf("%s/%s", name, *arg.Value.Str)
+				} else {
+					name = *arg.Value.Str
+				}
+			case "namespace":
+				if name != "" {
+					name = fmt.Sprintf("%s/%s", *arg.Value.Str, name)
+				} else {
+					name = *arg.Value.Str
+				}
+			case "version_requirements":
+				version = versionRequirementsString(arg)
+			}
+		}
+
+		if name != "" {
+			buf.Write([]byte(fmt.Sprintf("name=\"%s\"", name)))
+		}
+		if version != "" {
+			buf.Write([]byte(fmt.Sprintf(", version=\"%s\"", version)))
+		}
+
+		buf.WriteString(")")
+		if i+1 < len(*reqs.Value.List) {
+			buf.WriteString(",")
+		}
+		buf.WriteString("\n")
+	}
+
+	buf.WriteString("]")
+	return buf.String()
+}
+
+func versionRequirementsString(vc *buildexpression.Var) string {
+	if vc.Value.List == nil {
+		return ""
+	}
+
+	buf := bytes.Buffer{}
+	for _, arg := range *vc.Value.List {
+		if arg.Object == nil {
+			continue
+		}
+
+		for _, o := range *arg.Object {
+			if o.Name == "version" {
+				buf.WriteString(*o.Value.Str)
+			}
+		}
+	}
+
+	return buf.String()
+}
+
 func assignmentString(a *buildexpression.Var) string {
+	if a.Name == "requirements" {
+		return requirementsString(a)
+	}
 	return fmt.Sprintf("%s = %s", a.Name, valueString(a.Value))
 }
 

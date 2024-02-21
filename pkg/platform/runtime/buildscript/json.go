@@ -9,6 +9,15 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
+const (
+	reqFuncName            = "Req"
+	nameKey                = "name"
+	namespaceKey           = "namespace"
+	versionKey             = "version"
+	comparatorKey          = "comparator"
+	versionRequirementsKey = "version_requirements"
+)
+
 // MarshalJSON marshals the Participle-produced Script into an equivalent buildexpression.
 // Users of buildscripts do not need to do this manually; the Expr field contains the
 // equivalent buildexpression.
@@ -63,6 +72,10 @@ func (v *Value) MarshalJSON() ([]byte, error) {
 }
 
 func (f *FuncCall) MarshalJSON() ([]byte, error) {
+	if f.Name == reqFuncName {
+		return marshalReq(f.Arguments)
+	}
+
 	m := make(map[string]interface{})
 	args := make(map[string]interface{})
 	for _, argument := range f.Arguments {
@@ -75,6 +88,48 @@ func (f *FuncCall) MarshalJSON() ([]byte, error) {
 			return nil, errors.New(fmt.Sprintf("Cannot marshal %v (arg %v)", f, argument))
 		}
 	}
+
 	m[f.Name] = args
 	return json.Marshal(m)
+}
+
+func marshalReq(args []*Value) ([]byte, error) {
+	mArgs := make(map[string]interface{})
+	for _, argument := range args {
+		switch {
+		case argument.Assignment != nil:
+			if argument.Assignment.Key == nameKey && argument.Assignment.Value.Str != nil {
+				name, namespace := separateNamespace(*argument.Assignment.Value.Str)
+				mArgs[nameKey] = name
+				mArgs[namespaceKey] = namespace
+			} else if argument.Assignment.Key == versionKey && argument.Assignment.Value.Str != nil {
+				mArgs[versionRequirementsKey] = &Value{List: &[]*Value{
+					{Object: &[]*Assignment{
+						{comparatorKey, &Value{Str: ptr.To("eq")}},
+						{versionKey, argument.Assignment.Value},
+					}},
+				}}
+			} else {
+				mArgs[argument.Assignment.Key] = argument.Assignment.Value
+			}
+		case argument.FuncCall != nil:
+			mArgs[argument.FuncCall.Name] = argument.FuncCall.Arguments
+		default:
+			return nil, errors.New(fmt.Sprintf("Cannot marshal %v", argument))
+		}
+	}
+
+	return json.Marshal(mArgs)
+}
+
+func separateNamespace(combined string) (string, string) {
+	var name, namespace string
+	s := strings.Trim(combined, `"`)
+	lastSlashIndex := strings.LastIndex(s, "/")
+	if lastSlashIndex != -1 {
+		namespace = s[:lastSlashIndex]
+		name = s[lastSlashIndex+1:]
+	}
+
+	return name, namespace
 }
