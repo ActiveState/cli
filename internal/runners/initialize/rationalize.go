@@ -2,9 +2,11 @@ package initialize
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
@@ -15,6 +17,7 @@ func rationalizeError(owner, project string, rerr *error) {
 	var pcErr *bpModel.ProjectCreatedError
 	var errArtifactSetup *setup.ArtifactSetupErrors
 	var projectExistsErr *errProjectExists
+	var unrecognizedLanguageErr *errUnrecognizedLanguage
 
 	switch {
 	case rerr == nil:
@@ -42,6 +45,13 @@ func rationalizeError(owner, project string, rerr *error) {
 	case errors.Is(*rerr, errNoOwner):
 		*rerr = errs.WrapUserFacing(*rerr,
 			locale.Tr("err_init_invalid_org", owner),
+			errs.SetInput(),
+		)
+
+	case errors.As(*rerr, &unrecognizedLanguageErr):
+		opts := strings.Join(language.RecognizedSupportedsNames(), ", ")
+		*rerr = errs.WrapUserFacing(*rerr,
+			locale.Tr("err_invalid_language", unrecognizedLanguageErr.Name, opts),
 			errs.SetInput(),
 		)
 
