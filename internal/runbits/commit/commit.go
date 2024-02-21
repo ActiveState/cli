@@ -31,6 +31,7 @@ type requirementChange struct {
 	Requirement           string `json:"requirement"`
 	VersionConstraintsOld string `json:"version_constraints_old,omitempty"`
 	VersionConstraintsNew string `json:"version_constraints_new,omitempty"`
+	Namespace             string `json:"namespace"`
 }
 
 func (o *commitOutput) MarshalOutput(format output.Format) interface{} {
@@ -122,13 +123,13 @@ func FormatChanges(commit *mono_models.Commit) ([]string, []*requirementChange) 
 		var result, oldConstraints, newConstraints string
 		switch change.Operation {
 		case string(model.OperationAdded):
-			result = locale.Tr("change_added", requirement, versionConstraints)
+			result = locale.Tr("change_added", requirement, versionConstraints, change.Namespace)
 			newConstraints = formatConstraints(change.VersionConstraints)
 		case string(model.OperationRemoved):
-			result = locale.Tr("change_removed", requirement)
+			result = locale.Tr("change_removed", requirement, change.Namespace)
 			oldConstraints = formatConstraints(change.VersionConstraintsOld)
 		case string(model.OperationUpdated):
-			result = locale.Tr("change_updated", requirement, formatConstraints(change.VersionConstraintsOld), versionConstraints)
+			result = locale.Tr("change_updated", requirement, formatConstraints(change.VersionConstraintsOld), versionConstraints, change.Namespace)
 			oldConstraints = formatConstraints(change.VersionConstraintsOld)
 			newConstraints = formatConstraints(change.VersionConstraints)
 		}
@@ -139,6 +140,7 @@ func FormatChanges(commit *mono_models.Commit) ([]string, []*requirementChange) 
 			Requirement:           change.Requirement,
 			VersionConstraintsOld: oldConstraints,
 			VersionConstraintsNew: newConstraints,
+			Namespace:             change.Namespace,
 		})
 	}
 
