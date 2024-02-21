@@ -97,6 +97,10 @@ func rationalizeBuildsError(err *error, auth *authentication.Auth) {
 func (b *Builds) Run(params *Params) (rerr error) {
 	defer rationalizeBuildsError(&rerr, b.auth)
 
+	if b.project != nil && !params.Namespace.IsValid() {
+		b.out.Notice(locale.Tr("operating_message", b.project.NamespaceString(), b.project.Dir()))
+	}
+
 	terminalArtfMap, err := getTerminalArtifactMap(
 		b.project, params.Namespace, params.CommitID, b.auth, b.analytics, b.svcModel, b.out, b.config)
 	if err != nil {

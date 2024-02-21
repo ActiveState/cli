@@ -75,6 +75,10 @@ func rationalizeDownloadError(err *error, auth *authentication.Auth) {
 func (d *Download) Run(params *DownloadParams) (rerr error) {
 	defer rationalizeDownloadError(&rerr, d.auth)
 
+	if d.project != nil && !params.Namespace.IsValid() {
+		d.out.Notice(locale.Tr("operating_message", d.project.NamespaceString(), d.project.Dir()))
+	}
+
 	terminalArtfMap, err := getTerminalArtifactMap(
 		d.project, params.Namespace, params.CommitID, d.auth, d.analytics, d.svcModel, d.out, d.config)
 	if err != nil {
