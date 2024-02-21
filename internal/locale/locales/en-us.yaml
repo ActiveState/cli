@@ -596,8 +596,10 @@ bundle_arg_name_description:
   other: Bundle name
 package_arg_nameversion:
   other: name[@version]
+package_arg_nameversion_wildcard_description:
+  other: "Package name and optionally the desired version. The version may contain wildcards, for example: '1.0.x'."
 package_arg_nameversion_description:
-  other: Package name and optionally the desired version, optionally with namespace, eg. '[<namespace>/]<name>'.
+  other: Package name and optionally the desired version
 bundle_arg_nameversion:
   other: name[@version]
 bundle_arg_nameversion_description:
