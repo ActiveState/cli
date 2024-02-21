@@ -129,7 +129,7 @@ fi
 
 # Fetch version info.
 $FETCH $INSTALLERTMPDIR/info.json $JSONURL
-if [ ! -z "`grep -o Invalid $INSTALLERTMPDIR/info.json`" ]; then
+if [ $? -ne 0 -o ! -z "`grep -o Invalid $INSTALLERTMPDIR/info.json`" ]; then
 	error "Could not download a State Tool installer for the given command line arguments"
 	exit 1
 fi
