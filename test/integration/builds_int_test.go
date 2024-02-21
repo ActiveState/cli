@@ -38,6 +38,7 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds() {
 
 	suite.Run("no flags", func() {
 		cp = ts.Spawn("builds")
+		cp.Expect("Operating on project ActiveState-CLI/Python-With-Custom-Builds, located at")
 		cp.Expect("CentOS")
 		cp.Expect("Docker Image")
 		cp.Expect("Installer")
@@ -117,6 +118,7 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Remote() {
 		cp.Expect("Signed Installer")
 		cp.Expect(".exe")
 		cp.Expect("To download builds run")
+		suite.Assert().NotContains(cp.Snapshot(), "Operating on project")
 		cp.ExpectExitCode(0)
 	})
 
@@ -151,6 +153,7 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Download() {
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("builds", "dl", "a46a74e9", "."),
 	)
+	cp.Expect("Operating on project ActiveState-CLI/Python-With-Custom-Builds, located at")
 	cp.Expect("Downloaded bzip2", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	require.FileExists(suite.T(), filepath.Join(ts.Dirs.Work, "artifact.tar.gz"))
@@ -163,6 +166,7 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Download_Remote() {
 
 	cp := ts.Spawn("builds", "dl", "a46a74e9", ".", "--namespace", "ActiveState-CLI/Python-With-Custom-Builds")
 	cp.Expect("Downloaded bzip2", e2e.RuntimeSourcingTimeoutOpt)
+	suite.Assert().NotContains(cp.Snapshot(), "Operating on project")
 	cp.ExpectExitCode(0)
 	require.FileExists(suite.T(), filepath.Join(ts.Dirs.Work, "artifact.tar.gz"))
 }
