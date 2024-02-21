@@ -21,10 +21,7 @@ func TestDiff(t *testing.T) {
 		"67890"
 	],
 	requirements = [
-		{
-			name = "language/python",
-			namespace = "language"
-		}
+		Req(name="language/perl")
 	]
 )
 
@@ -53,10 +50,7 @@ main = runtime`))
 		"67890"
 	],
 	requirements = [
-		{
-			name = "language/python",
-			namespace = "language"
-		}
+		Req(name="language/perl")
 	]
 )
 
