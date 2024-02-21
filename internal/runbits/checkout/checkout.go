@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -66,22 +67,24 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		return "", locale.WrapError(err, "err_fetch_project", "", ns.String())
 	}
 
+	var branch *mono_models.Branch
 	if branchName == "" {
-		branch, err := model.DefaultBranchForProject(pj)
+		branch, err = model.DefaultBranchForProject(pj)
 		if err != nil {
 			return "", errs.Wrap(err, "Could not grab branch for project")
 		}
 		branchName = branch.Label
+	} else {
+		branch, err = model.BranchForProjectByName(pj, branchName)
+		if err != nil {
+			return "", locale.WrapError(err, "err_fetch_branch", "", branchName)
+		}
 	}
 
 	commitID := ns.CommitID
 	if commitID == nil {
-		branch, err := model.BranchForProjectByName(pj, branchName)
-		if err != nil {
-			return "", locale.WrapError(err, "err_fetch_branch", "", branchName)
-		}
 		commitID = branch.CommitID
-	} else {
+	} else if branchName == "" {
 		// It's possible the given commitID does not belong to the default project branch.
 		// If so, find the correct branch.
 		for _, branch := range pj.Branches {
