@@ -1497,4 +1497,4 @@ uploadingredient_success:
     Version: [ACTIONABLE]{{.V2}}[/RESET]
     Revision: [ACTIONABLE]{{.V3}}[/RESET]
 
-    You can install this package by running `[ACTIONABLE]state install {{.V1}}/{{.V0}} --r {{.V3}} --ts now`[/RESET].
+    You can install this package by running `[ACTIONABLE]state install {{.V1}}/{{.V0}} --ts now`[/RESET].
