@@ -20,13 +20,8 @@ import (
 // submitting it to the build planner. It's easier to operate on build expressions directly than to
 // modify or manually populate the Participle-produced fields and re-generate a build expression.
 type Script struct {
-	Let  *Let `parser:"'let' ':' @@"`
-	In   *In  `parser:"'in' ':' @@"`
-	Expr *buildexpression.BuildExpression
-}
-
-type Let struct {
 	Assignments []*Assignment `parser:"@@+"`
+	Expr        *buildexpression.BuildExpression
 }
 
 type Assignment struct {
@@ -95,18 +90,17 @@ func indent(s string) string {
 
 func (s *Script) String() string {
 	buf := strings.Builder{}
-	buf.WriteString("let:\n")
 	for _, assignment := range s.Expr.Let.Assignments {
-		buf.WriteString(indent(assignmentString(assignment)))
+		buf.WriteString(assignmentString(assignment))
 		buf.WriteString("\n")
 	}
 	buf.WriteString("\n")
-	buf.WriteString("in:\n")
+	buf.WriteString("main = ")
 	switch {
 	case s.Expr.Let.In.FuncCall != nil:
-		buf.WriteString(indent(apString(s.Expr.Let.In.FuncCall)))
+		buf.WriteString(apString(s.Expr.Let.In.FuncCall))
 	case s.Expr.Let.In.Name != nil:
-		buf.WriteString(indent(*s.Expr.Let.In.Name))
+		buf.WriteString(*s.Expr.Let.In.Name)
 	}
 	return buf.String()
 }
