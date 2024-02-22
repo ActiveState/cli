@@ -49,5 +49,5 @@ func (t *Step) Set(value string) error {
 }
 
 func (t *Step) Type() string {
-	return "step"
+	return "value"
 }

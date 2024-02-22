@@ -49,7 +49,7 @@ func (nv *NameVersionValue) Version() string {
 }
 
 func (nv *NameVersionValue) Type() string {
-	return "name and version"
+	return "value"
 }
 
 // UserValue represents a flag that supports both a name and an email address, the following formats are supported:
@@ -91,7 +91,7 @@ func (u *UserValue) Set(s string) error {
 }
 
 func (u *UserValue) Type() string {
-	return "user"
+	return "value"
 }
 
 // UsersValue is used to represent multiple UserValue, this is used when a flag can be passed multiple times.
@@ -117,7 +117,7 @@ func (u *UsersValue) Set(s string) error {
 }
 
 func (u *UsersValue) Type() string {
-	return "users"
+	return "value"
 }
 
 // PackageValue represents a flag that supports specifying a package in the following formats:
@@ -163,7 +163,7 @@ func (p *PackageValue) Set(s string) error {
 }
 
 func (p *PackageValue) Type() string {
-	return "package"
+	return "value"
 }
 
 // PackageValueNoVersion is identical to PackageValue except that it does not support a version.
@@ -182,7 +182,7 @@ func (p *PackageValueNoVersion) Set(s string) error {
 }
 
 func (p *PackageValueNoVersion) Type() string {
-	return "package"
+	return "value"
 }
 
 // PackageValueNSRequired is identical to PackageValue except that specifying a namespace is required.
@@ -200,7 +200,7 @@ func (p *PackageValueNSRequired) Set(s string) error {
 	return nil
 }
 func (p *PackageValueNSRequired) Type() string {
-	return "namespace/package"
+	return "value"
 }
 
 // PackagesValue is used to represent multiple PackageValue, this is used when a flag can be passed multiple times.
@@ -226,7 +226,7 @@ func (p *PackagesValue) Set(s string) error {
 }
 
 func (p *PackagesValue) Type() string {
-	return "packages"
+	return "value"
 }
 
 type TimeValue struct {
@@ -255,7 +255,7 @@ func (u *TimeValue) Set(v string) error {
 }
 
 func (u *TimeValue) Type() string {
-	return "timestamp"
+	return "value"
 }
 
 type IntValue struct {
@@ -284,7 +284,7 @@ func (i *IntValue) Set(v string) error {
 }
 
 func (i *IntValue) Type() string {
-	return "int"
+	return "value"
 }
 
 func (i *IntValue) IsSet() bool {

@@ -22,7 +22,7 @@ func roleNames() []string {
 }
 
 func (r Role) Type() string {
-	return "Role"
+	return "value"
 }
 
 func (r Role) String() string {
