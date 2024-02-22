@@ -13,26 +13,24 @@ import (
 
 func TestMergeAdd(t *testing.T) {
 	scriptA, err := buildscript.NewScript([]byte(
-		`let:
-	runtime = solve(
-		platforms = [
-			"12345",
-			"67890"
-		],
-		requirements = [
-			{
-				name = "perl",
-				namespace = "language"
-			},
-			{
-				name = "DateTime",
-				namespace = "language/perl"
-			}
-		]
-	)
+		`runtime = solve(
+	platforms = [
+		"12345",
+		"67890"
+	],
+	requirements = [
+		{
+			name = "perl",
+			namespace = "language"
+		},
+		{
+			name = "DateTime",
+			namespace = "language/perl"
+		}
+	]
+)
 
-in:
-	runtime`))
+main = runtime`))
 	require.NoError(t, err)
 	bytes, err := json.Marshal(scriptA)
 	require.NoError(t, err)
@@ -40,26 +38,24 @@ in:
 	require.NoError(t, err)
 
 	scriptB, err := buildscript.NewScript([]byte(
-		`let:
-	runtime = solve(
-		platforms = [
-			"12345",
-			"67890"
-		],
-		requirements = [
-			{
-				name = "perl",
-				namespace = "language"
-			},
-			{
-				name = "JSON",
-				namespace = "language/perl"
-			}
-		]
-	)
+		`runtime = solve(
+	platforms = [
+		"12345",
+		"67890"
+	],
+	requirements = [
+		{
+			name = "perl",
+			namespace = "language"
+		},
+		{
+			name = "JSON",
+			namespace = "language/perl"
+		}
+	]
+)
 
-in:
-	runtime`))
+main = runtime`))
 	require.NoError(t, err)
 	bytes, err = json.Marshal(scriptB)
 	require.NoError(t, err)
@@ -81,58 +77,54 @@ in:
 	require.NoError(t, err)
 
 	assert.Equal(t,
-		`let:
-	runtime = solve(
-		platforms = [
-			"12345",
-			"67890"
-		],
-		requirements = [
-			{
-				name = "perl",
-				namespace = "language"
-			},
-			{
-				name = "JSON",
-				namespace = "language/perl"
-			},
-			{
-				name = "DateTime",
-				namespace = "language/perl"
-			}
-		]
-	)
+		`runtime = solve(
+	platforms = [
+		"12345",
+		"67890"
+	],
+	requirements = [
+		{
+			name = "perl",
+			namespace = "language"
+		},
+		{
+			name = "JSON",
+			namespace = "language/perl"
+		},
+		{
+			name = "DateTime",
+			namespace = "language/perl"
+		}
+	]
+)
 
-in:
-	runtime`, mergedScript.String())
+main = runtime`, mergedScript.String())
 }
 
 func TestMergeRemove(t *testing.T) {
 	scriptA, err := buildscript.NewScript([]byte(
-		`let:
-	runtime = solve(
-		platforms = [
-			"12345",
-			"67890"
-		],
-		requirements = [
-			{
-				name = "perl",
-				namespace = "language"
-			},
-			{
-				name = "JSON",
-				namespace = "language/perl"
-			},
-			{
-				name = "DateTime",
-				namespace = "language/perl"
-			}
-		]
-	)
+		`runtime = solve(
+	platforms = [
+		"12345",
+		"67890"
+	],
+	requirements = [
+		{
+			name = "perl",
+			namespace = "language"
+		},
+		{
+			name = "JSON",
+			namespace = "language/perl"
+		},
+		{
+			name = "DateTime",
+			namespace = "language/perl"
+		}
+	]
+)
 
-in:
-	runtime`))
+main = runtime`))
 	require.NoError(t, err)
 	bytes, err := json.Marshal(scriptA)
 	require.NoError(t, err)
@@ -140,26 +132,24 @@ in:
 	require.NoError(t, err)
 
 	scriptB, err := buildscript.NewScript([]byte(
-		`let:
-	runtime = solve(
-		platforms = [
-			"12345",
-			"67890"
-		],
-		requirements = [
-			{
-				name = "perl",
-				namespace = "language"
-			},
-			{
-				name = "DateTime",
-				namespace = "language/perl"
-			}
-		]
-	)
+		`runtime = solve(
+	platforms = [
+		"12345",
+		"67890"
+	],
+	requirements = [
+		{
+			name = "perl",
+			namespace = "language"
+		},
+		{
+			name = "DateTime",
+			namespace = "language/perl"
+		}
+	]
+)
 
-in:
-	runtime`))
+main = runtime`))
 	require.NoError(t, err)
 	bytes, err = json.Marshal(scriptB)
 	require.NoError(t, err)
@@ -181,46 +171,42 @@ in:
 	require.NoError(t, err)
 
 	assert.Equal(t,
-		`let:
-	runtime = solve(
-		platforms = [
-			"12345",
-			"67890"
-		],
-		requirements = [
-			{
-				name = "perl",
-				namespace = "language"
-			},
-			{
-				name = "DateTime",
-				namespace = "language/perl"
-			}
-		]
-	)
+		`runtime = solve(
+	platforms = [
+		"12345",
+		"67890"
+	],
+	requirements = [
+		{
+			name = "perl",
+			namespace = "language"
+		},
+		{
+			name = "DateTime",
+			namespace = "language/perl"
+		}
+	]
+)
 
-in:
-	runtime`, mergedScript.String())
+main = runtime`, mergedScript.String())
 }
 
 func TestMergeConflict(t *testing.T) {
 	scriptA, err := buildscript.NewScript([]byte(
-		`let:
-	runtime = solve(
-		platforms = [
-			"12345",
-			"67890"
-		],
-		requirements = [
-			{
-				name = "perl",
-				namespace = "language"
-			}
-		]
-	)
+		`runtime = solve(
+	platforms = [
+		"12345",
+		"67890"
+	],
+	requirements = [
+		{
+			name = "perl",
+			namespace = "language"
+		}
+	]
+)
 
-in:
-	runtime`))
+main = runtime`))
 	require.NoError(t, err)
 	bytes, err := json.Marshal(scriptA)
 	require.NoError(t, err)
@@ -228,25 +214,23 @@ in:
 	require.NoError(t, err)
 
 	scriptB, err := buildscript.NewScript([]byte(
-		`let:
-	runtime = solve(
-		platforms = [
-			"12345"
-		],
-		requirements = [
-			{
-				name = "perl",
-				namespace = "language"
-			},
-			{
-				name = "JSON",
-				namespace = "language/perl"
-			}
-		]
-	)
+		`runtime = solve(
+	platforms = [
+		"12345"
+	],
+	requirements = [
+		{
+			name = "perl",
+			namespace = "language"
+		},
+		{
+			name = "JSON",
+			namespace = "language/perl"
+		}
+	]
+)
 
-in:
-	runtime`))
+main = runtime`))
 	require.NoError(t, err)
 	bytes, err = json.Marshal(scriptB)
 	require.NoError(t, err)

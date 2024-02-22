@@ -15,22 +15,20 @@ import (
 
 func TestDiff(t *testing.T) {
 	script, err := buildscript.NewScript([]byte(
-		`let:
-	runtime = solve(
-		platforms = [
-			"12345",
-			"67890"
-		],
-		requirements = [
-			{
-				name = "language/python",
-				namespace = "language"
-			}
-		]
-	)
+		`runtime = solve(
+	platforms = [
+		"12345",
+		"67890"
+	],
+	requirements = [
+		{
+			name = "language/python",
+			namespace = "language"
+		}
+	]
+)
 
-in:
-	runtime`))
+main = runtime`))
 	require.NoError(t, err)
 
 	// Make a copy of the original expression.
@@ -45,26 +43,24 @@ in:
 	// Generate the difference between the modified script and the original expression.
 	result, err := generateDiff(script, expr)
 	require.NoError(t, err)
-	assert.Equal(t, `let:
-	runtime = solve(
-		platforms = [
+	assert.Equal(t, `runtime = solve(
+	platforms = [
 <<<<<<< local
-			"77777",
+		"77777",
 =======
-			"12345",
+		"12345",
 >>>>>>> remote
-			"67890"
-		],
-		requirements = [
-			{
-				name = "language/python",
-				namespace = "language"
-			}
-		]
-	)
+		"67890"
+	],
+	requirements = [
+		{
+			name = "language/python",
+			namespace = "language"
+		}
+	]
+)
 
-in:
-	runtime`, result)
+main = runtime`, result)
 }
 
 // TestRealWorld tests a real-world case where:
@@ -81,54 +77,52 @@ func TestRealWorld(t *testing.T) {
 	require.NoError(t, err)
 	result, err := generateDiff(script1, script2.Expr)
 	require.NoError(t, err)
-	assert.Equal(t, `let:
-	runtime = state_tool_artifacts_v1(
-		build_flags = [
-		],
-		camel_flags = [
-		],
-		src = "$sources"
-	)
-	sources = solve(
+	assert.Equal(t, `runtime = state_tool_artifacts_v1(
+	build_flags = [
+	],
+	camel_flags = [
+	],
+	src = "$sources"
+)
+sources = solve(
 <<<<<<< local
-		at_time = "2023-10-16T22:20:29.000000Z",
+	at_time = "2023-10-16T22:20:29.000000Z",
 =======
-		at_time = "2023-08-01T16:20:11.985000Z",
+	at_time = "2023-08-01T16:20:11.985000Z",
 >>>>>>> remote
-		platforms = [
-			"78977bc8-0f32-519d-80f3-9043f059398c",
-			"7c998ec2-7491-4e75-be4d-8885800ef5f2",
-			"96b7e6f2-bebf-564c-bc1c-f04482398f38"
-		],
-		requirements = [
-			{
-				name = "python",
-				namespace = "language",
-				version_requirements = [
-					{
-						comparator = "eq",
-						version = "3.10.11"
-					}
-				]
-			},
-			{
-				name = "requests",
+	platforms = [
+		"78977bc8-0f32-519d-80f3-9043f059398c",
+		"7c998ec2-7491-4e75-be4d-8885800ef5f2",
+		"96b7e6f2-bebf-564c-bc1c-f04482398f38"
+	],
+	requirements = [
+		{
+			name = "python",
+			namespace = "language",
+			version_requirements = [
+				{
+					comparator = "eq",
+					version = "3.10.11"
+				}
+			]
+		},
+		{
+			name = "requests",
 <<<<<<< local
-				namespace = "language/python"
+			namespace = "language/python"
 =======
-				namespace = "language/python",
-				version_requirements = [
-					{
-						comparator = "eq",
-						version = "2.30.0"
-					}
-				]
+			namespace = "language/python",
+			version_requirements = [
+				{
+					comparator = "eq",
+					version = "2.30.0"
+				}
+			]
 >>>>>>> remote
-			}
-		],
-		solver_version = null
-	)
+		}
+	],
+	solver_version = null
+)
 
-in:
-	runtime`, result)
+main = runtime`, result)
 }

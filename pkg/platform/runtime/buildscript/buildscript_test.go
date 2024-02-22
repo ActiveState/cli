@@ -26,28 +26,27 @@ func toBuildExpression(script *Script) (*buildexpression.BuildExpression, error)
 
 func TestBasic(t *testing.T) {
 	script, err := NewScript([]byte(
-		`let:
-  runtime = solve(
-    platforms = ["linux", "windows"],
-    requirements = [
-      {
-        name = "python",
-        namespace = "language",
-      },
-      {
-        name = "requests",
-        namespace = "language/python",
-        version_requirements = [
-          {
-            comparator = "eq",
-            version = "3.10.10"
-          }
-        ]
-      }
-    ]
-  )
-in:
-  runtime
+		`runtime = solve(
+	platforms = ["linux", "windows"],
+	requirements = [
+		{
+			name = "python",
+			namespace = "language",
+		},
+		{
+			name = "requests",
+			namespace = "language/python",
+			version_requirements = [
+				{
+					comparator = "eq",
+					version = "3.10.10"
+				}
+			]
+		}
+	]
+)
+
+main = runtime
 `))
 	require.NoError(t, err)
 
@@ -55,68 +54,64 @@ in:
 	require.NoError(t, err)
 
 	assert.Equal(t, &Script{
-		&Let{
-			[]*Assignment{
-				{"runtime", &Value{
-					FuncCall: &FuncCall{"solve", []*Value{
-						{Assignment: &Assignment{
-							"platforms", &Value{List: &[]*Value{
-								{Str: ptr.To(`"linux"`)},
-								{Str: ptr.To(`"windows"`)},
-							}},
+		[]*Assignment{
+			{"runtime", &Value{
+				FuncCall: &FuncCall{"solve", []*Value{
+					{Assignment: &Assignment{
+						"platforms", &Value{List: &[]*Value{
+							{Str: ptr.To(`"linux"`)},
+							{Str: ptr.To(`"windows"`)},
 						}},
-						{Assignment: &Assignment{
-							"requirements", &Value{List: &[]*Value{
-								{Object: &[]*Assignment{
-									{"name", &Value{Str: ptr.To(`"python"`)}},
-									{"namespace", &Value{Str: ptr.To(`"language"`)}},
-								}},
-								{Object: &[]*Assignment{
-									{"name", &Value{Str: ptr.To(`"requests"`)}},
-									{"namespace", &Value{Str: ptr.To(`"language/python"`)}},
-									{"version_requirements", &Value{List: &[]*Value{
-										{Object: &[]*Assignment{
-											{"comparator", &Value{Str: ptr.To(`"eq"`)}},
-											{"version", &Value{Str: ptr.To(`"3.10.10"`)}},
-										}},
-									}}},
-								}},
+					}},
+					{Assignment: &Assignment{
+						"requirements", &Value{List: &[]*Value{
+							{Object: &[]*Assignment{
+								{"name", &Value{Str: ptr.To(`"python"`)}},
+								{"namespace", &Value{Str: ptr.To(`"language"`)}},
+							}},
+							{Object: &[]*Assignment{
+								{"name", &Value{Str: ptr.To(`"requests"`)}},
+								{"namespace", &Value{Str: ptr.To(`"language/python"`)}},
+								{"version_requirements", &Value{List: &[]*Value{
+									{Object: &[]*Assignment{
+										{"comparator", &Value{Str: ptr.To(`"eq"`)}},
+										{"version", &Value{Str: ptr.To(`"3.10.10"`)}},
+									}},
+								}}},
 							}},
 						}},
 					}},
 				}},
-			},
+			}},
+			{"main", &Value{Ident: ptr.To("runtime")}},
 		},
-		&In{Name: ptr.To("runtime")},
 		expr,
 	}, script)
 }
 
 func TestComplex(t *testing.T) {
 	script, err := NewScript([]byte(
-		`let:
-    linux_runtime = solve(
-        requirements=[
-            {
-                name="language/python"
-            }
-        ],
-        platforms=["67890"]
-    )
+		`linux_runtime = solve(
+		requirements=[
+				{
+						name="language/python"
+				}
+		],
+		platforms=["67890"]
+)
 
-    win_runtime = solve(
-        requirements=[{
-                name="language/perl"
-            }
-        ],
-        platforms=["12345"]
-    )
+win_runtime = solve(
+		requirements=[{
+						name="language/perl"
+				}
+		],
+		platforms=["12345"]
+)
 
-in:
-    merge(
-        win_installer(win_runtime),
-        tar_installer(linux_runtime)
-    )
+main = merge(
+		win_installer(win_runtime),
+		tar_installer(linux_runtime)
+)
 `))
 	require.NoError(t, err)
 
@@ -124,74 +119,72 @@ in:
 	require.NoError(t, err)
 
 	assert.Equal(t, &Script{
-		&Let{
-			[]*Assignment{
-				{"linux_runtime", &Value{
-					FuncCall: &FuncCall{"solve", []*Value{
-						{Assignment: &Assignment{
-							"requirements", &Value{List: &[]*Value{
-								{Object: &[]*Assignment{
-									{"name", &Value{Str: ptr.To(`"language/python"`)}},
-								}},
+		[]*Assignment{
+			{"linux_runtime", &Value{
+				FuncCall: &FuncCall{"solve", []*Value{
+					{Assignment: &Assignment{
+						"requirements", &Value{List: &[]*Value{
+							{Object: &[]*Assignment{
+								{"name", &Value{Str: ptr.To(`"language/python"`)}},
 							}},
 						}},
-						{Assignment: &Assignment{
-							"platforms", &Value{List: &[]*Value{
-								{Str: ptr.To(`"67890"`)}},
-							},
-						}},
+					}},
+					{Assignment: &Assignment{
+						"platforms", &Value{List: &[]*Value{
+							{Str: ptr.To(`"67890"`)}},
+						},
 					}},
 				}},
-				{"win_runtime", &Value{
-					FuncCall: &FuncCall{"solve", []*Value{
-						{Assignment: &Assignment{
-							"requirements", &Value{List: &[]*Value{
-								{Object: &[]*Assignment{
-									{"name", &Value{Str: ptr.To(`"language/perl"`)}},
-								}},
+			}},
+			{"win_runtime", &Value{
+				FuncCall: &FuncCall{"solve", []*Value{
+					{Assignment: &Assignment{
+						"requirements", &Value{List: &[]*Value{
+							{Object: &[]*Assignment{
+								{"name", &Value{Str: ptr.To(`"language/perl"`)}},
 							}},
 						}},
-						{Assignment: &Assignment{
-							"platforms", &Value{List: &[]*Value{
-								{Str: ptr.To(`"12345"`)}},
-							},
-						}},
+					}},
+					{Assignment: &Assignment{
+						"platforms", &Value{List: &[]*Value{
+							{Str: ptr.To(`"12345"`)}},
+						},
 					}},
 				}},
-			},
+			}},
+			{"main", &Value{
+				FuncCall: &FuncCall{"merge", []*Value{
+					{FuncCall: &FuncCall{"win_installer", []*Value{{Ident: ptr.To("win_runtime")}}}},
+					{FuncCall: &FuncCall{"tar_installer", []*Value{{Ident: ptr.To("linux_runtime")}}}},
+				}}}},
 		},
-		&In{FuncCall: &FuncCall{"merge", []*Value{
-			{FuncCall: &FuncCall{"win_installer", []*Value{{Ident: ptr.To("win_runtime")}}}},
-			{FuncCall: &FuncCall{"tar_installer", []*Value{{Ident: ptr.To("linux_runtime")}}}},
-		}}},
 		expr,
 	}, script)
 }
 
-const example = `let:
-  runtime = solve(
-    at_time = "2023-04-27T17:30:05.999000Z",
-    platforms = ["96b7e6f2-bebf-564c-bc1c-f04482398f38", "96b7e6f2-bebf-564c-bc1c-f04482398f38"],
-    requirements = [
-      {
-        name = "python",
-        namespace = "language",
-      },
-      {
-        name = "requests",
-        namespace = "language/python",
-        version_requirements = [
-          {
-            comparator = "eq",
-            version = "3.10.10"
-          }
-        ]
-      }
-    ],
-    solver_version = 0
-  )
-in:
-  runtime`
+const example = `runtime = solve(
+	at_time = "2023-04-27T17:30:05.999000Z",
+	platforms = ["96b7e6f2-bebf-564c-bc1c-f04482398f38", "96b7e6f2-bebf-564c-bc1c-f04482398f38"],
+	requirements = [
+		{
+			name = "python",
+			namespace = "language",
+		},
+		{
+			name = "requests",
+			namespace = "language/python",
+			version_requirements = [
+				{
+					comparator = "eq",
+					version = "3.10.10"
+				}
+			]
+		}
+	],
+	solver_version = 0
+)
+
+main = runtime`
 
 func TestExample(t *testing.T) {
 	script, err := NewScript([]byte(example))
@@ -201,77 +194,72 @@ func TestExample(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, &Script{
-		&Let{
-			[]*Assignment{
-				{"runtime", &Value{
-					FuncCall: &FuncCall{"solve", []*Value{
-						{Assignment: &Assignment{
-							"at_time", &Value{Str: ptr.To(`"2023-04-27T17:30:05.999000Z"`)},
-						}},
-						{Assignment: &Assignment{
-							"platforms", &Value{List: &[]*Value{
-								{Str: ptr.To(`"96b7e6f2-bebf-564c-bc1c-f04482398f38"`)},
-								{Str: ptr.To(`"96b7e6f2-bebf-564c-bc1c-f04482398f38"`)},
-							}},
-						}},
-						{Assignment: &Assignment{
-							"requirements", &Value{List: &[]*Value{
-								{Object: &[]*Assignment{
-									{"name", &Value{Str: ptr.To(`"python"`)}},
-									{"namespace", &Value{Str: ptr.To(`"language"`)}},
-								}},
-								{Object: &[]*Assignment{
-									{"name", &Value{Str: ptr.To(`"requests"`)}},
-									{"namespace", &Value{Str: ptr.To(`"language/python"`)}},
-									{"version_requirements", &Value{List: &[]*Value{
-										{Object: &[]*Assignment{
-											{"comparator", &Value{Str: ptr.To(`"eq"`)}},
-											{"version", &Value{Str: ptr.To(`"3.10.10"`)}},
-										}},
-									}}},
-								}},
-							}},
-						}},
-						{Assignment: &Assignment{
-							"solver_version", &Value{Number: ptr.To(float64(0))},
+		[]*Assignment{
+			{"runtime", &Value{
+				FuncCall: &FuncCall{"solve", []*Value{
+					{Assignment: &Assignment{
+						"at_time", &Value{Str: ptr.To(`"2023-04-27T17:30:05.999000Z"`)},
+					}},
+					{Assignment: &Assignment{
+						"platforms", &Value{List: &[]*Value{
+							{Str: ptr.To(`"96b7e6f2-bebf-564c-bc1c-f04482398f38"`)},
+							{Str: ptr.To(`"96b7e6f2-bebf-564c-bc1c-f04482398f38"`)},
 						}},
 					}},
+					{Assignment: &Assignment{
+						"requirements", &Value{List: &[]*Value{
+							{Object: &[]*Assignment{
+								{"name", &Value{Str: ptr.To(`"python"`)}},
+								{"namespace", &Value{Str: ptr.To(`"language"`)}},
+							}},
+							{Object: &[]*Assignment{
+								{"name", &Value{Str: ptr.To(`"requests"`)}},
+								{"namespace", &Value{Str: ptr.To(`"language/python"`)}},
+								{"version_requirements", &Value{List: &[]*Value{
+									{Object: &[]*Assignment{
+										{"comparator", &Value{Str: ptr.To(`"eq"`)}},
+										{"version", &Value{Str: ptr.To(`"3.10.10"`)}},
+									}},
+								}}},
+							}},
+						}},
+					}},
+					{Assignment: &Assignment{
+						"solver_version", &Value{Number: ptr.To(float64(0))},
+					}},
 				}},
-			},
+			}},
+			{"main", &Value{Ident: ptr.To("runtime")}},
 		},
-		&In{Name: ptr.To("runtime")},
 		expr,
 	}, script)
 }
 
 func TestString(t *testing.T) {
 	script, err := NewScript([]byte(
-		`let:
-    runtime = solve(
-        platforms=["12345", "67890"],
-        requirements=[{name="language/python"}]
-    )
-in:
-    runtime
+		`runtime = solve(
+		platforms=["12345", "67890"],
+		requirements=[{name="language/python"}]
+)
+
+main = runtime
 `))
 	require.NoError(t, err)
 
 	assert.Equal(t,
-		`let:
-	runtime = solve(
-		platforms = [
-			"12345",
-			"67890"
-		],
-		requirements = [
-			{
-				name = "language/python"
-			}
-		]
-	)
+		`runtime = solve(
+	platforms = [
+		"12345",
+		"67890"
+	],
+	requirements = [
+		{
+			name = "language/python"
+		}
+	]
+)
 
-in:
-	runtime`, script.String())
+main = runtime`, script.String())
 }
 
 func TestRoundTrip(t *testing.T) {
@@ -293,17 +281,16 @@ func TestRoundTrip(t *testing.T) {
 
 func TestJson(t *testing.T) {
 	script, err := NewScript([]byte(
-		`let:
-    runtime = solve(
-        requirements=[
-            {
-                name="language/python"
-            }
-        ],
-        platforms=["12345", "67890"]
-    )
-in:
-    runtime
+		`runtime = solve(
+		requirements=[
+				{
+						name="language/python"
+				}
+		],
+		platforms=["12345", "67890"]
+)
+
+main = runtime
 `))
 	require.NoError(t, err)
 

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
 // MarshalJSON marshals the Participle-produced Script into an equivalent buildexpression.
@@ -13,10 +15,17 @@ import (
 func (s *Script) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
 	let := make(map[string]interface{})
-	for _, assignment := range s.Let.Assignments {
-		let[assignment.Key] = assignment.Value
+	for _, assignment := range s.Assignments {
+		key := assignment.Key
+		value := assignment.Value
+		if key == "main" {
+			key = "in"
+			if value.Ident != nil {
+				value = &Value{Str: ptr.To("$" + *value.Ident)}
+			}
+		}
+		let[key] = value
 	}
-	let["in"] = s.In
 	m["let"] = let
 	return json.Marshal(m)
 }
@@ -68,14 +77,4 @@ func (f *FuncCall) MarshalJSON() ([]byte, error) {
 	}
 	m[f.Name] = args
 	return json.Marshal(m)
-}
-
-func (i *In) MarshalJSON() ([]byte, error) {
-	switch {
-	case i.FuncCall != nil:
-		return json.Marshal(i.FuncCall)
-	case i.Name != nil:
-		return json.Marshal("$" + *i.Name)
-	}
-	return nil, errors.New(fmt.Sprintf("Cannot marshal %v", i))
 }
