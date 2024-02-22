@@ -38,12 +38,15 @@ func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
 	cp.Expect("Revision")
 	cp.Expect("Message")
 	cp.Expect("• requests (2.26.0 → 2.7.0)")
+	cp.Expect("namespace: language/python")
 	cp.Expect("• autopip (1.6.0 → Auto)")
 	cp.Expect("+ autopip 1.6.0")
 	cp.SetLogger(termtest.VerboseLogger)
 	cp.Expect("- convertdate")
+	cp.Expect("namespace: language/python")
 	cp.SetLogger(termtest.VoidLogger)
 	cp.Expect(`+ Platform`)
+	cp.Expect("namespace: platform")
 	suite.Assert().NotContains(cp.Output(), "StructuredChanges")
 	cp.ExpectExitCode(0)
 }
@@ -65,6 +68,7 @@ func (suite *HistoryIntegrationTestSuite) TestJSON() {
 	cp.Expect(`"requirement":`)
 	cp.Expect(`"version_constraints_old":`)
 	cp.Expect(`"version_constraints_new":`)
+	cp.Expect(`"namespace":`)
 	cp.ExpectExitCode(0)
 	// AssertValidJSON(suite.T(), cp) // list is too large to fit in terminal snapshot
 }

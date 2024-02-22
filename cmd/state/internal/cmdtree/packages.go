@@ -159,7 +159,7 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 			},
 			{
 				Name:        "ts",
-				Description: locale.T("package_search_flag_ts_description"),
+				Description: locale.T("package_flag_ts_description"),
 				Value:       &params.Timestamp,
 			},
 		},
