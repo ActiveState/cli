@@ -19,8 +19,8 @@ func TestMergeAdd(t *testing.T) {
 		"67890"
 	],
 	requirements = [
-		Req(name="language/perl"),
-		Req(name="language/perl/DateTime")
+		Req(name = "language/perl"),
+		Req(name = "language/perl/DateTime")
 	]
 )
 
@@ -38,8 +38,8 @@ main = runtime`))
 		"67890"
 	],
 	requirements = [
-		Req(name="language/perl"),
-		Req(name="language/perl/JSON")
+		Req(name = "language/perl"),
+		Req(name = "language/perl/JSON")
 	]
 )
 
@@ -71,9 +71,9 @@ main = runtime`))
 		"67890"
 	],
 	requirements = [
-		Req(name="language/perl"),
-		Req(name="language/perl/JSON"),
-		Req(name="language/perl/DateTime")
+		Req(name = "language/perl"),
+		Req(name = "language/perl/JSON"),
+		Req(name = "language/perl/DateTime")
 	]
 )
 
@@ -88,9 +88,9 @@ func TestMergeRemove(t *testing.T) {
 		"67890"
 	],
 	requirements = [
-		Req(name="language/perl"),
-		Req(name="language/perl/JSON"),
-		Req(name="language/perl/DateTime")
+		Req(name = "language/perl"),
+		Req(name = "language/perl/JSON"),
+		Req(name = "language/perl/DateTime")
 	]
 )
 
@@ -108,8 +108,8 @@ main = runtime`))
 		"67890"
 	],
 	requirements = [
-		Req(name="language/perl"),
-		Req(name="language/perl/DateTime")
+		Req(name = "language/perl"),
+		Req(name = "language/perl/DateTime")
 	]
 )
 
@@ -141,8 +141,8 @@ main = runtime`))
 		"67890"
 	],
 	requirements = [
-		Req(name="language/perl"),
-		Req(name="language/perl/DateTime")
+		Req(name = "language/perl"),
+		Req(name = "language/perl/DateTime")
 	]
 )
 
@@ -157,7 +157,7 @@ func TestMergeConflict(t *testing.T) {
 		"67890"
 	],
 	requirements = [
-		Req(name="language/perl"),
+		Req(name = "language/perl"),
 	]
 )
 
@@ -174,8 +174,8 @@ main = runtime`))
 		"12345"
 	],
 	requirements = [
-		Req(name="language/perl"),
-		Req(name="language/perl/JSON")
+		Req(name = "language/perl"),
+		Req(name = "language/perl/JSON")
 	]
 )
 

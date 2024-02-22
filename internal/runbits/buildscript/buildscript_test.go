@@ -21,7 +21,7 @@ func TestDiff(t *testing.T) {
 		"67890"
 	],
 	requirements = [
-		Req(name="language/perl")
+		Req(name = "language/perl")
 	]
 )
 
@@ -50,7 +50,7 @@ main = runtime`))
 		"67890"
 	],
 	requirements = [
-		Req(name="language/perl")
+		Req(name = "language/perl")
 	]
 )
 
@@ -90,11 +90,11 @@ sources = solve(
 		"96b7e6f2-bebf-564c-bc1c-f04482398f38"
 	],
 	requirements = [
-		Req(name="language/python", version="3.10.11"),
+		Req(name = "language/python", version = "3.10.11"),
 <<<<<<< local
-		Req(name="language/python/requests")
+		Req(name = "language/python/requests")
 =======
-		Req(name="language/python/requests", version="2.30.0")
+		Req(name = "language/python/requests", version = "2.30.0")
 >>>>>>> remote
 	],
 	solver_version = null
