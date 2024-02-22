@@ -176,7 +176,7 @@ func transformReq(req *buildexpression.Value) *buildexpression.Value {
 }
 
 func assignmentString(a *buildexpression.Var) string {
-	if a.Name == "requirements" {
+	if a.Name == buildexpression.RequirementsKey {
 		a = transformRequirements(a)
 	}
 	return fmt.Sprintf("%s = %s", a.Name, valueString(a.Value))
