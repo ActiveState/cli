@@ -414,7 +414,7 @@ func Parse(configFilepath string) (_ *Project, rerr error) {
 		return nil, err
 	}
 
-	re, _ := regexp.Compile(`activestate\.(\w+)\.yaml`)
+	re, _ := regexp.Compile(`activestate[._-](\w+)\.yaml`)
 	for _, file := range files {
 		match := re.FindStringSubmatch(file.Name())
 		if len(match) == 0 {
