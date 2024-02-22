@@ -10,6 +10,9 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/strutils"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/alecthomas/participle/v2"
 )
@@ -91,10 +94,8 @@ func indent(s string) string {
 func (s *Script) String() string {
 	buf := strings.Builder{}
 	for _, assignment := range s.Expr.Let.Assignments {
-		if assignment.Name == "requirements" {
-			buf.WriteString(requirementsString(assignment))
-			buf.WriteString("\n")
-			continue
+		if assignment.Name == buildexpression.RequirementsKey {
+			assignment = transformRequirements(assignment)
 		}
 		buf.WriteString(assignmentString(assignment))
 		buf.WriteString("\n")
@@ -110,74 +111,73 @@ func (s *Script) String() string {
 	return buf.String()
 }
 
-func requirementsString(reqs *buildexpression.Var) string {
-	buf := bytes.Buffer{}
-	buf.WriteString("requirements = [\n")
-
-	for i, req := range *reqs.Value.List {
-		buf.WriteString(indent("Req("))
-		var name, version string
-		for _, arg := range *req.Object {
-			switch arg.Name {
-			case "name":
-				if name != "" {
-					name = fmt.Sprintf("%s/%s", name, *arg.Value.Str)
-				} else {
-					name = *arg.Value.Str
-				}
-			case "namespace":
-				if name != "" {
-					name = fmt.Sprintf("%s/%s", *arg.Value.Str, name)
-				} else {
-					name = *arg.Value.Str
-				}
-			case "version_requirements":
-				version = versionRequirementsString(arg)
-			}
-		}
-
-		if name != "" {
-			buf.Write([]byte(fmt.Sprintf("name=\"%s\"", name)))
-		}
-		if version != "" {
-			buf.Write([]byte(fmt.Sprintf(", version=\"%s\"", version)))
-		}
-
-		buf.WriteString(")")
-		if i+1 < len(*reqs.Value.List) {
-			buf.WriteString(",")
-		}
-		buf.WriteString("\n")
+func transformRequirements(reqs *buildexpression.Var) *buildexpression.Var {
+	newReqs := &buildexpression.Var{
+		Name: "requirements",
+		Value: &buildexpression.Value{
+			List: &[]*buildexpression.Value{},
+		},
 	}
 
-	buf.WriteString("]")
-	return buf.String()
+	for _, req := range *reqs.Value.List {
+		*newReqs.Value.List = append(*newReqs.Value.List, transformReq(req))
+	}
+
+	return newReqs
 }
 
-func versionRequirementsString(vc *buildexpression.Var) string {
-	if vc.Value.List == nil {
-		return ""
+func transformReq(req *buildexpression.Value) *buildexpression.Value {
+	newReq := &buildexpression.Value{
+		Ap: &buildexpression.Ap{
+			Name:      reqFuncName,
+			Arguments: []*buildexpression.Value{},
+		},
 	}
 
-	buf := bytes.Buffer{}
-	for _, arg := range *vc.Value.List {
-		if arg.Object == nil {
-			continue
-		}
-
-		for _, o := range *arg.Object {
-			if o.Name == "version" {
-				buf.WriteString(*o.Value.Str)
+	var name, version string
+	for _, arg := range *req.Object {
+		switch arg.Name {
+		case buildexpression.RequirementNameKey:
+			if name != "" {
+				name = fmt.Sprintf("%s/%s", name, *arg.Value.Str)
+			} else {
+				name = *arg.Value.Str
 			}
+
+		case buildexpression.RequirementNamespaceKey:
+			if name != "" {
+				name = fmt.Sprintf("%s/%s", *arg.Value.Str, name)
+			} else {
+				name = *arg.Value.Str
+			}
+		case buildexpression.RequirementVersionRequirementsKey:
+			version = model.BuildExpressionRequirementsToString(arg)
 		}
 	}
 
-	return buf.String()
+	if name != "" {
+		newReq.Ap.Arguments = append(newReq.Ap.Arguments, &buildexpression.Value{
+			Assignment: &buildexpression.Var{
+				Name:  "name",
+				Value: &buildexpression.Value{Str: ptr.To(name)},
+			},
+		})
+	}
+	if version != "" {
+		newReq.Ap.Arguments = append(newReq.Ap.Arguments, &buildexpression.Value{
+			Assignment: &buildexpression.Var{
+				Name:  "version",
+				Value: &buildexpression.Value{Str: ptr.To(version)},
+			},
+		})
+	}
+
+	return newReq
 }
 
 func assignmentString(a *buildexpression.Var) string {
 	if a.Name == "requirements" {
-		return requirementsString(a)
+		a = transformRequirements(a)
 	}
 	return fmt.Sprintf("%s = %s", a.Name, valueString(a.Value))
 }
@@ -233,15 +233,38 @@ func valueString(v *buildexpression.Value) string {
 }
 
 func apString(f *buildexpression.Ap) string {
+	if f.Name == reqFuncName {
+		return apReqString(f)
+	}
+
 	buf := bytes.Buffer{}
 	buf.WriteString(fmt.Sprintf("%s(\n", f.Name))
+
 	for i, argument := range f.Arguments {
 		buf.WriteString(indent(valueString(argument)))
+
 		if i+1 < len(f.Arguments) {
 			buf.WriteString(",")
 		}
+
 		buf.WriteString("\n")
 	}
+
+	buf.WriteString(")")
+	return buf.String()
+}
+
+func apReqString(f *buildexpression.Ap) string {
+	buf := bytes.Buffer{}
+	buf.WriteString(fmt.Sprintf("%s(", f.Name))
+	for i, argument := range f.Arguments {
+		buf.WriteString(strutils.RemoveSpaces(valueString(argument)))
+
+		if i+1 < len(f.Arguments) {
+			buf.WriteString(", ")
+		}
+	}
+
 	buf.WriteString(")")
 	return buf.String()
 }
