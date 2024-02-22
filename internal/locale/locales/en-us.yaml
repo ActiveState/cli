@@ -806,11 +806,11 @@ field_id:
 field_changes:
   other: Changes
 change_added:
-  other: "[SUCCESS]+[/RESET] {{.V0}} {{.V1}}"
+  other: "[SUCCESS]+[/RESET] {{.V0}} {{.V1}}\n     namespace: {{.V2}}"
 change_removed:
-  other: "[ERROR]-[/RESET] {{.V0}}"
+  other: "[ERROR]-[/RESET] {{.V0}}\n     namespace: {{.V1}}"
 change_updated:
-  other: "[ACTIONABLE]•[/RESET] {{.V0}} ({{.V1}} → {{.V2}})"
+  other: "[ACTIONABLE]•[/RESET] {{.V0}} ({{.V1}} → {{.V2}})\n     namespace: {{.V3}}"
 constraint_auto:
   other: Auto
 constraint_resolved:
