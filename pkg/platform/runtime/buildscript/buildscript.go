@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/alecthomas/participle/v2"
@@ -233,36 +232,31 @@ func valueString(v *buildexpression.Value) string {
 }
 
 func apString(f *buildexpression.Ap) string {
+	var (
+		newline = "\n"
+		comma   = ","
+		indent  = indent
+	)
+
 	if f.Name == reqFuncName {
-		return apReqString(f)
+		newline = ""
+		comma = ", "
+		indent = func(s string) string {
+			return s
+		}
 	}
 
 	buf := bytes.Buffer{}
-	buf.WriteString(fmt.Sprintf("%s(\n", f.Name))
+	buf.WriteString(fmt.Sprintf("%s(%s", f.Name, newline))
 
 	for i, argument := range f.Arguments {
 		buf.WriteString(indent(valueString(argument)))
 
 		if i+1 < len(f.Arguments) {
-			buf.WriteString(",")
+			buf.WriteString(comma)
 		}
 
-		buf.WriteString("\n")
-	}
-
-	buf.WriteString(")")
-	return buf.String()
-}
-
-func apReqString(f *buildexpression.Ap) string {
-	buf := bytes.Buffer{}
-	buf.WriteString(fmt.Sprintf("%s(", f.Name))
-	for i, argument := range f.Arguments {
-		buf.WriteString(strutils.RemoveSpaces(valueString(argument)))
-
-		if i+1 < len(f.Arguments) {
-			buf.WriteString(", ")
-		}
+		buf.WriteString(newline)
 	}
 
 	buf.WriteString(")")

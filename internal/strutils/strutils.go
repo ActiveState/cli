@@ -5,7 +5,6 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
-	"unicode"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
@@ -40,16 +39,4 @@ func Summarize(v string, maxLen int) string {
 	}
 	v = strings.Replace(v, "\n", " ", -1)
 	return v
-}
-
-func RemoveSpaces(v string) string {
-	var b strings.Builder
-	b.Grow(len(v))
-	for _, ch := range v {
-		if !unicode.IsSpace(ch) {
-			b.WriteRune(ch)
-		}
-	}
-
-	return b.String()
 }

@@ -29,8 +29,8 @@ func TestBasic(t *testing.T) {
 		`runtime = solve(
 	platforms = ["linux", "windows"],
 	requirements = [
-		Req(name="language/python"),
-		Req(name="language/python/requests", version="3.10.10")
+		Req(name = "language/python"),
+		Req(name = "language/python/requests", version = "3.10.10")
 	]
 )
 
@@ -85,14 +85,14 @@ func TestComplex(t *testing.T) {
 	script, err := NewScript([]byte(
 		`linux_runtime = solve(
 		requirements=[
-			Req(name="language/python")
+			Req(name = "language/python")
 		],
 		platforms=["67890"]
 )
 
 win_runtime = solve(
 		requirements=[
-			Req(name="language/perl")
+			Req(name = "language/perl")
 		],
 		platforms=["12345"]
 )
@@ -165,8 +165,8 @@ const example = `runtime = solve(
 	at_time = "2023-04-27T17:30:05.999000Z",
 	platforms = ["96b7e6f2-bebf-564c-bc1c-f04482398f38", "96b7e6f2-bebf-564c-bc1c-f04482398f38"],
 	requirements = [
-		Req(name="language/python"),
-		Req(name="language/python/requests", version="3.10.10")
+		Req(name = "language/python"),
+		Req(name = "language/python/requests", version = "3.10.10")
 	],
 	solver_version = 0
 )
@@ -231,7 +231,7 @@ func TestString(t *testing.T) {
 	script, err := NewScript([]byte(
 		`runtime = solve(
 		platforms=["12345", "67890"],
-		requirements=[Req(name="language/python", version="3.10.10")]
+		requirements=[Req(name = "language/python", version = "3.10.10")]
 )
 
 main = runtime
@@ -245,7 +245,7 @@ main = runtime
 		"67890"
 	],
 	requirements = [
-		Req(name="language/python", version="3.10.10")
+		Req(name = "language/python", version = "3.10.10")
 	]
 )
 
@@ -273,9 +273,7 @@ func TestJson(t *testing.T) {
 	script, err := NewScript([]byte(
 		`runtime = solve(
 		requirements=[
-				{
-						name="language/python"
-				}
+			Req(name = "language/python")
 		],
 		platforms=["12345", "67890"]
 )
@@ -291,7 +289,8 @@ main = runtime
         "solve": {
           "requirements": [
             {
-              "name": "language/python"
+              "name": "python",
+			  "namespace": "language"
             }
           ],
           "platforms": ["12345", "67890"]
