@@ -10,6 +10,8 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/alecthomas/participle/v2"
 )
@@ -91,6 +93,9 @@ func indent(s string) string {
 func (s *Script) String() string {
 	buf := strings.Builder{}
 	for _, assignment := range s.Expr.Let.Assignments {
+		if assignment.Name == buildexpression.RequirementsKey {
+			assignment = transformRequirements(assignment)
+		}
 		buf.WriteString(assignmentString(assignment))
 		buf.WriteString("\n")
 	}
@@ -105,7 +110,74 @@ func (s *Script) String() string {
 	return buf.String()
 }
 
+func transformRequirements(reqs *buildexpression.Var) *buildexpression.Var {
+	newReqs := &buildexpression.Var{
+		Name: "requirements",
+		Value: &buildexpression.Value{
+			List: &[]*buildexpression.Value{},
+		},
+	}
+
+	for _, req := range *reqs.Value.List {
+		*newReqs.Value.List = append(*newReqs.Value.List, transformReq(req))
+	}
+
+	return newReqs
+}
+
+func transformReq(req *buildexpression.Value) *buildexpression.Value {
+	newReq := &buildexpression.Value{
+		Ap: &buildexpression.Ap{
+			Name:      reqFuncName,
+			Arguments: []*buildexpression.Value{},
+		},
+	}
+
+	var name, version string
+	for _, arg := range *req.Object {
+		switch arg.Name {
+		case buildexpression.RequirementNameKey:
+			if name != "" {
+				name = fmt.Sprintf("%s/%s", name, *arg.Value.Str)
+			} else {
+				name = *arg.Value.Str
+			}
+
+		case buildexpression.RequirementNamespaceKey:
+			if name != "" {
+				name = fmt.Sprintf("%s/%s", *arg.Value.Str, name)
+			} else {
+				name = *arg.Value.Str
+			}
+		case buildexpression.RequirementVersionRequirementsKey:
+			version = model.BuildExpressionRequirementsToString(arg)
+		}
+	}
+
+	if name != "" {
+		newReq.Ap.Arguments = append(newReq.Ap.Arguments, &buildexpression.Value{
+			Assignment: &buildexpression.Var{
+				Name:  "name",
+				Value: &buildexpression.Value{Str: ptr.To(name)},
+			},
+		})
+	}
+	if version != "" {
+		newReq.Ap.Arguments = append(newReq.Ap.Arguments, &buildexpression.Value{
+			Assignment: &buildexpression.Var{
+				Name:  "version",
+				Value: &buildexpression.Value{Str: ptr.To(version)},
+			},
+		})
+	}
+
+	return newReq
+}
+
 func assignmentString(a *buildexpression.Var) string {
+	if a.Name == buildexpression.RequirementsKey {
+		a = transformRequirements(a)
+	}
 	return fmt.Sprintf("%s = %s", a.Name, valueString(a.Value))
 }
 
@@ -160,15 +232,33 @@ func valueString(v *buildexpression.Value) string {
 }
 
 func apString(f *buildexpression.Ap) string {
+	var (
+		newline = "\n"
+		comma   = ","
+		indent  = indent
+	)
+
+	if f.Name == reqFuncName {
+		newline = ""
+		comma = ", "
+		indent = func(s string) string {
+			return s
+		}
+	}
+
 	buf := bytes.Buffer{}
-	buf.WriteString(fmt.Sprintf("%s(\n", f.Name))
+	buf.WriteString(fmt.Sprintf("%s(%s", f.Name, newline))
+
 	for i, argument := range f.Arguments {
 		buf.WriteString(indent(valueString(argument)))
+
 		if i+1 < len(f.Arguments) {
-			buf.WriteString(",")
+			buf.WriteString(comma)
 		}
-		buf.WriteString("\n")
+
+		buf.WriteString(newline)
 	}
+
 	buf.WriteString(")")
 	return buf.String()
 }
