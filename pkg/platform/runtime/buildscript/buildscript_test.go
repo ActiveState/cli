@@ -29,20 +29,8 @@ func TestBasic(t *testing.T) {
 		`runtime = solve(
 	platforms = ["linux", "windows"],
 	requirements = [
-		{
-			name = "python",
-			namespace = "language",
-		},
-		{
-			name = "requests",
-			namespace = "language/python",
-			version_requirements = [
-				{
-					comparator = "eq",
-					version = "3.10.10"
-				}
-			]
-		}
+		Req(name = "language/python"),
+		Req(name = "language/python/requests", version = "3.10.10")
 	]
 )
 
@@ -65,19 +53,23 @@ main = runtime
 					}},
 					{Assignment: &Assignment{
 						"requirements", &Value{List: &[]*Value{
-							{Object: &[]*Assignment{
-								{"name", &Value{Str: ptr.To(`"python"`)}},
-								{"namespace", &Value{Str: ptr.To(`"language"`)}},
-							}},
-							{Object: &[]*Assignment{
-								{"name", &Value{Str: ptr.To(`"requests"`)}},
-								{"namespace", &Value{Str: ptr.To(`"language/python"`)}},
-								{"version_requirements", &Value{List: &[]*Value{
-									{Object: &[]*Assignment{
-										{"comparator", &Value{Str: ptr.To(`"eq"`)}},
-										{"version", &Value{Str: ptr.To(`"3.10.10"`)}},
+							{FuncCall: &FuncCall{
+								Name: "Req",
+								Arguments: []*Value{
+									{Assignment: &Assignment{
+										"name", &Value{Str: ptr.To(`"language/python"`)},
 									}},
 								}}},
+							{FuncCall: &FuncCall{
+								Name: "Req",
+								Arguments: []*Value{
+									{Assignment: &Assignment{
+										"name", &Value{Str: ptr.To(`"language/python/requests"`)},
+									}},
+									{Assignment: &Assignment{
+										"version", &Value{Str: ptr.To(`"3.10.10"`)},
+									}},
+								},
 							}},
 						}},
 					}},
@@ -93,17 +85,14 @@ func TestComplex(t *testing.T) {
 	script, err := NewScript([]byte(
 		`linux_runtime = solve(
 		requirements=[
-				{
-						name="language/python"
-				}
+			Req(name = "language/python")
 		],
 		platforms=["67890"]
 )
 
 win_runtime = solve(
-		requirements=[{
-						name="language/perl"
-				}
+		requirements=[
+			Req(name = "language/perl")
 		],
 		platforms=["12345"]
 )
@@ -124,8 +113,13 @@ main = merge(
 				FuncCall: &FuncCall{"solve", []*Value{
 					{Assignment: &Assignment{
 						"requirements", &Value{List: &[]*Value{
-							{Object: &[]*Assignment{
-								{"name", &Value{Str: ptr.To(`"language/python"`)}},
+							{FuncCall: &FuncCall{
+								Name: "Req",
+								Arguments: []*Value{
+									{Assignment: &Assignment{
+										"name", &Value{Str: ptr.To(`"language/python"`)}},
+									},
+								},
 							}},
 						}},
 					}},
@@ -140,8 +134,13 @@ main = merge(
 				FuncCall: &FuncCall{"solve", []*Value{
 					{Assignment: &Assignment{
 						"requirements", &Value{List: &[]*Value{
-							{Object: &[]*Assignment{
-								{"name", &Value{Str: ptr.To(`"language/perl"`)}},
+							{FuncCall: &FuncCall{
+								Name: "Req",
+								Arguments: []*Value{
+									{Assignment: &Assignment{
+										"name", &Value{Str: ptr.To(`"language/perl"`)}},
+									},
+								},
 							}},
 						}},
 					}},
@@ -166,20 +165,8 @@ const example = `runtime = solve(
 	at_time = "2023-04-27T17:30:05.999000Z",
 	platforms = ["96b7e6f2-bebf-564c-bc1c-f04482398f38", "96b7e6f2-bebf-564c-bc1c-f04482398f38"],
 	requirements = [
-		{
-			name = "python",
-			namespace = "language",
-		},
-		{
-			name = "requests",
-			namespace = "language/python",
-			version_requirements = [
-				{
-					comparator = "eq",
-					version = "3.10.10"
-				}
-			]
-		}
+		Req(name = "language/python"),
+		Req(name = "language/python/requests", version = "3.10.10")
 	],
 	solver_version = 0
 )
@@ -208,19 +195,24 @@ func TestExample(t *testing.T) {
 					}},
 					{Assignment: &Assignment{
 						"requirements", &Value{List: &[]*Value{
-							{Object: &[]*Assignment{
-								{"name", &Value{Str: ptr.To(`"python"`)}},
-								{"namespace", &Value{Str: ptr.To(`"language"`)}},
+							{FuncCall: &FuncCall{
+								Name: "Req",
+								Arguments: []*Value{
+									{Assignment: &Assignment{
+										"name", &Value{Str: ptr.To(`"language/python"`)}},
+									},
+								},
 							}},
-							{Object: &[]*Assignment{
-								{"name", &Value{Str: ptr.To(`"requests"`)}},
-								{"namespace", &Value{Str: ptr.To(`"language/python"`)}},
-								{"version_requirements", &Value{List: &[]*Value{
-									{Object: &[]*Assignment{
-										{"comparator", &Value{Str: ptr.To(`"eq"`)}},
-										{"version", &Value{Str: ptr.To(`"3.10.10"`)}},
-									}},
-								}}},
+							{FuncCall: &FuncCall{
+								Name: "Req",
+								Arguments: []*Value{
+									{Assignment: &Assignment{
+										"name", &Value{Str: ptr.To(`"language/python/requests"`)}},
+									},
+									{Assignment: &Assignment{
+										"version", &Value{Str: ptr.To(`"3.10.10"`)}},
+									},
+								},
 							}},
 						}},
 					}},
@@ -239,7 +231,7 @@ func TestString(t *testing.T) {
 	script, err := NewScript([]byte(
 		`runtime = solve(
 		platforms=["12345", "67890"],
-		requirements=[{name="language/python"}]
+		requirements=[Req(name = "language/python", version = "3.10.10")]
 )
 
 main = runtime
@@ -253,9 +245,7 @@ main = runtime
 		"67890"
 	],
 	requirements = [
-		{
-			name = "language/python"
-		}
+		Req(name = "language/python", version = "3.10.10")
 	]
 )
 
@@ -283,9 +273,7 @@ func TestJson(t *testing.T) {
 	script, err := NewScript([]byte(
 		`runtime = solve(
 		requirements=[
-				{
-						name="language/python"
-				}
+			Req(name = "language/python")
 		],
 		platforms=["12345", "67890"]
 )
@@ -301,7 +289,8 @@ main = runtime
         "solve": {
           "requirements": [
             {
-              "name": "language/python"
+              "name": "python",
+			  "namespace": "language"
             }
           ],
           "platforms": ["12345", "67890"]
