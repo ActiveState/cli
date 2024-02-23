@@ -266,7 +266,7 @@ func sprintMap(value interface{}) (string, error) {
 
 	sort.Slice(result, func(i, j int) bool { return result[i] < result[j] })
 
-	return "\n" + strings.Join(result, "\n"), nil
+	return strings.Join(result, "\n"), nil
 }
 
 // sprintTable will marshal and return the given slice of structs as a string, formatted as a table
@@ -299,12 +299,12 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 				return "", err
 			}
 
-			if funk.Contains(field.opts, string(OmitEmpty)) && (stringValue == "" || stringValue == nilText) {
-				continue
-			}
-
 			if firstIteration && !funk.Contains(field.opts, string(SeparateLineOpt)) {
 				headers = append(headers, localizedField(field.l10n))
+			}
+
+			if funk.Contains(field.opts, string(OmitEmpty)) && (stringValue == "" || stringValue == nilText) {
+				stringValue = ""
 			}
 
 			if funk.Contains(field.opts, string(EmptyNil)) && stringValue == nilText {
@@ -325,7 +325,8 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 			row = append(row, columns(offset, stringValue)...)
 		}
 
-		if len(row) > 0 {
+		// Append row if vertical so we can align headers later
+		if len(row) > 0 || vertical {
 			rows = append(rows, row)
 		}
 	}
@@ -334,6 +335,7 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 		t := table.New([]string{"", ""})
 		t.AddRow(verticalRows(headers, rows)...)
 		t.HideHeaders = true
+		t.Vertical = true
 		return t.Render(), nil
 	}
 
@@ -406,7 +408,12 @@ func verticalRows(hdrs []string, rows [][]string) [][]string {
 		for j, hcol := range hrow {
 			var header string
 			if j < len(hdrs) {
-				header = hdrs[j]
+				// Align headers with rows
+				if hcol == "" {
+					continue
+				} else {
+					header = hdrs[j]
+				}
 			}
 
 			vrow := []string{header, hcol}
