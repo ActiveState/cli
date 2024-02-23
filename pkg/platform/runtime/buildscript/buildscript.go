@@ -40,7 +40,7 @@ type Value struct {
 
 	Assignment *Assignment    `parser:"| @@"`                        // only in FuncCall
 	Object     *[]*Assignment `parser:"| '{' @@ (',' @@)* ','? '}'"` // only in List
-	Ident      *string        `parser:"| @Ident"`                    // only in FuncCall
+	Ident      *string        `parser:"| @Ident"`                    // only in FuncCall or Assignment
 }
 
 type Null struct {
@@ -200,6 +200,9 @@ func valueString(v *buildexpression.Value) string {
 		return buf.String()
 
 	case v.Str != nil:
+		if strings.HasPrefix(*v.Str, "$") { // variable reference
+			return strings.TrimLeft(*v.Str, "$")
+		}
 		return strconv.Quote(*v.Str)
 
 	case v.Float != nil:
