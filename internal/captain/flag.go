@@ -90,7 +90,7 @@ func (s *NullString) Set(v string) error {
 }
 
 func (s *NullString) Type() string {
-	return "value"
+	return "null string"
 }
 
 func (s *NullString) IsSet() bool {
@@ -130,7 +130,7 @@ func (n *NullInt) Set(v string) error {
 }
 
 func (n *NullInt) Type() string {
-	return "value"
+	return "null int"
 }
 
 func (n *NullInt) IsSet() bool {
@@ -167,7 +167,7 @@ func (b *NullBool) Set(v string) error {
 }
 
 func (b *NullBool) Type() string {
-	return "value"
+	return "null bool"
 }
 
 func (b *NullBool) IsSet() bool {

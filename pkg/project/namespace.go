@@ -76,7 +76,7 @@ func (ns *Namespaced) String() string {
 
 // Type returns the human readable type name of Namespaced.
 func (ns *Namespaced) Type() string {
-	return "value"
+	return "namespace"
 }
 
 // IsValid returns whether or not the namespace is set sufficiently.

@@ -66,5 +66,5 @@ func (f *Filter) Set(value string) error {
 }
 
 func (f Filter) Type() string {
-	return "value"
+	return "filter"
 }

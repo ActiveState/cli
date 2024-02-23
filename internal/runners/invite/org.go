@@ -14,7 +14,7 @@ type Org struct {
 }
 
 func (o *Org) Type() string {
-	return "value"
+	return "Org"
 }
 
 func (o *Org) String() string {

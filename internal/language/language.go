@@ -239,7 +239,7 @@ func (l *Language) Set(v string) error {
 
 // Type implements the captain.FlagMarshaler interface.
 func (l *Language) Type() string {
-	return "value"
+	return "language"
 }
 
 // Executable contains details about an executable program used to interpret a

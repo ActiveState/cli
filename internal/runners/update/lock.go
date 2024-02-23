@@ -36,7 +36,7 @@ func (stv *StateToolChannelVersion) Set(arg string) error {
 }
 
 func (stv *StateToolChannelVersion) Type() string {
-	return "value"
+	return "channel"
 }
 
 type LockParams struct {

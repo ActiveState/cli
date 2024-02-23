@@ -31,7 +31,7 @@ func (t *Text) String() string {
 
 // Type implements the flagmarshaler interface.
 func (t *Text) Type() string {
-	return "value"
+	return "text"
 }
 
 func (ns *Text) IsSet() bool {
