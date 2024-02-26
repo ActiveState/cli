@@ -30,6 +30,8 @@ var (
 	ErrMergeFastForward = errs.New("No merge required")
 
 	ErrMergeCommitInHistory = errs.New("Can't merge commit thats already in target commits history")
+
+	ErrCommitNotInHistory = errs.New("Target commit is not in history")
 )
 
 var ErrOrderForbidden = errs.New("no permission to retrieve order")
@@ -940,7 +942,7 @@ func GetCommitWithinCommitHistory(currentCommitID, targetCommitID strfmt.UUID) (
 		return nil, errs.Wrap(err, "API communication failed.")
 	}
 	if !ok {
-		return nil, locale.WrapError(err, "err_get_commit_within_history_not_in", "The target commit is not within the current commit's history.")
+		return nil, ErrCommitNotInHistory
 	}
 
 	return commit, nil
