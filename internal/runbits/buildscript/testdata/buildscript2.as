@@ -13,26 +13,8 @@ sources = solve(
 		"96b7e6f2-bebf-564c-bc1c-f04482398f38"
 	],
 	requirements = [
-		{
-			name = "python",
-			namespace = "language",
-			version_requirements = [
-				{
-					comparator = "eq",
-					version = "3.10.11"
-				}
-			]
-		},
-		{
-			name = "requests",
-			namespace = "language/python",
-			version_requirements = [
-				{
-					comparator = "eq",
-					version = "2.30.0"
-				}
-			]
-		}
+		Req(name = "language/python", version = Eq("3.10.11")),
+		Req(name = "language/python/requests", version = Eq("2.30.0"))
 	],
 	solver_version = null
 )

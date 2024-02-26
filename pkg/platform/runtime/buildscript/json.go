@@ -6,15 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
-)
-
-const (
-	reqFuncName = "Req"
 )
 
 // MarshalJSON marshals the Participle-produced Script into an equivalent buildexpression.
@@ -90,48 +83,74 @@ func (f *FuncCall) MarshalJSON() ([]byte, error) {
 }
 
 func marshalReq(args []*Value) ([]byte, error) {
-	mArgs := make(map[string]interface{})
-	for _, argument := range args {
+	requirement := make(map[string]interface{})
+
+	for _, arg := range args {
+		assignment := arg.Assignment
+		if assignment == nil {
+			return nil, errors.New(fmt.Sprintf("Cannot marshal %v", arg))
+		}
+
 		switch {
-		case argument.Assignment != nil:
-			if argument.Assignment.Key == buildexpression.RequirementNameKey && argument.Assignment.Value.Str != nil {
-				name, namespace := separateNamespace(*argument.Assignment.Value.Str)
-				mArgs[buildexpression.RequirementNameKey] = name
-				mArgs[buildexpression.RequirementNamespaceKey] = namespace
-			} else if argument.Assignment.Key == buildexpression.RequirementVersionKey && argument.Assignment.Value.Str != nil {
-				value := strings.Trim(*argument.Assignment.Value.Str, `"`)
-				versionReqs, err := model.VersionStringToRequirements(value)
-				if err != nil {
-					return nil, errs.Wrap(err, "Could not parse version requirements")
-				}
+		// Marshal the name argument (e.g. name = "<namespace>/<name>") into
+		// {"name": "<name>", "namespace": "<namespace>"}
+		case assignment.Key == buildexpression.RequirementNameKey && assignment.Value.Str != nil:
+			name, namespace := separateNamespace(*assignment.Value.Str)
+			requirement[buildexpression.RequirementNameKey] = name
+			requirement[buildexpression.RequirementNamespaceKey] = namespace
 
-				var scriptReqs []*Value
-				for _, req := range versionReqs {
-					var assignments []*Assignment
-					comparator, ok := req[bpModel.VersionRequirementComparatorKey]
-					if ok {
-						assignments = append(assignments, &Assignment{buildexpression.RequirementComparatorKey, &Value{Str: ptr.To(comparator)}})
+		// Marshal the version argument (e.g. version = <op>("<version>")) into
+		// {"version_requirements": [{"comparator": "<op>", "version": "<version>"}]}
+		case assignment.Key == buildexpression.RequirementVersionKey && assignment.Value.FuncCall != nil:
+			var requirements []*Value
+			var addRequirement func(*FuncCall) error // recursive function for adding to requirements list
+			addRequirement = func(funcCall *FuncCall) error {
+				switch name := funcCall.Name; name {
+				case eqFuncName:
+					fallthrough
+				case neFuncName:
+					fallthrough
+				case gtFuncName:
+					fallthrough
+				case gteFuncName:
+					fallthrough
+				case ltFuncName:
+					fallthrough
+				case lteFuncName:
+					req := make([]*Assignment, 0)
+					req = append(req, &Assignment{buildexpression.RequirementComparatorKey, &Value{Str: ptr.To(strings.ToLower(name))}})
+					if len(funcCall.Arguments) == 0 || funcCall.Arguments[0].Str == nil {
+						return errors.New(fmt.Sprintf("Illegal argument for version comparator '%s': string expected", name))
 					}
-
-					version, ok := req[bpModel.VersionRequirementVersionKey]
-					if ok {
-						assignments = append(assignments, &Assignment{buildexpression.RequirementVersionKey, &Value{Str: ptr.To(version)}})
+					req = append(req, &Assignment{buildexpression.RequirementVersionKey, &Value{Str: funcCall.Arguments[0].Str}})
+					requirements = append(requirements, &Value{Object: &req})
+				case andFuncName:
+					for _, a := range funcCall.Arguments {
+						if a.FuncCall == nil {
+							return errors.New(fmt.Sprintf("Illegal argument for version comparator '%s': function expected", name))
+						}
+						err := addRequirement(a.FuncCall)
+						if err != nil {
+							return err
+						}
 					}
-
-					reqValue := &Value{Object: &assignments}
-					scriptReqs = append(scriptReqs, reqValue)
+				default:
+					return errors.New(fmt.Sprintf("Unknown version comparator: %s", name))
 				}
-
-				mArgs[buildexpression.RequirementVersionRequirementsKey] = &Value{List: &scriptReqs}
-			} else {
-				mArgs[argument.Assignment.Key] = argument.Assignment.Value
+				return nil
 			}
+			err := addRequirement(assignment.Value.FuncCall)
+			if err != nil {
+				return nil, err
+			}
+			requirement[buildexpression.RequirementVersionRequirementsKey] = &Value{List: &requirements}
+
 		default:
-			return nil, errors.New(fmt.Sprintf("Cannot marshal %v", argument))
+			return nil, errors.New(fmt.Sprintf("Invalid or unknown argument: %v", assignment))
 		}
 	}
 
-	return json.Marshal(mArgs)
+	return json.Marshal(requirement)
 }
 
 func separateNamespace(combined string) (string, string) {
