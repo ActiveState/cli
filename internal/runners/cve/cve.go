@@ -63,7 +63,7 @@ func (r *Cve) Run(params *Params) error {
 
 	if !r.auth.Authenticated() {
 		return errs.AddTips(
-			locale.NewError("cve_needs_authentication"),
+			locale.NewInputError("cve_needs_authentication"),
 			locale.T("auth_tip"),
 		)
 	}
