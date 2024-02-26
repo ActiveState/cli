@@ -28,9 +28,6 @@ func (s *Script) MarshalJSON() ([]byte, error) {
 		value := assignment.Value
 		if key == "main" {
 			key = "in"
-			if value.Ident != nil {
-				value = &Value{Str: ptr.To("$" + *value.Ident)}
-			}
 		}
 		let[key] = value
 	}
@@ -65,7 +62,7 @@ func (v *Value) MarshalJSON() ([]byte, error) {
 		}
 		return json.Marshal(m)
 	case v.Ident != nil:
-		return json.Marshal(v.Ident)
+		return json.Marshal("$" + *v.Ident)
 	}
 	return json.Marshal([]*Value{}) // participle does not create v.List if it's empty
 }
