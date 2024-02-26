@@ -77,7 +77,7 @@ func (u *Uninstall) Run(params *Params) error {
 	store := store.New(path)
 	if !store.HasMarker() {
 		return errs.AddTips(
-			locale.NewError("err_deploy_uninstall_not_deployed", "There is no deployed runtime at '{{.V0}}' to uninstall.", path),
+			locale.NewInputError("err_deploy_uninstall_not_deployed", "There is no deployed runtime at '{{.V0}}' to uninstall.", path),
 			locale.Tl("err_deploy_uninstall_not_deployed_tip", "Either change the current directory to a deployment or supply '--path <path>' arguments."))
 	}
 
