@@ -839,6 +839,8 @@ flag_state_clean_config_force_description:
   other: Run clean config operation without prompts and ignoring any errors stopping running services
 err_uninstall_activated:
   other: Cannot uninstall the State Tool while in an activated state. Please deactivate by entering [ACTIONABLE]exit[/RESET] or pressing [ACTIONABLE]Ctrl+D[/RESET] and then try again.
+err_remove_cache:
+  other: Could not remove State Tool cache directory
 err_clean_cache_activated:
   other: Cannot remove the cache directory while in an activated state. Please deactivate by entering [ACTIONABLE]exit[/RESET] or pressing [ACTIONABLE]Ctrl+D[/RESET] and then try again.
 uninstall_confirm:
