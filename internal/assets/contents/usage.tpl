@@ -32,12 +32,12 @@ Arguments:
 {{- if .Cobra.HasAvailableFlags}}
 
 Flags:
-{{.Cobra.LocalFlags.FlagUsages | trimTrailingWhitespaces}}
+{{.Cmd.LocalFlagUsages | trimTrailingWhitespaces}}
 {{- end}}
 {{- if .Cobra.HasAvailableInheritedFlags}}
 
 Global Flags:
-{{.Cobra.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}
+{{.Cmd.InheritedFlagUsages | trimTrailingWhitespaces}}
 {{- end}}
 
 {{- if .Cobra.HasHelpSubCommands}}
