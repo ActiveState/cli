@@ -22,7 +22,7 @@ func FetchProjectVulnerabilities(auth *authentication.Auth, org, project string)
 	// This should be removed by https://www.pivotaltracker.com/story/show/176508740
 	if !auth.Authenticated() {
 		return nil, errs.AddTips(
-			locale.NewInputError("cve_needs_authentication"),
+			locale.NewError("cve_needs_authentication"),
 			locale.T("auth_tip"),
 		)
 	}
@@ -36,11 +36,10 @@ func FetchProjectVulnerabilities(auth *authentication.Auth, org, project string)
 
 	msg := resp.ProjectVulnerabilities.Message
 	if msg != nil {
-		newError := locale.NewError
 		if resp.ProjectVulnerabilities.TypeName == "NotFound" {
-			newError = locale.NewInputError
+			return nil, &ErrProjectNotFound{org, project}
 		}
-		return nil, newError("project_vulnerability_err", "Request to retrieve vulnerability information failed with error: {{.V0}}", *msg)
+		return nil, locale.NewError("project_vulnerability_err", "Request to retrieve vulnerability information failed with error: {{.V0}}", *msg)
 	}
 
 	return &resp.ProjectVulnerabilities, nil
@@ -51,7 +50,7 @@ func FetchCommitVulnerabilities(auth *authentication.Auth, commitID string) (*mo
 	// This should be removed by https://www.pivotaltracker.com/story/show/176508740
 	if !auth.Authenticated() {
 		return nil, errs.AddTips(
-			locale.NewInputError("cve_needs_authentication"),
+			locale.NewError("cve_needs_authentication"),
 			locale.T("auth_tip"),
 		)
 	}
