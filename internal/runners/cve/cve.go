@@ -63,13 +63,16 @@ func (r *Cve) Run(params *Params) error {
 
 	if !r.auth.Authenticated() {
 		return errs.AddTips(
-			locale.NewError("cve_needs_authentication"),
+			locale.NewInputError("cve_needs_authentication"),
 			locale.T("auth_tip"),
 		)
 	}
 
 	vulnerabilities, err := r.fetchVulnerabilities(*params.Namespace)
 	if err != nil {
+		if errs.Matches(err, &model.ErrProjectNotFound{}) {
+			return locale.WrapInputError(err, "cve_mediator_resp_not_found", "That project was not found")
+		}
 		return locale.WrapError(err, "cve_mediator_resp", "Failed to retrieve vulnerability information")
 	}
 
