@@ -272,6 +272,7 @@ func TestRoundTrip(t *testing.T) {
 func TestJson(t *testing.T) {
 	script, err := NewScript([]byte(
 		`runtime = solve(
+		at_time = at_time,
 		requirements=[
 			Req(name = "language/python")
 		],
@@ -287,10 +288,11 @@ main = runtime
     "let": {
       "runtime": {
         "solve": {
+          "at_time": "$at_time",
           "requirements": [
             {
               "name": "python",
-			  "namespace": "language"
+              "namespace": "language"
             }
           ],
           "platforms": ["12345", "67890"]
