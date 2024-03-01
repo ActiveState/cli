@@ -102,6 +102,9 @@ func (r *Revert) Run(params *Params) (rerr error) {
 
 	targetCommit, err := model.GetCommitWithinCommitHistory(latestCommit, strfmt.UUID(targetCommitID))
 	if err != nil {
+		if err == model.ErrCommitNotInHistory {
+			return locale.WrapInputError(err, "err_revert_commit_not_found", "The commit [NOTICE]{{.V0}}[/RESET] was not found in the project's commit history.", commitID)
+		}
 		return errs.AddTips(
 			locale.WrapError(err, "err_revert_get_commit", "", commitID),
 			locale.T("tip_private_project_auth"),

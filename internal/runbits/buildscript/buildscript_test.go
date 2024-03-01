@@ -76,7 +76,7 @@ func TestRealWorld(t *testing.T) {
 	],
 	camel_flags = [
 	],
-	src = "$sources"
+	src = sources
 )
 sources = solve(
 <<<<<<< local

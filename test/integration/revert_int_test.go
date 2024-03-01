@@ -108,7 +108,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert_failsOnCommitNotInHistory() 
 	cp.Expect(fmt.Sprintf("Operating on project %s", namespace))
 	cp.SendLine("Y")
 	cp.Expect(commitID)
-	cp.Expect("The target commit is not within the current commit's history")
+	cp.Expect("not found")
 	cp.ExpectNotExitCode(0)
 	ts.IgnoreLogErrors()
 }
@@ -166,7 +166,7 @@ func (suite *RevertIntegrationTestSuite) TestRevertTo_failsOnCommitNotInHistory(
 	cp.Expect(fmt.Sprintf("Operating on project %s", namespace))
 	cp.SendLine("Y")
 	cp.Expect(commitID)
-	cp.Expect("The target commit is not")
+	cp.Expect("not found")
 	cp.ExpectNotExitCode(0)
 	ts.IgnoreLogErrors()
 }

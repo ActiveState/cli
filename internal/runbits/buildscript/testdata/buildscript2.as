@@ -3,7 +3,7 @@ runtime = state_tool_artifacts_v1(
 	],
 	camel_flags = [
 	],
-	src = "$sources"
+	src = sources
 )
 sources = solve(
 	at_time = "2023-08-01T16:20:11.985000Z",
