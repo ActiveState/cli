@@ -167,8 +167,15 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Download() {
 	)
 	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
-	buildID := suite.extractBuildID(ts, "bzip2@1.0.8", "")
-	suite.Require().NotEmpty(buildID)
+	var buildID string
+	if runtime.GOOS == "windows" {
+		// On Windows we need the specific build ID as the terminal buffer is not
+		// large enough to display all the builds
+		buildID = "dbf05bf8-4b2e-5560-a329-b5b70bc7b0fa"
+	} else {
+		buildID = suite.extractBuildID(ts, "bzip2@1.0.8", "")
+		suite.Require().NotEmpty(buildID)
+	}
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("builds", "dl", buildID, "."),
@@ -184,8 +191,15 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Download_Remote() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	buildID := suite.extractBuildID(ts, "bzip2@1.0.8", "ActiveState-CLI/Python-With-Custom-Builds")
-	suite.Require().NotEmpty(buildID)
+	var buildID string
+	if runtime.GOOS == "windows" {
+		// On Windows we need the specific build ID as the terminal buffer is not
+		// large enough to display all the builds
+		buildID = "dbf05bf8-4b2e-5560-a329-b5b70bc7b0fa"
+	} else {
+		buildID = suite.extractBuildID(ts, "bzip2@1.0.8", "")
+		suite.Require().NotEmpty(buildID)
+	}
 
 	cp := ts.Spawn("builds", "dl", buildID, ".", "--namespace", "ActiveState-CLI/Python-With-Custom-Builds")
 	cp.Expect("Downloaded bzip2", e2e.RuntimeSourcingTimeoutOpt)
