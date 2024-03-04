@@ -197,7 +197,7 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Download_Remote() {
 		// large enough to display all the builds
 		buildID = "dbf05bf8-4b2e-5560-a329-b5b70bc7b0fa"
 	} else {
-		buildID = suite.extractBuildID(ts, "bzip2@1.0.8", "")
+		buildID = suite.extractBuildID(ts, "bzip2@1.0.8", "ActiveState-CLI/Python-With-Custom-Builds")
 		suite.Require().NotEmpty(buildID)
 	}
 
