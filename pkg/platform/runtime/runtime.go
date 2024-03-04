@@ -3,7 +3,6 @@ package runtime
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -91,7 +90,7 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, a
 	logging.Debug("Initializing runtime for: %s/%s@%s", target.Owner(), target.Name(), target.CommitUUID())
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
-		fmt.Fprintln(os.Stderr, locale.T("notice_runtime_disabled"))
+		out.Notice(locale.T("notice_runtime_disabled"))
 		return &Runtime{disabled: true, target: target, analytics: an}, nil
 	}
 	recordAttempt(an, target)
