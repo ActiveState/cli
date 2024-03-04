@@ -174,8 +174,8 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Download() {
 		buildID = "dbf05bf8-4b2e-5560-a329-b5b70bc7b0fa"
 	} else {
 		buildID = suite.extractBuildID(ts, "bzip2@1.0.8", "")
-		suite.Require().NotEmpty(buildID)
 	}
+	suite.Require().NotEmpty(buildID)
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("builds", "dl", buildID, "."),
@@ -198,8 +198,8 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Download_Remote() {
 		buildID = "dbf05bf8-4b2e-5560-a329-b5b70bc7b0fa"
 	} else {
 		buildID = suite.extractBuildID(ts, "bzip2@1.0.8", "ActiveState-CLI/Python-With-Custom-Builds")
-		suite.Require().NotEmpty(buildID)
 	}
+	suite.Require().NotEmpty(buildID)
 
 	cp := ts.Spawn("builds", "dl", buildID, ".", "--namespace", "ActiveState-CLI/Python-With-Custom-Builds")
 	cp.Expect("Downloaded bzip2", e2e.RuntimeSourcingTimeoutOpt)
