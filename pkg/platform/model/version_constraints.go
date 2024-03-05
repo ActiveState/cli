@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
 
 type versionConstraints struct {
@@ -37,32 +36,6 @@ func GqlReqVersionConstraintsString(requirement *gqlModel.Requirement) string {
 		constraints[i] = &versionConstraints{constraint.Comparator, constraint.Version}
 	}
 	return versionConstraintsToString(constraints)
-}
-
-func BuildExpressionRequirementsToString(requirements *buildexpression.Var) string {
-	if requirements.Value.List == nil {
-		return ""
-	}
-
-	var constrants []*versionConstraints
-	for _, arg := range *requirements.Value.List {
-		if arg.Object == nil {
-			continue
-		}
-
-		constraint := &versionConstraints{}
-		for _, o := range *arg.Object {
-			switch o.Name {
-			case buildexpression.RequirementVersionKey:
-				constraint.version = *o.Value.Str
-			case buildexpression.RequirementComparatorKey:
-				constraint.comparator = *o.Value.Str
-			}
-		}
-		constrants = append(constrants, constraint)
-	}
-
-	return versionConstraintsToString(constrants)
 }
 
 func versionConstraintsToString(constraints []*versionConstraints) string {
