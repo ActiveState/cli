@@ -2,10 +2,9 @@ package buildscript
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
@@ -74,7 +73,7 @@ func (f *FuncCall) MarshalJSON() ([]byte, error) {
 		case argument.FuncCall != nil:
 			args[argument.FuncCall.Name] = argument.FuncCall.Arguments
 		default:
-			return nil, errors.New(fmt.Sprintf("Cannot marshal %v (arg %v)", f, argument))
+			return nil, errs.New("Cannot marshal %v (arg %v)", f, argument)
 		}
 	}
 
@@ -88,7 +87,7 @@ func marshalReq(args []*Value) ([]byte, error) {
 	for _, arg := range args {
 		assignment := arg.Assignment
 		if assignment == nil {
-			return nil, errors.New(fmt.Sprintf("Cannot marshal %v", arg))
+			return nil, errs.New("Cannot marshal %v", arg)
 		}
 
 		switch {
@@ -106,47 +105,37 @@ func marshalReq(args []*Value) ([]byte, error) {
 			var addRequirement func(*FuncCall) error // recursive function for adding to requirements list
 			addRequirement = func(funcCall *FuncCall) error {
 				switch name := funcCall.Name; name {
-				case eqFuncName:
-					fallthrough
-				case neFuncName:
-					fallthrough
-				case gtFuncName:
-					fallthrough
-				case gteFuncName:
-					fallthrough
-				case ltFuncName:
-					fallthrough
-				case lteFuncName:
+				case eqFuncName, neFuncName, gtFuncName, gteFuncName, ltFuncName, lteFuncName:
 					req := make([]*Assignment, 0)
 					req = append(req, &Assignment{buildexpression.RequirementComparatorKey, &Value{Str: ptr.To(strings.ToLower(name))}})
 					if len(funcCall.Arguments) == 0 || funcCall.Arguments[0].Str == nil {
-						return errors.New(fmt.Sprintf("Illegal argument for version comparator '%s': string expected", name))
+						return errs.New("Illegal argument for version comparator '%s': string expected", name)
 					}
 					req = append(req, &Assignment{buildexpression.RequirementVersionKey, &Value{Str: funcCall.Arguments[0].Str}})
 					requirements = append(requirements, &Value{Object: &req})
 				case andFuncName:
 					for _, a := range funcCall.Arguments {
 						if a.FuncCall == nil {
-							return errors.New(fmt.Sprintf("Illegal argument for version comparator '%s': function expected", name))
+							return errs.New("Illegal argument for version comparator '%s': function expected", name)
 						}
 						err := addRequirement(a.FuncCall)
 						if err != nil {
-							return err
+							return errs.Wrap(err, "Could not marshal additional requirement")
 						}
 					}
 				default:
-					return errors.New(fmt.Sprintf("Unknown version comparator: %s", name))
+					return errs.New("Unknown version comparator: %s", name)
 				}
 				return nil
 			}
 			err := addRequirement(assignment.Value.FuncCall)
 			if err != nil {
-				return nil, err
+				return nil, errs.Wrap(err, "Could not marshal requirement")
 			}
 			requirement[buildexpression.RequirementVersionRequirementsKey] = &Value{List: &requirements}
 
 		default:
-			return nil, errors.New(fmt.Sprintf("Invalid or unknown argument: %v", assignment))
+			return nil, errs.New("Invalid or unknown argument: %v", assignment)
 		}
 	}
 

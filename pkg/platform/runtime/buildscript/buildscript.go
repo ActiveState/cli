@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/thoas/go-funk"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -287,6 +289,16 @@ func valueString(v *buildexpression.Value) string {
 	return fmt.Sprintf("[\n]") // participle does not create v.List if it's empty
 }
 
+// inlineFunctions contains buildscript function names whose arguments should all be written on a
+// single line. By default, function arguments are written one per line.
+var inlineFunctions = []string{
+	reqFuncName,
+	eqFuncName, neFuncName,
+	gtFuncName, gteFuncName,
+	ltFuncName, lteFuncName,
+	andFuncName,
+}
+
 func apString(f *buildexpression.Ap) string {
 	var (
 		newline = "\n"
@@ -294,11 +306,7 @@ func apString(f *buildexpression.Ap) string {
 		indent  = indent
 	)
 
-	if f.Name == reqFuncName ||
-		f.Name == eqFuncName || f.Name == neFuncName ||
-		f.Name == gtFuncName || f.Name == gteFuncName ||
-		f.Name == ltFuncName || f.Name == lteFuncName ||
-		f.Name == andFuncName {
+	if funk.Contains(inlineFunctions, f.Name) {
 		newline = ""
 		comma = ", "
 		indent = func(s string) string {
