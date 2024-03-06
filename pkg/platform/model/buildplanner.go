@@ -355,7 +355,7 @@ func (bp *BuildPlanner) GetBuildExpression(commitID string) (*buildexpression.Bu
 
 	err = expression.MaybeUpdateTimestamp(resp.Commit.AtTime)
 	if err != nil {
-		return nil, errs.Wrap(err, "failed to possibly update at_time in build expression")
+		return nil, errs.Wrap(err, "failed to possibly update %s in build expression", buildexpression.AtTimeKey)
 	}
 
 	return expression, nil

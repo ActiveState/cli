@@ -22,15 +22,14 @@ func (s *Script) MarshalJSON() ([]byte, error) {
 		value := assignment.Value
 		switch key {
 		case buildexpression.AtTimeKey:
-			if value.Str != nil {
-				atTime, err := strfmt.ParseDateTime(strings.Trim(*value.Str, `"`))
-				if err != nil {
-					return nil, errs.Wrap(err, "Invalid timestamp: %s", *value.Str)
-				}
-				s.atTime = &atTime
-			} else {
+			if value.Str == nil {
 				return nil, errs.New("String timestamp expected for '%s'", key)
 			}
+			atTime, err := strfmt.ParseDateTime(strings.Trim(*value.Str, `"`))
+			if err != nil {
+				return nil, errs.Wrap(err, "Invalid timestamp: %s", *value.Str)
+			}
+			s.atTime = &atTime
 			continue // do not include this custom assignment in the let block
 		case "main":
 			key = "in"

@@ -322,7 +322,7 @@ func TestRoundTrip(t *testing.T) {
 func TestJson(t *testing.T) {
 	script, err := NewScript([]byte(
 		`at_time = "2000-01-01T00:00:00.000Z"
-		runtime = solve(
+runtime = solve(
 		at_time = at_time,
 		requirements=[
 			Req(name = "language/python")

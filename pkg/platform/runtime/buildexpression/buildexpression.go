@@ -898,7 +898,7 @@ func (e *BuildExpression) removePlatform(platformID strfmt.UUID) error {
 func (e *BuildExpression) SetDefaultTimestamp() (*strfmt.DateTime, error) {
 	atTimeNode, err := e.getSolveAtTimeValue()
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not get at time node")
+		return nil, errs.Wrap(err, "Could not get %s node", AtTimeKey)
 	}
 	var atTimePtr *strfmt.DateTime
 	if atTimeNode.Str != nil && !strings.HasPrefix(*atTimeNode.Str, "$") {
