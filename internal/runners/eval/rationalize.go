@@ -15,6 +15,8 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 		return
 	}
 
+	var targetNotFoundErr *errTargetNotFound
+
 	switch {
 	case errors.Is(*rerr, rationalize.ErrNotAuthenticated):
 		*rerr = errs.WrapUserFacing(*rerr,
@@ -25,6 +27,11 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 	case errors.Is(*rerr, rationalize.ErrNoProject):
 		*rerr = errs.WrapUserFacing(*rerr,
 			locale.Tr("err_no_project"),
+			errs.SetInput())
+
+	case errors.As(*rerr, &targetNotFoundErr):
+		*rerr = errs.WrapUserFacing(*rerr,
+			locale.Tr("err_target_not_found", targetNotFoundErr.target),
 			errs.SetInput())
 	}
 }

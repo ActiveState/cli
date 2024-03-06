@@ -31,6 +31,11 @@ type Eval struct {
 	auth    *authentication.Auth
 }
 
+type errTargetNotFound struct {
+	error
+	target string
+}
+
 func New(p primeable) *Eval {
 	return &Eval{
 		out:     p.Output(),
@@ -63,7 +68,7 @@ func (e *Eval) Run(params *Params) (rerr error) {
 	}
 
 	if target == "" {
-		return locale.NewInputError("err_eval_target_not_found", "Target '{{.V0}}' not found", params.Target)
+		return errTargetNotFound{target: params.Target}
 	}
 
 	pg := output.StartSpinner(e.out, locale.Tl("progress_eval", "Evaluating ... "), constants.TerminalAnimationInterval)

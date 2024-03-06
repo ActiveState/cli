@@ -361,38 +361,42 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 func ProcessBuildError(build *Build, fallbackMessage string) error {
 	logging.Debug("ProcessBuildError: build.Type=%s", build.Type)
 	if build.Type == PlanningErrorType {
-		var errs []string
-		var isTransient bool
-
-		if build.Message != "" {
-			errs = append(errs, build.Message)
-		}
-
-		for _, se := range build.SubErrors {
-			if se.Type != RemediableSolveErrorType && se.Type != GenericSolveErrorType {
-				continue
-			}
-
-			if se.Message != "" {
-				errs = append(errs, se.Message)
-				isTransient = se.IsTransient
-			}
-
-			for _, ve := range se.ValidationErrors {
-				if ve.Error != "" {
-					errs = append(errs, ve.Error)
-				}
-			}
-		}
-		return &BuildPlannerError{
-			ValidationErrors: errs,
-			IsTransient:      isTransient,
-		}
+		return processPlanningError(build.Message, build.SubErrors)
 	} else if build.Error == nil {
 		return errs.New(fallbackMessage)
 	}
 
 	return locale.NewInputError("err_buildplanner_build", "Encountered error processing build response")
+}
+
+func processPlanningError(message string, subErrors []*BuildExprLocation) error {
+	var errs []string
+	var isTransient bool
+
+	if message != "" {
+		errs = append(errs, message)
+	}
+
+	for _, se := range subErrors {
+		if se.Type != RemediableSolveErrorType && se.Type != GenericSolveErrorType {
+			continue
+		}
+
+		if se.Message != "" {
+			errs = append(errs, se.Message)
+			isTransient = se.IsTransient
+		}
+
+		for _, ve := range se.ValidationErrors {
+			if ve.Error != "" {
+				errs = append(errs, ve.Error)
+			}
+		}
+	}
+	return &BuildPlannerError{
+		ValidationErrors: errs,
+		IsTransient:      isTransient,
+	}
 }
 
 func ProcessProjectError(project *Project, fallbackMessage string) error {
@@ -407,10 +411,13 @@ func ProcessProjectError(project *Project, fallbackMessage string) error {
 }
 
 func ProcessEvaluateError(evaluate *evaluate, fallbackMessage string) error {
-	if evaluate.Type == ParseErrorType {
-		return &BuildPlannerError{
-			ValidationErrors: []string{evaluate.Message},
-		}
+	switch evaluate.Type {
+	case ParseErrorType:
+		return locale.NewInputError("err_buildplanner_parse_error", "The platform failed to parse the build expression, received message: {{.V0}}. Path: {{.V1}}", evaluate.Message, evaluate.ParseError.Path)
+	case ValidationErrorType:
+		return locale.NewInputError("err_buildplanner_validation_error", "The platform failed to validate the build expression, received message: {{.V0}}", evaluate.Message)
+	case PlanningErrorType:
+		return processPlanningError(evaluate.Message, evaluate.Build.SubErrors)
 	}
 
 	return errs.New(fallbackMessage)
