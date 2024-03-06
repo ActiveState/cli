@@ -406,6 +406,16 @@ func ProcessProjectError(project *Project, fallbackMessage string) error {
 	return errs.New(fallbackMessage)
 }
 
+func ProcessEvaluateError(evaluate *evaluate, fallbackMessage string) error {
+	if evaluate.Type == ParseErrorType {
+		return &BuildPlannerError{
+			ValidationErrors: []string{evaluate.Message},
+		}
+	}
+
+	return errs.New(fallbackMessage)
+}
+
 type RevertCommitError struct {
 	Type    string
 	Message string
@@ -514,6 +524,18 @@ type mergedCommit struct {
 // branch and the merge strategy was FastForward.
 type MergeCommitResult struct {
 	MergedCommit *mergedCommit `json:"mergeCommit"`
+}
+
+type evaluate struct {
+	Type  string `json:"__typename"`
+	Build *Build `json:"build"`
+	*Error
+	*ParseError
+	*PlanningError
+}
+
+type EvaluateResult struct {
+	Evaluate *evaluate `json:"evaluate"`
 }
 
 // Error contains an error message.

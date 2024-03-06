@@ -595,3 +595,53 @@ func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, 
 	}
 	return requirements, nil
 }
+
+// TODO: Change this to use CommitID and not project
+func (bp *BuildPlanner) Evaluate(owner, project, target string, expr *buildexpression.BuildExpression) (*bpModel.EvaluateResult, error) {
+	logging.Debug("EvaluateByProject, owner: %s, project: %s", owner, project)
+	resp := &bpModel.EvaluateResult{}
+	err := bp.client.Run(request.Evaluate(owner, project, target, expr), resp)
+	if err != nil {
+		return nil, processBuildPlannerError(err, "Failed to evaluate target")
+	}
+
+	if resp.Evaluate == nil {
+		return nil, errs.New("Evaluate is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.Evaluate.Type) {
+		return nil, bpModel.ProcessEvaluateError(resp.Evaluate, "Could not evaluate target")
+	}
+
+	return resp, nil
+}
+
+func (bp *BuildPlanner) pollBuildStatus(owner, project, commitID string, expr *buildexpression.BuildExpression) (*bpModel.EvaluateResult, error) {
+	resp := model.NewBuildPlanResponse(owner, project)
+	ticker := time.NewTicker(pollInterval)
+	for {
+		select {
+		case <-ticker.C:
+			// Change this to just poll the build status
+			err := bp.client.Run(request.BuildPlan(commitID, owner, project), resp)
+			if err != nil {
+				return nil, processBuildPlannerError(err, "failed to fetch build plan")
+			}
+
+			if resp == nil {
+				return nil, errs.New("Build plan response is nil")
+			}
+
+			build, err := resp.Build()
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not get build from response")
+			}
+
+			if build.Status != bpModel.Planning {
+				return build, nil
+			}
+		case <-time.After(pollTimeout):
+			return nil, locale.NewError("err_buildplanner_timeout", "Timed out waiting for build plan")
+		}
+	}
+}
