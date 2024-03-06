@@ -8,7 +8,10 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 // NameVersionValue represents a flag that supports both a name and a version, the following formats are supported:
@@ -242,7 +245,12 @@ func (u *TimeValue) String() string {
 
 func (u *TimeValue) Set(v string) error {
 	if v == "now" {
-		u.Time = ptr.To(time.Now())
+		latest, err := model.FetchLatestRevisionTimeStamp(authentication.LegacyGet())
+		if err != nil {
+			multilog.Error("Unable to determine latest revision time: %v", err)
+			latest = time.Now()
+		}
+		u.Time = ptr.To(latest)
 	} else {
 		u.raw = v
 		tsv, err := time.Parse(time.RFC3339, v)
