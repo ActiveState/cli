@@ -1,13 +1,9 @@
 package request
 
-import "github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
-
-func Evaluate(owner, project, target string, expression *buildexpression.BuildExpression) *evaluate {
+func Evaluate(commitId, target string) *evaluate {
 	return &evaluate{map[string]interface{}{
-		"organization": owner,
-		"project":      project,
-		"target":       target,
-		"expr":         expression,
+		"commitId": commitId,
+		"target":   target,
 	}}
 }
 
@@ -17,34 +13,14 @@ type evaluate struct {
 
 func (b *evaluate) Query() string {
 	return `
-query ($organization: String!, $project: String!, $target: String! $expr: BuildExpr!) {
-  project(organization: $organization, project: $project) {
-    ... on Project {
+query ($commitId: ID!, $target: String!) {
+  commit(commitId: $commitId) {
+    ... on Commit {
       __typename
-      name
-      description
-      evaluate(expr: $expr, target: $target) {
+      build(target: $target) {
         ... on Build {
           __typename
           status
-        }
-        ... on ParseError {
-          __typename
-          message
-          subErrors {
-            __typename
-            message
-            buildExprPath
-          }
-        }
-        ... on ValidationError {
-          __typename
-          message
-          subErrors {
-            __typename
-            message
-            buildExprPath
-          }
         }
         ... on PlanningError {
           __typename

@@ -597,10 +597,10 @@ func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, 
 	return requirements, nil
 }
 
-func (bp *BuildPlanner) Evaluate(owner, project, target string, expr *buildexpression.BuildExpression) error {
-	logging.Debug("EvaluateByProject, owner: %s, project: %s", owner, project)
-	resp := &bpModel.EvaluateResult{}
-	err := bp.client.Run(request.Evaluate(owner, project, target, expr), resp)
+func (bp *BuildPlanner) BuildTarget(commitID, target string) error {
+	logging.Debug("Evaluate, commitID: %s, target: %s", commitID, target)
+	resp := &bpModel.BuildTargetResult{}
+	err := bp.client.Run(request.Evaluate(commitID, target), resp)
 	if err != nil {
 		return processBuildPlannerError(err, "Failed to evaluate target")
 	}
@@ -610,24 +610,24 @@ func (bp *BuildPlanner) Evaluate(owner, project, target string, expr *buildexpre
 	}
 
 	if bpModel.IsErrorResponse(resp.Evaluate.Type) {
-		return bpModel.ProcessEvaluateError(resp.Evaluate, "Could not evaluate target")
+		return bpModel.ProcessBuildTargetError(resp.Evaluate, "Could not evaluate target")
 	}
 
-	if err := bp.pollBuildStatus(owner, project, target, expr); err != nil {
+	if err := bp.pollBuildStatus(commitID); err != nil {
 		return errs.Wrap(err, "Failed to poll build status")
 	}
 
 	return nil
 }
 
-func (bp *BuildPlanner) pollBuildStatus(owner, project, commitID string, expr *buildexpression.BuildExpression) error {
-	resp := model.NewBuildPlanResponse(owner, project)
+func (bp *BuildPlanner) pollBuildStatus(commitID string) error {
+	resp := model.NewBuildPlanResponse("", "")
 	ticker := time.NewTicker(pollInterval)
 	for {
 		select {
 		case <-ticker.C:
 			// Change this to just poll the build status
-			err := bp.client.Run(request.BuildPlan(commitID, owner, project), resp)
+			err := bp.client.Run(request.BuildPlan(commitID, "", ""), resp)
 			if err != nil {
 				return processBuildPlannerError(err, "failed to fetch build plan")
 			}

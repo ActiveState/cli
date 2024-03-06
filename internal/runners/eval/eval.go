@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
@@ -55,6 +56,11 @@ func (e *Eval) Run(params *Params) (rerr error) {
 		return rationalize.ErrNoProject
 	}
 
+	commitID, err := localcommit.Get(e.project.Dir())
+	if err != nil {
+		return errs.Wrap(err, "Unable to get commit ID")
+	}
+
 	script, err := buildscript.NewScriptFromProject(e.project, e.auth)
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
@@ -74,7 +80,7 @@ func (e *Eval) Run(params *Params) (rerr error) {
 	pg := output.StartSpinner(e.out, locale.Tl("progress_eval", "Evaluating ... "), constants.TerminalAnimationInterval)
 
 	bp := model.NewBuildPlannerModel(e.auth)
-	if err := bp.Evaluate(e.project.Owner(), e.project.Name(), target, script.Expr); err != nil {
+	if err := bp.BuildTarget(commitID.String(), target); err != nil {
 		return locale.WrapError(err, "err_eval", "Failed to evaluate target '{{.V0}}'", target)
 	}
 
