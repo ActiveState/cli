@@ -39,7 +39,7 @@ func newScriptFromFile(path, org, project string, auth *authentication.Auth) (*S
 		return nil, errs.Wrap(err, "Unable to get the local commit ID")
 	}
 	buildplanner := model.NewBuildPlannerModel(auth)
-	expr, err := buildplanner.GetBuildExpression(org, project, commitId.String())
+	expr, err := buildplanner.GetBuildExpression(commitId.String())
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get the remote build expression")
 	}

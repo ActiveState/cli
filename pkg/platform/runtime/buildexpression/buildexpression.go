@@ -683,6 +683,21 @@ func (e *BuildExpression) getSolveNodeArguments() ([]*Value, error) {
 	return solveAp.Arguments, nil
 }
 
+func (e *BuildExpression) GetSolveAtTimeValue() (*Value, error) {
+	solveAp, err := e.getSolveNode()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get solve node")
+	}
+
+	for _, arg := range solveAp.Arguments {
+		if arg.Assignment != nil && arg.Assignment.Name == AtTimeKey {
+			return arg.Assignment.Value, nil
+		}
+	}
+
+	return nil, errs.New("Could not find %s", AtTimeKey)
+}
+
 func (e *BuildExpression) getPlatformsNode() (*[]*Value, error) {
 	solveAp, err := e.getSolveNode()
 	if err != nil {
@@ -878,21 +893,24 @@ func (e *BuildExpression) removePlatform(platformID strfmt.UUID) error {
 }
 
 func (e *BuildExpression) SetDefaultTimestamp() error {
-	solveNode, err := e.getSolveNode()
+	atTimeNode, err := e.GetSolveAtTimeValue()
 	if err != nil {
-		return errs.Wrap(err, "Could not get solve node")
+		return errs.Wrap(err, "Could not get at time node")
 	}
+	atTimeNode.Str = ptr.To("$" + AtTimeKey)
+	return nil
+}
 
-	for _, arg := range solveNode.Arguments {
-		if arg.Assignment == nil {
-			continue
-		}
-
-		if arg.Assignment.Name == AtTimeKey {
-			arg.Assignment.Value.Str = ptr.To(fmt.Sprintf("$%s", AtTimeKey))
-		}
+// MaybeUpdateTimestamp looks at the solve node's "at_time" parameter and if it is "$at_time",
+// replaces it with the given timestamp.
+func (e *BuildExpression) MaybeUpdateTimestamp(atTime strfmt.DateTime) error {
+	atTimeNode, err := e.GetSolveAtTimeValue()
+	if err != nil {
+		return errs.Wrap(err, "Could not get at time node")
 	}
-
+	if atTimeNode.Str != nil && *atTimeNode.Str == "$"+AtTimeKey {
+		atTimeNode.Str = ptr.To(atTime.String())
+	}
 	return nil
 }
 

@@ -164,7 +164,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		return nil, errs.Wrap(err, "Response does not contain commitID")
 	}
 
-	expr, err := bp.GetBuildExpression(owner, project, commitID.String())
+	expr, err := bp.GetBuildExpression(commitID.String())
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to get build expression")
 	}
@@ -276,7 +276,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	expression := params.Expression
 	if expression == nil {
 		var err error
-		expression, err = bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
+		expression, err = bp.GetBuildExpression(params.ParentCommit)
 		if err != nil {
 			return "", errs.Wrap(err, "Failed to get build expression")
 		}
@@ -328,8 +328,8 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	return resp.Commit.CommitID, nil
 }
 
-func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*buildexpression.BuildExpression, error) {
-	logging.Debug("GetBuildExpression, owner: %s, project: %s, commitID: %s", owner, project, commitID)
+func (bp *BuildPlanner) GetBuildExpression(commitID string) (*buildexpression.BuildExpression, error) {
+	logging.Debug("GetBuildExpression, commitID: %s", commitID)
 	resp := &bpModel.BuildExpression{}
 	err := bp.client.Run(request.BuildExpression(commitID), resp)
 	if err != nil {
@@ -351,6 +351,11 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 	expression, err := buildexpression.New(resp.Commit.Expression)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
+	}
+
+	err = expression.MaybeUpdateTimestamp(resp.Commit.AtTime)
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to possibly update at_time in build expression")
 	}
 
 	return expression, nil

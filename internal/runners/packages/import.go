@@ -126,7 +126,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 	}
 
 	bp := model.NewBuildPlannerModel(i.auth)
-	be, err := bp.GetBuildExpression(i.proj.Owner(), i.proj.Name(), latestCommit.String())
+	be, err := bp.GetBuildExpression(latestCommit.String())
 	if err != nil {
 		return locale.WrapError(err, "err_cannot_get_build_expression", "Could not get build expression")
 	}

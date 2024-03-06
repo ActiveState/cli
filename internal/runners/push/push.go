@@ -174,7 +174,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		r.out.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", targetNamespace.Owner, targetNamespace.Project))
 
 		// Create a new project with the current project's buildexpression.
-		expr, err := bp.GetBuildExpression(r.project.Owner(), r.project.Name(), commitID.String())
+		expr, err := bp.GetBuildExpression(commitID.String())
 		if err != nil {
 			return errs.Wrap(err, "Could not get buildexpression")
 		}

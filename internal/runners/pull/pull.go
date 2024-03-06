@@ -228,7 +228,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	// Get the local and remote build expressions to merge.
 	exprA := script.Expr
 	bp := model.NewBuildPlannerModel(p.auth)
-	exprB, err := bp.GetBuildExpression(p.project.Owner(), p.project.Name(), remoteCommit.String())
+	exprB, err := bp.GetBuildExpression(remoteCommit.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get buildexpression for remote commit")
 	}

@@ -30,7 +30,7 @@ func getBuildExpression(proj *project.Project, customCommit *strfmt.UUID, auth *
 	if customCommit != nil {
 		commitID = *customCommit
 	}
-	return bp.GetBuildExpression(proj.Owner(), proj.Name(), commitID.String())
+	return bp.GetBuildExpression(commitID.String())
 }
 
 // Sync synchronizes the local build script with the remote one.
