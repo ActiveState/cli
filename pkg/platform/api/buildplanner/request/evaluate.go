@@ -17,13 +17,13 @@ type evaluate struct {
 
 func (b *evaluate) Query() string {
 	return `
-query ($organization: String!, $project: String!, $expr: BuildExpr!) {
+query ($organization: String!, $project: String!, $target: String! $expr: BuildExpr!) {
   project(organization: $organization, project: $project) {
     ... on Project {
       __typename
       name
       description
-      evaluate(expr: $expr) {
+      evaluate(expr: $expr, target: $target) {
         ... on Build {
           __typename
           status
