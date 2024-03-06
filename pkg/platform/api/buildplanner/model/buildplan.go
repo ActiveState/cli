@@ -542,7 +542,7 @@ type buildTarget struct {
 }
 
 type BuildTargetResult struct {
-	Evaluate *buildTarget `json:"evaluate"`
+	Build *buildTarget `json:"build"`
 }
 
 // Error contains an error message.
