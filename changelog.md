@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.44.0
+
+### Added
+
+* Added buildscripts, the ActiveState platform equivalent of a pyproject.toml file. You will find this file alongside
+  your activestate.yaml file.
+* Added the `state builds` command, which lists all available builds produced for your project (eg. installers, docker images, python wheels, ..)
+* Added the `state builds dl` command, which lets you download individual builds for your project.
+* 
+
+### Changed
+
+* `state info` has been updated to give more meta information, including CVE details across versions of the requested package.
+* `state info` now respects the case sensitivity rules of your projects language. 
+* `state install` will now show a dependency tree for which dependencies were brought in along with the requested package.
+* `state install` will now warn you above CVE's in the package being installed. If there are CVE's of level critical it
+  will prompt you to confirm before installing. This mechanic is configurable.
+* `state history` now shows catalog revision information.
+* `state update lock` will now disable auto updates, in addition to locking your project down to the current State Tool version.
+* We now show both the requested and resulting version of packages across different commands, eg. `state packages`, `state languages`, ..
+* Auto update will no longer run for certain critical commands or when using structured output (eg. `--output json`).
+* Raised the artifact cache size from 500MB to 1GB.
+
+### Fixed
+
+* Fixed issue where `state shell` would improperly set up your PATH if there are entries with spaces.
+* Fixed update available message being printed twice.
+
+### Removed
+
+* Removed `state security report`, you can now access everything through `state security` instead.
+
 ## 0.43.0
 
 ### Added

@@ -2,6 +2,7 @@ package output
 
 import (
 	"io"
+	"os"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -92,4 +93,12 @@ type Config struct {
 	Colored     bool
 	Interactive bool
 	ShellName   string
+}
+
+func (c *Config) OutWriterFD() (uintptr, bool) {
+	if file, ok := c.OutWriter.(*os.File); ok {
+		return file.Fd(), true
+	}
+
+	return 0, false
 }

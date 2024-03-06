@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
@@ -41,7 +42,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile" // remove in DX-2307
 )
 
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
@@ -170,7 +170,7 @@ func New(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
 func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session {
 	dirs, err := NewDirs("")
 	require.NoError(t, err)
-	env := sandboxedTestEnvironment(t, dirs, updatePath)
+	env := sandboxedTestEnvironment(t, dirs, updatePath, extraEnv...)
 
 	session := &Session{Dirs: dirs, Env: env, retainDirs: retainDirs, T: t}
 
@@ -182,6 +182,13 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 
 	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
 	require.NoError(session.T, err)
+
+	cfg, err := config.New()
+	require.NoError(session.T, err)
+
+	if err := cfg.Set(constants.SecurityPromptConfig, false); err != nil {
+		require.NoError(session.T, err)
+	}
 
 	return session
 }
@@ -320,11 +327,18 @@ func (s *Session) PrepareActiveStateYAML(contents string) {
 }
 
 func (s *Session) PrepareCommitIdFile(commitID string) {
-	// Replace the contents of this function with the line below in DX-2307.
-	//require.NoError(s.T, fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.ProjectConfigDirName, constants.CommitIdFileName), []byte(commitID)))
 	pjfile, err := projectfile.Parse(filepath.Join(s.Dirs.Work, constants.ConfigFileName))
 	require.NoError(s.T, err)
-	require.NoError(s.T, pjfile.LegacySetCommit(commitID))
+	require.NoError(s.T, pjfile.SetLegacyCommit(commitID))
+}
+
+// CommitID is used to grab the current commit ID for the project in our working directory.
+// For integration tests you should use this function instead of localcommit.Get() and pjfile.LegacyCommitID() as it
+// is guaranteed to give a fresh result from disk, whereas the ones above use caching which tests don't like.
+func (s *Session) CommitID() string {
+	pjfile, err := projectfile.Parse(filepath.Join(s.Dirs.Work, constants.ConfigFileName))
+	require.NoError(s.T, err)
+	return pjfile.LegacyCommitID()
 }
 
 // PrepareProject creates a very simple activestate.yaml file for the given org/project and, if a

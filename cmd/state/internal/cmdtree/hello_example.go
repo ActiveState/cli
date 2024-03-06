@@ -10,7 +10,7 @@ import (
 func newHelloCommand(prime *primer.Values) *captain.Command {
 	runner := hello.New(prime)
 
-	params := hello.NewRunParams()
+	params := hello.NewParams()
 
 	cmd := captain.NewCommand(
 		// The command's name should not be localized as we want commands to behave consistently regardless of localization.

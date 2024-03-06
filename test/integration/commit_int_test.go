@@ -20,7 +20,6 @@ type CommitIntegrationTestSuite struct {
 
 func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	suite.OnlyRunForTags(tagsuite.Commit)
-	suite.T().Skip("Temporarily disable buildscripts until DX-2307") // remove in DX-2307
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -55,8 +54,11 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	data = bytes.ReplaceAll(data, []byte("casestyle"), []byte("case"))
 	suite.Require().NoError(fileutils.WriteFile(scriptPath, data), "Update buildscript")
 
-	cp = ts.Spawn("commit")
-	cp.Expect("Runtime updated")
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("commit"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Runtime updated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 

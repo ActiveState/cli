@@ -255,7 +255,12 @@ func (s *Store) InstallPath() string {
 	return s.installPath
 }
 
+var ErrNoBuildPlanFile = errs.New("no build plan file")
+
 func (s *Store) BuildPlanRaw() ([]byte, error) {
+	if !fileutils.FileExists(s.buildPlanFile()) {
+		return nil, ErrNoBuildPlanFile
+	}
 	data, err := fileutils.ReadFile(s.buildPlanFile())
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not read build plan file.")

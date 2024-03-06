@@ -131,6 +131,17 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                   errors
                 }
               }
+              resolvedRequirements {
+                requirement {
+                  name
+                  namespace
+                  version_requirements: versionRequirements {
+                   	comparator
+                    version
+                  }
+                }
+                resolvedSource
+              }
             }
             ... on Error {
               message

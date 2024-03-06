@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/commit"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -39,7 +39,7 @@ func (h *History) Run(params *HistoryParams) error {
 	}
 	h.out.Notice(locale.Tr("operating_message", h.project.NamespaceString(), h.project.Dir()))
 
-	localCommitID, err := commitmediator.Get(h.project)
+	localCommitID, err := localcommit.Get(h.project.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}

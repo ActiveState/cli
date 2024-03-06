@@ -44,12 +44,7 @@ func (p *projectField) SetBranch(branch string) {
 	p.setQuery("branch", branch)
 }
 
-func (p *projectField) StripCommitID() {
-	p.unsetQuery("commitID") // legacy
-}
-
-// Remove this in DX-2307.
-func (p *projectField) LegacySetCommit(commitID string) {
+func (p *projectField) SetLegacyCommitID(commitID string) {
 	p.setQuery("commitID", commitID)
 }
 

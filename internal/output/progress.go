@@ -8,6 +8,8 @@ import (
 
 const moveCaretBackEscapeSequence = "\x1b[%dD" // %d is the number of characters to move back
 
+var SpinnerFrames = []string{`|`, `/`, `-`, `\`}
+
 type Spinner struct {
 	frame         int
 	frames        []string

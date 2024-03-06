@@ -623,14 +623,15 @@ type Commit struct {
 //	    }
 //	}
 type Build struct {
-	Type        string         `json:"__typename"`
-	BuildPlanID strfmt.UUID    `json:"buildPlanID"`
-	Status      string         `json:"status"`
-	Terminals   []*NamedTarget `json:"terminals"`
-	Artifacts   []*Artifact    `json:"artifacts"`
-	Steps       []*Step        `json:"steps"`
-	Sources     []*Source      `json:"sources"`
-	BuildLogIDs []*BuildLogID  `json:"buildLogIds"`
+	Type                 string                 `json:"__typename"`
+	BuildPlanID          strfmt.UUID            `json:"buildPlanID"`
+	Status               string                 `json:"status"`
+	Terminals            []*NamedTarget         `json:"terminals"`
+	Artifacts            []*Artifact            `json:"artifacts"`
+	Steps                []*Step                `json:"steps"`
+	Sources              []*Source              `json:"sources"`
+	BuildLogIDs          []*BuildLogID          `json:"buildLogIds"`
+	ResolvedRequirements []*ResolvedRequirement `json:"resolvedRequirements"`
 	*Error
 	*PlanningError
 }
@@ -683,6 +684,11 @@ type Source struct {
 	Name      string      `json:"name"`
 	Namespace string      `json:"namespace"`
 	Version   string      `json:"version"`
+}
+
+type ResolvedRequirement struct {
+	Requirement *Requirement `json:"requirement"`
+	Source      strfmt.UUID  `json:"resolvedSource"`
 }
 
 // NotFoundError represents an error that occurred because a resource was not found.

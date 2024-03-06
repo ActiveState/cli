@@ -25,15 +25,8 @@ const ServiceCommandName = "state-svc"
 // ConfigFileName holds the name of the file that the user uses to configure their project, not to be confused with InternalConfigFileNameLegacy
 const ConfigFileName = "activestate.yaml"
 
-// ProjectConfigDirName is the name of the directory that holds project-specific data like commit ID.
-// This folder does not hold ConfigFileName. It is a sibling to that file in a given directory.
-const ProjectConfigDirName = ".activestate"
-
 // BuildScriptFileName holds the name of the file that represents the build script used to generate the runtime
-const BuildScriptFileName = "buildscript.yaml"
-
-// CommitIdFileName is the name of the file in ProjectConfigDirName that contains a project's commit ID.
-const CommitIdFileName = "commit"
+const BuildScriptFileName = "buildscript.as"
 
 // InternalConfigNamespace holds the appdata folder name under which we store our config
 const InternalConfigNamespace = "activestate"
@@ -61,10 +54,6 @@ const DisableUpdates = "ACTIVESTATE_CLI_DISABLE_UPDATES"
 
 // DisableLanguageTemplates is the env var used to disable templating for new activestate.yaml files
 const DisableLanguageTemplates = "ACTIVESTATE_CLI_DISABLE_LANGUAGE_TEMPLATES"
-
-// DisableProjectMigrationPrompt is the env var used to disable the project migration prompt for legacy projects.
-// This is set by default for integration tests for backward-compatibility with old integration tests.
-const DisableProjectMigrationPrompt = "ACTIVESTATE_CLI_DISABLE_PROJECT_MIGRATION_PROMPT"
 
 // UpdateChannelEnvVarName is the env var that is used to override which channel to pull the update from
 const UpdateChannelEnvVarName = "ACTIVESTATE_CLI_UPDATE_CHANNEL"
@@ -195,6 +184,9 @@ const SvcAuthPollingRateEnvVarName = "ACTIVESTATE_SVC_AUTH_POLLING_RATE"
 // log rotation timer interval (1 minute).
 const SvcLogRotateIntervalEnvVarName = "ACTIVESTATE_CLI_LOG_ROTATE_INTERVAL_MS"
 
+// DisableActivateEventsEnvVarName is the environment variable used to disable events when activating or checking out a project
+const DisableActivateEventsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ACTIVATE_EVENTS"
+
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
 
@@ -284,6 +276,9 @@ const RequirementsImportAPIPath = "/sv/reqsvc/reqs"
 
 // BuildPlannerAPIPath is the path used for the build planner api
 const BuildPlannerAPIPath = "/sv/buildplanner/graphql"
+
+// VulnerabilitiesAPIPath is the path used for the vulnerabilities api
+const VulnerabilitiesAPIPath = "/v13s/v1/graphql"
 
 // MessagesInfoURL is the URL we check against to see what versions are deprecated
 const MessagesInfoURL = "https://state-tool.s3.amazonaws.com/messages.json"
@@ -434,6 +429,9 @@ const ForumsURL = "https://community.activestate.com/c/state-tool/"
 // GlobalDefaultPrefname is the pref that holds the path to the globally defaulted project
 const GlobalDefaultPrefname = "projects.active.path"
 
+// LastUsedNamespacePrefname is the pref that holds the last used org for commands that use a project
+const LastUsedNamespacePrefname = "last.used.namespace"
+
 // DefaultBranchName is the default branch name used on platform projects
 const DefaultBranchName = "main"
 
@@ -448,6 +446,12 @@ const ReportAnalyticsConfig = "report.analytics"
 
 // PreferredGlibcVersionConfig is the config key used to determine the preferred glibc version
 const PreferredGlibcVersionConfig = "runtime.preferred.glibc"
+
+// SecurityPromptConfig is the config key used to determine if we will prompt the user for security related actions
+const SecurityPromptConfig = "security.prompt.enabled"
+
+// SecurityPromptLevelConfig is the config key used to determine the level of security prompts
+const SecurityPromptLevelConfig = "security.prompt.level"
 
 // SvcAppName is the name we give our state-svc application
 const SvcAppName = "State Service"

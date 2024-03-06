@@ -102,6 +102,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchSimple() {
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
 	}
+	cp.Send("q")
 	cp.ExpectExitCode(0)
 }
 
@@ -120,6 +121,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithExactTerm() {
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
 	}
+	cp.Send("q")
 	cp.ExpectExitCode(0)
 }
 
@@ -142,7 +144,15 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithLang() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("bundles", "search", "Utilities", "--language=perl")
-	cp.Expect("Utilities")
+	expectations := []string{
+		"Name",
+		"Utilities",
+		"1.00",
+	}
+	for _, expectation := range expectations {
+		cp.Expect(expectation)
+	}
+	cp.Send("q")
 	cp.ExpectExitCode(0)
 }
 
@@ -223,7 +233,7 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 	defer ts.Close()
 
 	cp := ts.Spawn("bundles", "search", "Email", "--language", "Perl", "-o", "json")
-	cp.Expect(`"name":"Email"`)
+	cp.Expect(`"Name":"Email"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 

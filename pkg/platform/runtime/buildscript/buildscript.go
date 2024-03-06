@@ -7,9 +7,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/thoas/go-funk"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/alecthomas/participle/v2"
 )
@@ -20,13 +23,8 @@ import (
 // submitting it to the build planner. It's easier to operate on build expressions directly than to
 // modify or manually populate the Participle-produced fields and re-generate a build expression.
 type Script struct {
-	Let  *Let `parser:"'let' ':' @@"`
-	In   *In  `parser:"'in' ':' @@"`
-	Expr *buildexpression.BuildExpression
-}
-
-type Let struct {
 	Assignments []*Assignment `parser:"@@+"`
+	Expr        *buildexpression.BuildExpression
 }
 
 type Assignment struct {
@@ -43,7 +41,7 @@ type Value struct {
 
 	Assignment *Assignment    `parser:"| @@"`                        // only in FuncCall
 	Object     *[]*Assignment `parser:"| '{' @@ (',' @@)* ','? '}'"` // only in List
-	Ident      *string        `parser:"| @Ident"`                    // only in FuncCall
+	Ident      *string        `parser:"| @Ident"`                    // only in FuncCall or Assignment
 }
 
 type Null struct {
@@ -59,6 +57,17 @@ type In struct {
 	FuncCall *FuncCall `parser:"@@"`
 	Name     *string   `parser:"| @Ident"`
 }
+
+var (
+	reqFuncName = "Req"
+	eqFuncName  = "Eq"
+	neFuncName  = "Ne"
+	gtFuncName  = "Gt"
+	gteFuncName = "Gte"
+	ltFuncName  = "Lt"
+	lteFuncName = "Lte"
+	andFuncName = "And"
+)
 
 func NewScript(data []byte) (*Script, error) {
 	parser, err := participle.Build[Script]()
@@ -95,23 +104,135 @@ func indent(s string) string {
 
 func (s *Script) String() string {
 	buf := strings.Builder{}
-	buf.WriteString("let:\n")
 	for _, assignment := range s.Expr.Let.Assignments {
-		buf.WriteString(indent(assignmentString(assignment)))
+		if assignment.Name == buildexpression.RequirementsKey {
+			assignment = transformRequirements(assignment)
+		}
+		buf.WriteString(assignmentString(assignment))
 		buf.WriteString("\n")
 	}
 	buf.WriteString("\n")
-	buf.WriteString("in:\n")
+	buf.WriteString("main = ")
 	switch {
 	case s.Expr.Let.In.FuncCall != nil:
-		buf.WriteString(indent(apString(s.Expr.Let.In.FuncCall)))
+		buf.WriteString(apString(s.Expr.Let.In.FuncCall))
 	case s.Expr.Let.In.Name != nil:
-		buf.WriteString(indent(*s.Expr.Let.In.Name))
+		buf.WriteString(*s.Expr.Let.In.Name)
 	}
 	return buf.String()
 }
 
+// transformRequirements transforms a buildexpression list of requirements in object form into a
+// list of requirements in function-call form, which is how requirements are represented in
+// buildscripts.
+// This is to avoid custom marshaling code and reuse existing marshaling code.
+func transformRequirements(reqs *buildexpression.Var) *buildexpression.Var {
+	newReqs := &buildexpression.Var{
+		Name: buildexpression.RequirementsKey,
+		Value: &buildexpression.Value{
+			List: &[]*buildexpression.Value{},
+		},
+	}
+
+	for _, req := range *reqs.Value.List {
+		*newReqs.Value.List = append(*newReqs.Value.List, transformRequirement(req))
+	}
+
+	return newReqs
+}
+
+// transformRequirement transforms a buildexpression requirement in object form into a requirement
+// in function-call form.
+// For example, transform something like
+//
+//	{"name": "<name>", "namespace": "<namespace>",
+//		"version_requirements": [{"comparator": "<op>", "version": "<version>"}]}
+//
+// into something like
+//
+//	Req(name = "<namespace>/<name>", version = <op>("<version>"))
+func transformRequirement(req *buildexpression.Value) *buildexpression.Value {
+	newReq := &buildexpression.Value{
+		Ap: &buildexpression.Ap{
+			Name:      reqFuncName,
+			Arguments: []*buildexpression.Value{},
+		},
+	}
+
+	// Extract namespace, name, and version from requirement object.
+	name := ""
+	var version *buildexpression.Ap
+	for _, arg := range *req.Object {
+		switch arg.Name {
+		case buildexpression.RequirementNameKey:
+			name += *arg.Value.Str
+
+		case buildexpression.RequirementNamespaceKey:
+			name = fmt.Sprintf("%s/%s", *arg.Value.Str, name)
+
+		case buildexpression.RequirementVersionRequirementsKey:
+			version = transformVersion(arg)
+		}
+	}
+
+	// Add the arguments to the function transformation.
+	newReq.Ap.Arguments = append(newReq.Ap.Arguments, &buildexpression.Value{
+		Assignment: &buildexpression.Var{
+			Name:  buildexpression.RequirementNameKey,
+			Value: &buildexpression.Value{Str: ptr.To(name)},
+		},
+	})
+	if version != nil {
+		newReq.Ap.Arguments = append(newReq.Ap.Arguments, &buildexpression.Value{
+			Assignment: &buildexpression.Var{
+				Name:  buildexpression.RequirementVersionKey,
+				Value: &buildexpression.Value{Ap: version},
+			},
+		})
+	}
+
+	return newReq
+}
+
+// transformVersion transforms a buildexpression version_requirements list in object form into
+// function-call form.
+// For example, transform something like
+//
+//	[{"comparator": "<op1>", "version": "<version1>"}, {"comparator": "<op2>", "version": "<version2>"}]
+//
+// into something like
+//
+//	And(<op1>("<version1>"), <op2>("<version2>"))
+func transformVersion(requirements *buildexpression.Var) *buildexpression.Ap {
+	var aps []*buildexpression.Ap
+	for _, constraint := range *requirements.Value.List {
+		ap := &buildexpression.Ap{}
+		for _, o := range *constraint.Object {
+			switch o.Name {
+			case buildexpression.RequirementVersionKey:
+				ap.Arguments = []*buildexpression.Value{{Str: o.Value.Str}}
+			case buildexpression.RequirementComparatorKey:
+				ap.Name = strings.Title(*o.Value.Str)
+			}
+		}
+		aps = append(aps, ap)
+	}
+
+	if len(aps) == 1 {
+		return aps[0] // e.g. Eq("1.0")
+	}
+
+	args := make([]*buildexpression.Value, len(aps))
+	for i, ap := range aps {
+		args[i] = &buildexpression.Value{Ap: ap}
+	}
+	return &buildexpression.Ap{Name: andFuncName, Arguments: args} // e.g. And(Gt("1.0"), Lt("3.0"))
+}
+
 func assignmentString(a *buildexpression.Var) string {
+	if a.Name == buildexpression.RequirementsKey {
+		a = transformRequirements(a)
+	}
 	return fmt.Sprintf("%s = %s", a.Name, valueString(a.Value))
 }
 
@@ -134,6 +255,9 @@ func valueString(v *buildexpression.Value) string {
 		return buf.String()
 
 	case v.Str != nil:
+		if strings.HasPrefix(*v.Str, "$") { // variable reference
+			return strings.TrimLeft(*v.Str, "$")
+		}
 		return strconv.Quote(*v.Str)
 
 	case v.Float != nil:
@@ -165,16 +289,44 @@ func valueString(v *buildexpression.Value) string {
 	return fmt.Sprintf("[\n]") // participle does not create v.List if it's empty
 }
 
+// inlineFunctions contains buildscript function names whose arguments should all be written on a
+// single line. By default, function arguments are written one per line.
+var inlineFunctions = []string{
+	reqFuncName,
+	eqFuncName, neFuncName,
+	gtFuncName, gteFuncName,
+	ltFuncName, lteFuncName,
+	andFuncName,
+}
+
 func apString(f *buildexpression.Ap) string {
+	var (
+		newline = "\n"
+		comma   = ","
+		indent  = indent
+	)
+
+	if funk.Contains(inlineFunctions, f.Name) {
+		newline = ""
+		comma = ", "
+		indent = func(s string) string {
+			return s
+		}
+	}
+
 	buf := bytes.Buffer{}
-	buf.WriteString(fmt.Sprintf("%s(\n", f.Name))
+	buf.WriteString(fmt.Sprintf("%s(%s", f.Name, newline))
+
 	for i, argument := range f.Arguments {
 		buf.WriteString(indent(valueString(argument)))
+
 		if i+1 < len(f.Arguments) {
-			buf.WriteString(",")
+			buf.WriteString(comma)
 		}
-		buf.WriteString("\n")
+
+		buf.WriteString(newline)
 	}
+
 	buf.WriteString(")")
 	return buf.String()
 }

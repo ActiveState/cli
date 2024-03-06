@@ -1,7 +1,6 @@
 package update
 
 import (
-	"context"
 	"os"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -56,7 +55,7 @@ func New(prime primeable) *Update {
 func (u *Update) Run(params *Params) error {
 	// Check for available update
 	channel := fetchChannel(params.Channel, false)
-	upd, err := u.svc.CheckUpdate(context.Background(), channel, "")
+	upd, err := updater.NewDefaultChecker(u.cfg, u.an).CheckFor(channel, "")
 	if err != nil {
 		return errs.AddTips(locale.WrapError(
 			err, "err_update_fetch",
@@ -66,7 +65,7 @@ func (u *Update) Run(params *Params) error {
 		))
 	}
 
-	update := updater.NewUpdateInstaller(u.an, updater.NewAvailableUpdateFromGraph(upd))
+	update := updater.NewUpdateInstaller(u.an, upd)
 	if !update.ShouldInstall() {
 		logging.Debug("No update found")
 		u.out.Print(output.Prepare(

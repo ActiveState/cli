@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -60,7 +61,7 @@ func (r *Refresh) Run(params *Params) error {
 		if errs.Matches(err, &projectfile.ErrorNoDefaultProject{}) {
 			return locale.WrapError(err, "err_use_default_project_does_not_exist")
 		}
-		return locale.WrapError(err, "err_refresh_cannot_load_project", "Cannot load project to update runtime for")
+		return rationalize.ErrNoProject
 	}
 
 	rti, err := runtime.NewFromProject(proj, target.TriggerRefresh, r.analytics, r.svcModel, r.out, r.auth, r.config)

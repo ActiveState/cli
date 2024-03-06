@@ -13,8 +13,11 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/git"
+	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -57,12 +60,6 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		return "", errs.Wrap(err, "Could not get absolute path")
 	}
 
-	// Re-enable in DX-2307.
-	//emptyDir, err := fileutils.IsEmptyDir(path)
-	//if err != nil {
-	//	multilog.Error("Unable to check if directory is empty: %v", err)
-	//}
-
 	// If project does not exist at path then we must checkout
 	// the project and create the project file
 	pj, err := model.FetchProjectByName(ns.Owner, ns.Project)
@@ -70,22 +67,24 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		return "", locale.WrapError(err, "err_fetch_project", "", ns.String())
 	}
 
+	var branch *mono_models.Branch
 	if branchName == "" {
-		branch, err := model.DefaultBranchForProject(pj)
+		branch, err = model.DefaultBranchForProject(pj)
 		if err != nil {
 			return "", errs.Wrap(err, "Could not grab branch for project")
 		}
 		branchName = branch.Label
+	} else {
+		branch, err = model.BranchForProjectByName(pj, branchName)
+		if err != nil {
+			return "", locale.WrapError(err, "err_fetch_branch", "", branchName)
+		}
 	}
 
 	commitID := ns.CommitID
 	if commitID == nil {
-		branch, err := model.BranchForProjectByName(pj, branchName)
-		if err != nil {
-			return "", locale.WrapError(err, "err_fetch_branch", "", branchName)
-		}
 		commitID = branch.CommitID
-	} else {
+	} else if branchName == "" {
 		// It's possible the given commitID does not belong to the default project branch.
 		// If so, find the correct branch.
 		for _, branch := range pj.Branches {
@@ -139,31 +138,25 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	configFile := filepath.Join(path, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
 		_, err = projectfile.Create(&projectfile.CreateParams{
-			Owner:          owner,
-			Project:        pj.Name, // match case on the Platform
-			BranchName:     branchName,
-			Directory:      path,
-			Language:       language.String(),
-			Cache:          cachePath,
-			LegacyCommitID: commitID.String(), // remove in DX-2307
+			Owner:      owner,
+			Project:    pj.Name, // match case on the Platform
+			BranchName: branchName,
+			Directory:  path,
+			Language:   language.String(),
+			Cache:      cachePath,
 		})
 		if err != nil {
+			if osutils.IsAccessDeniedError(err) {
+				return "", &ErrNoPermission{err, path}
+			}
 			return "", errs.Wrap(err, "Could not create projectfile")
 		}
 	}
 
-	// Re-enable in DX-2307.
-	//err = localcommit.Set(path, commitID.String())
-	//if err != nil {
-	//	return "", errs.Wrap(err, "Could not create local commit file")
-	//}
-	//if emptyDir || fileutils.DirExists(filepath.Join(path, ".git")) {
-	//	err = localcommit.AddToGitIgnore(path)
-	//	if err != nil {
-	//		r.Outputer.Notice(locale.Tr("notice_commit_id_gitignore", constants.ProjectConfigDirName, constants.CommitIdFileName))
-	//		multilog.Error("Unable to add local commit file to .gitignore: %v", err)
-	//	}
-	//}
+	err = localcommit.Set(path, commitID.String())
+	if err != nil {
+		return "", errs.Wrap(err, "Could not create local commit file")
+	}
 
 	return path, nil
 }

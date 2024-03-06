@@ -46,7 +46,7 @@ func NewDirs(base string) (*Dirs, error) {
 	homeDir := filepath.Join(base, "home")
 	tempDir := filepath.Join(base, "temp")
 
-	subdirs := []string{config, cache, bin, work, defaultBin}
+	subdirs := []string{config, cache, bin, work, defaultBin, sockRoot, homeDir, tempDir}
 	for _, subdir := range subdirs {
 		if err := os.MkdirAll(subdir, 0700); err != nil {
 			return nil, err

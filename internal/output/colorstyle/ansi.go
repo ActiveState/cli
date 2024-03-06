@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package colorstyle
@@ -25,6 +26,7 @@ var ansiStyleMap = map[Style]string{
 	Magenta:   "\x1b[35",
 	Cyan:      "\x1b[36",
 	White:     "\x1b[37",
+	Orange:    "\x1b[38;5;208",
 }
 
 func New(writer io.Writer) *Styler {

@@ -113,7 +113,7 @@ type Build map[string]string
 // ConstantFields are the common fields for the Constant type. This is required
 // for type composition related to its yaml.Unmarshaler implementation.
 type ConstantFields struct {
-	Conditional Conditional `yaml:"if"`
+	Conditional Conditional `yaml:"if,omitempty"`
 }
 
 // Constant covers the constant structure, which goes under Project
@@ -175,7 +175,7 @@ type SecretScopes struct {
 type Secret struct {
 	Name        string      `yaml:"name"`
 	Description string      `yaml:"description"`
-	Conditional Conditional `yaml:"if"`
+	Conditional Conditional `yaml:"if,omitempty"`
 }
 
 var _ ConstrainedEntity = &Secret{}
@@ -227,7 +227,7 @@ type ConstrainedEntity interface {
 type Package struct {
 	Name        string      `yaml:"name"`
 	Version     string      `yaml:"version"`
-	Conditional Conditional `yaml:"if"`
+	Conditional Conditional `yaml:"if,omitempty"`
 	Build       Build       `yaml:"build,omitempty"`
 }
 
@@ -268,7 +268,7 @@ func MakePackagesFromConstrainedEntities(items []ConstrainedEntity) (packages []
 // for type composition related to its yaml.Unmarshaler implementation.
 type EventFields struct {
 	Scope       []string    `yaml:"scope"`
-	Conditional Conditional `yaml:"if"`
+	Conditional Conditional `yaml:"if,omitempty"`
 	id          string
 }
 
@@ -337,7 +337,7 @@ type ScriptFields struct {
 	Filename    string      `yaml:"filename,omitempty"`
 	Standalone  bool        `yaml:"standalone,omitempty"`
 	Language    string      `yaml:"language,omitempty"`
-	Conditional Conditional `yaml:"if"`
+	Conditional Conditional `yaml:"if,omitempty"`
 }
 
 // Script covers the script structure, which goes under Project
@@ -558,21 +558,20 @@ func (p *Project) Path() string {
 	return p.path
 }
 
-// LegacyCommitID is for use by commitmediator.Get() ONLY.
+// LegacyCommitID is for use by legacy mechanics ONLY
 // It returns a pre-migrated project's commit ID from activestate.yaml.
 func (p *Project) LegacyCommitID() string {
 	return p.parsedURL.LegacyCommitID
 }
 
-// LegacySetCommit is for use by commitmediator.Set() ONLY.
-// It changes the legacy commit ID in activestate.yaml.
-// Remove this in DX-2307.
-func (p *Project) LegacySetCommit(commitID string) error {
+// SetLegacyCommit sets the commit id within the current project file. This is done
+// in-place so that line order is preserved.
+func (p *Project) SetLegacyCommit(commitID string) error {
 	pf := NewProjectField()
 	if err := pf.LoadProject(p.Project); err != nil {
 		return errs.Wrap(err, "Could not load activestate.yaml")
 	}
-	pf.LegacySetCommit(commitID)
+	pf.SetLegacyCommitID(commitID)
 	if err := pf.Save(p.path); err != nil {
 		return errs.Wrap(err, "Could not save activestate.yaml")
 	}
@@ -582,7 +581,6 @@ func (p *Project) LegacySetCommit(commitID string) error {
 	return nil
 }
 
-// Remove this function in DX-2307.
 func (p *Project) Dir() string {
 	return filepath.Dir(p.path)
 }
@@ -711,7 +709,9 @@ func (p *Project) save(cfg ConfigGetter, path string) error {
 		return errs.Wrap(err, "f.Write %s failed", path)
 	}
 
-	StoreProjectMapping(cfg, fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
+	if cfg != nil {
+		StoreProjectMapping(cfg, fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
+	}
 
 	return nil
 }
@@ -934,17 +934,16 @@ func FromExactPath(path string) (*Project, error) {
 
 // CreateParams are parameters that we create a custom activestate.yaml file from
 type CreateParams struct {
-	Owner          string
-	Project        string
-	BranchName     string
-	Directory      string
-	Content        string
-	Language       string
-	Private        bool
-	path           string
-	ProjectURL     string
-	Cache          string
-	LegacyCommitID string // remove in DX-2307
+	Owner      string
+	Project    string
+	BranchName string
+	Directory  string
+	Content    string
+	Language   string
+	Private    bool
+	path       string
+	ProjectURL string
+	Cache      string
 }
 
 // Create will create a new activestate.yaml with a projectURL for the given details
@@ -978,11 +977,6 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 
 		if params.BranchName != "" {
 			q.Set("branch", params.BranchName)
-		}
-
-		// Remove this block in DX-2307.
-		if params.LegacyCommitID != "" {
-			q.Set("commitID", params.LegacyCommitID)
 		}
 
 		u.RawQuery = q.Encode()
@@ -1354,6 +1348,7 @@ func GetProjectPaths(cfg ConfigGetter, namespace string) []string {
 // StoreProjectMapping associates the namespace with the project
 // path in the config
 func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
+	SetRecentlyUsedNamespace(cfg, namespace)
 	err := cfg.GetThenSet(
 		LocalProjectsConfigKey,
 		func(v interface{}) (interface{}, error) {
@@ -1450,5 +1445,12 @@ func CleanProjectMapping(cfg ConfigGetter) {
 	)
 	if err != nil {
 		logging.Debug("Could not clean project mapping in config, error: %v", err)
+	}
+}
+
+func SetRecentlyUsedNamespace(cfg ConfigGetter, namespace string) {
+	err := cfg.Set(constants.LastUsedNamespacePrefname, namespace)
+	if err != nil {
+		logging.Debug("Could not set recently used namespace in config, error: %v", err)
 	}
 }

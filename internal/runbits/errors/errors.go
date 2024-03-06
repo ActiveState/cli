@@ -57,7 +57,7 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 			rerrs = []error{o.error}
 		}
 		for _, errv := range rerrs {
-			message := trimError(locale.ErrorMessage(errv))
+			message := normalizeError(locale.ErrorMessage(errv))
 			if f == output.PlainFormatName {
 				outLines = append(outLines, formatMessage(message)...)
 			} else {
@@ -76,7 +76,7 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 		outLines = append(outLines, "") // separate error from "Need More Help?" header
 		outLines = append(outLines, strings.TrimSpace(output.Title(locale.Tl("err_more_help", "Need More Help?")).String()))
 		for _, tip := range errorTips {
-			outLines = append(outLines, fmt.Sprintf(" [DISABLED]•[/RESET] %s", trimError(tip)))
+			outLines = append(outLines, fmt.Sprintf(" [DISABLED]•[/RESET] %s", normalizeError(tip)))
 		}
 	}
 	return strings.Join(outLines, "\n")
@@ -127,11 +127,13 @@ func (o *OutputError) MarshalStructured(f output.Format) interface{} {
 	return output.StructuredError{message, getErrorTips(o.error)}
 }
 
-func trimError(msg string) string {
-	if strings.Count(msg, ".") > 1 || strings.Count(msg, ",") > 0 {
-		return msg // Don't trim dots if we have multiple sentences.
+// normalizeError ensures the given erorr message ends with a period.
+func normalizeError(msg string) string {
+	msg = strings.TrimRight(msg, " \r\n")
+	if !strings.HasSuffix(msg, ".") {
+		msg = msg + "."
 	}
-	return strings.TrimRight(msg, " .")
+	return msg
 }
 
 // ParseUserFacing returns the exit code and a user facing error message.
@@ -193,6 +195,7 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.JoinMessage(err), stack)
 		action = anaConst.ActCommandError
 	} else {
+		logging.Debug("Returning input error:\n%s\nCreated at:\n%s", errs.JoinMessage(err), stack)
 		action = anaConst.ActCommandInputError
 		for _, err := range errs.Unpack(err) {
 			if locale.IsInputErrorNonRecursive(err) {

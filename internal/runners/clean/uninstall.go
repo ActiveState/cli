@@ -60,7 +60,7 @@ func newUninstall(out output.Outputer, prompt promptable, cfg *config.Instance, 
 
 func (u *Uninstall) Run(params *UninstallParams) error {
 	if os.Getenv(constants.ActivatedStateEnvVarName) != "" {
-		return locale.NewError("err_uninstall_activated")
+		return locale.NewInputError("err_uninstall_activated")
 	}
 
 	err := verifyInstallation()

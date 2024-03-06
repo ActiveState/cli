@@ -160,6 +160,11 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	refreshCmd := newRefreshCommand(prime)
 
+	buildsCmd := newBuildsCommand(prime)
+	buildsCmd.AddChildren(
+		newBuildsDownloadCommand(prime),
+	)
+
 	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
 		newHelloCommand(prime),
@@ -208,8 +213,9 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		refreshCmd,
 		newSwitchCommand(prime),
 		newTestCommand(prime),
-		//newCommitCommand(prime), // re-enable in DX-2307
+		newCommitCommand(prime),
 		newPublish(prime),
+		buildsCmd,
 	)
 
 	return &CmdTree{

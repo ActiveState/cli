@@ -4,11 +4,8 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/go-openapi/strfmt"
 )
@@ -109,7 +106,11 @@ func ParseNamespace(raw string) (*Namespaced, error) {
 	}
 
 	if len(groups) > 3 && len(groups[3]) > 0 {
-		uuid := strfmt.UUID(groups[3])
+		uuidString := groups[3]
+		if !strfmt.IsUUID(uuidString) {
+			return nil, locale.NewInputError("err_invalid_commit_id", "", uuidString)
+		}
+		uuid := strfmt.UUID(uuidString)
 		names.CommitID = &uuid
 	}
 
@@ -129,7 +130,11 @@ func ParseProjectNoOwner(raw string) (*Namespaced, error) {
 	}
 
 	if len(groups) > 2 && len(groups[2]) > 0 {
-		uuid := strfmt.UUID(groups[2])
+		uuidString := groups[2]
+		if !strfmt.IsUUID(uuidString) {
+			return nil, locale.NewInputError("err_invalid_commit_id", "", uuidString)
+		}
+		uuid := strfmt.UUID(uuidString)
 		names.CommitID = &uuid
 	}
 
@@ -153,10 +158,7 @@ func NameSpaceForConfig(configFile string) *Namespaced {
 		Project: prj.Name(),
 	}
 
-	commitID, err := commitmediator.Get(prj)
-	if err != nil {
-		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
-	}
+	commitID := strfmt.UUID(prj.LegacyCommitID()) // Not using localcommit due to import cycle. See anti-pattern comment in localcommit pkg.
 	if commitID != "" {
 		names.CommitID = &commitID
 	}

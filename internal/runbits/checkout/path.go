@@ -41,6 +41,11 @@ type ErrAlreadyCheckedOut struct {
 	Path string
 }
 
+type ErrNoPermission struct {
+	error
+	Path string
+}
+
 func validatePath(ns *project.Namespaced, path string) error {
 	if !fileutils.TargetExists(path) {
 		return nil

@@ -248,7 +248,7 @@ func (r *Runner) Run(params *Params) error {
 	result := graphModel.PublishResult{}
 
 	if err := r.client.Run(pr, &result); err != nil {
-		return locale.WrapError(err, "err_uploadingredient_publish", "Could not publish ingredient")
+		return locale.WrapError(err, "err_uploadingredient_publish", "", err.Error())
 	}
 
 	if result.Publish.Error != "" {
@@ -373,7 +373,7 @@ func prepareEditRequest(ingredient *ParentIngredient, r *request.PublishVariable
 				request.PublishVariableDep{request.Dependency{
 					Name:                ptr.From(dep.Feature, ""),
 					Namespace:           ptr.From(dep.Namespace, ""),
-					VersionRequirements: model.RequirementsToString(dep.Requirements),
+					VersionRequirements: model.InventoryRequirementsToString(dep.Requirements),
 				}, []request.Dependency{}},
 			)
 		}

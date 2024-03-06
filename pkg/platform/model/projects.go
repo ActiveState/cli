@@ -20,8 +20,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-type ErrProjectNameConflict struct{ *locale.LocalizedError }
-
 type ErrProjectNotFound struct {
 	Organization string
 	Project      string
@@ -189,8 +187,8 @@ func CreateEmptyProject(owner, name string, private bool) (*mono_models.Project,
 	pj, err := authentication.Client().Projects.AddProject(addParams, authentication.ClientAuth())
 	if err != nil {
 		msg := api.ErrorMessageFromPayload(err)
-		if _, ok := err.(*projects.AddProjectConflict); ok {
-			return nil, &ErrProjectNameConflict{locale.WrapInputError(err, msg)}
+		if errs.Matches(err, &projects.AddProjectConflict{}) || errs.Matches(err, &projects.AddProjectNotFound{}) {
+			return nil, locale.WrapInputError(err, msg)
 		}
 		return nil, locale.WrapError(err, msg)
 	}
@@ -258,6 +256,9 @@ func MakeProjectPrivate(owner, name string) error {
 	_, err := authentication.Client().Projects.EditProject(editParams, authentication.ClientAuth())
 	if err != nil {
 		msg := api.ErrorMessageFromPayload(err)
+		if errs.Matches(err, &projects.EditProjectBadRequest{}) {
+			return locale.WrapInputError(err, msg) // user does not have permission
+		}
 		return locale.WrapError(err, msg)
 	}
 

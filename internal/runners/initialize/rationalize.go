@@ -2,20 +2,22 @@ package initialize
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
-func rationalizeError(namespace *project.Namespaced, rerr *error) {
+func rationalizeError(owner, project string, rerr *error) {
 	var pcErr *bpModel.ProjectCreatedError
 	var errArtifactSetup *setup.ArtifactSetupErrors
 	var projectExistsErr *errProjectExists
+	var unrecognizedLanguageErr *errUnrecognizedLanguage
 
 	switch {
 	case rerr == nil:
@@ -30,7 +32,7 @@ func rationalizeError(namespace *project.Namespaced, rerr *error) {
 
 	case errors.As(*rerr, &projectExistsErr):
 		*rerr = errs.WrapUserFacing(*rerr,
-			locale.Tr("err_init_project_exists", namespace.Project, projectExistsErr.path),
+			locale.Tr("err_init_project_exists", project, projectExistsErr.path),
 			errs.SetInput(),
 		)
 
@@ -42,7 +44,14 @@ func rationalizeError(namespace *project.Namespaced, rerr *error) {
 
 	case errors.Is(*rerr, errNoOwner):
 		*rerr = errs.WrapUserFacing(*rerr,
-			locale.Tr("err_init_invalid_org", namespace.Owner),
+			locale.Tr("err_init_invalid_org", owner),
+			errs.SetInput(),
+		)
+
+	case errors.As(*rerr, &unrecognizedLanguageErr):
+		opts := strings.Join(language.RecognizedSupportedsNames(), ", ")
+		*rerr = errs.WrapUserFacing(*rerr,
+			locale.Tr("err_invalid_language", unrecognizedLanguageErr.Name, opts),
 			errs.SetInput(),
 		)
 
@@ -52,7 +61,7 @@ func rationalizeError(namespace *project.Namespaced, rerr *error) {
 		case bpModel.AlreadyExistsErrorType:
 			*rerr = errs.WrapUserFacing(
 				pcErr,
-				locale.Tl("err_create_project_exists", "The project '{{.V0}}' already exists under '{{.V1}}'", namespace.Project, namespace.Owner),
+				locale.Tl("err_create_project_exists", "The project '{{.V0}}' already exists under '{{.V1}}'", project, owner),
 				errs.SetInput(),
 			)
 		case bpModel.ForbiddenErrorType:
@@ -63,7 +72,7 @@ func rationalizeError(namespace *project.Namespaced, rerr *error) {
 		case bpModel.NotFoundErrorType:
 			*rerr = errs.WrapUserFacing(
 				pcErr,
-				locale.Tl("err_create_project_not_found", "Could not create project because the organization '{{.V0}}' was not found.", namespace.Owner),
+				locale.Tl("err_create_project_not_found", "Could not create project because the organization '{{.V0}}' was not found.", owner),
 				errs.SetInput(),
 				errs.SetTips(locale.T("err_init_authenticated")))
 		}
