@@ -135,7 +135,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_cannot_apply_changeset", "Could not apply changeset")
 	}
 
-	if err := be.SetDefaultTimestamp(); err != nil {
+	if _, err := be.SetDefaultTimestamp(); err != nil {
 		return locale.WrapError(err, "err_cannot_set_timestamp", "Could not set timestamp")
 	}
 

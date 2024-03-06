@@ -683,7 +683,7 @@ func (e *BuildExpression) getSolveNodeArguments() ([]*Value, error) {
 	return solveAp.Arguments, nil
 }
 
-func (e *BuildExpression) GetSolveAtTimeValue() (*Value, error) {
+func (e *BuildExpression) getSolveAtTimeValue() (*Value, error) {
 	solveAp, err := e.getSolveNode()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get solve node")
@@ -892,19 +892,30 @@ func (e *BuildExpression) removePlatform(platformID strfmt.UUID) error {
 	return nil
 }
 
-func (e *BuildExpression) SetDefaultTimestamp() error {
-	atTimeNode, err := e.GetSolveAtTimeValue()
+// SetDefaultTimestamp sets the at_time of this build expression to "$at_time", the Platform
+// default timestamp, and returns the previous timestamp, if one was set. (If the previous at_time
+// was already "$at_time", the returned value will be nil.)
+func (e *BuildExpression) SetDefaultTimestamp() (*strfmt.DateTime, error) {
+	atTimeNode, err := e.getSolveAtTimeValue()
 	if err != nil {
-		return errs.Wrap(err, "Could not get at time node")
+		return nil, errs.Wrap(err, "Could not get at time node")
+	}
+	var atTimePtr *strfmt.DateTime
+	if atTimeNode.Str != nil && !strings.HasPrefix(*atTimeNode.Str, "$") {
+		atTime, err := strfmt.ParseDateTime(*atTimeNode.Str)
+		if err != nil {
+			return nil, errs.Wrap(err, "Invalid timestamp: %s", *atTimeNode.Str)
+		}
+		atTimePtr = &atTime
 	}
 	atTimeNode.Str = ptr.To("$" + AtTimeKey)
-	return nil
+	return atTimePtr, nil
 }
 
 // MaybeUpdateTimestamp looks at the solve node's "at_time" parameter and if it is "$at_time",
 // replaces it with the given timestamp.
 func (e *BuildExpression) MaybeUpdateTimestamp(atTime strfmt.DateTime) error {
-	atTimeNode, err := e.GetSolveAtTimeValue()
+	atTimeNode, err := e.getSolveAtTimeValue()
 	if err != nil {
 		return errs.Wrap(err, "Could not get at time node")
 	}

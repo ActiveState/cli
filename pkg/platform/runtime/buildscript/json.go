@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
@@ -18,7 +20,19 @@ func (s *Script) MarshalJSON() ([]byte, error) {
 	for _, assignment := range s.Assignments {
 		key := assignment.Key
 		value := assignment.Value
-		if key == "main" {
+		switch key {
+		case buildexpression.AtTimeKey:
+			if value.Str != nil {
+				atTime, err := strfmt.ParseDateTime(strings.Trim(*value.Str, `"`))
+				if err != nil {
+					return nil, errs.Wrap(err, "Invalid timestamp: %s", *value.Str)
+				}
+				s.atTime = &atTime
+			} else {
+				return nil, errs.New("String timestamp expected for '%s'", key)
+			}
+			continue // do not include this custom assignment in the let block
+		case "main":
 			key = "in"
 		}
 		let[key] = value

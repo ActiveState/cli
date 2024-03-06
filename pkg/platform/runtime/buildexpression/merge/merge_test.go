@@ -1,11 +1,9 @@
 package merge
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,7 +11,9 @@ import (
 
 func TestMergeAdd(t *testing.T) {
 	scriptA, err := buildscript.NewScript([]byte(
-		`runtime = solve(
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
 	platforms = [
 		"12345",
 		"67890"
@@ -26,13 +26,11 @@ func TestMergeAdd(t *testing.T) {
 
 main = runtime`))
 	require.NoError(t, err)
-	bytes, err := json.Marshal(scriptA)
-	require.NoError(t, err)
-	exprA, err := buildexpression.New(bytes)
-	require.NoError(t, err)
 
 	scriptB, err := buildscript.NewScript([]byte(
-		`runtime = solve(
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
 	platforms = [
 		"12345",
 		"67890"
@@ -45,10 +43,6 @@ main = runtime`))
 
 main = runtime`))
 	require.NoError(t, err)
-	bytes, err = json.Marshal(scriptB)
-	require.NoError(t, err)
-	exprB, err := buildexpression.New(bytes)
-	require.NoError(t, err)
 
 	strategies := &mono_models.MergeStrategies{
 		OverwriteChanges: []*mono_models.CommitChangeEditable{
@@ -56,16 +50,18 @@ main = runtime`))
 		},
 	}
 
-	require.True(t, isAutoMergePossible(exprA, exprB))
+	require.True(t, isAutoMergePossible(scriptA.Expr, scriptB.Expr))
 
-	mergedExpr, err := Merge(exprA, exprB, strategies)
+	mergedExpr, err := Merge(scriptA.Expr, scriptB.Expr, strategies)
 	require.NoError(t, err)
 
 	mergedScript, err := buildscript.NewScriptFromBuildExpression(mergedExpr)
 	require.NoError(t, err)
 
 	assert.Equal(t,
-		`runtime = solve(
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
 	platforms = [
 		"12345",
 		"67890"
@@ -82,7 +78,9 @@ main = runtime`, mergedScript.String())
 
 func TestMergeRemove(t *testing.T) {
 	scriptA, err := buildscript.NewScript([]byte(
-		`runtime = solve(
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
 	platforms = [
 		"12345",
 		"67890"
@@ -96,13 +94,11 @@ func TestMergeRemove(t *testing.T) {
 
 main = runtime`))
 	require.NoError(t, err)
-	bytes, err := json.Marshal(scriptA)
-	require.NoError(t, err)
-	exprA, err := buildexpression.New(bytes)
-	require.NoError(t, err)
 
 	scriptB, err := buildscript.NewScript([]byte(
-		`runtime = solve(
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
 	platforms = [
 		"12345",
 		"67890"
@@ -115,10 +111,6 @@ main = runtime`))
 
 main = runtime`))
 	require.NoError(t, err)
-	bytes, err = json.Marshal(scriptB)
-	require.NoError(t, err)
-	exprB, err := buildexpression.New(bytes)
-	require.NoError(t, err)
 
 	strategies := &mono_models.MergeStrategies{
 		OverwriteChanges: []*mono_models.CommitChangeEditable{
@@ -126,16 +118,18 @@ main = runtime`))
 		},
 	}
 
-	require.True(t, isAutoMergePossible(exprA, exprB))
+	require.True(t, isAutoMergePossible(scriptA.Expr, scriptB.Expr))
 
-	mergedExpr, err := Merge(exprA, exprB, strategies)
+	mergedExpr, err := Merge(scriptA.Expr, scriptB.Expr, strategies)
 	require.NoError(t, err)
 
 	mergedScript, err := buildscript.NewScriptFromBuildExpression(mergedExpr)
 	require.NoError(t, err)
 
 	assert.Equal(t,
-		`runtime = solve(
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
 	platforms = [
 		"12345",
 		"67890"
@@ -151,7 +145,9 @@ main = runtime`, mergedScript.String())
 
 func TestMergeConflict(t *testing.T) {
 	scriptA, err := buildscript.NewScript([]byte(
-		`runtime = solve(
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
 	platforms = [
 		"12345",
 		"67890"
@@ -163,13 +159,11 @@ func TestMergeConflict(t *testing.T) {
 
 main = runtime`))
 	require.NoError(t, err)
-	bytes, err := json.Marshal(scriptA)
-	require.NoError(t, err)
-	exprA, err := buildexpression.New(bytes)
-	require.NoError(t, err)
 
 	scriptB, err := buildscript.NewScript([]byte(
-		`runtime = solve(
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
 	platforms = [
 		"12345"
 	],
@@ -181,14 +175,10 @@ main = runtime`))
 
 main = runtime`))
 	require.NoError(t, err)
-	bytes, err = json.Marshal(scriptB)
-	require.NoError(t, err)
-	exprB, err := buildexpression.New(bytes)
-	require.NoError(t, err)
 
-	assert.False(t, isAutoMergePossible(exprA, exprB)) // platforms do not match
+	assert.False(t, isAutoMergePossible(scriptA.Expr, scriptB.Expr)) // platforms do not match
 
-	_, err = Merge(exprA, exprB, nil)
+	_, err = Merge(scriptA.Expr, scriptB.Expr, nil)
 	require.Error(t, err)
 }
 

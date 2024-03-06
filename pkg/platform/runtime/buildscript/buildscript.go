@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -25,6 +26,7 @@ import (
 type Script struct {
 	Assignments []*Assignment `parser:"@@+"`
 	Expr        *buildexpression.BuildExpression
+	atTime      *strfmt.DateTime
 }
 
 type Assignment struct {
@@ -90,12 +92,18 @@ func NewScript(data []byte) (*Script, error) {
 		return nil, errs.Wrap(err, "Could not construct build expression")
 	}
 	script.Expr = expr
+	script.prepareForUse() // e.g. substitute "$at_time" with proper timestamp
 
 	return script, nil
 }
 
 func NewScriptFromBuildExpression(expr *buildexpression.BuildExpression) (*Script, error) {
-	return &Script{Expr: expr}, nil
+	atTime, err := expr.SetDefaultTimestamp()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not set default timestamp in buildexpression")
+	}
+
+	return &Script{Expr: expr, atTime: atTime}, nil
 }
 
 func indent(s string) string {
@@ -103,7 +111,19 @@ func indent(s string) string {
 }
 
 func (s *Script) String() string {
+	s.prepareForOutput()
+	defer s.prepareForUse()
+
 	buf := strings.Builder{}
+
+	if s.atTime != nil {
+		buf.WriteString(assignmentString(&buildexpression.Var{
+			Name:  buildexpression.AtTimeKey,
+			Value: &buildexpression.Value{Str: ptr.To(s.atTime.String())},
+		}))
+		buf.WriteString("\n")
+	}
+
 	for _, assignment := range s.Expr.Let.Assignments {
 		if assignment.Name == buildexpression.RequirementsKey {
 			assignment = transformRequirements(assignment)
@@ -111,6 +131,7 @@ func (s *Script) String() string {
 		buf.WriteString(assignmentString(assignment))
 		buf.WriteString("\n")
 	}
+
 	buf.WriteString("\n")
 	buf.WriteString("main = ")
 	switch {
@@ -119,7 +140,33 @@ func (s *Script) String() string {
 	case s.Expr.Let.In.Name != nil:
 		buf.WriteString(*s.Expr.Let.In.Name)
 	}
+
 	return buf.String()
+}
+
+// prepareForOutput prepares this script's buildexpression for output in buildscript format.
+// For example, substitute the solve node's "at_time" timestamp with a variable reference.
+// Since this function directly modifies the Expr field, callers of this function must balance it
+// with a call to `prepareForUse()` to restore the Expr to a useful state.
+func (s *Script) prepareForOutput() {
+	if s.atTime != nil {
+		_, err := s.Expr.SetDefaultTimestamp()
+		if err != nil {
+			multilog.Error("Failed to set default timestamp: %v", err)
+		}
+	}
+}
+
+// prepareForUse prepares this script's buildexpression for use in a buildplanner context.
+// For example, the solve node's "at_time" will not contain a variable reference if this script
+// has a top-level assignment for it.
+func (s *Script) prepareForUse() {
+	if s.atTime != nil {
+		err := s.Expr.MaybeUpdateTimestamp(*s.atTime)
+		if err != nil {
+			multilog.Error("Failed to possibly update at time: %v", err)
+		}
+	}
 }
 
 // transformRequirements transforms a buildexpression list of requirements in object form into a

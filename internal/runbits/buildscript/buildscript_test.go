@@ -15,7 +15,9 @@ import (
 
 func TestDiff(t *testing.T) {
 	script, err := buildscript.NewScript([]byte(
-		`runtime = solve(
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
 	platforms = [
 		"12345",
 		"67890"
@@ -35,12 +37,14 @@ main = runtime`))
 	require.NoError(t, err)
 
 	// Modify the build script.
-	(*script.Expr.Let.Assignments[0].Value.Ap.Arguments[0].Assignment.Value.List)[0].Str = ptr.To(`77777`)
+	(*script.Expr.Let.Assignments[0].Value.Ap.Arguments[1].Assignment.Value.List)[0].Str = ptr.To(`77777`)
 
 	// Generate the difference between the modified script and the original expression.
 	result, err := generateDiff(script, expr)
 	require.NoError(t, err)
-	assert.Equal(t, `runtime = solve(
+	assert.Equal(t, `at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
 	platforms = [
 <<<<<<< local
 		"77777",
@@ -71,7 +75,12 @@ func TestRealWorld(t *testing.T) {
 	require.NoError(t, err)
 	result, err := generateDiff(script1, script2.Expr)
 	require.NoError(t, err)
-	assert.Equal(t, `runtime = state_tool_artifacts_v1(
+	assert.Equal(t, `<<<<<<< local
+at_time = "2023-10-16T22:20:29.000Z"
+=======
+at_time = "2023-08-01T16:20:11.985Z"
+>>>>>>> remote
+runtime = state_tool_artifacts_v1(
 	build_flags = [
 	],
 	camel_flags = [
@@ -79,11 +88,7 @@ func TestRealWorld(t *testing.T) {
 	src = sources
 )
 sources = solve(
-<<<<<<< local
-	at_time = "2023-10-16T22:20:29.000000Z",
-=======
-	at_time = "2023-08-01T16:20:11.985000Z",
->>>>>>> remote
+	at_time = at_time,
 	platforms = [
 		"78977bc8-0f32-519d-80f3-9043f059398c",
 		"7c998ec2-7491-4e75-be4d-8885800ef5f2",
