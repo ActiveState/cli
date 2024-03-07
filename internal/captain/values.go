@@ -231,7 +231,7 @@ func (p *PackagesValue) Type() string {
 type TimeValue struct {
 	raw  string
 	Time *time.Time
-	Now  bool
+	now  bool
 }
 
 var _ FlagMarshaler = &TimeValue{}
@@ -249,12 +249,16 @@ func (u *TimeValue) Set(v string) error {
 		}
 		u.Time = &tsv
 	}
-	u.Now = v == "now"
+	u.now = v == "now"
 	return nil
 }
 
 func (u *TimeValue) Type() string {
 	return "timestamp"
+}
+
+func (u *TimeValue) Now() bool {
+	return u.now
 }
 
 type IntValue struct {
