@@ -43,10 +43,15 @@ type RunParams struct {
 // Initialize stores scope-related dependencies.
 type Initialize struct {
 	auth      *authentication.Auth
-	config    projectfile.ConfigGetter
+	config    Configurable
 	out       output.Outputer
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
+}
+
+type Configurable interface {
+	projectfile.ConfigGetter
+	GetBool(key string) bool
 }
 
 type primeable interface {

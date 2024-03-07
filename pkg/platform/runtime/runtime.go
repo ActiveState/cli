@@ -37,6 +37,11 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+type Configurable interface {
+	GetString(key string) string
+	GetBool(key string) bool
+}
+
 type Runtime struct {
 	disabled          bool
 	target            setup.Targeter
@@ -45,7 +50,7 @@ type Runtime struct {
 	svcm              *model.SvcModel
 	auth              *authentication.Auth
 	completed         bool
-	cfg               model.Configurable
+	cfg               Configurable
 	out               output.Outputer
 	resolvedArtifacts []*artifact.Artifact
 }
@@ -66,7 +71,7 @@ func IsNeedsCommitError(err error) bool {
 	return errs.Matches(err, &NeedsCommitError{})
 }
 
-func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel, auth *authentication.Auth, cfg model.Configurable, out output.Outputer) (*Runtime, error) {
+func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel, auth *authentication.Auth, cfg Configurable, out output.Outputer) (*Runtime, error) {
 	rt := &Runtime{
 		target:    target,
 		store:     store.New(target.Dir()),
@@ -86,7 +91,7 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 }
 
 // New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
-func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, auth *authentication.Auth, cfg model.Configurable, out output.Outputer) (*Runtime, error) {
+func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, auth *authentication.Auth, cfg Configurable, out output.Outputer) (*Runtime, error) {
 	logging.Debug("Initializing runtime for: %s/%s@%s", target.Owner(), target.Name(), target.CommitUUID())
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
@@ -147,7 +152,7 @@ func (r *Runtime) validateCache() error {
 		expr = string(data)
 	}
 
-	if !script.EqualsBuildExpressionBytes([]byte(expr)) {
+	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) && !script.EqualsBuildExpressionBytes([]byte(expr)) {
 		return &NeedsCommitError{errs.New("Runtime changes should be committed")}
 	}
 

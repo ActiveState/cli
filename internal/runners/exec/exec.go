@@ -36,12 +36,17 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
+type Configurable interface {
+	projectfile.ConfigGetter
+	GetBool(key string) bool
+}
+
 type Exec struct {
 	subshell  subshell.SubShell
 	proj      *project.Project
 	auth      *authentication.Auth
 	out       output.Outputer
-	cfg       projectfile.ConfigGetter
+	cfg       Configurable
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
 }
