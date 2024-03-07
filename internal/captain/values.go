@@ -8,10 +8,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 // NameVersionValue represents a flag that supports both a name and a version, the following formats are supported:
@@ -235,6 +231,7 @@ func (p *PackagesValue) Type() string {
 type TimeValue struct {
 	raw  string
 	Time *time.Time
+	Now  bool
 }
 
 var _ FlagMarshaler = &TimeValue{}
@@ -244,21 +241,15 @@ func (u *TimeValue) String() string {
 }
 
 func (u *TimeValue) Set(v string) error {
-	if v == "now" {
-		latest, err := model.FetchLatestRevisionTimeStamp(authentication.LegacyGet())
-		if err != nil {
-			multilog.Error("Unable to determine latest revision time: %v", err)
-			latest = time.Now()
-		}
-		u.Time = ptr.To(latest)
-	} else {
-		u.raw = v
+	u.raw = v
+	if v != "now" {
 		tsv, err := time.Parse(time.RFC3339, v)
 		if err != nil {
 			return locale.WrapInputError(err, "timeflag_format", "Invalid timestamp: Should be RFC3339 formatted.")
 		}
 		u.Time = &tsv
 	}
+	u.Now = v == "now"
 	return nil
 }
 
