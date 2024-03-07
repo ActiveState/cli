@@ -30,7 +30,7 @@ func getBuildExpression(proj *project.Project, customCommit *strfmt.UUID, auth *
 	if customCommit != nil {
 		commitID = *customCommit
 	}
-	return bp.GetBuildExpression(proj.Owner(), proj.Name(), commitID.String())
+	return bp.GetBuildExpression(commitID.String())
 }
 
 // Sync synchronizes the local build script with the remote one.
@@ -64,12 +64,17 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 			return false, errs.Wrap(err, "Unable to get local commit ID")
 		}
 
+		expr, err := script.BuildExpression()
+		if err != nil {
+			return false, errs.Wrap(err, "Unable to get build expression from build script")
+		}
+
 		bp := model.NewBuildPlannerModel(auth)
 		stagedCommitID, err := bp.StageCommit(model.StageCommitParams{
 			Owner:        proj.Owner(),
 			Project:      proj.Name(),
 			ParentCommit: localCommitID.String(),
-			Expression:   script.Expr,
+			Expression:   expr,
 		})
 		if err != nil {
 			return false, errs.Wrap(err, "Could not update project to reflect build script changes.")

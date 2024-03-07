@@ -138,7 +138,7 @@ func (r *Runtime) validateCache() error {
 	expr, err := r.store.GetAndValidateBuildExpression(commitID)
 	if err != nil {
 		bp := model.NewBuildPlannerModel(r.auth)
-		bpExpr, err := bp.GetBuildExpression(r.target.Owner(), r.target.Name(), commitID)
+		bpExpr, err := bp.GetBuildExpression(commitID)
 		if err != nil {
 			return errs.Wrap(err, "Unable to get remote build expression")
 		}
