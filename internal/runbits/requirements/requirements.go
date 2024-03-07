@@ -332,7 +332,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		RequirementName:      name,
 		RequirementVersion:   requirements,
 		RequirementNamespace: *ns,
-		RequirementRevision: requirementRevision,
+		RequirementRevision:  requirementRevision,
 		Operation:            operation,
 		TimeStamp:            ts,
 	}
@@ -416,7 +416,7 @@ func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 	}
 
 	bp := model.NewBuildPlannerModel(r.Auth)
-	expr, err := bp.GetBuildExpression(r.Project.Owner(), r.Project.Name(), commitID.String())
+	expr, err := bp.GetBuildExpression(commitID.String())
 	if err != nil {
 		return errs.Wrap(err, "Could not get remote build expr")
 	}

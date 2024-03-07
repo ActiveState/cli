@@ -531,6 +531,7 @@ type Project struct {
 // Commit contains the build and any errors.
 type Commit struct {
 	Type       string          `json:"__typename"`
+	AtTime     strfmt.DateTime `json:"atTime"`
 	Expression json.RawMessage `json:"expr"`
 	CommitID   strfmt.UUID     `json:"commitId"`
 	Build      *Build          `json:"build"`
