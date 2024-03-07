@@ -23,17 +23,7 @@ func toBuildExpression(script *Script) (*buildexpression.BuildExpression, error)
 	if err != nil {
 		return nil, err
 	}
-	expr, err := buildexpression.New(bytes)
-	if err != nil {
-		return nil, err
-	}
-	if script.atTime != nil {
-		err = expr.MaybeUpdateTimestamp(*script.atTime)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return expr, nil
+	return buildexpression.New(bytes)
 }
 
 func TestBasic(t *testing.T) {
@@ -359,7 +349,9 @@ main = runtime
 	require.NoError(t, err)
 	expectedJson, err := json.Marshal(marshaledInput)
 
-	actualJson, err := json.Marshal(script.Expr)
+	actualExpr, err := script.BuildExpression()
+	require.NoError(t, err)
+	actualJson, err := json.Marshal(actualExpr)
 	require.NoError(t, err)
 	assert.Equal(t, string(expectedJson), string(actualJson))
 }
@@ -415,7 +407,8 @@ func TestBuildExpression(t *testing.T) {
 	script, err := NewScriptFromBuildExpression(expr)
 	require.NoError(t, err)
 	require.NotNil(t, script)
-	newExpr := script.Expr
+	newExpr, err := script.BuildExpression()
+	require.NoError(t, err)
 	exprBytes, err := json.Marshal(expr)
 	require.NoError(t, err)
 	newExprBytes, err := json.Marshal(newExpr)
@@ -429,7 +422,7 @@ func TestBuildExpression(t *testing.T) {
 	// Verify null JSON value is handled correctly.
 	var null *string
 	nullHandled := false
-	for _, assignment := range script.Expr.Let.Assignments {
+	for _, assignment := range newExpr.Let.Assignments {
 		if assignment.Name == "runtime" {
 			args := assignment.Value.Ap.Arguments
 			require.NotNil(t, args)

@@ -1,13 +1,11 @@
 package buildscript
 
 import (
-	"encoding/json"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,14 +28,12 @@ runtime = solve(
 main = runtime`))
 	require.NoError(t, err)
 
-	// Make a copy of the original expression.
-	bytes, err := json.Marshal(script.Expr)
-	require.NoError(t, err)
-	expr, err := buildexpression.New(bytes)
+	expr, err := script.BuildExpression()
 	require.NoError(t, err)
 
 	// Modify the build script.
-	(*script.Expr.Let.Assignments[0].Value.Ap.Arguments[1].Assignment.Value.List)[0].Str = ptr.To(`77777`)
+	script, err = buildscript.NewScript([]byte(strings.Replace(script.String(), "12345", "77777", 1)))
+	require.NoError(t, err)
 
 	// Generate the difference between the modified script and the original expression.
 	result, err := generateDiff(script, expr)
@@ -73,7 +69,9 @@ func TestRealWorld(t *testing.T) {
 	require.NoError(t, err)
 	script2, err := buildscript.NewScript(fileutils.ReadFileUnsafe(filepath.Join("testdata", "buildscript2.as")))
 	require.NoError(t, err)
-	result, err := generateDiff(script1, script2.Expr)
+	expr2, err := script2.BuildExpression()
+	require.NoError(t, err)
+	result, err := generateDiff(script1, expr2)
 	require.NoError(t, err)
 	assert.Equal(t, `<<<<<<< local
 at_time = "2023-10-16T22:20:29.000Z"

@@ -64,12 +64,17 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 			return false, errs.Wrap(err, "Unable to get local commit ID")
 		}
 
+		expr, err := script.BuildExpression()
+		if err != nil {
+			return false, errs.Wrap(err, "Unable to get build expression from build script")
+		}
+
 		bp := model.NewBuildPlannerModel(auth)
 		stagedCommitID, err := bp.StageCommit(model.StageCommitParams{
 			Owner:        proj.Owner(),
 			Project:      proj.Name(),
 			ParentCommit: localCommitID.String(),
-			Expression:   script.Expr,
+			Expression:   expr,
 		})
 		if err != nil {
 			return false, errs.Wrap(err, "Could not update project to reflect build script changes.")

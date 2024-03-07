@@ -19,13 +19,13 @@ import (
 )
 
 // Script's tagged fields will be initially filled in by Participle.
-// Expr will be constructed later and is this script's buildexpression. We keep a copy of the build
+// expr will be constructed later and is this script's buildexpression. We keep a copy of the build
 // expression here with any changes that have been applied before either writing it to disk or
 // submitting it to the build planner. It's easier to operate on build expressions directly than to
 // modify or manually populate the Participle-produced fields and re-generate a build expression.
 type Script struct {
 	Assignments []*Assignment `parser:"@@+"`
-	Expr        *buildexpression.BuildExpression
+	expr        *buildexpression.BuildExpression
 	atTime      *strfmt.DateTime
 }
 
@@ -91,19 +91,25 @@ func NewScript(data []byte) (*Script, error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not construct build expression")
 	}
-	script.Expr = expr
-	script.prepareForUse() // e.g. substitute "$at_time" with proper timestamp
+	script.expr = expr
 
 	return script, nil
 }
 
 func NewScriptFromBuildExpression(expr *buildexpression.BuildExpression) (*Script, error) {
-	atTime, err := expr.SetDefaultTimestamp()
+	// Copy incoming build expression to keep any modifications local.
+	var err error
+	expr, err = expr.Copy()
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not set default timestamp in buildexpression")
+		return nil, errs.Wrap(err, "Could not copy build expression")
 	}
 
-	return &Script{Expr: expr, atTime: atTime}, nil
+	atTime, err := expr.SetDefaultTimestamp()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not set default timestamp in build expression")
+	}
+
+	return &Script{expr: expr, atTime: atTime}, nil
 }
 
 func indent(s string) string {
@@ -111,9 +117,6 @@ func indent(s string) string {
 }
 
 func (s *Script) String() string {
-	s.prepareForOutput()
-	defer s.prepareForUse()
-
 	buf := strings.Builder{}
 
 	if s.atTime != nil {
@@ -124,7 +127,7 @@ func (s *Script) String() string {
 		buf.WriteString("\n")
 	}
 
-	for _, assignment := range s.Expr.Let.Assignments {
+	for _, assignment := range s.expr.Let.Assignments {
 		if assignment.Name == buildexpression.RequirementsKey {
 			assignment = transformRequirements(assignment)
 		}
@@ -135,38 +138,35 @@ func (s *Script) String() string {
 	buf.WriteString("\n")
 	buf.WriteString("main = ")
 	switch {
-	case s.Expr.Let.In.FuncCall != nil:
-		buf.WriteString(apString(s.Expr.Let.In.FuncCall))
-	case s.Expr.Let.In.Name != nil:
-		buf.WriteString(*s.Expr.Let.In.Name)
+	case s.expr.Let.In.FuncCall != nil:
+		buf.WriteString(apString(s.expr.Let.In.FuncCall))
+	case s.expr.Let.In.Name != nil:
+		buf.WriteString(*s.expr.Let.In.Name)
 	}
 
 	return buf.String()
 }
 
-// prepareForOutput prepares this script's buildexpression for output in buildscript format.
-// For example, substitute the solve node's "at_time" timestamp with a variable reference.
-// Since this function directly modifies the Expr field, callers of this function must balance it
-// with a call to `prepareForUse()` to restore the Expr to a useful state.
-func (s *Script) prepareForOutput() {
-	if s.atTime != nil {
-		_, err := s.Expr.SetDefaultTimestamp()
-		if err != nil {
-			multilog.Error("Failed to set default timestamp: %v", err)
-		}
-	}
-}
-
-// prepareForUse prepares this script's buildexpression for use in a buildplanner context.
+// BuildExpression returns a copy of this script's underlying buildexpression for use in a
+// buildplanner context.
 // For example, the solve node's "at_time" will not contain a variable reference if this script
 // has a top-level assignment for it.
-func (s *Script) prepareForUse() {
+func (s *Script) BuildExpression() (*buildexpression.BuildExpression, error) {
+	expr := s.expr
+
 	if s.atTime != nil {
-		err := s.Expr.MaybeUpdateTimestamp(*s.atTime)
+		var err error
+		expr, err = expr.Copy()
 		if err != nil {
-			multilog.Error("Failed to possibly update at time: %v", err)
+			return nil, errs.Wrap(err, "Failed to copy buildexpression")
+		}
+		err = expr.MaybeUpdateTimestamp(*s.atTime)
+		if err != nil {
+			return nil, errs.Wrap(err, "Failed to possibly update %s", buildexpression.AtTimeKey)
 		}
 	}
+
+	return expr, nil
 }
 
 // transformRequirements transforms a buildexpression list of requirements in object form into a
@@ -388,7 +388,12 @@ func (s *Script) EqualsBuildExpressionBytes(exprBytes []byte) bool {
 }
 
 func (s *Script) EqualsBuildExpression(expr *buildexpression.BuildExpression) bool {
-	myJson, err := json.Marshal(s.Expr)
+	thisExpr, err := s.BuildExpression()
+	if err != nil {
+		multilog.Error("Unable to compute buildexpression from this buildscript: %v", err)
+		return false
+	}
+	myJson, err := json.Marshal(thisExpr)
 	if err != nil {
 		multilog.Error("Unable to marshal this buildscript to JSON: %v", err)
 		return false

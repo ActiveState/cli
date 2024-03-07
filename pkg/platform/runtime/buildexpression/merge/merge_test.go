@@ -26,6 +26,8 @@ runtime = solve(
 
 main = runtime`))
 	require.NoError(t, err)
+	exprA, err := scriptA.BuildExpression()
+	require.NoError(t, err)
 
 	scriptB, err := buildscript.NewScript([]byte(
 		`at_time = "2000-01-01T00:00:00.000Z"
@@ -43,6 +45,8 @@ runtime = solve(
 
 main = runtime`))
 	require.NoError(t, err)
+	exprB, err := scriptB.BuildExpression()
+	require.NoError(t, err)
 
 	strategies := &mono_models.MergeStrategies{
 		OverwriteChanges: []*mono_models.CommitChangeEditable{
@@ -50,9 +54,9 @@ main = runtime`))
 		},
 	}
 
-	require.True(t, isAutoMergePossible(scriptA.Expr, scriptB.Expr))
+	require.True(t, isAutoMergePossible(exprA, exprB))
 
-	mergedExpr, err := Merge(scriptA.Expr, scriptB.Expr, strategies)
+	mergedExpr, err := Merge(exprA, exprB, strategies)
 	require.NoError(t, err)
 
 	mergedScript, err := buildscript.NewScriptFromBuildExpression(mergedExpr)
@@ -94,6 +98,8 @@ runtime = solve(
 
 main = runtime`))
 	require.NoError(t, err)
+	exprA, err := scriptA.BuildExpression()
+	require.NoError(t, err)
 
 	scriptB, err := buildscript.NewScript([]byte(
 		`at_time = "2000-01-01T00:00:00.000Z"
@@ -111,6 +117,8 @@ runtime = solve(
 
 main = runtime`))
 	require.NoError(t, err)
+	exprB, err := scriptB.BuildExpression()
+	require.NoError(t, err)
 
 	strategies := &mono_models.MergeStrategies{
 		OverwriteChanges: []*mono_models.CommitChangeEditable{
@@ -118,9 +126,9 @@ main = runtime`))
 		},
 	}
 
-	require.True(t, isAutoMergePossible(scriptA.Expr, scriptB.Expr))
+	require.True(t, isAutoMergePossible(exprA, exprB))
 
-	mergedExpr, err := Merge(scriptA.Expr, scriptB.Expr, strategies)
+	mergedExpr, err := Merge(exprA, exprB, strategies)
 	require.NoError(t, err)
 
 	mergedScript, err := buildscript.NewScriptFromBuildExpression(mergedExpr)
@@ -159,6 +167,8 @@ runtime = solve(
 
 main = runtime`))
 	require.NoError(t, err)
+	exprA, err := scriptA.BuildExpression()
+	require.NoError(t, err)
 
 	scriptB, err := buildscript.NewScript([]byte(
 		`at_time = "2000-01-01T00:00:00.000Z"
@@ -175,10 +185,12 @@ runtime = solve(
 
 main = runtime`))
 	require.NoError(t, err)
+	exprB, err := scriptB.BuildExpression()
+	require.NoError(t, err)
 
-	assert.False(t, isAutoMergePossible(scriptA.Expr, scriptB.Expr)) // platforms do not match
+	assert.False(t, isAutoMergePossible(exprA, exprB)) // platforms do not match
 
-	_, err = Merge(scriptA.Expr, scriptB.Expr, nil)
+	_, err = Merge(exprA, exprB, nil)
 	require.Error(t, err)
 }
 

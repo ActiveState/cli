@@ -930,9 +930,9 @@ func (e *BuildExpression) MaybeUpdateTimestamp(ts strfmt.DateTime) error {
 
 	// Normalize existing timestamp.
 	// Platform timestamps may differ from the strfmt.DateTime format. For example, Platform
-	// timestamps will have 6-digit millisecond precision, while strfmt.DateTime will only have
-	// three-digit precision. This will affect comparisons between buildexpressions (which is
-	// normally done byte-by-byte).
+	// timestamps will have microsecond precision, while strfmt.DateTime will only have millisecond
+	// precision. This will affect comparisons between buildexpressions (which is normally done
+	// byte-by-byte).
 	case !strings.HasPrefix(*atTimeNode.Str, "$"):
 		atTime, err := strfmt.ParseDateTime(*atTimeNode.Str)
 		if err != nil {
@@ -942,6 +942,14 @@ func (e *BuildExpression) MaybeUpdateTimestamp(ts strfmt.DateTime) error {
 	}
 
 	return nil
+}
+
+func (e *BuildExpression) Copy() (*BuildExpression, error) {
+	bytes, err := json.Marshal(e)
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to marshal build expression during copy")
+	}
+	return New(bytes)
 }
 
 func (e *BuildExpression) MarshalJSON() ([]byte, error) {
