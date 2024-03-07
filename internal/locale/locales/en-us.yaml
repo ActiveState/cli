@@ -400,8 +400,6 @@ err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
 err_no_commit:
   other: Project branch has no commits
-err_order_recipe:
-  other: Could not get order from commit ID
 err_order_marshal:
   other: Failed to marshal/unmarshal order
 err_no_data_found:
@@ -422,8 +420,6 @@ err_commit_count_cannot_find_first:
   other: "Cannot find first commit ([ACTIONABLE]{{.V0}}[/RESET]) in indexed"
 err_commit_count_missing_last:
   other: "Missing last commit id"
-err_recipe_not_found:
-  other: Your project does not have a configuration that is compatible with your platform
 err_no_platform_data_remains:
   other: "Your current platform ([ACTIONABLE]{{.V0}}/{{.V1}}[/RESET]) does not appear to be configured in your project. You will need to add it before you are able to activate on this platform. Run 'state platforms --help' for more information on how to do this."
 err_runtime_setup:
@@ -456,16 +452,8 @@ err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
 export_cmd_description:
   other: Print information based on the provided subcommand
-export_recipe_cmd_description:
-  other: Print json formatted recipe data
 export_jwt_cmd_description:
   other: Print jwt credentials
-export_recipe_cmd_commitid_arg:
-  other: commitID
-export_recipe_cmd_commitid_arg_description:
-  other: "Sets target commit by ID (default: current commit)"
-export_recipe_flag_pretty:
-  other: Enables export format beautification
 export_new_api_key_cmd_description:
   other: Create and print new API key
 export_new_api_key_arg_name:
@@ -482,8 +470,6 @@ err_apikey_name_required:
   other: An API key name is required.
 err_cannot_obtain_apikey:
   other: Cannot obtain API key.
-export_recipe_flag_platform:
-  other: Sets target platform
 platforms_cmd_description:
   other: Manage platforms used in your project
 platforms_add_cmd_description:
