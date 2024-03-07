@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -26,7 +25,10 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 
 	ts.LoginAsPersistentUser()
 
-	cp := ts.SpawnWithOpts(
+	cp := ts.Spawn("config", "set", constants.OptinBuildscriptsConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
 		e2e.OptArgs(
 			"checkout",
 			"ActiveState-CLI/Commit-Test-A#7a1b416e-c17f-4d4a-9e27-cbad9e8f5655",
