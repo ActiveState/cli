@@ -683,6 +683,21 @@ func (e *BuildExpression) getSolveNodeArguments() ([]*Value, error) {
 	return solveAp.Arguments, nil
 }
 
+func (e *BuildExpression) getSolveAtTimeValue() (*Value, error) {
+	solveAp, err := e.getSolveNode()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get solve node")
+	}
+
+	for _, arg := range solveAp.Arguments {
+		if arg.Assignment != nil && arg.Assignment.Name == AtTimeKey {
+			return arg.Assignment.Value, nil
+		}
+	}
+
+	return nil, errs.New("Could not find %s", AtTimeKey)
+}
+
 func (e *BuildExpression) getPlatformsNode() (*[]*Value, error) {
 	solveAp, err := e.getSolveNode()
 	if err != nil {
@@ -877,23 +892,64 @@ func (e *BuildExpression) removePlatform(platformID strfmt.UUID) error {
 	return nil
 }
 
-func (e *BuildExpression) SetDefaultTimestamp() error {
-	solveNode, err := e.getSolveNode()
+// SetDefaultTimestamp sets the at_time of this build expression to "$at_time", the Platform
+// default timestamp, and returns the previous timestamp, if one was set. (If the previous at_time
+// was already "$at_time", the returned value will be nil.)
+func (e *BuildExpression) SetDefaultTimestamp() (*strfmt.DateTime, error) {
+	atTimeNode, err := e.getSolveAtTimeValue()
 	if err != nil {
-		return errs.Wrap(err, "Could not get solve node")
+		return nil, errs.Wrap(err, "Could not get %s node", AtTimeKey)
+	}
+	var atTimePtr *strfmt.DateTime
+	if atTimeNode.Str != nil && !strings.HasPrefix(*atTimeNode.Str, "$") {
+		atTime, err := strfmt.ParseDateTime(*atTimeNode.Str)
+		if err != nil {
+			return nil, errs.Wrap(err, "Invalid timestamp: %s", *atTimeNode.Str)
+		}
+		atTimePtr = &atTime
+	}
+	atTimeNode.Str = ptr.To("$" + AtTimeKey)
+	return atTimePtr, nil
+}
+
+// MaybeUpdateTimestamp looks at the solve node's "at_time" parameter and if it is "$at_time",
+// replaces it with the given timestamp. If there's an existing timestamp, it is normalized.
+func (e *BuildExpression) MaybeUpdateTimestamp(ts strfmt.DateTime) error {
+	atTimeNode, err := e.getSolveAtTimeValue()
+	if err != nil {
+		return errs.Wrap(err, "Could not get at time node")
 	}
 
-	for _, arg := range solveNode.Arguments {
-		if arg.Assignment == nil {
-			continue
-		}
+	switch {
+	case atTimeNode.Str == nil:
+		return errs.New("At time node is not a string")
 
-		if arg.Assignment.Name == AtTimeKey {
-			arg.Assignment.Value.Str = ptr.To(fmt.Sprintf("$%s", AtTimeKey))
+	// Variable substitution.
+	case *atTimeNode.Str == "$"+AtTimeKey:
+		atTimeNode.Str = ptr.To(ts.String())
+
+	// Normalize existing timestamp.
+	// Platform timestamps may differ from the strfmt.DateTime format. For example, Platform
+	// timestamps will have microsecond precision, while strfmt.DateTime will only have millisecond
+	// precision. This will affect comparisons between buildexpressions (which is normally done
+	// byte-by-byte).
+	case !strings.HasPrefix(*atTimeNode.Str, "$"):
+		atTime, err := strfmt.ParseDateTime(*atTimeNode.Str)
+		if err != nil {
+			return errs.Wrap(err, "Invalid timestamp: %s", *atTimeNode.Str)
 		}
+		atTimeNode.Str = ptr.To(atTime.String())
 	}
 
 	return nil
+}
+
+func (e *BuildExpression) Copy() (*BuildExpression, error) {
+	bytes, err := json.Marshal(e)
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to marshal build expression during copy")
+	}
+	return New(bytes)
 }
 
 func (e *BuildExpression) MarshalJSON() ([]byte, error) {

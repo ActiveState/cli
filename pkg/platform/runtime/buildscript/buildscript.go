@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -18,13 +19,14 @@ import (
 )
 
 // Script's tagged fields will be initially filled in by Participle.
-// Expr will be constructed later and is this script's buildexpression. We keep a copy of the build
+// expr will be constructed later and is this script's buildexpression. We keep a copy of the build
 // expression here with any changes that have been applied before either writing it to disk or
 // submitting it to the build planner. It's easier to operate on build expressions directly than to
 // modify or manually populate the Participle-produced fields and re-generate a build expression.
 type Script struct {
 	Assignments []*Assignment `parser:"@@+"`
-	Expr        *buildexpression.BuildExpression
+	expr        *buildexpression.BuildExpression
+	atTime      *strfmt.DateTime
 }
 
 type Assignment struct {
@@ -89,13 +91,25 @@ func NewScript(data []byte) (*Script, error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not construct build expression")
 	}
-	script.Expr = expr
+	script.expr = expr
 
 	return script, nil
 }
 
 func NewScriptFromBuildExpression(expr *buildexpression.BuildExpression) (*Script, error) {
-	return &Script{Expr: expr}, nil
+	// Copy incoming build expression to keep any modifications local.
+	var err error
+	expr, err = expr.Copy()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not copy build expression")
+	}
+
+	atTime, err := expr.SetDefaultTimestamp()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not set default timestamp in build expression")
+	}
+
+	return &Script{expr: expr, atTime: atTime}, nil
 }
 
 func indent(s string) string {
@@ -104,22 +118,55 @@ func indent(s string) string {
 
 func (s *Script) String() string {
 	buf := strings.Builder{}
-	for _, assignment := range s.Expr.Let.Assignments {
+
+	if s.atTime != nil {
+		buf.WriteString(assignmentString(&buildexpression.Var{
+			Name:  buildexpression.AtTimeKey,
+			Value: &buildexpression.Value{Str: ptr.To(s.atTime.String())},
+		}))
+		buf.WriteString("\n")
+	}
+
+	for _, assignment := range s.expr.Let.Assignments {
 		if assignment.Name == buildexpression.RequirementsKey {
 			assignment = transformRequirements(assignment)
 		}
 		buf.WriteString(assignmentString(assignment))
 		buf.WriteString("\n")
 	}
+
 	buf.WriteString("\n")
 	buf.WriteString("main = ")
 	switch {
-	case s.Expr.Let.In.FuncCall != nil:
-		buf.WriteString(apString(s.Expr.Let.In.FuncCall))
-	case s.Expr.Let.In.Name != nil:
-		buf.WriteString(*s.Expr.Let.In.Name)
+	case s.expr.Let.In.FuncCall != nil:
+		buf.WriteString(apString(s.expr.Let.In.FuncCall))
+	case s.expr.Let.In.Name != nil:
+		buf.WriteString(*s.expr.Let.In.Name)
 	}
+
 	return buf.String()
+}
+
+// BuildExpression returns a copy of this script's underlying buildexpression for use in a
+// buildplanner context.
+// For example, the solve node's "at_time" will not contain a variable reference if this script
+// has a top-level assignment for it.
+func (s *Script) BuildExpression() (*buildexpression.BuildExpression, error) {
+	expr := s.expr
+
+	if s.atTime != nil {
+		var err error
+		expr, err = expr.Copy()
+		if err != nil {
+			return nil, errs.Wrap(err, "Failed to copy buildexpression")
+		}
+		err = expr.MaybeUpdateTimestamp(*s.atTime)
+		if err != nil {
+			return nil, errs.Wrap(err, "Failed to possibly update %s", buildexpression.AtTimeKey)
+		}
+	}
+
+	return expr, nil
 }
 
 // transformRequirements transforms a buildexpression list of requirements in object form into a
@@ -341,7 +388,12 @@ func (s *Script) EqualsBuildExpressionBytes(exprBytes []byte) bool {
 }
 
 func (s *Script) EqualsBuildExpression(expr *buildexpression.BuildExpression) bool {
-	myJson, err := json.Marshal(s.Expr)
+	thisExpr, err := s.BuildExpression()
+	if err != nil {
+		multilog.Error("Unable to compute buildexpression from this buildscript: %v", err)
+		return false
+	}
+	myJson, err := json.Marshal(thisExpr)
 	if err != nil {
 		multilog.Error("Unable to marshal this buildscript to JSON: %v", err)
 		return false
