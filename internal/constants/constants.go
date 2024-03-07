@@ -441,6 +441,9 @@ const DefaultBranchName = "main"
 // UnstableConfig is the config key used to determine whether the user has opted in to unstable commands
 const UnstableConfig = "optin.unstable"
 
+// OptinBuildscriptsConfig is the config key used to determine whether the user has opted in to buildscripts
+const OptinBuildscriptsConfig = "optin.buildscripts"
+
 // ReportErrorsConfig is the config key used to determine if we will send rollbar reports
 const ReportErrorsConfig = "report.errors"
 

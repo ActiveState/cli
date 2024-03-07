@@ -180,9 +180,11 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 }
 
 func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *project.Namespaced, branchName string, strategy bpModel.MergeStrategy) (strfmt.UUID, error) {
-	err := p.mergeBuildScript(remoteCommit, localCommit)
-	if err != nil {
-		return "", errs.Wrap(err, "Could not merge local build script with remote changes")
+	if p.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		err := p.mergeBuildScript(remoteCommit, localCommit)
+		if err != nil {
+			return "", errs.Wrap(err, "Could not merge local build script with remote changes")
+		}
 	}
 
 	p.out.Notice(output.Title(locale.Tl("pull_diverged", "Merging history")))

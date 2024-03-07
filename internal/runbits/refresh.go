@@ -2,6 +2,7 @@ package runbits
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
@@ -14,6 +15,11 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
+type Configurable interface {
+	GetString(key string) string
+	GetBool(key string) bool
+}
+
 // RefreshRuntime should be called after runtime mutations.
 func RefreshRuntime(
 	auth *authentication.Auth,
@@ -24,12 +30,15 @@ func RefreshRuntime(
 	changed bool,
 	trigger target.Trigger,
 	svcm *model.SvcModel,
-	cfg model.Configurable,
+	cfg Configurable,
 ) (rerr error) {
-	_, err := buildscript.Sync(proj, &commitID, out, auth)
-	if err != nil {
-		return locale.WrapError(err, "err_update_build_script")
+	if cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		_, err := buildscript.Sync(proj, &commitID, out, auth)
+		if err != nil {
+			return locale.WrapError(err, "err_update_build_script")
+		}
 	}
+
 	target := target.NewProjectTarget(proj, resolveCommitID(proj, &commitID), trigger)
 	isCached := true
 	rt, err := runtime.New(target, an, svcm, auth, cfg, out)

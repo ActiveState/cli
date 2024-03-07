@@ -18,6 +18,11 @@ type ErrUpdate struct {
 	*locale.LocalizedError
 }
 
+type Configurable interface {
+	GetString(key string) string
+	GetBool(key string) bool
+}
+
 // NewFromProject is a helper function that creates a new runtime or updates an existing one for
 // the given project.
 func NewFromProject(
@@ -27,7 +32,7 @@ func NewFromProject(
 	svcModel *model.SvcModel,
 	out output.Outputer,
 	auth *authentication.Auth,
-	cfg model.Configurable) (_ *rt.Runtime, rerr error) {
+	cfg Configurable) (_ *rt.Runtime, rerr error) {
 	defer rationalizeError(auth, proj, &rerr)
 
 	if proj.IsHeadless() {
