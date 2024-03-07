@@ -126,6 +126,11 @@ type Targeter interface {
 	InstallFromDir() *string
 }
 
+type Configurable interface {
+	GetString(key string) string
+	GetBool(key string) bool
+}
+
 type Setup struct {
 	auth          *authentication.Auth
 	target        Targeter
@@ -133,7 +138,7 @@ type Setup struct {
 	store         *store.Store
 	analytics     analytics.Dispatcher
 	artifactCache *artifactcache.ArtifactCache
-	cfg           apimodel.Configurable
+	cfg           Configurable
 	out           output.Outputer
 }
 
@@ -620,7 +625,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, nil, errs.Wrap(err, "Could not save buildexpression file.")
 	}
 
-	if s.target.ProjectDir() != "" {
+	if s.target.ProjectDir() != "" && s.cfg.GetBool(constants.OptinBuildscriptsConfig) {
 		if err := buildscript.Update(s.target, buildResult.BuildExpression, s.auth); err != nil {
 			return nil, nil, errs.Wrap(err, "Could not save build script.")
 		}

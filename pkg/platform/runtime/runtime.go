@@ -37,6 +37,10 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+type Configurable interface {
+	GetBool(key string) bool
+}
+
 type Runtime struct {
 	disabled          bool
 	target            setup.Targeter
@@ -45,7 +49,7 @@ type Runtime struct {
 	svcm              *model.SvcModel
 	auth              *authentication.Auth
 	completed         bool
-	cfg               model.Configurable
+	cfg               Configurable
 	out               output.Outputer
 	resolvedArtifacts []*artifact.Artifact
 }
@@ -147,7 +151,7 @@ func (r *Runtime) validateCache() error {
 		expr = string(data)
 	}
 
-	if !script.EqualsBuildExpressionBytes([]byte(expr)) {
+	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) && !script.EqualsBuildExpressionBytes([]byte(expr)) {
 		return &NeedsCommitError{errs.New("Runtime changes should be committed")}
 	}
 
