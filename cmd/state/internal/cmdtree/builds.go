@@ -46,7 +46,6 @@ func newBuildsCommand(prime *primer.Values) *captain.Command {
 	)
 	cmd.SetGroup(ProjectUsageGroup)
 	cmd.SetSupportsStructuredOutput()
-	cmd.SetUnstable(true)
 	cmd.DeprioritizeInHelpListing()
 	return cmd
 }
@@ -90,6 +89,5 @@ func newBuildsDownloadCommand(prime *primer.Values) *captain.Command {
 		},
 	)
 	cmd.SetSupportsStructuredOutput()
-	cmd.SetUnstable(true)
 	return cmd
 }
