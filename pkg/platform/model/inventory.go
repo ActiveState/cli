@@ -14,6 +14,9 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	hsInventory "github.com/ActiveState/cli/pkg/platform/api/hasura_inventory"
+	hsInventoryModel "github.com/ActiveState/cli/pkg/platform/api/hasura_inventory/model"
+	hsInventoryRequest "github.com/ActiveState/cli/pkg/platform/api/hasura_inventory/request"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
@@ -545,6 +548,7 @@ func FetchIngredientVersions(ingredientID *strfmt.UUID) ([]*inventory_models.Ing
 }
 
 // FetchLatestTimeStamp fetches the latest timestamp from the inventory service.
+// This is not the same as FetchLatestRevisionTimeStamp.
 func FetchLatestTimeStamp() (time.Time, error) {
 	client := inventory.Get()
 	result, err := client.GetLatestTimestamp(inventory_operations.NewGetLatestTimestampParams())
@@ -553,6 +557,20 @@ func FetchLatestTimeStamp() (time.Time, error) {
 	}
 
 	return time.Time(*result.Payload.Timestamp), nil
+}
+
+// FetchLatestRevisionTimeStamp fetches the time of the last inventory change from the Hasura
+// inventory service.
+// This is not the same as FetchLatestTimeStamp.
+func FetchLatestRevisionTimeStamp(auth *authentication.Auth) (time.Time, error) {
+	client := hsInventory.New(auth)
+	request := hsInventoryRequest.NewLatestRevision()
+	response := hsInventoryModel.LatestRevisionResponse{}
+	err := client.Run(request, &response)
+	if err != nil {
+		return time.Now(), errs.Wrap(err, "Failed to get latest change time")
+	}
+	return time.Time(response.RevisionTimes[0].RevisionTime), nil
 }
 
 func FetchNormalizedName(namespace Namespace, name string) (string, error) {

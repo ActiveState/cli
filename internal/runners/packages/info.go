@@ -70,7 +70,12 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 		normalized = params.Package.Name
 	}
 
-	packages, err := model.SearchIngredientsStrict(ns.String(), normalized, false, false, params.Timestamp.Time) // ideally case-sensitive would be true (PB-4371)
+	ts, err := getTime(&params.Timestamp, i.auth, i.proj)
+	if err != nil {
+		return errs.Wrap(err, "Unable to get timestamp from params")
+	}
+
+	packages, err := model.SearchIngredientsStrict(ns.String(), normalized, false, false, ts) // ideally case-sensitive would be true (PB-4371)
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 	}
