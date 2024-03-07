@@ -128,12 +128,6 @@ func (r *Runtime) validateCache() error {
 		return nil
 	}
 
-	// Check if local build script has changes that should be committed.
-	script, err := buildscript.NewScriptFromProject(r.target, r.auth)
-	if err != nil {
-		return errs.Wrap(err, "Unable to get local build script")
-	}
-
 	commitID := r.target.CommitUUID().String()
 	expr, err := r.store.GetAndValidateBuildExpression(commitID)
 	if err != nil {
@@ -152,8 +146,15 @@ func (r *Runtime) validateCache() error {
 		expr = string(data)
 	}
 
-	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) && !script.EqualsBuildExpressionBytes([]byte(expr)) {
-		return &NeedsCommitError{errs.New("Runtime changes should be committed")}
+	// Check if local build script has changes that should be committed.
+	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		script, err := buildscript.NewScriptFromProject(r.target, r.auth)
+		if err != nil {
+			return errs.Wrap(err, "Unable to get local build script")
+		}
+		if !script.EqualsBuildExpressionBytes([]byte(expr)) {
+			return &NeedsCommitError{errs.New("Runtime changes should be committed")}
+		}
 	}
 
 	return nil
