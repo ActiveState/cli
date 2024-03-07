@@ -163,7 +163,7 @@ type artifactInstaller func(artifact.ArtifactID, string, ArtifactSetuper) error
 type artifactUninstaller func() error
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
-func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth, an analytics.Dispatcher, cfg apimodel.Configurable, out output.Outputer) *Setup {
+func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth, an analytics.Dispatcher, cfg Configurable, out output.Outputer) *Setup {
 	cache, err := artifactcache.New()
 	if err != nil {
 		multilog.Error("Could not create artifact cache: %v", err)

@@ -39,6 +39,11 @@ type Params struct {
 	Full      bool
 }
 
+type Configurable interface {
+	GetString(key string) string
+	GetBool(key string) bool
+}
+
 type Builds struct {
 	out       output.Outputer
 	project   *project.Project
@@ -214,7 +219,7 @@ func getTerminalArtifactMap(
 	an analytics.Dispatcher,
 	svcModel *model.SvcModel,
 	out output.Outputer,
-	cfg model.Configurable) (_ buildplan.TerminalArtifactMap, rerr error) {
+	cfg Configurable) (_ buildplan.TerminalArtifactMap, rerr error) {
 	if pj == nil && !namespace.IsValid() {
 		return nil, rationalize.ErrNoProject
 	}
