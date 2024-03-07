@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -192,6 +193,10 @@ func (e *BuildPlannerError) Error() string {
 	}
 
 	return err.Error()
+}
+
+func (e *BuildPlannerError) Unwrap() error {
+	return errors.Unwrap(e.Err)
 }
 
 // BuildPlan is the top level object returned by the build planner. It contains
