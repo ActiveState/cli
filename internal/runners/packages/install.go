@@ -6,7 +6,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
@@ -42,26 +41,9 @@ func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) (rerr
 		nsTypeV = &nsType
 	}
 
-	ts := params.Timestamp.Time
-	if ts == nil {
-		latest, err := model.FetchLatestTimeStamp()
-		if err != nil {
-			return errs.Wrap(err, "Unable to fetch latest Platform timestamp")
-		}
-
-		commitID, err := localcommit.Get(a.prime.Project().Dir())
-		if err != nil {
-			return errs.Wrap(err, "Unable to get commit ID")
-		}
-
-		atTime, err := model.FetchTimeStampForCommit(commitID)
-		if err != nil {
-			return errs.Wrap(err, "Unable to get commit time")
-		}
-
-		if atTime.After(latest) {
-			ts = atTime
-		}
+	ts, err := getTime(&params.Timestamp, a.prime.Auth(), a.prime.Project())
+	if err != nil {
+		return errs.Wrap(err, "Unable to get timestamp from params")
 	}
 
 	return requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(
