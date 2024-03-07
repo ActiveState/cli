@@ -241,7 +241,10 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	// Compute the merge strategy.
 	strategies, err := model.MergeCommit(remoteCommit, localCommit)
 	if err != nil {
-		if !errors.Is(err, model.ErrMergeCommitInHistory) {
+		switch {
+		case errors.Is(err, model.ErrMergeFastForward):
+			return buildscript.Update(p.project, exprB, p.auth)
+		case !errors.Is(err, model.ErrMergeCommitInHistory):
 			return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
 		}
 	}
