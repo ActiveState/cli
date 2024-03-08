@@ -222,7 +222,7 @@ func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *pr
 // mergeBuildScript merges the local build script with the remote buildexpression (not script).
 func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	// Get the build script to merge.
-	script, err := buildscript.NewScriptFromProject(p.project, p.auth)
+	script, err := buildscript.ScriptFromProjectWithFallback(p.project, p.auth)
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
 	}
