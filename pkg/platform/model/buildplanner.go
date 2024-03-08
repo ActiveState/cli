@@ -643,8 +643,13 @@ func (bp *BuildPlanner) pollBuildStatus(commitID string) error {
 
 			completed := true
 			for _, artifact := range build.Artifacts {
-				if artifact.Status == bpModel.ArtifactFailedPermanently || artifact.Status == bpModel.ArtifactFailedTransiently {
+				if artifact.Status == bpModel.ArtifactFailedPermanently ||
+					artifact.Status == bpModel.ArtifactFailedTransiently {
 					return errs.New("Artifact %s failed", artifact.NodeID)
+				}
+
+				if artifact.Status == bpModel.ArtifactNotSubmitted {
+					continue
 				}
 
 				if artifact.Status != bpModel.ArtifactSucceeded {
