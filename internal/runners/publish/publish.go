@@ -324,8 +324,8 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRev
 			r.Dependencies = append(
 				r.Dependencies,
 				request.PublishVariableDep{
-					request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version},
-					[]request.Dependency{},
+					Dependency: request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version},
+					Conditions: []request.Dependency{},
 				},
 			)
 		}
@@ -337,8 +337,8 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRev
 			r.Dependencies = append(
 				r.Dependencies,
 				request.PublishVariableDep{
-					request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version, Type: request.TypeRuntime},
-					[]request.Dependency{},
+					Dependency: request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version, Type: request.DependencyTypeRuntime},
+					Conditions: []request.Dependency{},
 				},
 			)
 		}
@@ -350,8 +350,8 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRev
 			r.Dependencies = append(
 				r.Dependencies,
 				request.PublishVariableDep{
-					request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version, Type: request.TypeBuild},
-					[]request.Dependency{},
+					Dependency: request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version, Type: request.DependencyTypeBuild},
+					Conditions: []request.Dependency{},
 				},
 			)
 		}
@@ -363,8 +363,8 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRev
 			r.Dependencies = append(
 				r.Dependencies,
 				request.PublishVariableDep{
-					request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version, Type: request.TypeTest},
-					[]request.Dependency{},
+					Dependency: request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version, Type: request.DependencyTypeTest},
+					Conditions: []request.Dependency{},
 				},
 			)
 		}

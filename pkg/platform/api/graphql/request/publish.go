@@ -14,6 +14,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	DependencyTypeRuntime = "runtime"
+	DependencyTypeBuild   = "build"
+	DependencyTypeTest    = "test"
+)
+
 func Publish(vars PublishVariables, filepath string) (*PublishInput, error) {
 	var f *os.File
 	if filepath != "" {
@@ -77,10 +83,6 @@ type PublishVariableFeature struct {
 	Namespace string `yaml:"namespace" json:"namespace"`
 	Version   string `yaml:"version" json:"version"`
 }
-
-const TypeRuntime string = "runtime"
-const TypeBuild string = "build"
-const TypeTest string = "test"
 
 type Dependency struct {
 	Name                string `yaml:"name" json:"name"`
