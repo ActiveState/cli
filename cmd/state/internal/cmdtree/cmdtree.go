@@ -114,7 +114,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newBundlesSearchCommand(prime),
 	)
 
-	secretsClient := secretsapi.InitializeClient()
+	secretsClient := secretsapi.InitializeClient(prime.Auth())
 	secretsCmd := newSecretsCommand(secretsClient, prime)
 	secretsCmd.AddChildren(
 		newSecretsGetCommand(prime),

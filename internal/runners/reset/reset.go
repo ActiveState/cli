@@ -86,7 +86,7 @@ func (r *Reset) Run(params *Params) error {
 		if commitID == localCommitID {
 			return locale.NewInputError("err_reset_same_commitid", "Your project is already at the given commit ID")
 		}
-		history, err := model.CommitHistoryFromID(commitID)
+		history, err := model.CommitHistoryFromID(commitID, r.auth)
 		if err != nil || len(history) == 0 {
 			return locale.WrapInputError(err, "err_reset_commitid", "The given commit ID does not exist")
 		}

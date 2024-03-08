@@ -45,6 +45,9 @@ func (suite *ScriptRunSuite) TestRunStandaloneCommand() {
 	suite.OnlyRunForTags(tagsuite.Scripts)
 	t := suite.T()
 
+	auth, err := authentication.LegacyGet()
+	require.NoError(t, err)
+
 	pjfile := &projectfile.Project{}
 	var contents string
 	if runtime.GOOS != "windows" {
@@ -64,7 +67,7 @@ scripts:
     standalone: true
   `)
 	}
-	err := yaml.Unmarshal([]byte(contents), pjfile)
+	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
 	require.NoError(t, pjfile.Persist())
 
@@ -74,7 +77,7 @@ scripts:
 	cfg, err := config.New()
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
-	scriptRun := scriptrun.New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
 	err = scriptRun.Run(proj.ScriptByName("run"), []string{})
 	assert.NoError(t, err, "No error occurred")
 }
@@ -89,6 +92,9 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 		// as it's not worth the time and effort to debug.
 		return
 	}
+
+	auth, err := authentication.LegacyGet()
+	require.NoError(t, err)
 
 	root, err := environment.GetRootPath()
 	require.NoError(t, err, "should detect root path")
@@ -113,7 +119,7 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 	defer func() { require.NoError(t, cfg.Close()) }()
 
 	out := capturer.CaptureOutput(func() {
-		scriptRun := scriptrun.New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+		scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
 		err = scriptRun.Run(proj.ScriptByName("run"), nil)
 		assert.NoError(t, err, "Error: "+errs.JoinMessage(err))
 	})
@@ -125,6 +131,9 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 func (suite *ScriptRunSuite) TestRunNoProjectInheritance() {
 	suite.OnlyRunForTags(tagsuite.Scripts)
 	t := suite.T()
+
+	auth, err := authentication.LegacyGet()
+	require.NoError(t, err)
 
 	pjfile := &projectfile.Project{}
 	var contents string
@@ -145,7 +154,7 @@ scripts:
     standalone: true
 `)
 	}
-	err := yaml.Unmarshal([]byte(contents), pjfile)
+	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
 	require.NoError(t, pjfile.Persist())
 
@@ -157,7 +166,7 @@ scripts:
 	defer func() { require.NoError(t, cfg.Close()) }()
 
 	out := outputhelper.NewCatcher()
-	scriptRun := scriptrun.New(authentication.LegacyGet(), out, subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+	scriptRun := scriptrun.New(auth, out, subshell.New(cfg), proj, cfg, blackhole.New(), nil)
 	fmt.Println(proj.ScriptByName("run"))
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.NoError(t, err, "No error occurred")
@@ -167,6 +176,9 @@ func (suite *ScriptRunSuite) TestRunMissingScript() {
 	suite.OnlyRunForTags(tagsuite.Scripts)
 	t := suite.T()
 
+	auth, err := authentication.LegacyGet()
+	require.NoError(t, err)
+
 	pjfile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
 project: "https://platform.activestate.com/ActiveState/pjfile"
@@ -174,7 +186,7 @@ scripts:
   - name: run
     value: whatever
   `)
-	err := yaml.Unmarshal([]byte(contents), pjfile)
+	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
 	require.NoError(t, pjfile.Persist())
 
@@ -185,7 +197,7 @@ scripts:
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
 
-	scriptRun := scriptrun.New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
 	err = scriptRun.Run(nil, nil)
 	assert.Error(t, err, "Error occurred")
 }
@@ -193,6 +205,9 @@ scripts:
 func (suite *ScriptRunSuite) TestRunUnknownCommand() {
 	suite.OnlyRunForTags(tagsuite.Scripts)
 	t := suite.T()
+
+	auth, err := authentication.LegacyGet()
+	require.NoError(t, err)
 
 	pjfile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
@@ -202,7 +217,7 @@ scripts:
     value: whatever
     standalone: true
   `)
-	err := yaml.Unmarshal([]byte(contents), pjfile)
+	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
 	require.NoError(t, pjfile.Persist())
 
@@ -213,7 +228,7 @@ scripts:
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
 
-	scriptRun := scriptrun.New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.Error(t, err, "Error occurred")
 }
@@ -221,6 +236,9 @@ scripts:
 func (suite *ScriptRunSuite) TestRunActivatedCommand() {
 	suite.OnlyRunForTags(tagsuite.Scripts)
 	t := suite.T()
+
+	auth, err := authentication.LegacyGet()
+	require.NoError(t, err)
 
 	// Prepare an empty activated environment.
 	root, err := environment.GetRootPath()
@@ -263,7 +281,7 @@ scripts:
 	require.NoError(t, err)
 
 	// Run the command.
-	scriptRun := scriptrun.New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.NoError(t, err, "No error occurred")
 
@@ -344,6 +362,9 @@ scripts:
 
 func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []string) (string, error) {
 
+	auth, err := authentication.LegacyGet()
+	require.NoError(t, err)
+
 	pjfile := setupProjectWithScriptsExpectingArgs(t, tmplCmdName)
 	require.NoError(t, pjfile.Persist())
 	defer projectfile.Reset()
@@ -356,7 +377,7 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 	defer func() { require.NoError(t, cfg.Close()) }()
 
 	outStr, outErr := osutil.CaptureStdout(func() {
-		scriptRun := scriptrun.New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+		scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
 		err = scriptRun.Run(proj.ScriptByName(cmdName), cmdArgs)
 	})
 	require.NoError(t, outErr, "error capturing stdout")

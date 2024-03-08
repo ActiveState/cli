@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 type KeypairSaveTestSuite struct {
@@ -21,18 +22,20 @@ type KeypairSaveTestSuite struct {
 
 	secretsClient *secretsapi.Client
 	cfg           keypairs.Configurable
+	auth          *authentication.Auth
 }
 
 func (suite *KeypairSaveTestSuite) BeforeTest(suiteName, testName string) {
-	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
-	suite.Require().NotNil(secretsClient)
-	suite.secretsClient = secretsClient
-
-	httpmock.Activate(secretsClient.BaseURI)
-
 	var err error
 	suite.cfg, err = config.New()
 	suite.Require().NoError(err)
+	suite.auth, err = authentication.LegacyGet()
+	suite.Require().NoError(err)
+
+	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123", suite.auth)
+	suite.Require().NotNil(secretsClient)
+	suite.secretsClient = secretsClient
+	httpmock.Activate(secretsClient.BaseURI)
 }
 
 func (suite *KeypairSaveTestSuite) AfterTest(suiteName, testName string) {
@@ -47,7 +50,7 @@ func (suite *KeypairSaveTestSuite) TestSave_Fails() {
 	suite.Require().NotNil(encKeypair)
 	suite.Require().Nil(err)
 
-	err = keypairs.SaveEncodedKeypair(suite.cfg, suite.secretsClient, encKeypair)
+	err = keypairs.SaveEncodedKeypair(suite.cfg, suite.secretsClient, encKeypair, suite.auth)
 	suite.Error(err)
 }
 
@@ -64,7 +67,7 @@ func (suite *KeypairSaveTestSuite) TestSave_Succeeds() {
 	suite.Require().NotNil(encKeypair)
 	suite.Require().Nil(err)
 
-	err = keypairs.SaveEncodedKeypair(suite.cfg, suite.secretsClient, encKeypair)
+	err = keypairs.SaveEncodedKeypair(suite.cfg, suite.secretsClient, encKeypair, suite.auth)
 	suite.Require().Nil(err)
 	suite.Require().NoError(bodyErr)
 

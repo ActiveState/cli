@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -19,10 +20,11 @@ type Recipe struct {
 	output.Outputer
 	*project.Project
 	model.Configurable
+	*authentication.Auth
 }
 
 func NewRecipe(prime primeable) *Recipe {
-	return &Recipe{prime.Output(), prime.Project(), prime.Config()}
+	return &Recipe{prime.Output(), prime.Project(), prime.Config(), prime.Auth()}
 }
 
 type RecipeParams struct {
@@ -35,7 +37,7 @@ type RecipeParams struct {
 func (r *Recipe) Run(params *RecipeParams) error {
 	logging.Debug("Execute")
 
-	data, err := recipeData(r.Project, params.CommitID, params.Platform, r.Configurable)
+	data, err := recipeData(r.Project, params.CommitID, params.Platform, r.Configurable, r.Auth)
 	if err != nil {
 		return err
 	}
@@ -52,10 +54,10 @@ func (r *Recipe) Run(params *RecipeParams) error {
 	return nil
 }
 
-func recipeData(proj *project.Project, commitID, platform string, cfg model.Configurable) ([]byte, error) {
+func recipeData(proj *project.Project, commitID, platform string, cfg model.Configurable, auth *authentication.Auth) ([]byte, error) {
 	cid := strfmt.UUID(commitID)
 
-	r, err := fetchRecipe(proj, cid, platform, cfg)
+	r, err := fetchRecipe(proj, cid, platform, cfg, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +75,7 @@ func beautifyJSON(d []byte) ([]byte, error) {
 	return out.Bytes(), nil
 }
 
-func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string, cfg model.Configurable) (string, error) {
+func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string, cfg model.Configurable, auth *authentication.Auth) (string, error) {
 	if platform == "" {
 		platform = sysinfo.OS().String()
 	}
@@ -100,5 +102,5 @@ func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string, c
 		commitID = *dcommitID
 	}
 
-	return model.FetchRawRecipeForCommitAndPlatform(commitID, proj.Owner(), proj.Name(), platform, cfg)
+	return model.FetchRawRecipeForCommitAndPlatform(commitID, proj.Owner(), proj.Name(), platform, cfg, auth)
 }

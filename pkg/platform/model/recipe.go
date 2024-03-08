@@ -66,21 +66,21 @@ func init() {
 }
 
 // FetchRawRecipeForCommit returns a recipe from a project based off a commitID
-func FetchRawRecipeForCommit(commitID strfmt.UUID, owner, project string, cfg Configurable) (string, error) {
-	return fetchRawRecipe(commitID, owner, project, nil, cfg)
+func FetchRawRecipeForCommit(commitID strfmt.UUID, owner, project string, cfg Configurable, auth *authentication.Auth) (string, error) {
+	return fetchRawRecipe(commitID, owner, project, nil, cfg, auth)
 }
 
 // FetchRawRecipeForCommitAndPlatform returns a recipe from a project based off a commitID and platform
-func FetchRawRecipeForCommitAndPlatform(commitID strfmt.UUID, owner, project string, platform string, cfg Configurable) (string, error) {
-	return fetchRawRecipe(commitID, owner, project, &platform, cfg)
+func FetchRawRecipeForCommitAndPlatform(commitID strfmt.UUID, owner, project string, platform string, cfg Configurable, auth *authentication.Auth) (string, error) {
+	return fetchRawRecipe(commitID, owner, project, &platform, cfg, auth)
 }
 
-func ResolveRecipe(commitID strfmt.UUID, owner, projectName string, cfg Configurable) (*inventory_models.Recipe, error) {
+func ResolveRecipe(commitID strfmt.UUID, owner, projectName string, cfg Configurable, auth *authentication.Auth) (*inventory_models.Recipe, error) {
 	if commitID == "" {
 		return nil, locale.NewError("err_no_commit", "Missing Commit ID")
 	}
 
-	recipe, err := FetchRecipe(commitID, owner, projectName, &HostPlatform, cfg)
+	recipe, err := FetchRecipe(commitID, owner, projectName, &HostPlatform, cfg, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -92,26 +92,26 @@ func ResolveRecipe(commitID strfmt.UUID, owner, projectName string, cfg Configur
 	return recipe, nil
 }
 
-func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string, cfg Configurable) (string, error) {
-	_, transport := inventory.Init(authentication.LegacyGet())
+func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string, cfg Configurable, auth *authentication.Auth) (string, error) {
+	_, transport := inventory.Init(auth)
 
 	var err error
 	params := iop.NewResolveRecipesParams()
 	params.SetHTTPClient(api.NewHTTPClient())
 	params.SetTimeout(time.Second * 60)
-	params.Order, err = commitToOrder(commitID, owner, project)
+	params.Order, err = commitToOrder(commitID, owner, project, auth)
 	if err != nil {
 		return "", errs.Wrap(err, "commitToOrder failed")
 	}
 
 	if hostPlatform != nil {
-		params.Order.Platforms, err = filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms, cfg)
+		params.Order.Platforms, err = filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms, cfg, auth)
 		if err != nil {
 			return "", err
 		}
 	}
 
-	recipe, err := inventory.ResolveRecipes(transport, params, authentication.ClientAuth())
+	recipe, err := inventory.ResolveRecipes(transport, params, auth.ClientAuth())
 	if err != nil {
 		if err == context.DeadlineExceeded {
 			return "", locale.WrapError(err, "request_timed_out")
@@ -132,8 +132,8 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 	return recipe, nil
 }
 
-func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_models.Order, error) {
-	monoOrder, err := FetchOrderFromCommit(commitID)
+func commitToOrder(commitID strfmt.UUID, owner, project string, auth *authentication.Auth) (*inventory_models.Order, error) {
+	monoOrder, err := FetchOrderFromCommit(commitID, auth)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_order_recipe")
 	}
@@ -158,19 +158,19 @@ func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_mode
 	return order, nil
 }
 
-func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string, cfg Configurable) (*inventory_models.Recipe, error) {
+func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string, cfg Configurable, auth *authentication.Auth) (*inventory_models.Recipe, error) {
 	var err error
 	params := iop.NewResolveRecipesParams()
 	params.SetHTTPClient(api.NewHTTPClient())
 	params.SetTimeout(time.Second * 60)
-	params.Order, err = commitToOrder(commitID, owner, project)
+	params.Order, err = commitToOrder(commitID, owner, project, auth)
 	if err != nil {
 		return nil, errs.Wrap(err, "commitToOrder failed")
 	}
 
-	client, _ := inventory.Init(authentication.LegacyGet())
+	client, _ := inventory.Init(auth)
 
-	response, _, err := client.ResolveRecipes(params, authentication.ClientAuth())
+	response, _, err := client.ResolveRecipes(params, auth.ClientAuth())
 	if err != nil {
 		if err == context.DeadlineExceeded {
 			return nil, locale.WrapError(err, "request_timed_out")
@@ -184,7 +184,7 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 		return nil, serr
 	}
 
-	platformID, err := FilterCurrentPlatform(*hostPlatform, params.Order.Platforms, cfg)
+	platformID, err := FilterCurrentPlatform(*hostPlatform, params.Order.Platforms, cfg, auth)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_filter_current_platform")
 	}
@@ -198,8 +198,8 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 	return nil, locale.NewInputError("err_recipe_not_found")
 }
 
-func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID, cfg Configurable) (strfmt.UUID, error) {
-	platformIDs, err := filterPlatformIDs(hostPlatform, runtime.GOARCH, platforms, cfg)
+func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID, cfg Configurable, auth *authentication.Auth) (strfmt.UUID, error) {
+	platformIDs, err := filterPlatformIDs(hostPlatform, runtime.GOARCH, platforms, cfg, auth)
 	if err != nil {
 		return "", errs.Wrap(err, "filterPlatformIDs failed")
 	}

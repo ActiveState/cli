@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	platformModel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/go-openapi/strfmt"
@@ -21,22 +22,23 @@ type ArtifactListing struct {
 	buildtimeClosure artifact.Map
 	artifactIDs      []artifact.ArtifactID
 	cfg              platformModel.Configurable
+	auth             *authentication.Auth
 }
 
 type ArtifactError struct {
 	*locale.LocalizedError
 }
 
-func NewArtifactListing(build *model.Build, buildtimeClosure bool, cfg platformModel.Configurable) (*ArtifactListing, error) {
-	al := &ArtifactListing{build: build, cfg: cfg}
+func NewArtifactListing(build *model.Build, buildtimeClosure bool, cfg platformModel.Configurable, auth *authentication.Auth) (*ArtifactListing, error) {
+	al := &ArtifactListing{build: build, cfg: cfg, auth: auth}
 	if buildtimeClosure {
-		buildtimeClosure, err := newFilteredMapFromBuildPlan(al.build, true, cfg)
+		buildtimeClosure, err := newFilteredMapFromBuildPlan(al.build, true, cfg, auth)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not create buildtime closure")
 		}
 		al.buildtimeClosure = buildtimeClosure
 	} else {
-		runtimeClosure, err := newFilteredMapFromBuildPlan(al.build, false, cfg)
+		runtimeClosure, err := newFilteredMapFromBuildPlan(al.build, false, cfg, auth)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not create runtime closure")
 		}
@@ -51,7 +53,7 @@ func (al *ArtifactListing) RuntimeClosure() (artifact.Map, error) {
 		return al.runtimeClosure, nil
 	}
 
-	runtimeClosure, err := newFilteredMapFromBuildPlan(al.build, false, al.cfg)
+	runtimeClosure, err := newFilteredMapFromBuildPlan(al.build, false, al.cfg, al.auth)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create runtime closure")
 	}
@@ -65,7 +67,7 @@ func (al *ArtifactListing) BuildtimeClosure() (artifact.Map, error) {
 		return al.buildtimeClosure, nil
 	}
 
-	buildtimeClosure, err := newFilteredMapFromBuildPlan(al.build, true, al.cfg)
+	buildtimeClosure, err := newFilteredMapFromBuildPlan(al.build, true, al.cfg, al.auth)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create buildtime closure")
 	}
@@ -104,8 +106,8 @@ func (al *ArtifactListing) ArtifactIDs(buildtimeClosure bool) ([]artifact.Artifa
 // lookup table and calls the recursive function buildMap to build up the
 // artifact map by traversing the build plan from the terminal targets through
 // all of the runtime dependencies for each of the artifacts in the DAG.
-func newFilteredMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool, cfg platformModel.Configurable) (artifact.Map, error) {
-	filtered, err := filterPlatformTerminal(build, cfg)
+func newFilteredMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool, cfg platformModel.Configurable, auth *authentication.Auth) (artifact.Map, error) {
+	filtered, err := filterPlatformTerminal(build, cfg, auth)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not filter terminals")
 	}
@@ -179,7 +181,7 @@ func NewMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool, fil
 
 // filterPlatformTerminal filters the build terminal nodes to only include
 // terminals that are for the current host platform.
-func filterPlatformTerminal(build *model.Build, cfg platformModel.Configurable) (*model.NamedTarget, error) {
+func filterPlatformTerminal(build *model.Build, cfg platformModel.Configurable, auth *authentication.Auth) (*model.NamedTarget, error) {
 	// Extract the available platforms from the build plan
 	// We are only interested in terminals with the platform tag
 	var bpPlatforms []strfmt.UUID
@@ -191,7 +193,7 @@ func filterPlatformTerminal(build *model.Build, cfg platformModel.Configurable) 
 	}
 
 	// Get the platform ID for the current host platform
-	platformID, err := platformModel.FilterCurrentPlatform(platformModel.HostPlatform, bpPlatforms, cfg)
+	platformID, err := platformModel.FilterCurrentPlatform(platformModel.HostPlatform, bpPlatforms, cfg, auth)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_filter_current_platform")
 	}
@@ -414,8 +416,8 @@ func getSourceInfo(sourceID strfmt.UUID, lookup map[strfmt.UUID]interface{}) (So
 
 // NewMapFromBuildPlan creates an artifact map from a build plan
 // where the key is the artifact name rather than the artifact ID.
-func NewNamedMapFromBuildPlan(build *model.Build, buildtimeClosure bool, cfg platformModel.Configurable) (artifact.NamedMap, error) {
-	am, err := newFilteredMapFromBuildPlan(build, buildtimeClosure, cfg)
+func NewNamedMapFromBuildPlan(build *model.Build, buildtimeClosure bool, cfg platformModel.Configurable, auth *authentication.Auth) (artifact.NamedMap, error) {
+	am, err := newFilteredMapFromBuildPlan(build, buildtimeClosure, cfg, auth)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create artifact map")
 	}

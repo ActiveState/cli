@@ -4,19 +4,21 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 // Search manages the searching execution context.
 type Search struct {
-	out output.Outputer
+	out  output.Outputer
+	auth *authentication.Auth
 }
 
 // NewSearch prepares a search execution context for use.
-func NewSearch(prime primer.Outputer) *Search {
+func NewSearch(prime primeable) *Search {
 	return &Search{
-		out: prime.Output(),
+		out:  prime.Output(),
+		auth: prime.Auth(),
 	}
 }
 
@@ -24,7 +26,7 @@ func NewSearch(prime primer.Outputer) *Search {
 func (s *Search) Run() error {
 	logging.Debug("Execute platforms search")
 
-	modelPlatforms, err := model.FetchPlatforms()
+	modelPlatforms, err := model.FetchPlatforms(s.auth)
 	if err != nil {
 		return errs.Wrap(err, "Unable to fetch platforms")
 	}

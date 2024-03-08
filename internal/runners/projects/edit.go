@@ -101,7 +101,7 @@ func (e *Edit) Run(params *EditParams) error {
 		return nil
 	}
 
-	if err = model.EditProject(params.Namespace.Owner, params.Namespace.Project, editable); err != nil {
+	if err = model.EditProject(params.Namespace.Owner, params.Namespace.Project, editable, e.auth); err != nil {
 		return locale.WrapError(err, "err_edit_project", "Could not edit project")
 	}
 

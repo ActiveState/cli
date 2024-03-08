@@ -34,7 +34,7 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	params, err := prepareParams(ps.Params)
+	params, err := prepareParams(ps.Params, r.prime.Auth())
 	if err != nil {
 		return errs.Wrap(err, "Could not prepare parameters.")
 	}

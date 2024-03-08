@@ -16,7 +16,7 @@ import (
 
 // Save will add a new secret for this user or update an existing one.
 func Save(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *mono_models.Organization, project *mono_models.Project,
-	isUser bool, secretName, secretValue string) error {
+	isUser bool, secretName, secretValue string, auth *authentication.Auth) error {
 
 	logging.Debug("attempting to upsert user-secret for org=%s", org.OrganizationID.String())
 	encrStr, err := encrypter.EncryptAndEncode([]byte(secretValue))
@@ -37,7 +37,7 @@ func Save(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *m
 
 	params.UserSecrets = append(params.UserSecrets, secretChange)
 
-	_, err = secretsClient.Secrets.Secrets.SaveAllUserSecrets(params, authentication.LegacyGet().ClientAuth())
+	_, err = secretsClient.Secrets.Secrets.SaveAllUserSecrets(params, auth.ClientAuth())
 	if err != nil {
 		multilog.Error("error saving user secret: %v", err)
 		return locale.WrapError(err, "secrets_err_save", "", err.Error())
@@ -61,7 +61,7 @@ func ShareWithOrgUsers(secretsClient *secretsapi.Client, org *mono_models.Organi
 
 	for _, member := range members {
 		if currentUserID != member.User.UserID {
-			pubKey, err := keypairs.FetchPublicKey(secretsClient, member.User)
+			pubKey, err := keypairs.FetchPublicKey(secretsClient, member.User, auth)
 			if err != nil {
 				if errs.Matches(err, &keypairs.ErrKeypairNotFound{}) {
 					logging.Info("User `%s` has no public-key", member.User.Username)

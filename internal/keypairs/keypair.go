@@ -97,13 +97,13 @@ func GenerateEncodedKeypair(passphrase string, bits int) (*EncodedKeypair, error
 }
 
 // SaveEncodedKeypair stores an encoded Keypair back to the Secrets Service.
-func SaveEncodedKeypair(cfg Configurable, secretsClient *secretsapi.Client, encKeypair *EncodedKeypair) error {
+func SaveEncodedKeypair(cfg Configurable, secretsClient *secretsapi.Client, encKeypair *EncodedKeypair, auth *authentication.Auth) error {
 	params := keys.NewSaveKeypairParams().WithKeypair(&secretsModels.KeypairChange{
 		EncryptedPrivateKey: &encKeypair.EncodedPrivateKey,
 		PublicKey:           &encKeypair.EncodedPublicKey,
 	})
 
-	if _, err := secretsClient.Keys.SaveKeypair(params, authentication.LegacyGet().ClientAuth()); err != nil {
+	if _, err := secretsClient.Keys.SaveKeypair(params, auth.ClientAuth()); err != nil {
 		return locale.WrapError(err, "keypair_err_save")
 	}
 
@@ -114,13 +114,13 @@ func SaveEncodedKeypair(cfg Configurable, secretsClient *secretsapi.Client, encK
 // GenerateAndSaveEncodedKeypair first Generates and then tries to Save an EncodedKeypair. This is equivalent to calling
 // GenerateEncodedKeypair and then SaveEncodedKeypair. Upon success of both actions, the EncodedKeypair will be returned,
 // otherwise a Failure is returned.
-func GenerateAndSaveEncodedKeypair(cfg Configurable, secretsClient *secretsapi.Client, passphrase string, bits int) (*EncodedKeypair, error) {
+func GenerateAndSaveEncodedKeypair(cfg Configurable, secretsClient *secretsapi.Client, passphrase string, bits int, auth *authentication.Auth) (*EncodedKeypair, error) {
 	encodedKeypair, err := GenerateEncodedKeypair(passphrase, bits)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not generate encoded keypair")
 	}
 
-	err = SaveEncodedKeypair(cfg, secretsClient, encodedKeypair)
+	err = SaveEncodedKeypair(cfg, secretsClient, encodedKeypair, auth)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not save encoded keypair")
 	}

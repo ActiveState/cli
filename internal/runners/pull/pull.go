@@ -206,7 +206,7 @@ func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *pr
 		return "", locale.WrapError(err, "err_pull_merge_commit", "Could not create merge commit.")
 	}
 
-	cmit, err := model.GetCommit(resultCommit)
+	cmit, err := model.GetCommit(resultCommit, p.auth)
 	if err != nil {
 		return "", locale.WrapError(err, "err_pull_getcommit", "Could not inspect resulting commit.")
 	}

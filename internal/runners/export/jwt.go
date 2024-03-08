@@ -27,7 +27,7 @@ func (j *JWT) Run(params *JWTParams) error {
 		return locale.NewInputError("err_jwt_not_authenticated")
 	}
 
-	token := authentication.LegacyGet().BearerToken()
+	token := j.Auth.BearerToken()
 	j.Outputer.Print(output.Prepare(
 		token,
 		&struct {

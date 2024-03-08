@@ -138,7 +138,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 				return errs.Wrap(err, "Unable to get local commit")
 			}
 
-			language, err := model.LanguageByCommit(commitID)
+			language, err := model.LanguageByCommit(commitID, r.Auth)
 			if err == nil {
 				langName = language.Name
 				ns = ptr.To(model.NewNamespacePkgOrBundle(langName, *nsType))
@@ -163,7 +163,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 
 		var nsv model.Namespace
 		var supportedLang *medmodel.SupportedLanguage
-		requirementName, nsv, supportedLang, err = resolvePkgAndNamespace(r.Prompt, requirementName, *nsType, supported, ts)
+		requirementName, nsv, supportedLang, err = resolvePkgAndNamespace(r.Prompt, requirementName, *nsType, supported, ts, r.Auth)
 		if err != nil {
 			return errs.Wrap(err, "Could not resolve pkg and namespace")
 		}
@@ -189,18 +189,18 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	if validatePkg {
 		pg = output.StartSpinner(out, locale.Tr("progress_search", requirementName), constants.TerminalAnimationInterval)
 
-		normalized, err := model.FetchNormalizedName(*ns, requirementName)
+		normalized, err := model.FetchNormalizedName(*ns, requirementName, r.Auth)
 		if err != nil {
 			multilog.Error("Failed to normalize '%s': %v", requirementName, err)
 		}
 
-		packages, err := model.SearchIngredientsStrict(ns.String(), normalized, false, false, nil) // ideally case-sensitive would be true (PB-4371)
+		packages, err := model.SearchIngredientsStrict(ns.String(), normalized, false, false, nil, r.Auth) // ideally case-sensitive would be true (PB-4371)
 		if err != nil {
 			return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 		}
 
 		if len(packages) == 0 {
-			suggestions, err := getSuggestions(*ns, requirementName)
+			suggestions, err := getSuggestions(*ns, requirementName, r.Auth)
 			if err != nil {
 				multilog.Error("Failed to retrieve suggestions: %v", err)
 			}
@@ -293,7 +293,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 
 	// Check if this is an addition or an update
 	if operation == bpModel.OperationAdded && parentCommitID != "" {
-		req, err := model.GetRequirement(parentCommitID, *ns, requirementName)
+		req, err := model.GetRequirement(parentCommitID, *ns, requirementName, r.Auth)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}
@@ -308,13 +308,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 
 	if !hasParentCommit {
 		languageFromNs := model.LanguageFromNamespace(ns.String())
-		parentCommitID, err = model.CommitInitial(model.HostPlatform, languageFromNs, langVersion)
+		parentCommitID, err = model.CommitInitial(model.HostPlatform, languageFromNs, langVersion, r.Auth)
 		if err != nil {
 			return locale.WrapError(err, "err_install_no_project_commit", "Could not create initial commit for new project")
 		}
 	}
 
-	name, version, err := model.ResolveRequirementNameAndVersion(requirementName, requirementVersion, requirementBitWidth, *ns)
+	name, version, err := model.ResolveRequirementNameAndVersion(requirementName, requirementVersion, requirementBitWidth, *ns, r.Auth)
 	if err != nil {
 		return errs.Wrap(err, "Could not resolve requirement name and version")
 	}
@@ -515,11 +515,11 @@ func supportedLanguageByName(supported []medmodel.SupportedLanguage, langName st
 	return funk.Find(supported, func(l medmodel.SupportedLanguage) bool { return l.Name == langName }).(medmodel.SupportedLanguage)
 }
 
-func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType model.NamespaceType, supported []medmodel.SupportedLanguage, ts *time.Time) (string, model.Namespace, *medmodel.SupportedLanguage, error) {
+func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType model.NamespaceType, supported []medmodel.SupportedLanguage, ts *time.Time, auth *authentication.Auth) (string, model.Namespace, *medmodel.SupportedLanguage, error) {
 	ns := model.NewBlankNamespace()
 
 	// Find ingredients that match the input query
-	ingredients, err := model.SearchIngredientsStrict("", packageName, false, false, ts)
+	ingredients, err := model.SearchIngredientsStrict("", packageName, false, false, ts, auth)
 	if err != nil {
 		return "", ns, nil, locale.WrapError(err, "err_pkgop_search_err", "Failed to check for ingredients.")
 	}
@@ -567,8 +567,8 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 	return values[choice][0], model.NewNamespacePkgOrBundle(language, nsType), &supportedLang, nil
 }
 
-func getSuggestions(ns model.Namespace, name string) ([]string, error) {
-	results, err := model.SearchIngredients(ns.String(), name, false, nil)
+func getSuggestions(ns model.Namespace, name string, auth *authentication.Auth) ([]string, error) {
+	results, err := model.SearchIngredients(ns.String(), name, false, nil, auth)
 	if err != nil {
 		return []string{}, locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
 	}
