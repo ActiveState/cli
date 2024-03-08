@@ -22,40 +22,59 @@ type projecter interface {
 	Name() string
 }
 
-func NewScriptFromProject(proj projecter, auth *authentication.Auth) (*Script, error) {
-	return newScriptFromFile(filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName), proj.Owner(), proj.Name(), auth)
+var ErrBuildscriptNotExist = errors.New("Build script does not exist")
+
+// ScriptFromProjectWithFallback will source the buildscript from the project, and create it if it does not exist.
+func ScriptFromProjectWithFallback(proj projecter, auth *authentication.Auth) (*Script, error) {
+	path := filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName)
+
+	buildscript, err := ScriptFromFile(path)
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			return nil, errs.Wrap(err, "Could not read build script from file")
+		}
+
+		logging.Debug("Build script does not exist. Creating one.")
+		commitId, err := localcommit.Get(filepath.Dir(path))
+		if err != nil {
+			return nil, errs.Wrap(err, "Unable to get the local commit ID")
+		}
+		buildplanner := model.NewBuildPlannerModel(auth)
+		expr, err := buildplanner.GetBuildExpression(commitId.String())
+		if err != nil {
+			return nil, errs.Wrap(err, "Unable to get the remote build expression")
+		}
+		buildscript, err = NewScriptFromBuildExpression(expr)
+		if err != nil {
+			return nil, errs.Wrap(err, "Unable to convert build expression to build script")
+		}
+		err = fileutils.WriteFile(path, []byte(buildscript.String()))
+		if err != nil {
+			return nil, errs.Wrap(err, "Unable to write build script")
+		}
+	}
+
+	return buildscript, nil
 }
 
-func newScriptFromFile(path, org, project string, auth *authentication.Auth) (*Script, error) {
-	if data, err := fileutils.ReadFile(path); err == nil {
-		return NewScript(data)
-	} else if !errors.Is(err, os.ErrNotExist) {
-		return nil, errs.Wrap(err, "Could not read build script")
-	}
+func ScriptFromProject(proj projecter) (*Script, error) {
+	path := filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName)
+	return ScriptFromFile(path)
+}
 
-	logging.Debug("Build script does not exist. Creating one.")
-	commitId, err := localcommit.Get(filepath.Dir(path))
+func ScriptFromFile(path string) (*Script, error) {
+	data, err := fileutils.ReadFile(path)
 	if err != nil {
-		return nil, errs.Wrap(err, "Unable to get the local commit ID")
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, errs.Pack(err, ErrBuildscriptNotExist)
+		}
+		return nil, errs.Wrap(err, "Could not read build script from file")
 	}
-	buildplanner := model.NewBuildPlannerModel(auth)
-	expr, err := buildplanner.GetBuildExpression(commitId.String())
-	if err != nil {
-		return nil, errs.Wrap(err, "Unable to get the remote build expression")
-	}
-	script, err := NewScriptFromBuildExpression(expr)
-	if err != nil {
-		return nil, errs.Wrap(err, "Unable to convert build expression to build script")
-	}
-	err = fileutils.WriteFile(path, []byte(script.String()))
-	if err != nil {
-		return nil, errs.Wrap(err, "Unable to write build script")
-	}
-	return script, nil
+	return NewScript(data)
 }
 
 func Update(proj projecter, newExpr *buildexpression.BuildExpression, auth *authentication.Auth) error {
-	if script, err := NewScriptFromProject(proj, auth); err == nil && (script == nil || !script.EqualsBuildExpression(newExpr)) {
+	if script, err := ScriptFromProjectWithFallback(proj, auth); err == nil && (script == nil || !script.EqualsBuildExpression(newExpr)) {
 		update(proj.ProjectDir(), newExpr, auth)
 	} else if err != nil {
 		return errs.Wrap(err, "Could not read build script")

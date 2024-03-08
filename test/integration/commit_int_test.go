@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -43,14 +42,14 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.NoError(err, "Error loading project")
 
-	_, err = buildscript.NewScriptFromProject(proj, nil)
-	suite.Require().NoError(err, errs.JoinMessage(err)) // verify validity
+	_, err = buildscript.ScriptFromProject(proj)
+	suite.Require().NoError(err) // verify validity
 
 	cp = ts.Spawn("commit")
 	cp.Expect("No change")
 	cp.ExpectExitCode(0)
 
-	_, err = buildscript.NewScriptFromProject(proj, nil)
+	_, err = buildscript.ScriptFromProject(proj)
 	suite.Require().NoError(err) // verify validity
 
 	scriptPath := filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName)

@@ -148,7 +148,7 @@ func (r *Runtime) validateCache() error {
 
 	// Check if local build script has changes that should be committed.
 	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		script, err := buildscript.NewScriptFromProject(r.target, r.auth)
+		script, err := buildscript.ScriptFromProject(r.target)
 		if err != nil {
 			return errs.Wrap(err, "Unable to get local build script")
 		}
