@@ -55,14 +55,6 @@ type Runtime struct {
 	resolvedArtifacts []*artifact.Artifact
 }
 
-// NeedsUpdateError is an error returned when the runtime is not completely installed yet.
-type NeedsUpdateError struct{ error }
-
-// IsNeedsUpdateError checks if the error is a NeedsUpdateError
-func IsNeedsUpdateError(err error) bool {
-	return errs.Matches(err, &NeedsUpdateError{})
-}
-
 // NeedsCommitError is an error returned when the local runtime's build script has changes that need
 // staging. This is not a fatal error. A runtime can still be used, but a warning should be emitted.
 type NeedsCommitError struct{ error }
@@ -115,15 +107,18 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, a
 	return r, err
 }
 
-func (r *Runtime) validateCache() error {
+func (r *Runtime) NeedsUpdate() bool {
 	if !r.store.MarkerIsValid(r.target.CommitUUID()) {
 		if r.target.ReadOnly() {
 			logging.Debug("Using forced cache")
 		} else {
-			return &NeedsUpdateError{errs.New("Runtime requires setup.")}
+			return true
 		}
 	}
+	return false
+}
 
+func (r *Runtime) validateCache() error {
 	if r.target.ProjectDir() == "" {
 		return nil
 	}

@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/rtutils"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/shirou/gopsutil/v3/process"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -21,8 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -127,17 +127,20 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	switch {
 	case err == nil:
 		break
-	case runtime.IsNeedsUpdateError(err):
-		pg := runbits.NewRuntimeProgressIndicator(s.out)
-		defer rtutils.Closer(pg.Close, &rerr)
-		if err := rt.Update(pg); err != nil {
-			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
-		}
 	case runtime.IsNeedsCommitError(err):
 		s.out.Notice(locale.T("notice_commit_build_script"))
 	default:
 		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 	}
+
+	if rt.NeedsUpdate() {
+		pg := runbits.NewRuntimeProgressIndicator(s.out)
+		defer rtutils.Closer(pg.Close, &rerr)
+		if err := rt.Update(pg); err != nil {
+			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
+		}
+	}
+
 	venv := virtualenvironment.New(rt)
 
 	env, err := venv.GetEnv(true, false, projectDir, projectNamespace)

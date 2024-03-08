@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
@@ -155,7 +155,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
-	return runbits.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, commitID, true, target.TriggerImport, i.svcModel, i.cfg)
+	return runtime.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, commitID, true, target.TriggerImport, i.svcModel, i.cfg)
 }
 
 func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model.Changeset, error) {
