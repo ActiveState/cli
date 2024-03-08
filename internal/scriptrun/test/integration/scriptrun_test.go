@@ -66,7 +66,7 @@ scripts:
 	}
 	err := yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	pjfile.Persist()
+	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -96,7 +96,7 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 
 	pjfile, err := projectfile.Parse(prjPath)
 	require.NoError(t, err, "parsing pjfile file")
-	pjfile.Persist()
+	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -147,7 +147,7 @@ scripts:
 	}
 	err := yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	pjfile.Persist()
+	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -176,7 +176,7 @@ scripts:
   `)
 	err := yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	pjfile.Persist()
+	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -204,7 +204,7 @@ scripts:
   `)
 	err := yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	pjfile.Persist()
+	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -257,7 +257,7 @@ scripts:
 	}
 	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	pjfile.Persist()
+	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -345,7 +345,7 @@ scripts:
 func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []string) (string, error) {
 
 	pjfile := setupProjectWithScriptsExpectingArgs(t, tmplCmdName)
-	pjfile.Persist()
+	require.NoError(t, pjfile.Persist())
 	defer projectfile.Reset()
 
 	proj, err := project.New(pjfile, nil)

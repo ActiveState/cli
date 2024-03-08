@@ -152,7 +152,10 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 	// Have to call this once the project has been set
 	r.analytics.Event(anaConsts.CatActivationFlow, "start")
 
-	proj.Source().Persist()
+	err = proj.Source().Persist()
+	if err != nil {
+		return errs.Wrap(err, "Unable to persist project")
+	}
 
 	// Yes this is awkward, issue here - https://www.pivotaltracker.com/story/show/175619373
 	activatedKey := fmt.Sprintf("activated_%s", proj.Namespace().String())
