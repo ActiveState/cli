@@ -164,7 +164,7 @@ func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 
 	pg := runbits.NewRuntimeProgressIndicator(d.output)
 	defer rtutils.Closer(pg.Close, &rerr)
-	if err := rti.Update(pg); err != nil {
+	if err := rti.SolveAndUpdate(pg); err != nil {
 		return locale.WrapError(err, "deploy_install_failed", "Installation failed.")
 	}
 

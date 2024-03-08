@@ -171,8 +171,58 @@ func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth
 	return &Setup{auth, target, eventHandler, store.New(target.Dir()), an, cache, cfg, out}
 }
 
-// Update installs the runtime locally (or updates it if it's already partially installed)
-func (s *Setup) Update() (rerr error) {
+func (s *Setup) Solve() (*apimodel.BuildResult, error) {
+	if s.target.InstallFromDir() != nil {
+		return nil, nil
+	}
+
+	// Request build
+	if err := s.handleEvent(events.SolveStart{}); err != nil {
+		return nil, errs.Wrap(err, "Could not handle SolveStart event")
+	}
+
+	bp := model.NewBuildPlannerModel(s.auth)
+	buildResult, err := bp.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to fetch build result")
+	}
+
+	if err := s.eventHandler.Handle(events.SolveSuccess{}); err != nil {
+		return nil, errs.Wrap(err, "Could not handle SolveSuccess event")
+	}
+
+	return buildResult, nil
+}
+
+func (s *Setup) Update(buildResult *apimodel.BuildResult) error {
+	// Do not allow users to deploy runtimes to the root directory (this can easily happen in docker
+	// images). Note that runtime targets are fully resolved via fileutils.ResolveUniquePath(), so
+	// paths like "/." and "/opt/.." resolve to simply "/" at this time.
+	if rt.GOOS != "windows" && s.target.Dir() == "/" {
+		return locale.NewInputError("err_runtime_setup_root", "Cannot set up a runtime in the root directory. Please specify or run from a user-writable directory.")
+	}
+
+	// Update all the runtime artifacts
+	artifacts, err := s.updateArtifacts(buildResult)
+	if err != nil {
+		return errs.Wrap(err, "Failed to update artifacts")
+	}
+
+	// Update executors
+	if err := s.updateExecutors(artifacts); err != nil {
+		return ExecutorSetupError{errs.Wrap(err, "Failed to update executors")}
+	}
+
+	// Mark installation as completed
+	if err := s.store.MarkInstallationComplete(s.target.CommitUUID(), fmt.Sprintf("%s/%s", s.target.Owner(), s.target.Name())); err != nil {
+		return errs.Wrap(err, "Could not mark install as complete.")
+	}
+
+	return nil
+}
+
+// SolveAndUpdate installs the runtime locally (or updates it if it's already partially installed)
+func (s *Setup) SolveAndUpdate() (rerr error) {
 	defer func() {
 		// Panics are serious, and reproducing them in the runtime package is HARD. To help with this we dump
 		// the build plan when a panic occurs so we have something more to go on.
@@ -204,40 +254,26 @@ func (s *Setup) Update() (rerr error) {
 		}
 	}()
 
-	// Do not allow users to deploy runtimes to the root directory (this can easily happen in docker
-	// images). Note that runtime targets are fully resolved via fileutils.ResolveUniquePath(), so
-	// paths like "/." and "/opt/.." resolve to simply "/" at this time.
-	if rt.GOOS != "windows" && s.target.Dir() == "/" {
-		return locale.NewInputError("err_runtime_setup_root", "Cannot set up a runtime in the root directory. Please specify or run from a user-writable directory.")
-	}
-
-	// Update all the runtime artifacts
-	artifacts, err := s.updateArtifacts()
+	buildResult, err := s.Solve()
 	if err != nil {
-		return errs.Wrap(err, "Failed to update artifacts")
+		return errs.Wrap(err, "Could not solve build")
 	}
 
-	// Update executors
-	if err := s.updateExecutors(artifacts); err != nil {
-		return ExecutorSetupError{errs.Wrap(err, "Failed to update executors")}
-	}
-
-	// Mark installation as completed
-	if err := s.store.MarkInstallationComplete(s.target.CommitUUID(), fmt.Sprintf("%s/%s", s.target.Owner(), s.target.Name())); err != nil {
-		return errs.Wrap(err, "Could not mark install as complete.")
+	if err := s.Update(buildResult); err != nil {
+		return errs.Wrap(err, "Runtime update failed")
 	}
 
 	return nil
 }
 
-func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
+func (s *Setup) updateArtifacts(buildResult *apimodel.BuildResult) ([]artifact.ArtifactID, error) {
 	mutex := &sync.Mutex{}
 	var installArtifactFuncs []func() error
 
 	// Fetch and install each runtime artifact.
 	// Note: despite the name, we are "pre-installing" the artifacts to a temporary location.
 	// Once all artifacts are fetched, unpacked, and prepared, final installation occurs.
-	artifacts, uninstallFunc, err := s.fetchAndInstallArtifacts(func(a artifact.ArtifactID, archivePath string, as ArtifactSetuper) (rerr error) {
+	artifacts, uninstallFunc, err := s.fetchAndInstallArtifacts(buildResult, func(a artifact.ArtifactID, archivePath string, as ArtifactSetuper) (rerr error) {
 		defer func() {
 			if rerr != nil {
 				rerr = &ArtifactInstallError{errs.Wrap(rerr, "Unable to install artifact")}
@@ -386,30 +422,15 @@ func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 // all of them were already installed.
 // It may also return an artifact uninstaller function that should be run prior to final
 // installation.
-func (s *Setup) fetchAndInstallArtifacts(installFunc artifactInstaller) ([]artifact.ArtifactID, artifactUninstaller, error) {
+func (s *Setup) fetchAndInstallArtifacts(buildResult *apimodel.BuildResult, installFunc artifactInstaller) ([]artifact.ArtifactID, artifactUninstaller, error) {
 	if s.target.InstallFromDir() != nil {
 		artifacts, err := s.fetchAndInstallArtifactsFromDir(installFunc)
 		return artifacts, nil, err
 	}
-	return s.fetchAndInstallArtifactsFromBuildPlan(installFunc)
+	return s.fetchAndInstallArtifactsFromBuildPlan(buildResult, installFunc)
 }
 
-func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstaller) ([]artifact.ArtifactID, artifactUninstaller, error) {
-	// Request build
-	if err := s.handleEvent(events.SolveStart{}); err != nil {
-		return nil, nil, errs.Wrap(err, "Could not handle SolveStart event")
-	}
-
-	bp := model.NewBuildPlannerModel(s.auth)
-	buildResult, err := bp.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
-	if err != nil {
-		return nil, nil, errs.Wrap(err, "Failed to fetch build result")
-	}
-
-	if err := s.eventHandler.Handle(events.SolveSuccess{}); err != nil {
-		return nil, nil, errs.Wrap(err, "Could not handle SolveSuccess event")
-	}
-
+func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(buildResult *apimodel.BuildResult, installFunc artifactInstaller) ([]artifact.ArtifactID, artifactUninstaller, error) {
 	// If the build is not ready or if we are installing the buildtime closure
 	// then we need to include the buildtime closure in the changed artifacts
 	// and the progress reporting.
@@ -569,7 +590,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		}
 		dependencies.OutputSummary(s.out, requestedArtifacts, artifactsToBuild)
 	} else if s.target.Trigger() == target.TriggerInit {
-		dependencies.OutputSummary(s.out, changedArtifacts.Added, artifactsToBuild)
+		dependencies.OutputSummary(s.out, artifact.ArtifactIDsFromArtifactSlice(changedArtifacts.Added), artifactsToBuild)
 	} else if len(oldBuildPlanArtifacts) > 0 {
 		dependencies.OutputChangeSummary(s.out, changedArtifacts, artifactsToBuild, oldBuildPlanArtifacts)
 	}

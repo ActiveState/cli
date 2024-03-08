@@ -51,7 +51,7 @@ func NewFromProject(
 	if rti.NeedsUpdate() {
 		pg := runbits.NewRuntimeProgressIndicator(out)
 		defer rtutils.Closer(pg.Close, &rerr)
-		if err := rti.Update(pg); err != nil {
+		if err := rti.SolveAndUpdate(pg); err != nil {
 			return nil, &ErrUpdate{locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")}
 		}
 		return rti, nil

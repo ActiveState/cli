@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -28,30 +29,10 @@ func RefreshRuntime(
 	svcm *model.SvcModel,
 	cfg Configurable,
 ) (rerr error) {
-	target := target.NewProjectTarget(proj, resolveCommitID(proj, &commitID), trigger)
+	target := target.NewProjectTarget(proj, &commitID, trigger)
 	rt, err := runtime.New(target, an, svcm, auth, cfg, out)
 	if err != nil {
 		return locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
-	}
-
-	return RefreshRuntimeByReference(rt, auth, out, proj, commitID, changed, cfg)
-}
-
-// RefreshRuntime should be called after runtime mutations.
-func RefreshRuntimeByReference(
-	rt *runtime.Runtime,
-	auth *authentication.Auth,
-	out output.Outputer,
-	proj *project.Project,
-	commitID strfmt.UUID,
-	changed bool,
-	cfg Configurable,
-) (rerr error) {
-	if cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		_, err := buildscript.Sync(proj, &commitID, out, auth)
-		if err != nil {
-			return locale.WrapError(err, "err_update_build_script")
-		}
 	}
 
 	if !changed && !rt.NeedsUpdate() {
@@ -61,16 +42,38 @@ func RefreshRuntimeByReference(
 
 	if rt.NeedsUpdate() {
 		if !rt.HasCache() {
-			out.Notice(output.Title(locale.Tl("install_runtime", "Installing Runtime")))
-			out.Notice(locale.Tl("install_runtime_info", "Installing your runtime and dependencies."))
+			out.Notice(output.Title(locale.T("install_runtime")))
+			out.Notice(locale.T("install_runtime_info"))
 		} else {
-			out.Notice(output.Title(locale.Tl("update_runtime", "Updating Runtime")))
-			out.Notice(locale.Tl("update_runtime_info", "Changes to your runtime may require some dependencies to be rebuilt.\n"))
+			out.Notice(output.Title(locale.T("update_runtime")))
+			out.Notice(locale.T("update_runtime_info"))
 		}
+	}
+
+	return RefreshRuntimeByReference(rt, auth, out, proj, cfg)
+}
+
+// RefreshRuntimeByReference will update the given runtime if necessary. Unlike RefreshRuntime this won't print any UI
+// except for the progress of sourcing the runtime.
+func RefreshRuntimeByReference(
+	rt *runtime.Runtime,
+	auth *authentication.Auth,
+	out output.Outputer,
+	proj *project.Project,
+	cfg Configurable,
+) (rerr error) {
+	if cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		_, err := buildscript.Sync(proj, ptr.To(rt.Target().CommitUUID()), out, auth)
+		if err != nil {
+			return locale.WrapError(err, "err_update_build_script")
+		}
+	}
+
+	if rt.NeedsUpdate() {
 		pg := runbits.NewRuntimeProgressIndicator(out)
 		defer rtutils.Closer(pg.Close, &rerr)
 
-		err := rt.Update(pg)
+		err := rt.SolveAndUpdate(pg)
 		if err != nil {
 			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
 		}
@@ -79,14 +82,31 @@ func RefreshRuntimeByReference(
 	return nil
 }
 
-func resolveCommitID(proj *project.Project, customCommitID *strfmt.UUID) *strfmt.UUID {
-	var projectCommitID *strfmt.UUID
-	if proj != nil && proj.Namespace() != nil && proj.Namespace().CommitID != nil {
-		projectCommitID = proj.Namespace().CommitID
+// UpdateByReference will update the given runtime if necessary. This is functionally the same as RefreshRuntimeByReference
+// except that it does not do its own solve.
+func UpdateByReference(
+	rt *runtime.Runtime,
+	buildResult *model.BuildResult,
+	auth *authentication.Auth,
+	out output.Outputer,
+	proj *project.Project,
+	cfg Configurable,
+) (rerr error) {
+	if cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		_, err := buildscript.Sync(proj, ptr.To(rt.Target().CommitUUID()), out, auth)
+		if err != nil {
+			return locale.WrapError(err, "err_update_build_script")
+		}
 	}
 
-	if projectCommitID != customCommitID {
-		return customCommitID
+	if rt.NeedsUpdate() {
+		pg := runbits.NewRuntimeProgressIndicator(out)
+		defer rtutils.Closer(pg.Close, &rerr)
+
+		err := rt.Setup(pg).Update(buildResult)
+		if err != nil {
+			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
+		}
 	}
 
 	return nil

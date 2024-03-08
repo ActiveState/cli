@@ -136,7 +136,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	if rt.NeedsUpdate() {
 		pg := runbits.NewRuntimeProgressIndicator(s.out)
 		defer rtutils.Closer(pg.Close, &rerr)
-		if err := rt.Update(pg); err != nil {
+		if err := rt.SolveAndUpdate(pg); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 	}
