@@ -51,7 +51,7 @@ func rationalizeError(err *error) {
 	case err == nil:
 		return
 	case errs.Matches(*err, buildscript.ErrBuildscriptNotExist):
-		*err = errs.WrapUserFacing(*err, locale.T("err_buildscript_notexist"))
+		*err = errs.WrapUserFacing(*err, locale.T("err_buildscript_not_exist"))
 	}
 }
 
