@@ -605,12 +605,12 @@ func (bp *BuildPlanner) BuildTarget(commitID, target string) error {
 		return processBuildPlannerError(err, "Failed to evaluate target")
 	}
 
-	if resp.Build == nil {
-		return errs.New("Evaluate is nil")
+	if resp.Commit == nil {
+		return errs.New("Commit is nil")
 	}
 
-	if bpModel.IsErrorResponse(resp.Build.Type) {
-		return bpModel.ProcessBuildTargetError(resp.Build, "Could not evaluate target")
+	if bpModel.IsErrorResponse(resp.Commit.Type) {
+		return bpModel.ProcessBuildTargetError(resp.Commit, "Could not evaluate target")
 	}
 
 	if err := bp.pollBuildStatus(commitID); err != nil {
