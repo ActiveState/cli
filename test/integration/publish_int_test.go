@@ -12,9 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/stretchr/testify/suite"
-	"gopkg.in/yaml.v3"
 )
 
 var editorFileRx = regexp.MustCompile(`file:\s*?(.*?)\.\s`)
@@ -27,7 +25,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 	suite.OnlyRunForTags(tagsuite.Publish)
 
 	// For development convenience, should not be committed without commenting out..
-	// os.Setenv(constants.APIHostEnvVarName, "pr11496.activestate.build")
+	// os.Setenv(constants.APIHostEnvVarName, "pr13328.activestate.build")
 
 	if v := os.Getenv(constants.APIHostEnvVarName); v == "" || v == constants.DefaultAPIHost {
 		suite.T().Skipf("Skipping test as %s is not set, this test can only be run against non-production envs.", constants.APIHostEnvVarName)
@@ -70,11 +68,17 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 	user := ts.CreateNewUser()
 
 	tests := []struct {
-		name        string
-		invocations []invocation
+		name                string
+		ingredientName      string
+		ingredientNamespace string
+		ingredientVersion   string
+		invocations         []invocation
 	}{
 		{
 			"New ingredient with file arg and flags",
+			"im-a-name-test1",
+			fmt.Sprintf("org/%s", user.Username),
+			"2.3.4",
 			[]invocation{
 				{
 					input{
@@ -86,6 +90,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 							"--description", "im-a-description",
 							"--author", "author-name <author-email@domain.tld>",
 							"--depend", "language/python@>=3",
+							"--depend", "builder/python-module-builder@>=0",
 							"--depend-test", "language/python@>=3",
 							"--depend-build", "language/python@>=3",
 							"--depend-runtime", "language/python@>=3",
@@ -113,6 +118,9 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 		},
 		{
 			"New ingredient with invalid filename",
+			"",
+			"",
+			"",
 			[]invocation{{input{
 				[]string{tempFileInvalid},
 				nil,
@@ -130,18 +138,21 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 		},
 		{
 			"New ingredient with meta file",
+			"im-a-name-test2",
+			fmt.Sprintf("org/%s", user.Username),
+			"2.3.4",
 			[]invocation{{
 				input{
 					[]string{"--meta", "{{.MetaFile}}", tempFile},
 					ptr.To(`
-name: im-a-name-test2
-namespace: org/{{.Username}}
-version: 2.3.4
-description: im-a-description
-authors:
-  - name: author-name
-    email: author-email@domain.tld
-`),
+		name: im-a-name-test2
+		namespace: org/{{.Username}}
+		version: 2.3.4
+		description: im-a-description
+		authors:
+		  - name: author-name
+		    email: author-email@domain.tld
+		`),
 					nil,
 					true,
 				},
@@ -163,18 +174,21 @@ authors:
 		},
 		{
 			"New ingredient with meta file and flags",
+			"im-a-name-from-flag",
+			fmt.Sprintf("org/%s", user.Username),
+			"2.3.4",
 			[]invocation{{
 				input{
 					[]string{"--meta", "{{.MetaFile}}", tempFile, "--name", "im-a-name-from-flag", "--author", "author-name-from-flag <author-email-from-flag@domain.tld>"},
 					ptr.To(`
-name: im-a-name
-namespace: org/{{.Username}}
-version: 2.3.4
-description: im-a-description
-authors:
-  - name: author-name
-    email: author-email@domain.tld
-`),
+		name: im-a-name
+		namespace: org/{{.Username}}
+		version: 2.3.4
+		description: im-a-description
+		authors:
+		  - name: author-name
+		    email: author-email@domain.tld
+		`),
 					nil,
 					true,
 				},
@@ -196,19 +210,22 @@ authors:
 		},
 		{
 			"New ingredient with editor flag",
+			"im-a-name-test3",
+			fmt.Sprintf("org/%s", user.Username),
+			"2.3.4",
 			[]invocation{{
 				input{
 					[]string{tempFile, "--editor"},
 					nil,
 					ptr.To(`
-name: im-a-name-test3
-namespace: org/{{.Username}}
-version: 2.3.4
-description: im-a-description
-authors:
-  - name: author-name
-    email: author-email@domain.tld
-`),
+		name: im-a-name-test3
+		namespace: org/{{.Username}}
+		version: 2.3.4
+		description: im-a-description
+		authors:
+		  - name: author-name
+		    email: author-email@domain.tld
+		`),
 					true,
 				},
 				expect{
@@ -229,6 +246,9 @@ authors:
 		},
 		{
 			"Cancel Publish",
+			"bogus",
+			fmt.Sprintf("org/%s", user.Username),
+			"2.3.4",
 			[]invocation{{
 				input{
 					[]string{tempFile, "--name", "bogus", "--namespace", "org/{{.Username}}"},
@@ -246,6 +266,9 @@ authors:
 		},
 		{
 			"Edit ingredient without file arg and with flags",
+			"editable",
+			fmt.Sprintf("org/%s", user.Username),
+			"1.0.1",
 			[]invocation{
 				{ // Create ingredient
 					input{
@@ -382,14 +405,6 @@ authors:
 
 					cp.Expect("Y/n")
 
-					snapshot := cp.Snapshot()
-					rx := regexp.MustCompile(`(?s)Publish following ingredient\?(.*)\(Y/n`)
-					match := rx.FindSubmatch([]byte(snapshot))
-					suite.Require().NotNil(match, fmt.Sprintf("Could not match '%s' against: %s", rx.String(), snapshot))
-
-					meta := request.PublishVariables{}
-					suite.Require().NoError(yaml.Unmarshal(match[1], &meta))
-
 					if inv.input.confirmUpload {
 						cp.SendLine("Y")
 					} else {
@@ -398,13 +413,13 @@ authors:
 					}
 
 					cp.Expect("Successfully published")
-					cp.Expect("Name: " + meta.Name)
-					cp.Expect("Namespace: " + meta.Namespace)
-					cp.Expect("Version: " + meta.Version)
+					cp.Expect("Name: " + tt.ingredientName)
+					cp.Expect("Namespace: " + tt.ingredientNamespace)
+					cp.Expect("Version: " + tt.ingredientVersion)
 					cp.ExpectExitCode(inv.expect.exitCode)
 
-					cp = ts.Spawn("search", meta.Namespace+"/"+meta.Name, "--ts=now")
-					cp.Expect(meta.Version)
+					cp = ts.Spawn("search", tt.ingredientNamespace+"/"+tt.ingredientName, "--ts=now")
+					cp.Expect(tt.ingredientVersion)
 					cp.ExpectExitCode(0)
 				})
 			}

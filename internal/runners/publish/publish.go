@@ -1,6 +1,7 @@
 package publish
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"path/filepath"
@@ -244,6 +245,12 @@ func (r *Runner) Run(params *Params) error {
 
 	r.out.Notice(locale.Tl("uploadingredient_uploading", "Publishing ingredient..."))
 
+	reqVarsData, err := json.MarshalIndent(reqVars, "", "  ")
+	if err != nil {
+		return locale.WrapError(err, "err_uploadingredient_publish", "Could not marshal publish request")
+	}
+	logging.Debug("Publish request vars: %s", string(reqVarsData))
+
 	pr, err := request.Publish(reqVars, params.Filepath)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not create publish request")
@@ -319,7 +326,6 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRev
 	}
 
 	if len(params.Depends) != 0 {
-		r.Dependencies = []request.PublishVariableDep{}
 		for _, dep := range params.Depends {
 			r.Dependencies = append(
 				r.Dependencies,
@@ -332,7 +338,6 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRev
 	}
 
 	if len(params.DependsRuntime) != 0 {
-		r.Dependencies = []request.PublishVariableDep{}
 		for _, dep := range params.DependsRuntime {
 			r.Dependencies = append(
 				r.Dependencies,
@@ -345,7 +350,6 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRev
 	}
 
 	if len(params.DependsBuild) != 0 {
-		r.Dependencies = []request.PublishVariableDep{}
 		for _, dep := range params.DependsBuild {
 			r.Dependencies = append(
 				r.Dependencies,
@@ -358,7 +362,6 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRev
 	}
 
 	if len(params.DependsTest) != 0 {
-		r.Dependencies = []request.PublishVariableDep{}
 		for _, dep := range params.DependsTest {
 			r.Dependencies = append(
 				r.Dependencies,
