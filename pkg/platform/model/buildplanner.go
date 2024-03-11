@@ -31,7 +31,7 @@ import (
 const (
 	pollInterval       = 1 * time.Second
 	pollTimeout        = 30 * time.Second
-	buildStatusTimeout = 30 * time.Minute
+	buildStatusTimeout = 24 * time.Hour
 
 	codeExtensionKey          = "code"
 	clientDeprecationErrorKey = "CLIENT_DEPRECATION_ERROR"
