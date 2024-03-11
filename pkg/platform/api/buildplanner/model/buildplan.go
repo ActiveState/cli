@@ -410,19 +410,6 @@ func ProcessProjectError(project *Project, fallbackMessage string) error {
 	return errs.New(fallbackMessage)
 }
 
-func ProcessBuildTargetError(build *buildTarget, fallbackMessage string) error {
-	switch build.Type {
-	case ParseErrorType:
-		return locale.NewInputError("err_buildplanner_parse_error", "The platform failed to parse the build expression, received message: {{.V0}}. Path: {{.V1}}", build.Message, build.ParseError.Path)
-	case ValidationErrorType:
-		return locale.NewInputError("err_buildplanner_validation_error", "The platform failed to validate the build expression, received message: {{.V0}}", build.Message)
-	case PlanningErrorType:
-		return processPlanningError(build.Message, build.Project.Commit.Build.SubErrors)
-	}
-
-	return errs.New(fallbackMessage)
-}
-
 type RevertCommitError struct {
 	Type    string
 	Message string
@@ -533,16 +520,10 @@ type MergeCommitResult struct {
 	MergedCommit *mergedCommit `json:"mergeCommit"`
 }
 
-type buildTarget struct {
-	Type    string   `json:"__typename"`
+type BuildTargetResult struct {
 	Project *Project `json:"Project"`
 	*Error
-	*ParseError
-	*PlanningError
-}
-
-type BuildTargetResult struct {
-	Project *buildTarget `json:"Project"`
+	*NotFoundError
 }
 
 // Error contains an error message.
