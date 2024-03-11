@@ -80,7 +80,7 @@ func (e *Eval) Run(params *Params) (rerr error) {
 	pg := output.StartSpinner(e.out, locale.Tl("progress_eval", "Evaluating ... "), constants.TerminalAnimationInterval)
 
 	bp := model.NewBuildPlannerModel(e.auth)
-	if err := bp.BuildTarget(commitID.String(), target); err != nil {
+	if err := bp.BuildTarget(e.project.Owner(), e.project.Name(), commitID.String(), target); err != nil {
 		return locale.WrapError(err, "err_eval", "Failed to evaluate target '{{.V0}}'", target)
 	}
 

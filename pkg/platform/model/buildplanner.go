@@ -597,20 +597,20 @@ func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, 
 	return requirements, nil
 }
 
-func (bp *BuildPlanner) BuildTarget(commitID, target string) error {
-	logging.Debug("Evaluate, commitID: %s, target: %s", commitID, target)
+func (bp *BuildPlanner) BuildTarget(owner, project, commitID, target string) error {
+	logging.Debug("BuildTarget, owner: %s, project: %s, commitID: %s, target: %s", owner, project, commitID, target)
 	resp := &bpModel.BuildTargetResult{}
-	err := bp.client.Run(request.Evaluate(commitID, target), resp)
+	err := bp.client.Run(request.Evaluate(owner, project, commitID, target), resp)
 	if err != nil {
 		return processBuildPlannerError(err, "Failed to evaluate target")
 	}
 
-	if resp.Commit == nil {
-		return errs.New("Commit is nil")
+	if resp.Project == nil {
+		return errs.New("Project is nil")
 	}
 
-	if bpModel.IsErrorResponse(resp.Commit.Type) {
-		return bpModel.ProcessBuildTargetError(resp.Commit, "Could not evaluate target")
+	if bpModel.IsErrorResponse(resp.Project.Type) {
+		return bpModel.ProcessBuildTargetError(resp.Project, "Could not evaluate target")
 	}
 
 	if err := bp.pollBuildStatus(commitID); err != nil {
@@ -639,6 +639,10 @@ func (bp *BuildPlanner) pollBuildStatus(commitID string) error {
 			build, err := resp.Build()
 			if err != nil {
 				return errs.Wrap(err, "Could not get build from response")
+			}
+
+			if build.Status != bpModel.Completed {
+				continue
 			}
 
 			completed := true

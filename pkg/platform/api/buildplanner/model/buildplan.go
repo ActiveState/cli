@@ -417,7 +417,7 @@ func ProcessBuildTargetError(build *buildTarget, fallbackMessage string) error {
 	case ValidationErrorType:
 		return locale.NewInputError("err_buildplanner_validation_error", "The platform failed to validate the build expression, received message: {{.V0}}", build.Message)
 	case PlanningErrorType:
-		return processPlanningError(build.Message, build.Commit.Build.SubErrors)
+		return processPlanningError(build.Message, build.Project.Commit.Build.SubErrors)
 	}
 
 	return errs.New(fallbackMessage)
@@ -534,15 +534,15 @@ type MergeCommitResult struct {
 }
 
 type buildTarget struct {
-	Type   string  `json:"__typename"`
-	Commit *Commit `json:"commit"`
+	Type    string   `json:"__typename"`
+	Project *Project `json:"Project"`
 	*Error
 	*ParseError
 	*PlanningError
 }
 
 type BuildTargetResult struct {
-	Commit *buildTarget `json:"commit"`
+	Project *buildTarget `json:"Project"`
 }
 
 // Error contains an error message.

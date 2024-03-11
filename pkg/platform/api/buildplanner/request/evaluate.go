@@ -1,9 +1,11 @@
 package request
 
-func Evaluate(commitId, target string) *evaluate {
+func Evaluate(owner, project, commitId, target string) *evaluate {
 	return &evaluate{map[string]interface{}{
-		"commitId": commitId,
-		"target":   target,
+		"organization": owner,
+		"project":      project,
+		"commitId":     commitId,
+		"target":       target,
 	}}
 }
 
@@ -13,45 +15,56 @@ type evaluate struct {
 
 func (b *evaluate) Query() string {
 	return `
-query ($commitId: ID!, $target: String!) {
-  commit(commitId: $commitId) {
-    ... on Commit {
+query ($organization: String!, $project: String!, $commitId: String!, $target: String!) {
+  project(organization: $organization, project: $project) {
+    ... on Project {
       __typename
-      build(target: $target) {
-        ... on Build {
+      commit(vcsRef: $commitId) {
+        ... on Commit {
           __typename
-          status
-        }
-        ... on PlanningError {
-          __typename
-          message
-          subErrors {
-            __typename
-            ... on GenericSolveError {
-              path
-              message
-              isTransient
-              validationErrors {
-                error
-                jsonPath
-              }
+          build(target: $target) {
+            ... on Build {
+              __typename
+              status
             }
-            ... on RemediableSolveError {
-              path
+            ... on PlanningError {
+              __typename
               message
-              isTransient
-              errorType
-              validationErrors {
-                error
-                jsonPath
-              }
-              suggestedRemediations {
-                remediationType
-                command
-                parameters
+              subErrors {
+                __typename
+                ... on GenericSolveError {
+                  path
+                  message
+                  isTransient
+                  validationErrors {
+                    error
+                    jsonPath
+                  }
+                }
+                ... on RemediableSolveError {
+                  path
+                  message
+                  isTransient
+                  errorType
+                  validationErrors {
+                    error
+                    jsonPath
+                  }
+                  suggestedRemediations {
+                    remediationType
+                    command
+                    parameters
+                  }
+                }
               }
             }
           }
+        }
+        ... on NotFound {
+          type
+          message
+          resource
+          mayNeedAuthentication
         }
       }
     }
