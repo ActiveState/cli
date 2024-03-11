@@ -696,40 +696,13 @@ func ChangesetFromRequirements(op Operation, reqs []*gqlModel.Requirement) Chang
 	return changeset
 }
 
-// FetchOrderFromCommit retrieves an order from a given commit ID
-func FetchOrderFromCommit(commitID strfmt.UUID, auth *authentication.Auth) (*mono_models.Order, error) {
-	params := vcsClient.NewGetOrderParams()
-	params.CommitID = commitID
-	params.SetHTTPClient(api.NewHTTPClient())
-
-	var res *vcsClient.GetOrderOK
-	var err error
-	if auth.Authenticated() {
-		res, err = mono.New().VersionControl.GetOrder(params, auth.ClientAuth())
-		if err != nil {
-			return nil, errors.New(api.ErrorMessageFromPayload(err))
-		}
-	} else {
-		// Allow activation of public projects if user is not authenticated
-		res, err = mono.New().VersionControl.GetOrder(params, nil)
-		if err != nil {
-			code := api.ErrorCode(err)
-			if code == 401 || code == 403 {
-				return nil, errs.Pack(err, ErrOrderForbidden)
-			}
-			return nil, errors.New(api.ErrorMessageFromPayload(err))
-		}
-	}
-
-	return res.Payload, err
-}
-
 func TrackBranch(source, target *mono_models.Project, auth *authentication.Auth) error {
 	authClient, err := auth.Client()
 	if err != nil {
 		return errs.Wrap(err, "Could not get auth client")
 	}
 
+func TrackBranch(source, target *mono_models.Project) error {
 	sourceBranch, err := DefaultBranchForProject(source)
 	if err != nil {
 		return err
