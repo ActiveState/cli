@@ -20,7 +20,6 @@ import (
 	vcsClient "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	auth "github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -730,34 +729,6 @@ func ChangesetFromRequirements(op Operation, reqs []*gqlModel.Requirement) Chang
 	}
 
 	return changeset
-}
-
-// FetchOrderFromCommit retrieves an order from a given commit ID
-func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
-	params := vcsClient.NewGetOrderParams()
-	params.CommitID = commitID
-	params.SetHTTPClient(api.NewHTTPClient())
-
-	var res *vcsClient.GetOrderOK
-	var err error
-	if auth.LegacyGet().Authenticated() {
-		res, err = mono.New().VersionControl.GetOrder(params, authentication.ClientAuth())
-		if err != nil {
-			return nil, errors.New(api.ErrorMessageFromPayload(err))
-		}
-	} else {
-		// Allow activation of public projects if user is not authenticated
-		res, err = mono.New().VersionControl.GetOrder(params, nil)
-		if err != nil {
-			code := api.ErrorCode(err)
-			if code == 401 || code == 403 {
-				return nil, errs.Pack(err, ErrOrderForbidden)
-			}
-			return nil, errors.New(api.ErrorMessageFromPayload(err))
-		}
-	}
-
-	return res.Payload, err
 }
 
 func TrackBranch(source, target *mono_models.Project) error {
