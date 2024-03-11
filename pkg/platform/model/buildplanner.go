@@ -624,8 +624,8 @@ func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, 
 	return requirements, nil
 }
 
-func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID, cfg Configurable) (strfmt.UUID, error) {
-	platformIDs, err := filterPlatformIDs(hostPlatform, runtime.GOARCH, platforms, cfg)
+func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID, cfg Configurable, auth *authentication.Auth) (strfmt.UUID, error) {
+	platformIDs, err := filterPlatformIDs(hostPlatform, runtime.GOARCH, platforms, cfg, auth)
 	if err != nil {
 		return "", errs.Wrap(err, "filterPlatformIDs failed")
 	}

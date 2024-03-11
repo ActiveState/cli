@@ -702,7 +702,6 @@ func TrackBranch(source, target *mono_models.Project, auth *authentication.Auth)
 		return errs.Wrap(err, "Could not get auth client")
 	}
 
-func TrackBranch(source, target *mono_models.Project) error {
 	sourceBranch, err := DefaultBranchForProject(source)
 	if err != nil {
 		return err
