@@ -634,14 +634,10 @@ func (bp *BuildPlanner) BuildTarget(owner, project, commitID, target string) err
 		return bpModel.ProcessBuildError(resp.Project.Commit.Build, "Could not process error response from evaluate target")
 	}
 
-	if err := bp.pollBuildStatus(commitID); err != nil {
-		return errs.Wrap(err, "Failed to poll build status")
-	}
-
 	return nil
 }
 
-func (bp *BuildPlanner) pollBuildStatus(commitID string) error {
+func (bp *BuildPlanner) PollBuildStatus(commitID string) error {
 	resp := model.NewBuildPlanResponse("", "")
 	ticker := time.NewTicker(pollInterval)
 	for {
@@ -665,8 +661,13 @@ func (bp *BuildPlanner) pollBuildStatus(commitID string) error {
 			// response with emtpy targets that we should remove
 			removeEmptyTargets(build)
 
+			// If the build status is completed then we are done.
+			if build.Status == bpModel.Completed {
+				return nil
+			}
+
 			// If the build status is planning it may not have any artifacts yet.
-			if build.Status != bpModel.Planning {
+			if build.Status == bpModel.Planning {
 				continue
 			}
 

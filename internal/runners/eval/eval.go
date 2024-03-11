@@ -84,6 +84,10 @@ func (e *Eval) Run(params *Params) (rerr error) {
 		return locale.WrapError(err, "err_eval", "Failed to evaluate target '{{.V0}}'", target)
 	}
 
+	if err := bp.PollBuildStatus(commitID.String()); err != nil {
+		return locale.WrapError(err, "err_eval", "Failed to build target '{{.V0}}'", target)
+	}
+
 	pg.Stop("OK")
 
 	e.out.Notice(locale.Tl("notice_eval_success", "Target successfully evaluated"))
