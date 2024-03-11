@@ -366,38 +366,42 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 func ProcessBuildError(build *Build, fallbackMessage string) error {
 	logging.Debug("ProcessBuildError: build.Type=%s", build.Type)
 	if build.Type == PlanningErrorType {
-		var errs []string
-		var isTransient bool
-
-		if build.Message != "" {
-			errs = append(errs, build.Message)
-		}
-
-		for _, se := range build.SubErrors {
-			if se.Type != RemediableSolveErrorType && se.Type != GenericSolveErrorType {
-				continue
-			}
-
-			if se.Message != "" {
-				errs = append(errs, se.Message)
-				isTransient = se.IsTransient
-			}
-
-			for _, ve := range se.ValidationErrors {
-				if ve.Error != "" {
-					errs = append(errs, ve.Error)
-				}
-			}
-		}
-		return &BuildPlannerError{
-			ValidationErrors: errs,
-			IsTransient:      isTransient,
-		}
+		return processPlanningError(build.Message, build.SubErrors)
 	} else if build.Error == nil {
 		return errs.New(fallbackMessage)
 	}
 
 	return locale.NewInputError("err_buildplanner_build", "Encountered error processing build response")
+}
+
+func processPlanningError(message string, subErrors []*BuildExprLocation) error {
+	var errs []string
+	var isTransient bool
+
+	if message != "" {
+		errs = append(errs, message)
+	}
+
+	for _, se := range subErrors {
+		if se.Type != RemediableSolveErrorType && se.Type != GenericSolveErrorType {
+			continue
+		}
+
+		if se.Message != "" {
+			errs = append(errs, se.Message)
+			isTransient = se.IsTransient
+		}
+
+		for _, ve := range se.ValidationErrors {
+			if ve.Error != "" {
+				errs = append(errs, ve.Error)
+			}
+		}
+	}
+	return &BuildPlannerError{
+		ValidationErrors: errs,
+		IsTransient:      isTransient,
+	}
 }
 
 func ProcessProjectError(project *Project, fallbackMessage string) error {
@@ -519,6 +523,12 @@ type mergedCommit struct {
 // branch and the merge strategy was FastForward.
 type MergeCommitResult struct {
 	MergedCommit *mergedCommit `json:"mergeCommit"`
+}
+
+type BuildTargetResult struct {
+	Project *Project `json:"Project"`
+	*Error
+	*NotFoundError
 }
 
 // Error contains an error message.

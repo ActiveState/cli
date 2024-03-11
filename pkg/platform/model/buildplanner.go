@@ -30,8 +30,9 @@ import (
 )
 
 const (
-	pollInterval = 1 * time.Second
-	pollTimeout  = 30 * time.Second
+	pollInterval       = 1 * time.Second
+	pollTimeout        = 30 * time.Second
+	buildStatusTimeout = 24 * time.Hour
 
 	codeExtensionKey          = "code"
 	clientDeprecationErrorKey = "CLIENT_DEPRECATION_ERROR"
@@ -637,4 +638,100 @@ func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID, cfg Con
 	}
 
 	return platformIDs[0], nil
+}
+
+func (bp *BuildPlanner) BuildTarget(owner, project, commitID, target string) error {
+	logging.Debug("BuildTarget, owner: %s, project: %s, commitID: %s, target: %s", owner, project, commitID, target)
+	resp := &bpModel.BuildTargetResult{}
+	err := bp.client.Run(request.Evaluate(owner, project, commitID, target), resp)
+	if err != nil {
+		return processBuildPlannerError(err, "Failed to evaluate target")
+	}
+
+	if resp.Project == nil {
+		return errs.New("Project is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.Project.Type) {
+		return bpModel.ProcessProjectError(resp.Project, "Could not evaluate target")
+	}
+
+	if resp.Project.Commit == nil {
+		return errs.New("Commit is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.Project.Commit.Type) {
+		return bpModel.ProcessCommitError(resp.Project.Commit, "Could not process error response from evaluate target")
+	}
+
+	if resp.Project.Commit.Build == nil {
+		return errs.New("Build is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.Project.Commit.Build.Type) {
+		return bpModel.ProcessBuildError(resp.Project.Commit.Build, "Could not process error response from evaluate target")
+	}
+
+	return nil
+}
+
+func (bp *BuildPlanner) PollBuildStatus(commitID string) error {
+	resp := model.NewBuildPlanResponse("", "")
+	ticker := time.NewTicker(pollInterval)
+	for {
+		select {
+		case <-ticker.C:
+			err := bp.client.Run(request.BuildPlan(commitID, "", ""), resp)
+			if err != nil {
+				return processBuildPlannerError(err, "failed to fetch build plan")
+			}
+
+			if resp == nil {
+				return errs.New("Build plan response is nil")
+			}
+
+			build, err := resp.Build()
+			if err != nil {
+				return errs.Wrap(err, "Could not get build from response")
+			}
+
+			// The type aliasing in the query populates the
+			// response with emtpy targets that we should remove
+			removeEmptyTargets(build)
+
+			// If the build status is completed then we are done.
+			if build.Status == bpModel.Completed {
+				return nil
+			}
+
+			// If the build status is planning it may not have any artifacts yet.
+			if build.Status == bpModel.Planning {
+				continue
+			}
+
+			// If all artifacts are completed then we are done.
+			completed := true
+			for _, artifact := range build.Artifacts {
+				if artifact.Status == bpModel.ArtifactFailedPermanently ||
+					artifact.Status == bpModel.ArtifactFailedTransiently {
+					return errs.New("Artifact %s failed", artifact.NodeID)
+				}
+
+				if artifact.Status == bpModel.ArtifactNotSubmitted {
+					continue
+				}
+
+				if artifact.Status != bpModel.ArtifactSucceeded {
+					completed = false
+					break
+				}
+			}
+
+			if completed {
+				return nil
+			}
+		case <-time.After(buildStatusTimeout):
+			return locale.NewError("err_buildplanner_timeout", "Timed out waiting for build plan")
+		}
+	}
 }
