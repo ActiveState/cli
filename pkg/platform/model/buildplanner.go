@@ -657,6 +657,10 @@ func (bp *BuildPlanner) pollBuildStatus(commitID string) error {
 				return errs.Wrap(err, "Could not get build from response")
 			}
 
+			// The type aliasing in the query populates the
+			// response with emtpy targets that we should remove
+			removeEmptyTargets(build)
+
 			if build.Status != bpModel.Completed {
 				continue
 			}
