@@ -642,7 +642,6 @@ func (bp *BuildPlanner) pollBuildStatus(commitID string) error {
 	for {
 		select {
 		case <-ticker.C:
-			// Change this to just poll the build status
 			err := bp.client.Run(request.BuildPlan(commitID, "", ""), resp)
 			if err != nil {
 				return processBuildPlannerError(err, "failed to fetch build plan")
@@ -661,10 +660,12 @@ func (bp *BuildPlanner) pollBuildStatus(commitID string) error {
 			// response with emtpy targets that we should remove
 			removeEmptyTargets(build)
 
-			if build.Status != bpModel.Completed {
+			// If the build status is planning it may not have any artifacts yet.
+			if build.Status != bpModel.Planning {
 				continue
 			}
 
+			// If all artifacts are completed then we are done.
 			completed := true
 			for _, artifact := range build.Artifacts {
 				if artifact.Status == bpModel.ArtifactFailedPermanently ||
