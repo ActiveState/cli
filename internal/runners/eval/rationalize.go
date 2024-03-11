@@ -6,16 +6,15 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 )
 
-func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *error) {
+func rationalizeError(rerr *error) {
 	if rerr == nil {
 		return
 	}
 
-	var targetNotFoundErr *errTargetNotFound
+	var planningError *model.BuildPlannerError
 
 	switch {
 	case errors.Is(*rerr, rationalize.ErrNotAuthenticated):
@@ -29,9 +28,10 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 			locale.Tr("err_no_project"),
 			errs.SetInput())
 
-	case errors.As(*rerr, &targetNotFoundErr):
+	case errors.As(*rerr, &planningError):
+		// Forward API error to user.
 		*rerr = errs.WrapUserFacing(*rerr,
-			locale.Tr("err_target_not_found", targetNotFoundErr.target),
-			errs.SetInput())
+			locale.Tl("err_planning_failed", "{{.V0}}", planningError.Error()),
+		)
 	}
 }

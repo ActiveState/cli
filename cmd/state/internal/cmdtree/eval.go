@@ -13,7 +13,7 @@ func newEvalCommand(prime *primer.Values) *captain.Command {
 
 	cmd := captain.NewCommand(
 		"eval",
-		locale.Tl("eval_title", "Eval"),
+		"",
 		locale.Tl("eval_description", "Evaluate a buildscript target"),
 		prime,
 		[]*captain.Flag{},

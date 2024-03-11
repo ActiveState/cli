@@ -1,8 +1,6 @@
 package eval
 
 import (
-	"strings"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -12,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -32,11 +29,6 @@ type Eval struct {
 	auth    *authentication.Auth
 }
 
-type errTargetNotFound struct {
-	error
-	target string
-}
-
 func New(p primeable) *Eval {
 	return &Eval{
 		out:     p.Output(),
@@ -46,7 +38,9 @@ func New(p primeable) *Eval {
 }
 
 func (e *Eval) Run(params *Params) (rerr error) {
-	defer rationalizeError(e.auth, e.project, &rerr)
+	defer rationalizeError(&rerr)
+
+	e.out.Notice(output.Title(locale.Tl("title_eval", "Evaluating target: {{.V0}}", params.Target)))
 
 	if !e.auth.Authenticated() {
 		return rationalize.ErrNotAuthenticated
@@ -61,31 +55,15 @@ func (e *Eval) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Unable to get commit ID")
 	}
 
-	script, err := buildscript.ScriptFromProject(e.project)
-	if err != nil {
-		return errs.Wrap(err, "Could not get local build script")
-	}
-
-	var target string
-	for _, assignment := range script.Assignments {
-		if strings.EqualFold(assignment.Key, params.Target) {
-			target = assignment.Key
-		}
-	}
-
-	if target == "" {
-		return errTargetNotFound{target: params.Target}
-	}
-
 	pg := output.StartSpinner(e.out, locale.Tl("progress_eval", "Evaluating ... "), constants.TerminalAnimationInterval)
 
 	bp := model.NewBuildPlannerModel(e.auth)
-	if err := bp.BuildTarget(e.project.Owner(), e.project.Name(), commitID.String(), target); err != nil {
-		return locale.WrapError(err, "err_eval", "Failed to evaluate target '{{.V0}}'", target)
+	if err := bp.BuildTarget(e.project.Owner(), e.project.Name(), commitID.String(), params.Target); err != nil {
+		return locale.WrapError(err, "err_eval", "Failed to evaluate target '{{.V0}}'", params.Target)
 	}
 
 	if err := bp.PollBuildStatus(commitID.String()); err != nil {
-		return locale.WrapError(err, "err_eval", "Failed to build target '{{.V0}}'", target)
+		return locale.WrapError(err, "err_eval", "Failed to build target '{{.V0}}'", params.Target)
 	}
 
 	pg.Stop("OK")
