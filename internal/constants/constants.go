@@ -280,6 +280,9 @@ const BuildPlannerAPIPath = "/sv/buildplanner/graphql"
 // VulnerabilitiesAPIPath is the path used for the vulnerabilities api
 const VulnerabilitiesAPIPath = "/v13s/v1/graphql"
 
+// HasuraInventoryAPIPath is the path used for the hasura inventory api
+const HasuraInventoryAPIPath = "/sv/hasura-inventory/v1/graphql"
+
 // MessagesInfoURL is the URL we check against to see what versions are deprecated
 const MessagesInfoURL = "https://state-tool.s3.amazonaws.com/messages.json"
 
@@ -437,6 +440,9 @@ const DefaultBranchName = "main"
 
 // UnstableConfig is the config key used to determine whether the user has opted in to unstable commands
 const UnstableConfig = "optin.unstable"
+
+// OptinBuildscriptsConfig is the config key used to determine whether the user has opted in to buildscripts
+const OptinBuildscriptsConfig = "optin.buildscripts"
 
 // ReportErrorsConfig is the config key used to determine if we will send rollbar reports
 const ReportErrorsConfig = "report.errors"

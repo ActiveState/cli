@@ -22,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -81,6 +82,10 @@ func main() {
 		return
 	}
 	rollbar.SetConfig(cfg)
+
+	// Configuration options
+	// This should only be used if the config option is not exclusive to one package.
+	configMediator.RegisterOption(constants.OptinBuildscriptsConfig, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
 
 	// Set up our output formatter/writer
 	outFlags := parseOutputFlags(os.Args)

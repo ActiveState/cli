@@ -16,6 +16,7 @@ query ($commitID: ID!) {
   commit(commitId: $commitID) {
     ... on Commit {
       __typename
+      atTime
       expr
     }
     ... on Error{

@@ -1548,3 +1548,5 @@ err_runtime_cache_invalid:
   other: Your runtime needs to be updated, please run '[ACTIONABLE]state refresh[/RESET]'.
 err_target_not_found:
   other: Could not find build target '{{.V0}}'. Please check your buildscript and ensure the target exists.
+err_buildscript_not_exist:
+  other: Your project does not have a buildscript.as file. Please refer to the documentation on how to create one.
