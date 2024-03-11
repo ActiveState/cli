@@ -61,7 +61,7 @@ func (e *Eval) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Unable to get commit ID")
 	}
 
-	script, err := buildscript.NewScriptFromProject(e.project, e.auth)
+	script, err := buildscript.ScriptFromProject(e.project)
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
 	}
