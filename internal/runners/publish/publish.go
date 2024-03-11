@@ -1,7 +1,6 @@
 package publish
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"path/filepath"
@@ -244,12 +243,6 @@ func (r *Runner) Run(params *Params) error {
 	}
 
 	r.out.Notice(locale.Tl("uploadingredient_uploading", "Publishing ingredient..."))
-
-	reqVarsData, err := json.MarshalIndent(reqVars, "", "  ")
-	if err != nil {
-		return locale.WrapError(err, "err_uploadingredient_publish", "Could not marshal publish request")
-	}
-	logging.Debug("Publish request vars: %s", string(reqVarsData))
 
 	pr, err := request.Publish(reqVars, params.Filepath)
 	if err != nil {
