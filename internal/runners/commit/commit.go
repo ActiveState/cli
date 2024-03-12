@@ -1,6 +1,8 @@
 package commit
 
 import (
+	"errors"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
@@ -9,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
@@ -47,11 +50,20 @@ func New(p primeable) *Commit {
 }
 
 func rationalizeError(err *error) {
+	var buildPlannerErr *bpModel.BuildPlannerError
+
 	switch {
 	case err == nil:
 		return
+
 	case errs.Matches(*err, buildscript.ErrBuildscriptNotExist):
 		*err = errs.WrapUserFacing(*err, locale.T("err_buildscript_not_exist"))
+
+	// We communicate buildplanner errors verbatim as the intend is that these are curated by the buildplanner
+	case errors.As(*err, &buildPlannerErr):
+		*err = errs.WrapUserFacing(*err,
+			buildPlannerErr.LocalizedError(),
+			errs.SetIf(buildPlannerErr.InputError(), errs.SetInput()))
 	}
 }
 
