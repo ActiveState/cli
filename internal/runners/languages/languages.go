@@ -75,7 +75,7 @@ func (l *Languages) Run() error {
 	}
 
 	// Fetch resolved artifacts list for showing full version numbers.
-	rt, err := runtime.NewFromProject(l.project, target.TriggerLanguage, l.analytics, l.svcModel, l.out, l.auth, l.cfg)
+	rt, err := runtime.NewFromProject(l.project, nil, target.TriggerLanguage, l.analytics, l.svcModel, l.out, l.auth, l.cfg)
 	if err != nil {
 		return locale.WrapError(err, "err_languages_runtime", "Could not initialize runtime")
 	}

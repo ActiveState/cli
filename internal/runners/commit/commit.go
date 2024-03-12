@@ -107,6 +107,17 @@ func (c *Commit) Run() (rerr error) {
 		return errs.Wrap(err, "Could not update project to reflect build script changes.")
 	}
 
+	// Source the runtime
+	trigger := target.TriggerCommit
+	rti, err := runtime.NewFromProject(c.proj, &stagedCommitID, trigger, c.analytics, c.svcModel, c.out, c.auth, c.cfg)
+	if err != nil {
+		return locale.WrapInputError(
+			err, "err_commit_runtime_new",
+			"Could not update runtime for this project.",
+		)
+	}
+
+	// Update local commit ID
 	if err := localcommit.Set(c.proj.Dir(), stagedCommitID.String()); err != nil {
 		return errs.Wrap(err, "Could not set local commit ID")
 	}
@@ -118,15 +129,6 @@ func (c *Commit) Run() (rerr error) {
 	}
 	if err := buildscript.Update(c.proj, newBuildExpr, c.auth); err != nil {
 		return errs.Wrap(err, "Could not update local build script.")
-	}
-
-	trigger := target.TriggerCommit
-	rti, err := runtime.NewFromProject(c.proj, trigger, c.analytics, c.svcModel, c.out, c.auth, c.cfg)
-	if err != nil {
-		return locale.WrapInputError(
-			err, "err_commit_runtime_new",
-			"Could not update runtime for this project.",
-		)
 	}
 
 	execDir := setup.ExecDir(rti.Target().Dir())
