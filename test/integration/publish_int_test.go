@@ -5,6 +5,7 @@ import (
 	"os"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -25,7 +26,8 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 	suite.OnlyRunForTags(tagsuite.Publish)
 
 	// For development convenience, should not be committed without commenting out..
-	// os.Setenv(constants.APIHostEnvVarName, "pr13328.activestate.build")
+	os.Setenv(constants.APIHostEnvVarName, "pr13361.activestate.build")
+	os.Setenv(constants.DebugServiceRequestsEnvVarName, "true")
 
 	if v := os.Getenv(constants.APIHostEnvVarName); v == "" || v == constants.DefaultAPIHost {
 		suite.T().Skipf("Skipping test as %s is not set, this test can only be run against non-production envs.", constants.APIHostEnvVarName)
@@ -130,7 +132,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 				expect{
 					[]string{},
 					"Expected file extension to be either",
-					false,
+					true,
 					1,
 				},
 			},
@@ -145,14 +147,14 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 				input{
 					[]string{"--meta", "{{.MetaFile}}", tempFile},
 					ptr.To(`
-		name: im-a-name-test2
-		namespace: org/{{.Username}}
-		version: 2.3.4
-		description: im-a-description
-		authors:
-		  - name: author-name
-		    email: author-email@domain.tld
-		`),
+name: im-a-name-test2
+namespace: org/{{.Username}}
+version: 2.3.4
+description: im-a-description
+authors:
+  - name: author-name
+    email: author-email@domain.tld
+`),
 					nil,
 					true,
 				},
@@ -181,14 +183,14 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 				input{
 					[]string{"--meta", "{{.MetaFile}}", tempFile, "--name", "im-a-name-from-flag", "--author", "author-name-from-flag <author-email-from-flag@domain.tld>"},
 					ptr.To(`
-		name: im-a-name
-		namespace: org/{{.Username}}
-		version: 2.3.4
-		description: im-a-description
-		authors:
-		  - name: author-name
-		    email: author-email@domain.tld
-		`),
+name: im-a-name
+namespace: org/{{.Username}}
+version: 2.3.4
+description: im-a-description
+authors:
+  - name: author-name
+    email: author-email@domain.tld
+`),
 					nil,
 					true,
 				},
@@ -218,14 +220,14 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 					[]string{tempFile, "--editor"},
 					nil,
 					ptr.To(`
-		name: im-a-name-test3
-		namespace: org/{{.Username}}
-		version: 2.3.4
-		description: im-a-description
-		authors:
-		  - name: author-name
-		    email: author-email@domain.tld
-		`),
+name: im-a-name-test3
+namespace: org/{{.Username}}
+version: 2.3.4
+description: im-a-description
+authors:
+  - name: author-name
+    email: author-email@domain.tld
+`),
 					true,
 				},
 				expect{
@@ -410,6 +412,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 					} else {
 						cp.SendLine("n")
 						cp.Expect("Publish cancelled")
+						return
 					}
 
 					cp.Expect("Successfully published")
@@ -420,6 +423,8 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 
 					cp = ts.Spawn("search", tt.ingredientNamespace+"/"+tt.ingredientName, "--ts=now")
 					cp.Expect(tt.ingredientVersion)
+					time.Sleep(time.Second)
+					cp.Send("q")
 					cp.ExpectExitCode(0)
 				})
 			}
