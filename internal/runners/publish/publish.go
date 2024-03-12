@@ -278,6 +278,7 @@ func (r *Runner) Run(params *Params) error {
 			*publishedIngredient.PrimaryNamespace,
 			*publishedVersion.Version,
 			strconv.Itoa(int(*publishedVersion.Revision)),
+			publishedVersion.RevisionTimestamp.String(),
 		),
 		result.Publish,
 	))
