@@ -19,7 +19,6 @@ import (
 
 type config interface {
 	GetBool(key string) bool
-	IsSet(key string) bool
 	Closed() bool
 }
 
@@ -56,12 +55,16 @@ var (
 )
 
 func readConfig() {
-	reportingDisabled = currentCfg != nil && !currentCfg.Closed() && currentCfg.IsSet(constants.ReportErrorsConfig) && !currentCfg.GetBool(constants.ReportErrorsConfig)
+	reportingDisabled = currentCfg != nil && !currentCfg.Closed() && !currentCfg.GetBool(constants.ReportErrorsConfig)
 	logging.Debug("Sending Rollbar reports? %v", reportingDisabled)
 }
 
 func init() {
-	configMediator.RegisterOption(constants.ReportErrorsConfig, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
+	configMediator.RegisterOption(configMediator.Option{
+		Name:    constants.ReportErrorsConfig,
+		Type:    configMediator.Bool,
+		Default: true,
+	})
 	configMediator.AddListener(constants.ReportErrorsConfig, readConfig)
 }
 

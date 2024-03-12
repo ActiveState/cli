@@ -24,7 +24,11 @@ import (
 )
 
 func init() {
-	configMediator.RegisterOption(constants.PreferredGlibcVersionConfig, configMediator.String, configMediator.EmptyEvent, configMediator.EmptyEvent)
+	configMediator.RegisterOption(configMediator.Option{
+		Name:    constants.PreferredGlibcVersionConfig,
+		Type:    configMediator.String,
+		Default: "",
+	})
 }
 
 type Configurable interface {
