@@ -172,7 +172,7 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		}
 	}
 
-	rt, err := runtime.NewFromProject(proj, target.TriggerActivate, r.analytics, r.svcModel, r.out, r.auth, r.config)
+	rt, err := runtime.NewFromProject(proj, nil, target.TriggerActivate, r.analytics, r.svcModel, r.out, r.auth, r.config)
 	if err != nil {
 		return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
 	}
