@@ -12,6 +12,7 @@ import (
 	rt "github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
 )
 
 type ErrUpdate struct {
@@ -27,6 +28,7 @@ type Configurable interface {
 // the given project.
 func NewFromProject(
 	proj *project.Project,
+	customCommitID *strfmt.UUID,
 	trigger target.Trigger,
 	an analytics.Dispatcher,
 	svcModel *model.SvcModel,
@@ -39,7 +41,7 @@ func NewFromProject(
 		return nil, rationalize.ErrHeadless
 	}
 
-	rti, err := rt.New(target.NewProjectTarget(proj, nil, trigger), an, svcModel, auth, cfg, out)
+	rti, err := rt.New(target.NewProjectTarget(proj, customCommitID, trigger), an, svcModel, auth, cfg, out)
 	if err == nil {
 		return rti, nil
 	}

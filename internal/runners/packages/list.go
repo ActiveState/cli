@@ -108,7 +108,7 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	// Fetch resolved artifacts list for showing full version numbers, if possible.
 	var artifacts []*artifact.Artifact
 	if l.project != nil && params.Project == "" {
-		rt, err := runbitsRuntime.NewFromProject(l.project, target.TriggerPackage, l.analytics, l.svcModel, l.out, l.auth, l.cfg)
+		rt, err := runbitsRuntime.NewFromProject(l.project, nil, target.TriggerPackage, l.analytics, l.svcModel, l.out, l.auth, l.cfg)
 		if err != nil {
 			return locale.WrapError(err, "err_package_list_runtime", "Could not initialize runtime")
 		}

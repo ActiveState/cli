@@ -248,7 +248,7 @@ func getTerminalArtifactMap(
 	switch {
 	// Return the artifact map from this runtime.
 	case !namespaceProvided && !commitIdProvided:
-		rt, err := runtime.NewFromProject(pj, target.TriggerBuilds, an, svcModel, out, auth, cfg)
+		rt, err := runtime.NewFromProject(pj, nil, target.TriggerBuilds, an, svcModel, out, auth, cfg)
 		if err != nil {
 			return nil, locale.WrapInputError(err, "err_refresh_runtime_new", "Could not update runtime for this project.")
 		}
