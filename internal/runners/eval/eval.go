@@ -62,7 +62,7 @@ func (e *Eval) Run(params *Params) (rerr error) {
 		return locale.WrapError(err, "err_eval", "Failed to evaluate target '{{.V0}}'", params.Target)
 	}
 
-	if err := bp.PollBuildStatus(commitID.String()); err != nil {
+	if err := bp.PollBuildStatus(commitID.String(), e.project.Owner(), e.project.Name(), params.Target); err != nil {
 		return locale.WrapError(err, "err_eval", "Failed to build target '{{.V0}}'", params.Target)
 	}
 

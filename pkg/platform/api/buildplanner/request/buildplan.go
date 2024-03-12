@@ -7,5 +7,9 @@ func BuildPlan(commitID, organization, project string) gqlclient.Request {
 		return BuildPlanByCommitID(commitID)
 	}
 
-	return BuildPlanByProject(organization, project, commitID)
+	return BuildPlanByProject(organization, project, commitID, "")
+}
+
+func BuildPlanTarget(commitID, organization, project, target string) gqlclient.Request {
+	return BuildPlanByProject(organization, project, commitID, target)
 }
