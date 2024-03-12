@@ -26,8 +26,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 	suite.OnlyRunForTags(tagsuite.Publish)
 
 	// For development convenience, should not be committed without commenting out..
-	os.Setenv(constants.APIHostEnvVarName, "pr13361.activestate.build")
-	os.Setenv(constants.DebugServiceRequestsEnvVarName, "true")
+	// os.Setenv(constants.APIHostEnvVarName, "pr13361.activestate.build")
 
 	if v := os.Getenv(constants.APIHostEnvVarName); v == "" || v == constants.DefaultAPIHost {
 		suite.T().Skipf("Skipping test as %s is not set, this test can only be run against non-production envs.", constants.APIHostEnvVarName)
