@@ -1221,7 +1221,6 @@ type ConfigGetter interface {
 	GetStringMapStringSlice(key string) map[string][]string
 	AllKeys() []string
 	GetStringSlice(string) []string
-	IsSet(string) bool
 	GetString(string) string
 	Set(string, interface{}) error
 	GetThenSet(string, func(interface{}) (interface{}, error)) error

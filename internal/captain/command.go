@@ -33,7 +33,11 @@ import (
 )
 
 func init() {
-	configMediator.RegisterOption(constants.UnstableConfig, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
+	configMediator.RegisterOption(configMediator.Option{
+		Name:    constants.UnstableConfig,
+		Type:    configMediator.Bool,
+		Default: false,
+	})
 }
 
 // appEventPrefix is used for all executables except for the State Tool itself.
