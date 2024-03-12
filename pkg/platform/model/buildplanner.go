@@ -675,13 +675,13 @@ func (bp *BuildPlanner) BuildTarget(owner, project, commitID, target string) err
 	return nil
 }
 
-func (bp *BuildPlanner) PollBuildStatus(commitID string) error {
-	resp := model.NewBuildPlanResponse("", "")
+func (bp *BuildPlanner) PollBuildStatus(commitID, owner, project, target string) error {
+	resp := model.NewBuildPlanResponse(owner, project)
 	ticker := time.NewTicker(pollInterval)
 	for {
 		select {
 		case <-ticker.C:
-			err := bp.client.Run(request.BuildPlan(commitID, "", ""), resp)
+			err := bp.client.Run(request.BuildPlanTarget(commitID, owner, project, target), resp)
 			if err != nil {
 				return processBuildPlannerError(err, "failed to fetch build plan")
 			}
