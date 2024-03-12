@@ -570,7 +570,12 @@ func FetchLatestRevisionTimeStamp(auth *authentication.Auth) (time.Time, error) 
 	if err != nil {
 		return time.Now(), errs.Wrap(err, "Failed to get latest change time")
 	}
-	return time.Time(response.RevisionTimes[0].RevisionTime), nil
+
+	// Increment time by 1 second to work around API precision issue where same second comparisons can fall on either side
+	t := time.Time(response.RevisionTimes[0].RevisionTime)
+	t = t.Add(time.Second)
+
+	return t, nil
 }
 
 func FetchNormalizedName(namespace Namespace, name string) (string, error) {
