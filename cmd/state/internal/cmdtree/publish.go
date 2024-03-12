@@ -124,6 +124,5 @@ func newPublish(prime *primer.Values) *captain.Command {
 			return runner.Run(&params)
 		})
 	c.SetGroup(AuthorGroup)
-	c.SetUnstable(true)
 	return c
 }

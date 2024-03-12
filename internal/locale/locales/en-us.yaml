@@ -1528,6 +1528,7 @@ uploadingredient_success:
     Namespace: [ACTIONABLE]{{.V1}}[/RESET]
     Version: [ACTIONABLE]{{.V2}}[/RESET]
     Revision: [ACTIONABLE]{{.V3}}[/RESET]
+    Timestamp: [ACTIONABLE]{{.V4}}[/RESET]
 
     You can install this package by running `[ACTIONABLE]state install {{.V1}}/{{.V0}} --ts now`[/RESET].
 err_runtime_cache_invalid:
