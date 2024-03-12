@@ -222,7 +222,7 @@ func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *pr
 // mergeBuildScript merges the local build script with the remote buildexpression (not script).
 func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	// Get the build script to merge.
-	script, err := buildscript.NewScriptFromProject(p.project, p.auth)
+	script, err := buildscript.ScriptFromProjectWithFallback(p.project, p.auth)
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
 	}
@@ -241,7 +241,10 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	// Compute the merge strategy.
 	strategies, err := model.MergeCommit(remoteCommit, localCommit)
 	if err != nil {
-		if !errors.Is(err, model.ErrMergeCommitInHistory) {
+		switch {
+		case errors.Is(err, model.ErrMergeFastForward):
+			return buildscript.Update(p.project, exprB, p.auth)
+		case !errors.Is(err, model.ErrMergeCommitInHistory):
 			return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
 		}
 	}
