@@ -1528,10 +1528,13 @@ uploadingredient_success:
     Namespace: [ACTIONABLE]{{.V1}}[/RESET]
     Version: [ACTIONABLE]{{.V2}}[/RESET]
     Revision: [ACTIONABLE]{{.V3}}[/RESET]
+    Timestamp: [ACTIONABLE]{{.V4}}[/RESET]
 
     You can install this package by running `[ACTIONABLE]state install {{.V1}}/{{.V0}} --ts now`[/RESET].
 err_runtime_cache_invalid:
   other: Your runtime needs to be updated, please run '[ACTIONABLE]state refresh[/RESET]'.
+err_target_not_found:
+  other: Could not find buildscript target '[ACTIONABLE]{{.V0}}[/reset]'. Please check your buildscript and ensure the target exists.
 err_buildscript_not_exist:
   other: Your project does not have a buildscript.as file. Please refer to the documentation on how to create one.
 builds_dl_downloading:
