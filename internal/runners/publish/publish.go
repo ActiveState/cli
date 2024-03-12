@@ -271,6 +271,14 @@ func (r *Runner) Run(params *Params) error {
 		return locale.WrapError(err, "err_uploadingingredient_fetch_version", "Unable to fetch newly published ingredient version")
 	}
 
+	ingTime, err := time.Parse(time.RFC3339, publishedVersion.RevisionTimestamp.String())
+	if err != nil {
+		return errs.Wrap(err, "Ingredient timestamp invalid")
+	}
+
+	// Increment time by 1 second to work around API precision issue where same second comparisons can fall on either side
+	ingTime = ingTime.Add(time.Second)
+
 	r.out.Print(output.Prepare(
 		locale.Tl(
 			"uploadingredient_success", "",
@@ -278,7 +286,7 @@ func (r *Runner) Run(params *Params) error {
 			*publishedIngredient.PrimaryNamespace,
 			*publishedVersion.Version,
 			strconv.Itoa(int(*publishedVersion.Revision)),
-			publishedVersion.RevisionTimestamp.String(),
+			ingTime.Format(time.RFC3339),
 		),
 		result.Publish,
 	))
