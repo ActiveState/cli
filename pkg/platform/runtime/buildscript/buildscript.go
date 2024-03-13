@@ -80,11 +80,7 @@ func NewScript(data []byte) (*Script, error) {
 
 	script, err := parser.ParseBytes(constants.BuildScriptFileName, data)
 	if err != nil {
-		parseErrors := errs.Unpack(err)
-		if len(parseErrors) > 0 {
-			return nil, locale.WrapInputError(err, "err_parse_buildscript_bytes", "Could not parse build script: {{.V0}}", parseErrors[len(parseErrors)-1].Error())
-		}
-		return nil, errs.Wrap(err, "Could not parse build script")
+		return nil, locale.WrapInputError(err, "err_parse_buildscript_bytes", "Could not parse build script: {{.V0}}", errs.JoinMessage(err))
 	}
 
 	// Construct the equivalent buildexpression.
