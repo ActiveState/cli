@@ -1544,3 +1544,5 @@ commit_success:
     Run '[ACTIONABLE]state refresh[/RESET]' to update your local runtime.
 builds_dl_downloading:
   other: Downloading {{.V0}}
+warn_has_failed_artifacts:
+  other: "Warning: This project has failed builds, and some artifacts will be missing as a result.\n"
