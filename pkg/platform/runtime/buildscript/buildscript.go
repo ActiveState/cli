@@ -82,7 +82,7 @@ func NewScript(data []byte) (*Script, error) {
 	if err != nil {
 		parseErrors := errs.Unpack(err)
 		if len(parseErrors) > 0 {
-			return nil, locale.NewInputError("err_parse_buildscript_bytes", "Could not parse build script: {{.V0}}", parseErrors[len(parseErrors)-1].Error())
+			return nil, locale.WrapInputError(err, "err_parse_buildscript_bytes", "Could not parse build script: {{.V0}}", parseErrors[len(parseErrors)-1].Error())
 		}
 		return nil, errs.Wrap(err, "Could not parse build script")
 	}
