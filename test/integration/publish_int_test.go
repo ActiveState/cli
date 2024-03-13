@@ -13,7 +13,9 @@ import (
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/yaml.v2"
 )
 
 var editorFileRx = regexp.MustCompile(`file:\s*?(.*?)\.\s`)
@@ -26,7 +28,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 	suite.OnlyRunForTags(tagsuite.Publish)
 
 	// For development convenience, should not be committed without commenting out..
-	// os.Setenv(constants.APIHostEnvVarName, "pr13361.activestate.build")
+	// os.Setenv(constants.APIHostEnvVarName, "pr13375.activestate.build")
 
 	if v := os.Getenv(constants.APIHostEnvVarName); v == "" || v == constants.DefaultAPIHost {
 		suite.T().Skipf("Skipping test as %s is not set, this test can only be run against non-production envs.", constants.APIHostEnvVarName)
@@ -45,6 +47,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 		immediateOutput  string
 		exitBeforePrompt bool
 		exitCode         int
+		parseMeta        bool
 	}
 
 	type invocation struct {
@@ -113,6 +116,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 						"",
 						false,
 						0,
+						false,
 					},
 				},
 			},
@@ -133,6 +137,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 					"Expected file extension to be either",
 					true,
 					1,
+					true,
 				},
 			},
 			},
@@ -170,6 +175,7 @@ authors:
 					"",
 					false,
 					0,
+					true,
 				},
 			}},
 		},
@@ -206,6 +212,7 @@ authors:
 					"",
 					false,
 					0,
+					true,
 				},
 			}},
 		},
@@ -242,6 +249,7 @@ authors:
 					"",
 					false,
 					0,
+					true,
 				},
 			}},
 		},
@@ -262,6 +270,7 @@ authors:
 					"",
 					false,
 					0,
+					true,
 				},
 			}},
 		},
@@ -290,6 +299,7 @@ authors:
 						"",
 						false,
 						0,
+						true,
 					},
 				},
 				{ // Edit ingredient
@@ -318,6 +328,7 @@ authors:
 						"",
 						false,
 						0,
+						true,
 					},
 				},
 				{ // description editing not supported
@@ -338,6 +349,7 @@ authors:
 						"",
 						true,
 						1,
+						true,
 					},
 				},
 			},
@@ -406,6 +418,27 @@ authors:
 
 					cp.Expect("Y/n")
 
+					var (
+						name      = tt.ingredientName
+						namespace = tt.ingredientNamespace
+						version   = tt.ingredientVersion
+					)
+
+					if inv.expect.parseMeta {
+						snapshot := cp.Snapshot()
+						rx := regexp.MustCompile(`(?s)Publish following ingredient\?(.*)\(Y/n`)
+						match := rx.FindSubmatch([]byte(snapshot))
+						suite.Require().NotNil(match, fmt.Sprintf("Could not match '%s' against: %s", rx.String(), snapshot))
+
+						meta := request.PublishVariables{}
+						err := yaml.Unmarshal(match[1], &meta)
+						if err == nil {
+							name = meta.Name
+							namespace = meta.Namespace
+							version = meta.Version
+						}
+					}
+
 					if inv.input.confirmUpload {
 						cp.SendLine("Y")
 					} else {
@@ -415,13 +448,13 @@ authors:
 					}
 
 					cp.Expect("Successfully published")
-					cp.Expect("Name: " + tt.ingredientName)
-					cp.Expect("Namespace: " + tt.ingredientNamespace)
-					cp.Expect("Version: " + tt.ingredientVersion)
+					cp.Expect("Name: " + name)
+					cp.Expect("Namespace: " + namespace)
+					cp.Expect("Version: " + version)
 					cp.ExpectExitCode(inv.expect.exitCode)
 
-					cp = ts.Spawn("search", tt.ingredientNamespace+"/"+tt.ingredientName, "--ts=now")
-					cp.Expect(tt.ingredientVersion)
+					cp = ts.Spawn("search", namespace+"/"+name, "--ts=now")
+					cp.Expect(version)
 					time.Sleep(time.Second)
 					cp.Send("q")
 					cp.ExpectExitCode(0)
