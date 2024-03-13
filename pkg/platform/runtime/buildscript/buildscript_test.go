@@ -32,7 +32,7 @@ func TestBasic(t *testing.T) {
 	platforms = ["linux", "windows"],
 	requirements = [
 		Req(name = "language/python"),
-		Req(name = "language/python/requests", version = Eq("3.10.10"))
+		Req(name = "language/python/requests", version = Eq(value = "3.10.10"))
 	]
 )
 
@@ -70,8 +70,10 @@ main = runtime
 									}},
 									{Assignment: &Assignment{
 										"version", &Value{FuncCall: &FuncCall{
-											Name:      "Eq",
-											Arguments: []*Value{{Str: ptr.To(`"3.10.10"`)}},
+											Name: "Eq",
+											Arguments: []*Value{
+												{Assignment: &Assignment{Key: "value", Value: &Value{Str: ptr.To(`"3.10.10"`)}}},
+											},
 										}},
 									}},
 								},
@@ -174,8 +176,8 @@ runtime = solve(
 	platforms = ["96b7e6f2-bebf-564c-bc1c-f04482398f38", "96b7e6f2-bebf-564c-bc1c-f04482398f38"],
 	requirements = [
 		Req(name = "language/python"),
-		Req(name = "language/python/requests", version = Eq("3.10.10")),
-		Req(name = "language/python/argparse", version = And(Gt("1.0"), Lt("2.0")))
+		Req(name = "language/python/requests", version = Eq(value = "3.10.10")),
+		Req(name = "language/python/argparse", version = And(left = Gt(value = "1.0"), right = Lt(value = "2.0")))
 	],
 	solver_version = 0
 )
@@ -224,8 +226,10 @@ func TestExample(t *testing.T) {
 									},
 									{Assignment: &Assignment{
 										"version", &Value{FuncCall: &FuncCall{
-											Name:      "Eq",
-											Arguments: []*Value{{Str: ptr.To(`"3.10.10"`)}},
+											Name: "Eq",
+											Arguments: []*Value{
+												{Assignment: &Assignment{Key: "value", Value: &Value{Str: ptr.To(`"3.10.10"`)}}},
+											},
 										}},
 									}},
 								},
@@ -240,14 +244,18 @@ func TestExample(t *testing.T) {
 										"version", &Value{FuncCall: &FuncCall{
 											Name: "And",
 											Arguments: []*Value{
-												{FuncCall: &FuncCall{
-													Name:      "Gt",
-													Arguments: []*Value{{Str: ptr.To(`"1.0"`)}},
-												}},
-												{FuncCall: &FuncCall{
-													Name:      "Lt",
-													Arguments: []*Value{{Str: ptr.To(`"2.0"`)}},
-												}},
+												{Assignment: &Assignment{Key: "left", Value: &Value{FuncCall: &FuncCall{
+													Name: "Gt",
+													Arguments: []*Value{
+														{Assignment: &Assignment{Key: "value", Value: &Value{Str: ptr.To(`"1.0"`)}}},
+													},
+												}}}},
+												{Assignment: &Assignment{Key: "right", Value: &Value{FuncCall: &FuncCall{
+													Name: "Lt",
+													Arguments: []*Value{
+														{Assignment: &Assignment{Key: "value", Value: &Value{Str: ptr.To(`"2.0"`)}}},
+													},
+												}}}},
 											},
 										}},
 									}},
@@ -271,7 +279,7 @@ func TestString(t *testing.T) {
 	script, err := NewScript([]byte(
 		`runtime = solve(
 		platforms=["12345", "67890"],
-		requirements=[Req(name = "language/python", version = Eq("3.10.10"))]
+		requirements=[Req(name = "language/python", version = Eq(value = "3.10.10"))]
 )
 
 main = runtime
@@ -285,7 +293,7 @@ main = runtime
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/python", version = Eq("3.10.10"))
+		Req(name = "language/python", version = Eq(value = "3.10.10"))
 	]
 )
 

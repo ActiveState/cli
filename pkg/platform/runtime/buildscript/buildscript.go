@@ -197,7 +197,7 @@ func transformRequirements(reqs *buildexpression.Var) *buildexpression.Var {
 //
 // into something like
 //
-//	Req(name = "<namespace>/<name>", version = <op>("<version>"))
+//	Req(name = "<namespace>/<name>", version = <op>(value = "<version>"))
 func transformRequirement(req *buildexpression.Value) *buildexpression.Value {
 	newReq := &buildexpression.Value{
 		Ap: &buildexpression.Ap{
@@ -249,7 +249,7 @@ func transformRequirement(req *buildexpression.Value) *buildexpression.Value {
 //
 // into something like
 //
-//	And(<op1>("<version1>"), <op2>("<version2>"))
+//	And(<op1>(value = "<version1>"), <op2>(value = "<version2>"))
 func transformVersion(requirements *buildexpression.Var) *buildexpression.Ap {
 	var aps []*buildexpression.Ap
 	for _, constraint := range *requirements.Value.List {
@@ -257,7 +257,9 @@ func transformVersion(requirements *buildexpression.Var) *buildexpression.Ap {
 		for _, o := range *constraint.Object {
 			switch o.Name {
 			case buildexpression.RequirementVersionKey:
-				ap.Arguments = []*buildexpression.Value{{Str: o.Value.Str}}
+				ap.Arguments = []*buildexpression.Value{{
+					Assignment: &buildexpression.Var{Name: "value", Value: &buildexpression.Value{Str: o.Value.Str}},
+				}}
 			case buildexpression.RequirementComparatorKey:
 				ap.Name = strings.Title(*o.Value.Str)
 			}
@@ -266,14 +268,26 @@ func transformVersion(requirements *buildexpression.Var) *buildexpression.Ap {
 	}
 
 	if len(aps) == 1 {
-		return aps[0] // e.g. Eq("1.0")
+		return aps[0] // e.g. Eq(value = "1.0")
 	}
 
-	args := make([]*buildexpression.Value, len(aps))
-	for i, ap := range aps {
-		args[i] = &buildexpression.Value{Ap: ap}
+	// e.g. And(left = Gt(value = "1.0"), right = Lt(value = "3.0"))
+	// Iterate backwards over the requirements array and construct a binary tree of 'And()' functions.
+	// For example, given [Gt(value = "1.0"), Ne(value = "2.0"), Lt(value = "3.0")], produce:
+	//   And(left = Gt(value = "1.0"), right = And(left = Ne(value = "2.0"), right = Lt(value = "3.0")))
+	var ap *buildexpression.Ap
+	for i := len(aps) - 2; i >= 0; i-- {
+		right := &buildexpression.Value{Ap: aps[i+1]}
+		if ap != nil {
+			right = &buildexpression.Value{Ap: ap}
+		}
+		args := []*buildexpression.Value{
+			{Assignment: &buildexpression.Var{Name: "left", Value: &buildexpression.Value{Ap: aps[i]}}},
+			{Assignment: &buildexpression.Var{Name: "right", Value: right}},
+		}
+		ap = &buildexpression.Ap{Name: andFuncName, Arguments: args}
 	}
-	return &buildexpression.Ap{Name: andFuncName, Arguments: args} // e.g. And(Gt("1.0"), Lt("3.0"))
+	return ap
 }
 
 func assignmentString(a *buildexpression.Var) string {
