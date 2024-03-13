@@ -1537,5 +1537,10 @@ err_target_not_found:
   other: Could not find buildscript target '[ACTIONABLE]{{.V0}}[/reset]'. Please check your buildscript and ensure the target exists.
 err_buildscript_not_exist:
   other: Your project does not have a buildscript.as file. Please refer to the documentation on how to create one.
+commit_success:
+  other: |
+    Commit '[ACTIONABLE]{{.V0}}[/RESET]' for project '[ACTIONABLE]{{.V1}}[/RESET]' successfully created.
+    
+    Run '[ACTIONABLE]state refresh[/RESET]' to update your local runtime.
 builds_dl_downloading:
   other: Downloading {{.V0}}
