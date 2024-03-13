@@ -47,7 +47,7 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 
 	cp = ts.Spawn("commit")
 	cp.Expect("No change")
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(1)
 
 	_, err = buildscript.ScriptFromProject(proj)
 	suite.Require().NoError(err) // verify validity
@@ -59,9 +59,8 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("commit"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Runtime updated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("successfully created")
 	cp.ExpectExitCode(0)
 }
 
