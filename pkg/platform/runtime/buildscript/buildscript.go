@@ -12,6 +12,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
@@ -79,12 +80,20 @@ func NewScript(data []byte) (*Script, error) {
 
 	script, err := parser.ParseBytes(constants.BuildScriptFileName, data)
 	if err != nil {
+		parseErrors := errs.Unpack(err)
+		if len(parseErrors) > 0 {
+			return nil, locale.NewInputError("err_parse_buildscript_bytes", "Could not parse build script: {{.V0}}", parseErrors[len(parseErrors)-1].Error())
+		}
 		return nil, errs.Wrap(err, "Could not parse build script")
 	}
 
 	// Construct the equivalent buildexpression.
 	bytes, err := json.Marshal(script)
 	if err != nil {
+		parseErrors := errs.Unpack(err)
+		if len(parseErrors) > 0 {
+			return nil, locale.NewInputError("err_marshall_buildscript", "Could not marshall build script: {{.V0}}", parseErrors[len(parseErrors)-1].Error())
+		}
 		return nil, errs.Wrap(err, "Could not marshal build script to build expression")
 	}
 	expr, err := buildexpression.New(bytes)
