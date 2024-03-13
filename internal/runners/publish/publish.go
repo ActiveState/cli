@@ -34,18 +34,21 @@ import (
 )
 
 type Params struct {
-	Name         string
-	Version      string
-	Namespace    string
-	Owner        string
-	Description  string
-	Authors      captain.UsersValue
-	Depends      captain.PackagesValue
-	Features     captain.PackagesValue
-	Filepath     string
-	MetaFilepath string
-	Edit         bool
-	Editor       bool
+	Name           string
+	Version        string
+	Namespace      string
+	Owner          string
+	Description    string
+	Authors        captain.UsersValue
+	Depends        captain.PackagesValue
+	DependsRuntime captain.PackagesValue
+	DependsBuild   captain.PackagesValue
+	DependsTest    captain.PackagesValue
+	Features       captain.PackagesValue
+	Filepath       string
+	MetaFilepath   string
+	Edit           bool
+	Editor         bool
 }
 
 type Runner struct {
@@ -192,6 +195,15 @@ func (r *Runner) Run(params *Params) error {
 		}
 	}
 
+	// Validate user input
+	if params.Edit {
+		// Description is not currently supported for edit
+		// https://activestatef.atlassian.net/browse/DX-1886
+		if params.Description != "" {
+			return locale.NewInputError("err_uploadingredient_edit_description_not_supported")
+		}
+	}
+
 	if err := prepareRequestFromParams(&reqVars, params, isRevision); err != nil {
 		return errs.Wrap(err, "Could not prepare request from params")
 	}
@@ -202,15 +214,6 @@ func (r *Runner) Run(params *Params) error {
 		}
 		if err := r.OpenInEditor(&reqVars); err != nil {
 			return err
-		}
-	}
-
-	// Validate user input
-	if params.Edit {
-		// Description is not currently supported for edit
-		// https://activestatef.atlassian.net/browse/DX-1886
-		if reqVars.Description != "" {
-			return locale.NewInputError("err_uploadingredient_edit_description_not_supported")
 		}
 	}
 
@@ -325,11 +328,45 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRev
 	}
 
 	if len(params.Depends) != 0 {
-		r.Dependencies = []request.PublishVariableDep{}
 		for _, dep := range params.Depends {
 			r.Dependencies = append(
 				r.Dependencies,
-				request.PublishVariableDep{request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version}, []request.Dependency{}},
+				request.PublishVariableDep{
+					Dependency: request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version},
+				},
+			)
+		}
+	}
+
+	if len(params.DependsRuntime) != 0 {
+		for _, dep := range params.DependsRuntime {
+			r.Dependencies = append(
+				r.Dependencies,
+				request.PublishVariableDep{
+					Dependency: request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version, Type: request.DependencyTypeRuntime},
+				},
+			)
+		}
+	}
+
+	if len(params.DependsBuild) != 0 {
+		for _, dep := range params.DependsBuild {
+			r.Dependencies = append(
+				r.Dependencies,
+				request.PublishVariableDep{
+					Dependency: request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version, Type: request.DependencyTypeBuild},
+				},
+			)
+		}
+	}
+
+	if len(params.DependsTest) != 0 {
+		for _, dep := range params.DependsTest {
+			r.Dependencies = append(
+				r.Dependencies,
+				request.PublishVariableDep{
+					Dependency: request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version, Type: request.DependencyTypeTest},
+				},
 			)
 		}
 	}

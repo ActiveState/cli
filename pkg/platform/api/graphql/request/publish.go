@@ -14,6 +14,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	DependencyTypeRuntime = "runtime"
+	DependencyTypeBuild   = "build"
+	DependencyTypeTest    = "test"
+)
+
 func Publish(vars PublishVariables, filepath string) (*PublishInput, error) {
 	var f *os.File
 	if filepath != "" {
@@ -82,6 +88,7 @@ type Dependency struct {
 	Name                string `yaml:"name" json:"name"`
 	Namespace           string `yaml:"namespace" json:"namespace"`
 	VersionRequirements string `yaml:"versionRequirements,omitempty" json:"versionRequirements,omitempty"`
+	Type                string `yaml:"type,omitempty" json:"type,omitempty"`
 }
 
 // ExampleAuthorVariables is used for presenting sample data to the user, it's not used for graphql input
