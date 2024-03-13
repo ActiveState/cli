@@ -110,7 +110,7 @@ func newFilteredMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure b
 		return nil, errs.Wrap(err, "Could not filter terminals")
 	}
 
-	result, err := NewMapFromBuildPlan(build, calculateBuildtimeClosure, true, filtered)
+	result, err := NewMapFromBuildPlan(build, calculateBuildtimeClosure, true, filtered, false)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get map from build plan")
 	}
@@ -129,7 +129,7 @@ type TerminalArtifactMap map[string]artifact.Map
 // Setting calculateBuildtimeClosure as true calculates the artifact map with the buildtime
 // dependencies. This is different from the runtime dependency calculation as it
 // includes ALL of the input artifacts of the step that generated each artifact.
-func NewMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool, filterStateToolArtifacts bool, filterTerminal *model.NamedTarget) (TerminalArtifactMap, error) {
+func NewMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool, filterStateToolArtifacts bool, filterTerminal *model.NamedTarget, allowFailedArtifacts bool) (TerminalArtifactMap, error) {
 	lookup := make(map[strfmt.UUID]interface{})
 
 	for _, artifact := range build.Artifacts {
@@ -156,7 +156,7 @@ func NewMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool, fil
 		// then we need to recurse back through the DAG until we find nodeIDs that are state tool
 		// artifacts. These are the terminal targets.
 		for _, nodeID := range terminal.NodeIDs {
-			err := unpackArtifacts(nodeID, lookup, &terminalTargetIDs, filterStateToolArtifacts)
+			err := unpackArtifacts(nodeID, lookup, &terminalTargetIDs, filterStateToolArtifacts, allowFailedArtifacts)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not build terminals")
 			}
@@ -209,7 +209,7 @@ func filterPlatformTerminal(build *model.Build, cfg platformModel.Configurable) 
 
 // unpackArtifacts recursively walks the buildplan to collect all node ID's that come from the given node ID.
 // The primary use-case is to give it a terminal and retrieve a full list of node ID's that were produced for that terminal.
-func unpackArtifacts(nodeID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result *[]strfmt.UUID, filterStateToolArtifacts bool) error {
+func unpackArtifacts(nodeID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result *[]strfmt.UUID, filterStateToolArtifacts bool, allowFailedArtifacts bool) error {
 	targetArtifact, ok := lookup[nodeID].(*model.Artifact)
 	if !ok {
 		logging.Debug("NodeID %s does not resolve to an artifact", nodeID)
@@ -217,8 +217,10 @@ func unpackArtifacts(nodeID strfmt.UUID, lookup map[strfmt.UUID]interface{}, res
 	}
 
 	if !model.IsSuccessArtifactStatus(targetArtifact.Status) {
-		return &ArtifactError{
-			locale.NewError("err_artifact_failed", "Artifact '{{.V0}}' failed to build", trimDisplayName(targetArtifact.DisplayName)),
+		if !allowFailedArtifacts {
+			return &ArtifactError{
+				locale.NewError("err_artifact_failed", "Artifact '{{.V0}}' failed to build", trimDisplayName(targetArtifact.DisplayName)),
+			}
 		}
 	}
 
@@ -243,7 +245,7 @@ func unpackArtifacts(nodeID strfmt.UUID, lookup map[strfmt.UUID]interface{}, res
 			continue
 		}
 		for _, id := range input.NodeIDs {
-			if err := unpackArtifacts(id, lookup, result, filterStateToolArtifacts); err != nil {
+			if err := unpackArtifacts(id, lookup, result, filterStateToolArtifacts, allowFailedArtifacts); err != nil {
 				return errs.Wrap(err, "recursive unpackArtifacts failed")
 			}
 		}

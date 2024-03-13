@@ -1556,3 +1556,5 @@ commit_success:
     Commit '[ACTIONABLE]{{.V0}}[/RESET]' for project '[ACTIONABLE]{{.V1}}[/RESET]' successfully created.
     
     Run '[ACTIONABLE]state refresh[/RESET]' to update your local runtime.
+warn_has_failed_artifacts:
+  other: "Warning: This project has failed builds, and some artifacts will be missing as a result.\n"
