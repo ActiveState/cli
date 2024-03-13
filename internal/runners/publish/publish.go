@@ -195,6 +195,15 @@ func (r *Runner) Run(params *Params) error {
 		}
 	}
 
+	// Validate user input
+	if params.Edit {
+		// Description is not currently supported for edit
+		// https://activestatef.atlassian.net/browse/DX-1886
+		if params.Description != "" {
+			return locale.NewInputError("err_uploadingredient_edit_description_not_supported")
+		}
+	}
+
 	if err := prepareRequestFromParams(&reqVars, params, isRevision); err != nil {
 		return errs.Wrap(err, "Could not prepare request from params")
 	}
@@ -205,15 +214,6 @@ func (r *Runner) Run(params *Params) error {
 		}
 		if err := r.OpenInEditor(&reqVars); err != nil {
 			return err
-		}
-	}
-
-	// Validate user input
-	if params.Edit {
-		// Description is not currently supported for edit
-		// https://activestatef.atlassian.net/browse/DX-1886
-		if reqVars.Description != "" {
-			return locale.NewInputError("err_uploadingredient_edit_description_not_supported")
 		}
 	}
 
