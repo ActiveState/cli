@@ -90,10 +90,6 @@ func NewScript(data []byte) (*Script, error) {
 	// Construct the equivalent buildexpression.
 	bytes, err := json.Marshal(script)
 	if err != nil {
-		parseErrors := errs.Unpack(err)
-		if len(parseErrors) > 0 {
-			return nil, locale.NewInputError("err_marshall_buildscript", "Could not marshall build script: {{.V0}}", parseErrors[len(parseErrors)-1].Error())
-		}
 		return nil, errs.Wrap(err, "Could not marshal build script to build expression")
 	}
 	expr, err := buildexpression.New(bytes)
