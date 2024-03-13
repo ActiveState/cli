@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
 	"golang.org/x/net/context"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -366,20 +365,6 @@ func (r *Runtime) ExecutableDirs() (envdef.ExecutablePaths, error) {
 
 func IsRuntimeDir(dir string) bool {
 	return store.New(dir).HasMarker()
-}
-
-func (r *Runtime) TerminalArtifactMap(filterStatToolArtifacts bool) (buildplan.TerminalArtifactMap, error) {
-	runtimeStore := r.store
-	if runtimeStore == nil {
-		runtimeStore = store.New(r.target.Dir())
-	}
-
-	plan, err := runtimeStore.BuildPlan()
-	if err != nil {
-		return nil, errs.Wrap(err, "Unable to fetch build plan")
-	}
-
-	return buildplan.NewMapFromBuildPlan(plan, false, filterStatToolArtifacts, nil)
 }
 
 func (r *Runtime) ResolvedArtifacts() ([]*artifact.Artifact, error) {

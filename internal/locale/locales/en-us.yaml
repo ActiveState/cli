@@ -1551,3 +1551,5 @@ err_target_not_found:
   other: Could not find buildscript target '[ACTIONABLE]{{.V0}}[/reset]'. Please check your buildscript and ensure the target exists.
 err_buildscript_not_exist:
   other: Your project does not have a buildscript.as file. Please refer to the documentation on how to create one.
+warn_has_failed_artifacts:
+  other: "Warning: This project has failed builds, and some artifacts will be missing as a result.\n"
