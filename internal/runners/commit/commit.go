@@ -1,15 +1,20 @@
 package commit
 
 import (
+	"errors"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/pkg/localcommit"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
@@ -44,31 +49,50 @@ func New(p primeable) *Commit {
 	}
 }
 
-func (c *Commit) Run() error {
+func rationalizeError(err *error) {
+	var buildPlannerErr *bpModel.BuildPlannerError
+
+	switch {
+	case err == nil:
+		return
+
+	case errs.Matches(*err, buildscript.ErrBuildscriptNotExist):
+		*err = errs.WrapUserFacing(*err, locale.T("err_buildscript_not_exist"))
+
+	// We communicate buildplanner errors verbatim as the intend is that these are curated by the buildplanner
+	case errors.As(*err, &buildPlannerErr):
+		*err = errs.WrapUserFacing(*err,
+			buildPlannerErr.LocalizedError(),
+			errs.SetIf(buildPlannerErr.InputError(), errs.SetInput()))
+	}
+}
+
+func (c *Commit) Run() (rerr error) {
+	defer rationalizeError(&rerr)
+
 	if c.proj == nil {
 		return locale.NewInputError("err_no_project")
 	}
 
-	changesCommitted, err := buildscript.Sync(c.proj, nil, c.out, c.auth)
+	// Get buildscript.as representation
+	script, err := buildscript.ScriptFromProject(c.proj)
 	if err != nil {
-		return locale.WrapError(
-			err, "err_commit_sync_buildscript",
-			"Could not synchronize the buildscript.",
-		)
+		return errs.Wrap(err, "Could not get local build script")
 	}
 
-	trigger := target.TriggerCommit
-	rti, err := runtime.NewFromProject(c.proj, trigger, c.analytics, c.svcModel, c.out, c.auth, c.cfg)
+	// Get build expression for current state of the project
+	localCommitID, err := localcommit.Get(c.proj.Dir())
 	if err != nil {
-		return locale.WrapInputError(
-			err, "err_commit_runtime_new",
-			"Could not update runtime for this project.",
-		)
+		return errs.Wrap(err, "Unable to get local commit ID")
+	}
+	bp := model.NewBuildPlannerModel(c.auth)
+	exprProject, err := bp.GetBuildExpression(localCommitID.String())
+	if err != nil {
+		return errs.Wrap(err, "Could not get remote build expr for provided commit")
 	}
 
-	execDir := setup.ExecDir(rti.Target().Dir())
-
-	if !changesCommitted {
+	// Check if there is anything to commit
+	if script.EqualsBuildExpression(exprProject) {
 		c.out.Print(output.Prepare(
 			locale.Tl(
 				"commit_notice_no_change",
@@ -79,6 +103,47 @@ func (c *Commit) Run() error {
 
 		return nil
 	}
+
+	exprBuildscript, err := script.BuildExpression()
+	if err != nil {
+		return errs.Wrap(err, "Unable to get build expression from build script")
+	}
+
+	stagedCommitID, err := bp.StageCommit(model.StageCommitParams{
+		Owner:        c.proj.Owner(),
+		Project:      c.proj.Name(),
+		ParentCommit: localCommitID.String(),
+		Expression:   exprBuildscript,
+	})
+	if err != nil {
+		return errs.Wrap(err, "Could not update project to reflect build script changes.")
+	}
+
+	// Source the runtime
+	trigger := target.TriggerCommit
+	rti, err := runtime.NewFromProject(c.proj, &stagedCommitID, trigger, c.analytics, c.svcModel, c.out, c.auth, c.cfg)
+	if err != nil {
+		return locale.WrapInputError(
+			err, "err_commit_runtime_new",
+			"Could not update runtime for this project.",
+		)
+	}
+
+	// Update local commit ID
+	if err := localcommit.Set(c.proj.Dir(), stagedCommitID.String()); err != nil {
+		return errs.Wrap(err, "Could not set local commit ID")
+	}
+
+	// Update our local build expression to match the committed one. This allows our API a way to ensure forward compatibility.
+	newBuildExpr, err := bp.GetBuildExpression(stagedCommitID.String())
+	if err != nil {
+		return errs.Wrap(err, "Unable to get the remote build expression")
+	}
+	if err := buildscript.Update(c.proj, newBuildExpr, c.auth); err != nil {
+		return errs.Wrap(err, "Could not update local build script.")
+	}
+
+	execDir := setup.ExecDir(rti.Target().Dir())
 
 	c.out.Print(output.Prepare(
 		locale.Tl(

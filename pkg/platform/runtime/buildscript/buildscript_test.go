@@ -6,10 +6,12 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
+	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
 
 // toBuildExpression converts given script constructed by Participle into a buildexpression.
@@ -30,7 +32,7 @@ func TestBasic(t *testing.T) {
 	platforms = ["linux", "windows"],
 	requirements = [
 		Req(name = "language/python"),
-		Req(name = "language/python/requests", version = "3.10.10")
+		Req(name = "language/python/requests", version = Eq("3.10.10"))
 	]
 )
 
@@ -67,7 +69,10 @@ main = runtime
 										"name", &Value{Str: ptr.To(`"language/python/requests"`)},
 									}},
 									{Assignment: &Assignment{
-										"version", &Value{Str: ptr.To(`"3.10.10"`)},
+										"version", &Value{FuncCall: &FuncCall{
+											Name:      "Eq",
+											Arguments: []*Value{{Str: ptr.To(`"3.10.10"`)}},
+										}},
 									}},
 								},
 							}},
@@ -78,6 +83,7 @@ main = runtime
 			{"main", &Value{Ident: ptr.To("runtime")}},
 		},
 		expr,
+		nil,
 	}, script)
 }
 
@@ -158,15 +164,18 @@ main = merge(
 				}}}},
 		},
 		expr,
+		nil,
 	}, script)
 }
 
-const example = `runtime = solve(
-	at_time = "2023-04-27T17:30:05.999000Z",
+const example = `at_time = "2023-04-27T17:30:05.999Z"
+runtime = solve(
+	at_time = at_time,
 	platforms = ["96b7e6f2-bebf-564c-bc1c-f04482398f38", "96b7e6f2-bebf-564c-bc1c-f04482398f38"],
 	requirements = [
 		Req(name = "language/python"),
-		Req(name = "language/python/requests", version = "3.10.10")
+		Req(name = "language/python/requests", version = Eq("3.10.10")),
+		Req(name = "language/python/argparse", version = And(Gt("1.0"), Lt("2.0")))
 	],
 	solver_version = 0
 )
@@ -180,12 +189,16 @@ func TestExample(t *testing.T) {
 	expr, err := toBuildExpression(script)
 	require.NoError(t, err)
 
+	atTime, err := strfmt.ParseDateTime("2023-04-27T17:30:05.999Z")
+	require.NoError(t, err)
+
 	assert.Equal(t, &Script{
 		[]*Assignment{
+			{"at_time", &Value{Str: ptr.To(`"2023-04-27T17:30:05.999Z"`)}},
 			{"runtime", &Value{
 				FuncCall: &FuncCall{"solve", []*Value{
 					{Assignment: &Assignment{
-						"at_time", &Value{Str: ptr.To(`"2023-04-27T17:30:05.999000Z"`)},
+						"at_time", &Value{Ident: ptr.To(`at_time`)},
 					}},
 					{Assignment: &Assignment{
 						"platforms", &Value{List: &[]*Value{
@@ -210,8 +223,34 @@ func TestExample(t *testing.T) {
 										"name", &Value{Str: ptr.To(`"language/python/requests"`)}},
 									},
 									{Assignment: &Assignment{
-										"version", &Value{Str: ptr.To(`"3.10.10"`)}},
+										"version", &Value{FuncCall: &FuncCall{
+											Name:      "Eq",
+											Arguments: []*Value{{Str: ptr.To(`"3.10.10"`)}},
+										}},
+									}},
+								},
+							}},
+							{FuncCall: &FuncCall{
+								Name: "Req",
+								Arguments: []*Value{
+									{Assignment: &Assignment{
+										"name", &Value{Str: ptr.To(`"language/python/argparse"`)}},
 									},
+									{Assignment: &Assignment{
+										"version", &Value{FuncCall: &FuncCall{
+											Name: "And",
+											Arguments: []*Value{
+												{FuncCall: &FuncCall{
+													Name:      "Gt",
+													Arguments: []*Value{{Str: ptr.To(`"1.0"`)}},
+												}},
+												{FuncCall: &FuncCall{
+													Name:      "Lt",
+													Arguments: []*Value{{Str: ptr.To(`"2.0"`)}},
+												}},
+											},
+										}},
+									}},
 								},
 							}},
 						}},
@@ -224,6 +263,7 @@ func TestExample(t *testing.T) {
 			{"main", &Value{Ident: ptr.To("runtime")}},
 		},
 		expr,
+		&atTime,
 	}, script)
 }
 
@@ -231,7 +271,7 @@ func TestString(t *testing.T) {
 	script, err := NewScript([]byte(
 		`runtime = solve(
 		platforms=["12345", "67890"],
-		requirements=[Req(name = "language/python", version = "3.10.10")]
+		requirements=[Req(name = "language/python", version = Eq("3.10.10"))]
 )
 
 main = runtime
@@ -245,7 +285,7 @@ main = runtime
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/python", version = "3.10.10")
+		Req(name = "language/python", version = Eq("3.10.10"))
 	]
 )
 
@@ -263,7 +303,7 @@ func TestRoundTrip(t *testing.T) {
 	tmpfile.Write([]byte(script.String()))
 	tmpfile.Close()
 
-	roundTripScript, err := newScriptFromFile(tmpfile.Name(), "", "", nil)
+	roundTripScript, err := ScriptFromFile(tmpfile.Name())
 	require.NoError(t, err)
 
 	assert.Equal(t, script, roundTripScript)
@@ -271,7 +311,8 @@ func TestRoundTrip(t *testing.T) {
 
 func TestJson(t *testing.T) {
 	script, err := NewScript([]byte(
-		`runtime = solve(
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
 		at_time = at_time,
 		requirements=[
 			Req(name = "language/python")
@@ -288,7 +329,7 @@ main = runtime
     "let": {
       "runtime": {
         "solve": {
-          "at_time": "$at_time",
+          "at_time": "2000-01-01T00:00:00.000Z",
           "requirements": [
             {
               "name": "python",
@@ -308,7 +349,9 @@ main = runtime
 	require.NoError(t, err)
 	expectedJson, err := json.Marshal(marshaledInput)
 
-	actualJson, err := json.Marshal(script)
+	actualExpr, err := script.BuildExpression()
+	require.NoError(t, err)
+	actualJson, err := json.Marshal(actualExpr)
 	require.NoError(t, err)
 	assert.Equal(t, string(expectedJson), string(actualJson))
 }
@@ -318,7 +361,7 @@ func TestBuildExpression(t *testing.T) {
   "let": {
     "runtime": {
       "solve_legacy": {
-        "at_time": "2023-04-27T17:30:05.999000Z",
+        "at_time": "2023-04-27T17:30:05.999Z",
         "build_flags": [],
         "camel_flags": [],
         "platforms": [
@@ -364,7 +407,8 @@ func TestBuildExpression(t *testing.T) {
 	script, err := NewScriptFromBuildExpression(expr)
 	require.NoError(t, err)
 	require.NotNil(t, script)
-	newExpr := script.Expr
+	newExpr, err := script.BuildExpression()
+	require.NoError(t, err)
 	exprBytes, err := json.Marshal(expr)
 	require.NoError(t, err)
 	newExprBytes, err := json.Marshal(newExpr)
@@ -378,7 +422,7 @@ func TestBuildExpression(t *testing.T) {
 	// Verify null JSON value is handled correctly.
 	var null *string
 	nullHandled := false
-	for _, assignment := range script.Expr.Let.Assignments {
+	for _, assignment := range newExpr.Let.Assignments {
 		if assignment.Name == "runtime" {
 			args := assignment.Value.Ap.Arguments
 			require.NotNil(t, args)

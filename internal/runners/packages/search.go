@@ -58,12 +58,16 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 		ns = model.NewRawNamespace(params.Ingredient.Namespace)
 	}
 
+	ts, err := getTime(&params.Timestamp, s.auth, s.proj)
+	if err != nil {
+		return errs.Wrap(err, "Unable to get timestamp from params")
+	}
+
 	var packages []*model.IngredientAndVersion
-	var err error
 	if params.ExactTerm {
-		packages, err = model.SearchIngredientsLatestStrict(ns.String(), params.Ingredient.Name, true, true, params.Timestamp.Time)
+		packages, err = model.SearchIngredientsLatestStrict(ns.String(), params.Ingredient.Name, true, true, ts)
 	} else {
-		packages, err = model.SearchIngredientsLatest(ns.String(), params.Ingredient.Name, true, params.Timestamp.Time)
+		packages, err = model.SearchIngredientsLatest(ns.String(), params.Ingredient.Name, true, ts)
 	}
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")

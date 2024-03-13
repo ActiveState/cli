@@ -180,9 +180,11 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 }
 
 func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *project.Namespaced, branchName string, strategy bpModel.MergeStrategy) (strfmt.UUID, error) {
-	err := p.mergeBuildScript(remoteCommit, localCommit)
-	if err != nil {
-		return "", errs.Wrap(err, "Could not merge local build script with remote changes")
+	if p.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		err := p.mergeBuildScript(remoteCommit, localCommit)
+		if err != nil {
+			return "", errs.Wrap(err, "Could not merge local build script with remote changes")
+		}
 	}
 
 	p.out.Notice(output.Title(locale.Tl("pull_diverged", "Merging history")))
@@ -220,15 +222,18 @@ func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *pr
 // mergeBuildScript merges the local build script with the remote buildexpression (not script).
 func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	// Get the build script to merge.
-	script, err := buildscript.NewScriptFromProject(p.project, p.auth)
+	script, err := buildscript.ScriptFromProjectWithFallback(p.project, p.auth)
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
 	}
 
 	// Get the local and remote build expressions to merge.
-	exprA := script.Expr
+	exprA, err := script.BuildExpression()
+	if err != nil {
+		return errs.Wrap(err, "Could not get buildexpression from local build script")
+	}
 	bp := model.NewBuildPlannerModel(p.auth)
-	exprB, err := bp.GetBuildExpression(p.project.Owner(), p.project.Name(), remoteCommit.String())
+	exprB, err := bp.GetBuildExpression(remoteCommit.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get buildexpression for remote commit")
 	}
@@ -236,7 +241,10 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	// Compute the merge strategy.
 	strategies, err := model.MergeCommit(remoteCommit, localCommit)
 	if err != nil {
-		if !errors.Is(err, model.ErrMergeCommitInHistory) {
+		switch {
+		case errors.Is(err, model.ErrMergeFastForward):
+			return buildscript.Update(p.project, exprB, p.auth)
+		case !errors.Is(err, model.ErrMergeCommitInHistory):
 			return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
 		}
 	}

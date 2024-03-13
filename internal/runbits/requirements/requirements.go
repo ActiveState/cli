@@ -332,7 +332,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		RequirementName:      name,
 		RequirementVersion:   requirements,
 		RequirementNamespace: *ns,
-		RequirementRevision: requirementRevision,
+		RequirementRevision:  requirementRevision,
 		Operation:            operation,
 		TimeStamp:            ts,
 	}
@@ -415,16 +415,17 @@ func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
-	bp := model.NewBuildPlannerModel(r.Auth)
-	expr, err := bp.GetBuildExpression(r.Project.Owner(), r.Project.Name(), commitID.String())
-	if err != nil {
-		return errs.Wrap(err, "Could not get remote build expr")
-	}
+	if r.Config.GetBool(constants.OptinBuildscriptsConfig) {
+		bp := model.NewBuildPlannerModel(r.Auth)
+		expr, err := bp.GetBuildExpression(commitID.String())
+		if err != nil {
+			return errs.Wrap(err, "Could not get remote build expr")
+		}
 
-	// Note: a commit ID file needs to exist at this point.
-	err = buildscript.Update(r.Project, expr, r.Auth)
-	if err != nil {
-		return locale.WrapError(err, "err_update_build_script")
+		err = buildscript.Update(r.Project, expr, r.Auth)
+		if err != nil {
+			return locale.WrapError(err, "err_update_build_script")
+		}
 	}
 
 	return nil

@@ -126,6 +126,11 @@ type Targeter interface {
 	InstallFromDir() *string
 }
 
+type Configurable interface {
+	GetString(key string) string
+	GetBool(key string) bool
+}
+
 type Setup struct {
 	auth          *authentication.Auth
 	target        Targeter
@@ -133,7 +138,7 @@ type Setup struct {
 	store         *store.Store
 	analytics     analytics.Dispatcher
 	artifactCache *artifactcache.ArtifactCache
-	cfg           apimodel.Configurable
+	cfg           Configurable
 	out           output.Outputer
 }
 
@@ -158,7 +163,7 @@ type artifactInstaller func(artifact.ArtifactID, string, ArtifactSetuper) error
 type artifactUninstaller func() error
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
-func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth, an analytics.Dispatcher, cfg apimodel.Configurable, out output.Outputer) *Setup {
+func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth, an analytics.Dispatcher, cfg Configurable, out output.Outputer) *Setup {
 	cache, err := artifactcache.New()
 	if err != nil {
 		multilog.Error("Could not create artifact cache: %v", err)
@@ -620,7 +625,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, nil, errs.Wrap(err, "Could not save buildexpression file.")
 	}
 
-	if s.target.ProjectDir() != "" {
+	if s.target.ProjectDir() != "" && s.cfg.GetBool(constants.OptinBuildscriptsConfig) {
 		if err := buildscript.Update(s.target, buildResult.BuildExpression, s.auth); err != nil {
 			return nil, nil, errs.Wrap(err, "Could not save build script.")
 		}

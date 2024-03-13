@@ -3,6 +3,7 @@ package integration
 import (
 	"encoding/json"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -137,6 +138,22 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Remote() {
 	})
 }
 
+type Platforms struct {
+	Platforms []Platform `json:"platforms"`
+}
+type Platform struct {
+	ID       string   `json:"id"`
+	Name     string   `json:"name"`
+	Packages Packages `json:"packages"`
+}
+
+type Packages []Build
+
+type Build struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 func (suite *BuildsIntegrationTestSuite) TestBuilds_Download() {
 	suite.OnlyRunForTags(tagsuite.Builds)
 	ts := e2e.New(suite.T(), false)
@@ -150,8 +167,18 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Download() {
 	)
 	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
+	var buildID string
+	if runtime.GOOS == "windows" {
+		// On Windows we need the specific build ID as the terminal buffer is not
+		// large enough to display all the builds
+		buildID = "dbf05bf8-4b2e-5560-a329-b5b70bc7b0fa"
+	} else {
+		buildID = suite.extractBuildID(ts, "bzip2@1.0.8", "")
+	}
+	suite.Require().NotEmpty(buildID)
+
 	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("builds", "dl", "a46a74e9", "."),
+		e2e.OptArgs("builds", "dl", buildID, "."),
 	)
 	cp.Expect("Operating on project ActiveState-CLI/Python-With-Custom-Builds, located at")
 	cp.Expect("Downloaded bzip2", e2e.RuntimeSourcingTimeoutOpt)
@@ -164,11 +191,61 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Download_Remote() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("builds", "dl", "a46a74e9", ".", "--namespace", "ActiveState-CLI/Python-With-Custom-Builds")
+	var buildID string
+	if runtime.GOOS == "windows" {
+		// On Windows we need the specific build ID as the terminal buffer is not
+		// large enough to display all the builds
+		buildID = "dbf05bf8-4b2e-5560-a329-b5b70bc7b0fa"
+	} else {
+		buildID = suite.extractBuildID(ts, "bzip2@1.0.8", "ActiveState-CLI/Python-With-Custom-Builds")
+	}
+	suite.Require().NotEmpty(buildID)
+
+	cp := ts.Spawn("builds", "dl", buildID, ".", "--namespace", "ActiveState-CLI/Python-With-Custom-Builds")
 	cp.Expect("Downloaded bzip2", e2e.RuntimeSourcingTimeoutOpt)
 	suite.Assert().NotContains(cp.Snapshot(), "Operating on project")
 	cp.ExpectExitCode(0)
 	require.FileExists(suite.T(), filepath.Join(ts.Dirs.Work, "bzip2-1.0.8.tar.gz"))
+}
+
+func (suite *BuildsIntegrationTestSuite) extractBuildID(ts *e2e.Session, name string, namespace string) string {
+	args := []string{"builds", "--all", "--output=json"}
+	if namespace != "" {
+		args = append(args, "--namespace", namespace)
+	}
+
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs(args...),
+	)
+	cp.Expect(`"}`)
+	cp.ExpectExitCode(0)
+
+	var platforms Platforms
+	suite.Require().NoError(json.Unmarshal([]byte(cp.Output()), &platforms))
+
+	var platformID string
+	switch runtime.GOOS {
+	case "windows":
+		platformID = constants.Win10Bit64UUID
+	case "darwin":
+		platformID = constants.MacBit64UUID
+	case "linux":
+		platformID = constants.LinuxBit64UUID
+	}
+
+	for _, platform := range platforms.Platforms {
+		if platform.ID != platformID {
+			continue
+		}
+
+		for _, build := range platform.Packages {
+			if build.Name == name {
+				return build.ID
+			}
+		}
+	}
+
+	return ""
 }
 
 func TestBuildsIntegrationTestSuite(t *testing.T) {

@@ -12,29 +12,36 @@ import (
 	rt "github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
 )
 
 type ErrUpdate struct {
 	*locale.LocalizedError
 }
 
+type Configurable interface {
+	GetString(key string) string
+	GetBool(key string) bool
+}
+
 // NewFromProject is a helper function that creates a new runtime or updates an existing one for
 // the given project.
 func NewFromProject(
 	proj *project.Project,
+	customCommitID *strfmt.UUID,
 	trigger target.Trigger,
 	an analytics.Dispatcher,
 	svcModel *model.SvcModel,
 	out output.Outputer,
 	auth *authentication.Auth,
-	cfg model.Configurable) (_ *rt.Runtime, rerr error) {
+	cfg Configurable) (_ *rt.Runtime, rerr error) {
 	defer rationalizeError(auth, proj, &rerr)
 
 	if proj.IsHeadless() {
 		return nil, rationalize.ErrHeadless
 	}
 
-	rti, err := rt.New(target.NewProjectTarget(proj, nil, trigger), an, svcModel, auth, cfg, out)
+	rti, err := rt.New(target.NewProjectTarget(proj, customCommitID, trigger), an, svcModel, auth, cfg, out)
 	if err == nil {
 		return rti, nil
 	}

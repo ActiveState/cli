@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -194,6 +195,10 @@ func (e *BuildPlannerError) Error() string {
 	return err.Error()
 }
 
+func (e *BuildPlannerError) Unwrap() error {
+	return errors.Unwrap(e.Err)
+}
+
 // BuildPlan is the top level object returned by the build planner. It contains
 // the commit and build.
 type BuildPlan interface {
@@ -361,38 +366,42 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 func ProcessBuildError(build *Build, fallbackMessage string) error {
 	logging.Debug("ProcessBuildError: build.Type=%s", build.Type)
 	if build.Type == PlanningErrorType {
-		var errs []string
-		var isTransient bool
-
-		if build.Message != "" {
-			errs = append(errs, build.Message)
-		}
-
-		for _, se := range build.SubErrors {
-			if se.Type != RemediableSolveErrorType && se.Type != GenericSolveErrorType {
-				continue
-			}
-
-			if se.Message != "" {
-				errs = append(errs, se.Message)
-				isTransient = se.IsTransient
-			}
-
-			for _, ve := range se.ValidationErrors {
-				if ve.Error != "" {
-					errs = append(errs, ve.Error)
-				}
-			}
-		}
-		return &BuildPlannerError{
-			ValidationErrors: errs,
-			IsTransient:      isTransient,
-		}
+		return processPlanningError(build.Message, build.SubErrors)
 	} else if build.Error == nil {
 		return errs.New(fallbackMessage)
 	}
 
 	return locale.NewInputError("err_buildplanner_build", "Encountered error processing build response")
+}
+
+func processPlanningError(message string, subErrors []*BuildExprLocation) error {
+	var errs []string
+	var isTransient bool
+
+	if message != "" {
+		errs = append(errs, message)
+	}
+
+	for _, se := range subErrors {
+		if se.Type != RemediableSolveErrorType && se.Type != GenericSolveErrorType {
+			continue
+		}
+
+		if se.Message != "" {
+			errs = append(errs, se.Message)
+			isTransient = se.IsTransient
+		}
+
+		for _, ve := range se.ValidationErrors {
+			if ve.Error != "" {
+				errs = append(errs, ve.Error)
+			}
+		}
+	}
+	return &BuildPlannerError{
+		ValidationErrors: errs,
+		IsTransient:      isTransient,
+	}
 }
 
 func ProcessProjectError(project *Project, fallbackMessage string) error {
@@ -516,6 +525,12 @@ type MergeCommitResult struct {
 	MergedCommit *mergedCommit `json:"mergeCommit"`
 }
 
+type BuildTargetResult struct {
+	Project *Project `json:"Project"`
+	*Error
+	*NotFoundError
+}
+
 // Error contains an error message.
 type Error struct {
 	Message string `json:"message"`
@@ -531,6 +546,7 @@ type Project struct {
 // Commit contains the build and any errors.
 type Commit struct {
 	Type       string          `json:"__typename"`
+	AtTime     strfmt.DateTime `json:"atTime"`
 	Expression json.RawMessage `json:"expr"`
 	CommitID   strfmt.UUID     `json:"commitId"`
 	Build      *Build          `json:"build"`
