@@ -1,7 +1,6 @@
 package output
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -266,7 +265,7 @@ func sprintMap(value interface{}) (string, error) {
 
 	sort.Slice(result, func(i, j int) bool { return result[i] < result[j] })
 
-	return strings.Join(result, "\n"), nil
+	return "\n" + strings.Join(result, "\n"), nil
 }
 
 // sprintTable will marshal and return the given slice of structs as a string, formatted as a table
@@ -275,13 +274,13 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 		return "", nil
 	}
 
+	if vertical {
+		return sprintVerticalTable(slice)
+	}
+
 	headers := []string{}
 	rows := [][]string{}
 	for _, v := range slice {
-		if !isStruct(v) {
-			return "", errors.New("Tried to sprintTable with slice that doesn't contain all structs")
-		}
-
 		meta, err := parseStructMeta(v)
 		if err != nil {
 			return "", err
@@ -322,24 +321,70 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 				break
 			}
 
-			row = append(row, columns(offset, stringValue)...)
+			rowValue := columns(offset, stringValue)
+
+			row = append(row, rowValue...)
 		}
 
-		// Append row if vertical so we can align headers later
-		if len(row) > 0 || vertical {
+		if len(row) > 0 {
 			rows = append(rows, row)
 		}
 	}
 
-	if vertical {
-		t := table.New([]string{"", ""})
-		t.AddRow(verticalRows(headers, rows)...)
-		t.HideHeaders = true
-		t.Vertical = true
-		return t.Render(), nil
+	return table.New(headers).AddRow(rows...).Render(), nil
+}
+
+type binding struct {
+	header string
+	value  string
+}
+
+func sprintVerticalTable(slice []interface{}) (string, error) {
+	if len(slice) == 0 {
+		return "", nil
 	}
 
-	return table.New(headers).AddRow(rows...).Render(), nil
+	rows := [][]binding{}
+	for _, v := range slice {
+		meta, err := parseStructMeta(v)
+		if err != nil {
+			return "", err
+		}
+
+		row := []binding{}
+		for _, field := range meta {
+			if funk.Contains(field.opts, string(HidePlain)) {
+				continue
+			}
+
+			stringValue, err := sprint(field.value)
+			if err != nil {
+				return "", err
+			}
+
+			if funk.Contains(field.opts, string(OmitEmpty)) && (stringValue == "" || stringValue == nilText) {
+				stringValue = ""
+			}
+
+			if funk.Contains(field.opts, string(EmptyNil)) && stringValue == nilText {
+				stringValue = ""
+			}
+
+			if stringValue != "" {
+				row = append(row, binding{header: localizedField(field.l10n), value: stringValue})
+			}
+		}
+
+		if len(row) > 0 {
+			rows = append(rows, row)
+		}
+	}
+
+	t := table.New([]string{"", ""})
+	t.AddRow(verticalRows(rows)...)
+	t.HideHeaders = true
+	t.Vertical = true
+	return t.Render(), nil
 }
 
 func asSlice(val interface{}) ([]interface{}, error) {
@@ -401,22 +446,14 @@ func columns(offset int, value string) []string {
 	return cols
 }
 
-func verticalRows(hdrs []string, rows [][]string) [][]string {
+func verticalRows(rows [][]binding) [][]string {
 	var vrows [][]string
 
 	for i, hrow := range rows {
-		for j, hcol := range hrow {
-			var header string
-			if j < len(hdrs) {
-				// Align headers with rows
-				if hcol == "" {
-					continue
-				} else {
-					header = hdrs[j]
-				}
-			}
+		for _, hcol := range hrow {
+			header := hcol.header
 
-			vrow := []string{header, hcol}
+			vrow := []string{header, hcol.value}
 			vrows = append(vrows, vrow)
 		}
 
