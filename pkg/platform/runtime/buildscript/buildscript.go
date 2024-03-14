@@ -3,6 +3,7 @@ package buildscript
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -80,7 +81,11 @@ func NewScript(data []byte) (*Script, error) {
 
 	script, err := parser.ParseBytes(constants.BuildScriptFileName, data)
 	if err != nil {
-		return nil, locale.WrapInputError(err, "err_parse_buildscript_bytes", "Could not parse build script: {{.V0}}", errs.JoinMessage(err))
+		var parseError participle.Error
+		if errors.As(err, &parseError) {
+			return nil, locale.WrapInputError(err, "err_parse_buildscript_bytes", "Could not parse build script: {{.V0}}: {{.V1}}", parseError.Position().String(), parseError.Message())
+		}
+		return nil, locale.WrapInputError(err, "err_parse_buildscript_bytes", "Could not parse build script")
 	}
 
 	// Construct the equivalent buildexpression.
