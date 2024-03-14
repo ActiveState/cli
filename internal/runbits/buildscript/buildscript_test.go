@@ -93,11 +93,11 @@ sources = solve(
 		"96b7e6f2-bebf-564c-bc1c-f04482398f38"
 	],
 	requirements = [
-		Req(name = "language/python", version = Eq("3.10.11")),
+		Req(name = "language/python", version = Eq(value = "3.10.11")),
 <<<<<<< local
 		Req(name = "language/python/requests")
 =======
-		Req(name = "language/python/requests", version = Eq("2.30.0"))
+		Req(name = "language/python/requests", version = Eq(value = "2.30.0"))
 >>>>>>> remote
 	],
 	solver_version = null
