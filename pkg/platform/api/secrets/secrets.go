@@ -40,12 +40,13 @@ var persistentClient *Client
 type Client struct {
 	*secrets_client.Secrets
 	BaseURI string
+	auth    *authentication.Auth
 }
 
 // GetClient gets the cached (if any) client instance that was initialized using our default settings
-func GetClient() *Client {
+func GetClient(auth *authentication.Auth) *Client {
 	if persistentClient == nil {
-		persistentClient = NewDefaultClient()
+		persistentClient = NewDefaultClient(auth)
 	}
 	return persistentClient
 }
@@ -58,7 +59,7 @@ func Reset() {
 // NewClient creates a new SecretsAPI client instance using the provided HTTP settings.
 // It also expects to receive the actual Bearer token value that will be passed in each
 // API request in order to authenticate each request.
-func NewClient(schema, host, basePath string) *Client {
+func NewClient(schema, host, basePath string, auth *authentication.Auth) *Client {
 	logging.Debug("secrets-api scheme=%s host=%s base_path=%s", schema, host, basePath)
 	transportRuntime := httptransport.New(host, basePath, []string{schema})
 	transportRuntime.Transport = api.NewRoundTripper(retryhttp.DefaultClient.StandardClient().Transport)
@@ -66,15 +67,16 @@ func NewClient(schema, host, basePath string) *Client {
 	secretsClient := &Client{
 		Secrets: secrets_client.New(transportRuntime, strfmt.Default),
 		BaseURI: fmt.Sprintf("%s://%s%s", schema, host, basePath),
+		auth:    auth,
 	}
 	return secretsClient
 }
 
 // NewDefaultClient creates a new Client using constants SecretsAPISchema, -Host, and -Path and
 // a provided Bearer-token value.
-func NewDefaultClient() *Client {
+func NewDefaultClient(auth *authentication.Auth) *Client {
 	serviceURL := api.GetServiceURL(api.ServiceSecrets)
-	return NewClient(serviceURL.Scheme, serviceURL.Host, serviceURL.Path)
+	return NewClient(serviceURL.Scheme, serviceURL.Host, serviceURL.Path, auth)
 }
 
 // DefaultClient represents a secretsapi Client instance that can be accessed by any package
@@ -87,21 +89,21 @@ var DefaultClient *Client
 // available to it at the time of the call; thus, the DefaultClient can be re-initialized this way.
 // Because this function is dependent on a runtime-value from pkg/platform/api, we are not relying on
 // the init() function for instantiation; this must be called explicitly.
-func InitializeClient() *Client {
-	DefaultClient = NewDefaultClient()
+func InitializeClient(auth *authentication.Auth) *Client {
+	DefaultClient = NewDefaultClient(auth)
 	return DefaultClient
 }
 
 // Get is an alias for InitializeClient used to persist our Get() pattern used throughout the codebase
-func Get() *Client {
-	return InitializeClient()
+func Get(auth *authentication.Auth) *Client {
+	return InitializeClient(auth)
 }
 
 // AuthenticatedUserID will check with the Secrets Service to ensure the current Bearer token
 // is a valid one and return the user's UID in the response. Otherwise, this function will return
 // a Failure.
 func (client *Client) AuthenticatedUserID() (strfmt.UUID, error) {
-	resOk, err := client.Authentication.GetWhoami(nil, authentication.LegacyGet().ClientAuth())
+	resOk, err := client.Authentication.GetWhoami(nil, client.auth.ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 401 {
 			return "", locale.NewInputError("err_api_not_authenticated")
@@ -120,7 +122,7 @@ func (client *Client) Persist() {
 func FetchAll(client *Client, org *mono_models.Organization) ([]*secretsModels.UserSecret, error) {
 	params := secretsapiClient.NewGetAllUserSecretsParams()
 	params.OrganizationID = org.OrganizationID
-	getOk, err := client.Secrets.Secrets.GetAllUserSecrets(params, authentication.LegacyGet().ClientAuth())
+	getOk, err := client.Secrets.Secrets.GetAllUserSecrets(params, client.auth.ClientAuth())
 	if err != nil {
 		switch statusCode := api.ErrorCode(err); statusCode {
 		case 401:
@@ -136,7 +138,7 @@ func FetchAll(client *Client, org *mono_models.Organization) ([]*secretsModels.U
 func FetchDefinitions(client *Client, projectID strfmt.UUID) ([]*secretsModels.SecretDefinition, error) {
 	params := secretsapiClient.NewGetDefinitionsParams()
 	params.ProjectID = projectID
-	getOk, err := client.Secrets.Secrets.GetDefinitions(params, authentication.LegacyGet().ClientAuth())
+	getOk, err := client.Secrets.Secrets.GetDefinitions(params, client.auth.ClientAuth())
 	if err != nil {
 		switch statusCode := api.ErrorCode(err); statusCode {
 		case 401:
@@ -153,7 +155,7 @@ func SaveSecretShares(client *Client, org *mono_models.Organization, user *mono_
 	params.OrganizationID = org.OrganizationID
 	params.UserID = user.UserID
 	params.UserSecrets = shares
-	_, err := client.Secrets.Secrets.ShareUserSecrets(params, authentication.LegacyGet().ClientAuth())
+	_, err := client.Secrets.Secrets.ShareUserSecrets(params, client.auth.ClientAuth())
 	if err != nil {
 		logging.Debug("error sharing user secrets with %s: %v", user.Username, err)
 		return locale.WrapError(err, "secrets_err_save", "", err.Error())

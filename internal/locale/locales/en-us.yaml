@@ -41,10 +41,6 @@ version_info:
     Revision [NOTICE]{{.Revision}}[/RESET]
     Channel [NOTICE]{{.Channel}}[/RESET]
     Built [NOTICE]{{.Date}}[/RESET]{{if not .BuiltViaCI}} (dev){{end}}
-err_project_file_unavailable:
-  other: Could not load the project file
-err_project_unavailable:
-  other: "Could not load the project: {{.V0}}"
 err_invalid_status_code:
   other: "Invalid status code: [NOTICE]{{.V0}}[/RESET]"
 info_activating_state:

@@ -2,11 +2,9 @@ package authentication
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"time"
 
-	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -28,8 +26,6 @@ import (
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 )
-
-var exit = os.Exit
 
 var persist *Auth
 
@@ -57,13 +53,11 @@ type Configurable interface {
 const ApiTokenConfigKey = "apiToken"
 
 // LegacyGet returns a cached version of Auth
-func LegacyGet() *Auth {
+func LegacyGet() (*Auth, error) {
 	if persist == nil {
 		cfg, err := config.New()
 		if err != nil {
-			// TODO: We need to get rid of this Get() function altogether...
-			multilog.Error("Could not get configuration required by auth: %v", err)
-			os.Exit(1)
+			return nil, errs.Wrap(err, "Could not get configuration required by auth")
 		}
 
 		persist = New(cfg)
@@ -71,7 +65,7 @@ func LegacyGet() *Auth {
 			logging.Warning("Could not sync authenticated state: %s", err.Error())
 		}
 	}
-	return persist
+	return persist, nil
 }
 
 func LegacyClose() {
@@ -79,16 +73,6 @@ func LegacyClose() {
 		return
 	}
 	persist.Close()
-}
-
-// Client is a shortcut for calling Client() on the persisted auth
-func Client() *mono_client.Mono {
-	return LegacyGet().Client()
-}
-
-// ClientAuth is a shortcut for calling ClientAuth() on the persisted auth
-func ClientAuth() runtime.ClientAuthInfoWriter {
-	return LegacyGet().ClientAuth()
 }
 
 // Reset clears the cache
@@ -348,19 +332,7 @@ func (s *Auth) Logout() error {
 }
 
 // Client will return an API client that has authentication set up
-func (s *Auth) Client() *mono_client.Mono {
-	client, err := s.ClientSafe()
-	if err != nil {
-		logging.Debug("Trying to get the Client while not authenticated")
-		fmt.Fprintln(os.Stderr, colorize.StripColorCodes(locale.T("err_api_not_authenticated")))
-		exit(1)
-	}
-
-	return client
-}
-
-// ClientSafe will return an API client that has authentication set up
-func (s *Auth) ClientSafe() (*mono_client.Mono, error) {
+func (s *Auth) Client() (*mono_client.Mono, error) {
 	if s.client == nil {
 		s.client = mono.NewWithAuth(s.clientAuth)
 	}
@@ -374,7 +346,7 @@ func (s *Auth) ClientSafe() (*mono_client.Mono, error) {
 
 // CreateToken will create an API token for the current authenticated user
 func (s *Auth) CreateToken() error {
-	client, err := s.ClientSafe()
+	client, err := s.Client()
 	if err != nil {
 		return err
 	}
@@ -427,7 +399,7 @@ func (s *Auth) NewAPIKey(name string) (string, error) {
 	params := authentication.NewAddTokenParams()
 	params.SetTokenOptions(&mono_models.TokenEditable{Name: name, DeviceID: uniqid.Text()})
 
-	client, err := s.ClientSafe()
+	client, err := s.Client()
 	if err != nil {
 		return "", err
 	}

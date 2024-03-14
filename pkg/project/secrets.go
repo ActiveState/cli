@@ -349,7 +349,7 @@ func (e *SecretExpander) ExpandWithPrompt(_ string, category string, name string
 		return "", err
 	}
 
-	err = secrets.Save(e.secretsClient, keypair, org, pj, isUser, name, value)
+	err = secrets.Save(e.secretsClient, keypair, org, pj, isUser, name, value, e.auth)
 
 	if err != nil {
 		return "", err

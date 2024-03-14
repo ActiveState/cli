@@ -85,7 +85,7 @@ func New(prime primeable) *Initialize {
 // (i.e. `state use show`).
 // Error handling is not necessary because it's an input error to not include a language to
 // `state init`. We're just trying to infer one as a convenience to the user.
-func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
+func inferLanguage(config projectfile.ConfigGetter, auth *authentication.Auth) (string, string, bool) {
 	defaultProjectDir := config.GetString(constants.GlobalDefaultPrefname)
 	if defaultProjectDir == "" {
 		return "", "", false
@@ -102,7 +102,7 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 	if commitID == "" {
 		return "", "", false
 	}
-	lang, err := model.FetchLanguageForCommit(commitID)
+	lang, err := model.FetchLanguageForCommit(commitID, auth)
 	if err != nil {
 		return "", "", false
 	}
@@ -168,7 +168,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 			languageVersion = langParts[1]
 		}
 	} else {
-		languageName, languageVersion, inferred = inferLanguage(r.config)
+		languageName, languageVersion, inferred = inferLanguage(r.config, r.auth)
 	}
 
 	if languageName == "" {
@@ -331,7 +331,7 @@ func deriveVersion(lang language.Language, version string) (string, error) {
 }
 
 func (i *Initialize) getOwner(desiredOwner string) (string, error) {
-	orgs, err := model.FetchOrganizations()
+	orgs, err := model.FetchOrganizations(i.auth)
 	if err != nil {
 		return "", errs.Wrap(err, "Unable to get the user's writable orgs")
 	}

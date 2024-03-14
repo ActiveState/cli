@@ -10,10 +10,14 @@ import (
 )
 
 // FetchOrganizationLimits returns the limits for an organization
-func FetchOrganizationLimits(orgName string) (*mono_models.Limits, error) {
+func FetchOrganizationLimits(orgName string, auth *authentication.Auth) (*mono_models.Limits, error) {
 	params := clientLimits.NewGetOrganizationLimitsParams()
 	params.SetOrganizationIdentifier(orgName)
-	res, err := authentication.Client().Limits.GetOrganizationLimits(params, authentication.ClientAuth())
+	authClient, err := auth.Client()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get auth client")
+	}
+	res, err := authClient.Limits.GetOrganizationLimits(params, auth.ClientAuth())
 
 	if err != nil {
 		return nil, processLimitsErrorResponse(err)

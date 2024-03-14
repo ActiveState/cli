@@ -24,7 +24,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	auth "github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/graphql"
@@ -52,7 +52,7 @@ type Params struct {
 }
 
 type Runner struct {
-	auth    *auth.Auth
+	auth    *authentication.Auth
 	out     output.Outputer
 	prompt  prompt.Prompter
 	project *project.Project
@@ -149,7 +149,7 @@ func (r *Runner) Run(params *Params) error {
 	isRevision := false
 	if params.Version != "" {
 		// Attempt to get the version if it already exists, it not existing is not an error though
-		i, err := model.GetIngredientByNameAndVersion(reqVars.Namespace, reqVars.Name, params.Version)
+		i, err := model.GetIngredientByNameAndVersion(reqVars.Namespace, reqVars.Name, params.Version, r.auth)
 		if err != nil {
 			var notFound *inventory_operations.GetNamespaceIngredientVersionNotFound
 			if !errors.As(err, &notFound) {
@@ -164,7 +164,7 @@ func (r *Runner) Run(params *Params) error {
 	if ingredient == nil {
 		// Attempt to find the existing ingredient, if we didn't already get it from the version specific call above
 		ts := time.Now()
-		ingredients, err := model.SearchIngredientsStrict(reqVars.Namespace, reqVars.Name, true, false, &ts)
+		ingredients, err := model.SearchIngredientsStrict(reqVars.Namespace, reqVars.Name, true, false, &ts, r.auth)
 		if err != nil && !errs.Matches(err, &model.ErrSearch404{}) { // 404 means either the ingredient or the namespace was not found, which is fine
 			return locale.WrapError(err, "err_uploadingredient_search", "Could not search for ingredient")
 		}
@@ -183,7 +183,7 @@ func (r *Runner) Run(params *Params) error {
 				"Could not find ingredient to edit with name: '[ACTIONABLE]{{.V0}}[/RESET]', namespace: '[ACTIONABLE]{{.V1}}[/RESET]'.",
 				reqVars.Name, reqVars.Namespace)
 		}
-		if err := prepareEditRequest(ingredient, &reqVars, isRevision); err != nil {
+		if err := prepareEditRequest(ingredient, &reqVars, isRevision, r.auth); err != nil {
 			return errs.Wrap(err, "Could not prepare edit request")
 		}
 	} else {
@@ -263,13 +263,13 @@ func (r *Runner) Run(params *Params) error {
 	logging.Debug("Published ingredient revision: %d", result.Publish.Revision)
 
 	ingredientID := strfmt.UUID(result.Publish.IngredientID)
-	publishedIngredient, err := model.FetchIngredient(&ingredientID)
+	publishedIngredient, err := model.FetchIngredient(&ingredientID, r.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingredient_fetch", "Unable to fetch newly published ingredient")
 	}
 	versionID := strfmt.UUID(result.Publish.IngredientVersionID)
 	atTime := strfmt.DateTime(time.Now())
-	publishedVersion, err := model.FetchIngredientVersion(&ingredientID, &versionID, true, &atTime)
+	publishedVersion, err := model.FetchIngredientVersion(&ingredientID, &versionID, true, &atTime, r.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingingredient_fetch_version", "Unable to fetch newly published ingredient version")
 	}
@@ -387,11 +387,11 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRev
 // prepareEditRequest inherits meta data from the previous ingredient revision if it exists. This should really happen
 // on the API, but at the time of implementation we did this client side as the API side requires significant refactorings
 // to enable this behavior.
-func prepareEditRequest(ingredient *ParentIngredient, r *request.PublishVariables, isRevision bool) error {
+func prepareEditRequest(ingredient *ParentIngredient, r *request.PublishVariables, isRevision bool, auth *authentication.Auth) error {
 	r.Version = ingredient.Version
 
 	if !isRevision {
-		authors, err := model.FetchAuthors(&ingredient.IngredientID, &ingredient.IngredientVersionID)
+		authors, err := model.FetchAuthors(&ingredient.IngredientID, &ingredient.IngredientVersionID, auth)
 		if err != nil {
 			return locale.WrapError(err, "err_uploadingredient_fetch_authors", "Could not fetch authors for ingredient")
 		}

@@ -3,6 +3,7 @@ package invite
 import (
 	"strconv"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -25,13 +26,20 @@ func (o *Org) String() string {
 }
 
 func (o *Org) Set(v string) error {
-	var err error
-	o.Organization, err = model.FetchOrgByURLName(v, authentication.LegacyGet())
+	auth, err := authentication.LegacyGet()
+	if err != nil {
+		return errs.Wrap(err, "Could not get auth")
+	}
+	o.Organization, err = model.FetchOrgByURLName(v, auth)
 	return err
 }
 
 func (o *Org) CanInvite(numInvites int) error {
-	limits, err := model.FetchOrganizationLimits(o.URLname)
+	auth, err := authentication.LegacyGet()
+	if err != nil {
+		return errs.Wrap(err, "Could not get auth")
+	}
+	limits, err := model.FetchOrganizationLimits(o.URLname, auth)
 	if err != nil {
 		return locale.WrapError(err, "err_invite_fetchlimits", "Could not detect member limits for organization.")
 	}

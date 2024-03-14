@@ -39,6 +39,7 @@ type Resolver struct {
 	an             *sync.Client
 	anForClient    *sync.Client // Use separate client for events sent through service so we don't contaminate one with the other
 	rtwatch        *rtwatcher.Watcher
+	auth           *authentication.Auth
 }
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
@@ -83,6 +84,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 		an,
 		anForClient,
 		rtwatcher.New(cfg, anForClient),
+		auth,
 	}, nil
 }
 
@@ -203,7 +205,7 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action, source st
 		if values.ProjectNameSpace == nil || *values.ProjectNameSpace == "" {
 			return nil
 		}
-		id, err := r.projectIDCache.FromNamespace(*values.ProjectNameSpace)
+		id, err := r.projectIDCache.FromNamespace(*values.ProjectNameSpace, r.auth)
 		if err != nil {
 			logging.Error("Could not resolve project ID for analytics: %s", errs.JoinMessage(err))
 		}

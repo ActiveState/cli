@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -49,6 +50,7 @@ func NewParams() *Params {
 type Hello struct {
 	out     output.Outputer
 	project *project.Project
+	auth    *authentication.Auth
 }
 
 // New contains the scope in which an instance of Hello is constructed from an
@@ -57,6 +59,7 @@ func New(p primeable) *Hello {
 	return &Hello{
 		out:     p.Output(),
 		project: p.Project(),
+		auth:    p.Auth(),
 	}
 }
 
@@ -116,7 +119,7 @@ func (h *Hello) Run(params *Params) (rerr error) {
 	}
 
 	// Grab data from the platform.
-	commitMsg, err := currentCommitMessage(h.project)
+	commitMsg, err := currentCommitMessage(h.project, h.auth)
 	if err != nil {
 		err = errs.Wrap(
 			err, "Cannot get commit message",
@@ -140,7 +143,7 @@ func (h *Hello) Run(params *Params) (rerr error) {
 // is obtained. Since it is a sort of construction function that has some
 // complexity, it is helpful to provide localized error context. Secluding this
 // sort of logic is helpful to keep the subhandlers clean.
-func currentCommitMessage(proj *project.Project) (string, error) {
+func currentCommitMessage(proj *project.Project, auth *authentication.Auth) (string, error) {
 	if proj == nil {
 		return "", errs.New("Cannot determine which project to use")
 	}
@@ -150,7 +153,7 @@ func currentCommitMessage(proj *project.Project) (string, error) {
 		return "", errs.Wrap(err, "Cannot determine which commit to use")
 	}
 
-	commit, err := model.GetCommit(commitId)
+	commit, err := model.GetCommit(commitId, auth)
 	if err != nil {
 		return "", errs.Wrap(err, "Cannot get commit from server")
 	}

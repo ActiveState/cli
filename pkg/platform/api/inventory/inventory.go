@@ -40,9 +40,9 @@ func New(serviceURL *url.URL, auth runtime.ClientAuthInfoWriter) (inventory_oper
 }
 
 // Get returns a cached version of the default api client
-func Get() inventory_operations.ClientService {
+func Get(auth *authentication.Auth) inventory_operations.ClientService {
 	if persist == nil {
-		persist, _ = Init(authentication.LegacyGet())
+		persist, _ = Init(auth)
 	}
 	return persist
 }

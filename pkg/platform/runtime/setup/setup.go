@@ -417,7 +417,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	// Compute and handle the change summary
 	var requestedArtifacts artifact.Map // Artifacts required for the runtime to function
-	artifactListing, err := buildplan.NewArtifactListing(buildResult.Build, includeBuildtimeClosure, s.cfg)
+	artifactListing, err := buildplan.NewArtifactListing(buildResult.Build, includeBuildtimeClosure, s.cfg, s.auth)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Failed to create artifact listing")
 	}
@@ -475,7 +475,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		s.analytics.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeBuild, dimensions)
 	}
 
-	changedArtifacts, err := buildplan.NewBaseArtifactChangesetByBuildPlan(buildResult.Build, false, includeBuildtimeClosure, s.cfg)
+	changedArtifacts, err := buildplan.NewBaseArtifactChangesetByBuildPlan(buildResult.Build, false, includeBuildtimeClosure, s.cfg, s.auth)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Could not compute base artifact changeset")
 	}
@@ -488,12 +488,12 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	var oldBuildPlanArtifacts artifact.Map
 
 	if oldBuildPlan != nil {
-		changedArtifacts, err = buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false, includeBuildtimeClosure, s.cfg)
+		changedArtifacts, err = buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false, includeBuildtimeClosure, s.cfg, s.auth)
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "Could not compute artifact changeset")
 		}
 
-		artifactListing, err := buildplan.NewArtifactListing(oldBuildPlan, false, s.cfg)
+		artifactListing, err := buildplan.NewArtifactListing(oldBuildPlan, false, s.cfg, s.auth)
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "Unable to create artifact listing for old build plan")
 		}

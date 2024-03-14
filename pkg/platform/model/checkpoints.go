@@ -16,6 +16,7 @@ import (
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 var (
@@ -32,8 +33,8 @@ type Language struct {
 }
 
 // GetRequirement searches a commit for a requirement by name.
-func GetRequirement(commitID strfmt.UUID, namespace Namespace, requirement string) (*gqlModel.Requirement, error) {
-	chkPt, _, err := FetchCheckpointForCommit(commitID)
+func GetRequirement(commitID strfmt.UUID, namespace Namespace, requirement string, auth *authentication.Auth) (*gqlModel.Requirement, error) {
+	chkPt, _, err := FetchCheckpointForCommit(commitID, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -50,8 +51,8 @@ func GetRequirement(commitID strfmt.UUID, namespace Namespace, requirement strin
 }
 
 // FetchLanguagesForCommit fetches a list of language names for the given commit
-func FetchLanguagesForCommit(commitID strfmt.UUID) ([]Language, error) {
-	checkpoint, _, err := FetchCheckpointForCommit(commitID)
+func FetchLanguagesForCommit(commitID strfmt.UUID, auth *authentication.Auth) ([]Language, error) {
+	checkpoint, _, err := FetchCheckpointForCommit(commitID, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -71,12 +72,12 @@ func FetchLanguagesForCommit(commitID strfmt.UUID) ([]Language, error) {
 }
 
 // FetchCheckpointForCommit fetches the checkpoint for the given commit
-func FetchCheckpointForCommit(commitID strfmt.UUID) ([]*gqlModel.Requirement, strfmt.DateTime, error) {
+func FetchCheckpointForCommit(commitID strfmt.UUID, auth *authentication.Auth) ([]*gqlModel.Requirement, strfmt.DateTime, error) {
 	logging.Debug("fetching checkpoint (%s)", commitID.String())
 
 	request := request.CheckpointByCommit(commitID)
 
-	gql := graphql.New()
+	gql := graphql.New(auth)
 	response := gqlModel.Checkpoint{}
 	err := gql.Run(request, &response)
 	if err != nil {
@@ -185,12 +186,12 @@ func CheckpointToPlatforms(requirements []*gqlModel.Requirement) []strfmt.UUID {
 }
 
 // CheckpointToLanguage returns the language from a checkpoint
-func CheckpointToLanguage(requirements []*gqlModel.Requirement) (*Language, error) {
+func CheckpointToLanguage(requirements []*gqlModel.Requirement, auth *authentication.Auth) (*Language, error) {
 	for _, req := range requirements {
 		if !NamespaceMatch(req.Namespace, NamespaceLanguageMatch) {
 			continue
 		}
-		lang, err := FetchLanguageByDetails(req.Requirement, req.VersionConstraint)
+		lang, err := FetchLanguageByDetails(req.Requirement, req.VersionConstraint, auth)
 		if err != nil {
 			return nil, err
 		}

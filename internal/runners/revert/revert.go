@@ -100,7 +100,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 		preposition = " to" // need leading whitespace
 	}
 
-	targetCommit, err := model.GetCommitWithinCommitHistory(latestCommit, strfmt.UUID(targetCommitID))
+	targetCommit, err := model.GetCommitWithinCommitHistory(latestCommit, strfmt.UUID(targetCommitID), r.auth)
 	if err != nil {
 		if err == model.ErrCommitNotInHistory {
 			return locale.WrapInputError(err, "err_revert_commit_not_found", "The commit [NOTICE]{{.V0}}[/RESET] was not found in the project's commit history.", commitID)
@@ -114,7 +114,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 	var orgs []gqlmodel.Organization
 	if targetCommit.Author != nil {
 		var err error
-		orgs, err = model.FetchOrganizationsByIDs([]strfmt.UUID{*targetCommit.Author})
+		orgs, err = model.FetchOrganizationsByIDs([]strfmt.UUID{*targetCommit.Author}, r.auth)
 		if err != nil {
 			return locale.WrapError(err, "err_revert_get_organizations", "Could not get organizations for current user")
 		}

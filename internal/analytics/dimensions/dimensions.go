@@ -50,7 +50,7 @@ type Values struct {
 	preProcessor func(*Values) error
 }
 
-func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
+func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string, auth *authentication.Auth) *Values {
 	installSource, err := storage.InstallSource()
 	if err != nil {
 		multilog.Error("Could not detect installSource: %s", errs.JoinMessage(err))
@@ -59,7 +59,7 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 	deviceID := uniqid.Text()
 
 	var userIDString string
-	userID := authentication.LegacyGet().UserID()
+	userID := auth.UserID()
 	if userID != nil {
 		userIDString = userID.String()
 	}

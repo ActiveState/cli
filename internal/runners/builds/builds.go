@@ -112,7 +112,7 @@ func (b *Builds) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Could not get terminal artifact map")
 	}
 
-	platformMap, err := model.FetchPlatformsMap()
+	platformMap, err := model.FetchPlatformsMap(b.auth)
 	if err != nil {
 		return errs.Wrap(err, "Could not get platforms")
 	}
@@ -276,7 +276,7 @@ func getTerminalArtifactMap(
 
 	// Return the artifact map for the latest commitID of the given project.
 	case namespaceProvided && !commitIdProvided:
-		pj, err := model.FetchProjectByName(namespace.Owner, namespace.Project)
+		pj, err := model.FetchProjectByName(namespace.Owner, namespace.Project, auth)
 		if err != nil {
 			return nil, false, locale.WrapInputError(err, "err_fetch_project", "", namespace.String())
 		}

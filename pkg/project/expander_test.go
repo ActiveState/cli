@@ -58,9 +58,12 @@ scripts:
 
 	require.NoError(t, pjFile.Init())
 
-	pjFile.Persist()
+	require.NoError(t, pjFile.Persist())
 
-	return project.Get()
+	proj, err := project.Get()
+	require.NoError(t, err)
+
+	return proj
 }
 
 func TestExpandProject(t *testing.T) {
@@ -190,8 +193,9 @@ scripts:
 
 	err := yaml.Unmarshal([]byte(contents), projectFile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	projectFile.Persist()
-	prj := project.Get()
+	require.NoError(t, projectFile.Persist())
+	prj, err := project.Get()
+	require.NoError(t, err)
 
 	expanded, err := project.ExpandFromProject("- $scripts.foo-bar -", prj)
 	assert.NoError(t, err, "Ran without failure")
