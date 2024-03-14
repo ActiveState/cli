@@ -3,6 +3,7 @@ package buildscript
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
@@ -79,7 +81,11 @@ func NewScript(data []byte) (*Script, error) {
 
 	script, err := parser.ParseBytes(constants.BuildScriptFileName, data)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not parse build script")
+		var parseError participle.Error
+		if errors.As(err, &parseError) {
+			return nil, locale.WrapInputError(err, "err_parse_buildscript_bytes", "Could not parse build script: {{.V0}}: {{.V1}}", parseError.Position().String(), parseError.Message())
+		}
+		return nil, locale.WrapError(err, "err_parse_buildscript_bytes", "Could not parse build script: {{.V0}}", err.Error())
 	}
 
 	// Construct the equivalent buildexpression.
