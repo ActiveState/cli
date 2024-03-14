@@ -2,9 +2,7 @@ package project
 
 import (
 	"errors"
-	"fmt"
 	"log"
-	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -281,20 +279,8 @@ func Parse(fpath string) (*Project, error) {
 	return New(pjfile, output.Get())
 }
 
-// Get returns project struct. Quits execution if error occurs
-func Get() *Project {
-	pj := projectfile.Get()
-	project, err := New(pj, output.Get())
-	if err != nil {
-		fmt.Fprint(os.Stderr, locale.Tr("err_project_unavailable", err.Error()))
-		os.Exit(1)
-	}
-	return project
-}
-
-// GetSafe returns project struct.  Produces failure if error occurs, allows recovery
-func GetSafe() (*Project, error) {
-	pjFile, err := projectfile.GetSafe()
+func Get() (*Project, error) {
+	pjFile, err := projectfile.Get()
 	if err != nil {
 		return nil, err
 	}
@@ -436,7 +422,7 @@ func (s *Secret) IsProject() bool { return s.scope == SecretScopeProject }
 
 // ValueOrNil acts as Value() except it can return a nil
 func (s *Secret) ValueOrNil() (*string, error) {
-	secretsExpander := NewSecretExpander(secretsapi.GetClient(), nil, nil, s.cfg, s.auth)
+	secretsExpander := NewSecretExpander(secretsapi.GetClient(s.auth), nil, nil, s.cfg, s.auth)
 
 	category := ProjectCategory
 	if s.IsUser() {

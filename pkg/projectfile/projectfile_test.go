@@ -306,7 +306,8 @@ func TestGet(t *testing.T) {
 	cwd, _ := osutils.Getwd()
 	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
 
-	config := Get()
+	config, err := Get()
+	require.NoError(t, err)
 	assert.NotNil(t, config, "Config should be set")
 	assert.NotEqual(t, "", os.Getenv(constants.ProjectEnvVarName), "The project env var should be set")
 
@@ -320,11 +321,12 @@ func TestGetActivated(t *testing.T) {
 	cwd, _ := osutils.Getwd()
 	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
 
-	config1 := Get()
+	config1, err := Get()
+	require.NoError(t, err)
 	assert.Equal(t, filepath.Join(root, "pkg", "projectfile", "testdata", constants.ConfigFileName), os.Getenv(constants.ProjectEnvVarName), "The activated state's config file is set")
 
 	os.Chdir(root)
-	config2, err := GetSafe()
+	config2, err := Get()
 	assert.NoError(t, err, "No error even if no activestate.yaml does not exist")
 	assert.Equal(t, config1, config2, "The same activated state is returned")
 

@@ -105,7 +105,7 @@ func (s *Switch) Run(params SwitchParams) error {
 		}
 	}
 
-	belongs, err := model.CommitBelongsToBranch(s.project.Owner(), s.project.Name(), s.project.BranchName(), identifier.CommitID())
+	belongs, err := model.CommitBelongsToBranch(s.project.Owner(), s.project.Name(), s.project.BranchName(), identifier.CommitID(), s.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_identifier_branch", "Could not determine if commit belongs to branch")
 	}
