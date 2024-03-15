@@ -2,6 +2,7 @@ package commit
 
 import (
 	"errors"
+	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
@@ -114,11 +115,18 @@ func (c *Commit) Run() (rerr error) {
 		return errs.Wrap(err, "Unable to get build expression from build script")
 	}
 
+	var exprAtTime *time.Time
+	if atTime := script.AtTime; atTime != nil {
+		atTimeTime := time.Time(*atTime)
+		exprAtTime = &atTimeTime
+	}
+
 	stagedCommitID, err := bp.StageCommit(model.StageCommitParams{
 		Owner:        c.proj.Owner(),
 		Project:      c.proj.Name(),
 		ParentCommit: localCommitID.String(),
 		Expression:   exprBuildscript,
+		TimeStamp:    exprAtTime,
 	})
 	if err != nil {
 		return errs.Wrap(err, "Could not update project to reflect build script changes.")

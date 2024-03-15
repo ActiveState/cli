@@ -28,7 +28,7 @@ import (
 type Script struct {
 	Assignments []*Assignment `parser:"@@+"`
 	expr        *buildexpression.BuildExpression
-	atTime      *strfmt.DateTime
+	AtTime      *strfmt.DateTime
 }
 
 type Assignment struct {
@@ -115,7 +115,7 @@ func NewScriptFromBuildExpression(expr *buildexpression.BuildExpression) (*Scrip
 		return nil, errs.Wrap(err, "Could not set default timestamp in build expression")
 	}
 
-	return &Script{expr: expr, atTime: atTime}, nil
+	return &Script{expr: expr, AtTime: atTime}, nil
 }
 
 func indent(s string) string {
@@ -125,10 +125,10 @@ func indent(s string) string {
 func (s *Script) String() string {
 	buf := strings.Builder{}
 
-	if s.atTime != nil {
+	if s.AtTime != nil {
 		buf.WriteString(assignmentString(&buildexpression.Var{
 			Name:  buildexpression.AtTimeKey,
-			Value: &buildexpression.Value{Str: ptr.To(s.atTime.String())},
+			Value: &buildexpression.Value{Str: ptr.To(s.AtTime.String())},
 		}))
 		buf.WriteString("\n")
 	}
@@ -160,13 +160,13 @@ func (s *Script) String() string {
 func (s *Script) BuildExpression() (*buildexpression.BuildExpression, error) {
 	expr := s.expr
 
-	if s.atTime != nil {
+	if s.AtTime != nil {
 		var err error
 		expr, err = expr.Copy()
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to copy buildexpression")
 		}
-		err = expr.MaybeUpdateTimestamp(*s.atTime)
+		err = expr.MaybeUpdateTimestamp(*s.AtTime)
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to possibly update %s", buildexpression.AtTimeKey)
 		}
