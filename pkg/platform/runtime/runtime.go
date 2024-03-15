@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -128,7 +127,7 @@ func (r *Runtime) validateCache() error {
 	}
 
 	commitID := r.target.CommitUUID().String()
-	expr, err := r.store.GetAndValidateBuildExpression(commitID)
+	_, err := r.store.GetAndValidateBuildExpression(commitID)
 	if err != nil {
 		bp := model.NewBuildPlannerModel(r.auth)
 		bpExpr, err := bp.GetBuildExpression(commitID)
@@ -138,21 +137,20 @@ func (r *Runtime) validateCache() error {
 		if err := r.store.StoreBuildExpression(bpExpr, commitID); err != nil {
 			return errs.Wrap(err, "Unable to store build expression")
 		}
-		data, err := json.Marshal(bpExpr)
-		if err != nil {
-			return errs.Wrap(err, "Unable to marshal buildexpression to JSON: %v", err)
-		}
-		expr = string(data)
 	}
 
 	// Check if local build script has changes that should be committed.
 	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		script, err := buildscript.ScriptFromProject(r.target)
-		if err != nil {
-			return errs.Wrap(err, "Unable to get local build script")
-		}
-		if !script.EqualsBuildExpressionBytes([]byte(expr)) {
-			return &NeedsCommitError{errs.New("Runtime changes should be committed")}
+		if cachedScript, err := r.store.BuildScript(); err == nil {
+			script, err := buildscript.ScriptFromProject(r.target)
+			if err != nil {
+				return errs.Wrap(err, "Unable to get local build script")
+			}
+			if !script.Equals(cachedScript) {
+				return &NeedsCommitError{errs.New("Runtime changes should be committed")}
+			}
+		} else if err != store.ErrNoBuildScriptFile {
+			return errs.Wrap(err, "Unable to read cached build script")
 		}
 	}
 

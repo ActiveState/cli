@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -28,7 +30,7 @@ var ErrBuildscriptNotExist = errors.New("Build script does not exist")
 func ScriptFromProjectWithFallback(proj projecter, auth *authentication.Auth) (*Script, error) {
 	path := filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName)
 
-	buildscript, err := ScriptFromFile(path)
+	script, err := ScriptFromFile(path)
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			return nil, errs.Wrap(err, "Could not read build script from file")
@@ -40,21 +42,21 @@ func ScriptFromProjectWithFallback(proj projecter, auth *authentication.Auth) (*
 			return nil, errs.Wrap(err, "Unable to get the local commit ID")
 		}
 		buildplanner := model.NewBuildPlannerModel(auth)
-		expr, err := buildplanner.GetBuildExpression(commitId.String())
+		expr, atTime, err := buildplanner.GetBuildExpressionAndTime(commitId.String())
 		if err != nil {
-			return nil, errs.Wrap(err, "Unable to get the remote build expression")
+			return nil, errs.Wrap(err, "Unable to get the remote build expression and time")
 		}
-		buildscript, err = NewScriptFromBuildExpression(expr)
+		script, err = NewFromCommit(atTime, expr)
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to convert build expression to build script")
 		}
-		err = fileutils.WriteFile(path, []byte(buildscript.String()))
+		err = fileutils.WriteFile(path, []byte(script.String()))
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to write build script")
 		}
 	}
 
-	return buildscript, nil
+	return script, nil
 }
 
 func ScriptFromProject(proj projecter) (*Script, error) {
@@ -70,26 +72,26 @@ func ScriptFromFile(path string) (*Script, error) {
 		}
 		return nil, errs.Wrap(err, "Could not read build script from file")
 	}
-	return NewScript(data)
+	return New(data)
 }
 
-func Update(proj projecter, newExpr *buildexpression.BuildExpression, auth *authentication.Auth) error {
-	if script, err := ScriptFromProjectWithFallback(proj, auth); err == nil && (script == nil || !script.EqualsBuildExpression(newExpr)) {
-		update(proj.ProjectDir(), newExpr, auth)
-	} else if err != nil {
+func Update(proj projecter, atTime *strfmt.DateTime, newExpr *buildexpression.BuildExpression, auth *authentication.Auth) error {
+	script, err := ScriptFromProjectWithFallback(proj, auth)
+	if err != nil {
 		return errs.Wrap(err, "Could not read build script")
 	}
-	return nil
-}
 
-func update(projectDir string, newExpr *buildexpression.BuildExpression, auth *authentication.Auth) error {
-	script, err := NewScriptFromBuildExpression(newExpr)
+	newScript, err := NewFromCommit(atTime, newExpr)
 	if err != nil {
-		return errs.Wrap(err, "Could not parse build expression")
+		return errs.Wrap(err, "Could not construct new build script to write")
+	}
+
+	if script != nil && script.Equals(newScript) {
+		return nil // no changes to write
 	}
 
 	logging.Debug("Writing build script")
-	if err := fileutils.WriteFile(filepath.Join(projectDir, constants.BuildScriptFileName), []byte(script.String())); err != nil {
+	if err := fileutils.WriteFile(filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName), []byte(script.String())); err != nil {
 		return errs.Wrap(err, "Could not write build script to file")
 	}
 	return nil
