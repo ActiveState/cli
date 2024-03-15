@@ -228,9 +228,11 @@ func (r *Runner) Run(params *Params) error {
 
 	cont, err := r.prompt.Confirm(
 		"",
-		locale.Tl("uploadingredient_confirm", `Publish following ingredient?
+		locale.Tl("uploadingredient_confirm", `Prepared the following ingredient:
+
 {{.V0}}
 
+Do you want to publish this ingredient?
 `, string(b)),
 		ptr.To(true),
 	)
