@@ -89,6 +89,8 @@ type Command struct {
 
 	group CommandGroup
 
+	deprioritizeInHelpListing bool
+
 	flags     []*Flag
 	arguments []*Argument
 
@@ -290,6 +292,7 @@ func (c *Command) Execute(args []string) error {
 	c.cobra.SetArgs(args)
 	err := c.cobra.Execute()
 	c.cobra.SetArgs(nil)
+	rationalizeError(&err)
 	return setupSensibleErrors(err, args)
 }
 
@@ -439,6 +442,10 @@ func (c *Command) Group() CommandGroup {
 	return c.group
 }
 
+func (c *Command) DeprioritizeInHelpListing() {
+	c.deprioritizeInHelpListing = true
+}
+
 // SetHasVariableArguments allows a captain Command to accept a variable number of command line
 // arguments.
 // By default, captain has Cobra restrict the command line arguments accepted to those given in the
@@ -458,10 +465,14 @@ func (c *Command) SkipChecks() bool {
 }
 
 func (c *Command) SortBefore(c2 *Command) bool {
-	if c.group != c2.group {
+	switch {
+	case c.group != c2.group:
 		return c.group.SortBefore(c2.group)
+	case c.deprioritizeInHelpListing == c2.deprioritizeInHelpListing:
+		return c.Name() < c2.Name()
+	default:
+		return !c.deprioritizeInHelpListing
 	}
-	return c.Name() < c2.Name()
 }
 
 func (c *Command) AddChildren(children ...*Command) {

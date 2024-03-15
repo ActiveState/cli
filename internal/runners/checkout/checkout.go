@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/checker"
 	"github.com/ActiveState/cli/internal/runbits/checkout"
 	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
@@ -69,9 +68,10 @@ func NewCheckout(prime primeable) *Checkout {
 func (u *Checkout) Run(params *Params) (rerr error) {
 	logging.Debug("Checkout %v", params.Namespace)
 
-	checker.RunUpdateNotifier(u.analytics, u.svcModel, u.out)
-
 	logging.Debug("Checking out %s to %s", params.Namespace.String(), params.PreferredPath)
+
+	u.out.Notice(locale.Tr("checking_out", params.Namespace.String()))
+
 	var err error
 	projectDir, err := u.checkout.Run(params.Namespace, params.Branch, params.RuntimePath, params.PreferredPath, params.NoClone)
 	if err != nil {
@@ -105,7 +105,9 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		}()
 	}
 
-	rti, err := runtime.NewFromProject(proj, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth, u.config)
+	u.out.Notice(output.Title(locale.T("installing_runtime_title")))
+
+	rti, err := runtime.NewFromProject(proj, nil, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth, u.config)
 	if err != nil {
 		return locale.WrapError(err, "err_checkout_runtime_new", "Could not checkout this project.")
 	}

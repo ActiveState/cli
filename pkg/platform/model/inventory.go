@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -15,6 +14,9 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	hsInventory "github.com/ActiveState/cli/pkg/platform/api/hasura_inventory"
+	hsInventoryModel "github.com/ActiveState/cli/pkg/platform/api/hasura_inventory/model"
+	hsInventoryRequest "github.com/ActiveState/cli/pkg/platform/api/hasura_inventory/request"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
@@ -105,6 +107,46 @@ func SearchIngredientsStrict(namespace string, name string, caseSensitive bool, 
 	}
 
 	return ingredients, nil
+}
+
+// SearchIngredientsLatest will return all ingredients+ingredientVersions that
+// fuzzily match the ingredient name, but only the latest version of each
+// ingredient.
+func SearchIngredientsLatest(namespace string, name string, includeVersions bool, ts *time.Time) ([]*IngredientAndVersion, error) {
+	results, err := searchIngredientsNamespace(namespace, name, includeVersions, false, ts)
+	if err != nil {
+		return nil, err
+	}
+
+	return processLatestIngredients(results), nil
+}
+
+// SearchIngredientsLatestStrict will return all ingredients+ingredientVersions that
+// strictly match the ingredient name, but only the latest version of each
+// ingredient.
+func SearchIngredientsLatestStrict(namespace string, name string, caseSensitive bool, includeVersions bool, ts *time.Time) ([]*IngredientAndVersion, error) {
+	results, err := SearchIngredientsStrict(namespace, name, caseSensitive, includeVersions, ts)
+	if err != nil {
+		return nil, err
+	}
+
+	return processLatestIngredients(results), nil
+}
+
+func processLatestIngredients(ingredients []*IngredientAndVersion) []*IngredientAndVersion {
+	seen := make(map[string]bool)
+	var processedIngredients []*IngredientAndVersion
+	for _, ing := range ingredients {
+		if ing.Ingredient.Name == nil {
+			continue
+		}
+		if seen[*ing.Ingredient.Name] {
+			continue
+		}
+		processedIngredients = append(processedIngredients, ing)
+		seen[*ing.Ingredient.Name] = true
+	}
+	return processedIngredients
 }
 
 // FetchAuthors obtains author info for an ingredient at a particular version.
@@ -232,6 +274,19 @@ func FetchPlatforms() ([]*Platform, error) {
 	}
 
 	return platformCache, nil
+}
+
+func FetchPlatformsMap() (map[strfmt.UUID]*Platform, error) {
+	platforms, err := FetchPlatforms()
+	if err != nil {
+		return nil, err
+	}
+
+	platformMap := make(map[strfmt.UUID]*Platform)
+	for _, p := range platforms {
+		platformMap[*p.PlatformID] = p
+	}
+	return platformMap, nil
 }
 
 func FetchPlatformsForCommit(commitID strfmt.UUID) ([]*Platform, error) {
@@ -493,6 +548,7 @@ func FetchIngredientVersions(ingredientID *strfmt.UUID) ([]*inventory_models.Ing
 }
 
 // FetchLatestTimeStamp fetches the latest timestamp from the inventory service.
+// This is not the same as FetchLatestRevisionTimeStamp.
 func FetchLatestTimeStamp() (time.Time, error) {
 	client := inventory.Get()
 	result, err := client.GetLatestTimestamp(inventory_operations.NewGetLatestTimestampParams())
@@ -501,6 +557,25 @@ func FetchLatestTimeStamp() (time.Time, error) {
 	}
 
 	return time.Time(*result.Payload.Timestamp), nil
+}
+
+// FetchLatestRevisionTimeStamp fetches the time of the last inventory change from the Hasura
+// inventory service.
+// This is not the same as FetchLatestTimeStamp.
+func FetchLatestRevisionTimeStamp(auth *authentication.Auth) (time.Time, error) {
+	client := hsInventory.New(auth)
+	request := hsInventoryRequest.NewLatestRevision()
+	response := hsInventoryModel.LatestRevisionResponse{}
+	err := client.Run(request, &response)
+	if err != nil {
+		return time.Now(), errs.Wrap(err, "Failed to get latest change time")
+	}
+
+	// Increment time by 1 second to work around API precision issue where same second comparisons can fall on either side
+	t := time.Time(response.RevisionTimes[0].RevisionTime)
+	t = t.Add(time.Second)
+
+	return t, nil
 }
 
 func FetchNormalizedName(namespace Namespace, name string) (string, error) {
@@ -517,33 +592,4 @@ func FetchNormalizedName(namespace Namespace, name string) (string, error) {
 		return "", errs.New("Normalized name for %s not found", name)
 	}
 	return *res.Payload.NormalizedNames[0].Normalized, nil
-}
-
-func RequirementsToString(requirements inventory_models.Requirements) string {
-	if requirements == nil || len(requirements) == 0 {
-		return ""
-	}
-
-	parts := []string{}
-	for _, requirement := range requirements {
-		if requirement.Version == nil || requirement.Comparator == nil {
-			multilog.Error("Invalid requirement, has nil values: %v", requirement)
-			continue
-		}
-		switch *requirement.Comparator {
-		case inventory_models.RequirementComparatorEq:
-			parts = append(parts, *requirement.Version)
-		case inventory_models.RequirementComparatorGt:
-			parts = append(parts, fmt.Sprintf(">%s", *requirement.Version))
-		case inventory_models.RequirementComparatorGte:
-			parts = append(parts, fmt.Sprintf(">=%s", *requirement.Version))
-		case inventory_models.RequirementComparatorLt:
-			parts = append(parts, fmt.Sprintf("<%s", *requirement.Version))
-		case inventory_models.RequirementComparatorLte:
-			parts = append(parts, fmt.Sprintf("<=%s", *requirement.Version))
-		case inventory_models.RequirementComparatorNe:
-			parts = append(parts, fmt.Sprintf("!%s", *requirement.Version))
-		}
-	}
-	return strings.Join(parts, ",")
 }

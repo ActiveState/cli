@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
@@ -44,7 +45,10 @@ events:
 `))
 	ts.PrepareCommitIdFile("fbc613d6-b0b1-4f84-b26e-4aa5869c4e54")
 
-	cp := ts.Spawn("activate")
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("activate"),
+		e2e.OptAppendEnv(constants.DisableActivateEventsEnvVarName+"=false"),
+	)
 	cp.SendEnter()
 	cp.Expect("before-script")
 	cp.Expect("First activate event")
@@ -54,7 +58,10 @@ events:
 	cp.Expect("after-script")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("activate")
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("activate"),
+		e2e.OptAppendEnv(constants.DisableActivateEventsEnvVarName+"=false"),
+	)
 	cp.Expect("Activate event")
 	cp.ExpectInput()
 	cp.SendLine("exit")

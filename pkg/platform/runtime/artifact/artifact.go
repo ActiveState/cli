@@ -19,6 +19,7 @@ type Artifact struct {
 	Version          *string
 	RequestedByOrder bool
 	URL              string
+	MimeType         string
 
 	GeneratedBy strfmt.UUID
 

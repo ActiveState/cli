@@ -74,7 +74,7 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{
 			{
 				Name:        locale.T("package_arg_nameversion"),
-				Description: locale.T("package_arg_nameversion_description"),
+				Description: locale.T("package_arg_nameversion_wildcard_description"),
 				Value:       &params.Package,
 				Required:    true,
 			},
@@ -143,7 +143,7 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"search",
-		locale.Tl("package_search_title", "Searching Packages"),
+		"",
 		locale.T("package_search_cmd_description"),
 		prime,
 		[]*captain.Flag{
@@ -159,7 +159,7 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 			},
 			{
 				Name:        "ts",
-				Description: locale.T("package_search_flag_ts_description"),
+				Description: locale.T("package_flag_ts_description"),
 				Value:       &params.Timestamp,
 			},
 		},
@@ -184,7 +184,7 @@ func newInfoCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"info",
-		locale.Tl("package_info_title", "Displaying Package Information"),
+		"",
 		locale.T("package_info_cmd_description"),
 		prime,
 		[]*captain.Flag{

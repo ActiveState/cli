@@ -22,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -30,7 +31,6 @@ import (
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/errors"
-	"github.com/ActiveState/cli/internal/runbits/legacy/projectmigration"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcctl"
@@ -82,6 +82,10 @@ func main() {
 		return
 	}
 	rollbar.SetConfig(cfg)
+
+	// Configuration options
+	// This should only be used if the config option is not exclusive to one package.
+	configMediator.RegisterOption(constants.OptinBuildscriptsConfig, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
 
 	// Set up our output formatter/writer
 	outFlags := parseOutputFlags(os.Args)
@@ -198,13 +202,6 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	// Set up prompter
 	prompter := prompt.New(isInteractive, an)
 
-	// This is an anti-pattern. DO NOT DO THIS! Normally we should be passing prompt and out as
-	// arguments everywhere it is needed. However, we need to support legacy projects with commitId in
-	// activestate.yaml, and whenever that commitId is needed, we need to prompt the user to migrate
-	// their project. This would result in a lot of boilerplate for a legacy feature, so we're
-	// working around it with package "globals".
-	projectmigration.Register(prompter, out)
-
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)
 
@@ -225,7 +222,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	cmds.OnExecStart(msger.OnExecStart)
 	cmds.OnExecStop(msger.OnExecStop)
 
-	if childCmd != nil && !childCmd.SkipChecks() {
+	if childCmd != nil && !childCmd.SkipChecks() && !out.Type().IsStructured() {
 		// Auto update to latest state tool version
 		if updated, err := autoUpdate(svcmodel, args, cfg, an, out); err == nil && updated {
 			return nil // command will be run by updated exe

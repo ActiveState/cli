@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -61,6 +62,7 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, lang string, ex
 
 	// Run `state init`, creating the project.
 	cp := ts.Spawn(computedArgs...)
+	cp.Expect("Initializing Project")
 	cp.Expect("Skipping runtime setup")
 	cp.Expect(fmt.Sprintf("Project '%s' has been successfully initialized", namespace))
 	cp.ExpectExitCode(0)
@@ -152,6 +154,36 @@ func (suite *InitIntegrationTestSuite) TestInit_AlreadyExists() {
 	cp.ExpectExitCode(1)
 }
 
+func (suite *InitIntegrationTestSuite) TestInit_Resolved() {
+	suite.OnlyRunForTags(tagsuite.Init)
+	if runtime.GOOS == "darwin" {
+		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
+		return
+	}
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	ts.LoginAsPersistentUser()
+
+	// Generate a new namespace for the project to be created.
+	pname := strutils.UUID()
+	namespace := fmt.Sprintf("%s/%s", e2e.PersistentUsername, pname)
+
+	// Run `state init`, creating the project.
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("init", namespace, "--language", "python@3.10"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect(fmt.Sprintf("Project '%s' has been successfully initialized", namespace), e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0)
+	ts.NotifyProjectCreated(e2e.PersistentUsername, pname.String())
+
+	// Run `state languages` to verify a full language version was resolved.
+	cp = ts.Spawn("languages")
+	cp.Expect("python")
+	cp.Expect("3.10 → 3.10.0")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *InitIntegrationTestSuite) TestInit_NoOrg() {
 	suite.OnlyRunForTags(tagsuite.Init)
 	ts := e2e.New(suite.T(), false)
@@ -161,6 +193,33 @@ func (suite *InitIntegrationTestSuite) TestInit_NoOrg() {
 	cp := ts.Spawn("init", "random-org/test-project", "--language", "python@3")
 	cp.Expect("The organization 'random-org' either does not exist, or you do not have permissions to create a project in it.")
 	cp.ExpectExitCode(1)
+}
+
+func (suite *InitIntegrationTestSuite) TestInit_InferredOrg() {
+	suite.OnlyRunForTags(tagsuite.Init)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	ts.LoginAsPersistentUser()
+	ts.IgnoreLogErrors()
+
+	org := "ActiveState-CLI"
+	projectName := fmt.Sprintf("test-project-%s", model.HostPlatform)
+
+	// First, checkout project to set last used org.
+	cp := ts.Spawn("checkout", fmt.Sprintf("%s/Python3", org))
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+
+	// Now, run `state init` without specifying the org.
+	cp = ts.Spawn("init", projectName, "--language", "python@3")
+	cp.Expect(fmt.Sprintf("%s/%s", org, projectName))
+	cp.Expect("to track changes for this environment")
+	cp.Expect("successfully initialized")
+	cp.ExpectExitCode(0)
+	ts.NotifyProjectCreated(org, projectName)
+
+	// Verify the config file has the correct project owner.
+	suite.Contains(string(fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))), "ActiveState-CLI")
 }
 
 func TestInitIntegrationTestSuite(t *testing.T) {

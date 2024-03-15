@@ -43,6 +43,12 @@ const (
 	// ServiceBuildPlanner is our service that processes build plans.
 	ServiceBuildPlanner = "build-planner"
 
+	// ServiceVulnerabilities is Data Acquisition's Hasura service for vulnerability (CVE) information.
+	ServiceVulnerabilities = "vulnerabilities"
+
+	// ServiceHasuraInventory is the Hasura service for inventory information.
+	ServiceHasuraInventory = "hasura-inventory"
+
 	// TestingPlatform is the API host used by tests so-as not to affect production.
 	TestingPlatform = ".testing.tld"
 )
@@ -92,6 +98,16 @@ var urlsByService = map[Service]*url.URL{
 		Scheme: "https",
 		Host:   constants.DefaultAPIHost,
 		Path:   constants.BuildPlannerAPIPath,
+	},
+	ServiceVulnerabilities: {
+		Scheme: "https",
+		Host:   constants.DefaultAPIHost,
+		Path:   constants.VulnerabilitiesAPIPath,
+	},
+	ServiceHasuraInventory: {
+		Scheme: "https",
+		Host:   constants.DefaultAPIHost,
+		Path:   constants.HasuraInventoryAPIPath,
 	},
 }
 

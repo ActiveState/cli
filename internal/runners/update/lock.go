@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -101,6 +102,11 @@ func (l *Lock) Run(params *LockParams) error {
 
 	if lockVersion == "" {
 		lockVersion = exactVersion
+	}
+
+	err = l.cfg.Set(constants.AutoUpdateConfigKey, "false")
+	if err != nil {
+		return locale.WrapError(err, "err_lock_disable_autoupdate", "Unable to disable automatic updates prior to locking")
 	}
 
 	err = projectfile.AddLockInfo(l.project.Source().Path(), channel, lockVersion)

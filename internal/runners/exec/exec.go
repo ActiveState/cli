@@ -36,12 +36,17 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
+type Configurable interface {
+	projectfile.ConfigGetter
+	GetBool(key string) bool
+}
+
 type Exec struct {
 	subshell  subshell.SubShell
 	proj      *project.Project
 	auth      *authentication.Auth
 	out       output.Outputer
-	cfg       projectfile.ConfigGetter
+	cfg       Configurable
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
 }
@@ -118,7 +123,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 
 	s.out.Notice(locale.Tr("operating_message", projectNamespace, projectDir))
 
-	rt, err := runtime.New(rtTarget, s.analytics, s.svcModel, s.auth, s.cfg)
+	rt, err := runtime.New(rtTarget, s.analytics, s.svcModel, s.auth, s.cfg, s.out)
 	switch {
 	case err == nil:
 		break

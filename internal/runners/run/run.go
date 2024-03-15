@@ -60,8 +60,6 @@ func (r *Run) Run(name string, args []string) error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	checker.RunUpdateNotifier(r.analytics, r.svcModel, r.out)
-
 	r.out.Notice(locale.Tr("operating_message", r.proj.NamespaceString(), r.proj.Dir()))
 
 	if name == "" {

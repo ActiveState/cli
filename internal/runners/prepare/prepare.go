@@ -2,6 +2,7 @@ package prepare
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
@@ -11,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -20,8 +22,8 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -62,7 +64,7 @@ func New(prime primeable) *Prepare {
 // This ensures that the installation is compatible with an updated State Tool installation
 func (r *Prepare) resetExecutors() error {
 	defaultProjectDir := r.cfg.GetString(constants.GlobalDefaultPrefname)
-	if defaultProjectDir == "" {
+	if defaultProjectDir == "" || !fileutils.TargetExists(defaultProjectDir) {
 		return nil
 	}
 
@@ -74,12 +76,12 @@ func (r *Prepare) resetExecutors() error {
 		return errs.Wrap(err, "Could not get project from its directory")
 	}
 
-	commitID, err := commitmediator.Get(proj)
+	commitID, err := localcommit.Get(proj.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 
-	run, err := rt.New(target.NewCustomTarget(proj.Owner(), proj.Name(), commitID, defaultTargetDir, target.TriggerResetExec), r.analytics, r.svcModel, nil, r.cfg)
+	run, err := rt.New(target.NewCustomTarget(proj.Owner(), proj.Name(), commitID, defaultTargetDir, target.TriggerResetExec), r.analytics, r.svcModel, nil, r.cfg, r.out)
 	if err != nil {
 		if rt.IsNeedsUpdateError(err) {
 			return nil // project was never set up, so no executors to reset
@@ -107,7 +109,7 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 	}
 
 	if err := prepareCompletions(cmd, r.subshell); err != nil {
-		if !errs.Matches(err, &ErrorNotSupported{}) {
+		if !errs.Matches(err, &ErrorNotSupported{}) && !os.IsPermission(err) {
 			r.reportError(locale.Tl("err_prepare_generate_completions", "Could not generate completions script, error received: {{.V0}}.", err.Error()), err)
 		}
 	}

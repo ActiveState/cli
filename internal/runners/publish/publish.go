@@ -248,7 +248,7 @@ func (r *Runner) Run(params *Params) error {
 	result := graphModel.PublishResult{}
 
 	if err := r.client.Run(pr, &result); err != nil {
-		return locale.WrapError(err, "err_uploadingredient_publish", "Could not publish ingredient")
+		return locale.WrapError(err, "err_uploadingredient_publish", "", err.Error())
 	}
 
 	if result.Publish.Error != "" {
@@ -271,6 +271,14 @@ func (r *Runner) Run(params *Params) error {
 		return locale.WrapError(err, "err_uploadingingredient_fetch_version", "Unable to fetch newly published ingredient version")
 	}
 
+	ingTime, err := time.Parse(time.RFC3339, publishedVersion.RevisionTimestamp.String())
+	if err != nil {
+		return errs.Wrap(err, "Ingredient timestamp invalid")
+	}
+
+	// Increment time by 1 second to work around API precision issue where same second comparisons can fall on either side
+	ingTime = ingTime.Add(time.Second)
+
 	r.out.Print(output.Prepare(
 		locale.Tl(
 			"uploadingredient_success", "",
@@ -278,6 +286,7 @@ func (r *Runner) Run(params *Params) error {
 			*publishedIngredient.PrimaryNamespace,
 			*publishedVersion.Version,
 			strconv.Itoa(int(*publishedVersion.Revision)),
+			ingTime.Format(time.RFC3339),
 		),
 		result.Publish,
 	))
@@ -373,7 +382,7 @@ func prepareEditRequest(ingredient *ParentIngredient, r *request.PublishVariable
 				request.PublishVariableDep{request.Dependency{
 					Name:                ptr.From(dep.Feature, ""),
 					Namespace:           ptr.From(dep.Namespace, ""),
-					VersionRequirements: model.RequirementsToString(dep.Requirements),
+					VersionRequirements: model.InventoryRequirementsToString(dep.Requirements),
 				}, []request.Dependency{}},
 			)
 		}

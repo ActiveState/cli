@@ -20,13 +20,15 @@ type CommitIntegrationTestSuite struct {
 
 func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	suite.OnlyRunForTags(tagsuite.Commit)
-	suite.T().Skip("Temporarily disable buildscripts until DX-2307") // remove in DX-2307
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	ts.LoginAsPersistentUser()
 
-	cp := ts.SpawnWithOpts(
+	cp := ts.Spawn("config", "set", constants.OptinBuildscriptsConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
 		e2e.OptArgs(
 			"checkout",
 			"ActiveState-CLI/Commit-Test-A#7a1b416e-c17f-4d4a-9e27-cbad9e8f5655",
@@ -40,14 +42,14 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.NoError(err, "Error loading project")
 
-	_, err = buildscript.NewScriptFromProject(proj, nil)
+	_, err = buildscript.ScriptFromProject(proj)
 	suite.Require().NoError(err) // verify validity
 
 	cp = ts.Spawn("commit")
 	cp.Expect("No change")
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(1)
 
-	_, err = buildscript.NewScriptFromProject(proj, nil)
+	_, err = buildscript.ScriptFromProject(proj)
 	suite.Require().NoError(err) // verify validity
 
 	scriptPath := filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName)
@@ -55,8 +57,10 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	data = bytes.ReplaceAll(data, []byte("casestyle"), []byte("case"))
 	suite.Require().NoError(fileutils.WriteFile(scriptPath, data), "Update buildscript")
 
-	cp = ts.Spawn("commit")
-	cp.Expect("Runtime updated")
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("commit"),
+	)
+	cp.Expect("successfully created")
 	cp.ExpectExitCode(0)
 }
 

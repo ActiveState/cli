@@ -8,7 +8,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
 // NameVersionValue represents a flag that supports both a name and a version, the following formats are supported:
@@ -232,6 +231,7 @@ func (p *PackagesValue) Type() string {
 type TimeValue struct {
 	raw  string
 	Time *time.Time
+	now  bool
 }
 
 var _ FlagMarshaler = &TimeValue{}
@@ -241,21 +241,24 @@ func (u *TimeValue) String() string {
 }
 
 func (u *TimeValue) Set(v string) error {
-	if v == "now" {
-		u.Time = ptr.To(time.Now())
-	} else {
-		u.raw = v
+	u.raw = v
+	if v != "now" {
 		tsv, err := time.Parse(time.RFC3339, v)
 		if err != nil {
 			return locale.WrapInputError(err, "timeflag_format", "Invalid timestamp: Should be RFC3339 formatted.")
 		}
 		u.Time = &tsv
 	}
+	u.now = v == "now"
 	return nil
 }
 
 func (u *TimeValue) Type() string {
 	return "timestamp"
+}
+
+func (u *TimeValue) Now() bool {
+	return u.now
 }
 
 type IntValue struct {

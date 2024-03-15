@@ -36,6 +36,8 @@ const (
 	HidePlain PlainOpts = "hidePlain"
 	// ShiftColsPrefix starts the column after the set qty
 	ShiftColsPrefix PlainOpts = "shiftCols="
+	// OmitEmpty omits empty values from output
+	OmitEmpty PlainOpts = "omitEmpty"
 )
 
 const dash = "\u2500"
@@ -99,13 +101,13 @@ func (f *Plain) write(writer io.Writer, value interface{}) {
 
 // writeNow is a little helper that just writes the given value to the requested writer (no marshalling)
 func (f *Plain) writeNow(writer io.Writer, value string) {
-	_, err := colorize.Colorize(wordWrap(value), writer, !f.cfg.Colored)
+	_, err := colorize.Colorize(WordWrap(value), writer, !f.cfg.Colored)
 	if err != nil {
 		logging.ErrorNoStacktrace("Writing colored output failed: %v", err)
 	}
 }
 
-func wordWrap(text string) string {
+func WordWrap(text string) string {
 	return wordWrapWithWidth(text, termutils.GetWidth())
 }
 
@@ -292,13 +294,17 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 				continue
 			}
 
-			if firstIteration && !funk.Contains(field.opts, string(SeparateLineOpt)) {
-				headers = append(headers, localizedField(field.l10n))
-			}
-
 			stringValue, err := sprint(field.value)
 			if err != nil {
 				return "", err
+			}
+
+			if funk.Contains(field.opts, string(OmitEmpty)) && (stringValue == "" || stringValue == nilText) {
+				continue
+			}
+
+			if firstIteration && !funk.Contains(field.opts, string(SeparateLineOpt)) {
+				headers = append(headers, localizedField(field.l10n))
 			}
 
 			if funk.Contains(field.opts, string(EmptyNil)) && stringValue == nilText {

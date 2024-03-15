@@ -33,7 +33,7 @@ func UnrecognizedLanguageError(name string, options []string) *locale.LocalizedE
 	if len(options) > 0 {
 		opts = strings.Join(options, ", ")
 	}
-	return locale.NewError("err_invalid_language", "", name, opts)
+	return locale.NewInputError("err_invalid_language", "", name, opts)
 }
 
 const (

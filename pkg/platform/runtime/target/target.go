@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
@@ -46,6 +46,7 @@ const (
 	TriggerUse                Trigger = "use"
 	TriggerOfflineInstaller   Trigger = "offline-installer"
 	TriggerOfflineUninstaller Trigger = "offline-uninstaller"
+	TriggerBuilds             Trigger = "builds"
 	triggerUnknown            Trigger = "unknown"
 )
 
@@ -88,7 +89,7 @@ func (p *ProjectTarget) CommitUUID() strfmt.UUID {
 	if p.customCommit != nil {
 		return *p.customCommit
 	}
-	commitID, err := commitmediator.Get(p.Project)
+	commitID, err := localcommit.Get(p.Project.Dir())
 	if err != nil {
 		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
 		return ""

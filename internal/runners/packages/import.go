@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
@@ -105,7 +105,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		params.FileName = defaultImportFile
 	}
 
-	latestCommit, err := commitmediator.Get(i.proj)
+	latestCommit, err := localcommit.Get(i.proj.Dir())
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_commit")
 	}
@@ -126,7 +126,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 	}
 
 	bp := model.NewBuildPlannerModel(i.auth)
-	be, err := bp.GetBuildExpression(i.proj.Owner(), i.proj.Name(), latestCommit.String())
+	be, err := bp.GetBuildExpression(latestCommit.String())
 	if err != nil {
 		return locale.WrapError(err, "err_cannot_get_build_expression", "Could not get build expression")
 	}
@@ -135,7 +135,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_cannot_apply_changeset", "Could not apply changeset")
 	}
 
-	if err := be.SetDefaultTimestamp(); err != nil {
+	if _, err := be.SetDefaultTimestamp(); err != nil {
 		return locale.WrapError(err, "err_cannot_set_timestamp", "Could not set timestamp")
 	}
 
@@ -151,7 +151,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
 
-	if err := commitmediator.Set(i.proj, commitID.String()); err != nil {
+	if err := localcommit.Set(i.proj.Dir(), commitID.String()); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 

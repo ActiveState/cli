@@ -12,8 +12,8 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -86,7 +86,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 	}
 	r.out.Notice(locale.Tr("operating_message", r.project.NamespaceString(), r.project.Dir()))
 
-	commitID, err := commitmediator.Get(r.project) // The commit we want to push
+	commitID, err := localcommit.Get(r.project.Dir()) // The commit we want to push
 	if err != nil {
 		// Note: should not get here, as verifyInput() ensures there is a local commit
 		return errs.Wrap(err, "Unable to get local commit")
@@ -174,7 +174,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		r.out.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", targetNamespace.Owner, targetNamespace.Project))
 
 		// Create a new project with the current project's buildexpression.
-		expr, err := bp.GetBuildExpression(r.project.Owner(), r.project.Name(), commitID.String())
+		expr, err := bp.GetBuildExpression(commitID.String())
 		if err != nil {
 			return errs.Wrap(err, "Could not get buildexpression")
 		}
@@ -190,7 +190,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		}
 
 		// Update the project's commitID with the create project or push result.
-		if err := commitmediator.Set(r.project, commitID.String()); err != nil {
+		if err := localcommit.Set(r.project.Dir(), commitID.String()); err != nil {
 			return errs.Wrap(err, "Unable to create local commit file")
 		}
 
@@ -277,7 +277,7 @@ func (r *Push) verifyInput() error {
 		return rationalize.ErrNoProject
 	}
 
-	commitID, err := commitmediator.Get(r.project)
+	commitID, err := localcommit.Get(r.project.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -315,7 +315,7 @@ func (r *Push) promptNamespace() (*project.Namespaced, error) {
 	}
 
 	var name string
-	commitID, err := commitmediator.Get(r.project)
+	commitID, err := localcommit.Get(r.project.Dir())
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get local commit")
 	}

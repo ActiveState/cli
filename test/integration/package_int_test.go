@@ -153,12 +153,13 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 	// Note that the expected strings might change due to inventory changes
 	cp := ts.Spawn("search", "requests")
 	expectations := []string{
-		"requests3",
-		"3.0.0a1",
+		"requests2",
+		"2.16.0",
 	}
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
 	}
+	cp.Send("q")
 	cp.ExpectExitCode(0)
 }
 
@@ -172,11 +173,12 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 	expectations := []string{
 		"Name",
 		"requests",
-		"older versions",
+		"more",
 	}
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
 	}
+	cp.Send("q")
 	cp.ExpectExitCode(0)
 }
 
@@ -205,8 +207,9 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
 	cp := ts.Spawn("search", "Moose", "--language=perl")
 	cp.Expect("Name")
 	cp.Expect("Moose")
+	cp.Expect("Moose-Autobox")
 	cp.Expect("MooseFS")
-	cp.Expect("MooseX-ABC")
+	cp.Send("q")
 	cp.ExpectExitCode(0)
 }
 
@@ -217,14 +220,10 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchModules() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("search", "leapsecond", "--language=perl")
-	cp.Expect("Matching modules")
-	cp.Expect("Date::Leapsecond")
-	cp.Expect("Matching modules")
-	cp.Expect("DateTime::LeapSecond")
-	cp.Expect("Matching modules")
-	cp.Expect("DateTime::LeapSecond")
-	cp.Expect("Matching modules")
-	cp.Expect("DateTime::Lite::LeapSecond")
+	cp.Expect("Date-Leapsecond")
+	cp.Expect("DateTime-LeapSecond")
+	cp.Expect("DateTime-Lite")
+	cp.Send("q")
 	cp.ExpectExitCode(0)
 }
 
@@ -259,25 +258,13 @@ func (suite *PackageIntegrationTestSuite) TestPackage_info() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("info", "pexpect")
-	cp.Expect("Details for version")
+	cp.Expect("Package Information")
 	cp.Expect("Authors")
 	cp.Expect("Version")
 	cp.Expect("Available")
 	cp.Expect("What's next?")
 	cp.Expect("run 'state install")
 	cp.ExpectExitCode(0)
-}
-
-func (suite *PackageIntegrationTestSuite) TestPackage_infoWrongCase() {
-	suite.OnlyRunForTags(tagsuite.Package)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-	suite.PrepareActiveStateYAML(ts)
-
-	cp := ts.Spawn("info", "Pexpect")
-	cp.Expect("No packages in our catalog are an exact match")
-	cp.ExpectExitCode(1)
-	ts.IgnoreLogErrors()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_detached_operation() {
@@ -426,7 +413,7 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	defer ts.Close()
 
 	cp := ts.Spawn("search", "Text-CSV", "--exact-term", "--language", "Perl", "-o", "json")
-	cp.Expect(`"name":"Text-CSV"`)
+	cp.Expect(`"Name":"Text-CSV"`)
 	cp.ExpectExitCode(0)
 	//AssertValidJSON(suite.T(), cp) // currently too large to fit terminal window to validate
 
@@ -643,6 +630,76 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDock
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
+}
+
+func (suite *PackageIntegrationTestSuite) TestResolved() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("install", "requests"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("packages")
+	cp.Expect("Auto →")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *PackageIntegrationTestSuite) TestCVE_NoPrompt() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("install", "urllib3@2.0.2"),
+	)
+	cp.Expect("Warning: Dependency has 2 known vulnerabilities")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *PackageIntegrationTestSuite) TestCVE_Prompt() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "set", "security.prompt.level", "high")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "set", "security.prompt.enabled", "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("install", "urllib3@2.0.2"),
+	)
+	cp.Expect("Warning: Dependency has 2 known vulnerabilities")
+	cp.Expect("Do you want to continue")
+	cp.SendLine("y")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "set", "security.prompt.enabled", "false")
+	cp.ExpectExitCode(0)
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {

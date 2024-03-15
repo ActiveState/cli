@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/thoas/go-funk"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
@@ -16,21 +17,34 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
+	vulnModel "github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
+	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
+)
+
+func init() {
+	configMediator.RegisterOption(constants.SecurityPromptConfig, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
+	configMediator.RegisterOption(constants.SecurityPromptLevelConfig, configMediator.String, configMediator.EmptyEvent, configMediator.EmptyEvent)
+}
+
+const (
+	promptDefault      = true
+	promptDefaultLevel = vulnModel.SeverityCritical
 )
 
 type PackageVersion struct {
@@ -119,7 +133,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	if nsType != nil {
 		switch *nsType {
 		case model.NamespacePackage, model.NamespaceBundle:
-			commitID, err := commitmediator.Get(r.Project)
+			commitID, err := localcommit.Get(r.Project.Dir())
 			if err != nil {
 				return errs.Wrap(err, "Unable to get local commit")
 			}
@@ -208,7 +222,68 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		pg = nil
 	}
 
-	parentCommitID, err := commitmediator.Get(r.Project)
+	if r.Auth.Authenticated() && operation == bpModel.OperationAdded && ns.Type() == model.NamespacePackage {
+		pg = output.StartSpinner(out, locale.Tr("progress_cve_search", requirementName), constants.TerminalAnimationInterval)
+
+		vulnerabilities, err := model.FetchVulnerabilitiesForIngredient(r.Auth, &request.Ingredient{
+			Namespace: ns.String(),
+			Name:      requirementName,
+			Version:   requirementVersion,
+		})
+		if err != nil {
+			return errs.Wrap(err, "Failed to retrieve vulnerabilities")
+		}
+
+		var safe bool
+		if vulnerabilities == nil || vulnerabilities.Vulnerabilities.Length() == 0 {
+			safe = true
+		}
+
+		if !safe {
+			pg.Stop(locale.T("progress_unsafe"))
+			pg = nil
+
+			if r.shouldPromptForSecurity(vulnerabilities.Vulnerabilities) {
+				out.Notice("")
+				cont, err := r.promptForSecurity(out, vulnerabilities.Vulnerabilities)
+				if err != nil {
+					return errs.Wrap(err, "Failed to prompt for security")
+				}
+
+				if !cont {
+					if !r.Prompt.IsInteractive() {
+						return errs.AddTips(
+							locale.NewInputError("err_pkgop_security_prompt", "Operation aborted due to security prompt"),
+							locale.Tl("more_info_prompt", "To disable security prompting run: [ACTIONABLE]state config set security.prompt.enabled false[/RESET]"),
+						)
+					}
+					return locale.NewError("err_pkgop_security_prompt", "Operation aborted due to security prompt")
+				}
+			} else {
+				var severityBreakdown []string
+				if len(vulnerabilities.Vulnerabilities.Critical) > 0 {
+					severityBreakdown = append(severityBreakdown, fmt.Sprintf("[RED]%d Critical[/RESET]", len(vulnerabilities.Vulnerabilities.Critical)))
+				}
+				if len(vulnerabilities.Vulnerabilities.High) > 0 {
+					severityBreakdown = append(severityBreakdown, fmt.Sprintf("[ORANGE]%d high[/RESET]", len(vulnerabilities.Vulnerabilities.High)))
+				}
+				if len(vulnerabilities.Vulnerabilities.Medium) > 0 {
+					severityBreakdown = append(severityBreakdown, fmt.Sprintf("[YELLOW]%d medium[/RESET]", len(vulnerabilities.Vulnerabilities.Medium)))
+				}
+				if len(vulnerabilities.Vulnerabilities.Low) > 0 {
+					severityBreakdown = append(severityBreakdown, fmt.Sprintf("[MAGENTA]%d low[/RESET]", len(vulnerabilities.Vulnerabilities.Low)))
+				}
+
+				out.Notice("    " + strings.TrimSpace(locale.Tr("warning_vulnerable", strconv.Itoa(vulnerabilities.Vulnerabilities.Length()), strings.Join(severityBreakdown, ", "))))
+			}
+		} else {
+			pg.Stop(locale.T("progress_safe"))
+		}
+
+		pg = nil
+	}
+
+	parentCommitID, err := localcommit.Get(r.Project.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -257,7 +332,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		RequirementName:      name,
 		RequirementVersion:   requirements,
 		RequirementNamespace: *ns,
-		RequirementRevision: requirementRevision,
+		RequirementRevision:  requirementRevision,
 		Operation:            operation,
 		TimeStamp:            ts,
 	}
@@ -281,19 +356,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		trigger = target.TriggerPackage
 	}
 
-	// Re-enable in DX-2307.
-	//expr, err := bp.GetBuildExpression(r.Project.Owner(), r.Project.Name(), commitID.String())
-	//if err != nil {
-	//	return errs.Wrap(err, "Could not get remote build expr")
-	//}
-
 	// refresh or install runtime
 	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, r.Project, commitID, true, trigger, r.SvcModel, r.Config)
 	if err != nil {
-		return handleRefreshError(err, r.Project, parentCommitID)
+		return r.handleRefreshError(err, parentCommitID)
 	}
 
-	if err := updateCommitID(r.Project, commitID); err != nil {
+	if err := r.updateCommitID(commitID); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
@@ -331,30 +400,115 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	return nil
 }
 
-func handleRefreshError(err error, project *project.Project, parentCommitID strfmt.UUID) error {
+func (r *RequirementOperation) handleRefreshError(err error, parentCommitID strfmt.UUID) error {
 	// If the error is a build error then return, if not update the commit ID then return
 	if !runbits.IsBuildError(err) {
-		if err := updateCommitID(project, parentCommitID); err != nil {
+		if err := r.updateCommitID(parentCommitID); err != nil {
 			return locale.WrapError(err, "err_package_update_commit_id")
 		}
 	}
 	return err
 }
 
-func updateCommitID(project *project.Project, commitID strfmt.UUID) error {
-	if err := commitmediator.Set(project, commitID.String()); err != nil {
+func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
+	if err := localcommit.Set(r.Project.Dir(), commitID.String()); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
-	// Note: a commit ID file needs to exist at this point.
-	// Re-enable in DX-2307.
-	// Will have to pass the buildscript as an argument to this function.
-	//err = buildscript.Update(r.Project, expr, r.Auth)
-	//if err != nil {
-	//	return locale.WrapError(err, "err_update_build_script")
-	//}
+	if r.Config.GetBool(constants.OptinBuildscriptsConfig) {
+		bp := model.NewBuildPlannerModel(r.Auth)
+		expr, err := bp.GetBuildExpression(commitID.String())
+		if err != nil {
+			return errs.Wrap(err, "Could not get remote build expr")
+		}
+
+		err = buildscript.Update(r.Project, expr, r.Auth)
+		if err != nil {
+			return locale.WrapError(err, "err_update_build_script")
+		}
+	}
 
 	return nil
+}
+
+func (r *RequirementOperation) shouldPromptForSecurity(vulnerabilities *model.Vulnerabilites) bool {
+	if (r.Config.IsSet(constants.SecurityPromptConfig) && !r.Config.GetBool(constants.SecurityPromptConfig)) || vulnerabilities == nil {
+		return false
+	}
+
+	if !r.Config.IsSet(constants.SecurityPromptConfig) {
+		if err := r.Config.Set(constants.SecurityPromptConfig, promptDefault); err != nil {
+			multilog.Error("Failed to set security prompt config: %v", err)
+		}
+	}
+
+	if !r.Config.IsSet(constants.SecurityPromptLevelConfig) {
+		if err := r.Config.Set(constants.SecurityPromptLevelConfig, promptDefaultLevel); err != nil {
+			multilog.Error("Failed to set security prompt level config: %v", err)
+		}
+	}
+
+	promptLevel := r.Config.GetString(constants.SecurityPromptLevelConfig)
+
+	logging.Debug("Prompt level: ", promptLevel)
+	switch promptLevel {
+	case vulnModel.SeverityCritical:
+		return len(vulnerabilities.Critical) > 0
+	case vulnModel.SeverityHigh:
+		return (len(vulnerabilities.Critical) > 0 ||
+			len(vulnerabilities.High) > 0)
+	case vulnModel.SeverityMedium:
+		return (len(vulnerabilities.Critical) > 0 ||
+			len(vulnerabilities.High) > 0 ||
+			len(vulnerabilities.Medium) > 0)
+	case vulnModel.SeverityLow:
+		return (len(vulnerabilities.Critical) > 0 ||
+			len(vulnerabilities.High) > 0 ||
+			len(vulnerabilities.Medium) > 0 ||
+			len(vulnerabilities.Low) > 0)
+	}
+
+	return false
+}
+
+func (r *RequirementOperation) promptForSecurity(out output.Outputer, vulnerabilities *model.Vulnerabilites) (bool, error) {
+	out.Notice(locale.Tr("warning_vulnerable_simple", strconv.Itoa(vulnerabilities.Length())))
+
+	var pkgVersionVulns []string
+	if len(vulnerabilities.Critical) > 0 {
+		criticalOutput := fmt.Sprintf("[RED]%d Critical: [/RESET]", len(vulnerabilities.Critical))
+		criticalOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(vulnerabilities.Critical, ", "))
+		pkgVersionVulns = append(pkgVersionVulns, criticalOutput)
+	}
+
+	if len(vulnerabilities.High) > 0 {
+		highOutput := fmt.Sprintf("[ORANGE]%d High: [/RESET]", len(vulnerabilities.High))
+		highOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(vulnerabilities.High, ", "))
+		pkgVersionVulns = append(pkgVersionVulns, highOutput)
+	}
+
+	if len(vulnerabilities.Medium) > 0 {
+		mediumOutput := fmt.Sprintf("[YELLOW]%d Medium: [/RESET]", len(vulnerabilities.Medium))
+		mediumOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(vulnerabilities.Medium, ", "))
+		pkgVersionVulns = append(pkgVersionVulns, mediumOutput)
+	}
+
+	if len(vulnerabilities.Low) > 0 {
+		lowOutput := fmt.Sprintf("[MAGENTA]%d Low: [/RESET]", len(vulnerabilities.Low))
+		lowOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(vulnerabilities.Low, ", "))
+		pkgVersionVulns = append(pkgVersionVulns, lowOutput)
+	}
+
+	out.Print(pkgVersionVulns)
+	out.Notice("")
+	out.Notice(locale.T("more_info_vulnerabilities"))
+
+	confirm, err := r.Prompt.Confirm("", locale.Tr("prompt_continue_pkg_operation"), ptr.To(false))
+	if err != nil {
+		return false, locale.WrapError(err, "err_pkgop_confirm", "Need a confirmation.")
+	}
+
+	return confirm, nil
 }
 
 func supportedLanguageByName(supported []medmodel.SupportedLanguage, langName string) medmodel.SupportedLanguage {

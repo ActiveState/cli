@@ -214,15 +214,13 @@ func (p *Project) ProjectDir() string {
 	return p.Dir()
 }
 
-// LegacyCommitID is for use by commitmediator.Get() ONLY.
+// LegacyCommitID is for use by legacy mechanics ONLY
 func (p *Project) LegacyCommitID() string {
 	return p.projectfile.LegacyCommitID()
 }
 
-// LegacySetCommit is for use by commitmediator.Set() ONLY.
-// Remove in DX-2307.
-func (p *Project) LegacySetCommit(commitID string) error {
-	return p.projectfile.LegacySetCommit(commitID)
+func (p *Project) SetLegacyCommit(commitID string) error {
+	return p.projectfile.SetLegacyCommit(commitID)
 }
 
 func (p *Project) IsHeadless() bool {

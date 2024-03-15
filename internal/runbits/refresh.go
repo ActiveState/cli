@@ -2,9 +2,11 @@ package runbits
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -12,6 +14,11 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
+
+type Configurable interface {
+	GetString(key string) string
+	GetBool(key string) bool
+}
 
 // RefreshRuntime should be called after runtime mutations.
 func RefreshRuntime(
@@ -23,16 +30,18 @@ func RefreshRuntime(
 	changed bool,
 	trigger target.Trigger,
 	svcm *model.SvcModel,
-	cfg model.Configurable,
+	cfg Configurable,
 ) (rerr error) {
-	// Re-enable in DX-2307.
-	//_, err := buildscript.Sync(proj, &commitID, out, auth)
-	//if err != nil {
-	//	return locale.WrapError(err, "err_update_build_script")
-	//}
+	if cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		_, err := buildscript.Sync(proj, &commitID, out, auth)
+		if err != nil {
+			return locale.WrapError(err, "err_update_build_script")
+		}
+	}
+
 	target := target.NewProjectTarget(proj, resolveCommitID(proj, &commitID), trigger)
 	isCached := true
-	rt, err := runtime.New(target, an, svcm, auth, cfg)
+	rt, err := runtime.New(target, an, svcm, auth, cfg, out)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			isCached = false

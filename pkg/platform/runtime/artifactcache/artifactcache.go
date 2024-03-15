@@ -40,9 +40,9 @@ type ArtifactCache struct {
 
 const MB int64 = 1024 * 1024
 
-// New returns a new artifact cache in the State Tool's cache directory with the default maximum size of 500MB.
+// New returns a new artifact cache in the State Tool's cache directory with the default maximum size of 1GB.
 func New() (*ArtifactCache, error) {
-	var maxSize int64 = 500 * MB
+	var maxSize int64 = 1024 * MB
 	// TODO: size should be configurable and the user should be warned of an invalid size.
 	// https://activestatef.atlassian.net/browse/DX-984
 	if sizeOverride, err := strconv.Atoi(os.Getenv(constants.ArtifactCacheSizeEnvVarName)); err != nil && sizeOverride > 0 {
@@ -112,9 +112,11 @@ func (cache *ArtifactCache) Store(a artifact.ArtifactID, archivePath string) err
 	if existingArtifact, found := cache.artifacts[a]; found {
 		path := existingArtifact.ArchivePath
 		logging.Debug("Replacing cached artifact '%s'", path)
-		err := os.Remove(path)
-		if err != nil {
-			return errs.Wrap(err, "Unable to overwrite existing artifact '%s'", path)
+		if fileutils.TargetExists(path) {
+			err := os.Remove(path)
+			if err != nil {
+				return errs.Wrap(err, "Unable to overwrite existing artifact '%s'", path)
+			}
 		}
 		delete(cache.artifacts, existingArtifact.Id)
 		cache.currentSize -= existingArtifact.Size
@@ -147,9 +149,11 @@ func (cache *ArtifactCache) Store(a artifact.ArtifactID, archivePath string) err
 		}
 
 		logging.Debug("Removing cached artifact '%s' last accessed on %s", lastAccessed.ArchivePath, time.Unix(lastAccessed.LastAccessTime, 0).Format(time.UnixDate))
-		err := os.Remove(lastAccessed.ArchivePath)
-		if err != nil {
-			return errs.Wrap(err, "Unable to remove cached artifact '%s'", lastAccessed.ArchivePath)
+		if fileutils.TargetExists(lastAccessed.ArchivePath) {
+			err := os.Remove(lastAccessed.ArchivePath)
+			if err != nil {
+				return errs.Wrap(err, "Unable to remove cached artifact '%s'", lastAccessed.ArchivePath)
+			}
 		}
 		delete(cache.artifacts, lastAccessed.Id)
 		cache.currentSize -= lastAccessed.Size
@@ -193,7 +197,7 @@ func (cache *ArtifactCache) Save() error {
 	}
 
 	if cache.timeSpentCopying > 5*time.Second {
-		multilog.Log(logging.Debug, rollbar.Error)("Spent %.1f seconds copying %.1fMB of artifacts to cache", cache.timeSpentCopying.Seconds, float64(cache.sizeCopied)/float64(MB))
+		multilog.Log(logging.Debug, rollbar.Error)("Spent %.1f seconds copying %.1fMB of artifacts to cache", cache.timeSpentCopying.Seconds(), float64(cache.sizeCopied)/float64(MB))
 	}
 	cache.timeSpentCopying = 0 // reset
 	cache.sizeCopied = 0       //reset

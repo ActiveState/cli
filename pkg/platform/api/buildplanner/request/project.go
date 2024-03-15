@@ -1,10 +1,11 @@
 package request
 
-func BuildPlanByProject(organization, project, commitID string) *buildPlanByProject {
+func BuildPlanByProject(organization, project, commitID, target string) *buildPlanByProject {
 	bp := &buildPlanByProject{map[string]interface{}{
 		"organization": organization,
 		"project":      project,
 		"commitID":     commitID,
+		"target":       target,
 	}}
 
 	return bp
@@ -16,7 +17,7 @@ type buildPlanByProject struct {
 
 func (b *buildPlanByProject) Query() string {
 	return `
-query ($commitID: String!, $organization: String!, $project: String!) {
+query ($commitID: String!, $organization: String!, $project: String!, $target: String) {
   project(organization: $organization, project: $project) {
     ... on Project {
       commit(vcsRef: $commitID) {
@@ -24,7 +25,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
           __typename
           expr
           commitId
-          build {
+          build(target: $target) {
             __typename
             ... on BuildCompleted {
               buildLogIds {
@@ -130,6 +131,17 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                   logURL
                   errors
                 }
+              }
+              resolvedRequirements {
+                requirement {
+                  name
+                  namespace
+                  version_requirements: versionRequirements {
+                   	comparator
+                    version
+                  }
+                }
+                resolvedSource
               }
             }
             ... on Error {
