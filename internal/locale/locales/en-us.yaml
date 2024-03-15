@@ -1558,3 +1558,13 @@ commit_success:
     Run '[ACTIONABLE]state refresh[/RESET]' to update your local runtime.
 warn_has_failed_artifacts:
   other: "Warning: This project has failed builds, and some artifacts will be missing as a result.\n"
+err_build_artifacts_failed:
+  other: |
+    The following artifacts failed to build, please refer to their logs for more information:
+    
+    {{.V0}}
+err_build_artifact_failed:
+  other: |
+    [NOTICE]{{.V0}}[/RESET]
+    [DISABLED]├─ Message:[/RESET] [ERROR]{{.V1}}[/RESET]
+    [DISABLED]└─ Log:[/RESET] [ACTIONABLE]{{.V2}}[/RESET]
