@@ -152,21 +152,7 @@ func (r *Runtime) validateCache() error {
 				return &NeedsCommitError{errs.New("Runtime changes should be committed")}
 			}
 
-		case err == store.ErrNoBuildScriptFile:
-			bp := model.NewBuildPlannerModel(r.auth)
-			expr, atTime, err := bp.GetBuildExpressionAndTime(commitID)
-			if err != nil {
-				return errs.Wrap(err, "Unable to get remote build expression and time")
-			}
-			script, err := buildscript.NewFromCommit(atTime, expr)
-			if err != nil {
-				return errs.Wrap(err, "Unable to get local build script")
-			}
-			if err := r.store.StoreBuildScript(script); err != nil {
-				return errs.Wrap(err, "Unable to store build script")
-			}
-
-		default:
+		case !errors.Is(err, store.ErrNoBuildScriptFile):
 			return errs.Wrap(err, "Unable to read cached build script")
 		}
 	}
