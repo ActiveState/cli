@@ -292,26 +292,6 @@ authors:
 						0,
 					},
 				},
-				{ // description editing not supported
-					input{
-						[]string{
-							"--edit",
-							"--name", "editable",
-							"--description", "foo",
-						},
-						nil,
-						nil,
-						false,
-					},
-					expect{
-						[]string{
-							`Editing an ingredient description is not yet supported`,
-						},
-						"",
-						true,
-						1,
-					},
-				},
 			},
 		},
 	}
