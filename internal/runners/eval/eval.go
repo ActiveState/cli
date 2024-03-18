@@ -56,6 +56,11 @@ func (e *Eval) Run(params *Params) (rerr error) {
 	}
 
 	pg := output.StartSpinner(e.out, locale.Tl("progress_eval", "Evaluating ... "), constants.TerminalAnimationInterval)
+	defer func() {
+		if pg != nil {
+			pg.Stop(locale.T("progress_fail") + "\n")
+		}
+	}()
 
 	bp := model.NewBuildPlannerModel(e.auth)
 	if err := bp.BuildTarget(e.project.Owner(), e.project.Name(), commitID.String(), params.Target); err != nil {
@@ -67,6 +72,7 @@ func (e *Eval) Run(params *Params) (rerr error) {
 	}
 
 	pg.Stop("OK")
+	pg = nil
 
 	e.out.Notice(locale.Tl("notice_eval_success", "Target successfully evaluated"))
 
