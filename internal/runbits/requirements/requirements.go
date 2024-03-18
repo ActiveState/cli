@@ -417,12 +417,12 @@ func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 
 	if r.Config.GetBool(constants.OptinBuildscriptsConfig) {
 		bp := model.NewBuildPlannerModel(r.Auth)
-		expr, err := bp.GetBuildExpression(commitID.String())
+		expr, atTime, err := bp.GetBuildExpressionAndTime(commitID.String())
 		if err != nil {
-			return errs.Wrap(err, "Could not get remote build expr")
+			return errs.Wrap(err, "Could not get remote build expr and time")
 		}
 
-		err = buildscript.Update(r.Project, expr, r.Auth)
+		err = buildscript.Update(r.Project, atTime, expr, r.Auth)
 		if err != nil {
 			return locale.WrapError(err, "err_update_build_script")
 		}
