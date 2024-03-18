@@ -637,7 +637,16 @@ func (bp *BuildPlanner) BuildTarget(owner, project, commitID, target string) err
 	return nil
 }
 
+type ErrFailedArtifacts struct {
+	Artifacts []*bpModel.Artifact
+}
+
+func (e ErrFailedArtifacts) Error() string {
+	return "ErrFailedArtifacts"
+}
+
 func (bp *BuildPlanner) PollBuildStatus(commitID, owner, project, target string) error {
+	var failedArtifacts []*model.Artifact
 	resp := model.NewBuildPlanResponse(owner, project)
 	ticker := time.NewTicker(pollInterval)
 	for {
@@ -661,11 +670,6 @@ func (bp *BuildPlanner) PollBuildStatus(commitID, owner, project, target string)
 			// response with emtpy targets that we should remove
 			removeEmptyTargets(build)
 
-			// If the build status is completed then we are done.
-			if build.Status == bpModel.Completed {
-				return nil
-			}
-
 			// If the build status is planning it may not have any artifacts yet.
 			if build.Status == bpModel.Planning {
 				continue
@@ -674,22 +678,28 @@ func (bp *BuildPlanner) PollBuildStatus(commitID, owner, project, target string)
 			// If all artifacts are completed then we are done.
 			completed := true
 			for _, artifact := range build.Artifacts {
-				if artifact.Status == bpModel.ArtifactFailedPermanently ||
-					artifact.Status == bpModel.ArtifactFailedTransiently {
-					return errs.New("Artifact %s failed", artifact.NodeID)
-				}
-
 				if artifact.Status == bpModel.ArtifactNotSubmitted {
 					continue
 				}
-
 				if artifact.Status != bpModel.ArtifactSucceeded {
 					completed = false
-					break
+				}
+
+				if artifact.Status == bpModel.ArtifactFailedPermanently ||
+					artifact.Status == bpModel.ArtifactFailedTransiently {
+					failedArtifacts = append(failedArtifacts, artifact)
 				}
 			}
 
 			if completed {
+				return nil
+			}
+
+			// If the build status is completed then we are done.
+			if build.Status == bpModel.Completed {
+				if len(failedArtifacts) != 0 {
+					return ErrFailedArtifacts{failedArtifacts}
+				}
 				return nil
 			}
 		case <-time.After(buildStatusTimeout):
