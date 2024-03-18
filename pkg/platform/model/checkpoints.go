@@ -60,9 +60,13 @@ func FetchLanguagesForCommit(commitID strfmt.UUID, auth *authentication.Auth) ([
 	languages := []Language{}
 	for _, requirement := range checkpoint {
 		if NamespaceMatch(requirement.Namespace, NamespaceLanguageMatch) {
+			version := requirement.VersionConstraint
+			if version == "" {
+				version = SimplifyConstraintsString(GqlReqVersionConstraintsString(requirement))
+			}
 			lang := Language{
 				Name:    requirement.Requirement,
-				Version: requirement.VersionConstraint,
+				Version: version,
 			}
 			languages = append(languages, lang)
 		}

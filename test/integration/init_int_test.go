@@ -180,7 +180,7 @@ func (suite *InitIntegrationTestSuite) TestInit_Resolved() {
 	// Run `state languages` to verify a full language version was resolved.
 	cp = ts.Spawn("languages")
 	cp.Expect("python")
-	cp.Expect("3.10 → 3.10.0")
+	cp.Expect("3.10 → 3.10.") // note: the patch version is variable, so just expect that it exists
 	cp.ExpectExitCode(0)
 }
 
