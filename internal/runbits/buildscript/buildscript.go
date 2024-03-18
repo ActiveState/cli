@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -14,14 +15,17 @@ import (
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
-func getBuildExpression(proj *project.Project, customCommit *strfmt.UUID, auth *authentication.Auth) (*buildexpression.BuildExpression, error) {
+// getEquivalentBuildScript constructs and returns a buildscript that represents the
+// buildexpression and at_time of a fetched project commit.
+// This is used either to compare the local build script with a remote equivalent, or to update
+// the local build script with a remote equivalent.
+func getEquivalentBuildScript(proj *project.Project, customCommit *strfmt.UUID, auth *authentication.Auth) (*buildscript.Script, error) {
 	bp := model.NewBuildPlannerModel(auth)
 	commitID, err := localcommit.Get(proj.Dir())
 	if err != nil {
@@ -30,7 +34,11 @@ func getBuildExpression(proj *project.Project, customCommit *strfmt.UUID, auth *
 	if customCommit != nil {
 		commitID = *customCommit
 	}
-	return bp.GetBuildExpression(commitID.String())
+	expr, atTime, err := bp.GetBuildExpressionAndTime(commitID.String())
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to get remote build expression and time")
+	}
+	return buildscript.NewFromCommit(atTime, expr)
 }
 
 // Sync synchronizes the local build script with the remote one.
@@ -44,16 +52,16 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 		return false, errs.Wrap(err, "Could not get local build script")
 	}
 
-	expr, err := getBuildExpression(proj, commitID, auth)
+	remoteScript, err := getEquivalentBuildScript(proj, commitID, auth)
 	if err != nil {
-		return false, errs.Wrap(err, "Could not get remote build expr for provided commit")
+		return false, errs.Wrap(err, "Could not get remote build script-equivalent")
 	}
 
 	// If commitID is given, a mutation happened, so prefer the remote build expression.
 	// Otherwise, prefer local changes.
 	if script != nil && commitID == nil {
 		logging.Debug("Checking for changes")
-		if script.EqualsBuildExpression(expr) {
+		if script.Equals(remoteScript) {
 			return false, nil // nothing to do
 		}
 		logging.Debug("Merging changes")
@@ -64,9 +72,10 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 			return false, errs.Wrap(err, "Unable to get local commit ID")
 		}
 
-		expr, err := script.BuildExpression()
-		if err != nil {
-			return false, errs.Wrap(err, "Unable to get build expression from build script")
+		var atTime *time.Time
+		if script.AtTime != nil {
+			scriptAtTime := time.Time(*script.AtTime)
+			atTime = &scriptAtTime
 		}
 
 		bp := model.NewBuildPlannerModel(auth)
@@ -74,7 +83,8 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 			Owner:        proj.Owner(),
 			Project:      proj.Name(),
 			ParentCommit: localCommitID.String(),
-			Expression:   expr,
+			Expression:   script.Expr,
+			TimeStamp:    atTime,
 		})
 		if err != nil {
 			return false, errs.Wrap(err, "Could not update project to reflect build script changes.")
@@ -83,34 +93,31 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 
 		localcommit.Set(proj.Dir(), commitID.String())
 
-		expr, err = getBuildExpression(proj, commitID, auth) // timestamps might be different
+		script, err = getEquivalentBuildScript(proj, commitID, auth) // timestamps might be different
 		if err != nil {
 			return false, errs.Wrap(err, "Could not get remote build expr for staged commit")
 		}
 
 		synced = true
+	} else {
+		script = remoteScript
 	}
 
-	if err := buildscript.Update(proj, expr, auth); err != nil {
+	if err := buildscript.Update(proj, script.AtTime, script.Expr, auth); err != nil {
 		return false, errs.Wrap(err, "Could not update local build script.")
 	}
 
 	return synced, nil
 }
 
-func generateDiff(script *buildscript.Script, expr *buildexpression.BuildExpression) (string, error) {
-	newScript, err := buildscript.NewScriptFromBuildExpression(expr)
-	if err != nil {
-		return "", errs.Wrap(err, "Unable to transform build expression to build script")
-	}
-
+func generateDiff(script *buildscript.Script, otherScript *buildscript.Script) (string, error) {
 	local := locale.Tl("diff_local", "local")
 	remote := locale.Tl("diff_remote", "remote")
 
 	var result bytes.Buffer
 
 	diff := diffmatchpatch.New()
-	scriptLines, newScriptLines, lines := diff.DiffLinesToChars(script.String(), newScript.String())
+	scriptLines, newScriptLines, lines := diff.DiffLinesToChars(script.String(), otherScript.String())
 	hunks := diff.DiffMain(scriptLines, newScriptLines, false)
 	hunks = diff.DiffCharsToLines(hunks, lines)
 	hunks = diff.DiffCleanupSemantic(hunks)
@@ -138,8 +145,8 @@ func generateDiff(script *buildscript.Script, expr *buildexpression.BuildExpress
 	return result.String(), nil
 }
 
-func GenerateAndWriteDiff(proj *project.Project, script *buildscript.Script, expr *buildexpression.BuildExpression) error {
-	result, err := generateDiff(script, expr)
+func GenerateAndWriteDiff(proj *project.Project, script *buildscript.Script, otherScript *buildscript.Script) error {
+	result, err := generateDiff(script, otherScript)
 	if err != nil {
 		return errs.Wrap(err, "Could not generate diff between local and remote build scripts")
 	}

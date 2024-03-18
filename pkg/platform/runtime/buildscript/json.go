@@ -29,7 +29,7 @@ func (s *Script) MarshalJSON() ([]byte, error) {
 			if err != nil {
 				return nil, errs.Wrap(err, "Invalid timestamp: %s", *value.Str)
 			}
-			s.atTime = &atTime
+			s.AtTime = &atTime
 			continue // do not include this custom assignment in the let block
 		case "main":
 			key = "in"

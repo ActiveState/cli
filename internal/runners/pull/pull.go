@@ -4,6 +4,7 @@ import (
 	"errors"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
@@ -222,20 +223,21 @@ func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *pr
 // mergeBuildScript merges the local build script with the remote buildexpression (not script).
 func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	// Get the build script to merge.
-	script, err := buildscript.ScriptFromProjectWithFallback(p.project, p.auth)
+	scriptA, err := buildscript.ScriptFromProjectWithFallback(p.project, p.auth)
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
 	}
 
 	// Get the local and remote build expressions to merge.
-	exprA, err := script.BuildExpression()
-	if err != nil {
-		return errs.Wrap(err, "Could not get buildexpression from local build script")
-	}
+	exprA := scriptA.Expr
 	bp := model.NewBuildPlannerModel(p.auth)
-	exprB, err := bp.GetBuildExpression(remoteCommit.String())
+	exprB, atTimeB, err := bp.GetBuildExpressionAndTime(remoteCommit.String())
 	if err != nil {
-		return errs.Wrap(err, "Unable to get buildexpression for remote commit")
+		return errs.Wrap(err, "Unable to get buildexpression and time for remote commit")
+	}
+	scriptB, err := buildscript.NewFromCommit(atTimeB, exprB)
+	if err != nil {
+		return errs.Wrap(err, "Could not convert build expression to build script")
 	}
 
 	// Compute the merge strategy.
@@ -243,7 +245,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	if err != nil {
 		switch {
 		case errors.Is(err, model.ErrMergeFastForward):
-			return buildscript.Update(p.project, exprB, p.auth)
+			return buildscript.Update(p.project, atTimeB, exprB, p.auth)
 		case !errors.Is(err, model.ErrMergeCommitInHistory):
 			return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
 		}
@@ -252,7 +254,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	// Attempt the merge.
 	mergedExpr, err := merge.Merge(exprA, exprB, strategies)
 	if err != nil {
-		err := buildscriptRunbits.GenerateAndWriteDiff(p.project, script, exprB)
+		err := buildscriptRunbits.GenerateAndWriteDiff(p.project, scriptA, scriptB)
 		if err != nil {
 			return locale.WrapError(err, "err_diff_build_script", "Unable to generate differences between local and remote build script")
 		}
@@ -262,8 +264,15 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 			filepath.Join(p.project.Dir(), constants.BuildScriptFileName))
 	}
 
+	// For now, pick the later of the script AtTimes.
+	atTime := scriptA.AtTime
+	atTimeA := time.Time(*scriptA.AtTime)
+	if atTimeB := time.Time(*scriptB.AtTime); atTimeA.Before(atTimeB) {
+		atTime = scriptB.AtTime
+	}
+
 	// Write the merged build expression as a local build script.
-	return buildscript.Update(p.project, mergedExpr, p.auth)
+	return buildscript.Update(p.project, atTime, mergedExpr, p.auth)
 }
 
 func resolveRemoteProject(prj *project.Project) (*project.Namespaced, error) {
