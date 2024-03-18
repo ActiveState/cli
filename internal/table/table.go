@@ -163,7 +163,9 @@ func rescaleColumns(colWidths []int, targetTotal int, vertical bool, verticalHea
 	if vertical && len(colWidths) > 0 && colWidths[0] < verticalHeaderWidth {
 		diff := verticalHeaderWidth - colWidths[0]
 		colWidths[0] += diff
-		colWidths[len(colWidths)-1] -= diff
+		for i := 1; i < len(colWidths); i++ {
+			colWidths[i] = diff / (len(colWidths) - 1)
+		}
 	}
 }
 
