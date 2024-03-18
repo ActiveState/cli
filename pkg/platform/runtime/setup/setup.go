@@ -626,8 +626,15 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	if s.target.ProjectDir() != "" && s.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript.Update(s.target, buildResult.AtTime, buildResult.BuildExpression, s.auth); err != nil {
-			return nil, nil, errs.Wrap(err, "Could not save build script.")
+		script, err := buildscript.NewFromCommit(buildResult.AtTime, buildResult.BuildExpression)
+		if err != nil {
+			return nil, nil, errs.Wrap(err, "Could not construct build script")
+		}
+		if err := s.store.StoreBuildScript(script); err != nil {
+			return nil, nil, errs.Wrap(err, "Could not save build script")
+		}
+		if err := buildscript.Update(s.target, script.AtTime, script.Expr, s.auth); err != nil {
+			return nil, nil, errs.Wrap(err, "Could not update build script.")
 		}
 	}
 

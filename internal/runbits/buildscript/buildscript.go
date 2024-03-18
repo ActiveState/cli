@@ -99,6 +99,8 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 		}
 
 		synced = true
+	} else {
+		script = remoteScript
 	}
 
 	if err := buildscript.Update(proj, script.AtTime, script.Expr, auth); err != nil {

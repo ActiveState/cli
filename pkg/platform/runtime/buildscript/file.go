@@ -91,7 +91,7 @@ func Update(proj projecter, atTime *strfmt.DateTime, newExpr *buildexpression.Bu
 	}
 
 	logging.Debug("Writing build script")
-	if err := fileutils.WriteFile(filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName), []byte(script.String())); err != nil {
+	if err := fileutils.WriteFile(filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName), []byte(newScript.String())); err != nil {
 		return errs.Wrap(err, "Could not write build script to file")
 	}
 	return nil

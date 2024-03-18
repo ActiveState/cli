@@ -141,15 +141,32 @@ func (r *Runtime) validateCache() error {
 
 	// Check if local build script has changes that should be committed.
 	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		if cachedScript, err := r.store.BuildScript(); err == nil {
+		cachedScript, err := r.store.BuildScript()
+		switch {
+		case err == nil:
 			script, err := buildscript.ScriptFromProject(r.target)
+			if err != nil && !errs.Matches(err, buildscript.ErrBuildscriptNotExist) {
+				return errs.Wrap(err, "Unable to get local build script")
+			}
+			if script != nil && !script.Equals(cachedScript) {
+				return &NeedsCommitError{errs.New("Runtime changes should be committed")}
+			}
+
+		case err == store.ErrNoBuildScriptFile:
+			bp := model.NewBuildPlannerModel(r.auth)
+			expr, atTime, err := bp.GetBuildExpressionAndTime(commitID)
+			if err != nil {
+				return errs.Wrap(err, "Unable to get remote build expression and time")
+			}
+			script, err := buildscript.NewFromCommit(atTime, expr)
 			if err != nil {
 				return errs.Wrap(err, "Unable to get local build script")
 			}
-			if !script.Equals(cachedScript) {
-				return &NeedsCommitError{errs.New("Runtime changes should be committed")}
+			if err := r.store.StoreBuildScript(script); err != nil {
+				return errs.Wrap(err, "Unable to store build script")
 			}
-		} else if err != store.ErrNoBuildScriptFile {
+
+		default:
 			return errs.Wrap(err, "Unable to read cached build script")
 		}
 	}
