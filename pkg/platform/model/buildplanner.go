@@ -663,7 +663,7 @@ func (bp *BuildPlanner) BuildTarget(owner, project, commitID, target string) err
 }
 
 type ErrFailedArtifacts struct {
-	Artifacts []*bpModel.Artifact
+	Artifacts map[strfmt.UUID]*bpModel.Artifact
 }
 
 func (e ErrFailedArtifacts) Error() string {
@@ -671,7 +671,7 @@ func (e ErrFailedArtifacts) Error() string {
 }
 
 func (bp *BuildPlanner) PollBuildStatus(commitID, owner, project, target string) error {
-	var failedArtifacts []*model.Artifact
+	failedArtifacts := map[strfmt.UUID]*model.Artifact{}
 	resp := model.NewBuildPlanResponse(owner, project)
 	ticker := time.NewTicker(pollInterval)
 	for {
@@ -712,7 +712,7 @@ func (bp *BuildPlanner) PollBuildStatus(commitID, owner, project, target string)
 
 				if artifact.Status == bpModel.ArtifactFailedPermanently ||
 					artifact.Status == bpModel.ArtifactFailedTransiently {
-					failedArtifacts = append(failedArtifacts, artifact)
+					failedArtifacts[artifact.NodeID] = artifact
 				}
 			}
 
