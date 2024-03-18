@@ -334,9 +334,9 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 	return table.New(headers).AddRow(rows...).Render(), nil
 }
 
-type binding struct {
-	header string
-	value  string
+type verticalRow struct {
+	header  string
+	content string
 }
 
 func sprintVerticalTable(slice []interface{}) (string, error) {
@@ -344,14 +344,14 @@ func sprintVerticalTable(slice []interface{}) (string, error) {
 		return "", nil
 	}
 
-	rows := [][]binding{}
+	rows := [][]verticalRow{}
 	for _, v := range slice {
 		meta, err := parseStructMeta(v)
 		if err != nil {
 			return "", err
 		}
 
-		row := []binding{}
+		row := []verticalRow{}
 		for _, field := range meta {
 			if funk.Contains(field.opts, string(HidePlain)) {
 				continue
@@ -371,7 +371,7 @@ func sprintVerticalTable(slice []interface{}) (string, error) {
 			}
 
 			if stringValue != "" {
-				row = append(row, binding{header: localizedField(field.l10n), value: stringValue})
+				row = append(row, verticalRow{header: localizedField(field.l10n), content: stringValue})
 			}
 		}
 
@@ -446,14 +446,14 @@ func columns(offset int, value string) []string {
 	return cols
 }
 
-func verticalRows(rows [][]binding) [][]string {
+func verticalRows(rows [][]verticalRow) [][]string {
 	var vrows [][]string
 
 	for i, hrow := range rows {
 		for _, hcol := range hrow {
 			header := hcol.header
 
-			vrow := []string{header, hcol.value}
+			vrow := []string{header, hcol.content}
 			vrows = append(vrows, vrow)
 		}
 
