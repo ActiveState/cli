@@ -21,6 +21,10 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
+// getEquivalentBuildScript constructs and returns a buildscript that represents the
+// buildexpression and at_time of a fetched project commit.
+// This is used either to compare the local build script with a remote equivalent, or to update
+// the local build script with a remote equivalent.
 func getEquivalentBuildScript(proj *project.Project, customCommit *strfmt.UUID, auth *authentication.Auth) (*buildscript.Script, error) {
 	bp := model.NewBuildPlannerModel(auth)
 	commitID, err := localcommit.Get(proj.Dir())
