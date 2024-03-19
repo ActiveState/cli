@@ -452,9 +452,7 @@ func verticalRows(rows [][]verticalRow) [][]string {
 
 	for i, hrow := range rows {
 		for _, hcol := range hrow {
-			header := hcol.header
-
-			vrow := []string{header, hcol.content}
+			vrow := []string{hcol.header, hcol.content}
 			vrows = append(vrows, vrow)
 		}
 
