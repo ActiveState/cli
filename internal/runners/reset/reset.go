@@ -18,8 +18,8 @@ import (
 )
 
 type Params struct {
-	Force    bool
-	CommitID string
+	Force  bool
+	Target string
 }
 
 type Reset struct {
@@ -62,7 +62,7 @@ func (r *Reset) Run(params *Params) error {
 
 	var commitID strfmt.UUID
 	switch {
-	case params.CommitID == "":
+	case params.Target == "":
 		latestCommit, err := model.BranchCommitID(r.project.Owner(), r.project.Name(), r.project.BranchName())
 		if err != nil {
 			return locale.WrapError(err, "err_reset_latest_commit", "Could not get latest commit ID")
@@ -76,15 +76,15 @@ func (r *Reset) Run(params *Params) error {
 		}
 		commitID = *latestCommit
 
-	case !strfmt.IsUUID(params.CommitID):
-		branch, err := model.BranchForProjectNameByName(r.project.Owner(), r.project.Name(), params.CommitID)
+	case !strfmt.IsUUID(params.Target):
+		branch, err := model.BranchForProjectNameByName(r.project.Owner(), r.project.Name(), params.Target)
 		if err != nil {
 			return errs.Wrap(err, "Could not get branch")
 		}
 		commitID = strfmt.UUID(*branch.CommitID)
 
 	default:
-		commitID = strfmt.UUID(params.CommitID)
+		commitID = strfmt.UUID(params.Target)
 
 		history, err := model.CommitHistoryFromID(commitID, r.auth)
 		if err != nil || len(history) == 0 {

@@ -12,7 +12,7 @@ type ResetIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *ResetIntegrationTestSuite) TestRevert() {
+func (suite *ResetIntegrationTestSuite) TestReset() {
 	suite.OnlyRunForTags(tagsuite.Reset)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -75,7 +75,7 @@ func (suite *ResetIntegrationTestSuite) TestRevertToBranch() {
 }
 
 func (suite *ResetIntegrationTestSuite) TestJSON() {
-	suite.OnlyRunForTags(tagsuite.Revert, tagsuite.JSON)
+	suite.OnlyRunForTags(tagsuite.Reset, tagsuite.JSON)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
