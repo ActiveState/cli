@@ -1,6 +1,7 @@
 package output
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -281,6 +282,10 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 	headers := []string{}
 	rows := [][]string{}
 	for _, v := range slice {
+		if !isStruct(v) {
+			return "", errors.New("Tried to sprintTable with slice that doesn't contain all structs")
+		}
+
 		meta, err := parseStructMeta(v)
 		if err != nil {
 			return "", err
@@ -298,12 +303,12 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 				return "", err
 			}
 
-			if firstIteration && !funk.Contains(field.opts, string(SeparateLineOpt)) {
-				headers = append(headers, localizedField(field.l10n))
-			}
-
 			if funk.Contains(field.opts, string(OmitEmpty)) && (stringValue == "" || stringValue == nilText) {
 				continue
+			}
+
+			if firstIteration && !funk.Contains(field.opts, string(SeparateLineOpt)) {
+				headers = append(headers, localizedField(field.l10n))
 			}
 
 			if funk.Contains(field.opts, string(EmptyNil)) && stringValue == nilText {
@@ -368,9 +373,7 @@ func sprintVerticalTable(slice []interface{}) (string, error) {
 				stringValue = ""
 			}
 
-			if stringValue != "" {
-				row = append(row, verticalRow{header: localizedField(field.l10n), content: stringValue})
-			}
+			row = append(row, verticalRow{header: localizedField(field.l10n), content: stringValue})
 		}
 
 		if len(row) > 0 {
