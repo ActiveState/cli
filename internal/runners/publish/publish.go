@@ -205,15 +205,6 @@ func (r *Runner) Run(params *Params) error {
 		}
 	}
 
-	// Validate user input
-	if params.Edit {
-		// Description is not currently supported for edit
-		// https://activestatef.atlassian.net/browse/DX-1886
-		if reqVars.Description != "" {
-			return locale.NewInputError("err_uploadingredient_edit_description_not_supported")
-		}
-	}
-
 	if reqVars.Namespace == "" {
 		return locale.NewInputError("err_uploadingredient_namespace_required", "You have to supply the namespace when working outside of a project context")
 	}
