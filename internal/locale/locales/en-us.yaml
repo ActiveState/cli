@@ -1507,8 +1507,6 @@ err_searchingredient_toomany:
   other: Too many ingredients match the query '[ACTIONABLE]{{.V0}}[/RESET]', please try to be more specific.
 alternative_unknown_pkg_name:
   other: unknown
-err_uploadingredient_edit_description_not_supported:
-  other: Editing an ingredient description is not yet supported.
 err_uploadingredient_publish:
   other: |
     Could not publish ingredient.
