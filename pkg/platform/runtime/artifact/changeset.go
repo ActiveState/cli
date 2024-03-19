@@ -1,5 +1,7 @@
 package artifact
 
+import "github.com/ActiveState/cli/internal/rtutils/ptr"
+
 type ArtifactChangeset struct {
 	Added   []Artifact
 	Removed []Artifact
@@ -9,6 +11,11 @@ type ArtifactChangeset struct {
 type ArtifactUpdate struct {
 	From Artifact
 	To   Artifact
+
+	// IngredientChange tells us whether or not this change extends to the ingredient
+	// This can easily be calculated based on From.version!=To.version, but that's not easy to always remember.
+	// Storing it as a property helps surface the behavior and avoid the assumption that an artifact change equals an ingredient change.
+	IngredientChange bool
 }
 
 // NewArtifactChangeset parses two recipes and returns the artifact IDs of artifacts that have changed due to changes in the order requirements
@@ -31,8 +38,9 @@ func NewArtifactChangeset(old, new NamedMap, requestedOnly bool) ArtifactChanges
 				continue
 			}
 			updated = append(updated, ArtifactUpdate{
-				From: artfOld,
-				To:   artf,
+				From:             artfOld,
+				To:               artf,
+				IngredientChange: ptr.From(artfOld.Version, "") != ptr.From(artf.Version, ""),
 			})
 
 		} else {

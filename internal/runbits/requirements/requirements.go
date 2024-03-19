@@ -424,6 +424,9 @@ func (r *RequirementOperation) cveReport(requirementName, requirementVersion str
 		})
 	}
 	for _, artifact := range artifactChangeset.Updated {
+		if !artifact.IngredientChange {
+			continue // For CVE reporting we only care about ingredient changes
+		}
 		ingredients = append(ingredients, &request.Ingredient{
 			Namespace: artifact.To.Namespace,
 			Name:      artifact.To.Name,
