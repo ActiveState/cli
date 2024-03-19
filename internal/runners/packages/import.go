@@ -110,12 +110,12 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "package_err_cannot_obtain_commit")
 	}
 
-	reqs, err := fetchCheckpoint(&latestCommit)
+	reqs, err := fetchCheckpoint(&latestCommit, i.auth)
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_fetch_checkpoint")
 	}
 
-	lang, err := model.CheckpointToLanguage(reqs)
+	lang, err := model.CheckpointToLanguage(reqs, i.auth)
 	if err != nil {
 		return locale.WrapInputError(err, "err_import_language", "Your project does not have a language associated with it, please add a language first.")
 	}
@@ -135,7 +135,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_cannot_apply_changeset", "Could not apply changeset")
 	}
 
-	if _, err := be.SetDefaultTimestamp(); err != nil {
+	if err := be.SetDefaultTimestamp(); err != nil {
 		return locale.WrapError(err, "err_cannot_set_timestamp", "Could not set timestamp")
 	}
 

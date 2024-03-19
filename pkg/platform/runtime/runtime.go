@@ -1,13 +1,11 @@
 package runtime
 
 import (
-	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
 	"golang.org/x/net/context"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -124,14 +122,8 @@ func (r *Runtime) validateCache() error {
 		return nil
 	}
 
-	// Check if local build script has changes that should be committed.
-	script, err := buildscript.NewScriptFromProject(r.target, r.auth)
-	if err != nil {
-		return errs.Wrap(err, "Unable to get local build script")
-	}
-
 	commitID := r.target.CommitUUID().String()
-	expr, err := r.store.GetAndValidateBuildExpression(commitID)
+	_, err := r.store.GetAndValidateBuildExpression(commitID)
 	if err != nil {
 		bp := model.NewBuildPlannerModel(r.auth)
 		bpExpr, err := bp.GetBuildExpression(commitID)
@@ -141,15 +133,24 @@ func (r *Runtime) validateCache() error {
 		if err := r.store.StoreBuildExpression(bpExpr, commitID); err != nil {
 			return errs.Wrap(err, "Unable to store build expression")
 		}
-		data, err := json.Marshal(bpExpr)
-		if err != nil {
-			return errs.Wrap(err, "Unable to marshal buildexpression to JSON: %v", err)
-		}
-		expr = string(data)
 	}
 
-	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) && !script.EqualsBuildExpressionBytes([]byte(expr)) {
-		return &NeedsCommitError{errs.New("Runtime changes should be committed")}
+	// Check if local build script has changes that should be committed.
+	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		cachedScript, err := r.store.BuildScript()
+		switch {
+		case err == nil:
+			script, err := buildscript.ScriptFromProject(r.target)
+			if err != nil && !errs.Matches(err, buildscript.ErrBuildscriptNotExist) {
+				return errs.Wrap(err, "Unable to get local build script")
+			}
+			if script != nil && !script.Equals(cachedScript) {
+				return &NeedsCommitError{errs.New("Runtime changes should be committed")}
+			}
+
+		case !errors.Is(err, store.ErrNoBuildScriptFile):
+			return errs.Wrap(err, "Unable to read cached build script")
+		}
 	}
 
 	return nil
@@ -380,20 +381,6 @@ func (r *Runtime) ExecutableDirs() (envdef.ExecutablePaths, error) {
 
 func IsRuntimeDir(dir string) bool {
 	return store.New(dir).HasMarker()
-}
-
-func (r *Runtime) TerminalArtifactMap(filterStatToolArtifacts bool) (buildplan.TerminalArtifactMap, error) {
-	runtimeStore := r.store
-	if runtimeStore == nil {
-		runtimeStore = store.New(r.target.Dir())
-	}
-
-	plan, err := runtimeStore.BuildPlan()
-	if err != nil {
-		return nil, errs.Wrap(err, "Unable to fetch build plan")
-	}
-
-	return buildplan.NewMapFromBuildPlan(plan, false, filterStatToolArtifacts, nil)
 }
 
 func (r *Runtime) BuildPlan() (*bpModel.Build, error) {

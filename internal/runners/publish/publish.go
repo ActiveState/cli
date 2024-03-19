@@ -24,7 +24,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	auth "github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/graphql"
@@ -34,22 +34,25 @@ import (
 )
 
 type Params struct {
-	Name         string
-	Version      string
-	Namespace    string
-	Owner        string
-	Description  string
-	Authors      captain.UsersValue
-	Depends      captain.PackagesValue
-	Features     captain.PackagesValue
-	Filepath     string
-	MetaFilepath string
-	Edit         bool
-	Editor       bool
+	Name           string
+	Version        string
+	Namespace      string
+	Owner          string
+	Description    string
+	Authors        captain.UsersValue
+	Depends        captain.PackagesValue
+	DependsRuntime captain.PackagesValue
+	DependsBuild   captain.PackagesValue
+	DependsTest    captain.PackagesValue
+	Features       captain.PackagesValue
+	Filepath       string
+	MetaFilepath   string
+	Edit           bool
+	Editor         bool
 }
 
 type Runner struct {
-	auth    *auth.Auth
+	auth    *authentication.Auth
 	out     output.Outputer
 	prompt  prompt.Prompter
 	project *project.Project
@@ -146,7 +149,7 @@ func (r *Runner) Run(params *Params) error {
 	isRevision := false
 	if params.Version != "" {
 		// Attempt to get the version if it already exists, it not existing is not an error though
-		i, err := model.GetIngredientByNameAndVersion(reqVars.Namespace, reqVars.Name, params.Version)
+		i, err := model.GetIngredientByNameAndVersion(reqVars.Namespace, reqVars.Name, params.Version, r.auth)
 		if err != nil {
 			var notFound *inventory_operations.GetNamespaceIngredientVersionNotFound
 			if !errors.As(err, &notFound) {
@@ -161,7 +164,7 @@ func (r *Runner) Run(params *Params) error {
 	if ingredient == nil {
 		// Attempt to find the existing ingredient, if we didn't already get it from the version specific call above
 		ts := time.Now()
-		ingredients, err := model.SearchIngredientsStrict(reqVars.Namespace, reqVars.Name, true, false, &ts)
+		ingredients, err := model.SearchIngredientsStrict(reqVars.Namespace, reqVars.Name, true, false, &ts, r.auth)
 		if err != nil && !errs.Matches(err, &model.ErrSearch404{}) { // 404 means either the ingredient or the namespace was not found, which is fine
 			return locale.WrapError(err, "err_uploadingredient_search", "Could not search for ingredient")
 		}
@@ -180,7 +183,7 @@ func (r *Runner) Run(params *Params) error {
 				"Could not find ingredient to edit with name: '[ACTIONABLE]{{.V0}}[/RESET]', namespace: '[ACTIONABLE]{{.V1}}[/RESET]'.",
 				reqVars.Name, reqVars.Namespace)
 		}
-		if err := prepareEditRequest(ingredient, &reqVars, isRevision); err != nil {
+		if err := prepareEditRequest(ingredient, &reqVars, isRevision, r.auth); err != nil {
 			return errs.Wrap(err, "Could not prepare edit request")
 		}
 	} else {
@@ -189,6 +192,15 @@ func (r *Runner) Run(params *Params) error {
 				"Ingredient with namespace '[ACTIONABLE]{{.V0}}[/RESET]' and name '[ACTIONABLE]{{.V1}}[/RESET]' already exists. "+
 					"To edit an existing ingredient you need to pass the '[ACTIONABLE]--edit[/RESET]' flag.",
 				reqVars.Namespace, reqVars.Name)
+		}
+	}
+
+	// Validate user input
+	if params.Edit {
+		// Description is not currently supported for edit
+		// https://activestatef.atlassian.net/browse/DX-1886
+		if params.Description != "" {
+			return locale.NewInputError("err_uploadingredient_edit_description_not_supported")
 		}
 	}
 
@@ -205,15 +217,6 @@ func (r *Runner) Run(params *Params) error {
 		}
 	}
 
-	// Validate user input
-	if params.Edit {
-		// Description is not currently supported for edit
-		// https://activestatef.atlassian.net/browse/DX-1886
-		if reqVars.Description != "" {
-			return locale.NewInputError("err_uploadingredient_edit_description_not_supported")
-		}
-	}
-
 	if reqVars.Namespace == "" {
 		return locale.NewInputError("err_uploadingredient_namespace_required", "You have to supply the namespace when working outside of a project context")
 	}
@@ -225,9 +228,11 @@ func (r *Runner) Run(params *Params) error {
 
 	cont, err := r.prompt.Confirm(
 		"",
-		locale.Tl("uploadingredient_confirm", `Publish following ingredient?
+		locale.Tl("uploadingredient_confirm", `Prepared the following ingredient:
+
 {{.V0}}
 
+Do you want to publish this ingredient?
 `, string(b)),
 		ptr.To(true),
 	)
@@ -260,16 +265,24 @@ func (r *Runner) Run(params *Params) error {
 	logging.Debug("Published ingredient revision: %d", result.Publish.Revision)
 
 	ingredientID := strfmt.UUID(result.Publish.IngredientID)
-	publishedIngredient, err := model.FetchIngredient(&ingredientID)
+	publishedIngredient, err := model.FetchIngredient(&ingredientID, r.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingredient_fetch", "Unable to fetch newly published ingredient")
 	}
 	versionID := strfmt.UUID(result.Publish.IngredientVersionID)
 	atTime := strfmt.DateTime(time.Now())
-	publishedVersion, err := model.FetchIngredientVersion(&ingredientID, &versionID, true, &atTime)
+	publishedVersion, err := model.FetchIngredientVersion(&ingredientID, &versionID, true, &atTime, r.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingingredient_fetch_version", "Unable to fetch newly published ingredient version")
 	}
+
+	ingTime, err := time.Parse(time.RFC3339, publishedVersion.RevisionTimestamp.String())
+	if err != nil {
+		return errs.Wrap(err, "Ingredient timestamp invalid")
+	}
+
+	// Increment time by 1 second to work around API precision issue where same second comparisons can fall on either side
+	ingTime = ingTime.Add(time.Second)
 
 	r.out.Print(output.Prepare(
 		locale.Tl(
@@ -278,6 +291,7 @@ func (r *Runner) Run(params *Params) error {
 			*publishedIngredient.PrimaryNamespace,
 			*publishedVersion.Version,
 			strconv.Itoa(int(*publishedVersion.Revision)),
+			ingTime.Format(time.RFC3339),
 		),
 		result.Publish,
 	))
@@ -316,11 +330,45 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRev
 	}
 
 	if len(params.Depends) != 0 {
-		r.Dependencies = []request.PublishVariableDep{}
 		for _, dep := range params.Depends {
 			r.Dependencies = append(
 				r.Dependencies,
-				request.PublishVariableDep{request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version}, []request.Dependency{}},
+				request.PublishVariableDep{
+					Dependency: request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version},
+				},
+			)
+		}
+	}
+
+	if len(params.DependsRuntime) != 0 {
+		for _, dep := range params.DependsRuntime {
+			r.Dependencies = append(
+				r.Dependencies,
+				request.PublishVariableDep{
+					Dependency: request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version, Type: request.DependencyTypeRuntime},
+				},
+			)
+		}
+	}
+
+	if len(params.DependsBuild) != 0 {
+		for _, dep := range params.DependsBuild {
+			r.Dependencies = append(
+				r.Dependencies,
+				request.PublishVariableDep{
+					Dependency: request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version, Type: request.DependencyTypeBuild},
+				},
+			)
+		}
+	}
+
+	if len(params.DependsTest) != 0 {
+		for _, dep := range params.DependsTest {
+			r.Dependencies = append(
+				r.Dependencies,
+				request.PublishVariableDep{
+					Dependency: request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version, Type: request.DependencyTypeTest},
+				},
 			)
 		}
 	}
@@ -341,11 +389,11 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRev
 // prepareEditRequest inherits meta data from the previous ingredient revision if it exists. This should really happen
 // on the API, but at the time of implementation we did this client side as the API side requires significant refactorings
 // to enable this behavior.
-func prepareEditRequest(ingredient *ParentIngredient, r *request.PublishVariables, isRevision bool) error {
+func prepareEditRequest(ingredient *ParentIngredient, r *request.PublishVariables, isRevision bool, auth *authentication.Auth) error {
 	r.Version = ingredient.Version
 
 	if !isRevision {
-		authors, err := model.FetchAuthors(&ingredient.IngredientID, &ingredient.IngredientVersionID)
+		authors, err := model.FetchAuthors(&ingredient.IngredientID, &ingredient.IngredientVersionID, auth)
 		if err != nil {
 			return locale.WrapError(err, "err_uploadingredient_fetch_authors", "Could not fetch authors for ingredient")
 		}

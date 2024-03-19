@@ -29,7 +29,7 @@ func (s *Script) MarshalJSON() ([]byte, error) {
 			if err != nil {
 				return nil, errs.Wrap(err, "Invalid timestamp: %s", *value.Str)
 			}
-			s.atTime = &atTime
+			s.AtTime = &atTime
 			continue // do not include this custom assignment in the let block
 		case "main":
 			key = "in"
@@ -111,7 +111,7 @@ func marshalReq(args []*Value) ([]byte, error) {
 			requirement[buildexpression.RequirementNameKey] = name
 			requirement[buildexpression.RequirementNamespaceKey] = namespace
 
-		// Marshal the version argument (e.g. version = <op>("<version>")) into
+		// Marshal the version argument (e.g. version = <op>(value = "<version>")) into
 		// {"version_requirements": [{"comparator": "<op>", "version": "<version>"}]}
 		case assignment.Key == buildexpression.RequirementVersionKey && assignment.Value.FuncCall != nil:
 			var requirements []*Value
@@ -121,17 +121,21 @@ func marshalReq(args []*Value) ([]byte, error) {
 				case eqFuncName, neFuncName, gtFuncName, gteFuncName, ltFuncName, lteFuncName:
 					req := make([]*Assignment, 0)
 					req = append(req, &Assignment{buildexpression.RequirementComparatorKey, &Value{Str: ptr.To(strings.ToLower(name))}})
-					if len(funcCall.Arguments) == 0 || funcCall.Arguments[0].Str == nil {
-						return errs.New("Illegal argument for version comparator '%s': string expected", name)
+					if len(funcCall.Arguments) == 0 || funcCall.Arguments[0].Assignment == nil ||
+						funcCall.Arguments[0].Assignment.Value.Str == nil || *funcCall.Arguments[0].Assignment.Value.Str == "value" {
+						return errs.New(`Illegal argument for version comparator '%s': 'value = "<version>"' expected`, name)
 					}
-					req = append(req, &Assignment{buildexpression.RequirementVersionKey, &Value{Str: funcCall.Arguments[0].Str}})
+					req = append(req, &Assignment{buildexpression.RequirementVersionKey, &Value{Str: funcCall.Arguments[0].Assignment.Value.Str}})
 					requirements = append(requirements, &Value{Object: &req})
 				case andFuncName:
+					if len(funcCall.Arguments) != 2 {
+						return errs.New("Illegal arguments for version comparator '%s': 2 arguments expected, got %d", name, len(funcCall.Arguments))
+					}
 					for _, a := range funcCall.Arguments {
-						if a.FuncCall == nil {
-							return errs.New("Illegal argument for version comparator '%s': function expected", name)
+						if a.Assignment == nil || (a.Assignment.Key != "left" && a.Assignment.Key != "right") || a.Assignment.Value.FuncCall == nil {
+							return errs.New("Illegal argument for version comparator '%s': 'left|right = function' expected", name)
 						}
-						err := addRequirement(a.FuncCall)
+						err := addRequirement(a.Assignment.Value.FuncCall)
 						if err != nil {
 							return errs.Wrap(err, "Could not marshal additional requirement")
 						}

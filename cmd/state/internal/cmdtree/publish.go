@@ -75,6 +75,30 @@ func newPublish(prime *primer.Values) *captain.Command {
 				Value: &params.Depends,
 			},
 			{
+				Name: "depend-runtime",
+				Description: locale.Tl(
+					"author_upload_dependruntime_description",
+					"Ingredient that this ingredient depends on during runtime, format as <namespace>/<name>[@<version>]. Can be set multiple times.",
+				),
+				Value: &params.DependsRuntime,
+			},
+			{
+				Name: "depend-build",
+				Description: locale.Tl(
+					"author_upload_dependbuild_description",
+					"Ingredient that this ingredient depends on during build, format as <namespace>/<name>[@<version>]. Can be set multiple times.",
+				),
+				Value: &params.DependsBuild,
+			},
+			{
+				Name: "depend-test",
+				Description: locale.Tl(
+					"author_upload_dependtest_description",
+					"Ingredient that this ingredient depends on during tests, format as <namespace>/<name>[@<version>]. Can be set multiple times.",
+				),
+				Value: &params.DependsTest,
+			},
+			{
 				Name: "feature",
 				Description: locale.Tl(
 					"author_upload_feature_description",
@@ -100,6 +124,5 @@ func newPublish(prime *primer.Values) *captain.Command {
 			return runner.Run(&params)
 		})
 	c.SetGroup(AuthorGroup)
-	c.SetUnstable(true)
 	return c
 }

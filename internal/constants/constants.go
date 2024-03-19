@@ -387,6 +387,9 @@ const RuntimeBuildPlanStore = "build_plan"
 // BuildExpressionStore holds the cached build expression for the current commit ID.
 const BuildExpressionStore = "build_expression"
 
+// BuildScriptStore holds the cached buildscript for the current project.
+const BuildScriptStore = "build_script"
+
 // StateToolMarketingPage links to the marketing page for the state tool
 const StateToolMarketingPage = "https://www.activestate.com/products/platform/state-tool/"
 

@@ -4,7 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
@@ -132,7 +131,7 @@ func TestChangeSummary(t *testing.T) {
 			out := outputhelper.NewCatcher()
 			OutputChangeSummary(out, tt.changed, artifacts, tt.existing)
 
-			assert.Equal(t, output.WordWrap(tt.expected), strings.TrimSpace(out.CombinedOutput()))
+			assert.Equal(t, tt.expected, strings.TrimSpace(out.CombinedOutput()))
 		})
 	}
 

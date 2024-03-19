@@ -16,7 +16,7 @@ import (
 
 // toBuildExpression converts given script constructed by Participle into a buildexpression.
 // This function should not be used to convert an arbitrary script to buildexpression.
-// NewScript*() populates the expr field with the equivalent build expression.
+// New*() populates the Expr field with the equivalent build expression.
 // This function exists solely for testing that functionality.
 func toBuildExpression(script *Script) (*buildexpression.BuildExpression, error) {
 	bytes, err := json.Marshal(script)
@@ -27,12 +27,14 @@ func toBuildExpression(script *Script) (*buildexpression.BuildExpression, error)
 }
 
 func TestBasic(t *testing.T) {
-	script, err := NewScript([]byte(
-		`runtime = solve(
+	script, err := New([]byte(
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
 	platforms = ["linux", "windows"],
 	requirements = [
 		Req(name = "language/python"),
-		Req(name = "language/python/requests", version = Eq("3.10.10"))
+		Req(name = "language/python/requests", version = Eq(value = "3.10.10"))
 	]
 )
 
@@ -40,13 +42,18 @@ main = runtime
 `))
 	require.NoError(t, err)
 
+	atTime, err := strfmt.ParseDateTime("2000-01-01T00:00:00.000Z")
+	require.NoError(t, err)
+
 	expr, err := toBuildExpression(script)
 	require.NoError(t, err)
 
 	assert.Equal(t, &Script{
 		[]*Assignment{
+			{"at_time", &Value{Str: ptr.To(`"2000-01-01T00:00:00.000Z"`)}},
 			{"runtime", &Value{
 				FuncCall: &FuncCall{"solve", []*Value{
+					{Assignment: &Assignment{"at_time", &Value{Ident: ptr.To(`at_time`)}}},
 					{Assignment: &Assignment{
 						"platforms", &Value{List: &[]*Value{
 							{Str: ptr.To(`"linux"`)},
@@ -70,8 +77,10 @@ main = runtime
 									}},
 									{Assignment: &Assignment{
 										"version", &Value{FuncCall: &FuncCall{
-											Name:      "Eq",
-											Arguments: []*Value{{Str: ptr.To(`"3.10.10"`)}},
+											Name: "Eq",
+											Arguments: []*Value{
+												{Assignment: &Assignment{Key: "value", Value: &Value{Str: ptr.To(`"3.10.10"`)}}},
+											},
 										}},
 									}},
 								},
@@ -82,14 +91,16 @@ main = runtime
 			}},
 			{"main", &Value{Ident: ptr.To("runtime")}},
 		},
+		&atTime,
 		expr,
-		nil,
 	}, script)
 }
 
 func TestComplex(t *testing.T) {
-	script, err := NewScript([]byte(
-		`linux_runtime = solve(
+	script, err := New([]byte(
+		`at_time = "2000-01-01T00:00:00.000Z"
+linux_runtime = solve(
+		at_time = at_time,
 		requirements=[
 			Req(name = "language/python")
 		],
@@ -97,6 +108,7 @@ func TestComplex(t *testing.T) {
 )
 
 win_runtime = solve(
+		at_time = at_time,
 		requirements=[
 			Req(name = "language/perl")
 		],
@@ -110,13 +122,18 @@ main = merge(
 `))
 	require.NoError(t, err)
 
+	atTime, err := strfmt.ParseDateTime("2000-01-01T00:00:00.000Z")
+	require.NoError(t, err)
+
 	expr, err := toBuildExpression(script)
 	require.NoError(t, err)
 
 	assert.Equal(t, &Script{
 		[]*Assignment{
+			{"at_time", &Value{Str: ptr.To(`"2000-01-01T00:00:00.000Z"`)}},
 			{"linux_runtime", &Value{
 				FuncCall: &FuncCall{"solve", []*Value{
+					{Assignment: &Assignment{"at_time", &Value{Ident: ptr.To(`at_time`)}}},
 					{Assignment: &Assignment{
 						"requirements", &Value{List: &[]*Value{
 							{FuncCall: &FuncCall{
@@ -138,6 +155,7 @@ main = merge(
 			}},
 			{"win_runtime", &Value{
 				FuncCall: &FuncCall{"solve", []*Value{
+					{Assignment: &Assignment{"at_time", &Value{Ident: ptr.To(`at_time`)}}},
 					{Assignment: &Assignment{
 						"requirements", &Value{List: &[]*Value{
 							{FuncCall: &FuncCall{
@@ -163,8 +181,8 @@ main = merge(
 					{FuncCall: &FuncCall{"tar_installer", []*Value{{Ident: ptr.To("linux_runtime")}}}},
 				}}}},
 		},
+		&atTime,
 		expr,
-		nil,
 	}, script)
 }
 
@@ -174,8 +192,8 @@ runtime = solve(
 	platforms = ["96b7e6f2-bebf-564c-bc1c-f04482398f38", "96b7e6f2-bebf-564c-bc1c-f04482398f38"],
 	requirements = [
 		Req(name = "language/python"),
-		Req(name = "language/python/requests", version = Eq("3.10.10")),
-		Req(name = "language/python/argparse", version = And(Gt("1.0"), Lt("2.0")))
+		Req(name = "language/python/requests", version = Eq(value = "3.10.10")),
+		Req(name = "language/python/argparse", version = And(left = Gt(value = "1.0"), right = Lt(value = "2.0")))
 	],
 	solver_version = 0
 )
@@ -183,13 +201,13 @@ runtime = solve(
 main = runtime`
 
 func TestExample(t *testing.T) {
-	script, err := NewScript([]byte(example))
-	require.NoError(t, err)
-
-	expr, err := toBuildExpression(script)
+	script, err := New([]byte(example))
 	require.NoError(t, err)
 
 	atTime, err := strfmt.ParseDateTime("2023-04-27T17:30:05.999Z")
+	require.NoError(t, err)
+
+	expr, err := toBuildExpression(script)
 	require.NoError(t, err)
 
 	assert.Equal(t, &Script{
@@ -224,8 +242,10 @@ func TestExample(t *testing.T) {
 									},
 									{Assignment: &Assignment{
 										"version", &Value{FuncCall: &FuncCall{
-											Name:      "Eq",
-											Arguments: []*Value{{Str: ptr.To(`"3.10.10"`)}},
+											Name: "Eq",
+											Arguments: []*Value{
+												{Assignment: &Assignment{Key: "value", Value: &Value{Str: ptr.To(`"3.10.10"`)}}},
+											},
 										}},
 									}},
 								},
@@ -240,14 +260,18 @@ func TestExample(t *testing.T) {
 										"version", &Value{FuncCall: &FuncCall{
 											Name: "And",
 											Arguments: []*Value{
-												{FuncCall: &FuncCall{
-													Name:      "Gt",
-													Arguments: []*Value{{Str: ptr.To(`"1.0"`)}},
-												}},
-												{FuncCall: &FuncCall{
-													Name:      "Lt",
-													Arguments: []*Value{{Str: ptr.To(`"2.0"`)}},
-												}},
+												{Assignment: &Assignment{Key: "left", Value: &Value{FuncCall: &FuncCall{
+													Name: "Gt",
+													Arguments: []*Value{
+														{Assignment: &Assignment{Key: "value", Value: &Value{Str: ptr.To(`"1.0"`)}}},
+													},
+												}}}},
+												{Assignment: &Assignment{Key: "right", Value: &Value{FuncCall: &FuncCall{
+													Name: "Lt",
+													Arguments: []*Value{
+														{Assignment: &Assignment{Key: "value", Value: &Value{Str: ptr.To(`"2.0"`)}}},
+													},
+												}}}},
 											},
 										}},
 									}},
@@ -262,16 +286,18 @@ func TestExample(t *testing.T) {
 			}},
 			{"main", &Value{Ident: ptr.To("runtime")}},
 		},
-		expr,
 		&atTime,
+		expr,
 	}, script)
 }
 
 func TestString(t *testing.T) {
-	script, err := NewScript([]byte(
-		`runtime = solve(
+	script, err := New([]byte(
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+		at_time = at_time,
 		platforms=["12345", "67890"],
-		requirements=[Req(name = "language/python", version = Eq("3.10.10"))]
+		requirements=[Req(name = "language/python", version = Eq(value = "3.10.10"))]
 )
 
 main = runtime
@@ -279,13 +305,15 @@ main = runtime
 	require.NoError(t, err)
 
 	assert.Equal(t,
-		`runtime = solve(
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
 	platforms = [
 		"12345",
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/python", version = Eq("3.10.10"))
+		Req(name = "language/python", version = Eq(value = "3.10.10"))
 	]
 )
 
@@ -297,20 +325,20 @@ func TestRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(tmpfile.Name())
 
-	script, err := NewScript([]byte(example))
+	script, err := New([]byte(example))
 	require.NoError(t, err)
 
 	tmpfile.Write([]byte(script.String()))
 	tmpfile.Close()
 
-	roundTripScript, err := newScriptFromFile(tmpfile.Name(), "", "", nil)
+	roundTripScript, err := ScriptFromFile(tmpfile.Name())
 	require.NoError(t, err)
 
 	assert.Equal(t, script, roundTripScript)
 }
 
 func TestJson(t *testing.T) {
-	script, err := NewScript([]byte(
+	script, err := New([]byte(
 		`at_time = "2000-01-01T00:00:00.000Z"
 runtime = solve(
 		at_time = at_time,
@@ -329,7 +357,7 @@ main = runtime
     "let": {
       "runtime": {
         "solve": {
-          "at_time": "2000-01-01T00:00:00.000Z",
+          "at_time": "$at_time",
           "requirements": [
             {
               "name": "python",
@@ -349,9 +377,7 @@ main = runtime
 	require.NoError(t, err)
 	expectedJson, err := json.Marshal(marshaledInput)
 
-	actualExpr, err := script.BuildExpression()
-	require.NoError(t, err)
-	actualJson, err := json.Marshal(actualExpr)
+	actualJson, err := json.Marshal(script.Expr)
 	require.NoError(t, err)
 	assert.Equal(t, string(expectedJson), string(actualJson))
 }
@@ -404,20 +430,20 @@ func TestBuildExpression(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify conversions between buildscripts and buildexpressions is accurate.
-	script, err := NewScriptFromBuildExpression(expr)
+	script, err := NewFromCommit(nil, expr)
 	require.NoError(t, err)
 	require.NotNil(t, script)
-	newExpr, err := script.BuildExpression()
-	require.NoError(t, err)
+	newExpr := script.Expr
 	exprBytes, err := json.Marshal(expr)
 	require.NoError(t, err)
 	newExprBytes, err := json.Marshal(newExpr)
 	require.NoError(t, err)
 	assert.Equal(t, string(exprBytes), string(newExprBytes))
 
-	// Verify comparisons between buildscripts and buildexpressions is accurate.
-	assert.True(t, script.EqualsBuildExpression(expr))
-	assert.True(t, script.EqualsBuildExpressionBytes(exprBytes))
+	// Verify comparisons between buildscripts is accurate.
+	newScript, err := NewFromCommit(nil, newExpr)
+	require.NoError(t, err)
+	assert.True(t, script.Equals(newScript))
 
 	// Verify null JSON value is handled correctly.
 	var null *string

@@ -69,13 +69,13 @@ func (l *Languages) Run() error {
 		)
 	}
 
-	langs, err := model.FetchLanguagesForCommit(commitID)
+	langs, err := model.FetchLanguagesForCommit(commitID, l.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_fetching_languages", "Cannot obtain languages")
 	}
 
 	// Fetch resolved artifacts list for showing full version numbers.
-	rt, err := runtime.NewFromProject(l.project, target.TriggerLanguage, l.analytics, l.svcModel, l.out, l.auth, l.cfg)
+	rt, err := runtime.NewFromProject(l.project, nil, target.TriggerLanguage, l.analytics, l.svcModel, l.out, l.auth, l.cfg)
 	if err != nil {
 		return locale.WrapError(err, "err_languages_runtime", "Could not initialize runtime")
 	}

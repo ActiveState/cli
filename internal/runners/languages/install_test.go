@@ -1,9 +1,11 @@
 package languages
 
 import (
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"reflect"
 	"testing"
+
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 func Test_parseLanguage(t *testing.T) {
@@ -52,7 +54,9 @@ func Test_ensureVersionTestable(t *testing.T) {
 			"Version matches",
 			args{
 				&model.Language{Name: "Python", Version: "3.5"},
-				func(name string) ([]string, error) { return []string{"2.0", "3.5", "4.0"}, nil },
+				func(name string, auth *authentication.Auth) ([]string, error) {
+					return []string{"2.0", "3.5", "4.0"}, nil
+				},
 			},
 			"3.5",
 			false,
@@ -60,7 +64,7 @@ func Test_ensureVersionTestable(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := ensureVersionTestable(tt.args.language, tt.args.fetchVersions)
+			err := ensureVersionTestable(tt.args.language, tt.args.fetchVersions, nil)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ensureVersionTestable() error = %v, wantErr %v", err, tt.wantErr)

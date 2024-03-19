@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -29,8 +30,9 @@ import (
 )
 
 const (
-	pollInterval = 1 * time.Second
-	pollTimeout  = 30 * time.Second
+	pollInterval       = 1 * time.Second
+	pollTimeout        = 30 * time.Second
+	buildStatusTimeout = 24 * time.Hour
 
 	codeExtensionKey          = "code"
 	clientDeprecationErrorKey = "CLIENT_DEPRECATION_ERROR"
@@ -74,6 +76,28 @@ func logRequestVariables(req gqlclient.Request) {
 	}
 }
 
+type SolverError struct {
+	wrapped          error
+	validationErrors []string
+	isTransient      bool
+}
+
+func (e *SolverError) Error() string {
+	return "buildplan_error"
+}
+
+func (e *SolverError) Unwrap() error {
+	return e.wrapped
+}
+
+func (e *SolverError) ValidationErrors() []string {
+	return e.validationErrors
+}
+
+func (e *SolverError) IsTransient() bool {
+	return e.isTransient
+}
+
 func init() {
 	HostPlatform = sysinfo.OS().String()
 	if osName, ok := os.LookupEnv(constants.OverrideOSNameEnvVarName); ok {
@@ -91,6 +115,7 @@ type BuildResult struct {
 	BuildStatus         string
 	BuildReady          bool
 	BuildExpression     *buildexpression.BuildExpression
+	AtTime              *strfmt.DateTime
 }
 
 func (b *BuildResult) OrderedArtifacts() []artifact.ArtifactID {
@@ -164,9 +189,9 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		return nil, errs.Wrap(err, "Response does not contain commitID")
 	}
 
-	expr, err := bp.GetBuildExpression(commitID.String())
+	expr, atTime, err := bp.GetBuildExpressionAndTime(commitID.String())
 	if err != nil {
-		return nil, errs.Wrap(err, "Failed to get build expression")
+		return nil, errs.Wrap(err, "Failed to get build expression and time")
 	}
 
 	res := BuildResult{
@@ -175,6 +200,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		BuildReady:      build.Status == bpModel.Completed,
 		CommitID:        id,
 		BuildExpression: expr,
+		AtTime:          atTime,
 		BuildStatus:     build.Status,
 	}
 
@@ -299,7 +325,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 				return "", errs.Wrap(err, "Failed to update build expression with requirement")
 			}
 
-			if _, err := expression.SetDefaultTimestamp(); err != nil {
+			if err := expression.SetDefaultTimestamp(); err != nil {
 				return "", errs.Wrap(err, "Failed to set default timestamp")
 			}
 		}
@@ -353,12 +379,35 @@ func (bp *BuildPlanner) GetBuildExpression(commitID string) (*buildexpression.Bu
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}
 
-	err = expression.MaybeUpdateTimestamp(resp.Commit.AtTime)
+	return expression, nil
+}
+
+func (bp *BuildPlanner) GetBuildExpressionAndTime(commitID string) (*buildexpression.BuildExpression, *strfmt.DateTime, error) {
+	logging.Debug("GetBuildExpressionAndTime, commitID: %s", commitID)
+	resp := &bpModel.BuildExpression{}
+	err := bp.client.Run(request.BuildExpression(commitID), resp)
 	if err != nil {
-		return nil, errs.Wrap(err, "failed to possibly update %s in build expression", buildexpression.AtTimeKey)
+		return nil, nil, processBuildPlannerError(err, "failed to fetch build expression")
 	}
 
-	return expression, nil
+	if resp.Commit == nil {
+		return nil, nil, errs.New("Commit is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.Commit.Type) {
+		return nil, nil, bpModel.ProcessCommitError(resp.Commit, "Could not get build expression from commit")
+	}
+
+	if resp.Commit.Expression == nil {
+		return nil, nil, errs.New("Commit does not contain expression")
+	}
+
+	expression, err := buildexpression.New(resp.Commit.Expression)
+	if err != nil {
+		return nil, nil, errs.Wrap(err, "failed to parse build expression")
+	}
+
+	return expression, &resp.Commit.AtTime, nil
 }
 
 // CreateProjectParams contains information for the project to create.
@@ -599,4 +648,125 @@ func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, 
 		})
 	}
 	return requirements, nil
+}
+
+func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID, cfg Configurable, auth *authentication.Auth) (strfmt.UUID, error) {
+	platformIDs, err := filterPlatformIDs(hostPlatform, runtime.GOARCH, platforms, cfg, auth)
+	if err != nil {
+		return "", errs.Wrap(err, "filterPlatformIDs failed")
+	}
+
+	if len(platformIDs) == 0 {
+		return "", locale.NewInputError("err_recipe_no_platform")
+	} else if len(platformIDs) > 1 {
+		logging.Debug("Received multiple platform IDs. Picking the first one: %s", platformIDs[0])
+	}
+
+	return platformIDs[0], nil
+}
+
+func (bp *BuildPlanner) BuildTarget(owner, project, commitID, target string) error {
+	logging.Debug("BuildTarget, owner: %s, project: %s, commitID: %s, target: %s", owner, project, commitID, target)
+	resp := &bpModel.BuildTargetResult{}
+	err := bp.client.Run(request.Evaluate(owner, project, commitID, target), resp)
+	if err != nil {
+		return processBuildPlannerError(err, "Failed to evaluate target")
+	}
+
+	if resp.Project == nil {
+		return errs.New("Project is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.Project.Type) {
+		return bpModel.ProcessProjectError(resp.Project, "Could not evaluate target")
+	}
+
+	if resp.Project.Commit == nil {
+		return errs.New("Commit is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.Project.Commit.Type) {
+		return bpModel.ProcessCommitError(resp.Project.Commit, "Could not process error response from evaluate target")
+	}
+
+	if resp.Project.Commit.Build == nil {
+		return errs.New("Build is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.Project.Commit.Build.Type) {
+		return bpModel.ProcessBuildError(resp.Project.Commit.Build, "Could not process error response from evaluate target")
+	}
+
+	return nil
+}
+
+type ErrFailedArtifacts struct {
+	Artifacts map[strfmt.UUID]*bpModel.Artifact
+}
+
+func (e ErrFailedArtifacts) Error() string {
+	return "ErrFailedArtifacts"
+}
+
+func (bp *BuildPlanner) PollBuildStatus(commitID, owner, project, target string) error {
+	failedArtifacts := map[strfmt.UUID]*model.Artifact{}
+	resp := model.NewBuildPlanResponse(owner, project)
+	ticker := time.NewTicker(pollInterval)
+	for {
+		select {
+		case <-ticker.C:
+			err := bp.client.Run(request.BuildPlanTarget(commitID, owner, project, target), resp)
+			if err != nil {
+				return processBuildPlannerError(err, "failed to fetch build plan")
+			}
+
+			if resp == nil {
+				return errs.New("Build plan response is nil")
+			}
+
+			build, err := resp.Build()
+			if err != nil {
+				return errs.Wrap(err, "Could not get build from response")
+			}
+
+			// The type aliasing in the query populates the
+			// response with emtpy targets that we should remove
+			removeEmptyTargets(build)
+
+			// If the build status is planning it may not have any artifacts yet.
+			if build.Status == bpModel.Planning {
+				continue
+			}
+
+			// If all artifacts are completed then we are done.
+			completed := true
+			for _, artifact := range build.Artifacts {
+				if artifact.Status == bpModel.ArtifactNotSubmitted {
+					continue
+				}
+				if artifact.Status != bpModel.ArtifactSucceeded {
+					completed = false
+				}
+
+				if artifact.Status == bpModel.ArtifactFailedPermanently ||
+					artifact.Status == bpModel.ArtifactFailedTransiently {
+					failedArtifacts[artifact.NodeID] = artifact
+				}
+			}
+
+			if completed {
+				return nil
+			}
+
+			// If the build status is completed then we are done.
+			if build.Status == bpModel.Completed {
+				if len(failedArtifacts) != 0 {
+					return ErrFailedArtifacts{failedArtifacts}
+				}
+				return nil
+			}
+		case <-time.After(buildStatusTimeout):
+			return locale.NewError("err_buildplanner_timeout", "Timed out waiting for build plan")
+		}
+	}
 }

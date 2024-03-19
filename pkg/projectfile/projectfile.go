@@ -837,25 +837,12 @@ func getProjectFilePathFromDefault() (_ string, rerr error) {
 	return path, nil
 }
 
-// Get returns the project configration in an unsafe manner (exits if errors occur)
-func Get() *Project {
-	project, err := GetSafe()
-	if err != nil {
-		multilog.Error("projectfile.Get() failed with: %s", err.Error())
-		fmt.Fprint(os.Stderr, locale.T("err_project_file_unavailable"))
-		os.Exit(1)
-	}
-
-	return project
-}
-
 // GetPersisted gets the persisted project, if any
 func GetPersisted() *Project {
 	return persistentProject
 }
 
-// GetSafe returns the project configuration in a safe manner (returns error)
-func GetSafe() (*Project, error) {
+func Get() (*Project, error) {
 	if persistentProject != nil {
 		return persistentProject, nil
 	}
@@ -865,7 +852,10 @@ func GetSafe() (*Project, error) {
 		return nil, err
 	}
 
-	project.Persist()
+	err = project.Persist()
+	if err != nil {
+		return nil, err
+	}
 	return project, nil
 }
 
@@ -1207,14 +1197,13 @@ func Reset() {
 // Persist "activates" the given project and makes it such that subsequent calls
 // to Get() return this project.
 // Only one project can persist at a time.
-func (p *Project) Persist() {
+func (p *Project) Persist() error {
 	if p.Project == "" {
-		multilog.Error("projectfile.Persist() failed because no project is defined")
-		fmt.Fprint(os.Stderr, locale.T("err_invalid_project"))
-		os.Exit(1)
+		return locale.NewError(locale.T("err_invalid_project"))
 	}
 	persistentProject = p
 	os.Setenv(constants.ProjectEnvVarName, p.Path())
+	return nil
 }
 
 type ConfigGetter interface {

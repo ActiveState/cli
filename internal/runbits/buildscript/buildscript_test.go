@@ -12,7 +12,7 @@ import (
 )
 
 func TestDiff(t *testing.T) {
-	script, err := buildscript.NewScript([]byte(
+	script, err := buildscript.New([]byte(
 		`at_time = "2000-01-01T00:00:00.000Z"
 runtime = solve(
 	at_time = at_time,
@@ -28,15 +28,12 @@ runtime = solve(
 main = runtime`))
 	require.NoError(t, err)
 
-	expr, err := script.BuildExpression()
-	require.NoError(t, err)
-
 	// Modify the build script.
-	script, err = buildscript.NewScript([]byte(strings.Replace(script.String(), "12345", "77777", 1)))
+	modifiedScript, err := buildscript.New([]byte(strings.Replace(script.String(), "12345", "77777", 1)))
 	require.NoError(t, err)
 
 	// Generate the difference between the modified script and the original expression.
-	result, err := generateDiff(script, expr)
+	result, err := generateDiff(modifiedScript, script)
 	require.NoError(t, err)
 	assert.Equal(t, `at_time = "2000-01-01T00:00:00.000Z"
 runtime = solve(
@@ -65,13 +62,11 @@ main = runtime`, result)
 //   - The local project pulls from the Platform project, resulting in conflicting times and version
 //     requirements for requests.
 func TestRealWorld(t *testing.T) {
-	script1, err := buildscript.NewScript(fileutils.ReadFileUnsafe(filepath.Join("testdata", "buildscript1.as")))
+	script1, err := buildscript.New(fileutils.ReadFileUnsafe(filepath.Join("testdata", "buildscript1.as")))
 	require.NoError(t, err)
-	script2, err := buildscript.NewScript(fileutils.ReadFileUnsafe(filepath.Join("testdata", "buildscript2.as")))
+	script2, err := buildscript.New(fileutils.ReadFileUnsafe(filepath.Join("testdata", "buildscript2.as")))
 	require.NoError(t, err)
-	expr2, err := script2.BuildExpression()
-	require.NoError(t, err)
-	result, err := generateDiff(script1, expr2)
+	result, err := generateDiff(script1, script2)
 	require.NoError(t, err)
 	assert.Equal(t, `<<<<<<< local
 at_time = "2023-10-16T22:20:29.000Z"
@@ -93,11 +88,11 @@ sources = solve(
 		"96b7e6f2-bebf-564c-bc1c-f04482398f38"
 	],
 	requirements = [
-		Req(name = "language/python", version = Eq("3.10.11")),
+		Req(name = "language/python", version = Eq(value = "3.10.11")),
 <<<<<<< local
 		Req(name = "language/python/requests")
 =======
-		Req(name = "language/python/requests", version = Eq("2.30.0"))
+		Req(name = "language/python/requests", version = Eq(value = "2.30.0"))
 >>>>>>> remote
 	],
 	solver_version = null

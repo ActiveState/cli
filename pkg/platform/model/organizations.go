@@ -21,11 +21,15 @@ import (
 var ErrMemberNotFound = errs.New("member not found")
 
 // FetchOrganizations fetches all organizations for the current user.
-func FetchOrganizations() ([]*mono_models.Organization, error) {
+func FetchOrganizations(auth *authentication.Auth) ([]*mono_models.Organization, error) {
+	authClient, err := auth.Client()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get auth client")
+	}
 	params := clientOrgs.NewListOrganizationsParams()
 	memberOnly := true
 	params.SetMemberOnly(&memberOnly)
-	res, err := authentication.Client().Organizations.ListOrganizations(params, authentication.ClientAuth())
+	res, err := authClient.Organizations.ListOrganizations(params, auth.ClientAuth())
 
 	if err != nil {
 		return nil, processOrgErrorResponse(err)
@@ -36,13 +40,13 @@ func FetchOrganizations() ([]*mono_models.Organization, error) {
 
 // FetchOrgByURLName fetches an organization accessible to the current user by it's URL Name.
 func FetchOrgByURLName(urlName string, auth *authentication.Auth) (*mono_models.Organization, error) {
+	authClient, err := auth.Client()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get auth client")
+	}
 	params := clientOrgs.NewGetOrganizationParams()
 	params.OrganizationIdentifier = urlName
-	authClient, err := auth.ClientSafe()
-	if err != nil {
-		return nil, err
-	}
-	resOk, err := authClient.Organizations.GetOrganization(params, authentication.ClientAuth())
+	resOk, err := authClient.Organizations.GetOrganization(params, auth.ClientAuth())
 	if err != nil {
 		return nil, processOrgErrorResponse(err)
 	}
@@ -51,13 +55,13 @@ func FetchOrgByURLName(urlName string, auth *authentication.Auth) (*mono_models.
 
 // FetchOrgMembers fetches the members of an organization accessible to the current user by it's URL Name.
 func FetchOrgMembers(urlName string, auth *authentication.Auth) ([]*mono_models.Member, error) {
+	authClient, err := auth.Client()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get auth client")
+	}
 	params := clientOrgs.NewGetOrganizationMembersParams()
 	params.OrganizationName = urlName
-	authClient, err := auth.ClientSafe()
-	if err != nil {
-		return nil, err
-	}
-	resOk, err := authClient.Organizations.GetOrganizationMembers(params, authentication.ClientAuth())
+	resOk, err := authClient.Organizations.GetOrganizationMembers(params, auth.ClientAuth())
 	if err != nil {
 		return nil, processOrgErrorResponse(err)
 	}
@@ -83,11 +87,15 @@ func FetchOrgMember(orgName, name string, auth *authentication.Auth) (*mono_mode
 // InviteUserToOrg invites a single user (via email address) to a given
 // organization.
 //
-// The invited user can be added as an owner or a member
+// # The invited user can be added as an owner or a member
 //
 // Note: This method only returns the invitation for the new user, not existing
 // users.
-func InviteUserToOrg(orgName string, asOwner bool, email string) (*mono_models.Invitation, error) {
+func InviteUserToOrg(orgName string, asOwner bool, email string, auth *authentication.Auth) (*mono_models.Invitation, error) {
+	authClient, err := auth.Client()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get auth client")
+	}
 	params := clientOrgs.NewInviteOrganizationParams()
 	role := mono_models.RoleReader
 	if asOwner {
@@ -100,7 +108,7 @@ func InviteUserToOrg(orgName string, asOwner bool, email string) (*mono_models.I
 	params.SetOrganizationName(orgName)
 	params.SetAttributes(body)
 	params.SetEmail(email)
-	resOk, err := authentication.Client().Organizations.InviteOrganization(params, authentication.ClientAuth())
+	resOk, err := authClient.Organizations.InviteOrganization(params, auth.ClientAuth())
 	if err != nil {
 		return nil, processInviteErrorResponse(err)
 	}
@@ -112,11 +120,11 @@ func InviteUserToOrg(orgName string, asOwner bool, email string) (*mono_models.I
 }
 
 // FetchOrganizationsByIDs fetches organizations by their IDs
-func FetchOrganizationsByIDs(ids []strfmt.UUID) ([]model.Organization, error) {
+func FetchOrganizationsByIDs(ids []strfmt.UUID, auth *authentication.Auth) ([]model.Organization, error) {
 	ids = funk.Uniq(ids).([]strfmt.UUID)
 	request := request.OrganizationsByIDs(ids)
 
-	gql := graphql.New()
+	gql := graphql.New(auth)
 	response := model.Organizations{}
 	err := gql.Run(request, &response)
 	if err != nil {

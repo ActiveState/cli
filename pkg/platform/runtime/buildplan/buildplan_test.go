@@ -97,7 +97,7 @@ func TestNewMapFromBuildPlan(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewMapFromBuildPlan(tt.args.build, tt.args.calculateBuildtimeClosure, tt.args.filterStateToolArtifacts, tt.args.filterTerminal)
+			got, err := NewMapFromBuildPlan(tt.args.build, tt.args.calculateBuildtimeClosure, tt.args.filterStateToolArtifacts, tt.args.filterTerminal, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewMapFromBuildPlan() error = %v, wantErr %v", errs.JoinMessage(err), tt.wantErr)
 				return

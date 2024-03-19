@@ -86,8 +86,6 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	cp.Expect("Checked out")
 	cp.ExpectExitCode(0)
 
-	ts.LoginAsPersistentUser()
-
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("install", "requests"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
@@ -98,7 +96,7 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.NoError(err, "Error loading project")
 
-	_, err = buildscript.NewScriptFromProject(proj, nil)
+	_, err = buildscript.ScriptFromProjectWithFallback(proj, nil)
 	suite.Require().NoError(err) // just verify it's a valid build script
 
 	cp = ts.Spawn("pull")
@@ -106,7 +104,7 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	cp.ExpectNotExitCode(0)
 	ts.IgnoreLogErrors()
 
-	_, err = buildscript.NewScriptFromProject(proj, nil)
+	_, err = buildscript.ScriptFromProjectWithFallback(proj, nil)
 	suite.Assert().Error(err)
 	bytes := fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName))
 	suite.Assert().Contains(string(bytes), "<<<<<<<", "No merge conflict markers are in build script")

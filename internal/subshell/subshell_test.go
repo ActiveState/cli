@@ -30,7 +30,7 @@ func TestRunCommand(t *testing.T) {
 	pjfile := projectfile.Project{
 		Project: projectURL,
 	}
-	pjfile.Persist()
+	require.NoError(t, pjfile.Persist())
 
 	data := []byte("echo Hello")
 	if runtime.GOOS == "windows" {
