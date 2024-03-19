@@ -205,7 +205,7 @@ func fileTransformsInDir(instDir string, searchDir string, searchString string, 
 			return nil
 		}
 
-		b, err := ioutil.ReadFile(path)
+		b, err := os.ReadFile(path)
 		if err != nil {
 			return errs.Wrap(err, "Could not read file path %s", path)
 		}

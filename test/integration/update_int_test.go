@@ -61,7 +61,7 @@ func (suite *UpdateIntegrationTestSuite) env(disableUpdates, forceUpdate bool) [
 		env = append(env, constants.ForceUpdateEnvVarName+"=true")
 	}
 
-	dir, err := ioutil.TempDir("", "system*")
+	dir, err := os.MkdirTemp("", "system*")
 	suite.NoError(err)
 	env = append(env, fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir))
 
@@ -181,7 +181,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
 	defer cfg.Close()
 
 	subBinDir := filepath.Join(ts.Dirs.Bin, "bin")
-	files, err := os.ReadDir(ts.Dirs.Bin)
+	files, err := ioutil.ReadDir(ts.Dirs.Bin)
 	suite.NoError(err)
 	for _, f := range files {
 		err = fileutils.CopyFile(filepath.Join(ts.Dirs.Bin, f.Name()), filepath.Join(subBinDir, f.Name()))

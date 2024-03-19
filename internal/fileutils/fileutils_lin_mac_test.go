@@ -4,7 +4,6 @@
 package fileutils
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -14,7 +13,7 @@ import (
 )
 
 func TestSymlink(t *testing.T) {
-	td, err := ioutil.TempDir("", "")
+	td, err := os.MkdirTemp("", "")
 	require.NoError(t, err)
 	target := filepath.Join(td, "target")
 	err = Touch(target)
@@ -26,6 +25,3 @@ func TestSymlink(t *testing.T) {
 	assert.True(t, IsSymlink(symlink), "expected symlink")
 	assert.False(t, IsSymlink(target), "expected no symlink")
 }
-
-
-

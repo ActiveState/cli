@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -264,7 +263,7 @@ func (i *Instance) importLegacyConfig() (returnErr error) {
 		return nil
 	}
 
-	b, err := ioutil.ReadFile(fpath)
+	b, err := os.ReadFile(fpath)
 	if err != nil {
 		return errs.Wrap(err, "Could not read legacy config file at %s", fpath)
 	}

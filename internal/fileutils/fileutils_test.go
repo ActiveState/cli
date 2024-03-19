@@ -3,7 +3,6 @@ package fileutils
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -23,14 +22,14 @@ import (
 // the path to the temp file. The temp file and its directory must be manually
 // removed.
 func copyFileToTempDir(t *testing.T, filename string) string {
-	fileBytes, err := ioutil.ReadFile(filename)
+	fileBytes, err := os.ReadFile(filename)
 	assert.NoError(t, err, "Read file to copy")
 
-	tmpdir, err := ioutil.TempDir("", "activestatecli-test")
+	tmpdir, err := os.MkdirTemp("", "activestatecli-test")
 	assert.NoError(t, err, "Created a temp dir")
 
 	tmpfile := filepath.Join(tmpdir, filepath.Base(filename))
-	err = ioutil.WriteFile(tmpfile, fileBytes, 0666)
+	err = os.WriteFile(tmpfile, fileBytes, 0666)
 	assert.NoError(t, err, "Wrote to temp file")
 
 	return tmpfile
@@ -74,16 +73,16 @@ func TestReplaceAllTextFile(t *testing.T) {
 	assert.True(t, oldFileStat.Size() > newFileStat.Size(), "Replacement file is smaller, actual old: %d, vs new: %d", oldFileStat.Size(), newFileStat.Size())
 
 	// Compare the orig test.go file with the new one.
-	oldBytes, err := ioutil.ReadFile(testfile)
+	oldBytes, err := os.ReadFile(testfile)
 	assert.NoError(t, err, "Read original text file")
-	newBytes, err := ioutil.ReadFile(tmpfile)
+	newBytes, err := os.ReadFile(tmpfile)
 	assert.NoError(t, err, "Read new text file")
 	assert.NotEqual(t, string(oldBytes), string(newBytes), "Copy succeeded")
 	assert.Equal(t, string(bytes.Replace(oldBytes, []byte("%%FIND%%"), []byte("REPL"), -1)), string(newBytes), "Copy succeeded")
 }
 
 func TestEmptyDir_IsEmpty(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "test-dir-is-empty")
+	tmpdir, err := os.MkdirTemp("", "test-dir-is-empty")
 	require.NoError(t, err)
 
 	isEmpty, err := IsEmptyDir(tmpdir)
@@ -92,7 +91,7 @@ func TestEmptyDir_IsEmpty(t *testing.T) {
 }
 
 func TestEmptyDir_HasRegularFile(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "test-dir-has-file")
+	tmpdir, err := os.MkdirTemp("", "test-dir-has-file")
 	require.NoError(t, err)
 
 	err = Touch(path.Join(tmpdir, "regular-file"))
@@ -104,7 +103,7 @@ func TestEmptyDir_HasRegularFile(t *testing.T) {
 }
 
 func TestEmptyDir_HasSubDir(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "test-dir-has-dir")
+	tmpdir, err := os.MkdirTemp("", "test-dir-has-dir")
 	require.NoError(t, err)
 
 	require.Nil(t, Mkdir(path.Join(tmpdir, "some-dir")))
@@ -119,7 +118,7 @@ func getTempDir(t *testing.T, appendStr string) string {
 	if appendStr == "" {
 		dir = "test-dir-" + appendStr
 	}
-	tmpdir, err := ioutil.TempDir("", dir)
+	tmpdir, err := os.MkdirTemp("", dir)
 	require.NoError(t, err)
 	return tmpdir
 }
@@ -151,7 +150,7 @@ func TestAppend(t *testing.T) {
 }
 
 func TestWriteFile(t *testing.T) {
-	file, err := ioutil.TempFile("", "cli-test-writefile-replace")
+	file, err := os.CreateTemp("", "cli-test-writefile-replace")
 	require.NoError(t, err)
 	file.Close()
 
@@ -275,21 +274,22 @@ func TestCopyFilesAndRename(t *testing.T) {
 	err = Mkdir(destDir)
 	require.NoError(t, err)
 
-	err = ioutil.WriteFile(sourceFile1, []byte("overwritten"), 0660)
+	err = os.WriteFile(sourceFile1, []byte("overwritten"), 0660)
 	require.NoError(t, err)
-	err = ioutil.WriteFile(sourceFile2, []byte("new"), 0660)
+	err = os.WriteFile(sourceFile2, []byte("new"), 0660)
 	require.NoError(t, err)
-	err = ioutil.WriteFile(existingFile, []byte("original"), 0660)
+	err = os.WriteFile(existingFile, []byte("original"), 0660)
+	require.NoError(t, err)
 
 	err = CopyAndRenameFiles(sourceDir, destDir)
 	require.NoError(t, err)
 	require.DirExists(t, destDir)
 	assert.FileExists(t, destFile2)
-	b, err := ioutil.ReadFile(destFile2)
+	b, err := os.ReadFile(destFile2)
 	require.NoError(t, err)
 	assert.Equal(t, "new", string(b))
 	assert.FileExists(t, existingFile)
-	b, err = ioutil.ReadFile(existingFile)
+	b, err = os.ReadFile(existingFile)
 	require.NoError(t, err)
 	assert.Equal(t, "overwritten", string(b))
 }
@@ -345,7 +345,6 @@ type symlinkTestInfo struct {
 	srcLink,
 	destFile,
 	destLink string
-	t *testing.T
 }
 
 func TestCopySymlink(t *testing.T) {
@@ -400,13 +399,13 @@ func runSymlinkTest(t *testing.T, info symlinkTestInfo) {
 	require.NoError(t, err)
 
 	content := "stuff"
-	err = ioutil.WriteFile(info.srcFile, []byte(content), 0644)
+	err = os.WriteFile(info.srcFile, []byte(content), 0644)
 	require.NoError(t, err)
 
 	err = os.Symlink(info.srcFile, info.srcLink)
 	require.NoError(t, err)
 
-	linkContent, err := ioutil.ReadFile(info.srcLink)
+	linkContent, err := os.ReadFile(info.srcLink)
 	require.NoError(t, err)
 	require.Equal(t, content, string(linkContent))
 
@@ -415,17 +414,9 @@ func runSymlinkTest(t *testing.T, info symlinkTestInfo) {
 	err = CopySymlink(info.srcLink, info.destLink)
 	require.NoError(t, err)
 
-	copiedLinkContent, err := ioutil.ReadFile(info.destLink)
+	copiedLinkContent, err := os.ReadFile(info.destLink)
 	require.NoError(t, err)
 	require.Equal(t, content, string(copiedLinkContent))
-}
-
-type mockIncrementer struct {
-	Count int
-}
-
-func (mi *mockIncrementer) Increment() {
-	mi.Count++
 }
 
 func touchFile(t *testing.T, contents string, paths ...string) string {
@@ -435,20 +426,20 @@ func touchFile(t *testing.T, contents string, paths ...string) string {
 		err := MkdirUnlessExists(pd)
 		require.NoError(t, err, "creating parent directory %s", pd)
 	}
-	err := ioutil.WriteFile(fp, []byte(contents), 0666)
+	err := os.WriteFile(fp, []byte(contents), 0666)
 	require.NoError(t, err, "Touching %s", fp)
 	return fp
 }
 
 func assertFileWithContent(t *testing.T, contents string, paths ...string) {
 	fp := filepath.Join(paths...)
-	res, err := ioutil.ReadFile(fp)
+	res, err := os.ReadFile(fp)
 	assert.NoError(t, err, "reading %s", fp)
 	assert.Equal(t, contents, string(res))
 }
 
 func TestMoveAllFilesRecursively(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "activestatecli-test")
+	tempDir, err := os.MkdirTemp("", "activestatecli-test")
 	require.NoError(t, err, "Created a temp dir")
 	defer os.RemoveAll(tempDir)
 
@@ -521,7 +512,7 @@ func TestIsSameOrInsideOf(t *testing.T) {
 }
 
 func TestResolveUniquePath(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "")
+	tempDir, err := os.MkdirTemp("", "")
 	require.NoError(t, err)
 
 	defer os.RemoveAll(tempDir)
@@ -532,7 +523,7 @@ func TestResolveUniquePath(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedPath := targetPath
-	// On MacOS the ioutil.TempDir returns a symlink to the temporary directory
+	// On MacOS the os.MkdirTemp returns a symlink to the temporary directory
 	if runtime.GOOS == "darwin" {
 		expectedPath, err = filepath.EvalSymlinks(targetPath)
 		require.NoError(t, err)
@@ -615,7 +606,7 @@ func TestCaseSensitivePath(t *testing.T) {
 }
 
 func testCaseSensitivePath(t *testing.T, dirName, variant string) {
-	dir, err := ioutil.TempDir("", dirName)
+	dir, err := os.MkdirTemp("", dirName)
 	assert.NoError(t, err)
 
 	dir, err = GetLongPathName(dir)

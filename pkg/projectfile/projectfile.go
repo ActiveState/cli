@@ -12,7 +12,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/ActiveState/cli/internal/assets"
@@ -70,8 +69,6 @@ type projectURL struct {
 	LegacyCommitID string
 	BranchName     string
 }
-
-var projectMapMutex = &sync.Mutex{}
 
 const LocalProjectsConfigKey = "projects"
 
@@ -490,9 +487,9 @@ func parse(configFilepath string) (*Project, error) {
 		return nil, &ErrorNoProject{locale.NewInputError("err_no_projectfile")}
 	}
 
-	dat, err := ioutil.ReadFile(configFilepath)
+	dat, err := os.ReadFile(configFilepath)
 	if err != nil {
-		return nil, errs.Wrap(err, "ioutil.ReadFile %s failure", configFilepath)
+		return nil, errs.Wrap(err, "os.ReadFile %s failure", configFilepath)
 	}
 
 	return parseData(dat, configFilepath)
@@ -887,7 +884,7 @@ func FromPath(path string) (*Project, error) {
 		return nil, &ErrorNoProject{locale.WrapInputError(err, "err_project_not_found", "", path)}
 	}
 
-	_, err = ioutil.ReadFile(projectFilePath)
+	_, err = os.ReadFile(projectFilePath)
 	if err != nil {
 		logging.Warning("Cannot load config file: %v", err)
 		return nil, &ErrorNoProject{locale.WrapInputError(err, "err_no_projectfile")}
@@ -909,7 +906,7 @@ func FromExactPath(path string) (*Project, error) {
 		return nil, &ErrorNoProject{locale.NewInputError("err_no_projectfile")}
 	}
 
-	_, err := ioutil.ReadFile(projectFilePath)
+	_, err := os.ReadFile(projectFilePath)
 	if err != nil {
 		logging.Warning("Cannot load config file: %v", err)
 		return nil, &ErrorNoProject{locale.WrapInputError(err, "err_no_projectfile")}
@@ -1092,9 +1089,9 @@ func ParseVersionInfo(projectFilePath string) (*VersionInfo, error) {
 		return nil, nil
 	}
 
-	dat, err := ioutil.ReadFile(projectFilePath)
+	dat, err := os.ReadFile(projectFilePath)
 	if err != nil {
-		return nil, errs.Wrap(err, "ioutil.ReadFile %s failed", projectFilePath)
+		return nil, errs.Wrap(err, "os.ReadFile %s failed", projectFilePath)
 	}
 
 	versionStruct := VersionInfo{}
@@ -1134,25 +1131,25 @@ func AddLockInfo(projectFilePath, branch, version string) error {
 	if lockRegex.Match(data) {
 		versionUpdate := []byte(fmt.Sprintf("lock: %s@%s", branch, version))
 		replaced := lockRegex.ReplaceAll(data, versionUpdate)
-		return ioutil.WriteFile(projectFilePath, replaced, 0644)
+		return os.WriteFile(projectFilePath, replaced, 0644)
 	}
 
 	projectRegex := regexp.MustCompile(fmt.Sprintf("(?m:(^project:\\s*%s))", ProjectURLRe))
 	lockString := fmt.Sprintf("%s@%s", branch, version)
 	lockUpdate := []byte(fmt.Sprintf("${1}\nlock: %s", lockString))
 
-	data, err = ioutil.ReadFile(projectFilePath)
+	data, err = os.ReadFile(projectFilePath)
 	if err != nil {
 		return err
 	}
 
 	updated := projectRegex.ReplaceAll(data, lockUpdate)
 
-	return ioutil.WriteFile(projectFilePath, updated, 0644)
+	return os.WriteFile(projectFilePath, updated, 0644)
 }
 
 func RemoveLockInfo(projectFilePath string) error {
-	data, err := ioutil.ReadFile(projectFilePath)
+	data, err := os.ReadFile(projectFilePath)
 	if err != nil {
 		return locale.WrapError(err, "err_read_projectfile", "", projectFilePath)
 	}
@@ -1160,7 +1157,7 @@ func RemoveLockInfo(projectFilePath string) error {
 	lockRegex := regexp.MustCompile(`(?m)^lock:.*`)
 	clean := lockRegex.ReplaceAll(data, []byte(""))
 
-	err = ioutil.WriteFile(projectFilePath, clean, 0644)
+	err = os.WriteFile(projectFilePath, clean, 0644)
 	if err != nil {
 		return locale.WrapError(err, "err_write_unlocked_projectfile", "Could not remove lock from projectfile")
 	}
@@ -1169,7 +1166,7 @@ func RemoveLockInfo(projectFilePath string) error {
 }
 
 func cleanVersionInfo(projectFilePath string) ([]byte, error) {
-	data, err := ioutil.ReadFile(projectFilePath)
+	data, err := os.ReadFile(projectFilePath)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_read_projectfile", "", projectFilePath)
 	}
@@ -1180,7 +1177,7 @@ func cleanVersionInfo(projectFilePath string) ([]byte, error) {
 	versionRegex := regexp.MustCompile(`(?m:^version:\s*\d+.\d+.\d+-[A-Za-z0-9]+\n)`)
 	clean = versionRegex.ReplaceAll(clean, []byte(""))
 
-	err = ioutil.WriteFile(projectFilePath, clean, 0644)
+	err = os.WriteFile(projectFilePath, clean, 0644)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_write_clean_projectfile", "Could not write cleaned projectfile information")
 	}

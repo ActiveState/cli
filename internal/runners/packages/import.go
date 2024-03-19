@@ -1,7 +1,7 @@
 package packages
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/errs"
@@ -159,7 +159,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 }
 
 func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model.Changeset, error) {
-	data, err := ioutil.ReadFile(file)
+	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, locale.WrapInputError(err, "err_reading_changeset_file", "Cannot read import file: {{.V0}}", err.Error())
 	}

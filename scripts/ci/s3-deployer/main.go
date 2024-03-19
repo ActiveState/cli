@@ -18,8 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 )
 
-const awsProfileName = "default"
-
 var sourcePath, awsRegionName, awsBucketName, awsBucketPrefix string
 
 var sess *session.Session
@@ -51,12 +49,6 @@ func run() {
 		params := prepareFile(path)
 		uploadFile(params)
 	}
-}
-
-type logger struct{}
-
-func (l *logger) Log(v ...interface{}) {
-	fmt.Printf("AWS Log: %v", v)
 }
 
 func createSession() {

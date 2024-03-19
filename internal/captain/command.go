@@ -47,10 +47,6 @@ var appEventPrefix string = func() string {
 
 var cobraMapping map[*cobra.Command]*Command = make(map[*cobra.Command]*Command)
 
-type cobraCommander interface {
-	GetCobraCmd() *cobra.Command
-}
-
 type primer interface {
 	Output() output.Outputer
 	Analytics() analytics.Dispatcher
@@ -771,10 +767,6 @@ func (c *Command) outputTitleIfAny() {
 	if c.shouldWarnUnstable() {
 		c.out.Notice(locale.T("unstable_feature_banner"))
 	}
-}
-
-func (c *Command) argValidator(cobraCmd *cobra.Command, args []string) error {
-	return nil
 }
 
 // setupSensibleErrors inspects an error value for certain errors and returns a

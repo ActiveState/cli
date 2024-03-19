@@ -1,3 +1,12 @@
+internal/errs/errs.go:48:9: S1039: unnecessary use of fmt.Sprintf (gosimple)
+	return fmt.Sprintf("packed multiple errors")
+	       ^
+internal/terminal/terminal.go:8:2: SA1019: "golang.org/x/crypto/ssh/terminal" is deprecated: this package moved to golang.org/x/term. (staticcheck)
+	"golang.org/x/crypto/ssh/terminal"
+	^
+internal/constraints/constraints.go:21:5: var `cache` is unused (unused)
+var cache = make(map[string]interface{})
+    ^
 internal/constraints/constraints.go:23:6: func `getCache` is unused (unused)
 func getCache(key string, getter func() (interface{}, error)) (interface{}, error) {
      ^
@@ -13,147 +22,168 @@ func setProjectDir(t *testing.T) {
 internal/constraints/constraints_test.go:96:6: func `sliceContains` is unused (unused)
 func sliceContains(s []int, v int) bool {
      ^
-internal/osutils/exeutils.go:166:11: Error return value of `cmd.Wait` is not checked (errcheck)
-		cmd.Wait()
-		        ^
-internal/osutils/exeutils.go:202:10: Error return value of `io.Copy` is not checked (errcheck)
-		io.Copy(&stdoutBuf, stdoutIn)
-		       ^
-internal/osutils/exeutils.go:203:10: Error return value of `io.Copy` is not checked (errcheck)
-		io.Copy(&stderrBuf, stderrIn)
-		       ^
-internal/osutils/exeutils_test.go:72:20: Error return value is not checked (errcheck)
-		ExecuteAndPipeStd("printenv", []string{"FOO"}, []string{"FOO=--out--"})
-		                 ^
-internal/osutils/osutils_test.go:23:22: Error return value of `tmpfile.WriteString` is not checked (errcheck)
-		tmpfile.WriteString("#!/usr/bin/env bash\n")
-		                   ^
-internal/osutils/osutils_test.go:24:22: Error return value of `tmpfile.WriteString` is not checked (errcheck)
-		tmpfile.WriteString("exit 255")
-		                   ^
-internal/osutils/osutils_test.go:27:22: Error return value of `tmpfile.WriteString` is not checked (errcheck)
-		tmpfile.WriteString("echo off\n")
-		                   ^
-internal/osutils/osutils_test.go:33:10: Error return value of `os.Chmod` is not checked (errcheck)
-	os.Chmod(tmpfile.Name(), 0755)
-	        ^
-internal/osutils/exeutils.go:6:2: SA1019: "io/ioutil" has been deprecated since Go 1.19: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details. (staticcheck)
-	"io/ioutil"
-	^
-internal/osutils/osutils_test.go:4:2: SA1019: "io/ioutil" has been deprecated since Go 1.19: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details. (staticcheck)
-	"io/ioutil"
-	^
-internal/subshell/subshell_test.go:25:10: Error return value of `os.Chdir` is not checked (errcheck)
-	os.Chdir(filepath.Join(root, "test"))
-	        ^
-internal/subshell/subshell_test.go:22:6: func `setup` is unused (unused)
-func setup(t *testing.T) {
+internal/runbits/auth/keypair.go:41:6: func `validateLocalPrivateKey` is unused (unused)
+func validateLocalPrivateKey(cfg keypairs.Configurable, publicKey string) bool {
      ^
-internal/testhelpers/httpmock/httpmock_test.go:4:2: SA1019: "io/ioutil" has been deprecated since Go 1.19: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details. (staticcheck)
-	"io/ioutil"
-	^
-pkg/platform/api/graphql/request/mock/mock.go:50:5: var `mock` is unused (unused)
-var mock *httpmock.HTTPMock
-    ^
+internal/captain/command.go:50:6: type `cobraCommander` is unused (unused)
+type cobraCommander interface {
+     ^
+internal/captain/command.go:776:19: func `(*Command).argValidator` is unused (unused)
+func (c *Command) argValidator(cobraCmd *cobra.Command, args []string) error {
+                  ^
 internal/analytics/client/sync/client.go:40:2: field `gaClient` is unused (unused)
 	gaClient         *ga.Client
 	^
-internal/runners/secrets/secrets.go:153:33: Error return value of `project.RegisterExpander` is not checked (errcheck)
-		defer project.RegisterExpander("secrets", oldExpander)
-		                              ^
-internal/runners/secrets/secrets.go:156:26: Error return value of `project.RegisterExpander` is not checked (errcheck)
-	project.RegisterExpander("secrets", expander.Expand)
-	                        ^
-internal/runners/secrets/secrets.go:157:27: Error return value of `project.ExpandFromProject` is not checked (errcheck)
-	project.ExpandFromProject(fmt.Sprintf("$%s", filter), proj)
-	                         ^
-internal/subshell/cmd/env_test.go:66:6: func `openKeyMock` is unused (unused)
-func openKeyMock(path string) (osutils.RegistryKey, error) {
-     ^
-internal/output/colorstyle/ansi.go:41:16: Error return value of `w.writer.Write` is not checked (errcheck)
-	w.writer.Write([]byte(resolvedStyle + "m"))
-	              ^
-pkg/platform/model/buildplanner.go:417:22: Error return value of `expr.UpdatePlatform` is not checked (errcheck)
-		expr.UpdatePlatform(model.OperationAdded, params.PlatformID)
-		                   ^
-pkg/platform/model/buildplanner.go:424:25: Error return value of `expr.UpdateRequirement` is not checked (errcheck)
-		expr.UpdateRequirement(model.OperationAdded, bpModel.Requirement{
-		                      ^
 pkg/platform/model/buildengine.go:22:6: func `buildEngineFromResponse` is unused (unused)
 func buildEngineFromResponse(resp *headchef_models.V1BuildStatusResponse) BuildEngine {
      ^
 pkg/platform/model/vcs.go:661:6: func `commitChangeset` is unused (unused)
 func commitChangeset(parentCommit strfmt.UUID, op Operation, ns Namespace, requirement, version string) ([]*mono_models.CommitChangeEditable, error) {
      ^
+pkg/platform/runtime/setup/implementations/camel/ape_installer.go:21:20: func `(*MetaData).perlRelocationDir` is unused (unused)
+func (m *MetaData) perlRelocationDir(installRoot string) (string, error) {
+                   ^
+pkg/platform/runtime/setup/implementations/camel/apy_installer.go:20:20: func `(*MetaData).pythonRelocationDir` is unused (unused)
+func (m *MetaData) pythonRelocationDir(installRoot string) (string, error) {
+                   ^
+pkg/platform/runtime/setup/implementations/camel/apy_installer.go:36:6: func `locatePythonExecutable` is unused (unused)
+func locatePythonExecutable(installDir string) (string, error) {
+     ^
+pkg/platform/runtime/setup/implementations/camel/apy_installer.go:60:6: func `extractPythonRelocationPrefix` is unused (unused)
+func extractPythonRelocationPrefix(installDir string, python string) (string, error) {
+     ^
+pkg/project/namespace_test.go:13:6: func `newUUID` is unused (unused)
+func newUUID(uuid string) *strfmt.UUID {
+     ^
+internal/subshell/cmd/env_test.go:66:6: func `openKeyMock` is unused (unused)
+func openKeyMock(path string) (osutils.RegistryKey, error) {
+     ^
+internal/subshell/subshell_test.go:22:6: func `setup` is unused (unused)
+func setup(t *testing.T) {
+     ^
+internal/testhelpers/e2e/session.go:444:6: func `observeSendFn` is unused (unused)
+func observeSendFn(s *Session) func(string, int, error) {
+     ^
+internal/virtualenvironment/virtualenvironment.go:16:5: var `persisted` is unused (unused)
+var persisted *VirtualEnvironment
+    ^
+internal/runners/export/ghactions/ghactions.go:24:6: type `templateParams` is unused (unused)
+type templateParams struct {
+     ^
+cmd/state-installer/cmd.go:493:6: func `noArgs` is unused (unused)
+func noArgs() bool {
+     ^
+cmd/state-installer/cmd.go:497:6: func `shouldUpdateInstalledStateTool` is unused (unused)
+func shouldUpdateInstalledStateTool(stateExePath string) bool {
+     ^
+internal/runners/revert/revert.go:167:6: type `revertFunc` is unused (unused)
+type revertFunc func(params revertParams, bp *model.BuildPlanner) (strfmt.UUID, error)
+     ^
+internal/runners/ppm/convert.go:155:27: func `(*ConversionFlow).openInBrowser` is unused (unused)
+func (cf *ConversionFlow) openInBrowser(what, url string) {
+                          ^
+test/integration/fork_int_test.go:16:2: field `username` is unused (unused)
+	username string
+	^
+test/integration/secrets_int_test.go:17:2: field `originalWd` is unused (unused)
+	originalWd string
+	^
+cmd/state/internal/cmdtree/branch.go:26:6: func `newBranchAddCommand` is unused (unused)
+func newBranchAddCommand(prime *primer.Values) *captain.Command {
+     ^
+scripts/internal/workflow-helpers/ghtransport.go:108:17: S1024: should use time.Until instead of t.Sub(time.Now()) (gosimple)
+		retryAfter := rlErr.Rate.Reset.Sub(time.Now())
+		              ^
+internal/logging/logging.go:243:10: S1034: assigning the result of this type assertion to a variable (switch arg := arg.(type)) could eliminate type assertions in switch cases (gosimple)
+		switch arg.(type) {
+		       ^
+internal/logging/logging.go:245:14: S1034(related information): could eliminate this type assertion (gosimple)
+			args[i] = arg.(func() interface{})()
+			          ^
+internal/output/json.go:83:9: S1034: assigning the result of this type assertion to a variable (switch value := value.(type)) could eliminate type assertions in switch cases (gosimple)
+	switch value.(type) {
+	       ^
+internal/output/json.go:85:7: S1034(related information): could eliminate this type assertion (gosimple)
+		b = value.([]byte)
+		    ^
+scripts/ci/propagate-pr/main.go:138:5: S1003: should use strings.Contains(stdout, "Merge conflict in version.txt") instead (gosimple)
+				strings.Index(stdout, "Merge conflict in version.txt") != -1
+				^
+internal/captain/values.go:154:5: S1003: should use !strings.Contains(s, "/") instead (gosimple)
+	if strings.Index(s, "/") == -1 {
+	   ^
 pkg/platform/model/buildplanner.go:568:9: S1003: should use strings.Contains(version, ".x") instead (gosimple)
 	return strings.Index(version, ".x") >= 0 || strings.Index(version, ".X") >= 0
 	       ^
-pkg/platform/model/vcs.go:333:8: ineffectual assignment to err (ineffassign)
-		res, err = authClient.VersionControl.GetCommitHistory(params, auth.ClientAuth())
-		     ^
-pkg/platform/model/buildplanner.go:215:3: SA4004: the surrounding loop is unconditionally terminated (staticcheck)
-		break
-		^
-pkg/platform/runtime/buildscript/buildscript_test.go:311:15: Error return value of `tmpfile.Write` is not checked (errcheck)
-	tmpfile.Write([]byte(script.String()))
-	             ^
-pkg/platform/runtime/buildscript/buildscript_test.go:336:14: Error return value of `json.Compact` is not checked (errcheck)
-	json.Compact(inputJson, []byte(`{
+internal/prompt/helpers.go:100:57: S1010: should omit second index in slice, s[a:len(s)] is identical to s[a:] (gosimple)
+		if len(message) > idx && newMessage[len(newMessage)-1:len(newMessage)] != "\n" {
+		                                                      ^
+internal/sliceutils/sliceutils.go:15:14: S1010: should omit second index in slice, s[a:len(s)] is identical to s[a:] (gosimple)
+	return out[:len(out)]
 	            ^
-pkg/platform/runtime/buildscript/file.go:78:9: Error return value is not checked (errcheck)
-		update(proj.ProjectDir(), newExpr, auth)
-		      ^
-pkg/platform/runtime/buildscript/buildscript.go:356:9: S1039: unnecessary use of fmt.Sprintf (gosimple)
-	return fmt.Sprintf("[\n]") // participle does not create v.List if it's empty
-	       ^
-pkg/platform/runtime/buildscript/buildscript_test.go:358:16: ineffectual assignment to err (ineffassign)
-	expectedJson, err := json.Marshal(marshaledInput)
-	              ^
-pkg/platform/runtime/buildscript/buildscript.go:270:15: SA1019: strings.Title has been deprecated since Go 1.18 and an alternative has been available since Go 1.0: The rule Title uses for word boundaries does not handle Unicode punctuation properly. Use golang.org/x/text/cases instead. (staticcheck)
-				ap.Name = strings.Title(*o.Value.Str)
-				          ^
-cmd/state-svc/autostart/autostart.go:28:20: Error return value of `autostart.Enable` is not checked (errcheck)
-			autostart.Enable(app.Path(), Options)
-			                ^
-cmd/state-svc/autostart/autostart.go:31:21: Error return value of `autostart.Disable` is not checked (errcheck)
-			autostart.Disable(app.Path(), Options)
-			                 ^
-internal/analytics/client/sync/reporters/ga-state.go:56:12: Error return value of `r.ga.Send` is not checked (errcheck)
-		r.ga.Send(ga.NewPageview())
-		         ^
-scripts/internal/workflow-helpers/ghtransport.go:109:17: S1024: should use time.Until instead of t.Sub(time.Now()) (gosimple)
-		retryAfter := rlErr.Rate.Reset.Sub(time.Now())
-		              ^
-scripts/internal/workflow-helpers/jira.go:193:4: S1023: redundant break statement (gosimple)
-			break
-			^
-scripts/internal/workflow-helpers/jira.go:196:4: S1023: redundant break statement (gosimple)
-			break
-			^
-scripts/internal/workflow-helpers/workflow.go:44:2: S1008: should use 'return strings.HasPrefix(branchName, versionBranchPrefix)' instead of 'if strings.HasPrefix(branchName, versionBranchPrefix) { return true }; return false' (gosimple)
-	if strings.HasPrefix(branchName, versionBranchPrefix) {
-	^
-scripts/internal/workflow-helpers/github.go:211:2: SA9004: only the first constant in this group has an explicit type (staticcheck)
-	AssertLT Assertion = "less than"
-	^
-internal/updater/updater.go:217:23: Error return value of `fileLock.Unlock` is not checked (errcheck)
-	defer fileLock.Unlock()
-	                     ^
-pkg/platform/api/api.go:78:23: Error return value of `agentTemplate.Execute` is not checked (errcheck)
-	agentTemplate.Execute(&userAgent, struct {
-	                     ^
-internal/table/table.go:16:7: const `linebreakRune` is unused (unused)
-const linebreakRune = '\n'
-      ^
-internal/table/table.go:21:6: type `entry` is unused (unused)
-type entry struct {
-     ^
-internal/table/table.go:198:6: func `pad` is unused (unused)
-func pad(v string) string {
-     ^
-internal/table/table.go:162:69: S1010: should omit second index in slice, s[a:len(s)] is identical to s[a:] (gosimple)
+internal/table/table.go:156:69: S1010: should omit second index in slice, s[a:len(s)] is identical to s[a:] (gosimple)
 		widths[len(widths)-1] = mathutils.Total(colWidths[len(widths)-1 : len(colWidths)]...)
 		                                                                  ^
+internal/runbits/panics/panics.go:18:3: S1038: should use fmt.Fprintf instead of fmt.Fprintln(fmt.Sprintf(...)) (but don't forget the newline) (gosimple)
+		fmt.Fprintln(os.Stderr, fmt.Sprintf(`An unexpected error occurred.
+		^
+internal/logging/file.go:98:3: S1038: should use fmt.Fprintf instead of fmt.Fprintln(fmt.Sprintf(...)) (but don't forget the newline) (gosimple)
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("(PID %d) %s", os.Getpid(), message))
+		^
+cmd/state/autoupdate.go:195:10: S1012: should use `time.Since` instead of `time.Now().Sub` (gosimple)
+	diff := time.Now().Sub(stat.ModTime())
+	        ^
+scripts/ci/s3-deployer/main_test.go:29:2: S1021: should merge variable declaration with assignment on next line (gosimple)
+	var params *s3.PutObjectInput
+	^
+internal/gqlclient/gqlclient.go:283:27: S1025: the argument is already a string, there's no need to use fmt.Sprintf (gosimple)
+		fnames = append(fnames, fmt.Sprintf("%s", file.Name))
+		                        ^
+internal/config/instance.go:67:33: S1025: the argument is already a string, there's no need to use fmt.Sprintf (gosimple)
+	i.db, err = sql.Open("sqlite", fmt.Sprintf(`%s`, path))
+	                               ^
+internal/logging/logging_test.go:31:34: S1025: the argument is already a string, there's no need to use fmt.Sprintf (gosimple)
+	l.messages = append(l.messages, fmt.Sprintf("%s", message))
+	                                ^
+test/integration/auth_int_test.go:108:30: S1025: the argument is already a string, there's no need to use fmt.Sprintf (gosimple)
+	suite.Contains(cp.Output(), fmt.Sprintf("%s", string(expected)))
+	                            ^
+test/integration/exec_int_test.go:123:29: S1025: the argument is already a string, there's no need to use fmt.Sprintf (gosimple)
+		e2e.OptArgs("exec", "--", fmt.Sprintf("%s", testScript), args[0], args[1], args[2]),
+		                          ^
+test/integration/exec_int_test.go:160:29: S1025: the argument is already a string, there's no need to use fmt.Sprintf (gosimple)
+		e2e.OptArgs("exec", "--", fmt.Sprintf("%s", testScript)),
+		                          ^
+internal/sighandler/awaiting.go:44:28: S1019: should use make(chan error) instead (gosimple)
+	errCh := make(chan error, 0)
+	                          ^
+pkg/platform/runtime/runtime.go:272:6: S1023: redundant break statement (gosimple)
+					break // it only takes one download failure to report the runtime failure as due to download error
+					^
+pkg/platform/runtime/runtime.go:278:6: S1023: redundant break statement (gosimple)
+					break // it only takes one build failure to report the runtime failure as due to build error
+					^
+scripts/internal/workflow-helpers/jira.go:192:4: S1023: redundant break statement (gosimple)
+			break
+			^
+scripts/internal/workflow-helpers/jira.go:195:4: S1023: redundant break statement (gosimple)
+			break
+			^
+internal/testhelpers/config_test/config.go:32:10: S1040: type assertion to the same type: value already has type interface{} (gosimple)
+		return value.(interface{}).(string) // assume we stored the correct type
+		       ^
+internal/testhelpers/config_test/config.go:40:18: S1040: type assertion to the same type: value already has type interface{} (gosimple)
+	return found && value.(interface{}).(bool) // assume we stored the correct type
+	                ^
+internal/captain/command.go:783:16: S1040: type assertion to the same type: err already has type error (gosimple)
+	if err, ok := err.(error); ok && err == nil {
+	              ^
+cmd/state-svc/test/integration/svc_int_test.go:57:12: S1007: should use raw string (`...`) with regexp.MustCompile to avoid having to escape twice (gosimple)
+	portRe := regexp.MustCompile("Port:\\s+:(\\d+)")
+	          ^
+cmd/state-svc/test/integration/svc_int_test.go:64:11: S1007: should use raw string (`...`) with regexp.MustCompile to avoid having to escape twice (gosimple)
+	logRe := regexp.MustCompile("Log:\\s+(.+?\\.log)")
+	         ^
 pkg/sysinfo/sysinfo.go:24:20: S1007: should use raw string (`...`) with regexp.MustCompile to avoid having to escape twice (gosimple)
 var versionRegex = regexp.MustCompile("^(\\d+)\\D(\\d+)(?:\\D(\\d+))?")
                    ^
@@ -163,210 +193,39 @@ pkg/sysinfo/sysinfo.go:175:11: S1007: should use raw string (`...`) with regexp.
 pkg/sysinfo/sysinfo_darwin.go:26:22: S1007: should use raw string (`...`) with regexp.MustCompile to avoid having to escape twice (gosimple)
 	plistVersionRegex = regexp.MustCompile("(?s)ProductVersion.*?([\\d\\.]+)")
 	                    ^
-pkg/sysinfo/sysinfo_darwin.go:55:8: ineffectual assignment to err (ineffassign)
-	name, err := exec.Command("sw_vers", "-productName").Output()
-	      ^
-internal/sliceutils/sliceutils.go:15:14: S1010: should omit second index in slice, s[a:len(s)] is identical to s[a:] (gosimple)
-	return out[:len(out)]
-	            ^
-internal/errs/errs.go:48:9: S1039: unnecessary use of fmt.Sprintf (gosimple)
-	return fmt.Sprintf("packed multiple errors")
+pkg/sysinfo/sysinfo_darwin.go:71:11: S1007: should use raw string (`...`) with regexp.MustCompile to avoid having to escape twice (gosimple)
+	regex := regexp.MustCompile("(\\d+)\\D(\\d+)")
+	         ^
+scripts/internal/workflow-helpers/workflow.go:44:2: S1008: should use 'return strings.HasPrefix(branchName, versionBranchPrefix)' instead of 'if strings.HasPrefix(branchName, versionBranchPrefix) { return true }; return false' (gosimple)
+	if strings.HasPrefix(branchName, versionBranchPrefix) {
+	^
+internal/captain/command.go:291:24: S1039: unnecessary use of fmt.Sprintf (gosimple)
+	defer profile.Measure(fmt.Sprintf("cobra:Execute"), time.Now())
+	                      ^
+pkg/platform/runtime/buildscript/buildscript.go:356:9: S1039: unnecessary use of fmt.Sprintf (gosimple)
+	return fmt.Sprintf("[\n]") // participle does not create v.List if it's empty
 	       ^
-internal/gqlclient/gqlclient.go:283:27: S1025: the argument is already a string, there's no need to use fmt.Sprintf (gosimple)
-		fnames = append(fnames, fmt.Sprintf("%s", file.Name))
-		                        ^
-internal/runbits/auth/keypair.go:41:6: func `validateLocalPrivateKey` is unused (unused)
-func validateLocalPrivateKey(cfg keypairs.Configurable, publicKey string) bool {
-     ^
-internal/config/instance.go:215:12: Error return value of `rows.Scan` is not checked (errcheck)
-		rows.Scan(&key)
-		         ^
-internal/config/instance.go:256:13: Error return value of `os.Rename` is not checked (errcheck)
-			os.Rename(fpath, fpath+".corrupted")
-			         ^
-internal/config/instance.go:68:33: S1025: the argument is already a string, there's no need to use fmt.Sprintf (gosimple)
-	i.db, err = sql.Open("sqlite", fmt.Sprintf(`%s`, path))
-	                               ^
-internal/logging/file.go:133:8: Error return value of `l.Emit` is not checked (errcheck)
-	l.Emit(getContext("DEBUG", 1), logMsg, args...)
-	      ^
-internal/logging/logging.go:154:8: Error return value of `l.Emit` is not checked (errcheck)
-	l.Emit(getContext("DBG", 1), logMsg, args...)
-	      ^
-internal/logging/file.go:98:3: S1038: should use fmt.Fprintf instead of fmt.Fprintln(fmt.Sprintf(...)) (but don't forget the newline) (gosimple)
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("(PID %d) %s", os.Getpid(), message))
-		^
-internal/logging/logging_test.go:31:34: S1025: the argument is already a string, there's no need to use fmt.Sprintf (gosimple)
-	l.messages = append(l.messages, fmt.Sprintf("%s", message))
-	                                ^
-internal/logging/logging.go:243:10: S1034: assigning the result of this type assertion to a variable (switch arg := arg.(type)) could eliminate type assertions in switch cases (gosimple)
-		switch arg.(type) {
-		       ^
-internal/logging/logging.go:245:14: S1034(related information): could eliminate this type assertion (gosimple)
-			args[i] = arg.(func() interface{})()
-			          ^
-internal/runbits/git/git.go:98:7: SA6005: should use strings.EqualFold instead (staticcheck)
-	if !(strings.ToLower(proj.Owner()) == strings.ToLower(owner)) || !(strings.ToLower(proj.Name()) == strings.ToLower(name)) {
-	     ^
-pkg/platform/runtime/buildexpression/merge/merge.go:50:26: Error return value of `exprB.UpdateRequirement` is not checked (errcheck)
-		exprB.UpdateRequirement(op, bpReq)
-		                       ^
-pkg/projectfile/projectfile_test.go:185:14: Error return value of `project.Save` is not checked (errcheck)
-	project.Save(cfg)
-	            ^
-pkg/projectfile/projectfile_test.go:215:16: Error return value of `os.Chdir` is not checked (errcheck)
-	defer os.Chdir(currentDir)
-	              ^
-pkg/projectfile/projectfile_test.go:240:9: Error return value of `cfg.Set` is not checked (errcheck)
-	cfg.Set(constants.GlobalDefaultPrefname, defaultDir)
-	       ^
-pkg/projectfile/projectfile_test.go:290:9: Error return value of `cfg.Set` is not checked (errcheck)
-	cfg.Set(constants.GlobalDefaultPrefname, filepath.Join(rootDir, "does-not-exist"))
-	       ^
-pkg/projectfile/projectfile_test.go:296:9: Error return value of `cfg.Set` is not checked (errcheck)
-	cfg.Set(constants.GlobalDefaultPrefname, "")
-	       ^
-pkg/projectfile/projectfile_test.go:307:10: Error return value of `os.Chdir` is not checked (errcheck)
-	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
-	        ^
-pkg/projectfile/projectfield.go:62:24: func `(*projectField).unsetQuery` is unused (unused)
-func (p *projectField) unsetQuery(key string) {
-                       ^
-pkg/projectfile/projectfile.go:74:5: var `projectMapMutex` is unused (unused)
-var projectMapMutex = &sync.Mutex{}
-    ^
-pkg/projectfile/projectfile.go:45:23: S1039: unnecessary use of fmt.Sprintf (gosimple)
+pkg/project/expander_test.go:98:24: S1039: unnecessary use of fmt.Sprintf (gosimple)
+		prj.Source().SetPath(fmt.Sprintf(`c:\another\spoofed path\activestate.yaml`))
+		                     ^
+pkg/projectfile/projectfile.go:44:23: S1039: unnecessary use of fmt.Sprintf (gosimple)
 	urlProjectRegexStr = fmt.Sprintf(`https:\/\/[\w\.]+\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*([^&]*)(?:\&branch=)*(.*)`)
 	                     ^
-pkg/projectfile/projectfile_test.go:142:2: ineffectual assignment to project (ineffassign)
-	project, err := Parse(filepath.Join(rootpath, "activestate.yml.nope"))
-	^
-pkg/projectfile/projectfile_test.go:265:2: ineffectual assignment to path (ineffassign)
-	path, err = GetProjectFilePath()
-	^
-pkg/projectfile/projectfile_test.go:291:2: ineffectual assignment to path (ineffassign)
-	path, err = GetProjectFilePath()
-	^
-pkg/projectfile/projectfile_test.go:297:2: ineffectual assignment to path (ineffassign)
-	path, err = GetProjectFilePath()
-	^
-pkg/projectfile/projectfile_test.go:351:2: ineffectual assignment to versionInfo (ineffassign)
-	versionInfo, err = ParseVersionInfo(filepath.Join(getWd(t, "withbadversion"), constants.ConfigFileName))
-	^
-pkg/projectfile/projectfile.go:1329:6: SA6005: should use strings.EqualFold instead (staticcheck)
-		if strings.ToLower(key) == strings.ToLower(namespace) {
-		   ^
-pkg/platform/api/buildplanner/model/buildplan.go:52:2: SA9004: only the first constant in this group has an explicit type (staticcheck)
-	ComparatorEQ  string = "eq"
-	^
-internal/uniqid/uniqid.go:193:17: Error return value of `os.Chmod` is not checked (errcheck)
-		defer os.Chmod(filePath, stat.Mode().Perm())
-		              ^
-internal/runbits/panics/panics.go:18:3: S1038: should use fmt.Fprintf instead of fmt.Fprintln(fmt.Sprintf(...)) (but don't forget the newline) (gosimple)
-		fmt.Fprintln(os.Stderr, fmt.Sprintf(`An unexpected error occurred.
+pkg/projectfile/projectfile.go:45:23: S1039: unnecessary use of fmt.Sprintf (gosimple)
+	urlCommitRegexStr  = fmt.Sprintf(`https:\/\/[\w\.]+\/commit\/(.*)`)
+	                     ^
+test/integration/analytics_int_test.go:257:3: S1039: unnecessary use of fmt.Sprintf (gosimple)
+		fmt.Sprintf("Expected new heartbeats after state exec"))
 		^
-internal/osutils/termsize/termsize.go:19:17: Error return value of `syscall.Syscall` is not checked (errcheck)
-	syscall.Syscall(syscall.SYS_IOCTL,
-	               ^
-internal/runners/export/ghactions/ghactions.go:24:6: type `templateParams` is unused (unused)
-type templateParams struct {
-     ^
-internal/rtutils/singlethread/singlethread_test.go:18:12: Error return value of `tt.Run` is not checked (errcheck)
-		go tt.Run(func() error {
-		         ^
-internal/captain/command.go:233:14: Error return value is not checked (errcheck)
-		cmd.execute(cmd, args)
-		           ^
-internal/captain/command.go:693:22: Error return value of `sighandler.Pop` is not checked (errcheck)
-	defer sighandler.Pop()
-	                    ^
-internal/captain/command.go:50:6: type `cobraCommander` is unused (unused)
-type cobraCommander interface {
-     ^
-internal/captain/command.go:776:19: func `(*Command).argValidator` is unused (unused)
-func (c *Command) argValidator(cobraCmd *cobra.Command, args []string) error {
-                  ^
-internal/captain/command.go:783:16: S1040: type assertion to the same type: err already has type error (gosimple)
-	if err, ok := err.(error); ok && err == nil {
-	              ^
-internal/captain/values.go:154:5: S1003: should use !strings.Contains(s, "/") instead (gosimple)
-	if strings.Index(s, "/") == -1 {
-	   ^
-internal/fileutils/fileutils.go:335:17: Error return value of `os.Chmod` is not checked (errcheck)
-		defer os.Chmod(filePath, stat.Mode().Perm())
-		              ^
-internal/fileutils/fileutils.go:1037:18: Error return value of `filepath.WalkDir` is not checked (errcheck)
-	filepath.WalkDir(sourcePath, func(path string, f fs.DirEntry, err error) error {
-	                ^
-internal/fileutils/fileutils.go:54:6: type `includeFunc` is unused (unused)
-type includeFunc func(path string, contents []byte) (include bool)
-     ^
-internal/fileutils/fileutils_test.go:348:2: field `t` is unused (unused)
-	t *testing.T
-	^
-internal/fileutils/fileutils_test.go:423:6: type `mockIncrementer` is unused (unused)
-type mockIncrementer struct {
-     ^
-internal/fileutils/fileutils_test.go:427:28: func `(*mockIncrementer).Increment` is unused (unused)
-func (mi *mockIncrementer) Increment() {
-                           ^
-internal/fileutils/fileutils.go:1041:6: S1002: should omit comparison to bool constant, can be simplified to `!includeDirs` (gosimple)
-		if includeDirs == false && f.IsDir() {
-		   ^
-internal/fileutils/fileutils.go:1090:6: S1002: should omit comparison to bool constant, can be simplified to `!includeDirs` (gosimple)
-		if includeDirs == false && f.IsDir() {
-		   ^
-scripts/start-story/main.go:73:6: SA6005: should use strings.EqualFold instead (staticcheck)
-		if strings.ToLower(detectedIssueID) != strings.ToLower(jiraIssueID) {
-		   ^
-internal/testhelpers/e2e/session.go:651:18: Error return value of `filepath.WalkDir` is not checked (errcheck)
-	filepath.WalkDir(logDir, func(path string, f fs.DirEntry, err error) error {
-	                ^
-internal/testhelpers/e2e/session.go:444:6: func `observeSendFn` is unused (unused)
-func observeSendFn(s *Session) func(string, int, error) {
-     ^
-internal/testhelpers/e2e/session.go:614:3: ineffectual assignment to lines (ineffassign)
-		lines = append(lines, filepath.Base(file)+":"+strings.Split(string(b), "\n")[0])
-		^
-internal/testhelpers/e2e/shell.go:12:2: SA9004: only the first constant in this group has an explicit type (staticcheck)
-	Bash Shell = "bash"
-	^
-pkg/platform/api/graphql/model/projectconv.go:70:6: func `newStrfmtURI` is unused (unused)
-func newStrfmtURI(s *string) *strfmt.URI {
-     ^
-internal/installation/paths_test.go:18:17: Error return value of `fileutils.Touch` is not checked (errcheck)
-	fileutils.Touch(filepath.Join(tempdirWithInstall, InstallDirMarker))
-	               ^
-internal/installation/paths_test.go:61:17: Error return value of `fileutils.Touch` is not checked (errcheck)
-	fileutils.Touch(filepath.Join(tempdirWithInstall, InstallDirMarker))
-	               ^
-scripts/constants-generator/main.go:82:18: Error return value of `ioutil.WriteFile` is not checked (errcheck)
-	ioutil.WriteFile(target, buf.Bytes(), 0666)
-	                ^
-cmd/state-installer/test/integration/installer_int_test.go:55:16: Error return value of `cp.ExpectInput` is not checked (errcheck)
-	cp.ExpectInput()
-	              ^
-cmd/state-installer/test/integration/installer_int_test.go:56:13: Error return value of `cp.SendLine` is not checked (errcheck)
-	cp.SendLine("exit")
-	           ^
-cmd/state-installer/test/integration/installer_int_test.go:67:16: Error return value of `cp.ExpectInput` is not checked (errcheck)
-	cp.ExpectInput()
-	              ^
-cmd/state-installer/test/integration/installer_int_test.go:68:13: Error return value of `cp.SendLine` is not checked (errcheck)
-	cp.SendLine("exit")
-	           ^
-internal/termutils/termutils.go:6:2: SA1019: "golang.org/x/crypto/ssh/terminal" is deprecated: this package moved to golang.org/x/term. (staticcheck)
-	"golang.org/x/crypto/ssh/terminal"
-	^
-internal/unarchiver/targz.go:89:20: SA1019: tar.TypeRegA has been deprecated since Go 1.11 and an alternative has been available since Go 1.1: Use TypeReg instead. (staticcheck)
-	case tar.TypeReg, tar.TypeRegA, tar.TypeChar, tar.TypeBlock, tar.TypeFifo:
-	                  ^
-internal/sighandler/awaiting.go:44:28: S1019: should use make(chan error) instead (gosimple)
-	errCh := make(chan error, 0)
-	                          ^
-internal/sighandler/awaiting.go:25:9: SA5007: infinite recursive call (staticcheck)
-	return se.Signal()
-	       ^
+test/integration/performance_expansion_int_test.go:385:111: copylocks: call of performanceTest copies lock value: github.com/ActiveState/cli/internal/testhelpers/tagsuite.Suite contains github.com/stretchr/testify/suite.Suite contains sync.RWMutex (govet)
+	return performanceTest([]string{"run", opts.script.Name}, opts.expect, opts.samples, opts.max, opts.verbose, suite.Suite, ts)
+	                                                                                                             ^
+test/integration/performance_int_test.go:43:99: copylocks: call of performanceTest copies lock value: github.com/ActiveState/cli/internal/testhelpers/tagsuite.Suite contains github.com/stretchr/testify/suite.Suite contains sync.RWMutex (govet)
+	performanceTest([]string{"--version"}, "", StateVersionTotalSamples, StateVersionMaxTime, false, suite.Suite, ts)
+	                                                                                                 ^
+test/integration/performance_int_test.go:50:112: copylocks: performanceTest passes lock by value: github.com/ActiveState/cli/internal/testhelpers/tagsuite.Suite contains github.com/stretchr/testify/suite.Suite contains sync.RWMutex (govet)
+func performanceTest(commands []string, expect string, samples int, maxTime time.Duration, verbose bool, suite tagsuite.Suite, ts *e2e.Session) time.Duration {
+                                                                                                               ^
 pkg/platform/runtime/validate/validate.go:22:2: structtag: struct field tag `json: "sig"` not compatible with reflect.StructTag.Get: bad syntax for struct tag value (govet)
 	Sig  string `json: "sig"`
 	^
@@ -379,87 +238,69 @@ pkg/platform/runtime/validate/validate.go:27:2: structtag: struct field tag `jso
 pkg/platform/runtime/validate/validate.go:28:2: structtag: struct field tag `json: "signatures"` not compatible with reflect.StructTag.Get: bad syntax for struct tag value (govet)
 	Signatures []signature `json: "signatures"`
 	^
-internal/testhelpers/config_test/config.go:32:10: S1040: type assertion to the same type: value already has type interface{} (gosimple)
-		return value.(interface{}).(string) // assume we stored the correct type
-		       ^
-internal/testhelpers/config_test/config.go:40:18: S1040: type assertion to the same type: value already has type interface{} (gosimple)
-	return found && value.(interface{}).(bool) // assume we stored the correct type
-	                ^
-scripts/ci/propagate-pr/main.go:138:5: S1003: should use strings.Contains(stdout, "Merge conflict in version.txt") instead (gosimple)
-				strings.Index(stdout, "Merge conflict in version.txt") != -1
+internal/runbits/auth/keypair.go:99:5: ineffectual assignment to err (ineffassign)
+				err = keypairs.SaveEncodedKeypair(cfg, secretsapi.Get(auth), encodedKeypair, auth)
 				^
-internal/output/plain.go:43:7: const `dash` is unused (unused)
-const dash = "\u2500"
-      ^
-internal/output/plain.go:120:5: var `byteType` is unused (unused)
-var byteType = reflect.TypeOf([]byte(nil))
-    ^
-internal/output/plain.go:367:6: func `trimValue` is unused (unused)
-func trimValue(value string, size int) string {
-     ^
-internal/output/json.go:83:9: S1034: assigning the result of this type assertion to a variable (switch value := value.(type)) could eliminate type assertions in switch cases (gosimple)
-	switch value.(type) {
-	       ^
-internal/output/json.go:85:7: S1034(related information): could eliminate this type assertion (gosimple)
-		b = value.([]byte)
-		    ^
-internal/installation/storage/storage.go:151:6: type `configReader` is unused (unused)
-type configReader interface {
-     ^
-internal/installation/storage/storage.go:26:3: ineffectual assignment to localPath (ineffassign)
+internal/testhelpers/e2e/session.go:614:3: ineffectual assignment to lines (ineffassign)
+		lines = append(lines, filepath.Base(file)+":"+strings.Split(string(b), "\n")[0])
+		^
+internal/installation/storage/storage.go:25:3: ineffectual assignment to localPath (ineffassign)
 		localPath, err = appDataPathInTest()
 		^
-pkg/platform/runtime/setup/implementations/camel/ape_installer.go:22:20: func `(*MetaData).perlRelocationDir` is unused (unused)
-func (m *MetaData) perlRelocationDir(installRoot string) (string, error) {
-                   ^
-pkg/platform/runtime/setup/implementations/camel/apy_installer.go:20:20: func `(*MetaData).pythonRelocationDir` is unused (unused)
-func (m *MetaData) pythonRelocationDir(installRoot string) (string, error) {
-                   ^
-pkg/platform/runtime/setup/implementations/camel/apy_installer.go:36:6: func `locatePythonExecutable` is unused (unused)
-func locatePythonExecutable(installDir string) (string, error) {
-     ^
-pkg/platform/runtime/setup/implementations/camel/apy_installer.go:60:6: func `extractPythonRelocationPrefix` is unused (unused)
-func extractPythonRelocationPrefix(installDir string, python string) (string, error) {
-     ^
-cmd/state-installer/cmd.go:493:6: func `noArgs` is unused (unused)
-func noArgs() bool {
-     ^
-cmd/state-installer/cmd.go:497:6: func `shouldUpdateInstalledStateTool` is unused (unused)
-func shouldUpdateInstalledStateTool(stateExePath string) bool {
-     ^
-cmd/state-installer/cmd.go:37:2: SA1019: "golang.org/x/crypto/ssh/terminal" is deprecated: this package moved to golang.org/x/term. (staticcheck)
-	"golang.org/x/crypto/ssh/terminal"
+internal/runbits/git/test/integration/git_test.go:52:5: ineffectual assignment to err (ineffassign)
+	_, err = worktree.Add("activestate.yaml")
+	   ^
+internal/runbits/git/test/integration/git_test.go:54:10: ineffectual assignment to err (ineffassign)
+	commit, err := worktree.Commit("commit for test", &git.CommitOptions{
+	        ^
+internal/subshell/sscommon/rcfile.go:349:14: ineffectual assignment to err (ineffassign)
+	inPathList, err := fileutils.PathInList(listSep, pathList, currExecAbsDir)
+	            ^
+pkg/platform/model/vcs.go:333:8: ineffectual assignment to err (ineffassign)
+		res, err = authClient.VersionControl.GetCommitHistory(params, auth.ClientAuth())
+		     ^
+pkg/platform/runtime/buildscript/buildscript_test.go:358:16: ineffectual assignment to err (ineffassign)
+	expectedJson, err := json.Marshal(marshaledInput)
+	              ^
+pkg/projectfile/projectfile_test.go:141:2: ineffectual assignment to project (ineffassign)
+	project, err := Parse(filepath.Join(rootpath, "activestate.yml.nope"))
 	^
-internal/runbits/runtime/progress/decor.go:28:15: func `(*bar).setInternalTotal` is unused (unused)
-func (b *bar) setInternalTotal(v int64) {
-              ^
-internal/runbits/runtime/progress/decor.go:58:28: func `(*ProgressDigester).addSpinnerBar` is unused (unused)
-func (p *ProgressDigester) addSpinnerBar(name string, options ...mpb.BarOption) *bar {
-                           ^
-internal/runbits/runtime/progress/dotprogress.go:12:7: const `dotInterval` is unused (unused)
-const dotInterval = time.Second
-      ^
-cmd/state-svc/internal/messages/messages.go:79:21: SA4001: &*x will be simplified to x. It will not copy x. (staticcheck)
-	conditionParams := &(*m.baseParams) // copy
-	                   ^
-internal/prompt/helpers.go:100:57: S1010: should omit second index in slice, s[a:len(s)] is identical to s[a:] (gosimple)
-		if len(message) > idx && newMessage[len(newMessage)-1:len(newMessage)] != "\n" {
-		                                                      ^
-internal/terminal/terminal.go:8:2: SA1019: "golang.org/x/crypto/ssh/terminal" is deprecated: this package moved to golang.org/x/term. (staticcheck)
-	"golang.org/x/crypto/ssh/terminal"
+pkg/projectfile/projectfile_test.go:264:2: ineffectual assignment to path (ineffassign)
+	path, err = GetProjectFilePath()
 	^
-scripts/ci/s3-deployer/main.go:21:7: const `awsProfileName` is unused (unused)
-const awsProfileName = "default"
-      ^
-scripts/ci/s3-deployer/main.go:56:6: type `logger` is unused (unused)
-type logger struct{}
-     ^
-scripts/ci/s3-deployer/main.go:58:18: func `(*logger).Log` is unused (unused)
-func (l *logger) Log(v ...interface{}) {
-                 ^
-scripts/ci/s3-deployer/main_test.go:29:2: S1021: should merge variable declaration with assignment on next line (gosimple)
-	var params *s3.PutObjectInput
+pkg/projectfile/projectfile_test.go:290:2: ineffectual assignment to path (ineffassign)
+	path, err = GetProjectFilePath()
 	^
+pkg/projectfile/projectfile_test.go:296:2: ineffectual assignment to path (ineffassign)
+	path, err = GetProjectFilePath()
+	^
+pkg/projectfile/projectfile_test.go:350:2: ineffectual assignment to versionInfo (ineffassign)
+	versionInfo, err = ParseVersionInfo(filepath.Join(getWd(t, "withbadversion"), constants.ConfigFileName))
+	^
+pkg/sysinfo/sysinfo_darwin.go:55:8: ineffectual assignment to err (ineffassign)
+	name, err := exec.Command("sw_vers", "-productName").Output()
+	      ^
+test/integration/performance_expansion_int_test.go:46:2: ineffectual assignment to baseline (ineffassign)
+	baseline := DefaultMaxTime
+	^
+test/integration/prepare_int_test.go:162:2: ineffectual assignment to err (ineffassign)
+	err = os.RemoveAll(projectExecDir)
+	^
+internal/runbits/git/git.go:97:7: SA6005: should use strings.EqualFold instead (staticcheck)
+	if !(strings.ToLower(proj.Owner()) == strings.ToLower(owner)) || !(strings.ToLower(proj.Name()) == strings.ToLower(name)) {
+	     ^
+scripts/start-story/main.go:73:6: SA6005: should use strings.EqualFold instead (staticcheck)
+		if strings.ToLower(detectedIssueID) != strings.ToLower(jiraIssueID) {
+		   ^
+internal/runners/languages/install.go:123:6: SA6005: should use strings.EqualFold instead (staticcheck)
+		if strings.ToLower(pl.Name) == strings.ToLower(language.Name) {
+		   ^
+pkg/project/project.go:135:6: SA6005: should use strings.EqualFold instead (staticcheck)
+		if strings.ToLower(event.Name()) == strings.ToLower(name) {
+		   ^
+pkg/projectfile/projectfile.go:1326:6: SA6005: should use strings.EqualFold instead (staticcheck)
+		if strings.ToLower(key) == strings.ToLower(namespace) {
+		   ^
 internal/keypairs/rsa.go:36:15: SA1019: x509.EncryptPEMBlock has been deprecated since Go 1.16 because it shouldn't be used: Legacy PEM encryption as specified in RFC 1423 is insecure by design. Since it does not authenticate the ciphertext, it is vulnerable to padding oracle attacks that can let an attacker recover the plaintext. (staticcheck)
 	block, err = x509.EncryptPEMBlock(rand.Reader, block.Type, block.Bytes, []byte(passphrase), x509.PEMCipherAES256)
 	             ^
@@ -469,44 +310,35 @@ internal/keypairs/rsa.go:149:5: SA1019: x509.IsEncryptedPEMBlock has been deprec
 internal/keypairs/rsa.go:150:19: SA1019: x509.DecryptPEMBlock has been deprecated since Go 1.16 because it shouldn't be used: Legacy PEM encryption as specified in RFC 1423 is insecure by design. Since it does not authenticate the ciphertext, it is vulnerable to padding oracle attacks that can let an attacker recover the plaintext. (staticcheck)
 		keyBytes, err = x509.DecryptPEMBlock(block, []byte(passphrase))
 		                ^
-pkg/project/namespace_test.go:13:6: func `newUUID` is unused (unused)
-func newUUID(uuid string) *strfmt.UUID {
-     ^
-internal/virtualenvironment/virtualenvironment.go:16:5: var `persisted` is unused (unused)
-var persisted *VirtualEnvironment
-    ^
-test/integration/fork_int_test.go:16:2: field `username` is unused (unused)
-	username string
+internal/unarchiver/targz.go:89:20: SA1019: tar.TypeRegA has been deprecated since Go 1.11 and an alternative has been available since Go 1.1: Use TypeReg instead. (staticcheck)
+	case tar.TypeReg, tar.TypeRegA, tar.TypeChar, tar.TypeBlock, tar.TypeFifo:
+	                  ^
+pkg/platform/runtime/setup/implementations/alternative/runtime.go:4:2: SA1019: "io/ioutil" has been deprecated since Go 1.19: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details. (staticcheck)
+	"io/ioutil"
 	^
-test/integration/secrets_int_test.go:17:2: field `originalWd` is unused (unused)
-	originalWd string
+pkg/platform/runtime/setup/implementations/camel/artifact.go:6:2: SA1019: "io/ioutil" has been deprecated since Go 1.19: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details. (staticcheck)
+	"io/ioutil"
 	^
-internal/runners/ppm/convert.go:155:27: func `(*ConversionFlow).openInBrowser` is unused (unused)
-func (cf *ConversionFlow) openInBrowser(what, url string) {
-                          ^
-internal/runners/revert/revert.go:167:6: type `revertFunc` is unused (unused)
-type revertFunc func(params revertParams, bp *model.BuildPlanner) (strfmt.UUID, error)
-     ^
-cmd/state/internal/cmdtree/branch.go:26:6: func `newBranchAddCommand` is unused (unused)
-func newBranchAddCommand(prime *primer.Values) *captain.Command {
-     ^
-pkg/platform/runtime/runtime.go:272:6: S1023: redundant break statement (gosimple)
-					break // it only takes one download failure to report the runtime failure as due to download error
-					^
-cmd/state/autoupdate.go:195:10: S1012: should use `time.Since` instead of `time.Now().Sub` (gosimple)
-	diff := time.Now().Sub(stat.ModTime())
-	        ^
-test/integration/performance_expansion_int_test.go:385:111: copylocks: call of performanceTest copies lock value: github.com/ActiveState/cli/internal/testhelpers/tagsuite.Suite contains github.com/stretchr/testify/suite.Suite contains sync.RWMutex (govet)
-	return performanceTest([]string{"run", opts.script.Name}, opts.expect, opts.samples, opts.max, opts.verbose, suite.Suite, ts)
-	                                                                                                             ^
-test/integration/performance_int_test.go:43:99: copylocks: call of performanceTest copies lock value: github.com/ActiveState/cli/internal/testhelpers/tagsuite.Suite contains github.com/stretchr/testify/suite.Suite contains sync.RWMutex (govet)
-	performanceTest([]string{"--version"}, "", StateVersionTotalSamples, StateVersionMaxTime, false, suite.Suite, ts)
-	                                                                                                 ^
-test/integration/performance_int_test.go:50:112: copylocks: performanceTest passes lock by value: github.com/ActiveState/cli/internal/testhelpers/tagsuite.Suite contains github.com/stretchr/testify/suite.Suite contains sync.RWMutex (govet)
-func performanceTest(commands []string, expect string, samples int, maxTime time.Duration, verbose bool, suite tagsuite.Suite, ts *e2e.Session) time.Duration {
-                                                                                                               ^
-test/integration/performance_expansion_int_test.go:46:2: ineffectual assignment to baseline (ineffassign)
-	baseline := DefaultMaxTime
+pkg/platform/runtime/setup/implementations/camel/prepare_mac.go:7:2: SA1019: "io/ioutil" has been deprecated since Go 1.19: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details. (staticcheck)
+	"io/ioutil"
+	^
+pkg/platform/runtime/setup/implementations/camel/runtime.go:4:2: SA1019: "io/ioutil" has been deprecated since Go 1.19: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details. (staticcheck)
+	"io/ioutil"
+	^
+cmd/state-installer/cmd.go:37:2: SA1019: "golang.org/x/crypto/ssh/terminal" is deprecated: this package moved to golang.org/x/term. (staticcheck)
+	"golang.org/x/crypto/ssh/terminal"
+	^
+cmd/state-installer/installer.go:5:2: SA1019: "io/ioutil" has been deprecated since Go 1.19: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details. (staticcheck)
+	"io/ioutil"
+	^
+cmd/state-installer/installer_lin_mac.go:7:2: SA1019: "io/ioutil" has been deprecated since Go 1.19: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details. (staticcheck)
+	"io/ioutil"
+	^
+cmd/state-svc/test/integration/svc_int_test.go:5:2: SA1019: "io/ioutil" has been deprecated since Go 1.19: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details. (staticcheck)
+	"io/ioutil"
+	^
+internal/fileutils/fileutils.go:11:2: SA1019: "io/ioutil" has been deprecated since Go 1.19: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details. (staticcheck)
+	"io/ioutil"
 	^
 internal/keypairs/rsa_keypair_test.go:124:22: SA1019: x509.EncryptPEMBlock has been deprecated since Go 1.16 because it shouldn't be used: Legacy PEM encryption as specified in RFC 1423 is insecure by design. Since it does not authenticate the ciphertext, it is vulnerable to padding oracle attacks that can let an attacker recover the plaintext. (staticcheck)
 	newKeyBlock, err := x509.EncryptPEMBlock(rand.Reader, keyBlock.Type, keyBlock.Bytes, []byte("abc123"), x509.PEMCipherAES256)
@@ -514,6 +346,33 @@ internal/keypairs/rsa_keypair_test.go:124:22: SA1019: x509.EncryptPEMBlock has b
 internal/keypairs/rsa_keypair_test.go:143:22: SA1019: x509.EncryptPEMBlock has been deprecated since Go 1.16 because it shouldn't be used: Legacy PEM encryption as specified in RFC 1423 is insecure by design. Since it does not authenticate the ciphertext, it is vulnerable to padding oracle attacks that can let an attacker recover the plaintext. (staticcheck)
 	newKeyBlock, err := x509.EncryptPEMBlock(rand.Reader, keyBlock.Type, keyBlock.Bytes, []byte(""), x509.PEMCipherAES256)
 	                    ^
+internal/logging/rotate.go:5:2: SA1019: "io/ioutil" has been deprecated since Go 1.19: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details. (staticcheck)
+	"io/ioutil"
+	^
+internal/osutils/exeutils.go:6:2: SA1019: "io/ioutil" has been deprecated since Go 1.19: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details. (staticcheck)
+	"io/ioutil"
+	^
+pkg/platform/runtime/buildscript/buildscript.go:270:15: SA1019: strings.Title has been deprecated since Go 1.18 and an alternative has been available since Go 1.0: The rule Title uses for word boundaries does not handle Unicode punctuation properly. Use golang.org/x/text/cases instead. (staticcheck)
+				ap.Name = strings.Title(*o.Value.Str)
+				          ^
+pkg/platform/runtime/executors/executors.go:4:2: SA1019: "io/ioutil" has been deprecated since Go 1.19: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details. (staticcheck)
+	"io/ioutil"
+	^
+pkg/platform/runtime/store/store.go:5:2: SA1019: "io/ioutil" has been deprecated since Go 1.19: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details. (staticcheck)
+	"io/ioutil"
+	^
+pkg/projectfile/projectfile.go:6:2: SA1019: "io/ioutil" has been deprecated since Go 1.19: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details. (staticcheck)
+	"io/ioutil"
+	^
+test/integration/update_int_test.go:6:2: SA1019: "io/ioutil" has been deprecated since Go 1.19: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details. (staticcheck)
+	"io/ioutil"
+	^
+internal/sighandler/awaiting.go:25:9: SA5007: infinite recursive call (staticcheck)
+	return se.Signal()
+	       ^
+pkg/platform/model/buildplanner.go:215:3: SA4004: the surrounding loop is unconditionally terminated (staticcheck)
+		break
+		^
 test/integration/init_int_test.go:83:2: SA4006: this value of `err` is never used (staticcheck)
 	yaml, err := strutils.ParseTemplate(
 	^
@@ -523,3 +382,18 @@ test/integration/switch_int_test.go:75:2: SA4006: this value of `pj` is never us
 test/integration/switch_int_test.go:104:2: SA4006: this value of `pj` is never used (staticcheck)
 	pj, err = project.FromPath(pjfilepath)
 	^
+pkg/platform/api/buildplanner/model/buildplan.go:52:2: SA9004: only the first constant in this group has an explicit type (staticcheck)
+	ComparatorEQ  string = "eq"
+	^
+internal/runners/push/push.go:59:2: SA9004: only the first constant in this group has an explicit type (staticcheck)
+	pushCustomNamespace  intention = 0x0001 // User is pushing to a custom remote, ignoring the namespace in the current yaml
+	^
+internal/testhelpers/e2e/shell.go:12:2: SA9004: only the first constant in this group has an explicit type (staticcheck)
+	Bash Shell = "bash"
+	^
+scripts/internal/workflow-helpers/github.go:211:2: SA9004: only the first constant in this group has an explicit type (staticcheck)
+	AssertLT Assertion = "less than"
+	^
+cmd/state-svc/internal/messages/messages.go:79:21: SA4001: &*x will be simplified to x. It will not copy x. (staticcheck)
+	conditionParams := &(*m.baseParams) // copy
+	                   ^

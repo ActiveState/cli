@@ -18,22 +18,8 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-var cache = make(map[string]interface{})
-
-func getCache(key string, getter func() (interface{}, error)) (interface{}, error) {
-	if v, ok := cache[key]; ok {
-		return v, nil
-	}
-	v, err := getter()
-	if err != nil {
-		return nil, err
-	}
-	cache[key] = v
-	return v, err
-}
-
 // For testing.
-var osOverride, osVersionOverride, archOverride, libcOverride, compilerOverride string
+var osVersionOverride, archOverride, libcOverride, compilerOverride string
 
 type Conditional struct {
 	params map[string]interface{}

@@ -2,7 +2,7 @@ package integration
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -36,7 +36,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	ts.SetupRCFile()
 	suite.T().Setenv(constants.HomeEnvVarName, ts.Dirs.HomeDir)
 
-	dir, err := ioutil.TempDir("", "system*")
+	dir, err := os.MkdirTemp("", "system*")
 	suite.NoError(err)
 
 	// Run installer with source-path flag (ie. install from this local path)
@@ -149,7 +149,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallNoErrorTips() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	dir, err := ioutil.TempDir("", "system*")
+	dir, err := os.MkdirTemp("", "system*")
 	suite.NoError(err)
 
 	cp := ts.SpawnCmdWithOpts(
@@ -169,7 +169,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	dir, err := ioutil.TempDir("", "system*")
+	dir, err := os.MkdirTemp("", "system*")
 	suite.NoError(err)
 
 	cp := ts.SpawnCmdWithOpts(
@@ -231,7 +231,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallWhileInUse() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	dir, err := ioutil.TempDir("", "system*")
+	dir, err := os.MkdirTemp("", "system*")
 	suite.NoError(err)
 
 	cp := ts.SpawnCmdWithOpts(

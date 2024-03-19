@@ -3,7 +3,6 @@ package sysinfo
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"regexp"
@@ -37,7 +36,7 @@ func OSVersion() (*OSVersionInfo, error) {
 
 	// Fetch kernel version.
 	osrelFile := "/proc/sys/kernel/osrelease"
-	osrelData, err := ioutil.ReadFile(osrelFile)
+	osrelData, err := os.ReadFile(osrelFile)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to read %s: %v", osrelFile, err)
 	}
@@ -64,7 +63,7 @@ func OSVersion() (*OSVersionInfo, error) {
 			"/etc/SuSE-release",   // SuSEs
 		}
 		for _, etcFile := range etcFiles {
-			name, err = ioutil.ReadFile(etcFile)
+			name, err = os.ReadFile(etcFile)
 			if err == nil {
 				break
 			}

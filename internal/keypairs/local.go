@@ -1,7 +1,6 @@
 package keypairs
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -35,7 +34,7 @@ func Load(cfg Configurable, keyName string) (Keypair, error) {
 // file. The filename will be the value of `keyName` and suffixed with `.key`.
 func Save(cfg Configurable, kp Keypair, keyName string) error {
 	keyFileName := LocalKeyFilename(cfg.ConfigPath(), keyName)
-	err := ioutil.WriteFile(keyFileName, []byte(kp.EncodePrivateKey()), 0600)
+	err := os.WriteFile(keyFileName, []byte(kp.EncodePrivateKey()), 0600)
 	if err != nil {
 		return errs.Wrap(err, "WriteFile failed")
 	}
@@ -94,7 +93,7 @@ func LocalKeyFilename(configPath, keyName string) string {
 }
 
 func loadAndParseKeypair(keyFilename string) (Keypair, error) {
-	keyFileBytes, err := ioutil.ReadFile(keyFilename)
+	keyFileBytes, err := os.ReadFile(keyFilename)
 	if err != nil {
 		return nil, errs.Wrap(err, "ReadFile %s failed", keyFilename)
 	}

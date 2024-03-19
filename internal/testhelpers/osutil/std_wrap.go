@@ -1,7 +1,7 @@
 package osutil
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"time"
@@ -38,7 +38,7 @@ func captureWrites(fnToExec func(), reader, writer *os.File) (string, error) {
 		return "", err
 	}
 
-	writeBytes, err := ioutil.ReadAll(reader)
+	writeBytes, err := io.ReadAll(reader)
 	if err != nil {
 		err = reader.Close()
 	}

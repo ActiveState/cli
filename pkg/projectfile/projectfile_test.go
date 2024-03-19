@@ -1,7 +1,6 @@
 package projectfile
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -175,7 +174,7 @@ func TestSave(t *testing.T) {
 	project, err := Parse(path)
 	require.NoError(t, err, errs.JoinMessage(err))
 
-	tmpfile, err := ioutil.TempFile("", "test")
+	tmpfile, err := os.CreateTemp("", "test")
 	require.NoError(t, err, errs.JoinMessage(err))
 
 	cfg, err := config.New()
@@ -351,7 +350,7 @@ func TestParseVersionInfo(t *testing.T) {
 	versionInfo, err = ParseVersionInfo(filepath.Join(getWd(t, "withbadversion"), constants.ConfigFileName))
 	assert.Error(t, err)
 
-	path, err := ioutil.TempDir("", "ParseVersionInfoTest")
+	path, err := os.MkdirTemp("", "ParseVersionInfoTest")
 	require.NoError(t, err)
 	versionInfo, err = ParseVersionInfo(filepath.Join(path, constants.ConfigFileName))
 	require.NoError(t, err)
@@ -359,7 +358,7 @@ func TestParseVersionInfo(t *testing.T) {
 }
 
 func TestNewProjectfile(t *testing.T) {
-	dir, err := ioutil.TempDir("", "projectfile-test")
+	dir, err := os.MkdirTemp("", "projectfile-test")
 	assert.NoError(t, err, "Should be no error when getting a temp directory")
 	os.Chdir(dir)
 

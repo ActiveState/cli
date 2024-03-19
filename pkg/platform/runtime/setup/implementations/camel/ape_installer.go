@@ -3,7 +3,6 @@ package camel
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -55,7 +54,7 @@ func (m *MetaData) perlRelocationDir(installRoot string) (string, error) {
 }
 
 func loadRelocationFile(relocFilePath string) map[string]bool {
-	relocBytes, err := ioutil.ReadFile(relocFilePath)
+	relocBytes, err := os.ReadFile(relocFilePath)
 	if err != nil {
 		logging.Debug("Could not open relocation file: %v", err)
 		return nil

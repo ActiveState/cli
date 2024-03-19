@@ -2,7 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -293,7 +292,7 @@ func (suite *ScriptRunSuite) TestPathProvidesLang() {
 	suite.OnlyRunForTags(tagsuite.Scripts)
 	t := suite.T()
 
-	temp, err := ioutil.TempDir("", filepath.Base(t.Name()))
+	temp, err := os.MkdirTemp("", filepath.Base(t.Name()))
 	require.NoError(t, err)
 
 	tf := filepath.Join(temp, "python3")
@@ -330,7 +329,7 @@ func setupProjectWithScriptsExpectingArgs(t *testing.T, cmdName string) *project
 		os.Setenv("SHELL", "bash")
 	}
 
-	tmpfile, err := ioutil.TempFile("", "testRunCommand")
+	tmpfile, err := os.CreateTemp("", "testRunCommand")
 	require.NoError(t, err)
 	tmpfile.Close()
 	os.Remove(tmpfile.Name())

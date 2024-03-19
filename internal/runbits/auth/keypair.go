@@ -38,11 +38,6 @@ func generateKeypairForUser(cfg keypairs.Configurable, passphrase string, auth *
 	return nil
 }
 
-func validateLocalPrivateKey(cfg keypairs.Configurable, publicKey string) bool {
-	localKeypair, err := keypairs.LoadWithDefaults(cfg)
-	return err == nil && localKeypair.MatchPublicKey(publicKey)
-}
-
 // processExistingKeypairForUser will attempt to ensure the stored private-key for the user is encrypted
 // using the provided passphrase. If passphrase match fails, processExistingKeypairForUser will then try
 // validate that the locally stored private-key has a public-key matching the one provided in the keypair.

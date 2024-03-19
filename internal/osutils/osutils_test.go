@@ -1,7 +1,6 @@
 package osutils
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"reflect"
@@ -17,7 +16,7 @@ import (
 )
 
 func TestCmdExitCode(t *testing.T) {
-	tmpfile, err := ioutil.TempFile("", "TestCmdExitCode")
+	tmpfile, err := os.CreateTemp("", "TestCmdExitCode")
 	if runtime.GOOS != "windows" {
 		assert.NoError(t, err)
 		tmpfile.WriteString("#!/usr/bin/env bash\n")

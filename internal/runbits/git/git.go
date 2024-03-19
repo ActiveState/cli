@@ -2,7 +2,6 @@ package git
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -42,7 +41,7 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer, an an
 		return locale.WrapError(err, "err_git_fetch_project", "Could not fetch project details")
 	}
 
-	tempDir, err := ioutil.TempDir("", fmt.Sprintf("state-activate-repo-%s-%s", owner, name))
+	tempDir, err := os.MkdirTemp("", fmt.Sprintf("state-activate-repo-%s-%s", owner, name))
 	if err != nil {
 		return locale.WrapError(err, "err_git_tempdir", "Could not create temporary directory for git clone operation")
 	}

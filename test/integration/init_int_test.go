@@ -2,7 +2,7 @@ package integration
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -90,7 +90,7 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, lang string, ex
 			"LangExe":  language.MakeByName(expectedConfigLanguage).Executable().Filename(),
 		}, nil)
 
-	content, err := ioutil.ReadFile(configFilepath)
+	content, err := os.ReadFile(configFilepath)
 	suite.Require().NoError(err)
 	suite.Contains(string(content), yaml)
 }
