@@ -107,6 +107,9 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, a
 }
 
 func (r *Runtime) NeedsUpdate() bool {
+	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
+		return false
+	}
 	if !r.store.MarkerIsValid(r.target.CommitUUID()) {
 		if r.target.ReadOnly() {
 			logging.Debug("Using forced cache")
