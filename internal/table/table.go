@@ -104,6 +104,8 @@ func (t *Table) calculateWidth(maxTableWidth int) ([]int, int) {
 		colWidthsCombined += colWidths[n]
 	}
 
+	// Capture the width of the vertical header before we equalize the column widths.
+	// We must respect this width when rescaling the columns.
 	var verticalHeaderWidth int
 	if len(colWidths) > 0 && t.Vertical {
 		verticalHeaderWidth = colWidths[0]
@@ -164,7 +166,7 @@ func rescaleColumns(colWidths []int, targetTotal int, vertical bool, verticalHea
 		diff := verticalHeaderWidth - colWidths[0]
 		colWidths[0] += diff
 		for i := 1; i < len(colWidths); i++ {
-			colWidths[i] = diff / (len(colWidths) - 1)
+			colWidths[i] -= diff / (len(colWidths) - 1)
 		}
 	}
 }
