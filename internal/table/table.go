@@ -162,6 +162,8 @@ func rescaleColumns(colWidths []int, targetTotal int, vertical bool, verticalHea
 	}
 
 	// If vertical, respect the header width
+	// verticalHeaderWidth is the width of the header column before we equalized the column widths.
+	// We compare the current width of the header column with the original width and adjust the other columns accordingly.
 	if vertical && len(colWidths) > 0 && colWidths[0] < verticalHeaderWidth {
 		diff := verticalHeaderWidth - colWidths[0]
 		colWidths[0] += diff
