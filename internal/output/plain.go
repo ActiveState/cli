@@ -303,7 +303,7 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 			}
 
 			if funk.Contains(field.opts, string(OmitEmpty)) && (stringValue == "" || stringValue == nilText) {
-				stringValue = ""
+				continue
 			}
 
 			if funk.Contains(field.opts, string(EmptyNil)) && stringValue == nilText {
@@ -321,9 +321,7 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 				break
 			}
 
-			rowValue := columns(offset, stringValue)
-
-			row = append(row, rowValue...)
+			row = append(row, columns(offset, stringValue)...)
 		}
 
 		if len(row) > 0 {
@@ -363,7 +361,7 @@ func sprintVerticalTable(slice []interface{}) (string, error) {
 			}
 
 			if funk.Contains(field.opts, string(OmitEmpty)) && (stringValue == "" || stringValue == nilText) {
-				stringValue = ""
+				continue
 			}
 
 			if funk.Contains(field.opts, string(EmptyNil)) && stringValue == nilText {
