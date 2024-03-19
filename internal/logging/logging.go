@@ -4,7 +4,8 @@
 // allows you to set the logging level of your app in runtime.
 //
 // Logging is done just like calling fmt.Sprintf:
-// 		logging.Info("This object is %s and that is %s", obj, that)
+//
+//	logging.Info("This object is %s and that is %s", obj, that)
 //
 // example output:
 //
@@ -61,7 +62,7 @@ var LevelsByName = map[string]int{
 	"NOTHING":  NOTHING,
 }
 
-//default logging level is ALL
+// default logging level is ALL
 var level int = ALL
 
 // Set the logging level.
@@ -70,11 +71,12 @@ var level int = ALL
 // of active levels.
 //
 // e.g. for INFO and ERROR use:
-// 		SetLevel(logging.INFO | logging.ERROR)
+//
+//	SetLevel(logging.INFO | logging.ERROR)
 //
 // For everything but debug and info use:
-// 		SetLevel(logging.ALL &^ (logging.INFO | logging.DEBUG))
 //
+//	SetLevel(logging.ALL &^ (logging.INFO | logging.DEBUG))
 func SetLevel(l int) {
 	level = l
 }
@@ -114,7 +116,7 @@ func SetOutput(w io.Writer) {
 	log.SetOutput(w)
 }
 
-//a pluggable logger interface
+// a pluggable logger interface
 type LoggingHandler interface {
 	SetFormatter(Formatter)
 	SetVerbose(bool)
@@ -124,37 +126,37 @@ type LoggingHandler interface {
 	Close()
 }
 
-type strandardHandler struct {
+type standardHandler struct {
 	formatter Formatter
 }
 
-func (l *strandardHandler) SetFormatter(f Formatter) {
+func (l *standardHandler) SetFormatter(f Formatter) {
 	l.formatter = f
 }
 
-func (l *strandardHandler) SetVerbose(v bool) {
+func (l *standardHandler) SetVerbose(v bool) {
 }
 
-func (l *strandardHandler) Output() io.Writer {
+func (l *standardHandler) Output() io.Writer {
 	return nil
 }
 
 // default handling interface - just
-func (l *strandardHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
+func (l *standardHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
 	fmt.Fprintln(os.Stderr, l.formatter.Format(ctx, message, args...))
 	return nil
 }
 
 // Printf satifies a Logger interface allowing us to funnel our
 // logging handlers to 3rd party libraries
-func (l *strandardHandler) Printf(msg string, args ...interface{}) {
+func (l *standardHandler) Printf(msg string, args ...interface{}) {
 	logMsg := fmt.Sprintf("Third party log message: %s", msg)
 	l.Emit(getContext("DBG", 1), logMsg, args...)
 }
 
-func (l *strandardHandler) Close() {}
+func (l *standardHandler) Close() {}
 
-var currentHandler LoggingHandler = &strandardHandler{
+var currentHandler LoggingHandler = &standardHandler{
 	DefaultFormatter,
 }
 
@@ -174,7 +176,7 @@ type MessageContext struct {
 	TimeStamp time.Time
 }
 
-//get the stack (line + file) context to return the caller to the log
+// get the stack (line + file) context to return the caller to the log
 func getContext(level string, skipDepth int) *MessageContext {
 
 	_, file, line, _ := runtime.Caller(skipDepth)
@@ -259,7 +261,7 @@ func printLogError(err error, ctx *MessageContext, msg string, args ...interface
 	fmt.Fprintln(os.Stderr, DefaultFormatter.Format(ctx, msg, args...))
 }
 
-//output INFO level messages
+// output INFO level messages
 func Info(msg string, args ...interface{}) {
 
 	if level&INFO != 0 {

@@ -16,6 +16,7 @@ linters-settings:
       - (*github.com/ActiveState/termtest.TermTest).Wait
       - (*github.com/ActiveState/logging.fileHandler).Printf
       - (*github.com/ActiveState/logging.standardHandler).Printf
+      - (*github.com/ActiveState/lockfile.PidLock).TryLock
   govet:
     disable:
       - composites

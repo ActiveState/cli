@@ -48,7 +48,9 @@ func New(pj *project.Project) (*FileEvents, error) {
 		}
 	}
 
-	fe.watcher.OnEvent(fe.onEvent)
+	if err := fe.watcher.OnEvent(fe.onEvent); err != nil {
+		return nil, locale.WrapError(err, "err_fileevent_onevent", "Could not set event handler for file events.")
+	}
 	return fe, nil
 }
 

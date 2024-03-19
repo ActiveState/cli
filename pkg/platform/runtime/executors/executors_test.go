@@ -1,7 +1,6 @@
 package executors
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -15,7 +14,7 @@ import (
 )
 
 func TestExecutor(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "as-executor-test")
+	tmpDir, err := os.MkdirTemp("", "as-executor-test")
 	require.NoError(t, err, errs.JoinMessage(err))
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
