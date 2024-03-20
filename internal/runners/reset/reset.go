@@ -18,8 +18,8 @@ import (
 )
 
 type Params struct {
-	Force    bool
-	CommitID string
+	Force  bool
+	Target string
 }
 
 type Reset struct {
@@ -61,7 +61,8 @@ func (r *Reset) Run(params *Params) error {
 	r.out.Notice(locale.Tr("operating_message", r.project.NamespaceString(), r.project.Dir()))
 
 	var commitID strfmt.UUID
-	if params.CommitID == "" {
+	switch {
+	case params.Target == "":
 		latestCommit, err := model.BranchCommitID(r.project.Owner(), r.project.Name(), r.project.BranchName())
 		if err != nil {
 			return locale.WrapError(err, "err_reset_latest_commit", "Could not get latest commit ID")
@@ -74,22 +75,29 @@ func (r *Reset) Run(params *Params) error {
 			return locale.NewInputError("err_reset_latest", "You are already on the latest commit")
 		}
 		commitID = *latestCommit
-	} else {
-		if !strfmt.IsUUID(params.CommitID) {
-			return locale.NewInputError("Invalid commit ID")
-		}
-		commitID = strfmt.UUID(params.CommitID)
-		localCommitID, err := localcommit.Get(r.project.Dir())
+
+	case !strfmt.IsUUID(params.Target):
+		branch, err := model.BranchForProjectNameByName(r.project.Owner(), r.project.Name(), params.Target)
 		if err != nil {
-			return errs.Wrap(err, "Unable to get local commit")
+			return errs.Wrap(err, "Could not get branch")
 		}
-		if commitID == localCommitID {
-			return locale.NewInputError("err_reset_same_commitid", "Your project is already at the given commit ID")
-		}
+		commitID = strfmt.UUID(*branch.CommitID)
+
+	default:
+		commitID = strfmt.UUID(params.Target)
+
 		history, err := model.CommitHistoryFromID(commitID, r.auth)
 		if err != nil || len(history) == 0 {
 			return locale.WrapInputError(err, "err_reset_commitid", "The given commit ID does not exist")
 		}
+	}
+
+	localCommitID, err := localcommit.Get(r.project.Dir())
+	if err != nil {
+		return errs.Wrap(err, "Unable to get local commit")
+	}
+	if commitID == localCommitID {
+		return locale.NewInputError("err_reset_same_commitid", "Your project is already at the given commit ID")
 	}
 
 	r.out.Notice(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", commitID.String()))

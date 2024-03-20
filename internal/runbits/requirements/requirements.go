@@ -43,8 +43,8 @@ import (
 )
 
 func init() {
-	configMediator.RegisterOption(constants.SecurityPromptConfig, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
-	configMediator.RegisterOption(constants.SecurityPromptLevelConfig, configMediator.String, configMediator.EmptyEvent, configMediator.EmptyEvent)
+	configMediator.RegisterOption(constants.SecurityPromptConfig, configMediator.Bool, true)
+	configMediator.RegisterOption(constants.SecurityPromptLevelConfig, configMediator.String, vulnModel.SeverityCritical)
 }
 
 const (
@@ -529,7 +529,7 @@ func (r *RequirementOperation) shouldPromptForSecurity(vulnerabilities model.Vul
 		}
 	}
 
-	if !r.Config.GetBool(constants.SecurityPromptConfig) {
+	if !r.Config.GetBool(constants.SecurityPromptConfig) || vulnerabilities.Count == 0 {
 		return false
 	}
 
