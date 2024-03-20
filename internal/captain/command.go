@@ -226,7 +226,9 @@ func NewHiddenShimCommand(name string, prime primer, flags []*Flag, args []*Argu
 	}
 
 	cmd.cobra.SetHelpFunc(func(_ *cobra.Command, args []string) {
-		cmd.execute(cmd, args)
+		if err := cmd.execute(cmd, args); err != nil {
+			panic(err)
+		}
 	})
 
 	if err := cmd.setFlags(flags); err != nil {
@@ -284,7 +286,7 @@ func (c *Command) ShortDescription() string {
 }
 
 func (c *Command) Execute(args []string) error {
-	defer profile.Measure(fmt.Sprintf("cobra:Execute"), time.Now())
+	defer profile.Measure("cobra:Execute", time.Now())
 	c.cobra.SetArgs(args)
 	err := c.cobra.Execute()
 	c.cobra.SetArgs(nil)
@@ -772,9 +774,6 @@ func (c *Command) outputTitleIfAny() {
 // setupSensibleErrors inspects an error value for certain errors and returns a
 // wrapped error that can be checked and that is localized.
 func setupSensibleErrors(err error, args []string) error {
-	if err, ok := err.(error); ok && err == nil {
-		return nil
-	}
 	if err == nil {
 		return nil
 	}

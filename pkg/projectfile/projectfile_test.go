@@ -138,10 +138,10 @@ func TestParse(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	project, err := Parse(filepath.Join(rootpath, "activestate.yml.nope"))
+	_, err = Parse(filepath.Join(rootpath, "activestate.yml.nope"))
 	assert.Error(t, err, "Should throw an error")
 
-	project, err = Parse(filepath.Join(rootpath, "pkg", "projectfile", "testdata", "activestate.yaml"))
+	project, err := Parse(filepath.Join(rootpath, "pkg", "projectfile", "testdata", "activestate.yaml"))
 	require.NoError(t, err, "Should not throw an error")
 
 	assert.NotEmpty(t, project.Project, "Project should be set")
@@ -181,7 +181,8 @@ func TestSave(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
 	project.path = tmpfile.Name()
-	project.Save(cfg)
+	err = project.Save(cfg)
+	require.NoError(t, err)
 
 	stat, err := tmpfile.Stat()
 	assert.NoError(t, err, "Should be able to stat file")
@@ -236,7 +237,8 @@ func TestGetProjectFilePath(t *testing.T) {
 	cfg, err := config.New()
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
-	cfg.Set(constants.GlobalDefaultPrefname, defaultDir)
+	err = cfg.Set(constants.GlobalDefaultPrefname, defaultDir)
+	require.NoError(t, err)
 
 	// Now set up an empty directory.
 	emptyDir := filepath.Join(rootDir, "empty")
@@ -261,7 +263,7 @@ func TestGetProjectFilePath(t *testing.T) {
 
 	// If the project were to not exist, GetProjectFilePath() should return a typed error.
 	require.NoError(t, os.Setenv(constants.ActivatedStateEnvVarName, filepath.Join(rootDir, "does-not-exist")))
-	path, err = GetProjectFilePath()
+	_, err = GetProjectFilePath()
 	errNoProjectFromEnv := &ErrorNoProjectFromEnv{}
 	assert.ErrorAs(t, err, &errNoProjectFromEnv)
 
@@ -286,14 +288,16 @@ func TestGetProjectFilePath(t *testing.T) {
 	assert.Equal(t, defaultYaml, path)
 
 	// If the default project no longer exists, GetProjectFilePath() should return a typed error.
-	cfg.Set(constants.GlobalDefaultPrefname, filepath.Join(rootDir, "does-not-exist"))
-	path, err = GetProjectFilePath()
+	err = cfg.Set(constants.GlobalDefaultPrefname, filepath.Join(rootDir, "does-not-exist"))
+	require.NoError(t, err)
+	_, err = GetProjectFilePath()
 	errNoDefaultProject := &ErrorNoDefaultProject{}
 	assert.ErrorAs(t, err, &errNoDefaultProject)
 
 	// If none of the above, GetProjectFilePath() should return a typed error.
-	cfg.Set(constants.GlobalDefaultPrefname, "")
-	path, err = GetProjectFilePath()
+	err = cfg.Set(constants.GlobalDefaultPrefname, "")
+	require.NoError(t, err)
+	_, err = GetProjectFilePath()
 	errNoProject := &ErrorNoProject{}
 	assert.ErrorAs(t, err, &errNoProject)
 }
@@ -303,14 +307,16 @@ func TestGet(t *testing.T) {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	cwd, _ := osutils.Getwd()
-	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
+	err = os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
+	require.NoError(t, err, "Should change dir without issue.")
 
 	config, err := Get()
 	require.NoError(t, err)
 	assert.NotNil(t, config, "Config should be set")
 	assert.NotEqual(t, "", os.Getenv(constants.ProjectEnvVarName), "The project env var should be set")
 
-	os.Chdir(cwd) // restore
+	err = os.Chdir(cwd) // restore
+	require.NoError(t, err, "Should change dir without issue.")
 
 	Reset()
 }
@@ -318,13 +324,15 @@ func TestGet(t *testing.T) {
 func TestGetActivated(t *testing.T) {
 	root, _ := environment.GetRootPath()
 	cwd, _ := osutils.Getwd()
-	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
+	err := os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
+	require.NoError(t, err, "Should change dir without issue.")
 
 	config1, err := Get()
 	require.NoError(t, err)
 	assert.Equal(t, filepath.Join(root, "pkg", "projectfile", "testdata", constants.ConfigFileName), os.Getenv(constants.ProjectEnvVarName), "The activated state's config file is set")
 
-	os.Chdir(root)
+	err = os.Chdir(root)
+	require.NoError(t, err, "Should change dir without issue.")
 	config2, err := Get()
 	assert.NoError(t, err, "No error even if no activestate.yaml does not exist")
 	assert.Equal(t, config1, config2, "The same activated state is returned")
@@ -333,7 +341,8 @@ func TestGetActivated(t *testing.T) {
 	actual := os.Getenv(constants.ProjectEnvVarName)
 	assert.Equal(t, expected, actual, "The activated state's config file is still set properly")
 
-	os.Chdir(cwd) // restore
+	err = os.Chdir(cwd) // restore
+	require.NoError(t, err, "Should change dir without issue.")
 
 	Reset()
 }
@@ -349,6 +358,7 @@ func TestParseVersionInfo(t *testing.T) {
 
 	versionInfo, err = ParseVersionInfo(filepath.Join(getWd(t, "withbadversion"), constants.ConfigFileName))
 	assert.Error(t, err)
+	assert.Nil(t, versionInfo, "No version exists, because bad version")
 
 	path, err := os.MkdirTemp("", "ParseVersionInfoTest")
 	require.NoError(t, err)
@@ -360,7 +370,8 @@ func TestParseVersionInfo(t *testing.T) {
 func TestNewProjectfile(t *testing.T) {
 	dir, err := os.MkdirTemp("", "projectfile-test")
 	assert.NoError(t, err, "Should be no error when getting a temp directory")
-	os.Chdir(dir)
+	err = os.Chdir(dir)
+	assert.NoError(t, err, "Should be no error when changing to the temp directory")
 
 	pjFile, err := testOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", dir)
 	assert.NoError(t, err, "There should be no error when loading from a path")

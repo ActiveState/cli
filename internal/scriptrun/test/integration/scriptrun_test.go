@@ -242,7 +242,8 @@ func (suite *ScriptRunSuite) TestRunActivatedCommand() {
 	// Prepare an empty activated environment.
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
-	os.Chdir(filepath.Join(root, "test"))
+	err = os.Chdir(filepath.Join(root, "test"))
+	assert.NoError(t, err, "Should change directory")
 
 	cfg, err := config.New()
 	require.NoError(t, err)

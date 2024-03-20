@@ -221,15 +221,16 @@ func scriptPath(t *testing.T, targetDir string) string {
 
 // assertBinDirContents checks if given files are or are not in the bin directory
 func (suite *InstallScriptsIntegrationTestSuite) assertBinDirContents(dir string) {
-	binFiles := listFilesOnly(dir)
+	binFiles := suite.listFilesOnly(dir)
 	suite.Contains(binFiles, "state"+osutils.ExeExtension)
 	suite.Contains(binFiles, "state-svc"+osutils.ExeExtension)
 }
 
 // listFilesOnly is a helper function for assertBinDirContents filtering a directory recursively for base filenames
 // It allows for simple and coarse checks if a file exists or does not exist in the directory structure
-func listFilesOnly(dir string) []string {
-	files := fileutils.ListDirSimple(dir, true)
+func (suite *InstallScriptsIntegrationTestSuite) listFilesOnly(dir string) []string {
+	files, err := fileutils.ListDirSimple(dir, true)
+	suite.Require().NoError(err)
 	files = funk.Filter(files, func(f string) bool {
 		return !fileutils.IsDir(f)
 	}).([]string)

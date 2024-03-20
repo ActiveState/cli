@@ -155,7 +155,8 @@ func TestWriteFile(t *testing.T) {
 	file.Close()
 
 	// Set file read-only to test if chmodding from WriteFile works
-	os.Chmod(file.Name(), 0444)
+	err = os.Chmod(file.Name(), 0444)
+	require.NoError(t, err)
 
 	err = WriteFile(file.Name(), []byte("abc"))
 	require.NoError(t, err)

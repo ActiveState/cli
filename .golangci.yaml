@@ -1,6 +1,10 @@
-run:
-  skip-dirs:
+issues:
+  exclude-dirs:
     - vendor
+  exclude-rules:
+    - linters:
+        - staticcheck
+      text: "SA9004"
 
 linters-settings:
   errcheck:
@@ -31,12 +35,10 @@ linters-settings:
       - (*github.com/ActiveState/cli/pkg/platform/runtime/artifactcache.testArtifactCache).Store
       - github.com/ActiveState/cli/internal/testhelpers/osutil.RemoveConfigFile
       - (*github.com/ActiveState/cli/internal/logging.standardHandler).Emit
+      - (*github.com/ActiveState/cli/internal/logging.fileHandler).Emit
   govet:
     disable:
       - composites
-linters:
-  disable:
-    - errcheck
 
 # When issues occur with linting us the snippet below to help with debugging
 # linters:

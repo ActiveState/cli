@@ -1,7 +1,6 @@
 package alternative
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -97,7 +96,7 @@ func dirCanBeDeleted(dir string, cache map[artifact.ArtifactID]store.StoredArtif
 		return false, nil
 	}
 
-	entries, err := ioutil.ReadDir(dir)
+	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return false, errs.Wrap(err, "Could not read directory.")
 	}

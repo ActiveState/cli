@@ -3,7 +3,6 @@ package projectfile
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"os/user"
@@ -41,8 +40,8 @@ import (
 )
 
 var (
-	urlProjectRegexStr = fmt.Sprintf(`https:\/\/[\w\.]+\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*([^&]*)(?:\&branch=)*(.*)`)
-	urlCommitRegexStr  = fmt.Sprintf(`https:\/\/[\w\.]+\/commit\/(.*)`)
+	urlProjectRegexStr = `https:\/\/[\w\.]+\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*([^&]*)(?:\&branch=)*(.*)`
+	urlCommitRegexStr  = `https:\/\/[\w\.]+\/commit\/(.*)`
 
 	// ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
 	ProjectURLRe = regexp.MustCompile(urlProjectRegexStr)
@@ -401,7 +400,7 @@ var persistentProject *Project
 // Parse the given filepath, which should be the full path to an activestate.yaml file
 func Parse(configFilepath string) (_ *Project, rerr error) {
 	projectDir := filepath.Dir(configFilepath)
-	files, err := ioutil.ReadDir(projectDir)
+	files, err := os.ReadDir(projectDir)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_project_readdir", "Could not read project directory: {{.V0}}.", projectDir)
 	}
@@ -1323,7 +1322,7 @@ func GetProjectPaths(cfg ConfigGetter, namespace string) []string {
 	// match case-insensitively
 	var paths []string
 	for key, value := range projects {
-		if strings.ToLower(key) == strings.ToLower(namespace) {
+		if strings.EqualFold(key, namespace) {
 			paths = append(paths, value...)
 		}
 	}

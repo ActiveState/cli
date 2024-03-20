@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ActiveState/cli/internal/access"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -139,13 +140,16 @@ func definedSecrets(proj *project.Project, secCli *secretsapi.Client, cfg keypai
 	}
 
 	if filter != "" {
-		secretDefs = filterSecrets(proj, cfg, auth, secretDefs, filter)
+		secretDefs, err = filterSecrets(proj, cfg, auth, secretDefs, filter)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not filter secrets")
+		}
 	}
 
 	return secretDefs, nil
 }
 
-func filterSecrets(proj *project.Project, cfg keypairs.Configurable, auth *authentication.Auth, secrectDefs []*secretsModels.SecretDefinition, filter string) []*secretsModels.SecretDefinition {
+func filterSecrets(proj *project.Project, cfg keypairs.Configurable, auth *authentication.Auth, secrectDefs []*secretsModels.SecretDefinition, filter string) ([]*secretsModels.SecretDefinition, error) {
 	secrectDefsFiltered := []*secretsModels.SecretDefinition{}
 
 	oldExpander := project.RegisteredExpander("secrets")
@@ -153,11 +157,19 @@ func filterSecrets(proj *project.Project, cfg keypairs.Configurable, auth *authe
 		defer project.RegisterExpander("secrets", oldExpander)
 	}
 	expander := project.NewSecretExpander(secretsapi.Get(auth), proj, nil, cfg, auth)
-	project.RegisterExpander("secrets", expander.Expand)
-	project.ExpandFromProject(fmt.Sprintf("$%s", filter), proj)
+	err := project.RegisterExpander("secrets", expander.Expand)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not register secrets expander")
+	}
+
+	_, err = project.ExpandFromProject(fmt.Sprintf("$%s", filter), proj)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not expand filter")
+	}
+
 	accessedSecrets := expander.SecretsAccessed()
 	if accessedSecrets == nil {
-		return secrectDefsFiltered
+		return secrectDefsFiltered, nil
 	}
 
 	for _, secretDef := range secrectDefs {
@@ -169,7 +181,7 @@ func filterSecrets(proj *project.Project, cfg keypairs.Configurable, auth *authe
 		}
 	}
 
-	return secrectDefsFiltered
+	return secrectDefsFiltered, nil
 }
 
 func defsToData(defs []*secretsModels.SecretDefinition, cfg keypairs.Configurable, proj *project.Project, auth *authentication.Auth) ([]*secretData, error) {

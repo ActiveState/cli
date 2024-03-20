@@ -25,10 +25,14 @@ func RegisterConfigListener(cfg *config.Instance) error {
 	configMediator.AddListener(constants.AutostartSvcConfigKey, func() {
 		if cfg.GetBool(constants.AutostartSvcConfigKey) {
 			logging.Debug("Enabling autostart")
-			autostart.Enable(app.Path(), Options)
+			if err := autostart.Enable(app.Path(), Options); err != nil {
+				logging.Error("Failed to enable autostart: %s", err)
+			}
 		} else {
 			logging.Debug("Disabling autostart")
-			autostart.Disable(app.Path(), Options)
+			if err := autostart.Disable(app.Path(), Options); err != nil {
+				logging.Error("Failed to disable autostart: %s", err)
+			}
 		}
 	})
 

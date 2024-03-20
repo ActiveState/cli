@@ -75,7 +75,10 @@ func ScriptFromFile(path string) (*Script, error) {
 
 func Update(proj projecter, newExpr *buildexpression.BuildExpression, auth *authentication.Auth) error {
 	if script, err := ScriptFromProjectWithFallback(proj, auth); err == nil && (script == nil || !script.EqualsBuildExpression(newExpr)) {
-		update(proj.ProjectDir(), newExpr, auth)
+		err := update(proj.ProjectDir(), newExpr, auth)
+		if err != nil {
+			return errs.Wrap(err, "Could not update build script")
+		}
 	} else if err != nil {
 		return errs.Wrap(err, "Could not read build script")
 	}

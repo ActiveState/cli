@@ -94,7 +94,7 @@ func EnsureCorrectProject(owner, name, projectFilePath, repoURL string, out outp
 		return locale.WrapError(err, "err_git_project", "Could not create new project from project file at: {{.V0}}", projectFile.Path())
 	}
 
-	if !(strings.ToLower(proj.Owner()) == strings.ToLower(owner)) || !(strings.ToLower(proj.Name()) == strings.ToLower(name)) {
+	if !(strings.EqualFold(proj.Owner(), owner)) || !(strings.EqualFold(proj.Name(), name)) {
 		out.Notice(locale.Tr("warning_git_project_mismatch", repoURL, project.NewNamespace(owner, name, "").String(), constants.DocumentationURLMismatch))
 		err = proj.Source().SetNamespace(owner, name)
 		if err != nil {

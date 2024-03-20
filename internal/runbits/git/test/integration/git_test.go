@@ -50,6 +50,7 @@ func (suite *GitTestSuite) BeforeTest(suiteName, testName string) {
 	suite.NoError(err, "could not add tempfile to staging")
 
 	_, err = worktree.Add("activestate.yaml")
+	suite.NoError(err, "could not add projectfile to staging")
 
 	commit, err := worktree.Commit("commit for test", &git.CommitOptions{
 		Author: &object.Signature{
@@ -58,6 +59,7 @@ func (suite *GitTestSuite) BeforeTest(suiteName, testName string) {
 			When:  time.Now(),
 		},
 	})
+	suite.NoError(err, "could not create a commit")
 
 	_, err = repo.CommitObject(commit)
 	suite.NoError(err, "could not commit testfile")

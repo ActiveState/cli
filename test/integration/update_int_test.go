@@ -3,7 +3,6 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -78,7 +77,8 @@ func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, expecte
 
 	version := versionData{}
 	out := cp.StrippedSnapshot()
-	json.Unmarshal([]byte(out), &version)
+	err := json.Unmarshal([]byte(out), &version)
+	suite.NoError(err)
 
 	matcher(expected, version.Version, fmt.Sprintf("Version could not be matched, output:\n\n%s", out))
 }
@@ -93,7 +93,8 @@ func (suite *UpdateIntegrationTestSuite) channelCompare(ts *e2e.Session, expecte
 
 	channel := channelData{}
 	out := cp.StrippedSnapshot()
-	json.Unmarshal([]byte(out), &channel)
+	err := json.Unmarshal([]byte(out), &channel)
+	suite.NoError(err)
 
 	matcher(expected, channel.Channel, fmt.Sprintf("Channel could not be matched, output:\n\n%s", out))
 }
@@ -107,7 +108,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
 	suite.Require().NoError(err)
 	defer cfg.Close()
-	cfg.Set(constants.AutoUpdateConfigKey, "false")
+	err = cfg.Set(constants.AutoUpdateConfigKey, "false")
+	suite.Require().NoError(err)
 
 	search, found := "Update Available", false
 	for i := 0; i < 4; i++ {
@@ -181,7 +183,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
 	defer cfg.Close()
 
 	subBinDir := filepath.Join(ts.Dirs.Bin, "bin")
-	files, err := ioutil.ReadDir(ts.Dirs.Bin)
+	files, err := os.ReadDir(ts.Dirs.Bin)
 	suite.NoError(err)
 	for _, f := range files {
 		err = fileutils.CopyFile(filepath.Join(ts.Dirs.Bin, f.Name()), filepath.Join(subBinDir, f.Name()))
@@ -380,7 +382,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateToCurrent() {
 	defer ts.Close()
 
 	installDir := filepath.Join(ts.Dirs.Work, "install")
-	fileutils.MkdirUnlessExists(installDir)
+	err := fileutils.MkdirUnlessExists(installDir)
+	suite.Require().NoError(err)
 
 	suite.installLatestReleaseVersion(ts, installDir)
 

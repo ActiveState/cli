@@ -2,7 +2,7 @@ package logging
 
 import (
 	"io/fs"
-	"io/ioutil"
+	"io/ioutil" //nolint:staticcheck
 	"os"
 	"path/filepath"
 	"regexp"
@@ -49,7 +49,7 @@ func rotateLogs(files []fs.FileInfo, timeCutoff time.Time, amountCutoff int) []f
 func rotateLogsOnDisk() {
 	// Clean up old log files
 	logDir := filepath.Dir(FilePath())
-	files, err := ioutil.ReadDir(logDir)
+	files, err := ioutil.ReadDir(logDir) //nolint:staticcheck
 	if err != nil && !os.IsNotExist(err) {
 		Error("Could not scan config dir to clean up stale logs: %v", err)
 		return

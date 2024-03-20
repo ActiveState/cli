@@ -240,11 +240,10 @@ func writeMessageDepth(depth int, level string, msg string, args ...interface{})
 	// func() interface{} with the return value of executing it now.
 	// This allows lazy evaluation of arguments which are return values
 	for i, arg := range args {
-		switch arg.(type) {
+		switch arg := arg.(type) {
 		case func() interface{}:
-			args[i] = arg.(func() interface{})()
+			args[i] = arg
 		default:
-
 		}
 	}
 

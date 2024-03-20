@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -765,9 +764,9 @@ func copyFiles(src, dest string, remove bool) error {
 		return locale.NewError("err_os_not_a_directory", "", dest)
 	}
 
-	entries, err := ioutil.ReadDir(src)
+	entries, err := os.ReadDir(src)
 	if err != nil {
-		return errs.Wrap(err, "ioutil.ReadDir %s failed", src)
+		return errs.Wrap(err, "os.ReadDir %s failed", src)
 	}
 
 	for _, entry := range entries {
@@ -1030,9 +1029,9 @@ func SymlinkTarget(symlink string) (string, error) {
 
 // ListDirSimple recursively lists filepaths under the given sourcePath
 // This does not follow symlinks
-func ListDirSimple(sourcePath string, includeDirs bool) []string {
+func ListDirSimple(sourcePath string, includeDirs bool) ([]string, error) {
 	result := []string{}
-	filepath.WalkDir(sourcePath, func(path string, f fs.DirEntry, err error) error {
+	err := filepath.WalkDir(sourcePath, func(path string, f fs.DirEntry, err error) error {
 		if err != nil {
 			return errs.Wrap(err, "Could not walk path: %s", path)
 		}
@@ -1042,13 +1041,16 @@ func ListDirSimple(sourcePath string, includeDirs bool) []string {
 		result = append(result, path)
 		return nil
 	})
-	return result
+	if err != nil {
+		return result, errs.Wrap(err, "Could not walk dir: %s", sourcePath)
+	}
+	return result, nil
 }
 
 // ListFilesUnsafe lists filepaths under the given sourcePath non-recursively
 func ListFilesUnsafe(sourcePath string) []string {
 	result := []string{}
-	files, err := ioutil.ReadDir(sourcePath)
+	files, err := os.ReadDir(sourcePath)
 	if err != nil {
 		panic(fmt.Sprintf("Could not read dir: %s, error: %s", sourcePath, errs.JoinMessage(err)))
 	}

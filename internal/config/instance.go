@@ -3,7 +3,6 @@ package config
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -64,7 +63,7 @@ func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) 
 	isNew := err != nil
 
 	t := time.Now()
-	i.db, err = sql.Open("sqlite", fmt.Sprintf(`%s`, path))
+	i.db, err = sql.Open("sqlite", path)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create sqlite connection to %s", path)
 	}
@@ -211,7 +210,10 @@ func (i *Instance) AllKeys() []string {
 	defer rows.Close()
 	for rows.Next() {
 		var key string
-		rows.Scan(&key)
+		if err = rows.Scan(&key); err != nil {
+			multilog.Error("config:AllKeys scan failed: %s", errs.JoinMessage(err))
+			return nil
+		}
 		keys = append(keys, key)
 	}
 	return keys

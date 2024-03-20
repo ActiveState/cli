@@ -262,7 +262,10 @@ func (suite *InstallerIntegrationTestSuite) TestInstallWhileInUse() {
 	cp2.ExpectExit() // the return code can vary depending on shell (e.g. zsh vs. bash); just assert the installer shell exited
 
 	oldStateExeFound := false
-	for _, file := range fileutils.ListDirSimple(filepath.Join(installationDir(ts), "bin"), false) {
+	files, err := fileutils.ListDirSimple(filepath.Join(installationDir(ts), "bin"), false)
+	suite.Require().NoError(err)
+
+	for _, file := range files {
 		if strings.Contains(file, "state.exe") && strings.HasSuffix(file, ".old") {
 			oldStateExeFound = true
 			break

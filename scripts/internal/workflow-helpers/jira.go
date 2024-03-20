@@ -189,10 +189,8 @@ func UpdateJiraFixVersion(client *jira.Client, issue *jira.Issue, versionID stri
 		switch fixVersion.Name {
 		case VersionNextFeasible:
 			issueUpdate.Fields.Labels = append(issueUpdate.Fields.Labels, "WasNextFeasible")
-			break
 		case VersionNextUnscheduled:
 			issueUpdate.Fields.Labels = append(issueUpdate.Fields.Labels, "WasNextUnscheduled")
-			break
 		}
 	}
 

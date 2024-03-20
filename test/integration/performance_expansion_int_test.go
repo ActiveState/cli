@@ -43,7 +43,7 @@ func (suite *PerformanceExpansionIntegrationTestSuite) startSvc(ts *e2e.Session)
 
 func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance() {
 	suite.OnlyRunForTags(tagsuite.Performance)
-	baseline := DefaultMaxTime
+	baseline := DefaultMaxTime //nolint:ineffassign
 
 	// Establish baseline
 	// Must not be called as a subtest as it breaks the running of other subtests
@@ -382,7 +382,7 @@ func (suite *PerformanceExpansionIntegrationTestSuite) testScriptPerformance(opt
 		suite.prepareAlternateActiveStateYaml(name, string(contents), ts)
 	}
 
-	return performanceTest([]string{"run", opts.script.Name}, opts.expect, opts.samples, opts.max, opts.verbose, suite.Suite, ts)
+	return performanceTest([]string{"run", opts.script.Name}, opts.expect, opts.samples, opts.max, opts.verbose, &suite.Suite, ts)
 }
 
 func (suite *PerformanceExpansionIntegrationTestSuite) prepareAlternateActiveStateYaml(name, contents string, ts *e2e.Session) {

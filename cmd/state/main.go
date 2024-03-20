@@ -207,8 +207,13 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 	conditional := constraints.NewPrimeConditional(auth, pj, sshell.Shell())
 	project.RegisterConditional(conditional)
-	project.RegisterExpander("mixin", project.NewMixin(auth).Expander)
-	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(auth), prompter, cfg, auth))
+	if err := project.RegisterExpander("mixin", project.NewMixin(auth).Expander); err != nil {
+		logging.Debug("Could not register mixin expander: %v", err)
+	}
+
+	if err := project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(auth), prompter, cfg, auth)); err != nil {
+		logging.Debug("Could not register secrets expander: %v", err)
+	}
 
 	// Run the actual command
 	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, ipcClient, svcmodel, an), args...)

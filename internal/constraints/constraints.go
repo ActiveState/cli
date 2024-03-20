@@ -18,9 +18,6 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-// For testing.
-var osVersionOverride, archOverride, libcOverride, compilerOverride string
-
 type Conditional struct {
 	params map[string]interface{}
 	funcs  template.FuncMap

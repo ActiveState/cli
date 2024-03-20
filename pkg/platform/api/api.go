@@ -75,7 +75,7 @@ func (r *RoundTripper) UserAgent() string {
 	}
 
 	var userAgent bytes.Buffer
-	agentTemplate.Execute(&userAgent, struct {
+	err = agentTemplate.Execute(&userAgent, struct {
 		UserAgent    string
 		OS           string
 		OSVersion    string
@@ -86,6 +86,9 @@ func (r *RoundTripper) UserAgent() string {
 		OSVersion:    osVersionStr,
 		Architecture: sysinfo.Architecture().String(),
 	})
+	if err != nil {
+		logging.Error("Could not execute user agent template: %v", err)
+	}
 
 	return userAgent.String()
 }

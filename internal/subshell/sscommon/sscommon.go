@@ -28,9 +28,14 @@ func Start(cmd *exec.Cmd) chan error {
 
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 
-	cmd.Start()
-
 	errors := make(chan error, 1)
+
+	err := cmd.Start()
+	if err != nil {
+		errors <- errs.Wrap(err, "Failed to start command: %s", cmd.String())
+		close(errors)
+		return errors
+	}
 
 	go func() {
 		defer close(errors)

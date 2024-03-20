@@ -76,7 +76,8 @@ func (m *Messages) Check(command string, flags []string) ([]*graph.MessageInfo, 
 	}
 	allMessages := cacheValue.([]*graph.MessageInfo)
 
-	conditionParams := &(*m.baseParams) // copy
+	// copy the base params
+	conditionParams := &(*m.baseParams) //nolint:staticcheck
 	conditionParams.UserEmail = m.auth.Email()
 	conditionParams.UserName = m.auth.WhoAmI()
 	conditionParams.Command = command

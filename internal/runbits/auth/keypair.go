@@ -91,7 +91,9 @@ func recoverKeypairFromPreviousPassphrase(keypairRes *secretsModels.Keypair, pas
 			// previous passphrase is valid, encrypt private-key with new passphrase and upload
 			encodedKeypair, err := keypairs.EncodeKeypair(keypair, passphrase)
 			if err == nil {
-				err = keypairs.SaveEncodedKeypair(cfg, secretsapi.Get(auth), encodedKeypair, auth)
+				if saveErr := keypairs.SaveEncodedKeypair(cfg, secretsapi.Get(auth), encodedKeypair, auth); saveErr != nil {
+					return saveErr
+				}
 			}
 		}
 	}

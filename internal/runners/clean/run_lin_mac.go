@@ -170,10 +170,15 @@ func removeEmptyDir(dir string) error {
 		return errs.Wrap(err, "Could not check if directory is empty")
 	}
 
+	files, err := fileutils.ListDirSimple(dir, true)
+	if err != nil {
+		return errs.Wrap(err, "Could not list directory")
+	}
+
 	if !empty {
 		content, err := strutils.ParseTemplate(
 			"{{- range $file := .Files}}\n - {{$file}}\n{{- end}}",
-			map[string]interface{}{"Files": fileutils.ListDirSimple(dir, true)},
+			map[string]interface{}{"Files": files},
 			nil)
 		if err != nil {
 			return errs.Wrap(err, "Could not parse file list template")

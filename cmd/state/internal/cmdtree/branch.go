@@ -23,30 +23,6 @@ func newBranchCommand(prime *primer.Values) *captain.Command {
 		}).SetGroup(PlatformGroup).SetSupportsStructuredOutput().SetUnstable(true)
 }
 
-func newBranchAddCommand(prime *primer.Values) *captain.Command {
-	runner := branch.NewAdd(prime)
-
-	params := branch.AddParams{}
-
-	return captain.NewCommand(
-		"add",
-		locale.Tl("add_title", "Adding branch"),
-		locale.Tl("add_description", "Add a branch to your project"),
-		prime,
-		[]*captain.Flag{},
-		[]*captain.Argument{
-			{
-				Name:        locale.Tl("branch_arg_name", "name"),
-				Description: locale.Tl("branch_arg_name_description", "Branch to be created"),
-				Value:       &params.Label,
-				Required:    true,
-			},
-		},
-		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params)
-		}).SetSupportsStructuredOutput()
-}
-
 func newBranchSwitchCommand(prime *primer.Values) *captain.Command {
 	runner := swtch.New(prime)
 

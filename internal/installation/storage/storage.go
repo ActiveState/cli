@@ -27,6 +27,7 @@ func AppDataPath() (string, error) {
 			// panic as this only happening in tests
 			panic(err)
 		}
+		return localPath, nil
 	}
 
 	// Account for HOME dir not being set, meaning querying global folders will fail

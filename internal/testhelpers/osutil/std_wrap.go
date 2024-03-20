@@ -104,9 +104,15 @@ func writeLinesAndClosePipe(writer *os.File, lines []interface{}, callbackFn fun
 			callbackFn()
 		}
 		if lineStr, ok := line.(string); ok {
-			writer.WriteString(lineStr + "\n")
+			_, err := writer.WriteString(lineStr + "\n")
+			if err != nil {
+				log.Panicf("Error writing to stdin: %v", err)
+			}
 		} else if lineRune, ok := line.(rune); ok {
-			writer.WriteString(string(lineRune))
+			_, err := writer.WriteString(string(lineRune))
+			if err != nil {
+				log.Panicf("Error writing to stdin: %v", err)
+			}
 		} else {
 			log.Panicf("Unsupported line: %v", line)
 		}

@@ -1,7 +1,6 @@
 package executors
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	rt "runtime"
@@ -106,7 +105,7 @@ func (es *Executors) Clean() error {
 		return nil
 	}
 
-	files, err := ioutil.ReadDir(es.executorPath)
+	files, err := os.ReadDir(es.executorPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not read dir: %s", es.executorPath)
 	}

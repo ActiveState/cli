@@ -89,6 +89,7 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, lang string, ex
 			"Language": expectedConfigLanguage,
 			"LangExe":  language.MakeByName(expectedConfigLanguage).Executable().Filename(),
 		}, nil)
+	suite.Require().NoError(err)
 
 	content, err := os.ReadFile(configFilepath)
 	suite.Require().NoError(err)

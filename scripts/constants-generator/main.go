@@ -78,7 +78,9 @@ func run(args []string) {
 
 	wd, _ := os.Getwd()
 	log("Writing generated constants to: %s (pwd: %s)", target, wd)
-	os.WriteFile(target, buf.Bytes(), 0666)
+	if err := os.WriteFile(target, buf.Bytes(), 0666); err != nil {
+		logFatal("Failed to write file: %v", err)
+	}
 
 	log("Constants file generated")
 }

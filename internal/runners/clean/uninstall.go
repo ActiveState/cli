@@ -99,11 +99,13 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 		return errs.Wrap(err, "Failed to stop services.")
 	}
 
-	err = u.runUninstall(params)
-	if err != nil {
+	if err := u.runUninstall(params); err != nil {
 		return errs.Wrap(err, "Could not complete uninstallation")
 	}
-	events.WaitForEvents(5*time.Second, u.an.Close, logging.Close)
+
+	if err := events.WaitForEvents(5*time.Second, u.an.Close, logging.Close); err != nil {
+		return errs.Wrap(err, "Could not complete uninstallation")
+	}
 
 	return nil
 }
