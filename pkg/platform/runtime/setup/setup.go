@@ -172,6 +172,10 @@ func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth
 }
 
 func (s *Setup) Solve() (*apimodel.BuildResult, error) {
+	defer func() {
+		s.solveUpdateRecover(recover())
+	}()
+
 	if s.target.InstallFromDir() != nil {
 		return nil, nil
 	}
@@ -194,7 +198,22 @@ func (s *Setup) Solve() (*apimodel.BuildResult, error) {
 	return buildResult, nil
 }
 
-func (s *Setup) Update(buildResult *apimodel.BuildResult) error {
+func (s *Setup) Update(buildResult *apimodel.BuildResult) (rerr error) {
+	defer func() {
+		s.solveUpdateRecover(recover())
+	}()
+	defer func() {
+		var ev events.Eventer = events.Success{}
+		if rerr != nil {
+			ev = events.Failure{}
+		}
+
+		err := s.handleEvent(ev)
+		if err != nil {
+			multilog.Error("Could not handle Success/Failure event: %s", errs.JoinMessage(err))
+		}
+	}()
+
 	// Do not allow users to deploy runtimes to the root directory (this can easily happen in docker
 	// images). Note that runtime targets are fully resolved via fileutils.ResolveUniquePath(), so
 	// paths like "/." and "/opt/.." resolve to simply "/" at this time.
@@ -221,49 +240,25 @@ func (s *Setup) Update(buildResult *apimodel.BuildResult) error {
 	return nil
 }
 
-// SolveAndUpdate installs the runtime locally (or updates it if it's already partially installed)
-func (s *Setup) SolveAndUpdate() (rerr error) {
-	defer func() {
-		// Panics are serious, and reproducing them in the runtime package is HARD. To help with this we dump
-		// the build plan when a panic occurs so we have something more to go on.
-		if r := recover(); r != nil {
-			buildplan, err := s.store.BuildPlanRaw()
-			if err != nil {
-				logging.Error("Could not get raw buildplan: %s", err)
-			}
-			env, err := s.store.EnvDef()
-			if err != nil {
-				logging.Error("Could not get envdef: %s", err)
-			}
-			// We do a standard error log first here, as rollbar reports will pick up the most recent log lines.
-			// We can't put the buildplan in the multilog message as it'd be way too big a message for rollbar.
-			logging.Error("Panic during runtime update: %s, build plan:\n%s\n\nEnvDef:\n%#v", r, buildplan, env)
-			multilog.Critical("Panic during runtime update: %s", r)
-			panic(r) // We're just logging the panic while we have context, we're not meant to handle it here
-		}
-	}()
-	defer func() {
-		var ev events.Eventer = events.Success{}
-		if rerr != nil {
-			ev = events.Failure{}
-		}
-
-		err := s.handleEvent(ev)
-		if err != nil {
-			multilog.Error("Could not handle Success/Failure event: %s", errs.JoinMessage(err))
-		}
-	}()
-
-	buildResult, err := s.Solve()
+// Panics are serious, and reproducing them in the runtime package is HARD. To help with this we dump
+// the build plan when a panic occurs so we have something more to go on.
+func (s *Setup) solveUpdateRecover(r interface{}) {
+	if r == nil {
+		return
+	}
+	buildplan, err := s.store.BuildPlanRaw()
 	if err != nil {
-		return errs.Wrap(err, "Could not solve build")
+		logging.Error("Could not get raw buildplan: %s", err)
 	}
-
-	if err := s.Update(buildResult); err != nil {
-		return errs.Wrap(err, "Runtime update failed")
+	env, err := s.store.EnvDef()
+	if err != nil {
+		logging.Error("Could not get envdef: %s", err)
 	}
-
-	return nil
+	// We do a standard error log first here, as rollbar reports will pick up the most recent log lines.
+	// We can't put the buildplan in the multilog message as it'd be way too big a message for rollbar.
+	logging.Error("Panic during runtime update: %s, build plan:\n%s\n\nEnvDef:\n%#v", r, buildplan, env)
+	multilog.Critical("Panic during runtime update: %s", r)
+	panic(r) // We're just logging the panic while we have context, we're not meant to handle it here
 }
 
 func (s *Setup) updateArtifacts(buildResult *apimodel.BuildResult) ([]artifact.ArtifactID, error) {
