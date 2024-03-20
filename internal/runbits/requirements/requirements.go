@@ -38,8 +38,8 @@ import (
 )
 
 func init() {
-	configMediator.RegisterOption(constants.SecurityPromptConfig, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
-	configMediator.RegisterOption(constants.SecurityPromptLevelConfig, configMediator.String, configMediator.EmptyEvent, configMediator.EmptyEvent)
+	configMediator.RegisterOption(constants.SecurityPromptConfig, configMediator.Bool, true)
+	configMediator.RegisterOption(constants.SecurityPromptLevelConfig, configMediator.String, vulnModel.SeverityCritical)
 }
 
 const (
@@ -432,20 +432,8 @@ func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 }
 
 func (r *RequirementOperation) shouldPromptForSecurity(vulnerabilities *model.Vulnerabilites) bool {
-	if (r.Config.IsSet(constants.SecurityPromptConfig) && !r.Config.GetBool(constants.SecurityPromptConfig)) || vulnerabilities == nil {
+	if !r.Config.GetBool(constants.SecurityPromptConfig) || vulnerabilities == nil {
 		return false
-	}
-
-	if !r.Config.IsSet(constants.SecurityPromptConfig) {
-		if err := r.Config.Set(constants.SecurityPromptConfig, promptDefault); err != nil {
-			multilog.Error("Failed to set security prompt config: %v", err)
-		}
-	}
-
-	if !r.Config.IsSet(constants.SecurityPromptLevelConfig) {
-		if err := r.Config.Set(constants.SecurityPromptLevelConfig, promptDefaultLevel); err != nil {
-			multilog.Error("Failed to set security prompt level config: %v", err)
-		}
 	}
 
 	promptLevel := r.Config.GetString(constants.SecurityPromptLevelConfig)

@@ -55,7 +55,7 @@ var (
 )
 
 func init() {
-	configMediator.RegisterOption(constants.PreservePs1ConfigKey, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
+	configMediator.RegisterOption(constants.PreservePs1ConfigKey, configMediator.Bool, false)
 }
 
 // Configurable defines an interface to store and get configuration data
