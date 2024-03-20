@@ -251,6 +251,17 @@ func (r *Resolver) FetchLogTail(ctx context.Context) (string, error) {
 	return logging.ReadTail(), nil
 }
 
+func (r *Resolver) GetProcessesInUse(ctx context.Context, execDir string) ([]*graph.ProcessInfo, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
+	inUse := r.rtwatch.GetProcessesInUse(execDir)
+	processes := make([]*graph.ProcessInfo, 0, len(inUse))
+	for exe, pid := range inUse {
+		processes = append(processes, &graph.ProcessInfo{exe, pid})
+	}
+	return processes, nil
+}
+
 func handlePanics(recovered interface{}, stack []byte) {
 	if recovered != nil {
 		multilog.Error("Panic: %v", recovered)

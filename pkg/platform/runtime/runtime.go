@@ -182,7 +182,7 @@ func (r *Runtime) Update(eventHandler events.Handler) (rerr error) {
 		r.recordCompletion(rerr)
 	}()
 
-	if err := setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out).Update(); err != nil {
+	if err := setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out, r.svcm).Update(); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}
 

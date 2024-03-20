@@ -15,3 +15,7 @@ type AvailableUpdateResponse struct {
 type CheckMessagesResponse struct {
 	Messages []*MessageInfo `json:"checkMessages"`
 }
+
+type GetProcessesInUseResponse struct {
+	Processes []*ProcessInfo `json:"getProcessesInUse"`
+}

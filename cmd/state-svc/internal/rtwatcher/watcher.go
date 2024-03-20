@@ -3,8 +3,10 @@ package rtwatcher
 import (
 	"encoding/json"
 	"os"
+	"runtime"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"time"
 
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
@@ -98,6 +100,32 @@ func (w *Watcher) check() {
 func (w *Watcher) RecordUsage(e entry) {
 	logging.Debug("Recording usage of %s (%d)", e.Exec, e.PID)
 	w.an.EventWithSource(anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, e.Source, e.Dims)
+}
+
+// GetProcessesInUse returns for a given runtime exec directory a map of running executables to
+// their process IDs.
+func (w *Watcher) GetProcessesInUse(execDir string) map[string]int {
+	inUse := map[string]int{}
+
+	if runtime.GOOS != "linux" {
+		execDir = strings.ToLower(execDir) // Windows and macOS filesystems are case-insensitive
+	}
+	for _, proc := range w.watching {
+		exeToCompare := proc.Exec
+		if runtime.GOOS != "linux" {
+			exeToCompare = strings.ToLower(exeToCompare) // Windows and macOS filesystems are case-insensitive
+		}
+		if !strings.Contains(exeToCompare, execDir) {
+			continue
+		}
+		if isRunning, err := proc.IsRunning(); err == nil && isRunning {
+			inUse[proc.Exec] = proc.PID
+		} else if err != nil {
+			multilog.Error("Could not check if runtime process is running: %s", errs.JoinMessage(err))
+		}
+	}
+
+	return inUse
 }
 
 func (w *Watcher) Close() error {

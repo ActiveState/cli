@@ -163,6 +163,23 @@ func (m *SvcModel) FetchLogTail(ctx context.Context) (string, error) {
 	return "", errs.New("svcModel.FetchLogTail() did not return an expected value")
 }
 
+func (m *SvcModel) GetProcessesInUse(ctx context.Context, execDir string) (map[string]int, error) {
+	logging.Debug("Checking if runtime is in use for %s", execDir)
+	defer profile.Measure("svc:GetProcessesInUse", time.Now())
+
+	req := request.NewGetProcessesInUse(execDir)
+	response := graph.GetProcessesInUseResponse{}
+	if err := m.request(ctx, req, &response); err != nil {
+		return nil, errs.Wrap(err, "Error sending GetProcessesInUse request to state-svc")
+	}
+
+	inUse := make(map[string]int)
+	for _, proc := range response.Processes {
+		inUse[proc.Exe] = proc.Pid
+	}
+	return inUse, nil
+}
+
 func jsonFromMap(m map[string]interface{}) string {
 	d, err := json.Marshal(m)
 	if err != nil {
