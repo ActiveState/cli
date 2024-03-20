@@ -25,11 +25,7 @@ func TestSetUnknownKey(t *testing.T) {
 	assert.False(t, cfg.IsSet("unknown"))
 
 	// Register config key to be known. Now setting it should not error.
-	configMediator.RegisterOption(configMediator.Option{
-		Name:    "unknown",
-		Type:    configMediator.Bool,
-		Default: true,
-	})
+	configMediator.RegisterOption("unknown", configMediator.Bool, true)
 	err = set.Run(params)
 	assert.NoError(t, err)
 	assert.True(t, cfg.IsSet("unknown"))
@@ -40,27 +36,15 @@ func TestDefaultKey(t *testing.T) {
 	cfg, err := config.New()
 	assert.NoError(t, err)
 
-	configMediator.RegisterOption(configMediator.Option{
-		Name:    "foo",
-		Type:    configMediator.String,
-		Default: "bar",
-	})
+	configMediator.RegisterOption("foo", configMediator.String, "bar")
 	assert.Equal(t, "bar", cfg.GetString("foo"))
 	assert.False(t, cfg.IsSet("foo"))
 
-	configMediator.RegisterOption(configMediator.Option{
-		Name:    "bar",
-		Type:    configMediator.Bool,
-		Default: true,
-	})
+	configMediator.RegisterOption("bar", configMediator.Bool, true)
 	assert.True(t, cfg.GetBool("bar"))
 	assert.False(t, cfg.IsSet("bar"))
 
-	configMediator.RegisterOption(configMediator.Option{
-		Name:    "baz",
-		Type:    configMediator.Int,
-		Default: 0,
-	})
+	configMediator.RegisterOption("baz", configMediator.Int, 0)
 	assert.Equal(t, 0, cfg.GetInt("baz"))
 	assert.False(t, cfg.IsSet("baz"))
 

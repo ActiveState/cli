@@ -37,17 +37,14 @@ func GetOption(key string) Option {
 	return rule
 }
 
-// Registers a config option.
-// Name, Type, and Default are required fields.
-func RegisterOption(option Option) {
-	if option.GetEvent == nil {
-		option.GetEvent = EmptyEvent
-	}
-	if option.SetEvent == nil {
-		option.SetEvent = EmptyEvent
-	}
-	option.isRegistered = true
-	registry[option.Name] = option
+// Registers a config option without get/set events.
+func RegisterOption(key string, t Type, defaultValue interface{}) {
+	RegisterOptionWithEvents(key, t, defaultValue, EmptyEvent, EmptyEvent)
+}
+
+// Registers a config option with get/set events.
+func RegisterOptionWithEvents(key string, t Type, defaultValue interface{}, get, set Event) {
+	registry[key] = Option{key, t, defaultValue, get, set, true}
 }
 
 func KnownOption(rule Option) bool {

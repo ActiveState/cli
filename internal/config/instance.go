@@ -194,12 +194,13 @@ func (i *Instance) rawGet(key string) interface{} {
 
 func (i *Instance) Get(key string) interface{} {
 	result := i.rawGet(key)
-	if result == nil {
-		if opt := mediator.GetOption(key); mediator.KnownOption(opt) {
-			result = opt.Default
-		}
+	if result != nil {
+		return result
 	}
-	return result
+	if opt := mediator.GetOption(key); mediator.KnownOption(opt) {
+		return opt.Default
+	}
+	return nil
 }
 
 // GetString retrieves a string for a given key

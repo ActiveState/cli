@@ -38,16 +38,8 @@ import (
 )
 
 func init() {
-	configMediator.RegisterOption(configMediator.Option{
-		Name:    constants.SecurityPromptConfig,
-		Type:    configMediator.Bool,
-		Default: true,
-	})
-	configMediator.RegisterOption(configMediator.Option{
-		Name:    constants.SecurityPromptLevelConfig,
-		Type:    configMediator.String,
-		Default: vulnModel.SeverityCritical,
-	})
+	configMediator.RegisterOption(constants.SecurityPromptConfig, configMediator.Bool, true)
+	configMediator.RegisterOption(constants.SecurityPromptLevelConfig, configMediator.String, vulnModel.SeverityCritical)
 }
 
 const (

@@ -34,11 +34,7 @@ type ErrStateExe struct{ *locale.LocalizedError }
 type ErrExecuteRelaunch struct{ *errs.WrapperError }
 
 func init() {
-	configMediator.RegisterOption(configMediator.Option{
-		Name:    constants.AutoUpdateConfigKey,
-		Type:    configMediator.Bool,
-		Default: !condition.IsLTS(),
-	})
+	configMediator.RegisterOption(constants.AutoUpdateConfigKey, configMediator.Bool, !condition.IsLTS())
 }
 
 func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an analytics.Dispatcher, out output.Outputer) (bool, error) {

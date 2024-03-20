@@ -60,11 +60,7 @@ func readConfig() {
 }
 
 func init() {
-	configMediator.RegisterOption(configMediator.Option{
-		Name:    constants.ReportErrorsConfig,
-		Type:    configMediator.Bool,
-		Default: true,
-	})
+	configMediator.RegisterOption(constants.ReportErrorsConfig, configMediator.Bool, true)
 	configMediator.AddListener(constants.ReportErrorsConfig, readConfig)
 }
 

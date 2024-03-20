@@ -6,11 +6,7 @@ import (
 )
 
 func init() {
-	configMediator.RegisterOption(configMediator.Option{
-		Name:    constants.AutostartSvcConfigKey,
-		Type:    configMediator.Bool,
-		Default: true,
-	})
+	configMediator.RegisterOption(constants.AutostartSvcConfigKey, configMediator.Bool, true)
 }
 
 type Options struct {

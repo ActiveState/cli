@@ -16,9 +16,5 @@ type Dispatcher interface {
 }
 
 func init() {
-	configMediator.RegisterOption(configMediator.Option{
-		Name:    constants.ReportAnalyticsConfig,
-		Type:    configMediator.Bool,
-		Default: true,
-	})
+	configMediator.RegisterOption(constants.ReportAnalyticsConfig, configMediator.Bool, true)
 }
