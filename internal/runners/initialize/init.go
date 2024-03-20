@@ -355,13 +355,17 @@ func deriveVersion(lang language.Language, version string, auth *authentication.
 			return "", errs.Wrap(err, "Unable to get known versions for language %s", lang.Requirement())
 		}
 
+		validVersionPrefix := false
 		for _, knownVersion := range knownVersions {
 			if knownVersion == version {
-				break // e.g. python@3.10.10
+				return version, nil // e.g. python@3.10.10
 			} else if strings.HasPrefix(knownVersion, version) {
-				version += ".x" // not an exact match, e.g. python@3.10
-				break
+				validVersionPrefix = true // not an exact match, e.g. python@3.10
 			}
+		}
+
+		if validVersionPrefix {
+			version += ".x"
 		}
 	}
 

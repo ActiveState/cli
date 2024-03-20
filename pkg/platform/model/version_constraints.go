@@ -2,7 +2,6 @@ package model
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/multilog"
@@ -66,13 +65,4 @@ func versionConstraintsToString(constraints []*versionConstraints) string {
 		}
 	}
 	return strings.Join(parts, ",")
-}
-
-var gteLtRe = regexp.MustCompile(`^>=(\d(\.\d+)*),<(\d(\.\d+)*)$`)
-
-func SimplifyConstraintsString(constraints string) string {
-	if match := gteLtRe.FindStringSubmatch(constraints); len(match) > 1 {
-		return match[1] // e.g. 3.10 from ">=3.10,<3.11"
-	}
-	return constraints
 }
