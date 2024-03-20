@@ -391,12 +391,25 @@ func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) 
 		return nil, nil, nil, errs.Wrap(err, "Solve failed")
 	}
 
-	oldBuildplan, err := rt.BuildPlan()
+	// Get old buildplan
+	// We can't use the local store here; because it might not exist (ie. integrationt test, user cleaned cache, ..),
+	// but also there's no guarantee the old one is sequential to the current.
+	commit, err := model.GetCommit(commitID, r.Auth)
 	if err != nil {
-		return nil, nil, nil, errs.Wrap(err, "Could not get old buildplan")
+		return nil, nil, nil, errs.Wrap(err, "Could not get commit")
 	}
 
-	changedArtifacts, err := buildplan.NewArtifactChangesetByBuildPlan(oldBuildplan, buildResult.Build, false, false, r.Config, r.Auth)
+	var oldBuildPlan *bpModel.Build
+	if commit.ParentCommitID != "" {
+		bp := model.NewBuildPlannerModel(r.Auth)
+		oldBuildResult, err := bp.FetchBuildResult(commit.ParentCommitID, rtTarget.Owner(), rtTarget.Name())
+		if err != nil {
+			return nil, nil, nil, errs.Wrap(err, "Failed to fetch build result")
+		}
+		oldBuildPlan = oldBuildResult.Build
+	}
+
+	changedArtifacts, err := buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false, false, r.Config, r.Auth)
 	if err != nil {
 		return nil, nil, nil, errs.Wrap(err, "Could not get changed artifacts")
 	}
