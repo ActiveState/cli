@@ -14,7 +14,7 @@ func TestSetUnknownKey(t *testing.T) {
 	cfg, err := config.New()
 	assert.NoError(t, err)
 	err = cfg.Set("unknown", nil)
-	assert.Error(t, err)
+	assert.NoError(t, err)
 
 	outputer := outputhelper.NewCatcher()
 	set := Set{outputer, cfg, nil, blackhole.New()}

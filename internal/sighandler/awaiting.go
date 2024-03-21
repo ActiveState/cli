@@ -20,8 +20,8 @@ func (se SignalError) Error() string {
 	return fmt.Sprintf("caught a signal: %v", se.sig.String())
 }
 
-// GetSignal returns the received signal
-func (se SignalError) GetSignal() os.Signal {
+// Signal returns the received signal
+func (se SignalError) Signal() os.Signal {
 	return se.sig
 }
 

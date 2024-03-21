@@ -32,11 +32,12 @@ func fakeContents(before, contents, after string) string {
 }
 
 func fakeFileWithContents(t *testing.T, before, contents, after string) string {
-	t.Helper()
 	f := fileutils.TempFileUnsafe("", "")
 	defer f.Close()
 	_, err := f.WriteString(fakeContents(before, contents, after))
-	t.Fatal(err)
+	if err != nil {
+		t.Fatal(err)
+	}
 	return f.Name()
 }
 
