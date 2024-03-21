@@ -18,7 +18,7 @@ import (
 // installActivePerl will unpack the installer archive, locate the install script, and then use the installer
 // script to install an ActivePerl runtime to the configured runtime dir. Any failures
 // during this process will result in a failed installation and the install-dir being removed.
-func (m *MetaData) perlRelocationDir(installRoot string) (string, error) {
+func (m *MetaData) perlRelocationDir(installRoot string) (string, error) { //nolint:unused
 	relocFile := filepath.Join("bin", "reloc_perl")
 	if runtime.GOOS == "windows" {
 		relocFile = filepath.Join("bin", "config_data")
