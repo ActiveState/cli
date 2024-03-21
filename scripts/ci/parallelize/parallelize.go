@@ -97,7 +97,7 @@ func runJob(job Job) {
 	}
 
 	if job.If != "" {
-		pj, err := project.GetOnce()
+		pj, err := project.FromWD()
 		if err != nil {
 			failure("Could not get project: %s", errs.JoinMessage(err))
 			return

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/user"
-	"path/filepath"
 	rt "runtime"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -152,11 +151,6 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 	// Have to call this once the project has been set
 	r.analytics.Event(anaConsts.CatActivationFlow, "start")
 
-	err = proj.Source().Persist()
-	if err != nil {
-		return errs.Wrap(err, "Unable to persist project")
-	}
-
 	// Yes this is awkward, issue here - https://www.pivotaltracker.com/story/show/175619373
 	activatedKey := fmt.Sprintf("activated_%s", proj.Namespace().String())
 	setDefault := params.Default
@@ -239,8 +233,8 @@ func warningForAdministrator(out output.Outputer) {
 }
 
 func parentNamespace() (string, error) {
-	path := os.Getenv(constants.ProjectEnvVarName)
-	proj, err := project.FromExactPath(filepath.Dir(path))
+	path := os.Getenv(constants.ActivatedStateEnvVarName)
+	proj, err := project.FromExactPath(path)
 	if err != nil {
 		return "", locale.WrapError(err, "err_activate_projectpath", "Could not get project from path {{.V0}}", path)
 	}

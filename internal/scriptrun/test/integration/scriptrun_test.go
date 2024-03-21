@@ -69,7 +69,6 @@ scripts:
 	}
 	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -102,7 +101,6 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 
 	pjfile, err := projectfile.Parse(prjPath)
 	require.NoError(t, err, "parsing pjfile file")
-	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -156,7 +154,6 @@ scripts:
 	}
 	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -188,7 +185,6 @@ scripts:
   `)
 	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -219,7 +215,6 @@ scripts:
   `)
 	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -275,7 +270,6 @@ scripts:
 	}
 	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -284,9 +278,6 @@ scripts:
 	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.NoError(t, err, "No error occurred")
-
-	// Reset.
-	projectfile.Reset()
 }
 
 func (suite *ScriptRunSuite) TestPathProvidesLang() {
@@ -366,8 +357,6 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 	require.NoError(t, err)
 
 	pjfile := setupProjectWithScriptsExpectingArgs(t, tmplCmdName)
-	require.NoError(t, pjfile.Persist())
-	defer projectfile.Reset()
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)

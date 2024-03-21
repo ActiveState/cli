@@ -8,7 +8,6 @@ import (
 	"text/template"
 
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/stretchr/testify/assert"
 )
@@ -21,7 +20,6 @@ func setProjectDir(t *testing.T) {
 	assert.NoError(t, err, "Should fetch cwd")
 	err = os.Chdir(filepath.Join(cwd, "internal", "constraints", "testdata"))
 	assert.NoError(t, err, "Should change dir without issue.")
-	projectfile.Reset()
 }
 
 // This test is not for constraints, but verifies that sysinfo is working
