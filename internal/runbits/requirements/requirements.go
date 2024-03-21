@@ -479,7 +479,7 @@ func (r *RequirementOperation) cveReport(requirementName, requirementVersion str
 					locale.Tl("more_info_prompt", "To disable security prompting run: [ACTIONABLE]state config set security.prompt.enabled false[/RESET]"),
 				)
 			}
-			return locale.NewError("err_pkgop_security_prompt", "Operation aborted due to security prompt")
+			return locale.NewInputError("err_pkgop_security_prompt", "Operation aborted due to security prompt")
 		}
 	}
 
