@@ -96,7 +96,7 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.NoError(err, "Error loading project")
 
-	_, err = buildscript.ScriptFromProjectWithFallback(proj, nil)
+	_, err = buildscript.ScriptFromProject(proj)
 	suite.Require().NoError(err) // just verify it's a valid build script
 
 	cp = ts.Spawn("pull")
@@ -104,7 +104,7 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	cp.ExpectNotExitCode(0)
 	ts.IgnoreLogErrors()
 
-	_, err = buildscript.ScriptFromProjectWithFallback(proj, nil)
+	_, err = buildscript.ScriptFromProject(proj)
 	suite.Assert().Error(err)
 	bytes := fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName))
 	suite.Assert().Contains(string(bytes), "<<<<<<<", "No merge conflict markers are in build script")

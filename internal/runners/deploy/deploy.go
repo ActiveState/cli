@@ -158,7 +158,7 @@ func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 		d.output.Notice(locale.Tl("deploy_already_installed", "Already installed"))
 		return nil
 	}
-	if !runtime.IsNeedsUpdateError(err) {
+	if !errors.Is(err, runtime.NeedsUpdateError) {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
 
@@ -191,7 +191,7 @@ func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter, userScope bool) error {
 	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth, d.cfg, d.output)
 	if err != nil {
-		if runtime.IsNeedsUpdateError(err) {
+		if errors.Is(err, runtime.NeedsUpdateError) {
 			return locale.NewInputError("err_deploy_run_install")
 		}
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
@@ -228,7 +228,7 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
 	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth, d.cfg, d.output)
 	if err != nil {
-		if runtime.IsNeedsUpdateError(err) {
+		if errors.Is(err, runtime.NeedsUpdateError) {
 			return locale.NewInputError("err_deploy_run_install")
 		}
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
@@ -346,7 +346,7 @@ type Report struct {
 func (d *Deploy) report(rtTarget setup.Targeter) error {
 	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth, d.cfg, d.output)
 	if err != nil {
-		if runtime.IsNeedsUpdateError(err) {
+		if errors.Is(err, runtime.NeedsUpdateError) {
 			return locale.NewInputError("err_deploy_run_install")
 		}
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")

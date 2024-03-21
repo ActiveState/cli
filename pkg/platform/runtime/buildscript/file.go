@@ -11,9 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
 
@@ -25,39 +23,6 @@ type projecter interface {
 }
 
 var ErrBuildscriptNotExist = errors.New("Build script does not exist")
-
-// ScriptFromProjectWithFallback will source the buildscript from the project, and create it if it does not exist.
-func ScriptFromProjectWithFallback(proj projecter, auth *authentication.Auth) (*Script, error) {
-	path := filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName)
-
-	script, err := ScriptFromFile(path)
-	if err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			return nil, errs.Wrap(err, "Could not read build script from file")
-		}
-
-		logging.Debug("Build script does not exist. Creating one.")
-		commitId, err := localcommit.Get(filepath.Dir(path))
-		if err != nil {
-			return nil, errs.Wrap(err, "Unable to get the local commit ID")
-		}
-		buildplanner := model.NewBuildPlannerModel(auth)
-		expr, atTime, err := buildplanner.GetBuildExpressionAndTime(commitId.String())
-		if err != nil {
-			return nil, errs.Wrap(err, "Unable to get the remote build expression and time")
-		}
-		script, err = NewFromCommit(atTime, expr)
-		if err != nil {
-			return nil, errs.Wrap(err, "Unable to convert build expression to build script")
-		}
-		err = fileutils.WriteFile(path, []byte(script.String()))
-		if err != nil {
-			return nil, errs.Wrap(err, "Unable to write build script")
-		}
-	}
-
-	return script, nil
-}
 
 func ScriptFromProject(proj projecter) (*Script, error) {
 	path := filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName)
@@ -76,7 +41,7 @@ func ScriptFromFile(path string) (*Script, error) {
 }
 
 func Update(proj projecter, atTime *strfmt.DateTime, newExpr *buildexpression.BuildExpression, auth *authentication.Auth) error {
-	script, err := ScriptFromProjectWithFallback(proj, auth)
+	script, err := ScriptFromProject(proj)
 	if err != nil {
 		return errs.Wrap(err, "Could not read build script")
 	}

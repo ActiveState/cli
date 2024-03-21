@@ -1,6 +1,8 @@
 package runbits
 
 import (
+	"errors"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
@@ -43,7 +45,7 @@ func RefreshRuntime(
 	isCached := true
 	rt, err := runtime.New(target, an, svcm, auth, cfg, out)
 	if err != nil {
-		if runtime.IsNeedsUpdateError(err) {
+		if errors.Is(err, runtime.NeedsUpdateError) {
 			isCached = false
 		} else {
 			return locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")

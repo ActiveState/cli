@@ -54,20 +54,14 @@ type Runtime struct {
 }
 
 // NeedsUpdateError is an error returned when the runtime is not completely installed yet.
-type NeedsUpdateError struct{ error }
-
-// IsNeedsUpdateError checks if the error is a NeedsUpdateError
-func IsNeedsUpdateError(err error) bool {
-	return errs.Matches(err, &NeedsUpdateError{})
-}
+var NeedsUpdateError = errors.New("needs runtime update")
 
 // NeedsCommitError is an error returned when the local runtime's build script has changes that need
 // staging. This is not a fatal error. A runtime can still be used, but a warning should be emitted.
-type NeedsCommitError struct{ error }
+var NeedsCommitError = errors.New("runtime needs commit")
 
-func IsNeedsCommitError(err error) bool {
-	return errs.Matches(err, &NeedsCommitError{})
-}
+// NeedsResetError is an error returned when the runtime is improperly referenced in the project (eg. missing buildscript)
+var NeedsResetError = errors.New("needs runtime reset")
 
 func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel, auth *authentication.Auth, cfg Configurable, out output.Outputer) (*Runtime, error) {
 	rt := &Runtime{
@@ -118,7 +112,7 @@ func (r *Runtime) validateCache() error {
 		if r.target.ReadOnly() {
 			logging.Debug("Using forced cache")
 		} else {
-			return &NeedsUpdateError{errs.New("Runtime requires setup.")}
+			return NeedsUpdateError
 		}
 	}
 
@@ -126,34 +120,22 @@ func (r *Runtime) validateCache() error {
 		return nil
 	}
 
-	commitID := r.target.CommitUUID().String()
-	_, err := r.store.GetAndValidateBuildExpression(commitID)
-	if err != nil {
-		bp := model.NewBuildPlannerModel(r.auth)
-		bpExpr, err := bp.GetBuildExpression(commitID)
-		if err != nil {
-			return errs.Wrap(err, "Unable to get remote build expression")
-		}
-		if err := r.store.StoreBuildExpression(bpExpr, commitID); err != nil {
-			return errs.Wrap(err, "Unable to store build expression")
-		}
-	}
-
 	// Check if local build script has changes that should be committed.
 	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) {
 		cachedScript, err := r.store.BuildScript()
-		switch {
-		case err == nil:
-			script, err := buildscript.ScriptFromProject(r.target)
-			if err != nil && !errs.Matches(err, buildscript.ErrBuildscriptNotExist) {
-				return errs.Wrap(err, "Unable to get local build script")
+		if err != nil {
+			if errors.Is(err, store.ErrNoBuildScriptFile) {
+				return errs.Pack(err, NeedsUpdateError)
 			}
-			if script != nil && !script.Equals(cachedScript) {
-				return &NeedsCommitError{errs.New("Runtime changes should be committed")}
-			}
+			return errs.Wrap(err, "Could not retrieve buildscript from store")
+		}
 
-		case !errors.Is(err, store.ErrNoBuildScriptFile):
-			return errs.Wrap(err, "Unable to read cached build script")
+		script, err := buildscript.ScriptFromProject(r.target)
+		if err != nil && !errs.Matches(err, buildscript.ErrBuildscriptNotExist) {
+			return errs.Pack(err, NeedsResetError)
+		}
+		if script != nil && !script.Equals(cachedScript) {
+			return NeedsCommitError
 		}
 	}
 

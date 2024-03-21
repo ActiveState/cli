@@ -1,6 +1,7 @@
 package scriptrun
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -71,13 +72,13 @@ func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
 	switch {
 	case err == nil:
 		break
-	case runtime.IsNeedsUpdateError(err):
+	case errors.Is(err, runtime.NeedsUpdateError):
 		pg := runbits.NewRuntimeProgressIndicator(s.out)
 		defer rtutils.Closer(pg.Close, &rerr)
 		if err := rt.Update(pg); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
-	case runtime.IsNeedsCommitError(err):
+	case errors.Is(err, runtime.NeedsCommitError):
 		s.out.Notice(locale.T("notice_commit_build_script"))
 	default:
 		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")

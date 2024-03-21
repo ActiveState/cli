@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"errors"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -46,11 +48,11 @@ func NewFromProject(
 		return rti, nil
 	}
 
-	if rt.IsNeedsCommitError(err) {
+	if errors.Is(err, rt.NeedsCommitError) {
 		out.Notice(locale.T("notice_commit_build_script"))
 	}
 
-	if rt.IsNeedsUpdateError(err) {
+	if errors.Is(err, rt.NeedsUpdateError) {
 		pg := runbits.NewRuntimeProgressIndicator(out)
 		defer rtutils.Closer(pg.Close, &rerr)
 		if err := rti.Update(pg); err != nil {
