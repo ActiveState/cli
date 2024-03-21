@@ -17,6 +17,7 @@ import (
 
 func TestCmdExitCode(t *testing.T) {
 	tmpfile, err := os.CreateTemp("", "TestCmdExitCode")
+	var filename string
 	if runtime.GOOS != "windows" {
 		assert.NoError(t, err)
 		_, err = tmpfile.WriteString("#!/usr/bin/env bash\n")
@@ -25,6 +26,7 @@ func TestCmdExitCode(t *testing.T) {
 		assert.NoError(t, err)
 		err = tmpfile.Close()
 		assert.NoError(t, err)
+		filename = tmpfile.Name()
 	} else {
 		_, err = tmpfile.WriteString("echo off\n")
 		assert.NoError(t, err)
@@ -34,12 +36,13 @@ func TestCmdExitCode(t *testing.T) {
 		assert.NoError(t, err)
 		err = os.Rename(tmpfile.Name(), tmpfile.Name()+".bat")
 		assert.NoError(t, err)
+		filename = tmpfile.Name() + ".bat"
 	}
 
-	err = os.Chmod(tmpfile.Name(), 0755)
+	err = os.Chmod(filename, 0755)
 	assert.NoError(t, err)
 
-	cmd := exec.Command(tmpfile.Name())
+	cmd := exec.Command(filename)
 	err = cmd.Run()
 	assert.Error(t, err)
 	assert.Equal(t, 255, CmdExitCode(cmd), "Exits with code 255")
