@@ -26,6 +26,7 @@ type Table struct {
 	rows    []row
 
 	HideHeaders bool
+	Vertical    bool
 }
 
 func New(headers []string) *Table {
@@ -97,6 +98,13 @@ func (t *Table) calculateWidth(maxTableWidth int) ([]int, int) {
 		colWidthsCombined += colWidths[n]
 	}
 
+	// Capture the width of the vertical header before we equalize the column widths.
+	// We must respect this width when rescaling the columns.
+	var verticalHeaderWidth int
+	if len(colWidths) > 0 && t.Vertical {
+		verticalHeaderWidth = colWidths[0]
+	}
+
 	if colWidthsCombined >= maxTableWidth {
 		// Equalize widths by 20% of average width.
 		// This is to prevent columns that are much larger than others
@@ -109,7 +117,7 @@ func (t *Table) calculateWidth(maxTableWidth int) ([]int, int) {
 	tableWidth = mathutils.MinInt(tableWidth, maxTableWidth)
 
 	// Now scale back the row sizes according to the max width
-	rescaleColumns(colWidths, tableWidth)
+	rescaleColumns(colWidths, tableWidth, t.Vertical, verticalHeaderWidth)
 	logging.Debug("Table column widths: %v, total: %d", colWidths, tableWidth)
 
 	return colWidths, tableWidth
@@ -132,17 +140,30 @@ func equalizeWidths(colWidths []int, percentage int) {
 	}
 }
 
-func rescaleColumns(colWidths []int, targetTotal int) {
+func rescaleColumns(colWidths []int, targetTotal int, vertical bool, verticalHeaderWidth int) {
 	total := float64(mathutils.Total(colWidths...))
 	multiplier := float64(targetTotal) / total
 
+	originalWidths := make([]int, len(colWidths))
 	for n := range colWidths {
+		originalWidths[n] = colWidths[n]
 		colWidths[n] = int(float64(colWidths[n]) * multiplier)
 	}
 
 	// Account for floats that got rounded
 	if len(colWidths) > 0 {
 		colWidths[len(colWidths)-1] += targetTotal - mathutils.Total(colWidths...)
+	}
+
+	// If vertical, respect the header width
+	// verticalHeaderWidth is the width of the header column before we equalized the column widths.
+	// We compare the current width of the header column with the original width and adjust the other columns accordingly.
+	if vertical && len(colWidths) > 0 && colWidths[0] < verticalHeaderWidth {
+		diff := verticalHeaderWidth - colWidths[0]
+		colWidths[0] += diff
+		for i := 1; i < len(colWidths); i++ {
+			colWidths[i] -= diff / (len(colWidths) - 1)
+		}
 	}
 }
 

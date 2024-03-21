@@ -98,13 +98,16 @@ func (f *Plain) write(writer io.Writer, value interface{}) {
 
 // writeNow is a little helper that just writes the given value to the requested writer (no marshalling)
 func (f *Plain) writeNow(writer io.Writer, value string) {
-	_, err := colorize.Colorize(WordWrap(value), writer, !f.cfg.Colored)
+	if f.Config().Interactive {
+		value = wordWrap(value)
+	}
+	_, err := colorize.Colorize(value, writer, !f.cfg.Colored)
 	if err != nil {
 		logging.ErrorNoStacktrace("Writing colored output failed: %v", err)
 	}
 }
 
-func WordWrap(text string) string {
+func wordWrap(text string) string {
 	return wordWrapWithWidth(text, termutils.GetWidth())
 }
 
@@ -270,6 +273,10 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 		return "", nil
 	}
 
+	if vertical {
+		return sprintVerticalTable(slice)
+	}
+
 	headers := []string{}
 	rows := [][]string{}
 	for _, v := range slice {
@@ -325,14 +332,58 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 		}
 	}
 
-	if vertical {
-		t := table.New([]string{"", ""})
-		t.AddRow(verticalRows(headers, rows)...)
-		t.HideHeaders = true
-		return t.Render(), nil
+	return table.New(headers).AddRow(rows...).Render(), nil
+}
+
+type verticalRow struct {
+	header  string
+	content string
+}
+
+func sprintVerticalTable(slice []interface{}) (string, error) {
+	if len(slice) == 0 {
+		return "", nil
 	}
 
-	return table.New(headers).AddRow(rows...).Render(), nil
+	rows := [][]verticalRow{}
+	for _, v := range slice {
+		meta, err := parseStructMeta(v)
+		if err != nil {
+			return "", err
+		}
+
+		row := []verticalRow{}
+		for _, field := range meta {
+			if funk.Contains(field.opts, string(HidePlain)) {
+				continue
+			}
+
+			stringValue, err := sprint(field.value)
+			if err != nil {
+				return "", err
+			}
+
+			if funk.Contains(field.opts, string(OmitEmpty)) && (stringValue == "" || stringValue == nilText) {
+				continue
+			}
+
+			if funk.Contains(field.opts, string(EmptyNil)) && stringValue == nilText {
+				stringValue = ""
+			}
+
+			row = append(row, verticalRow{header: localizedField(field.l10n), content: stringValue})
+		}
+
+		if len(row) > 0 {
+			rows = append(rows, row)
+		}
+	}
+
+	t := table.New([]string{"", ""})
+	t.AddRow(verticalRows(rows)...)
+	t.HideHeaders = true
+	t.Vertical = true
+	return t.Render(), nil
 }
 
 func asSlice(val interface{}) ([]interface{}, error) {
@@ -386,17 +437,12 @@ func columns(offset int, value string) []string {
 	return cols
 }
 
-func verticalRows(hdrs []string, rows [][]string) [][]string {
+func verticalRows(rows [][]verticalRow) [][]string {
 	var vrows [][]string
 
 	for i, hrow := range rows {
-		for j, hcol := range hrow {
-			var header string
-			if j < len(hdrs) {
-				header = hdrs[j]
-			}
-
-			vrow := []string{header, hcol}
+		for _, hcol := range hrow {
+			vrow := []string{hcol.header, hcol.content}
 			vrows = append(vrows, vrow)
 		}
 

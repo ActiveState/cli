@@ -2,6 +2,7 @@ package commit
 
 import (
 	"errors"
+	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
@@ -93,32 +94,38 @@ func (c *Commit) Run() (rerr error) {
 		return errs.Wrap(err, "Could not get local build script")
 	}
 
-	// Get build expression for current state of the project
+	// Get equivalent build script for current state of the project
 	localCommitID, err := localcommit.Get(c.proj.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit ID")
 	}
 	bp := model.NewBuildPlannerModel(c.auth)
-	exprProject, err := bp.GetBuildExpression(localCommitID.String())
+	exprProject, atTime, err := bp.GetBuildExpressionAndTime(localCommitID.String())
 	if err != nil {
-		return errs.Wrap(err, "Could not get remote build expr for provided commit")
+		return errs.Wrap(err, "Could not get remote build expr and time for provided commit")
+	}
+	remoteScript, err := buildscript.NewFromCommit(atTime, exprProject)
+	if err != nil {
+		return errs.Wrap(err, "Could not convert build expression to build script")
 	}
 
 	// Check if there is anything to commit
-	if script.EqualsBuildExpression(exprProject) {
+	if script.Equals(remoteScript) {
 		return ErrNoChanges
 	}
 
-	exprBuildscript, err := script.BuildExpression()
-	if err != nil {
-		return errs.Wrap(err, "Unable to get build expression from build script")
+	var exprAtTime *time.Time
+	if atTime := script.AtTime; atTime != nil {
+		atTimeTime := time.Time(*atTime)
+		exprAtTime = &atTimeTime
 	}
 
 	stagedCommitID, err := bp.StageCommit(model.StageCommitParams{
 		Owner:        c.proj.Owner(),
 		Project:      c.proj.Name(),
 		ParentCommit: localCommitID.String(),
-		Expression:   exprBuildscript,
+		Expression:   script.Expr,
+		TimeStamp:    exprAtTime,
 	})
 	if err != nil {
 		return errs.Wrap(err, "Could not update project to reflect build script changes.")
@@ -130,12 +137,12 @@ func (c *Commit) Run() (rerr error) {
 	}
 
 	// Update our local build expression to match the committed one. This allows our API a way to ensure forward compatibility.
-	newBuildExpr, err := bp.GetBuildExpression(stagedCommitID.String())
+	newBuildExpr, newAtTime, err := bp.GetBuildExpressionAndTime(stagedCommitID.String())
 	if err != nil {
-		return errs.Wrap(err, "Unable to get the remote build expression")
+		return errs.Wrap(err, "Unable to get the remote build expression and time")
 	}
-	if err := buildscript.Update(c.proj, newBuildExpr, c.auth); err != nil {
-		return errs.Wrap(err, "Could not update local build script.")
+	if err := buildscript.Update(c.proj, newAtTime, newBuildExpr, c.auth); err != nil {
+		return errs.Wrap(err, "Could not update local build script")
 	}
 
 	pg.Stop(locale.T("progress_success") + "\n")

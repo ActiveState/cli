@@ -10,7 +10,7 @@ import (
 )
 
 func TestMergeAdd(t *testing.T) {
-	scriptA, err := buildscript.NewScript([]byte(
+	scriptA, err := buildscript.New([]byte(
 		`at_time = "2000-01-01T00:00:00.000Z"
 runtime = solve(
 	at_time = at_time,
@@ -26,10 +26,9 @@ runtime = solve(
 
 main = runtime`))
 	require.NoError(t, err)
-	exprA, err := scriptA.BuildExpression()
-	require.NoError(t, err)
+	exprA := scriptA.Expr
 
-	scriptB, err := buildscript.NewScript([]byte(
+	scriptB, err := buildscript.New([]byte(
 		`at_time = "2000-01-01T00:00:00.000Z"
 runtime = solve(
 	at_time = at_time,
@@ -45,8 +44,7 @@ runtime = solve(
 
 main = runtime`))
 	require.NoError(t, err)
-	exprB, err := scriptB.BuildExpression()
-	require.NoError(t, err)
+	exprB := scriptB.Expr
 
 	strategies := &mono_models.MergeStrategies{
 		OverwriteChanges: []*mono_models.CommitChangeEditable{
@@ -59,7 +57,7 @@ main = runtime`))
 	mergedExpr, err := Merge(exprA, exprB, strategies)
 	require.NoError(t, err)
 
-	mergedScript, err := buildscript.NewScriptFromBuildExpression(mergedExpr)
+	mergedScript, err := buildscript.NewFromCommit(scriptA.AtTime, mergedExpr)
 	require.NoError(t, err)
 
 	assert.Equal(t,
@@ -81,7 +79,7 @@ main = runtime`, mergedScript.String())
 }
 
 func TestMergeRemove(t *testing.T) {
-	scriptA, err := buildscript.NewScript([]byte(
+	scriptA, err := buildscript.New([]byte(
 		`at_time = "2000-01-01T00:00:00.000Z"
 runtime = solve(
 	at_time = at_time,
@@ -98,10 +96,9 @@ runtime = solve(
 
 main = runtime`))
 	require.NoError(t, err)
-	exprA, err := scriptA.BuildExpression()
-	require.NoError(t, err)
+	exprA := scriptA.Expr
 
-	scriptB, err := buildscript.NewScript([]byte(
+	scriptB, err := buildscript.New([]byte(
 		`at_time = "2000-01-01T00:00:00.000Z"
 runtime = solve(
 	at_time = at_time,
@@ -117,8 +114,7 @@ runtime = solve(
 
 main = runtime`))
 	require.NoError(t, err)
-	exprB, err := scriptB.BuildExpression()
-	require.NoError(t, err)
+	exprB := scriptB.Expr
 
 	strategies := &mono_models.MergeStrategies{
 		OverwriteChanges: []*mono_models.CommitChangeEditable{
@@ -131,7 +127,7 @@ main = runtime`))
 	mergedExpr, err := Merge(exprA, exprB, strategies)
 	require.NoError(t, err)
 
-	mergedScript, err := buildscript.NewScriptFromBuildExpression(mergedExpr)
+	mergedScript, err := buildscript.NewFromCommit(scriptA.AtTime, mergedExpr)
 	require.NoError(t, err)
 
 	assert.Equal(t,
@@ -152,7 +148,7 @@ main = runtime`, mergedScript.String())
 }
 
 func TestMergeConflict(t *testing.T) {
-	scriptA, err := buildscript.NewScript([]byte(
+	scriptA, err := buildscript.New([]byte(
 		`at_time = "2000-01-01T00:00:00.000Z"
 runtime = solve(
 	at_time = at_time,
@@ -167,10 +163,9 @@ runtime = solve(
 
 main = runtime`))
 	require.NoError(t, err)
-	exprA, err := scriptA.BuildExpression()
-	require.NoError(t, err)
+	exprA := scriptA.Expr
 
-	scriptB, err := buildscript.NewScript([]byte(
+	scriptB, err := buildscript.New([]byte(
 		`at_time = "2000-01-01T00:00:00.000Z"
 runtime = solve(
 	at_time = at_time,
@@ -185,8 +180,7 @@ runtime = solve(
 
 main = runtime`))
 	require.NoError(t, err)
-	exprB, err := scriptB.BuildExpression()
-	require.NoError(t, err)
+	exprB := scriptB.Expr
 
 	assert.False(t, isAutoMergePossible(exprA, exprB)) // platforms do not match
 

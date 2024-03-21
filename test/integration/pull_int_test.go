@@ -86,8 +86,6 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	cp.Expect("Checked out")
 	cp.ExpectExitCode(0)
 
-	ts.LoginAsPersistentUser()
-
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("install", "requests"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),

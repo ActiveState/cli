@@ -169,6 +169,11 @@ func New(data []byte) (*BuildExpression, error) {
 		return nil, errs.Wrap(err, "Could not validate requirements")
 	}
 
+	err = expr.normalizeTimestamp()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not normalize timestamp")
+	}
+
 	return expr, nil
 }
 
@@ -892,48 +897,27 @@ func (e *BuildExpression) removePlatform(platformID strfmt.UUID) error {
 	return nil
 }
 
-// SetDefaultTimestamp sets the at_time of this build expression to "$at_time", the Platform
-// default timestamp, and returns the previous timestamp, if one was set. (If the previous at_time
-// was already "$at_time", the returned value will be nil.)
-func (e *BuildExpression) SetDefaultTimestamp() (*strfmt.DateTime, error) {
+func (e *BuildExpression) SetDefaultTimestamp() error {
 	atTimeNode, err := e.getSolveAtTimeValue()
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not get %s node", AtTimeKey)
-	}
-	var atTimePtr *strfmt.DateTime
-	if atTimeNode.Str != nil && !strings.HasPrefix(*atTimeNode.Str, "$") {
-		atTime, err := strfmt.ParseDateTime(*atTimeNode.Str)
-		if err != nil {
-			return nil, errs.Wrap(err, "Invalid timestamp: %s", *atTimeNode.Str)
-		}
-		atTimePtr = &atTime
+		return errs.Wrap(err, "Could not get %s node", AtTimeKey)
 	}
 	atTimeNode.Str = ptr.To("$" + AtTimeKey)
-	return atTimePtr, nil
+	return nil
 }
 
-// MaybeUpdateTimestamp looks at the solve node's "at_time" parameter and if it is "$at_time",
-// replaces it with the given timestamp. If there's an existing timestamp, it is normalized.
-func (e *BuildExpression) MaybeUpdateTimestamp(ts strfmt.DateTime) error {
+// normalizeTimestamp normalizes the solve node's timestamp, if possible.
+// Platform timestamps may differ from the strfmt.DateTime format. For example, Platform
+// timestamps will have microsecond precision, while strfmt.DateTime will only have millisecond
+// precision. This will affect comparisons between buildexpressions (which is normally done
+// byte-by-byte).
+func (e *BuildExpression) normalizeTimestamp() error {
 	atTimeNode, err := e.getSolveAtTimeValue()
 	if err != nil {
 		return errs.Wrap(err, "Could not get at time node")
 	}
 
-	switch {
-	case atTimeNode.Str == nil:
-		return errs.New("At time node is not a string")
-
-	// Variable substitution.
-	case *atTimeNode.Str == "$"+AtTimeKey:
-		atTimeNode.Str = ptr.To(ts.String())
-
-	// Normalize existing timestamp.
-	// Platform timestamps may differ from the strfmt.DateTime format. For example, Platform
-	// timestamps will have microsecond precision, while strfmt.DateTime will only have millisecond
-	// precision. This will affect comparisons between buildexpressions (which is normally done
-	// byte-by-byte).
-	case !strings.HasPrefix(*atTimeNode.Str, "$"):
+	if atTimeNode.Str != nil && !strings.HasPrefix(*atTimeNode.Str, "$") {
 		atTime, err := strfmt.ParseDateTime(*atTimeNode.Str)
 		if err != nil {
 			return errs.Wrap(err, "Invalid timestamp: %s", *atTimeNode.Str)

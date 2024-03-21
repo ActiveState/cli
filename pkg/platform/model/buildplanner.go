@@ -115,6 +115,7 @@ type BuildResult struct {
 	BuildStatus         string
 	BuildReady          bool
 	BuildExpression     *buildexpression.BuildExpression
+	AtTime              *strfmt.DateTime
 }
 
 func (b *BuildResult) OrderedArtifacts() []artifact.ArtifactID {
@@ -188,9 +189,9 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		return nil, errs.Wrap(err, "Response does not contain commitID")
 	}
 
-	expr, err := bp.GetBuildExpression(commitID.String())
+	expr, atTime, err := bp.GetBuildExpressionAndTime(commitID.String())
 	if err != nil {
-		return nil, errs.Wrap(err, "Failed to get build expression")
+		return nil, errs.Wrap(err, "Failed to get build expression and time")
 	}
 
 	res := BuildResult{
@@ -199,6 +200,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		BuildReady:      build.Status == bpModel.Completed,
 		CommitID:        id,
 		BuildExpression: expr,
+		AtTime:          atTime,
 		BuildStatus:     build.Status,
 	}
 
@@ -322,7 +324,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 				return "", errs.Wrap(err, "Failed to update build expression with requirement")
 			}
 
-			if _, err := expression.SetDefaultTimestamp(); err != nil {
+			if err := expression.SetDefaultTimestamp(); err != nil {
 				return "", errs.Wrap(err, "Failed to set default timestamp")
 			}
 		}
@@ -376,12 +378,35 @@ func (bp *BuildPlanner) GetBuildExpression(commitID string) (*buildexpression.Bu
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}
 
-	err = expression.MaybeUpdateTimestamp(resp.Commit.AtTime)
+	return expression, nil
+}
+
+func (bp *BuildPlanner) GetBuildExpressionAndTime(commitID string) (*buildexpression.BuildExpression, *strfmt.DateTime, error) {
+	logging.Debug("GetBuildExpressionAndTime, commitID: %s", commitID)
+	resp := &bpModel.BuildExpression{}
+	err := bp.client.Run(request.BuildExpression(commitID), resp)
 	if err != nil {
-		return nil, errs.Wrap(err, "failed to possibly update %s in build expression", buildexpression.AtTimeKey)
+		return nil, nil, processBuildPlannerError(err, "failed to fetch build expression")
 	}
 
-	return expression, nil
+	if resp.Commit == nil {
+		return nil, nil, errs.New("Commit is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.Commit.Type) {
+		return nil, nil, bpModel.ProcessCommitError(resp.Commit, "Could not get build expression from commit")
+	}
+
+	if resp.Commit.Expression == nil {
+		return nil, nil, errs.New("Commit does not contain expression")
+	}
+
+	expression, err := buildexpression.New(resp.Commit.Expression)
+	if err != nil {
+		return nil, nil, errs.Wrap(err, "failed to parse build expression")
+	}
+
+	return expression, &resp.Commit.AtTime, nil
 }
 
 // CreateProjectParams contains information for the project to create.
@@ -679,7 +704,7 @@ func (bp *BuildPlanner) BuildTarget(owner, project, commitID, target string) err
 }
 
 type ErrFailedArtifacts struct {
-	Artifacts []*bpModel.Artifact
+	Artifacts map[strfmt.UUID]*bpModel.Artifact
 }
 
 func (e ErrFailedArtifacts) Error() string {
@@ -687,7 +712,7 @@ func (e ErrFailedArtifacts) Error() string {
 }
 
 func (bp *BuildPlanner) PollBuildStatus(commitID, owner, project, target string) error {
-	var failedArtifacts []*model.Artifact
+	failedArtifacts := map[strfmt.UUID]*model.Artifact{}
 	resp := model.NewBuildPlanResponse(owner, project)
 	ticker := time.NewTicker(pollInterval)
 	for {
@@ -728,7 +753,7 @@ func (bp *BuildPlanner) PollBuildStatus(commitID, owner, project, target string)
 
 				if artifact.Status == bpModel.ArtifactFailedPermanently ||
 					artifact.Status == bpModel.ArtifactFailedTransiently {
-					failedArtifacts = append(failedArtifacts, artifact)
+					failedArtifacts[artifact.NodeID] = artifact
 				}
 			}
 
