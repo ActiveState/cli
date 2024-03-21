@@ -88,7 +88,7 @@ func Libc() (*LibcInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Unable to fetch glibc version: %s", err)
 	}
-	regex := regexp.MustCompile("(\\d+)\\D(\\d+)")
+	regex := regexp.MustCompile(`(\d+)\D(\d+)`)
 	parts := regex.FindStringSubmatch(string(libc))
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("Unable to parse libc string '%s'", libc)
