@@ -60,8 +60,6 @@ func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) 
 	}
 
 	path := filepath.Join(i.appDataDir, C.InternalConfigFileName)
-	_, err = os.Stat(path)
-	isNew := err != nil
 
 	t := time.Now()
 	i.db, err = sql.Open("sqlite", path)
@@ -76,13 +74,6 @@ func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) 
 		return nil, errs.Wrap(err, "Could not seed settings database")
 	}
 	profile.Measure("config.createTable", t)
-
-	if isNew {
-		if err := i.importLegacyConfig(); err != nil {
-			// This is unfortunate but not a case we're handling beyond effectively resetting the users config
-			multilog.Error("Failed to import legacy config: %s", errs.JoinMessage(err))
-		}
-	}
 
 	return i, nil
 }
@@ -259,43 +250,4 @@ func (i *Instance) GetStringMap(key string) map[string]interface{} {
 // ConfigPath returns the path at which our configuration is stored
 func (i *Instance) ConfigPath() string {
 	return i.appDataDir
-}
-
-func (i *Instance) importLegacyConfig() (returnErr error) {
-	defer profile.Measure("config.importLegacyConfig", time.Now())
-	fpath := filepath.Join(i.appDataDir, C.InternalConfigFileNameLegacy)
-	defer func() {
-		if returnErr != nil {
-			returnErr = os.Rename(fpath, fpath+".corrupted")
-		} else {
-			returnErr = os.Remove(fpath)
-		}
-	}()
-
-	_, err := os.Stat(fpath)
-	if err != nil && os.IsNotExist(err) {
-		return nil
-	}
-
-	b, err := os.ReadFile(fpath)
-	if err != nil {
-		return errs.Wrap(err, "Could not read legacy config file at %s", fpath)
-	}
-
-	return i.importLegacyConfigFromBlob(b)
-}
-
-func (i *Instance) importLegacyConfigFromBlob(b []byte) (returnErr error) {
-	var data map[string]interface{}
-	if err := yaml.Unmarshal(b, &data); err != nil {
-		return errs.Wrap(err, "Could not unmarshal legacy config file")
-	}
-
-	for k, v := range data {
-		if err := i.Set(k, v); err != nil {
-			return errs.Wrap(err, "Could not import config key/val: %s: %v", k, v)
-		}
-	}
-
-	return nil
 }
