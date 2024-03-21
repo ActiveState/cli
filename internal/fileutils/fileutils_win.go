@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/google/uuid"
 	"golang.org/x/sys/windows"
 )
 
@@ -33,13 +32,12 @@ func IsExecutable(path string) bool {
 	pathExts := strings.Split(os.Getenv("PATHEXT"), ";")
 	for _, pe := range pathExts {
 		// pathext entries have `.` and are capitalize
-		if strings.ToLower(ext) == strings.ToLower(pe) {
+		if strings.EqualFold(ext, pe) {
 			return true
 		}
 	}
 	return false
 }
-
 
 // IsWritable returns true if the given path is writable
 func IsWritable(path string) bool {
@@ -56,19 +54,6 @@ func IsWritable(path string) bool {
 	// Check if the user bit is enabled in file permission
 	if info.Mode().Perm()&(1<<(uint(7))) == 0 {
 		logging.Debug("Write permission bit is not set on this file for user")
-		return false
-	}
-
-	return true
-}
-
-func isWritableTempFile(path string) bool {
-	fpath := filepath.Join(path, uuid.New().String())
-	if err := Touch(fpath); err != nil {
-		return false
-	}
-
-	if errr := os.Remove(fpath); errr != nil {
 		return false
 	}
 
@@ -101,7 +86,11 @@ func HideFile(path string) error {
 	k32 := syscall.NewLazyDLL("kernel32.dll")
 	setFileAttrs := k32.NewProc("SetFileAttributesW")
 
-	uipPath := uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(path)))
+	utfPath, err := syscall.UTF16FromString(path)
+	if err != nil {
+		return fmt.Errorf("Hide file (UTF16 conversion): %w", err)
+	}
+	uipPath := uintptr(unsafe.Pointer(&utfPath[0]))
 	r1, _, err := setFileAttrs.Call(uipPath, 2)
 	if r1 == 0 && !errors.Is(err, windows.ERROR_SUCCESS) {
 		return fmt.Errorf("Hide file (set attributes): %w", err)

@@ -46,7 +46,7 @@ type RequestWithFiles interface {
 
 type Header map[string][]string
 
-type graphqlClient = graphql.Client
+type graphqlClient = graphql.Client //nolint:unused
 
 // StandardizedErrors works around API's that don't follow the graphql standard
 // It looks redundant because it needs to address two different API responses.
