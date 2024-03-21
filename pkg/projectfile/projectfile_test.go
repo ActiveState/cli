@@ -209,7 +209,6 @@ func TestSave(t *testing.T) {
 }
 
 func TestGetProjectFilePath(t *testing.T) {
-	Reset()
 	currentDir, err := os.Getwd()
 	require.NoError(t, err)
 	defer os.Chdir(currentDir)
@@ -299,44 +298,18 @@ func TestGetProjectFilePath(t *testing.T) {
 	assert.ErrorAs(t, err, &errNoProject)
 }
 
-// TestGet the config
-func TestGet(t *testing.T) {
+// TestFromEnv the config
+func TestFromEnv(t *testing.T) {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	cwd, _ := osutils.Getwd()
 	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
 
-	config, err := Get()
+	config, err := FromEnv()
 	require.NoError(t, err)
 	assert.NotNil(t, config, "Config should be set")
-	assert.NotEqual(t, "", os.Getenv(constants.ProjectEnvVarName), "The project env var should be set")
 
 	os.Chdir(cwd) // restore
-
-	Reset()
-}
-
-func TestGetActivated(t *testing.T) {
-	root, _ := environment.GetRootPath()
-	cwd, _ := osutils.Getwd()
-	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
-
-	config1, err := Get()
-	require.NoError(t, err)
-	assert.Equal(t, filepath.Join(root, "pkg", "projectfile", "testdata", constants.ConfigFileName), os.Getenv(constants.ProjectEnvVarName), "The activated state's config file is set")
-
-	os.Chdir(root)
-	config2, err := Get()
-	assert.NoError(t, err, "No error even if no activestate.yaml does not exist")
-	assert.Equal(t, config1, config2, "The same activated state is returned")
-
-	expected := filepath.Join(root, "pkg", "projectfile", "testdata", constants.ConfigFileName)
-	actual := os.Getenv(constants.ProjectEnvVarName)
-	assert.Equal(t, expected, actual, "The activated state's config file is still set properly")
-
-	os.Chdir(cwd) // restore
-
-	Reset()
 }
 
 func TestParseVersionInfo(t *testing.T) {

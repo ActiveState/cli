@@ -20,8 +20,6 @@ import (
 )
 
 func loadProject(t *testing.T) *project.Project {
-	projectfile.Reset()
-
 	pjFile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
 project: "https://platform.activestate.com/Expander/general?branch=main"
@@ -58,9 +56,7 @@ scripts:
 
 	require.NoError(t, pjFile.Init())
 
-	require.NoError(t, pjFile.Persist())
-
-	proj, err := project.Get()
+	proj, err := project.FromWD()
 	require.NoError(t, err)
 
 	return proj
@@ -193,14 +189,12 @@ scripts:
 
 	err := yaml.Unmarshal([]byte(contents), projectFile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	require.NoError(t, projectFile.Persist())
-	prj, err := project.Get()
+	prj, err := project.FromWD()
 	require.NoError(t, err)
 
 	expanded, err := project.ExpandFromProject("- $scripts.foo-bar -", prj)
 	assert.NoError(t, err, "Ran without failure")
 	assert.Equal(t, "- bar -", expanded)
-	projectfile.Reset()
 }
 
 func TestExpandScriptPath(t *testing.T) {

@@ -73,9 +73,6 @@ const AutoUpdateTimeoutEnvVarName = "ACTIVESTATE_CLI_UPDATE_TIMEOUT"
 // EnvironmentEnvVarName is the name of the environment variable that specifies the current environment (dev, qa, prod, etc.)
 const EnvironmentEnvVarName = "ACTIVESTATE_ENVIRONMENT"
 
-// ProjectEnvVarName is the name of the environment variable that specifies the path of the activestate.yaml config file.
-const ProjectEnvVarName = "ACTIVESTATE_PROJECT"
-
 // ActivatedStateEnvVarName is the name of the environment variable that is set when in an activated state, its value will be the path of the project
 const ActivatedStateEnvVarName = "ACTIVESTATE_ACTIVATED"
 

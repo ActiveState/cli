@@ -19,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type RunIntegrationTestSuite struct {
@@ -78,10 +77,6 @@ func (suite *RunIntegrationTestSuite) SetupTest() {
 			suite.T().Skip("This test requires a bash shell in your PATH")
 		}
 	}
-}
-
-func (suite *RunIntegrationTestSuite) TearDownTest() {
-	projectfile.Reset()
 }
 
 func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *e2e.SpawnedCmd) {

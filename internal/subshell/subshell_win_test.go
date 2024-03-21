@@ -5,7 +5,6 @@ package subshell
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -14,10 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func TestBash(t *testing.T) {
@@ -43,11 +40,6 @@ func TestBashDontEscapeSpace(t *testing.T) {
 }
 
 func TestRunCommandNoProjectEnv(t *testing.T) {
-	projectURL := fmt.Sprintf("https://%s/string/string", constants.PlatformURL)
-	pjfile := projectfile.Project{
-		Project: projectURL,
-	}
-	pjfile.Persist()
 	os.Setenv("ComSpec", "C:\\WINDOWS\\system32\\cmd.exe")
 	os.Setenv("ACTIVESTATE_PROJECT", "SHOULD NOT BE SET")
 	os.Unsetenv("SHELL")
@@ -68,17 +60,9 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 	require.NoError(t, err)
 	assert.Contains(t, out, "--EMPTY--  --EMPTY--", strings.TrimSpace(out),
 		"Should not echo anything cause the ACTIVESTATE_PROJECT should be undefined by the run command")
-
-	projectfile.Reset()
 }
 
 func TestRunCommandError(t *testing.T) {
-	projectURL := fmt.Sprintf("https://%s/string/string", constants.PlatformURL)
-	pjfile := projectfile.Project{
-		Project: projectURL,
-	}
-	pjfile.Persist()
-
 	os.Unsetenv("SHELL")
 
 	cfg, err := config.New()
@@ -97,6 +81,4 @@ func TestRunCommandError(t *testing.T) {
 	var eerr interface{ ExitCode() int }
 	require.True(t, errors.As(err, &eerr), "Error is exec exit error")
 	assert.Equal(t, eerr.ExitCode(), 2, "Returns exit code 2")
-
-	projectfile.Reset()
 }
