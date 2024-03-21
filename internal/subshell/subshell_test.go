@@ -22,7 +22,8 @@ import (
 func setup(t *testing.T) { //nolint:unused
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
-	os.Chdir(filepath.Join(root, "test"))
+	err = os.Chdir(filepath.Join(root, "test"))
+	assert.NoError(t, err, "Should change to test directory")
 }
 
 func TestRunCommand(t *testing.T) {

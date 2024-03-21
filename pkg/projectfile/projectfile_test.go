@@ -205,14 +205,18 @@ func TestSave(t *testing.T) {
 	assert.FileExists(t, tmpfile.Name(), "Project file is saved")
 	assert.NotZero(t, stat.Size(), "Project file should have data")
 
-	os.Remove(tmpfile.Name())
+	err = os.Remove(tmpfile.Name())
+	assert.NoError(t, err, "Should remove our temp file")
 }
 
 func TestGetProjectFilePath(t *testing.T) {
 	Reset()
 	currentDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(currentDir)
+	defer func() {
+		err = os.Chdir(currentDir)
+		require.NoError(t, err)
+	}()
 
 	rootDir, err := fileutils.ResolvePath(fileutils.TempDirUnsafe())
 	assert.NoError(t, err)

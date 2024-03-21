@@ -176,7 +176,7 @@ func fileExists(path string) bool {
 }
 
 // writeFile writes data to a file, if it exists it is overwritten, if it doesn't exist it is created and data is written
-func writeFile(filePath string, data []byte) error {
+func writeFile(filePath string, data []byte) (rerr error) {
 	err := mkdirUnlessExists(filepath.Dir(filePath))
 	if err != nil {
 		return err
@@ -189,7 +189,9 @@ func writeFile(filePath string, data []byte) error {
 		if err := os.Chmod(filePath, 0644); err != nil {
 			return fmt.Errorf("os.Chmod %s failed: %w", filePath, err)
 		}
-		defer os.Chmod(filePath, stat.Mode().Perm())
+		defer func() {
+			rerr = os.Chmod(filePath, stat.Mode().Perm())
+		}()
 	}
 
 	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)

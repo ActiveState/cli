@@ -27,7 +27,7 @@ func ActivateAndWait(
 	ss subshell.SubShell,
 	cfg *config.Instance,
 	an analytics.Dispatcher,
-	changeDirectory bool) error {
+	changeDirectory bool) (rerr error) {
 
 	logging.Debug("Activating and waiting")
 
@@ -57,7 +57,7 @@ func ActivateAndWait(
 	}
 	defer func() {
 		if rt.GOOS == "windows" {
-			sighandler.Pop()
+			rerr = sighandler.Pop()
 		}
 	}()
 

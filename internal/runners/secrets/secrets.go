@@ -149,12 +149,14 @@ func definedSecrets(proj *project.Project, secCli *secretsapi.Client, cfg keypai
 	return secretDefs, nil
 }
 
-func filterSecrets(proj *project.Project, cfg keypairs.Configurable, auth *authentication.Auth, secrectDefs []*secretsModels.SecretDefinition, filter string) ([]*secretsModels.SecretDefinition, error) {
+func filterSecrets(proj *project.Project, cfg keypairs.Configurable, auth *authentication.Auth, secrectDefs []*secretsModels.SecretDefinition, filter string) (defs []*secretsModels.SecretDefinition, rerr error) {
 	secrectDefsFiltered := []*secretsModels.SecretDefinition{}
 
 	oldExpander := project.RegisteredExpander("secrets")
 	if oldExpander != nil {
-		defer project.RegisterExpander("secrets", oldExpander)
+		defer func() {
+			rerr = project.RegisterExpander("secrets", oldExpander)
+		}()
 	}
 	expander := project.NewSecretExpander(secretsapi.Get(auth), proj, nil, cfg, auth)
 	err := project.RegisterExpander("secrets", expander.Expand)

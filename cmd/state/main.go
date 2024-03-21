@@ -30,6 +30,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -121,7 +122,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		if err != nil {
 			return err
 		}
-		defer cleanup()
+		defer rtutils.Closer(cleanup, &rerr)
 	}
 
 	logging.CurrentHandler().SetVerbose(os.Getenv("VERBOSE") != "" || argsHaveVerbose(args))

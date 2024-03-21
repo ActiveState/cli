@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/sighandler"
 )
 
@@ -162,7 +163,7 @@ func binaryPathCmd(env []string, name string) (string, error) {
 	return split[0], nil
 }
 
-func runDirect(env []string, name string, args ...string) error {
+func runDirect(env []string, name string, args ...string) (rerr error) {
 	logging.Debug("Running command: %s %s", name, strings.Join(args, " "))
 
 	runCmd := exec.Command(name, args...)
@@ -180,7 +181,7 @@ func runDirect(env []string, name string, args ...string) error {
 	// - https://www.pivotaltracker.com/story/show/167523128
 	bs := sighandler.NewBackgroundSignalHandler(func(_ os.Signal) {}, os.Interrupt)
 	sighandler.Push(bs)
-	defer sighandler.Pop()
+	defer rtutils.Closer(sighandler.Pop, &rerr)
 
 	err := runCmd.Run()
 	// silence exit code errors

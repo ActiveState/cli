@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runners/activate"
 	"github.com/ActiveState/cli/internal/sighandler"
 	"github.com/ActiveState/cli/pkg/project"
@@ -53,10 +54,10 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 				Value:       params.Namespace,
 			},
 		},
-		func(_ *captain.Command, _ []string) error {
+		func(_ *captain.Command, _ []string) (rerr error) {
 			as := sighandler.NewAwaitingSigHandler(os.Interrupt)
 			sighandler.Push(as)
-			defer sighandler.Pop()
+			defer rtutils.Closer(sighandler.Pop, &rerr)
 			err := as.WaitForFunc(func() error {
 				return runner.Run(&params)
 			})

@@ -26,6 +26,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/sighandler"
 	"github.com/ActiveState/cli/internal/table"
 	"github.com/spf13/cobra"
@@ -616,7 +617,7 @@ func (c *Command) commandNames(includeRoot bool) []string {
 
 // cobraExecHandler is the function that we've routed cobra to run when a command gets executed.
 // It allows us to wrap some over-arching logic around command executions, and should never be called directly.
-func (c *Command) cobraExecHandler(cobraCmd *cobra.Command, args []string) error {
+func (c *Command) cobraExecHandler(cobraCmd *cobra.Command, args []string) (rerr error) {
 	defer profile.Measure("captain:runner", time.Now())
 
 	subCommandString := c.JoinedSubCommandNames()
@@ -688,7 +689,7 @@ func (c *Command) cobraExecHandler(cobraCmd *cobra.Command, args []string) error
 	// initialize signal handler for analytics events
 	as := sighandler.NewAwaitingSigHandler(os.Interrupt)
 	sighandler.Push(as)
-	defer sighandler.Pop()
+	defer rtutils.Closer(sighandler.Pop, &rerr)
 
 	err := as.WaitForFunc(func() error {
 		defer profile.Measure("captain:cmd:execute", time.Now())

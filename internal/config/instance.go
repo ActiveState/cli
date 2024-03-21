@@ -266,9 +266,9 @@ func (i *Instance) importLegacyConfig() (returnErr error) {
 	fpath := filepath.Join(i.appDataDir, C.InternalConfigFileNameLegacy)
 	defer func() {
 		if returnErr != nil {
-			os.Rename(fpath, fpath+".corrupted")
+			returnErr = os.Rename(fpath, fpath+".corrupted")
 		} else {
-			os.Remove(fpath)
+			returnErr = os.Remove(fpath)
 		}
 	}()
 
