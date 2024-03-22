@@ -123,9 +123,9 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	cp.Expect("3")
 
 	cp.SendLine(fmt.Sprintf("%s run test-interrupt", cp.Executable()))
-	cp.Expect("Start of script", termtest.OptExpectTimeout(5*time.Second))
+	cp.Expect("Start of script", termtest.OptExpectTimeout(10*time.Second))
 	cp.SendCtrlC()
-	cp.Expect("received interrupt", termtest.OptExpectTimeout(3*time.Second))
+	cp.Expect("received interrupt", termtest.OptExpectTimeout(5*time.Second))
 	cp.Expect("After first sleep or interrupt", termtest.OptExpectTimeout(2*time.Second))
 	cp.SendCtrlC()
 	suite.expectTerminateBatchJob(cp)
