@@ -55,6 +55,7 @@ func RefreshRuntime(
 
 // RefreshRuntimeByReference will update the given runtime if necessary. Unlike RefreshRuntime this won't print any UI
 // except for the progress of sourcing the runtime.
+// This allows us to pass in an already instantiated runtime, so we can handle certain runtime logic external from this runbit.
 func RefreshRuntimeByReference(
 	rt *runtime.Runtime,
 	auth *authentication.Auth,
