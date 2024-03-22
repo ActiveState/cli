@@ -557,53 +557,24 @@ func (r *RequirementOperation) summarizeCVEs(out output.Outputer, vulnerabilitie
 		out.Print(locale.Tr("warning_vulnerable", strconv.Itoa(vulnerabilities.CountPrimary), strconv.Itoa(vulnerabilities.Count-vulnerabilities.CountPrimary)))
 	}
 
-	if vulnerabilities.Critical.Count > 0 {
-		ings := []string{}
-		for _, vulns := range vulnerabilities.Critical.Ingredients {
-			prefix := ""
-			if vulnerabilities.Count > vulnerabilities.CountPrimary {
-				prefix = fmt.Sprintf("%s@%s: ", vulns.IngredientName, vulns.IngredientVersion)
+	printVulnerabilities := func(vulnerableIngredients model.VulnerableIngredientsByLevel, name, color string) {
+		if vulnerableIngredients.Count > 0 {
+			ings := []string{}
+			for _, vulns := range vulnerableIngredients.Ingredients {
+				prefix := ""
+				if vulnerabilities.Count > vulnerabilities.CountPrimary {
+					prefix = fmt.Sprintf("%s@%s: ", vulns.IngredientName, vulns.IngredientVersion)
+				}
+				ings = append(ings, fmt.Sprintf("%s[CYAN]%s[/RESET]", prefix, strings.Join(vulns.CVEIDs, ", ")))
 			}
-			ings = append(ings, fmt.Sprintf("%s[CYAN]%s[/RESET]", prefix, strings.Join(vulns.CVEIDs, ", ")))
+			out.Print(fmt.Sprintf(" • [%s]%d %s:[/RESET] %s", color, vulnerableIngredients.Count, name, strings.Join(ings, ", ")))
 		}
-		out.Print(fmt.Sprintf(" • [RED]%d Critical:[/RESET] %s", vulnerabilities.Critical.Count, strings.Join(ings, ", ")))
 	}
 
-	if vulnerabilities.High.Count > 0 {
-		ings := []string{}
-		for _, vulns := range vulnerabilities.High.Ingredients {
-			prefix := ""
-			if vulnerabilities.Count > vulnerabilities.CountPrimary {
-				prefix = fmt.Sprintf("%s@%s: ", vulns.IngredientName, vulns.IngredientVersion)
-			}
-			ings = append(ings, fmt.Sprintf("%s[CYAN]%s[/RESET]", prefix, strings.Join(vulns.CVEIDs, ", ")))
-		}
-		out.Print(fmt.Sprintf(" • [RED]%d High:[/RESET] %s", vulnerabilities.High.Count, strings.Join(ings, ", ")))
-	}
-
-	if vulnerabilities.Medium.Count > 0 {
-		ings := []string{}
-		for _, vulns := range vulnerabilities.Medium.Ingredients {
-			prefix := ""
-			if vulnerabilities.Count > vulnerabilities.CountPrimary {
-				prefix = fmt.Sprintf("%s@%s: ", vulns.IngredientName, vulns.IngredientVersion)
-			}
-			ings = append(ings, fmt.Sprintf("%s[CYAN]%s[/RESET]", prefix, strings.Join(vulns.CVEIDs, ", ")))
-		}
-		out.Print(fmt.Sprintf(" • [RED]%d Medium:[/RESET] %s", vulnerabilities.Medium.Count, strings.Join(ings, ", ")))
-	}
-
-	if vulnerabilities.Low.Count > 0 {
-		ings := []string{}
-		for _, vulns := range vulnerabilities.Low.Ingredients {
-			prefix := ""
-			if vulnerabilities.Count > vulnerabilities.CountPrimary {
-				prefix = fmt.Sprintf("%s@%s: ", vulns.IngredientName, vulns.IngredientVersion)
-			}
-			ings = append(ings, fmt.Sprintf("%s[CYAN]%s[/RESET]", prefix, strings.Join(vulns.CVEIDs, ", ")))
-		}
-		out.Print(fmt.Sprintf(" • [RED]%d Low:[/RESET] %s", vulnerabilities.Low.Count, strings.Join(ings, ", ")))
-	}
+	printVulnerabilities(vulnerabilities.Critical, locale.Tl("cve_critical", "Critical"), "RED")
+	printVulnerabilities(vulnerabilities.High, locale.Tl("cve_high", "High"), "ORANGE")
+	printVulnerabilities(vulnerabilities.Medium, locale.Tl("cve_medium", "Medium"), "YELLOW")
+	printVulnerabilities(vulnerabilities.Low, locale.Tl("cve_low", "Low"), "MAGENTA")
 
 	out.Print("")
 	out.Print(locale.T("more_info_vulnerabilities"))
