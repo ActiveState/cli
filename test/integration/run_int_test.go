@@ -39,6 +39,7 @@ scripts:
   - name: test-interrupt
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
     standalone: true
+    language: bash
     value: |
         go build -o ./interrupt ./interrupt.go
         ./interrupt
@@ -46,15 +47,18 @@ scripts:
   - name: test-interrupt
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
     standalone: true
+    language: bash
     value: |
         go build -o .\interrupt.exe .\interrupt.go
         .\interrupt.exe
     if: eq .OS.Name "Windows"
   - name: helloWorld
+    language: bash
     value: echo "Hello World!"
     standalone: true
     if: ne .OS.Name "Windows"
   - name: helloWorld
+    language: bash
     standalone: true
     value: echo Hello World!
     if: eq .OS.Name "Windows"
@@ -67,6 +71,7 @@ scripts:
     value: |
       exit 123
     standalone: true
+    language: bash
 `, pythonVersion), "\n")
 
 	ts.PrepareActiveStateYAML(configFileContent)
