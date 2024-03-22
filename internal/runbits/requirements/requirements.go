@@ -518,17 +518,6 @@ func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 }
 
 func (r *RequirementOperation) shouldPromptForSecurity(vulnerabilities model.VulnerableIngredientsByLevels) bool {
-	if !r.Config.IsSet(constants.SecurityPromptConfig) {
-		if err := r.Config.Set(constants.SecurityPromptConfig, promptDefault); err != nil {
-			multilog.Error("Failed to set security prompt config: %v", err)
-		}
-	}
-	if !r.Config.IsSet(constants.SecurityPromptLevelConfig) {
-		if err := r.Config.Set(constants.SecurityPromptLevelConfig, promptDefaultLevel); err != nil {
-			multilog.Error("Failed to set security prompt level config: %v", err)
-		}
-	}
-
 	if !r.Config.GetBool(constants.SecurityPromptConfig) || vulnerabilities.Count == 0 {
 		return false
 	}
