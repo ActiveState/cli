@@ -424,7 +424,7 @@ func (r *RequirementOperation) cveReport(requirementName, requirementVersion str
 
 	reqNameAndVersion := requirementName
 	if requirementVersion != "" {
-		requirementVersion = fmt.Sprintf("%s@%s", requirementName, requirementVersion)
+		reqNameAndVersion = fmt.Sprintf("%s@%s", requirementName, requirementVersion)
 	}
 	pg := output.StartSpinner(r.Output, locale.Tr("progress_cve_search", reqNameAndVersion), constants.TerminalAnimationInterval)
 
