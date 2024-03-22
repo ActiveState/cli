@@ -12,10 +12,13 @@ import (
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
+
+const local = "LOCAL"
 
 type Params struct {
 	Force  bool
@@ -76,6 +79,13 @@ func (r *Reset) Run(params *Params) error {
 		}
 		commitID = *latestCommit
 
+	case params.Target == local:
+		localCommitID, err := localcommit.Get(r.project.Dir())
+		if err != nil {
+			return errs.Wrap(err, "Unable to get local commit")
+		}
+		commitID = localCommitID
+
 	case !strfmt.IsUUID(params.Target):
 		branch, err := model.BranchForProjectNameByName(r.project.Owner(), r.project.Name(), params.Target)
 		if err != nil {
@@ -96,24 +106,27 @@ func (r *Reset) Run(params *Params) error {
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
-	if commitID == localCommitID {
-		return locale.NewInputError("err_reset_same_commitid", "Your project is already at the given commit ID")
-	}
-
 	r.out.Notice(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", commitID.String()))
-
-	defaultChoice := params.Force || !r.out.Config().Interactive
-	confirm, err := r.prompt.Confirm("", locale.Tl("reset_confim", "Resetting is destructive, you will lose any changes that were not pushed. Are you sure you want to do this?"), &defaultChoice)
-	if err != nil {
-		return locale.WrapError(err, "err_reset_confirm", "Could not confirm reset choice")
-	}
-	if !confirm {
-		return locale.NewInputError("err_reset_aborted", "Reset aborted by user")
+	if commitID != localCommitID {
+		defaultChoice := params.Force || !r.out.Config().Interactive
+		confirm, err := r.prompt.Confirm("", locale.Tl("reset_confim", "Resetting is destructive, you will lose any changes that were not pushed. Are you sure you want to do this?"), &defaultChoice)
+		if err != nil {
+			return locale.WrapError(err, "err_reset_confirm", "Could not confirm reset choice")
+		}
+		if !confirm {
+			return locale.NewInputError("err_reset_aborted", "Reset aborted by user")
+		}
 	}
 
 	err = localcommit.Set(r.project.Dir(), commitID.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to set local commit")
+	}
+
+	// Ensure the buildscript exists. Normally we should never do this, but reset is used for resetting from a corrupted
+	// state, so it is appropriate.
+	if err := buildscript.Initialize(r.project.Dir(), r.auth); err != nil {
+		return errs.Wrap(err, "Unable to initialize buildscript")
 	}
 
 	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, commitID, true, target.TriggerReset, r.svcModel, r.cfg)
