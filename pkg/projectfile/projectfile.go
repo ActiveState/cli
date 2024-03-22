@@ -55,6 +55,18 @@ var (
 	nonAlphanumericRegex = regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
 )
 
+const ConfigVersion = 1
+
+type MigratorFunc func(project *Project, configVersion int) (int, error)
+
+var migrationRunning bool
+
+var migrator MigratorFunc
+
+func RegisterMigrator(m MigratorFunc) {
+	migrator = m
+}
+
 type ErrorParseProject struct{ *locale.LocalizedError }
 
 type ErrorNoProject struct{ *locale.LocalizedError }
@@ -91,6 +103,7 @@ type ProjectSimple struct {
 // Project covers the top level project structure of our yaml
 type Project struct {
 	Project       string        `yaml:"project"`
+	ConfigVersion int           `yaml:"config_version"`
 	Lock          string        `yaml:"lock,omitempty"`
 	Environments  string        `yaml:"environments,omitempty"`
 	Constants     Constants     `yaml:"constants,omitempty"`
@@ -452,6 +465,32 @@ func Parse(configFilepath string) (_ *Project, rerr error) {
 
 	namespace := fmt.Sprintf("%s/%s", project.parsedURL.Owner, project.parsedURL.Name)
 	StoreProjectMapping(cfg, namespace, filepath.Dir(project.Path()))
+
+	// Migrate project file if needed
+	if !migrationRunning && project.ConfigVersion != ConfigVersion {
+		// Migrations may themselves utilize the projectfile package, so we have to ensure we don't start an infinite loop
+		migrationRunning = true
+		defer func() { migrationRunning = false }()
+
+		if project.ConfigVersion > ConfigVersion {
+			return nil, locale.NewInputError("err_projectfile_version_too_high")
+		}
+		if migrator == nil {
+			return nil, errs.New("migrator not set")
+		}
+		updatedConfigVersion, errMigrate := migrator(project, ConfigVersion)
+
+		// Ensure we update the config version regardless of any error that occurred, because we don't want to repeat
+		// the same version migrations
+		project.ConfigVersion = updatedConfigVersion
+		if err := NewYamlField("config_version", ConfigVersion).Save(project.Path()); err != nil {
+			return nil, errs.Wrap(err, "Could not save config_version")
+		}
+
+		if errMigrate != nil {
+			return nil, errs.Wrap(errMigrate, "Migrator failed")
+		}
+	}
 
 	return project, nil
 }
@@ -872,7 +911,7 @@ func GetOnce() (*Project, error) {
 
 	project, err := Parse(projectFilePath)
 	if err != nil {
-		return nil, locale.WrapInputError(err, "err_projectfile_parse", "", projectFilePath)
+		return nil, errs.Wrap(err, "Could not parse projectfile")
 	}
 
 	return project, nil
@@ -894,7 +933,7 @@ func FromPath(path string) (*Project, error) {
 	}
 	project, err := Parse(projectFilePath)
 	if err != nil {
-		return nil, locale.WrapInputError(err, "err_projectfile_parse", "", projectFilePath)
+		return nil, errs.Wrap(err, "Could not parse projectfile")
 	}
 
 	return project, nil
@@ -916,7 +955,7 @@ func FromExactPath(path string) (*Project, error) {
 	}
 	project, err := Parse(projectFilePath)
 	if err != nil {
-		return nil, locale.WrapInputError(err, "err_projectfile_parse", projectFilePath)
+		return nil, errs.Wrap(err, "Could not parse projectfile")
 	}
 
 	return project, nil
@@ -1011,9 +1050,10 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	data := map[string]interface{}{
-		"Project": params.ProjectURL,
-		"Content": content,
-		"Private": params.Private,
+		"Project":       params.ProjectURL,
+		"Content":       content,
+		"Private":       params.Private,
+		"ConfigVersion": ConfigVersion,
 	}
 
 	tplName := "activestate.yaml.tpl"

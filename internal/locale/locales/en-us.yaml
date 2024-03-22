@@ -1083,8 +1083,6 @@ err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory or its parent directories.
 err_project_not_found:
   other: Could not find project at [NOTICE]{{.V0}}[/RESET]
-err_projectfile_parse:
-  other: Unable to parse {{.V0}}
 err_non_interactive_prompt:
   other: Prompt "{{.V0}}" cannot be resolved in non-interactive mode.
 err_read_projectfile:
@@ -1550,3 +1548,6 @@ err_build_artifact_failed:
     [NOTICE]{{.V0}}[/RESET]
     [DISABLED]├─ Message:[/RESET] [ERROR]{{.V1}}[/RESET]
     [DISABLED]└─ Log:[/RESET] [ACTIONABLE]{{.V2}}[/RESET]
+err_projectfile_version_too_high:
+  other: Your local checkout of this project depends on a newer version of the State Tool. Please update your State Tool by running [ACTIONABLE]state update[/RESET].
+
