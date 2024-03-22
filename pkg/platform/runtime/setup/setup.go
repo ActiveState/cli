@@ -180,7 +180,6 @@ func (s *Setup) Solve() (*apimodel.BuildResult, error) {
 		return nil, nil
 	}
 
-	// Request build
 	if err := s.handleEvent(events.SolveStart{}); err != nil {
 		return nil, errs.Wrap(err, "Could not handle SolveStart event")
 	}
