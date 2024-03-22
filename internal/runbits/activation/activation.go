@@ -57,7 +57,7 @@ func ActivateAndWait(
 	}
 	defer func() {
 		if rt.GOOS == "windows" {
-			rerr = sighandler.Pop()
+			_ = sighandler.Pop() // Overwriting the returned error can mess up error code reporting
 		}
 	}()
 
