@@ -27,6 +27,9 @@ func OutputChangeSummary(out output.Outputer, changeset artifact.ArtifactChanges
 	var addedId *artifact.ArtifactID
 	for _, candidate := range changeset.Added {
 		if !isDependency(candidate.ArtifactID, changeset, artifacts) {
+			if addedId != nil {
+				return // more than two independent packages were added
+			}
 			foundId := candidate.ArtifactID
 			addedId = &foundId // cannot address candidateId as it changes over the loop
 		}
