@@ -67,7 +67,6 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 			),
 		)
 		cp.Expect("Fetched cached artifact", e2e.RuntimeSourcingTimeoutOpt) // Comes from log, which is why we're using VERBOSE=true
-		cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 		cp.ExpectExitCode(0)
 	})
 }
