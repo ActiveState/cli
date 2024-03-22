@@ -53,12 +53,10 @@ scripts:
         .\interrupt.exe
     if: eq .OS.Name "Windows"
   - name: helloWorld
-    language: bash
     value: echo "Hello World!"
     standalone: true
     if: ne .OS.Name "Windows"
   - name: helloWorld
-    language: bash
     standalone: true
     value: echo Hello World!
     if: eq .OS.Name "Windows"
