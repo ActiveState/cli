@@ -548,11 +548,12 @@ func (r *RequirementOperation) shouldPromptForSecurity(vulnerabilities model.Vul
 func (r *RequirementOperation) summarizeCVEs(out output.Outputer, vulnerabilities model.VulnerableIngredientsByLevels) {
 	out.Print("")
 
-	if vulnerabilities.CountPrimary == 0 {
+	switch {
+	case vulnerabilities.CountPrimary == 0:
 		out.Print(locale.Tr("warning_vulnerable_indirectonly", strconv.Itoa(vulnerabilities.Count)))
-	} else if vulnerabilities.CountPrimary == vulnerabilities.Count {
+	case vulnerabilities.CountPrimary == vulnerabilities.Count:
 		out.Print(locale.Tr("warning_vulnerable_directonly", strconv.Itoa(vulnerabilities.Count)))
-	} else {
+	default:
 		out.Print(locale.Tr("warning_vulnerable", strconv.Itoa(vulnerabilities.CountPrimary), strconv.Itoa(vulnerabilities.Count-vulnerabilities.CountPrimary)))
 	}
 
