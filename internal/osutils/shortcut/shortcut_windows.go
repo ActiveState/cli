@@ -40,11 +40,7 @@ func New(dir, name, target string, args ...string) *Shortcut {
 
 func (s *Shortcut) Enable() error {
 	// ALWAYS errors with "Incorrect function", which can apparently be safely ignored..
-	err := ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED|ole.COINIT_SPEED_OVER_MEMORY)
-	if err != nil {
-		return errs.Wrap(err, "Could not initialize COM")
-	}
-	defer ole.CoUninitialize()
+	_ = ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED|ole.COINIT_SPEED_OVER_MEMORY)
 
 	oleShellObject, err := oleutil.CreateObject("WScript.Shell")
 	if err != nil {
