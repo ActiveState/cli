@@ -93,9 +93,10 @@ func New(data []byte) (*Script, error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not marshal build script to build expression")
 	}
+
 	expr, err := buildexpression.New(bytes)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not construct build expression")
+		return nil, locale.WrapError(err, "err_parse_buildscript_bytes", "Could not construct build expression: {{.V0}}", errs.JoinMessage(err))
 	}
 	script.Expr = expr
 
