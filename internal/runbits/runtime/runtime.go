@@ -42,22 +42,21 @@ func NewFromProject(
 	}
 
 	rti, err := rt.New(target.NewProjectTarget(proj, customCommitID, trigger), an, svcModel, auth, cfg, out)
-	if err == nil {
-		return rti, nil
+	if err != nil {
+		if rt.IsNeedsCommitError(err) {
+			return nil, locale.WrapInputError(err, "notice_commit_build_script")
+		}
+		return nil, locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 	}
 
-	if rt.IsNeedsCommitError(err) {
-		out.Notice(locale.T("notice_commit_build_script"))
-	}
-
-	if rt.IsNeedsUpdateError(err) {
+	if rti.NeedsUpdate() {
 		pg := runbits.NewRuntimeProgressIndicator(out)
 		defer rtutils.Closer(pg.Close, &rerr)
-		if err := rti.Update(pg); err != nil {
+		if err := rti.SolveAndUpdate(pg); err != nil {
 			return nil, &ErrUpdate{locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")}
 		}
 		return rti, nil
 	}
 
-	return nil, locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
+	return rti, nil
 }

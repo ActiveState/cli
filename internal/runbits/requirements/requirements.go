@@ -8,7 +8,12 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/thoas/go-funk"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
@@ -238,67 +243,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		pg = nil
 	}
 
-	if r.Auth.Authenticated() && operation == bpModel.OperationAdded && ns.Type() == model.NamespacePackage {
-		pg = output.StartSpinner(out, locale.Tr("progress_cve_search", requirementName), constants.TerminalAnimationInterval)
-
-		vulnerabilities, err := model.FetchVulnerabilitiesForIngredient(r.Auth, &request.Ingredient{
-			Namespace: ns.String(),
-			Name:      requirementName,
-			Version:   requirementVersion,
-		})
-		if err != nil {
-			return errs.Wrap(err, "Failed to retrieve vulnerabilities")
-		}
-
-		var safe bool
-		if vulnerabilities == nil || vulnerabilities.Vulnerabilities.Length() == 0 {
-			safe = true
-		}
-
-		if !safe {
-			pg.Stop(locale.T("progress_unsafe"))
-			pg = nil
-
-			if r.shouldPromptForSecurity(vulnerabilities.Vulnerabilities) {
-				out.Notice("")
-				cont, err := r.promptForSecurity(out, vulnerabilities.Vulnerabilities)
-				if err != nil {
-					return errs.Wrap(err, "Failed to prompt for security")
-				}
-
-				if !cont {
-					if !r.Prompt.IsInteractive() {
-						return errs.AddTips(
-							locale.NewInputError("err_pkgop_security_prompt", "Operation aborted due to security prompt"),
-							locale.Tl("more_info_prompt", "To disable security prompting run: [ACTIONABLE]state config set security.prompt.enabled false[/RESET]"),
-						)
-					}
-					return locale.NewError("err_pkgop_security_prompt", "Operation aborted due to security prompt")
-				}
-			} else {
-				var severityBreakdown []string
-				if len(vulnerabilities.Vulnerabilities.Critical) > 0 {
-					severityBreakdown = append(severityBreakdown, fmt.Sprintf("[RED]%d Critical[/RESET]", len(vulnerabilities.Vulnerabilities.Critical)))
-				}
-				if len(vulnerabilities.Vulnerabilities.High) > 0 {
-					severityBreakdown = append(severityBreakdown, fmt.Sprintf("[ORANGE]%d high[/RESET]", len(vulnerabilities.Vulnerabilities.High)))
-				}
-				if len(vulnerabilities.Vulnerabilities.Medium) > 0 {
-					severityBreakdown = append(severityBreakdown, fmt.Sprintf("[YELLOW]%d medium[/RESET]", len(vulnerabilities.Vulnerabilities.Medium)))
-				}
-				if len(vulnerabilities.Vulnerabilities.Low) > 0 {
-					severityBreakdown = append(severityBreakdown, fmt.Sprintf("[MAGENTA]%d low[/RESET]", len(vulnerabilities.Vulnerabilities.Low)))
-				}
-
-				out.Notice("    " + strings.TrimSpace(locale.Tr("warning_vulnerable", strconv.Itoa(vulnerabilities.Vulnerabilities.Length()), strings.Join(severityBreakdown, ", "))))
-			}
-		} else {
-			pg.Stop(locale.T("progress_safe"))
-		}
-
-		pg = nil
-	}
-
 	parentCommitID, err := localcommit.Get(r.Project.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
@@ -366,18 +310,29 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
 
-	var trigger target.Trigger
-	switch ns.Type() {
-	case model.NamespaceLanguage:
-		trigger = target.TriggerLanguage
-	case model.NamespacePlatform:
-		trigger = target.TriggerPlatform
-	default:
-		trigger = target.TriggerPackage
+	// Solve runtime
+	rt, buildResult, changedArtifacts, err := r.solve(commitID, ns)
+	if err != nil {
+		return errs.Wrap(err, "Could not solve runtime")
+	}
+
+	// Report CVE's
+	if err := r.cveReport(requirementName, requirementVersion, *changedArtifacts, operation, ns); err != nil {
+		return err
+	}
+
+	// Start runtime update UI
+	out.Notice("")
+	if !rt.HasCache() {
+		out.Notice(output.Title(locale.T("install_runtime")))
+		out.Notice(locale.T("install_runtime_info"))
+	} else {
+		out.Notice(output.Title(locale.T("update_runtime")))
+		out.Notice(locale.T("update_runtime_info"))
 	}
 
 	// refresh or install runtime
-	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, r.Project, commitID, true, trigger, r.SvcModel, r.Config)
+	err = runbit.UpdateByReference(rt, buildResult, r.Auth, r.Output, r.Project, r.Config)
 	if err != nil {
 		return r.handleRefreshError(err, parentCommitID)
 	}
@@ -420,6 +375,137 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	return nil
 }
 
+func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) (
+	_ *runtime.Runtime, _ *model.BuildResult, _ *artifact.ArtifactChangeset, rerr error,
+) {
+	// Initialize runtime
+	var trigger target.Trigger
+	switch ns.Type() {
+	case model.NamespaceLanguage:
+		trigger = target.TriggerLanguage
+	case model.NamespacePlatform:
+		trigger = target.TriggerPlatform
+	default:
+		trigger = target.TriggerPackage
+	}
+
+	spinner := output.StartSpinner(r.Output, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+
+	defer func() {
+		if rerr != nil {
+			spinner.Stop(locale.T("progress_fail"))
+		} else {
+			spinner.Stop(locale.T("progress_success"))
+		}
+	}()
+
+	rtTarget := target.NewProjectTarget(r.Project, &commitID, trigger)
+	rt, err := runtime.New(rtTarget, r.Analytics, r.SvcModel, r.Auth, r.Config, r.Output)
+	if err != nil {
+		return nil, nil, nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+	}
+
+	setup := rt.Setup(&events.VoidHandler{})
+	buildResult, err := setup.Solve()
+	if err != nil {
+		return nil, nil, nil, errs.Wrap(err, "Solve failed")
+	}
+
+	// Get old buildplan
+	// We can't use the local store here; because it might not exist (ie. integrationt test, user cleaned cache, ..),
+	// but also there's no guarantee the old one is sequential to the current.
+	commit, err := model.GetCommit(commitID, r.Auth)
+	if err != nil {
+		return nil, nil, nil, errs.Wrap(err, "Could not get commit")
+	}
+
+	var oldBuildPlan *bpModel.Build
+	if commit.ParentCommitID != "" {
+		bp := model.NewBuildPlannerModel(r.Auth)
+		oldBuildResult, err := bp.FetchBuildResult(commit.ParentCommitID, rtTarget.Owner(), rtTarget.Name())
+		if err != nil {
+			return nil, nil, nil, errs.Wrap(err, "Failed to fetch build result")
+		}
+		oldBuildPlan = oldBuildResult.Build
+	}
+
+	changedArtifacts, err := buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false, false, r.Config, r.Auth)
+	if err != nil {
+		return nil, nil, nil, errs.Wrap(err, "Could not get changed artifacts")
+	}
+
+	return rt, buildResult, &changedArtifacts, nil
+}
+
+func (r *RequirementOperation) cveReport(requirementName, requirementVersion string, artifactChangeset artifact.ArtifactChangeset, operation bpModel.Operation, ns *model.Namespace) error {
+	if !r.Auth.Authenticated() || operation == bpModel.OperationRemoved {
+		return nil
+	}
+
+	reqNameAndVersion := requirementName
+	if requirementVersion != "" {
+		reqNameAndVersion = fmt.Sprintf("%s@%s", requirementName, requirementVersion)
+	}
+	pg := output.StartSpinner(r.Output, locale.Tr("progress_cve_search", reqNameAndVersion), constants.TerminalAnimationInterval)
+
+	ingredients := []*request.Ingredient{}
+	for _, artifact := range artifactChangeset.Added {
+		ingredients = append(ingredients, &request.Ingredient{
+			Namespace: artifact.Namespace,
+			Name:      artifact.Name,
+			Version:   *artifact.Version,
+		})
+	}
+	for _, artifact := range artifactChangeset.Updated {
+		if !artifact.IngredientChange {
+			continue // For CVE reporting we only care about ingredient changes
+		}
+		ingredients = append(ingredients, &request.Ingredient{
+			Namespace: artifact.To.Namespace,
+			Name:      artifact.To.Name,
+			Version:   *artifact.To.Version,
+		})
+	}
+
+	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(r.Auth, ingredients)
+	if err != nil {
+		return errs.Wrap(err, "Failed to retrieve vulnerabilities")
+	}
+
+	// No vulnerabilities, nothing further to do here
+	if len(ingredientVulnerabilities) == 0 {
+		pg.Stop(locale.T("progress_safe"))
+		pg = nil
+		return nil
+	}
+
+	vulnerabilities := model.CombineVulnerabilities(ingredientVulnerabilities, requirementName)
+
+	pg.Stop(locale.T("progress_unsafe"))
+	pg = nil
+
+	r.summarizeCVEs(r.Output, vulnerabilities)
+
+	if r.shouldPromptForSecurity(vulnerabilities) {
+		cont, err := r.promptForSecurity()
+		if err != nil {
+			return errs.Wrap(err, "Failed to prompt for security")
+		}
+
+		if !cont {
+			if !r.Prompt.IsInteractive() {
+				return errs.AddTips(
+					locale.NewInputError("err_pkgop_security_prompt", "Operation aborted due to security prompt"),
+					locale.Tl("more_info_prompt", "To disable security prompting run: [ACTIONABLE]state config set security.prompt.enabled false[/RESET]"),
+				)
+			}
+			return locale.NewInputError("err_pkgop_security_prompt", "Operation aborted due to security prompt")
+		}
+	}
+
+	return nil
+}
+
 func (r *RequirementOperation) handleRefreshError(err error, parentCommitID strfmt.UUID) error {
 	// If the error is a build error then return, if not update the commit ID then return
 	if !runbits.IsBuildError(err) {
@@ -451,8 +537,8 @@ func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 	return nil
 }
 
-func (r *RequirementOperation) shouldPromptForSecurity(vulnerabilities *model.Vulnerabilites) bool {
-	if !r.Config.GetBool(constants.SecurityPromptConfig) || vulnerabilities == nil {
+func (r *RequirementOperation) shouldPromptForSecurity(vulnerabilities model.VulnerableIngredientsByLevels) bool {
+	if !r.Config.GetBool(constants.SecurityPromptConfig) || vulnerabilities.Count == 0 {
 		return false
 	}
 
@@ -461,56 +547,60 @@ func (r *RequirementOperation) shouldPromptForSecurity(vulnerabilities *model.Vu
 	logging.Debug("Prompt level: ", promptLevel)
 	switch promptLevel {
 	case vulnModel.SeverityCritical:
-		return len(vulnerabilities.Critical) > 0
+		return vulnerabilities.Critical.Count > 0
 	case vulnModel.SeverityHigh:
-		return (len(vulnerabilities.Critical) > 0 ||
-			len(vulnerabilities.High) > 0)
+		return vulnerabilities.Critical.Count > 0 ||
+			vulnerabilities.High.Count > 0
 	case vulnModel.SeverityMedium:
-		return (len(vulnerabilities.Critical) > 0 ||
-			len(vulnerabilities.High) > 0 ||
-			len(vulnerabilities.Medium) > 0)
+		return vulnerabilities.Critical.Count > 0 ||
+			vulnerabilities.High.Count > 0 ||
+			vulnerabilities.Medium.Count > 0
 	case vulnModel.SeverityLow:
-		return (len(vulnerabilities.Critical) > 0 ||
-			len(vulnerabilities.High) > 0 ||
-			len(vulnerabilities.Medium) > 0 ||
-			len(vulnerabilities.Low) > 0)
+		return vulnerabilities.Critical.Count > 0 ||
+			vulnerabilities.High.Count > 0 ||
+			vulnerabilities.Medium.Count > 0 ||
+			vulnerabilities.Low.Count > 0
 	}
 
 	return false
 }
 
-func (r *RequirementOperation) promptForSecurity(out output.Outputer, vulnerabilities *model.Vulnerabilites) (bool, error) {
-	out.Notice(locale.Tr("warning_vulnerable_simple", strconv.Itoa(vulnerabilities.Length())))
+func (r *RequirementOperation) summarizeCVEs(out output.Outputer, vulnerabilities model.VulnerableIngredientsByLevels) {
+	out.Print("")
 
-	var pkgVersionVulns []string
-	if len(vulnerabilities.Critical) > 0 {
-		criticalOutput := fmt.Sprintf("[RED]%d Critical: [/RESET]", len(vulnerabilities.Critical))
-		criticalOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(vulnerabilities.Critical, ", "))
-		pkgVersionVulns = append(pkgVersionVulns, criticalOutput)
+	switch {
+	case vulnerabilities.CountPrimary == 0:
+		out.Print(locale.Tr("warning_vulnerable_indirectonly", strconv.Itoa(vulnerabilities.Count)))
+	case vulnerabilities.CountPrimary == vulnerabilities.Count:
+		out.Print(locale.Tr("warning_vulnerable_directonly", strconv.Itoa(vulnerabilities.Count)))
+	default:
+		out.Print(locale.Tr("warning_vulnerable", strconv.Itoa(vulnerabilities.CountPrimary), strconv.Itoa(vulnerabilities.Count-vulnerabilities.CountPrimary)))
 	}
 
-	if len(vulnerabilities.High) > 0 {
-		highOutput := fmt.Sprintf("[ORANGE]%d High: [/RESET]", len(vulnerabilities.High))
-		highOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(vulnerabilities.High, ", "))
-		pkgVersionVulns = append(pkgVersionVulns, highOutput)
+	printVulnerabilities := func(vulnerableIngredients model.VulnerableIngredientsByLevel, name, color string) {
+		if vulnerableIngredients.Count > 0 {
+			ings := []string{}
+			for _, vulns := range vulnerableIngredients.Ingredients {
+				prefix := ""
+				if vulnerabilities.Count > vulnerabilities.CountPrimary {
+					prefix = fmt.Sprintf("%s@%s: ", vulns.IngredientName, vulns.IngredientVersion)
+				}
+				ings = append(ings, fmt.Sprintf("%s[CYAN]%s[/RESET]", prefix, strings.Join(vulns.CVEIDs, ", ")))
+			}
+			out.Print(fmt.Sprintf(" • [%s]%d %s:[/RESET] %s", color, vulnerableIngredients.Count, name, strings.Join(ings, ", ")))
+		}
 	}
 
-	if len(vulnerabilities.Medium) > 0 {
-		mediumOutput := fmt.Sprintf("[YELLOW]%d Medium: [/RESET]", len(vulnerabilities.Medium))
-		mediumOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(vulnerabilities.Medium, ", "))
-		pkgVersionVulns = append(pkgVersionVulns, mediumOutput)
-	}
+	printVulnerabilities(vulnerabilities.Critical, locale.Tl("cve_critical", "Critical"), "RED")
+	printVulnerabilities(vulnerabilities.High, locale.Tl("cve_high", "High"), "ORANGE")
+	printVulnerabilities(vulnerabilities.Medium, locale.Tl("cve_medium", "Medium"), "YELLOW")
+	printVulnerabilities(vulnerabilities.Low, locale.Tl("cve_low", "Low"), "MAGENTA")
 
-	if len(vulnerabilities.Low) > 0 {
-		lowOutput := fmt.Sprintf("[MAGENTA]%d Low: [/RESET]", len(vulnerabilities.Low))
-		lowOutput += fmt.Sprintf("[CYAN]%s[/RESET]", strings.Join(vulnerabilities.Low, ", "))
-		pkgVersionVulns = append(pkgVersionVulns, lowOutput)
-	}
+	out.Print("")
+	out.Print(locale.T("more_info_vulnerabilities"))
+}
 
-	out.Print(pkgVersionVulns)
-	out.Notice("")
-	out.Notice(locale.T("more_info_vulnerabilities"))
-
+func (r *RequirementOperation) promptForSecurity() (bool, error) {
 	confirm, err := r.Prompt.Confirm("", locale.Tr("prompt_continue_pkg_operation"), ptr.To(false))
 	if err != nil {
 		return false, locale.WrapError(err, "err_pkgop_confirm", "Need a confirmation.")
