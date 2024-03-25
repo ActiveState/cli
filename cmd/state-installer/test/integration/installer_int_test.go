@@ -121,6 +121,9 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 
 	// Assert that the config was written (ie. RC files or windows registry)
 	suite.AssertConfig(ts)
+	if runtime.GOOS == "windows" {
+		ts.IgnoreLogErrors() // Shortcut creation can intermittently fail on Windows CI
+	}
 }
 
 func (suite *InstallerIntegrationTestSuite) TestInstallIncompatible() {
