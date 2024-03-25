@@ -3,7 +3,6 @@ package rtwatcher
 import (
 	"encoding/json"
 	"os"
-	"runtime"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -107,15 +106,9 @@ func (w *Watcher) RecordUsage(e entry) {
 func (w *Watcher) GetProcessesInUse(execDir string) map[string]int {
 	inUse := map[string]int{}
 
-	if runtime.GOOS != "linux" {
-		execDir = strings.ToLower(execDir) // Windows and macOS filesystems are case-insensitive
-	}
+	execDir = strings.ToLower(execDir) // match case-insensitively
 	for _, proc := range w.watching {
-		exeToCompare := proc.Exec
-		if runtime.GOOS != "linux" {
-			exeToCompare = strings.ToLower(exeToCompare) // Windows and macOS filesystems are case-insensitive
-		}
-		if !strings.Contains(exeToCompare, execDir) {
+		if !strings.Contains(strings.ToLower(proc.Exec), execDir) {
 			continue
 		}
 		if isRunning, err := proc.IsRunning(); err == nil && isRunning {
