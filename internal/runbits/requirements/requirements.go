@@ -2,6 +2,7 @@ package requirements
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -99,6 +100,8 @@ type ErrNoMatches struct {
 	Alternatives *string
 }
 
+var versionRe = regexp.MustCompile(`^\d(\.\d+)*$`)
+
 // ExecuteRequirementOperation executes the operation on the requirement
 // This has become quite unwieldy, and is ripe for a refactor - https://activestatef.atlassian.net/browse/DX-1897
 // For now, be aware that you should never provide BOTH ns AND nsType, one or the other should always be nil, but never both.
@@ -186,6 +189,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	}
 
 	origRequirementName := requirementName
+	appendVersionWildcard := false
 	if validatePkg {
 		pg = output.StartSpinner(out, locale.Tr("progress_search", requirementName), constants.TerminalAnimationInterval)
 
@@ -217,6 +221,18 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		}
 
 		requirementName = normalized
+
+		// If a bare version number was given, and if it is a partial version number (e.g. requests@2),
+		// we'll want to ultimately append a '.x' suffix.
+		if versionRe.MatchString(requirementVersion) {
+			for _, knownVersion := range packages[0].Versions {
+				if knownVersion.Version == requirementVersion {
+					break
+				} else if strings.HasPrefix(knownVersion.Version, requirementVersion) {
+					appendVersionWildcard = true
+				}
+			}
+		}
 
 		pg.Stop(locale.T("progress_found"))
 		pg = nil
@@ -319,7 +335,11 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		return errs.Wrap(err, "Could not resolve requirement name and version")
 	}
 
-	requirements, err := model.VersionStringToRequirements(version)
+	versionString := version
+	if appendVersionWildcard {
+		versionString += ".x"
+	}
+	requirements, err := model.VersionStringToRequirements(versionString)
 	if err != nil {
 		return errs.Wrap(err, "Could not process version string into requirements")
 	}
