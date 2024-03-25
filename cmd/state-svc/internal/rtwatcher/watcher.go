@@ -101,21 +101,15 @@ func (w *Watcher) RecordUsage(e entry) {
 	w.an.EventWithSource(anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, e.Source, e.Dims)
 }
 
-// GetProcessesInUse returns for a given runtime exec directory a map of running executables to
-// their process IDs.
-func (w *Watcher) GetProcessesInUse(execDir string) map[string]int {
-	inUse := map[string]int{}
+func (w *Watcher) GetProcessesInUse(execDir string) []entry {
+	inUse := make([]entry, 0)
 
 	execDir = strings.ToLower(execDir) // match case-insensitively
 	for _, proc := range w.watching {
 		if !strings.Contains(strings.ToLower(proc.Exec), execDir) {
 			continue
 		}
-		if isRunning, err := proc.IsRunning(); err == nil && isRunning {
-			inUse[proc.Exec] = proc.PID
-		} else if err != nil {
-			multilog.Error("Could not check if runtime process is running: %s", errs.JoinMessage(err))
-		}
+		inUse = append(inUse, proc) // append a copy
 	}
 
 	return inUse

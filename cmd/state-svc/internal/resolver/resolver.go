@@ -256,8 +256,8 @@ func (r *Resolver) GetProcessesInUse(ctx context.Context, execDir string) ([]*gr
 
 	inUse := r.rtwatch.GetProcessesInUse(execDir)
 	processes := make([]*graph.ProcessInfo, 0, len(inUse))
-	for exe, pid := range inUse {
-		processes = append(processes, &graph.ProcessInfo{exe, pid})
+	for _, entry := range inUse {
+		processes = append(processes, &graph.ProcessInfo{entry.Exec, entry.PID})
 	}
 	return processes, nil
 }
