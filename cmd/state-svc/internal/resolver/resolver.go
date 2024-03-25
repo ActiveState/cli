@@ -254,7 +254,10 @@ func (r *Resolver) FetchLogTail(ctx context.Context) (string, error) {
 func (r *Resolver) GetProcessesInUse(ctx context.Context, execDir string) ([]*graph.ProcessInfo, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
-	inUse := r.rtwatch.GetProcessesInUse(execDir)
+	inUse, err := r.rtwatch.GetProcessesInUse(execDir)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not if processes are in use for directory '%s'", execDir)
+	}
 	processes := make([]*graph.ProcessInfo, 0, len(inUse))
 	for exe, pid := range inUse {
 		processes = append(processes, &graph.ProcessInfo{exe, pid})
