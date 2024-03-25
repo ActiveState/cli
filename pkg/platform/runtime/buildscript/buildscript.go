@@ -110,6 +110,12 @@ func NewFromCommit(atTime *strfmt.DateTime, expr *buildexpression.BuildExpressio
 		return nil, errs.Wrap(err, "Could not copy build expression")
 	}
 
+	// Update old expressions that bake in at_time as a timestamp instead of as a variable.
+	err = expr.MaybeSetDefaultTimestamp(atTime)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not set default timestamp")
+	}
+
 	return &Script{AtTime: atTime, Expr: expr}, nil
 }
 
