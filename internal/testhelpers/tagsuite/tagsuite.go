@@ -13,11 +13,11 @@ import (
 const (
 	Activate        = "activate"
 	Analytics       = "analytics"
+	Artifacts       = "artifacts"
 	Auth            = "auth"
 	Automation      = "automation"
 	Branches        = "branches"
 	Bundle          = "bundle"
-	Builds          = "builds"
 	Carlisle        = "carlisle"
 	Checkout        = "checkout"
 	CLIDeploy       = "cli-deploy"
