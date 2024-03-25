@@ -262,6 +262,10 @@ func (r *Resolver) GetProcessesInUse(ctx context.Context, execDir string) ([]*gr
 	return processes, nil
 }
 
+func (r *Resolver) ProcessExited(execPath string, code int) {
+	r.rtwatch.Unwatch(execPath)
+}
+
 func handlePanics(recovered interface{}, stack []byte) {
 	if recovered != nil {
 		multilog.Error("Panic: %v", recovered)

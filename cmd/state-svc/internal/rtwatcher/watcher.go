@@ -6,6 +6,7 @@ import (
 	"runtime/debug"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
@@ -28,6 +29,7 @@ type Watcher struct {
 	watching []entry
 	stop     chan struct{}
 	interval time.Duration
+	mutex    sync.Mutex
 }
 
 type analytics interface {
@@ -77,6 +79,9 @@ func (w *Watcher) ticker(cb func()) {
 }
 
 func (w *Watcher) check() {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
 	watching := w.watching[:0]
 	for i := range w.watching {
 		e := w.watching[i] // Must use index, because we are deleting indexes further down
@@ -135,6 +140,21 @@ func (w *Watcher) Watch(pid int, exec, source string, dims *dimensions.Values) {
 	logging.Debug("Watching %s (%d)", exec, pid)
 	dims.Sequence = ptr.To(-1) // sequence is meaningless for heartbeat events
 	e := entry{pid, exec, source, dims}
+	w.mutex.Lock()
 	w.watching = append(w.watching, e)
+	w.mutex.Unlock()
 	go w.RecordUsage(e) // initial event
+}
+
+func (w *Watcher) Unwatch(execPath string) {
+	logging.Debug("Unwatching %s", execPath)
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+	for i, proc := range w.watching {
+		if execPath != proc.Exec {
+			continue
+		}
+		w.watching = append(w.watching[:i], w.watching[i+1:]...)
+		break
+	}
 }

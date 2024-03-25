@@ -73,6 +73,7 @@ func (c *Comm) GetLogFileName(ctx context.Context) (string, error) {
 
 type Resolver interface {
 	ReportRuntimeUsage(ctx context.Context, pid int, exec, source string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error)
+	ProcessExited(exec string, code int)
 }
 
 type AnalyticsReporter interface {
@@ -151,7 +152,13 @@ func ExitCodeHandler(cfg *config.Instance, resolver Resolver, analyticsReporter 
 		data := input[len(KeyExitCode):]
 		exitCode := svcmsg.NewExitCodeFromSvcMsg(data)
 
-		logging.Debug("Firing exit code event for %s", exitCode.ExecPath)
+		logging.Debug("Firing exit code events for %s", exitCode.ExecPath)
+		code, err := strconv.ParseInt(exitCode.ExitCode, 10, 0)
+		if err != nil {
+			multilog.Error("Invalid exit code: %s", exitCode.ExitCode)
+			code = 0
+		}
+		resolver.ProcessExited(exitCode.ExecPath, int(code))
 		analyticsReporter.EventWithSourceAndLabel(constants.CatDebug, constants.ActExecutorExit, constants.SrcExecutor, exitCode.ExitCode, &dimensions.Values{
 			Command: ptr.To(exitCode.ExecPath),
 		})
