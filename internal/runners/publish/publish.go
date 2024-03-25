@@ -270,8 +270,13 @@ Do you want to publish this ingredient?
 		return locale.WrapError(err, "err_uploadingredient_fetch", "Unable to fetch newly published ingredient")
 	}
 	versionID := strfmt.UUID(result.Publish.IngredientVersionID)
-	atTime := strfmt.DateTime(time.Now())
-	publishedVersion, err := model.FetchIngredientVersion(&ingredientID, &versionID, true, &atTime, r.auth)
+
+	latestTime, err := model.FetchLatestRevisionTimeStamp(r.auth)
+	if err != nil {
+		return locale.WrapError(err, "err_uploadingingredient_fetch_timestamp", "Unable to fetch latest revision timestamp")
+	}
+
+	publishedVersion, err := model.FetchIngredientVersion(&ingredientID, &versionID, true, ptr.To(strfmt.DateTime(latestTime)), r.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingingredient_fetch_version", "Unable to fetch newly published ingredient version")
 	}
