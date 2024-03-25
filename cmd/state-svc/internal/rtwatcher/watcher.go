@@ -103,7 +103,7 @@ func (w *Watcher) RecordUsage(e entry) {
 
 // GetProcessesInUse returns for a given runtime exec directory a map of running executables to
 // their process IDs.
-func (w *Watcher) GetProcessesInUse(execDir string) (map[string]int, error) {
+func (w *Watcher) GetProcessesInUse(execDir string) map[string]int {
 	inUse := map[string]int{}
 
 	execDir = strings.ToLower(execDir) // match case-insensitively
@@ -114,11 +114,11 @@ func (w *Watcher) GetProcessesInUse(execDir string) (map[string]int, error) {
 		if isRunning, err := proc.IsRunning(); err == nil && isRunning {
 			inUse[proc.Exec] = proc.PID
 		} else if err != nil {
-			return nil, errs.Wrap(err, "Could not check if runtime process is still running")
+			multilog.Error("Could not check if runtime process is running: %s", errs.JoinMessage(err))
 		}
 	}
 
-	return inUse, nil
+	return inUse
 }
 
 func (w *Watcher) Close() error {
