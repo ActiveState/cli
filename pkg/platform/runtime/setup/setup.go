@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -114,7 +115,7 @@ type ProgressReportError struct {
 
 type RuntimeInUseError struct {
 	*locale.LocalizedError
-	Processes map[string]int // exe path to process ID
+	Processes []*graph.ProcessInfo
 }
 
 type Targeter interface {
@@ -223,8 +224,8 @@ func (s *Setup) Update() (rerr error) {
 	if procs, err := s.svcm.GetProcessesInUse(ctx, ExecDir(s.target.Dir())); err == nil {
 		if len(procs) > 0 {
 			list := []string{}
-			for exe, pid := range procs {
-				list = append(list, fmt.Sprintf("   - %s (process: %d)", exe, pid))
+			for _, proc := range procs {
+				list = append(list, fmt.Sprintf("   - %s (process: %d)", proc.Exe, proc.Pid))
 			}
 			return &RuntimeInUseError{locale.NewInputError("runtime_setup_in_use_err", "", strings.Join(list, "\n")), procs}
 		}
