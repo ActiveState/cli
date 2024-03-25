@@ -20,8 +20,8 @@ func (suite *InstallIntegrationTestSuite) TestInstall() {
 	defer ts.Close()
 
 	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
-	cp := ts.SpawnWithOpts(e2e.OptArgs("install", "trender"))
-	cp.Expect("Package added")
+	cp := ts.SpawnWithOpts(e2e.OptArgs("install", "trender"), e2e.OptAppendEnv(constants.DisableRuntime+"=false"))
+	cp.Expect("Package added", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 

@@ -28,10 +28,10 @@ func NewSetup(store *store.Store) *Setup {
 func (s *Setup) DeleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, storedArtifacted, alreadyInstalled store.StoredArtifactMap) error {
 	del := map[artifact.ArtifactID]struct{}{}
 	for _, upd := range changeset.Updated {
-		del[upd.FromID] = struct{}{}
+		del[upd.From.ArtifactID] = struct{}{}
 	}
-	for _, id := range changeset.Removed {
-		del[id] = struct{}{}
+	for _, rem := range changeset.Removed {
+		del[rem.ArtifactID] = struct{}{}
 	}
 
 	// sort files and dirs in keep for faster look-up

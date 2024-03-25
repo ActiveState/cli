@@ -25,12 +25,12 @@ const showUpdatedPackages = true
 func OutputChangeSummary(out output.Outputer, changeset artifact.ArtifactChangeset, artifacts artifact.Map, filter artifact.Map) {
 	// Determine which package was installed.
 	var addedId *artifact.ArtifactID
-	for _, candidateId := range changeset.Added {
-		if !isDependency(candidateId, changeset, artifacts) {
+	for _, candidate := range changeset.Added {
+		if !isDependency(candidate.ArtifactID, changeset, artifacts) {
 			if addedId != nil {
 				return // more than two independent packages were added
 			}
-			foundId := candidateId
+			foundId := candidate.ArtifactID
 			addedId = &foundId // cannot address candidateId as it changes over the loop
 		}
 	}
@@ -66,9 +66,6 @@ func OutputChangeSummary(out output.Outputer, changeset artifact.ArtifactChanges
 	for _, source := range filter {
 		oldRequirements[fmt.Sprintf("%s/%s", source.Namespace, source.Name)] = *source.Version
 	}
-
-	// List additional dependencies.
-	out.Notice("") // blank line
 
 	localeKey := "additional_dependencies"
 	if hasAdditionalIndirectDependencies {
@@ -121,12 +118,12 @@ func OutputChangeSummary(out output.Outputer, changeset artifact.ArtifactChanges
 // returns whether or not the given artifact is a dependency of any of those artifacts or
 // dependencies.
 func isDependency(a artifact.ArtifactID, changeset artifact.ArtifactChangeset, artifacts artifact.Map) bool {
-	for _, artifactId := range changeset.Added {
-		if artifactId == a {
+	for _, artifact := range changeset.Added {
+		if artifact.ArtifactID == a {
 			continue
 		}
 
-		for _, depId := range buildplan.RecursiveDependenciesFor(artifactId, artifacts) {
+		for _, depId := range buildplan.RecursiveDependenciesFor(artifact.ArtifactID, artifacts) {
 			if a == depId {
 				return true
 			}
@@ -134,12 +131,12 @@ func isDependency(a artifact.ArtifactID, changeset artifact.ArtifactChangeset, a
 	}
 
 	for _, update := range changeset.Updated {
-		for _, depId := range buildplan.RecursiveDependenciesFor(update.ToID, artifacts) {
+		for _, depId := range buildplan.RecursiveDependenciesFor(update.To.ArtifactID, artifacts) {
 			if a == depId {
 				return true
 			}
 		}
-		for _, depId := range buildplan.RecursiveDependenciesFor(update.FromID, artifacts) {
+		for _, depId := range buildplan.RecursiveDependenciesFor(update.From.ArtifactID, artifacts) {
 			if a == depId {
 				return true
 			}
