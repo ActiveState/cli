@@ -137,7 +137,12 @@ func runWithCmd(env []string, name string, args ...string) error {
 		return locale.NewInputError("err_sscommon_unsupported_language", "", ext)
 	}
 
-	return runDirect(env, name, args...)
+	esc := osutils.NewCmdEscaper()
+	quoted := make([]string, 0, len(args))
+	for _, arg := range args {
+		quoted = append(quoted, esc.Quote(arg))
+	}
+	return runDirect(env, name, quoted...)
 }
 
 func binaryPathCmd(env []string, name string) (string, error) {

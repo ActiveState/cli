@@ -197,6 +197,26 @@ func (suite *ExecIntegrationTestSuite) TestExecWithPath() {
 
 }
 
+func (suite *ExecIntegrationTestSuite) TestExecQuotedArgs() {
+	suite.OnlyRunForTags(tagsuite.Exec)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl-5.32", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "testargs.txt"), []byte(`printf "Argument: '%s'.\n", $ARGV[0];`))
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("exec", "perl", "testargs.txt", "a<b"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Argument: 'a<b'.", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0)
+}
+
 func TestExecIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ExecIntegrationTestSuite))
 }

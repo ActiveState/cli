@@ -12,7 +12,7 @@ type ShellEscape struct {
 	escapeWith    string
 }
 
-//NewBashEscaper creates a new instance of ShellEscape that's configured for escaping bash style arguments
+// NewBashEscaper creates a new instance of ShellEscape that's configured for escaping bash style arguments
 func NewBashEscaper() *ShellEscape {
 	return &ShellEscape{
 		regexp.MustCompile(`^[\w]+$`),
@@ -33,7 +33,7 @@ func NewBatchEscaper() *ShellEscape {
 // NewCmdEscaper creates a new instance of ShellEscape that's configured for escaping cmd arguments
 func NewCmdEscaper() *ShellEscape {
 	return &ShellEscape{
-		regexp.MustCompile(`^[^ &()\[\]{}^=;!'+,~]+$`), // cmd.exe /? lists these characters as requiring quotes
+		regexp.MustCompile(`^[^ &()\[\]{}^=;!'+,~<>]+$`), // cmd.exe /? lists these characters as requiring quotes
 		regexp.MustCompile(`"`),
 		`""`,
 	}
