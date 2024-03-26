@@ -26,7 +26,6 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 	var errArtifactSetup *setup.ArtifactSetupErrors
 	var buildPlannerErr *bpModel.BuildPlannerError
 
-	isUpdateErr := errs.Matches(*rerr, &ErrUpdate{})
 	switch {
 	case errors.Is(*rerr, rationalize.ErrHeadless):
 		*rerr = errs.WrapUserFacing(*rerr,
@@ -34,7 +33,7 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 			errs.SetInput())
 
 	// Could not find a platform that matches on the given branch, so suggest alternate branches if ones exist
-	case isUpdateErr && errors.As(*rerr, &errNoMatchingPlatform):
+	case errors.As(*rerr, &errNoMatchingPlatform):
 		branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), proj.BranchName())
 		if err == nil && len(branches) > 0 {
 			// Suggest alternate branches
@@ -53,7 +52,7 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 
 	// If there was an artifact download error, say so, rather than reporting a generic "could not
 	// update runtime" error.
-	case isUpdateErr && errors.As(*rerr, &errArtifactSetup):
+	case errors.As(*rerr, &errArtifactSetup):
 		for _, err := range errArtifactSetup.Errors() {
 			if !errs.Matches(err, &setup.ArtifactDownloadError{}) {
 				continue
@@ -70,7 +69,7 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 	// this may be a private project.
 	// Note since we cannot assert the actual error type we do not wrap this as user-facing, as we do not know what we're
 	// dealing with so the localized underlying errors are more appropriate.
-	case isUpdateErr && !auth.Authenticated():
+	case !auth.Authenticated():
 		*rerr = errs.AddTips(*rerr,
 			locale.T("tip_private_project_auth"),
 		)

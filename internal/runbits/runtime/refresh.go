@@ -24,6 +24,11 @@ const (
 	OptOrderChanged
 )
 
+type Configurable interface {
+	GetString(key string) string
+	GetBool(key string) bool
+}
+
 // SolveAndUpdate should be called after runtime mutations.
 func SolveAndUpdate(
 	auth *authentication.Auth,
