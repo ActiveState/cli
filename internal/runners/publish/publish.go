@@ -195,15 +195,6 @@ func (r *Runner) Run(params *Params) error {
 		}
 	}
 
-	// Validate user input
-	if params.Edit {
-		// Description is not currently supported for edit
-		// https://activestatef.atlassian.net/browse/DX-1886
-		if params.Description != "" {
-			return locale.NewInputError("err_uploadingredient_edit_description_not_supported")
-		}
-	}
-
 	if err := prepareRequestFromParams(&reqVars, params, isRevision); err != nil {
 		return errs.Wrap(err, "Could not prepare request from params")
 	}
@@ -270,8 +261,13 @@ Do you want to publish this ingredient?
 		return locale.WrapError(err, "err_uploadingredient_fetch", "Unable to fetch newly published ingredient")
 	}
 	versionID := strfmt.UUID(result.Publish.IngredientVersionID)
-	atTime := strfmt.DateTime(time.Now())
-	publishedVersion, err := model.FetchIngredientVersion(&ingredientID, &versionID, true, &atTime, r.auth)
+
+	latestTime, err := model.FetchLatestRevisionTimeStamp(r.auth)
+	if err != nil {
+		return locale.WrapError(err, "err_uploadingingredient_fetch_timestamp", "Unable to fetch latest revision timestamp")
+	}
+
+	publishedVersion, err := model.FetchIngredientVersion(&ingredientID, &versionID, true, ptr.To(strfmt.DateTime(latestTime)), r.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingingredient_fetch_version", "Unable to fetch newly published ingredient version")
 	}
@@ -327,6 +323,11 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRev
 				Email: author.Email,
 			})
 		}
+	}
+
+	// User input trumps inheritance from previous ingredient
+	if len(params.Depends) != 0 || len(params.DependsRuntime) != 0 || len(params.DependsBuild) != 0 || len(params.DependsTest) != 0 {
+		r.Dependencies = []request.PublishVariableDep{}
 	}
 
 	if len(params.Depends) != 0 {
