@@ -3,8 +3,8 @@ package progress
 import (
 	"time"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 )
@@ -25,7 +25,7 @@ func NewDotProgressIndicator(out output.Outputer) *DotProgressDigester {
 
 func (d *DotProgressDigester) Handle(event events.Eventer) error {
 	switch event.(type) {
-	case events.SolveStart:
+	case events.Start:
 		d.spinner = output.StartSpinner(d.out, locale.T("setup_runtime"), time.Second)
 	case events.Success:
 		d.success = true
@@ -35,7 +35,7 @@ func (d *DotProgressDigester) Handle(event events.Eventer) error {
 
 func (d *DotProgressDigester) Close() error {
 	if d.spinner == nil {
-		return errs.New("spinner not initialized")
+		logging.Warning("DotProgressDigester.Close called with no active spinner")
 	}
 	if d.success {
 		d.spinner.Stop(locale.T("progress_completed"))

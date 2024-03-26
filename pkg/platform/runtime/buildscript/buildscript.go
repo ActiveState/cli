@@ -96,9 +96,10 @@ func New(data []byte) (*Script, error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not marshal build script to build expression")
 	}
+
 	expr, err := buildexpression.New(bytes)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not construct build expression")
+		return nil, locale.WrapError(err, "err_parse_buildscript_bytes", "Could not construct build expression: {{.V0}}", errs.JoinMessage(err))
 	}
 	script.Expr = expr
 
@@ -111,6 +112,12 @@ func NewFromCommit(atTime *strfmt.DateTime, expr *buildexpression.BuildExpressio
 	expr, err = expr.Copy()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not copy build expression")
+	}
+
+	// Update old expressions that bake in at_time as a timestamp instead of as a variable.
+	err = expr.MaybeSetDefaultTimestamp(atTime)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not set default timestamp")
 	}
 
 	return &Script{AtTime: atTime, Expr: expr}, nil
