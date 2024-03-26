@@ -66,7 +66,7 @@ func (r *Refresh) Run(params *Params) error {
 
 	rti, err := runtime.SolveAndUpdate(r.auth, r.out, r.analytics, proj, nil, target.TriggerRefresh, r.svcModel, r.config, runtime.OptMinimalUI)
 	if err != nil {
-		return locale.WrapInputError(err, "err_refresh_runtime_new", "Could not update runtime for this project.")
+		return locale.WrapError(err, "err_refresh_runtime_new", "Could not update runtime for this project.")
 	}
 
 	execDir := setup.ExecDir(rti.Target().Dir())
