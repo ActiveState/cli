@@ -437,16 +437,12 @@ func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) 
 	return rt, buildResult, &changedArtifacts, nil
 }
 
-func (r *RequirementOperation) cveReport(requirementName, requirementVersion string, artifactChangeset artifact.ArtifactChangeset, operation bpModel.Operation, ns *model.Namespace) error {
+func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChangeset, operation bpModel.Operation, ns *model.Namespace) error {
 	if !r.Auth.Authenticated() || operation == bpModel.OperationRemoved {
 		return nil
 	}
 
-	reqNameAndVersion := requirementName
-	if requirementVersion != "" {
-		reqNameAndVersion = fmt.Sprintf("%s@%s", requirementName, requirementVersion)
-	}
-	pg := output.StartSpinner(r.Output, locale.Tr("progress_cve_search", reqNameAndVersion), constants.TerminalAnimationInterval)
+	pg := output.StartSpinner(r.Output, locale.T("progress_cve_search"), constants.TerminalAnimationInterval)
 
 	ingredients := []*request.Ingredient{}
 	for _, artifact := range artifactChangeset.Added {
@@ -684,14 +680,19 @@ func getSuggestions(ns model.Namespace, name string, auth *authentication.Auth) 
 	return suggestions, nil
 }
 
-func commitMessage(op bpModel.Operation, name, version string, namespace model.Namespace, word int) string {
-	switch namespace.Type() {
-	case model.NamespaceLanguage:
-		return languageCommitMessage(op, name, version)
-	case model.NamespacePlatform:
-		return platformCommitMessage(op, name, version, word)
-	case model.NamespacePackage, model.NamespaceBundle:
-		return packageCommitMessage(op, name, version)
+func commitMessage(requirements ...*Requirement) string {
+	if len(requirements) == 1 {
+		req := requirements[0]
+		switch req.Namespace.Type() {
+		case model.NamespaceLanguage:
+			return languageCommitMessage(req.Operation, req.Name, req.Version)
+		case model.NamespacePlatform:
+			return platformCommitMessage(req.Operation, req.Name, req.Version, req.BitWidth)
+		case model.NamespacePackage, model.NamespaceBundle:
+			return packageCommitMessage(req.Operation, req.Name, req.Version)
+		}
+	} else {
+		return commitMessageMultiple(requirements...)
 	}
 
 	return ""
@@ -740,4 +741,9 @@ func packageCommitMessage(op bpModel.Operation, name, version string) string {
 		version = locale.Tl("package_version_auto", "auto")
 	}
 	return locale.Tr(msgL10nKey, name, version)
+}
+
+func commitMessageMultiple(requirements ...*Requirement) string {
+	// TODO: Replace this placeholder with a proper message
+	return locale.Tl("commit_message_multiple", "Committing changes to multiple requirements")
 }
