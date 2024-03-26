@@ -1,4 +1,4 @@
-package builds
+package artifacts
 
 import (
 	"errors"
