@@ -137,8 +137,11 @@ func (r *Runtime) validateCache() error {
 
 		if cachedScript != nil {
 			script, err := buildscript.ScriptFromProject(r.target)
-			if err != nil && !errs.Matches(err, buildscript.ErrBuildscriptNotExist) {
-				return errs.Pack(err, NeedsBuildscriptResetError)
+			if err != nil {
+				if errs.Matches(err, buildscript.ErrBuildscriptNotExist) {
+					return errs.Pack(err, NeedsBuildscriptResetError)
+				}
+				return errs.Wrap(err, "Could not get buildscript from project")
 			}
 			if script != nil && !script.Equals(cachedScript) {
 				return NeedsCommitError
