@@ -109,6 +109,16 @@ func (w *Watcher) GetProcessesInUse(execDir string) []entry {
 		if !strings.Contains(strings.ToLower(proc.Exec), execDir) {
 			continue
 		}
+		isRunning, err := proc.IsRunning()
+		if err != nil && !errs.Matches(err, &processError{}) {
+			multilog.Error("Could not check if runtime process is running: %s", errs.JoinMessage(err))
+			// Any errors should not affect fetching which processes are currently in use. We just won't
+			// include this one in the list.
+		}
+		if !isRunning {
+			logging.Debug("Runtime process %d:%s is not running", proc.PID, proc.Exec)
+			continue
+		}
 		inUse = append(inUse, proc) // append a copy
 	}
 
