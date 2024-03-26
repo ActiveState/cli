@@ -1,7 +1,6 @@
 package prepare
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"runtime"
