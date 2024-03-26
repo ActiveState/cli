@@ -62,7 +62,7 @@ func Initialize(path string, auth *authentication.Auth) error {
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the remote build expression and time")
 	}
-	script, err = NewFromCommit(atTime, expr)
+	script, err = NewFromBuildExpression(atTime, expr)
 	if err != nil {
 		return errs.Wrap(err, "Unable to convert build expression to build script")
 	}
@@ -82,7 +82,7 @@ func Update(proj projecter, atTime *strfmt.DateTime, newExpr *buildexpression.Bu
 		return errs.Wrap(err, "Could not read build script")
 	}
 
-	newScript, err := NewFromCommit(atTime, newExpr)
+	newScript, err := NewFromBuildExpression(atTime, newExpr)
 	if err != nil {
 		return errs.Wrap(err, "Could not construct new build script to write")
 	}

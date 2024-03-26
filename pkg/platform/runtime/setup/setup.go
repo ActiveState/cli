@@ -171,33 +171,33 @@ func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth
 	return &Setup{auth, target, eventHandler, store.New(target.Dir()), an, cache, cfg, out}
 }
 
-func (s *Setup) Solve() (*apimodel.BuildResult, error) {
+func (s *Setup) Solve() (*apimodel.BuildResult, *bpModel.Commit, error) {
 	defer func() {
 		s.solveUpdateRecover(recover())
 	}()
 
 	if s.target.InstallFromDir() != nil {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	if err := s.handleEvent(events.SolveStart{}); err != nil {
-		return nil, errs.Wrap(err, "Could not handle SolveStart event")
+		return nil, nil, errs.Wrap(err, "Could not handle SolveStart event")
 	}
 
 	bp := model.NewBuildPlannerModel(s.auth)
-	buildResult, err := bp.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
+	buildResult, commit, err := bp.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
 	if err != nil {
-		return nil, errs.Wrap(err, "Failed to fetch build result")
+		return nil, nil, errs.Wrap(err, "Failed to fetch build result")
 	}
 
 	if err := s.eventHandler.Handle(events.SolveSuccess{}); err != nil {
-		return nil, errs.Wrap(err, "Could not handle SolveSuccess event")
+		return nil, nil, errs.Wrap(err, "Could not handle SolveSuccess event")
 	}
 
-	return buildResult, nil
+	return buildResult, commit, nil
 }
 
-func (s *Setup) Update(buildResult *apimodel.BuildResult) (rerr error) {
+func (s *Setup) Update(buildResult *apimodel.BuildResult, commit *bpModel.Commit) (rerr error) {
 	defer func() {
 		s.solveUpdateRecover(recover())
 	}()
@@ -224,6 +224,25 @@ func (s *Setup) Update(buildResult *apimodel.BuildResult) (rerr error) {
 	artifacts, err := s.updateArtifacts(buildResult)
 	if err != nil {
 		return errs.Wrap(err, "Failed to update artifacts")
+	}
+
+	if err := s.store.StoreBuildPlan(buildResult.Build); err != nil {
+		return errs.Wrap(err, "Could not save recipe file.")
+	}
+
+	script, err := buildscript.NewFromBuildExpression(&commit.AtTime, buildResult.BuildExpression)
+	if err != nil {
+		return errs.Wrap(err, "Could not convert to buildscript")
+	}
+
+	if err := s.store.StoreBuildScript(script); err != nil {
+		return errs.Wrap(err, "Could not store buildscript file.")
+	}
+
+	if s.target.ProjectDir() != "" && s.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		if err := buildscript.Update(s.target, buildResult.AtTime, buildResult.BuildExpression, s.auth); err != nil {
+			return errs.Wrap(err, "Could not update build script.")
+		}
 	}
 
 	// Update executors
@@ -630,20 +649,6 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(buildResult *apimodel.Buil
 	err = s.artifactCache.Save()
 	if err != nil {
 		multilog.Error("Could not save artifact cache updates: %v", err)
-	}
-
-	if err := s.store.StoreBuildPlan(buildResult.Build); err != nil {
-		return nil, nil, errs.Wrap(err, "Could not save recipe file.")
-	}
-
-	if err := s.store.StoreBuildExpression(buildResult.BuildExpression, s.target.CommitUUID().String()); err != nil {
-		return nil, nil, errs.Wrap(err, "Could not save buildexpression file.")
-	}
-
-	if s.target.ProjectDir() != "" && s.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript.Update(s.target, buildResult.AtTime, buildResult.BuildExpression, s.auth); err != nil {
-			return nil, nil, errs.Wrap(err, "Could not update build script.")
-		}
 	}
 
 	artifacts := buildResult.OrderedArtifacts()

@@ -57,7 +57,7 @@ main = runtime`))
 	mergedExpr, err := Merge(exprA, exprB, strategies)
 	require.NoError(t, err)
 
-	mergedScript, err := buildscript.NewFromCommit(scriptA.AtTime, mergedExpr)
+	mergedScript, err := buildscript.NewFromBuildExpression(scriptA.AtTime, mergedExpr)
 	require.NoError(t, err)
 
 	assert.Equal(t,
@@ -127,7 +127,7 @@ main = runtime`))
 	mergedExpr, err := Merge(exprA, exprB, strategies)
 	require.NoError(t, err)
 
-	mergedScript, err := buildscript.NewFromCommit(scriptA.AtTime, mergedExpr)
+	mergedScript, err := buildscript.NewFromBuildExpression(scriptA.AtTime, mergedExpr)
 	require.NoError(t, err)
 
 	assert.Equal(t,

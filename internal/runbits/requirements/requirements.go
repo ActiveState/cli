@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/runbits"
 	runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -29,7 +30,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
@@ -311,7 +311,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	pg = nil
 
 	// Solve runtime
-	rt, buildResult, changedArtifacts, err := r.solve(commitID, ns)
+	rt, buildResult, commit, changedArtifacts, err := r.solve(commitID, ns)
 	if err != nil {
 		return errs.Wrap(err, "Could not solve runtime")
 	}
@@ -332,13 +332,15 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	}
 
 	// refresh or install runtime
-	err = runbit.UpdateByReference(rt, buildResult, r.Auth, r.Output, r.Project, r.Config)
-	if err != nil {
-		return r.handleRefreshError(err, parentCommitID)
+	err = runbit.UpdateByReference(rt, buildResult, commit, r.Auth, r.Project, r.Output)
+	if err == nil || !runbits.IsBuildError(err) {
+		// If the error is not a build error we want to retain the changes
+		if err2 := r.updateCommitID(commitID); err2 != nil {
+			return locale.WrapError(err2, "err_package_update_commit_id")
+		}
 	}
-
-	if err := r.updateCommitID(commitID); err != nil {
-		return locale.WrapError(err, "err_package_update_commit_id")
+	if err != nil {
+		return errs.Wrap(err, "Failed to refresh runtime")
 	}
 
 	if !hasParentCommit {
@@ -376,7 +378,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 }
 
 func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) (
-	_ *runtime.Runtime, _ *model.BuildResult, _ *artifact.ArtifactChangeset, rerr error,
+	_ *runtime.Runtime, _ *model.BuildResult, _ *bpModel.Commit, _ *artifact.ArtifactChangeset, rerr error,
 ) {
 	// Initialize runtime
 	var trigger target.Trigger
@@ -402,39 +404,39 @@ func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) 
 	rtTarget := target.NewProjectTarget(r.Project, &commitID, trigger)
 	rt, err := runtime.New(rtTarget, r.Analytics, r.SvcModel, r.Auth, r.Config, r.Output)
 	if err != nil {
-		return nil, nil, nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+		return nil, nil, nil, nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
 	}
 
 	setup := rt.Setup(&events.VoidHandler{})
-	buildResult, err := setup.Solve()
+	buildResult, commit, err := setup.Solve()
 	if err != nil {
-		return nil, nil, nil, errs.Wrap(err, "Solve failed")
+		return nil, nil, nil, nil, errs.Wrap(err, "Solve failed")
 	}
 
 	// Get old buildplan
 	// We can't use the local store here; because it might not exist (ie. integrationt test, user cleaned cache, ..),
 	// but also there's no guarantee the old one is sequential to the current.
-	commit, err := model.GetCommit(commitID, r.Auth)
+	oldCommit, err := model.GetCommit(commitID, r.Auth)
 	if err != nil {
-		return nil, nil, nil, errs.Wrap(err, "Could not get commit")
+		return nil, nil, nil, nil, errs.Wrap(err, "Could not get commit")
 	}
 
 	var oldBuildPlan *bpModel.Build
-	if commit.ParentCommitID != "" {
+	if oldCommit.ParentCommitID != "" {
 		bp := model.NewBuildPlannerModel(r.Auth)
-		oldBuildResult, err := bp.FetchBuildResult(commit.ParentCommitID, rtTarget.Owner(), rtTarget.Name())
+		oldBuildResult, _, err := bp.FetchBuildResult(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name())
 		if err != nil {
-			return nil, nil, nil, errs.Wrap(err, "Failed to fetch build result")
+			return nil, nil, nil, nil, errs.Wrap(err, "Failed to fetch build result")
 		}
 		oldBuildPlan = oldBuildResult.Build
 	}
 
 	changedArtifacts, err := buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false, false, r.Config, r.Auth)
 	if err != nil {
-		return nil, nil, nil, errs.Wrap(err, "Could not get changed artifacts")
+		return nil, nil, nil, nil, errs.Wrap(err, "Could not get changed artifacts")
 	}
 
-	return rt, buildResult, &changedArtifacts, nil
+	return rt, buildResult, commit, &changedArtifacts, nil
 }
 
 func (r *RequirementOperation) cveReport(requirementName, requirementVersion string, artifactChangeset artifact.ArtifactChangeset, operation bpModel.Operation, ns *model.Namespace) error {
@@ -504,16 +506,6 @@ func (r *RequirementOperation) cveReport(requirementName, requirementVersion str
 	}
 
 	return nil
-}
-
-func (r *RequirementOperation) handleRefreshError(err error, parentCommitID strfmt.UUID) error {
-	// If the error is a build error then return, if not update the commit ID then return
-	if !runbits.IsBuildError(err) {
-		if err := r.updateCommitID(parentCommitID); err != nil {
-			return locale.WrapError(err, "err_package_update_commit_id")
-		}
-	}
-	return err
 }
 
 func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {

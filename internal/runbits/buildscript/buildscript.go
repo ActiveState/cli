@@ -38,7 +38,7 @@ func getEquivalentBuildScript(proj *project.Project, customCommit *strfmt.UUID, 
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get remote build expression and time")
 	}
-	return buildscript.NewFromCommit(atTime, expr)
+	return buildscript.NewFromBuildExpression(atTime, expr)
 }
 
 // Sync synchronizes the local build script with the remote one.

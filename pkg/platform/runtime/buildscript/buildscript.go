@@ -103,7 +103,7 @@ func New(data []byte) (*Script, error) {
 	return script, nil
 }
 
-func NewFromCommit(atTime *strfmt.DateTime, expr *buildexpression.BuildExpression) (*Script, error) {
+func NewFromBuildExpression(atTime *strfmt.DateTime, expr *buildexpression.BuildExpression) (*Script, error) {
 	// Copy incoming build expression to keep any modifications local.
 	var err error
 	expr, err = expr.Copy()

@@ -85,6 +85,7 @@ func SolveAndUpdate(
 func UpdateByReference(
 	rt *runtime.Runtime,
 	buildResult *model.BuildResult,
+	commit *bpModel.Commit,
 	auth *authentication.Auth,
 	proj *project.Project,
 	out output.Outputer,
@@ -95,7 +96,7 @@ func UpdateByReference(
 		pg := NewRuntimeProgressIndicator(out)
 		defer rtutils.Closer(pg.Close, &rerr)
 
-		err := rt.Setup(pg).Update(buildResult)
+		err := rt.Setup(pg).Update(buildResult, commit)
 		if err != nil {
 			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
 		}

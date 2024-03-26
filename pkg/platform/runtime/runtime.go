@@ -161,7 +161,7 @@ func (r *Runtime) Setup(eventHandler events.Handler) *setup.Setup {
 	return setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out)
 }
 
-func (r *Runtime) Update(setup *setup.Setup, buildResult *model.BuildResult, eventHandler events.Handler) (rerr error) {
+func (r *Runtime) Update(setup *setup.Setup, buildResult *model.BuildResult, commit *bpModel.Commit) (rerr error) {
 	if r.disabled {
 		logging.Debug("Skipping update as it is disabled")
 		return nil // nothing to do
@@ -173,7 +173,7 @@ func (r *Runtime) Update(setup *setup.Setup, buildResult *model.BuildResult, eve
 		r.recordCompletion(rerr)
 	}()
 
-	if err := setup.Update(buildResult); err != nil {
+	if err := setup.Update(buildResult, commit); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}
 
@@ -195,12 +195,12 @@ func (r *Runtime) SolveAndUpdate(eventHandler events.Handler) error {
 	}
 
 	setup := r.Setup(eventHandler)
-	br, err := setup.Solve()
+	br, commit, err := setup.Solve()
 	if err != nil {
 		return errs.Wrap(err, "Could not solve")
 	}
 
-	return r.Update(setup, br, eventHandler)
+	return r.Update(setup, br, commit)
 }
 
 // HasCache tells us whether this runtime has any cached files. Note this does NOT tell you whether the cache is valid.
