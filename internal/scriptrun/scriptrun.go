@@ -83,6 +83,15 @@ func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
 	default:
 		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 	}
+
+	if rt.NeedsUpdate() {
+		pg := runbits.NewRuntimeProgressIndicator(s.out)
+		defer rtutils.Closer(pg.Close, &rerr)
+		if err := rt.SolveAndUpdate(pg); err != nil {
+			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
+		}
+	}
+
 	venv := virtualenvironment.New(rt)
 
 	projDir := filepath.Dir(s.project.Source().Path())

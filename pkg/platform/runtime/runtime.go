@@ -104,18 +104,25 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, a
 			CommitID: ptr.To(target.CommitUUID().String()),
 		})
 	}
+
 	return r, err
 }
 
-func (r *Runtime) validateCache() error {
+func (r *Runtime) NeedsUpdate() bool {
+	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
+		return false
+	}
 	if !r.store.MarkerIsValid(r.target.CommitUUID()) {
 		if r.target.ReadOnly() {
 			logging.Debug("Using forced cache")
 		} else {
-			return NeedsUpdateError
+			return true
 		}
 	}
+	return false
+}
 
+func (r *Runtime) validateCache() error {
 	if r.target.ProjectDir() == "" {
 		return nil
 	}
@@ -150,9 +157,11 @@ func (r *Runtime) Target() setup.Targeter {
 	return r.target
 }
 
-// Update updates the runtime by downloading all necessary artifacts from the Platform and installing them locally.
-// This function is usually called, after New() returned with a NeedsUpdateError
-func (r *Runtime) Update(eventHandler events.Handler) (rerr error) {
+func (r *Runtime) Setup(eventHandler events.Handler) *setup.Setup {
+	return setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out)
+}
+
+func (r *Runtime) Update(setup *setup.Setup, buildResult *model.BuildResult, eventHandler events.Handler) (rerr error) {
 	if r.disabled {
 		logging.Debug("Skipping update as it is disabled")
 		return nil // nothing to do
@@ -164,7 +173,7 @@ func (r *Runtime) Update(eventHandler events.Handler) (rerr error) {
 		r.recordCompletion(rerr)
 	}()
 
-	if err := setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out).Update(); err != nil {
+	if err := setup.Update(buildResult); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}
 
@@ -176,6 +185,23 @@ func (r *Runtime) Update(eventHandler events.Handler) (rerr error) {
 	*r = *rt
 
 	return nil
+}
+
+// SolveAndUpdate updates the runtime by downloading all necessary artifacts from the Platform and installing them locally.
+// This function is usually called, after New() returned with a NeedsUpdateError
+func (r *Runtime) SolveAndUpdate(eventHandler events.Handler) error {
+	if r.disabled {
+		logging.Debug("Skipping update as it is disabled")
+		return nil // nothing to do
+	}
+
+	setup := r.Setup(eventHandler)
+	br, err := setup.Solve()
+	if err != nil {
+		return errs.Wrap(err, "Could not solve")
+	}
+
+	return r.Update(setup, br, eventHandler)
 }
 
 // HasCache tells us whether this runtime has any cached files. Note this does NOT tell you whether the cache is valid.
@@ -348,6 +374,18 @@ func (r *Runtime) ExecutableDirs() (envdef.ExecutablePaths, error) {
 
 func IsRuntimeDir(dir string) bool {
 	return store.New(dir).HasMarker()
+}
+
+func (r *Runtime) BuildPlan() (*bpModel.Build, error) {
+	runtimeStore := r.store
+	if runtimeStore == nil {
+		runtimeStore = store.New(r.target.Dir())
+	}
+	plan, err := runtimeStore.BuildPlan()
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to fetch build plan")
+	}
+	return plan, nil
 }
 
 func (r *Runtime) ResolvedArtifacts() ([]*artifact.Artifact, error) {

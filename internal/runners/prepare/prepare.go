@@ -84,10 +84,11 @@ func (r *Prepare) resetExecutors() error {
 
 	run, err := rt.New(target.NewCustomTarget(proj.Owner(), proj.Name(), commitID, defaultTargetDir, target.TriggerResetExec), r.analytics, r.svcModel, nil, r.cfg, r.out)
 	if err != nil {
-		if errors.Is(err, rt.NeedsUpdateError) {
-			return nil // project was never set up, so no executors to reset
-		}
 		return errs.Wrap(err, "Could not initialize runtime for project.")
+	}
+
+	if !run.NeedsUpdate() {
+		return nil // project was never set up, so no executors to reset
 	}
 
 	if err := globaldefault.SetupDefaultActivation(r.subshell, r.cfg, run, proj); err != nil {

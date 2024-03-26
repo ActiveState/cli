@@ -20,8 +20,8 @@ func (suite *InstallIntegrationTestSuite) TestInstall() {
 	defer ts.Close()
 
 	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
-	cp := ts.SpawnWithOpts(e2e.OptArgs("install", "trender"))
-	cp.Expect("Package added")
+	cp := ts.SpawnWithOpts(e2e.OptArgs("install", "trender"), e2e.OptAppendEnv(constants.DisableRuntime+"=false"))
+	cp.Expect("Package added", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 
@@ -88,6 +88,26 @@ func (suite *InstallIntegrationTestSuite) TestInstall_BuildPlannerError() {
 	if strings.Count(strings.ReplaceAll(cp.Snapshot(), " x Failed", ""), " x ") != 1 {
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
 	}
+}
+
+func (suite *InstallIntegrationTestSuite) TestInstall_Resolved() {
+	suite.OnlyRunForTags(tagsuite.Install)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("install", "requests"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Package added", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0)
+
+	// Run `state packages` to verify a full package version was resolved.
+	cp = ts.Spawn("packages")
+	cp.Expect("requests")
+	cp.Expect("Auto → 2.") // note: the patch version is variable, so just expect that it exists
+	cp.ExpectExitCode(0)
 }
 
 func TestInstallIntegrationTestSuite(t *testing.T) {

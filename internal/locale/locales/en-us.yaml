@@ -1275,6 +1275,8 @@ progress_unsafe:
   other: " [ERROR]x Unsafe[/RESET]"
 progress_commit:
   other: " • Creating commit"
+progress_solve_preruntime:
+  other: " • Resolving Dependencies"
 progress_pkg_nolang:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] across all languages in the ActiveState Catalog"
 progress_build_log:
@@ -1289,8 +1291,11 @@ unstable_feature_banner:
   other: "[NOTICE]Beta Feature: This feature is still in beta and may be unstable.[/RESET]\n"
 warning_vulnerable:
   other: |
-    • [ERROR]Warning:[/RESET] Dependency has [ERROR]{{.V0}} known vulnerabilities (CVEs)[/RESET]. Severity: {{.V1}}. Run `[ACTIONABLE]state security[/RESET]` for more info.
-warning_vulnerable_simple:
+    [ERROR]Warning: Dependency has {{.V0}} direct and {{.V1}} indirect known vulnerabilities (CVEs)[/RESET]
+warning_vulnerable_indirectonly:
+  other: |
+    [ERROR]Warning: Dependency has {{.V0}} indirect known vulnerabilities (CVEs)[/RESET]
+warning_vulnerable_directonly:
   other: |
     [ERROR]Warning: Dependency has {{.V0}} known vulnerabilities (CVEs)[/RESET]
 more_info_vulnerabilities:
@@ -1548,6 +1553,16 @@ err_build_artifact_failed:
     [NOTICE]{{.V0}}[/RESET]
     [DISABLED]├─ Message:[/RESET] [ERROR]{{.V1}}[/RESET]
     [DISABLED]└─ Log:[/RESET] [ACTIONABLE]{{.V2}}[/RESET]
+install_runtime:
+  other: Installing Runtime
+install_runtime_info:
+  other: "Installing your runtime and dependencies.\n"
+update_runtime:
+  other: Updating Runtime
+update_runtime_info:
+  other: "Changes to your runtime may require some dependencies to be rebuilt.\n"
+err_buildscript_notexist:
+  other: Your project does not have a buildscript.as file. Please refer to the documentation on how to create one.
 err_projectfile_version_too_high:
   other: Your local checkout of this project depends on a newer version of the State Tool. Please update your State Tool by running [ACTIONABLE]state update[/RESET].
 
