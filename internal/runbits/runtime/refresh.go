@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -71,7 +70,7 @@ func RefreshRuntimeByReference(
 	}
 
 	if rt.NeedsUpdate() {
-		pg := runbits.NewRuntimeProgressIndicator(out)
+		pg := NewRuntimeProgressIndicator(out)
 		defer rtutils.Closer(pg.Close, &rerr)
 
 		err := rt.SolveAndUpdate(pg)
@@ -101,7 +100,7 @@ func UpdateByReference(
 	}
 
 	if rt.NeedsUpdate() {
-		pg := runbits.NewRuntimeProgressIndicator(out)
+		pg := NewRuntimeProgressIndicator(out)
 		defer rtutils.Closer(pg.Close, &rerr)
 
 		err := rt.Setup(pg).Update(buildResult)

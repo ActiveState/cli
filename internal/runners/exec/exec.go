@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/ActiveState/cli/internal/runbits"
+	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/shirou/gopsutil/v3/process"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -129,7 +129,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	case err == nil:
 		break
 	case errors.Is(err, runtime.NeedsUpdateError):
-		pg := runbits.NewRuntimeProgressIndicator(s.out)
+		pg := rtrunbit.NewRuntimeProgressIndicator(s.out)
 		defer rtutils.Closer(pg.Close, &rerr)
 		if err := rt.Update(pg); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
@@ -141,7 +141,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	}
 
 	if rt.NeedsUpdate() {
-		pg := runbits.NewRuntimeProgressIndicator(s.out)
+		pg := rtrunbit.NewRuntimeProgressIndicator(s.out)
 		defer rtutils.Closer(pg.Close, &rerr)
 		if err := rt.SolveAndUpdate(pg); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")

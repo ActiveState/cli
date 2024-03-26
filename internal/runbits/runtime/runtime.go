@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -53,7 +52,7 @@ func NewFromProject(
 	}
 
 	if rti.NeedsUpdate() {
-		pg := runbits.NewRuntimeProgressIndicator(out)
+		pg := NewRuntimeProgressIndicator(out)
 		defer rtutils.Closer(pg.Close, &rerr)
 		if err := rti.SolveAndUpdate(pg); err != nil {
 			return nil, &ErrUpdate{locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")}

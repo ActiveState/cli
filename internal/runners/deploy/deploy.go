@@ -1,13 +1,13 @@
 package deploy
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	rt "runtime"
 	"strings"
 
+	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -22,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -163,7 +162,7 @@ func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 		return nil
 	}
 
-	pg := runbits.NewRuntimeProgressIndicator(d.output)
+	pg := rtrunbit.NewRuntimeProgressIndicator(d.output)
 	defer rtutils.Closer(pg.Close, &rerr)
 	if err := rti.SolveAndUpdate(pg); err != nil {
 		return locale.WrapError(err, "deploy_install_failed", "Installation failed.")
