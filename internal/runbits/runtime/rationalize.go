@@ -19,7 +19,7 @@ import (
 )
 
 func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *error) {
-	if rerr == nil {
+	if *rerr == nil {
 		return
 	}
 	var errNoMatchingPlatform *model.ErrNoMatchingPlatform
@@ -65,15 +65,6 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 			break // it only takes one download failure to report the runtime failure as due to download error
 		}
 
-	// If updating failed due to unidentified errors, and the user is not authenticated, add a tip suggesting that they authenticate as
-	// this may be a private project.
-	// Note since we cannot assert the actual error type we do not wrap this as user-facing, as we do not know what we're
-	// dealing with so the localized underlying errors are more appropriate.
-	case !auth.Authenticated():
-		*rerr = errs.AddTips(*rerr,
-			locale.T("tip_private_project_auth"),
-		)
-
 	// We communicate buildplanner errors verbatim as the intend is that these are curated by the buildplanner
 	case errors.As(*rerr, &buildPlannerErr):
 		*rerr = errs.WrapUserFacing(*rerr,
@@ -87,6 +78,15 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 	// Buildscript is missing and needs to be recreated
 	case errors.Is(*rerr, runtime.NeedsBuildscriptResetError):
 		*rerr = errs.WrapUserFacing(*rerr, locale.T("notice_needs_buildscript_reset"), errs.SetInput())
+
+	// If updating failed due to unidentified errors, and the user is not authenticated, add a tip suggesting that they authenticate as
+	// this may be a private project.
+	// Note since we cannot assert the actual error type we do not wrap this as user-facing, as we do not know what we're
+	// dealing with so the localized underlying errors are more appropriate.
+	case !auth.Authenticated(): // MUST BE LAST
+		*rerr = errs.AddTips(*rerr,
+			locale.T("tip_private_project_auth"),
+		)
 
 	}
 }
