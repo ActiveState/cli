@@ -168,7 +168,7 @@ func (r *Runtime) Target() setup.Targeter {
 }
 
 func (r *Runtime) Setup(eventHandler events.Handler) *setup.Setup {
-	return setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out)
+	return setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out, r.svcm)
 }
 
 func (r *Runtime) Update(setup *setup.Setup, buildResult *model.BuildResult, eventHandler events.Handler) (rerr error) {

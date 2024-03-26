@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -112,6 +113,11 @@ type ProgressReportError struct {
 	*errs.WrapperError
 }
 
+type RuntimeInUseError struct {
+	*locale.LocalizedError
+	Processes []*graph.ProcessInfo
+}
+
 type Targeter interface {
 	CommitUUID() strfmt.UUID
 	Name() string
@@ -140,6 +146,7 @@ type Setup struct {
 	artifactCache *artifactcache.ArtifactCache
 	cfg           Configurable
 	out           output.Outputer
+	svcm          *model.SvcModel
 }
 
 type Setuper interface {
@@ -163,12 +170,12 @@ type artifactInstaller func(artifact.ArtifactID, string, ArtifactSetuper) error
 type artifactUninstaller func() error
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
-func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth, an analytics.Dispatcher, cfg Configurable, out output.Outputer) *Setup {
+func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth, an analytics.Dispatcher, cfg Configurable, out output.Outputer, svcm *model.SvcModel) *Setup {
 	cache, err := artifactcache.New()
 	if err != nil {
 		multilog.Error("Could not create artifact cache: %v", err)
 	}
-	return &Setup{auth, target, eventHandler, store.New(target.Dir()), an, cache, cfg, out}
+	return &Setup{auth, target, eventHandler, store.New(target.Dir()), an, cache, cfg, out, svcm}
 }
 
 func (s *Setup) Solve() (*apimodel.BuildResult, error) {
@@ -218,6 +225,21 @@ func (s *Setup) Update(buildResult *apimodel.BuildResult) (rerr error) {
 	// paths like "/." and "/opt/.." resolve to simply "/" at this time.
 	if rt.GOOS != "windows" && s.target.Dir() == "/" {
 		return locale.NewInputError("err_runtime_setup_root", "Cannot set up a runtime in the root directory. Please specify or run from a user-writable directory.")
+	}
+
+	// Determine if this runtime is currently in use.
+	ctx, cancel := context.WithTimeout(context.Background(), model.SvcTimeoutMinimal)
+	defer cancel()
+	if procs, err := s.svcm.GetProcessesInUse(ctx, ExecDir(s.target.Dir())); err == nil {
+		if len(procs) > 0 {
+			list := []string{}
+			for _, proc := range procs {
+				list = append(list, fmt.Sprintf("   - %s (process: %d)", proc.Exe, proc.Pid))
+			}
+			return &RuntimeInUseError{locale.NewInputError("runtime_setup_in_use_err", "", strings.Join(list, "\n")), procs}
+		}
+	} else {
+		multilog.Error("Unable to determine if runtime is in use: %v", err)
 	}
 
 	// Update all the runtime artifacts
