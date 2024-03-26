@@ -1565,4 +1565,7 @@ err_buildscript_notexist:
   other: Your project does not have a buildscript.as file. Please refer to the documentation on how to create one.
 err_projectfile_version_too_high:
   other: Your local checkout of this project depends on a newer version of the State Tool. Please update your State Tool by running [ACTIONABLE]state update[/RESET].
-
+err_headless:
+  other: Cannot operate on a headless project. Please visit {{.V0}} to convert your project and try again.
+notice_needs_buildscript_reset:
+  other: Your project is missing its buildscript file, please run '[ACTIONABLE]state reset LOCAL[/RESET]' to recreate it.

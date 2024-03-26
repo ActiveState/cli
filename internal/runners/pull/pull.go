@@ -172,7 +172,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		})
 	}
 
-	err = runtime.RefreshRuntime(p.auth, p.out, p.analytics, p.project, *resultingCommit, true, target.TriggerPull, p.svcModel, p.cfg)
+	_, err = runtime.SolveAndUpdate(p.auth, p.out, p.analytics, p.project, resultingCommit, target.TriggerPull, p.svcModel, p.cfg, runtime.OptOrderChanged)
 	if err != nil {
 		return locale.WrapError(err, "err_pull_refresh", "Could not refresh runtime after pull")
 	}
@@ -235,7 +235,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	if err != nil {
 		return errs.Wrap(err, "Unable to get buildexpression and time for remote commit")
 	}
-	scriptB, err := buildscript.NewFromCommit(atTimeB, exprB)
+	scriptB, err := buildscript.NewFromBuildExpression(atTimeB, exprB)
 	if err != nil {
 		return errs.Wrap(err, "Could not convert build expression to build script")
 	}

@@ -53,15 +53,12 @@ type Runtime struct {
 	resolvedArtifacts []*artifact.Artifact
 }
 
-// NeedsUpdateError is an error returned when the runtime is not completely installed yet.
-var NeedsUpdateError = errors.New("needs runtime update")
-
 // NeedsCommitError is an error returned when the local runtime's build script has changes that need
 // staging. This is not a fatal error. A runtime can still be used, but a warning should be emitted.
 var NeedsCommitError = errors.New("runtime needs commit")
 
-// NeedsResetError is an error returned when the runtime is improperly referenced in the project (eg. missing buildscript)
-var NeedsResetError = errors.New("needs runtime reset")
+// NeedsBuildscriptResetError is an error returned when the runtime is improperly referenced in the project (eg. missing buildscript)
+var NeedsBuildscriptResetError = errors.New("needs runtime reset")
 
 func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel, auth *authentication.Auth, cfg Configurable, out output.Outputer) (*Runtime, error) {
 	rt := &Runtime{
@@ -82,7 +79,7 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 	return rt, nil
 }
 
-// New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
+// New attempts to create a new runtime from local storage.
 func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, auth *authentication.Auth, cfg Configurable, out output.Outputer) (*Runtime, error) {
 	logging.Debug("Initializing runtime for: %s/%s@%s", target.Owner(), target.Name(), target.CommitUUID())
 
@@ -132,17 +129,20 @@ func (r *Runtime) validateCache() error {
 		cachedScript, err := r.store.BuildScript()
 		if err != nil {
 			if errors.Is(err, store.ErrNoBuildScriptFile) {
-				return errs.Pack(err, NeedsUpdateError)
+				logging.Warning("No buildscript file exists in store, unable to check if buildscript is dirty. This can happen if you cleared your cache.")
+			} else {
+				return errs.Wrap(err, "Could not retrieve buildscript from store")
 			}
-			return errs.Wrap(err, "Could not retrieve buildscript from store")
 		}
 
-		script, err := buildscript.ScriptFromProject(r.target)
-		if err != nil && !errs.Matches(err, buildscript.ErrBuildscriptNotExist) {
-			return errs.Pack(err, NeedsResetError)
-		}
-		if script != nil && !script.Equals(cachedScript) {
-			return NeedsCommitError
+		if cachedScript != nil {
+			script, err := buildscript.ScriptFromProject(r.target)
+			if err != nil && !errs.Matches(err, buildscript.ErrBuildscriptNotExist) {
+				return errs.Pack(err, NeedsBuildscriptResetError)
+			}
+			if script != nil && !script.Equals(cachedScript) {
+				return NeedsCommitError
+			}
 		}
 	}
 
@@ -188,7 +188,6 @@ func (r *Runtime) Update(setup *setup.Setup, buildResult *model.BuildResult, eve
 }
 
 // SolveAndUpdate updates the runtime by downloading all necessary artifacts from the Platform and installing them locally.
-// This function is usually called, after New() returned with a NeedsUpdateError
 func (r *Runtime) SolveAndUpdate(eventHandler events.Handler) error {
 	if r.disabled {
 		logging.Debug("Skipping update as it is disabled")

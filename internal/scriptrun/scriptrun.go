@@ -1,7 +1,6 @@
 package scriptrun
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,14 +14,12 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/process"
-	"github.com/ActiveState/cli/internal/rtutils"
 	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -68,28 +65,9 @@ func (s *ScriptRun) NeedsActivation() bool {
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
 func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
-	rt, err := runtime.New(target.NewProjectTarget(s.project, nil, target.TriggerScript), s.analytics, s.svcModel, s.auth, s.cfg, s.out)
-	switch {
-	case err == nil:
-		break
-	case errors.Is(err, runtime.NeedsUpdateError):
-		pg := rtrunbit.NewRuntimeProgressIndicator(s.out)
-		defer rtutils.Closer(pg.Close, &rerr)
-		if err := rt.SolveAndUpdate(pg); err != nil {
-			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
-		}
-	case errors.Is(err, runtime.NeedsCommitError):
-		s.out.Notice(locale.T("notice_commit_build_script"))
-	default:
+	rt, err := rtrunbit.SolveAndUpdate(s.auth, s.out, s.analytics, s.project, nil, target.TriggerScript, s.svcModel, s.cfg, rtrunbit.OptMinimalUI)
+	if err != nil {
 		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
-	}
-
-	if rt.NeedsUpdate() {
-		pg := rtrunbit.NewRuntimeProgressIndicator(s.out)
-		defer rtutils.Closer(pg.Close, &rerr)
-		if err := rt.SolveAndUpdate(pg); err != nil {
-			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
-		}
 	}
 
 	venv := virtualenvironment.New(rt)

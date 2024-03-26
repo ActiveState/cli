@@ -8,10 +8,12 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -22,22 +24,14 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 	}
 	var errNoMatchingPlatform *model.ErrNoMatchingPlatform
 	var errArtifactSetup *setup.ArtifactSetupErrors
+	var buildPlannerErr *bpModel.BuildPlannerError
 
 	isUpdateErr := errs.Matches(*rerr, &ErrUpdate{})
 	switch {
-	case proj == nil:
-		multilog.Error("runtime:rationalizeError called with nil project, error: %s", errs.JoinMessage(*rerr))
-		*rerr = errs.Pack(*rerr, errs.New("project is nil"))
-
-	case proj.IsHeadless():
-		*rerr = errs.NewUserFacing(
-			locale.Tl(
-				"err_runtime_headless",
-				"Cannot initialize runtime for a headless project. Please visit {{.V0}} to convert your project and try again.",
-				proj.URL(),
-			),
-			errs.SetInput(),
-		)
+	case errors.Is(*rerr, rationalize.ErrHeadless):
+		*rerr = errs.WrapUserFacing(*rerr,
+			locale.Tr("err_headless", proj.URL()),
+			errs.SetInput())
 
 	// Could not find a platform that matches on the given branch, so suggest alternate branches if ones exist
 	case isUpdateErr && errors.As(*rerr, &errNoMatchingPlatform):
@@ -80,5 +74,20 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 		*rerr = errs.AddTips(*rerr,
 			locale.T("tip_private_project_auth"),
 		)
+
+	// We communicate buildplanner errors verbatim as the intend is that these are curated by the buildplanner
+	case errors.As(*rerr, &buildPlannerErr):
+		*rerr = errs.WrapUserFacing(*rerr,
+			buildPlannerErr.LocalizedError(),
+			errs.SetIf(buildPlannerErr.InputError(), errs.SetInput()))
+
+	// User has modified the buildscript and needs to run `state commit`
+	case errors.Is(*rerr, runtime.NeedsCommitError):
+		*rerr = errs.WrapUserFacing(*rerr, locale.T("notice_commit_build_script"), errs.SetInput())
+
+	// Buildscript is missing and needs to be recreated
+	case errors.Is(*rerr, runtime.NeedsBuildscriptResetError):
+		*rerr = errs.WrapUserFacing(*rerr, locale.T("notice_needs_buildscript_reset"), errs.SetInput())
+
 	}
 }

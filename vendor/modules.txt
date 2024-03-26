@@ -275,6 +275,9 @@ github.com/hpcloud/tail/ratelimiter
 github.com/hpcloud/tail/util
 github.com/hpcloud/tail/watch
 github.com/hpcloud/tail/winfile
+# github.com/imacks/bitflags-go v1.0.0
+## explicit; go 1.18
+github.com/imacks/bitflags-go
 # github.com/imdario/mergo v0.3.11
 ## explicit; go 1.13
 github.com/imdario/mergo
