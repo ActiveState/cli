@@ -9,7 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/runners/builds"
+	"github.com/ActiveState/cli/internal/runners/artifacts"
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -18,12 +18,12 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
 
-type BuildsIntegrationTestSuite struct {
+type ArtifactsIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *BuildsIntegrationTestSuite) TestBuilds() {
-	suite.OnlyRunForTags(tagsuite.Builds)
+func (suite *ArtifactsIntegrationTestSuite) TestArtifacts() {
+	suite.OnlyRunForTags(tagsuite.Artifacts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -38,22 +38,22 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds() {
 	// In order to reuse the runtime cache and reduce test time we run the rest in subtests
 
 	suite.Run("no flags", func() {
-		cp = ts.Spawn("builds")
+		cp = ts.Spawn("artifacts")
 		cp.Expect("Operating on project ActiveState-CLI/Python-With-Custom-Builds, located at")
 		cp.Expect("CentOS")
 		cp.Expect("Docker Image")
 		cp.Expect("Installer")
 		cp.Expect("macOS")
-		cp.Expect("No builds")
+		cp.Expect("No artifacts")
 		cp.Expect("Windows")
 		cp.Expect("Signed Installer")
 		cp.Expect(".exe")
-		cp.Expect("To download builds run")
+		cp.Expect("To download artifacts run")
 		cp.ExpectExitCode(0)
 	})
 
 	suite.Run("--all flag", func() {
-		cp = ts.Spawn("builds", "--all")
+		cp = ts.Spawn("artifacts", "--all")
 		cp.Expect("CentOS")
 		cp.Expect("Docker Image")
 		cp.Expect("Installer")
@@ -64,76 +64,76 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds() {
 		cp.Expect("Signed Installer")
 		cp.Expect("Packages")
 		cp.Expect("python@3")
-		cp.Expect("To download builds run")
+		cp.Expect("To download artifacts run")
 		cp.ExpectExitCode(0)
 	})
 
 	suite.Run("json without flags", func() {
-		cp = ts.SpawnWithOpts(e2e.OptArgs("builds", "--output=json"), e2e.OptTermTest(termtest.OptRows(100)))
+		cp = ts.SpawnWithOpts(e2e.OptArgs("artifacts", "--output=json"), e2e.OptTermTest(termtest.OptRows(100)))
 		cp.ExpectExitCode(0)
 
-		output := builds.StructuredOutput{}
+		output := artifacts.StructuredOutput{}
 		out := strings.TrimLeft(cp.StrippedSnapshot(), locale.T("notice_runtime_disabled"))
 		suite.Require().NoError(json.Unmarshal([]byte(out), &output), ts.DebugMessage(""))
 
 		suite.Equal(3, len(output.Platforms))
 		for _, platform := range output.Platforms {
 			if !strings.HasPrefix(platform.Name, "macOS") {
-				suite.Greater(len(platform.Builds), 0)
+				suite.Greater(len(platform.Artifacts), 0)
 			}
 			suite.Equal(0, len(platform.Packages))
 		}
 	})
 
 	suite.Run("json with --all flag", func() {
-		cp = ts.SpawnWithOpts(e2e.OptArgs("builds", "--output=json", "--all"), e2e.OptTermTest(termtest.OptRows(100)))
+		cp = ts.SpawnWithOpts(e2e.OptArgs("artifacts", "--output=json", "--all"), e2e.OptTermTest(termtest.OptRows(100)))
 		cp.ExpectExitCode(0)
 
-		output := builds.StructuredOutput{}
+		output := artifacts.StructuredOutput{}
 		out := strings.TrimLeft(cp.StrippedSnapshot(), locale.T("notice_runtime_disabled"))
 		suite.Require().NoError(json.Unmarshal([]byte(out), &output), ts.DebugMessage(""))
 
 		suite.Equal(3, len(output.Platforms))
 		for _, platform := range output.Platforms {
 			if !strings.HasPrefix(platform.Name, "macOS") {
-				suite.Greater(len(platform.Builds), 0)
+				suite.Greater(len(platform.Artifacts), 0)
 			}
 			suite.Greater(len(platform.Packages), 0)
 		}
 	})
 }
 
-func (suite *BuildsIntegrationTestSuite) TestBuilds_Remote() {
-	suite.OnlyRunForTags(tagsuite.Builds)
+func (suite *ArtifactsIntegrationTestSuite) TestArtifacts_Remote() {
+	suite.OnlyRunForTags(tagsuite.Artifacts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	suite.Run("Namespace only", func() {
-		cp := ts.Spawn("builds", "--namespace", "ActiveState-CLI/Python-With-Custom-Builds")
+		cp := ts.Spawn("artifacts", "--namespace", "ActiveState-CLI/Python-With-Custom-Builds")
 		cp.Expect("CentOS")
 		cp.Expect("Docker Image")
 		cp.Expect("Installer")
 		cp.Expect("macOS")
-		cp.Expect("No builds")
+		cp.Expect("No artifacts")
 		cp.Expect("Windows")
 		cp.Expect("Signed Installer")
 		cp.Expect(".exe")
-		cp.Expect("To download builds run")
+		cp.Expect("To download artifacts run")
 		suite.Assert().NotContains(cp.Snapshot(), "Operating on project")
 		cp.ExpectExitCode(0)
 	})
 
 	suite.Run("Namespace and commit ID", func() {
-		cp := ts.Spawn("builds", "--namespace", "ActiveState-CLI/Python-With-Custom-Builds", "--commit", "993454c7-6613-4b1a-8981-1cee43cc249e")
+		cp := ts.Spawn("artifacts", "--namespace", "ActiveState-CLI/Python-With-Custom-Builds", "--commit", "993454c7-6613-4b1a-8981-1cee43cc249e")
 		cp.Expect("CentOS")
 		cp.Expect("Docker Image")
 		cp.Expect("Installer")
 		cp.Expect("macOS")
-		cp.Expect("No builds")
+		cp.Expect("No artifacts")
 		cp.Expect("Windows")
 		cp.Expect("Signed Installer")
 		cp.Expect(".exe")
-		cp.Expect("To download builds run")
+		cp.Expect("To download artifacts run")
 		cp.ExpectExitCode(0)
 	})
 }
@@ -154,8 +154,8 @@ type Build struct {
 	Name string `json:"name"`
 }
 
-func (suite *BuildsIntegrationTestSuite) TestBuilds_Download() {
-	suite.OnlyRunForTags(tagsuite.Builds)
+func (suite *ArtifactsIntegrationTestSuite) TestArtifacts_Download() {
+	suite.OnlyRunForTags(tagsuite.Artifacts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -178,7 +178,7 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Download() {
 	suite.Require().NotEmpty(buildID)
 
 	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("builds", "dl", buildID, "."),
+		e2e.OptArgs("artifacts", "dl", buildID, "."),
 	)
 	cp.Expect("Operating on project ActiveState-CLI/Python-With-Custom-Builds, located at")
 	cp.Expect("Downloaded bzip2", e2e.RuntimeSourcingTimeoutOpt)
@@ -186,8 +186,8 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Download() {
 	require.FileExists(suite.T(), filepath.Join(ts.Dirs.Work, "bzip2-1.0.8.tar.gz"))
 }
 
-func (suite *BuildsIntegrationTestSuite) TestBuilds_Download_Remote() {
-	suite.OnlyRunForTags(tagsuite.Builds)
+func (suite *ArtifactsIntegrationTestSuite) TestArtifacts_Download_Remote() {
+	suite.OnlyRunForTags(tagsuite.Artifacts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -201,14 +201,14 @@ func (suite *BuildsIntegrationTestSuite) TestBuilds_Download_Remote() {
 	}
 	suite.Require().NotEmpty(buildID)
 
-	cp := ts.Spawn("builds", "dl", buildID, ".", "--namespace", "ActiveState-CLI/Python-With-Custom-Builds")
+	cp := ts.Spawn("artifacts", "dl", buildID, ".", "--namespace", "ActiveState-CLI/Python-With-Custom-Builds")
 	cp.Expect("Downloaded bzip2", e2e.RuntimeSourcingTimeoutOpt)
 	suite.Assert().NotContains(cp.Snapshot(), "Operating on project")
 	cp.ExpectExitCode(0)
 	require.FileExists(suite.T(), filepath.Join(ts.Dirs.Work, "bzip2-1.0.8.tar.gz"))
 }
 
-func (suite *BuildsIntegrationTestSuite) extractBuildID(ts *e2e.Session, name string, namespace string) string {
+func (suite *ArtifactsIntegrationTestSuite) extractBuildID(ts *e2e.Session, name string, namespace string) string {
 	args := []string{"builds", "--all", "--output=json"}
 	if namespace != "" {
 		args = append(args, "--namespace", namespace)
@@ -248,6 +248,6 @@ func (suite *BuildsIntegrationTestSuite) extractBuildID(ts *e2e.Session, name st
 	return ""
 }
 
-func TestBuildsIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(BuildsIntegrationTestSuite))
+func TestArtifactsIntegrationTestSuite(t *testing.T) {
+	suite.Run(t, new(ArtifactsIntegrationTestSuite))
 }
