@@ -222,7 +222,7 @@ func unpackArtifacts(nodeID strfmt.UUID, lookup map[strfmt.UUID]interface{}, res
 	if !model.IsSuccessArtifactStatus(targetArtifact.Status) {
 		if !allowFailedArtifacts {
 			return &ArtifactError{
-				locale.NewError("err_artifact_failed", "Artifact '{{.V0}}' failed to build", trimDisplayName(targetArtifact.DisplayName)),
+				locale.NewError("err_artifact_failed", "Artifact '{{.V0}}' failed to build, build log: {{.V1}}", trimDisplayName(targetArtifact.DisplayName), targetArtifact.LogURL),
 				targetArtifact,
 			}
 		}
