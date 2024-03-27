@@ -467,16 +467,13 @@ func Parse(configFilepath string) (_ *Project, rerr error) {
 	StoreProjectMapping(cfg, namespace, filepath.Dir(project.Path()))
 
 	// Migrate project file if needed
-	if !migrationRunning && project.ConfigVersion != ConfigVersion {
+	if !migrationRunning && project.ConfigVersion != ConfigVersion && migrator != nil {
 		// Migrations may themselves utilize the projectfile package, so we have to ensure we don't start an infinite loop
 		migrationRunning = true
 		defer func() { migrationRunning = false }()
 
 		if project.ConfigVersion > ConfigVersion {
 			return nil, locale.NewInputError("err_projectfile_version_too_high")
-		}
-		if migrator == nil {
-			return nil, errs.New("migrator not set")
 		}
 		updatedConfigVersion, errMigrate := migrator(project, ConfigVersion)
 
