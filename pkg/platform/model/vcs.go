@@ -206,7 +206,7 @@ func NewNamespacePlatform() Namespace {
 func NewOrgNamespace(orgName string) Namespace {
 	return Namespace{
 		nsType: NamespaceOrg,
-		value:  fmt.Sprintf("org/%s", orgName),
+		value:  fmt.Sprintf("private/%s", orgName),
 	}
 }
 
