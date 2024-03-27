@@ -32,7 +32,7 @@ func (suite *MigratorIntegrationTestSuite) TestMigrator() {
 }
 
 func (suite *MigratorIntegrationTestSuite) TestMigrator_Buildscripts() {
-	suite.OnlyRunForTags(tagsuite.Migrations, tagsuite.Critical)
+	suite.OnlyRunForTags(tagsuite.Migrations, tagsuite.BuildScripts, tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
