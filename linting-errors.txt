@@ -1,2 +1,0 @@
-cmd/state/main.go:124:16: Error return value is not checked (errcheck)
-		defer cleanup()
