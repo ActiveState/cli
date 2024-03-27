@@ -24,7 +24,7 @@ func NewID() *ID {
 }
 
 // FromNamespace resolves the projectID from projectName and caches the result
-func (i *ID) FromNamespace(projectNameSpace string) (string, error) {
+func (i *ID) FromNamespace(projectNameSpace string, auth *authentication.Auth) (string, error) {
 	// Lock mutex to prevent resolving the same projectName more than once
 	i.projectIDMutex.Lock()
 	defer i.projectIDMutex.Unlock()
@@ -38,7 +38,7 @@ func (i *ID) FromNamespace(projectNameSpace string) (string, error) {
 		return "", errs.Wrap(err, "Failed to parse project namespace %s", projectNameSpace)
 	}
 
-	if err := authentication.LegacyGet().Refresh(); err != nil {
+	if err := auth.Refresh(); err != nil {
 		return "", errs.Wrap(err, "Failed to refresh authentication")
 	}
 	pj, err := model.LegacyFetchProjectByName(pn.Owner, pn.Project)

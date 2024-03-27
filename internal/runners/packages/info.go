@@ -57,14 +57,14 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	}
 
 	if nsTypeV != nil {
-		language, err := targetedLanguage(params.Language, i.proj)
+		language, err := targetedLanguage(params.Language, i.proj, i.auth)
 		if err != nil {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", *nsTypeV))
 		}
 		ns = ptr.To(model.NewNamespacePkgOrBundle(language, nstype))
 	}
 
-	normalized, err := model.FetchNormalizedName(*ns, params.Package.Name)
+	normalized, err := model.FetchNormalizedName(*ns, params.Package.Name, i.auth)
 	if err != nil {
 		multilog.Error("Failed to normalize '%s': %v", params.Package.Name, err)
 		normalized = params.Package.Name
@@ -75,7 +75,7 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 		return errs.Wrap(err, "Unable to get timestamp from params")
 	}
 
-	packages, err := model.SearchIngredientsStrict(ns.String(), normalized, false, false, ts) // ideally case-sensitive would be true (PB-4371)
+	packages, err := model.SearchIngredientsStrict(ns.String(), normalized, false, false, ts, i.auth) // ideally case-sensitive would be true (PB-4371)
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 	}
@@ -92,13 +92,13 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	ingredientVersion := pkg.LatestVersion
 
 	if params.Package.Version != "" {
-		ingredientVersion, err = specificIngredientVersion(pkg.Ingredient.IngredientID, params.Package.Version)
+		ingredientVersion, err = specificIngredientVersion(pkg.Ingredient.IngredientID, params.Package.Version, i.auth)
 		if err != nil {
 			return locale.WrapInputError(err, "info_err_version_not_found", "Could not find version {{.V0}} for package {{.V1}}", params.Package.Version, params.Package.Name)
 		}
 	}
 
-	authors, err := model.FetchAuthors(pkg.Ingredient.IngredientID, ingredientVersion.IngredientVersionID)
+	authors, err := model.FetchAuthors(pkg.Ingredient.IngredientID, ingredientVersion.IngredientVersionID, i.auth)
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_authors_info", "Cannot obtain authors info")
 	}
@@ -131,8 +131,8 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	return nil
 }
 
-func specificIngredientVersion(ingredientID *strfmt.UUID, version string) (*inventory_models.IngredientVersion, error) {
-	ingredientVersions, err := model.FetchIngredientVersions(ingredientID)
+func specificIngredientVersion(ingredientID *strfmt.UUID, version string, auth *authentication.Auth) (*inventory_models.IngredientVersion, error) {
+	ingredientVersions, err := model.FetchIngredientVersions(ingredientID, auth)
 	if err != nil {
 		return nil, locale.WrapError(err, "info_err_cannot_obtain_version", "Could not retrieve ingredient version information")
 	}

@@ -48,7 +48,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 
 	var ns model.Namespace
 	if params.Ingredient.Namespace == "" {
-		language, err := targetedLanguage(params.Language, s.proj)
+		language, err := targetedLanguage(params.Language, s.proj, s.auth)
 		if err != nil {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
 		}
@@ -65,9 +65,9 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 
 	var packages []*model.IngredientAndVersion
 	if params.ExactTerm {
-		packages, err = model.SearchIngredientsLatestStrict(ns.String(), params.Ingredient.Name, true, true, ts)
+		packages, err = model.SearchIngredientsLatestStrict(ns.String(), params.Ingredient.Name, true, true, ts, s.auth)
 	} else {
-		packages, err = model.SearchIngredientsLatest(ns.String(), params.Ingredient.Name, true, ts)
+		packages, err = model.SearchIngredientsLatest(ns.String(), params.Ingredient.Name, true, ts, s.auth)
 	}
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
@@ -112,7 +112,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	return nil
 }
 
-func targetedLanguage(languageOpt string, proj *project.Project) (string, error) {
+func targetedLanguage(languageOpt string, proj *project.Project, auth *authentication.Auth) (string, error) {
 	if languageOpt != "" {
 		return languageOpt, nil
 	}
@@ -127,7 +127,7 @@ func targetedLanguage(languageOpt string, proj *project.Project) (string, error)
 	if err != nil {
 		return "", errs.Wrap(err, "Unable to get local commit")
 	}
-	lang, err := model.LanguageByCommit(commitID)
+	lang, err := model.LanguageByCommit(commitID, auth)
 	if err != nil {
 		return "", errs.Wrap(err, "LanguageByCommit failed")
 	}

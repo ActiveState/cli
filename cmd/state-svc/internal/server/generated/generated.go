@@ -67,6 +67,11 @@ type ComplexityRoot struct {
 		Repeat    func(childComplexity int) int
 	}
 
+	ProcessInfo struct {
+		Exe func(childComplexity int) int
+		Pid func(childComplexity int) int
+	}
+
 	Project struct {
 		Locations func(childComplexity int) int
 		Namespace func(childComplexity int) int
@@ -78,6 +83,7 @@ type ComplexityRoot struct {
 		CheckMessages      func(childComplexity int, command string, flags []string) int
 		ConfigChanged      func(childComplexity int, key string) int
 		FetchLogTail       func(childComplexity int) int
+		GetProcessesInUse  func(childComplexity int, execDir string) int
 		Projects           func(childComplexity int) int
 		ReportRuntimeUsage func(childComplexity int, pid int, exec string, source string, dimensionsJSON string) int
 		Version            func(childComplexity int) int
@@ -109,6 +115,7 @@ type QueryResolver interface {
 	CheckMessages(ctx context.Context, command string, flags []string) ([]*graph.MessageInfo, error)
 	ConfigChanged(ctx context.Context, key string) (*graph.ConfigChangedResponse, error)
 	FetchLogTail(ctx context.Context) (string, error)
+	GetProcessesInUse(ctx context.Context, execDir string) ([]*graph.ProcessInfo, error)
 }
 
 type executableSchema struct {
@@ -217,6 +224,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MessageInfo.Repeat(childComplexity), true
 
+	case "ProcessInfo.exe":
+		if e.complexity.ProcessInfo.Exe == nil {
+			break
+		}
+
+		return e.complexity.ProcessInfo.Exe(childComplexity), true
+
+	case "ProcessInfo.pid":
+		if e.complexity.ProcessInfo.Pid == nil {
+			break
+		}
+
+		return e.complexity.ProcessInfo.Pid(childComplexity), true
+
 	case "Project.locations":
 		if e.complexity.Project.Locations == nil {
 			break
@@ -285,6 +306,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.FetchLogTail(childComplexity), true
+
+	case "Query.getProcessesInUse":
+		if e.complexity.Query.GetProcessesInUse == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getProcessesInUse_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetProcessesInUse(childComplexity, args["execDir"].(string)), true
 
 	case "Query.projects":
 		if e.complexity.Query.Projects == nil {
@@ -484,10 +517,16 @@ type Query {
     checkMessages(command: String!, flags: [String!]!): [MessageInfo!]!
     configChanged(key: String!): ConfigChangedResponse
     fetchLogTail: String!
+    getProcessesInUse(execDir: String!): [ProcessInfo!]!
 }
 
 type ConfigChangedResponse {
     received: Boolean!
+}
+
+type ProcessInfo {
+    exe: String!
+    pid: Int!
 }
 `, BuiltIn: false},
 }
@@ -623,6 +662,21 @@ func (ec *executionContext) field_Query_configChanged_args(ctx context.Context, 
 		}
 	}
 	args["key"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getProcessesInUse_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["execDir"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("execDir"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["execDir"] = arg0
 	return args, nil
 }
 
@@ -1278,6 +1332,94 @@ func (ec *executionContext) fieldContext_MessageInfo_placement(ctx context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _ProcessInfo_exe(ctx context.Context, field graphql.CollectedField, obj *graph.ProcessInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProcessInfo_exe(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Exe, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProcessInfo_exe(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProcessInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProcessInfo_pid(ctx context.Context, field graphql.CollectedField, obj *graph.ProcessInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProcessInfo_pid(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Pid, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProcessInfo_pid(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProcessInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Project_namespace(ctx context.Context, field graphql.CollectedField, obj *graph.Project) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Project_namespace(ctx, field)
 	if err != nil {
@@ -1798,6 +1940,66 @@ func (ec *executionContext) fieldContext_Query_fetchLogTail(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_getProcessesInUse(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getProcessesInUse(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetProcessesInUse(rctx, fc.Args["execDir"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*graph.ProcessInfo)
+	fc.Result = res
+	return ec.marshalNProcessInfo2ᚕᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐProcessInfoᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getProcessesInUse(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "exe":
+				return ec.fieldContext_ProcessInfo_exe(ctx, field)
+			case "pid":
+				return ec.fieldContext_ProcessInfo_pid(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ProcessInfo", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getProcessesInUse_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query___type(ctx, field)
 	if err != nil {
@@ -2057,8 +2259,8 @@ func (ec *executionContext) fieldContext_StateVersion_version(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _StateVersion_branch(ctx context.Context, field graphql.CollectedField, obj *graph.StateVersion) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_StateVersion_branch(ctx, field)
+func (ec *executionContext) _StateVersion_channel(ctx context.Context, field graphql.CollectedField, obj *graph.StateVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StateVersion_channel(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2088,7 +2290,7 @@ func (ec *executionContext) _StateVersion_branch(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StateVersion_branch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StateVersion_channel(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StateVersion",
 		Field:      field,
@@ -2233,7 +2435,7 @@ func (ec *executionContext) fieldContext_Version_state(ctx context.Context, fiel
 			case "version":
 				return ec.fieldContext_StateVersion_version(ctx, field)
 			case "channel":
-				return ec.fieldContext_StateVersion_branch(ctx, field)
+				return ec.fieldContext_StateVersion_channel(ctx, field)
 			case "revision":
 				return ec.fieldContext_StateVersion_revision(ctx, field)
 			case "date":
@@ -4201,6 +4403,41 @@ func (ec *executionContext) _MessageInfo(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
+var processInfoImplementors = []string{"ProcessInfo"}
+
+func (ec *executionContext) _ProcessInfo(ctx context.Context, sel ast.SelectionSet, obj *graph.ProcessInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, processInfoImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProcessInfo")
+		case "exe":
+
+			out.Values[i] = ec._ProcessInfo_exe(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pid":
+
+			out.Values[i] = ec._ProcessInfo_pid(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var projectImplementors = []string{"Project"}
 
 func (ec *executionContext) _Project(ctx context.Context, sel ast.SelectionSet, obj *graph.Project) graphql.Marshaler {
@@ -4414,6 +4651,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "getProcessesInUse":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getProcessesInUse(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "__type":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
@@ -4488,7 +4745,7 @@ func (ec *executionContext) _StateVersion(ctx context.Context, sel ast.Selection
 			}
 		case "channel":
 
-			out.Values[i] = ec._StateVersion_branch(ctx, field, obj)
+			out.Values[i] = ec._StateVersion_channel(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -4976,6 +5233,60 @@ func (ec *executionContext) unmarshalNMessageRepeatType2githubᚗcomᚋActiveSta
 
 func (ec *executionContext) marshalNMessageRepeatType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageRepeatType(ctx context.Context, sel ast.SelectionSet, v graph.MessageRepeatType) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNProcessInfo2ᚕᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐProcessInfoᚄ(ctx context.Context, sel ast.SelectionSet, v []*graph.ProcessInfo) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNProcessInfo2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐProcessInfo(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNProcessInfo2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐProcessInfo(ctx context.Context, sel ast.SelectionSet, v *graph.ProcessInfo) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ProcessInfo(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNProject2ᚕᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐProject(ctx context.Context, sel ast.SelectionSet, v []*graph.Project) graphql.Marshaler {

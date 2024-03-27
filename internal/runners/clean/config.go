@@ -18,7 +18,6 @@ type configurable interface {
 	ConfigPath() string
 	GetInt(string) int
 	Set(string, interface{}) error
-	IsSet(string) bool
 	GetStringMap(string) map[string]interface{}
 	GetBool(string) bool
 	GetString(string) string

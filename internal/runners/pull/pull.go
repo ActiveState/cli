@@ -18,9 +18,9 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/runbits"
 	buildscriptRunbits "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/commit"
+	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -172,7 +172,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		})
 	}
 
-	err = runbits.RefreshRuntime(p.auth, p.out, p.analytics, p.project, *resultingCommit, true, target.TriggerPull, p.svcModel, p.cfg)
+	err = runtime.RefreshRuntime(p.auth, p.out, p.analytics, p.project, *resultingCommit, true, target.TriggerPull, p.svcModel, p.cfg)
 	if err != nil {
 		return locale.WrapError(err, "err_pull_refresh", "Could not refresh runtime after pull")
 	}
@@ -207,7 +207,7 @@ func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *pr
 		return "", locale.WrapError(err, "err_pull_merge_commit", "Could not create merge commit.")
 	}
 
-	cmit, err := model.GetCommit(resultCommit)
+	cmit, err := model.GetCommit(resultCommit, p.auth)
 	if err != nil {
 		return "", locale.WrapError(err, "err_pull_getcommit", "Could not inspect resulting commit.")
 	}

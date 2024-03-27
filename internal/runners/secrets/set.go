@@ -70,13 +70,13 @@ func (s *Set) Run(params SetRunParams) error {
 		return err
 	}
 
-	err = secrets.Save(secretsapi.GetClient(), kp, org, remoteProject, secret.IsUser(), secret.Name(), params.Value)
+	err = secrets.Save(secretsapi.GetClient(s.auth), kp, org, remoteProject, secret.IsUser(), secret.Name(), params.Value, s.auth)
 	if err != nil {
 		return err
 	}
 
 	if secret.IsProject() {
-		return secrets.ShareWithOrgUsers(secretsapi.GetClient(), org, remoteProject, secret.Name(), params.Value, s.auth)
+		return secrets.ShareWithOrgUsers(secretsapi.GetClient(s.auth), org, remoteProject, secret.Name(), params.Value, s.auth)
 	}
 
 	return nil

@@ -62,7 +62,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 
 	// If project does not exist at path then we must checkout
 	// the project and create the project file
-	pj, err := model.FetchProjectByName(ns.Owner, ns.Project)
+	pj, err := model.FetchProjectByName(ns.Owner, ns.Project, r.auth)
 	if err != nil {
 		return "", locale.WrapError(err, "err_fetch_project", "", ns.String())
 	}
@@ -88,7 +88,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		// It's possible the given commitID does not belong to the default project branch.
 		// If so, find the correct branch.
 		for _, branch := range pj.Branches {
-			belongs, err := model.CommitBelongsToBranch(ns.Owner, ns.Project, branch.Label, *commitID)
+			belongs, err := model.CommitBelongsToBranch(ns.Owner, ns.Project, branch.Label, *commitID, r.auth)
 			if err != nil {
 				return "", errs.Wrap(err, "Could not determine if the given commitID belongs to a project branch")
 			}
@@ -111,7 +111,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		}
 	}
 
-	language, err := getLanguage(*commitID)
+	language, err := getLanguage(*commitID, r.auth)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get language from commitID")
 	}
@@ -125,7 +125,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 
 	// Match the case of the organization.
 	// Otherwise the incorrect case will be written to the project file.
-	owners, err := model.FetchOrganizationsByIDs([]strfmt.UUID{pj.OrganizationID})
+	owners, err := model.FetchOrganizationsByIDs([]strfmt.UUID{pj.OrganizationID}, r.auth)
 	if err != nil {
 		return "", errs.Wrap(err, "Unable to get the project's org")
 	}
@@ -161,8 +161,8 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	return path, nil
 }
 
-func getLanguage(commitID strfmt.UUID) (language.Language, error) {
-	modelLanguage, err := model.LanguageByCommit(commitID)
+func getLanguage(commitID strfmt.UUID, auth *authentication.Auth) (language.Language, error) {
+	modelLanguage, err := model.LanguageByCommit(commitID, auth)
 	if err != nil {
 		return language.Unset, locale.WrapError(err, "err_language_by_commit", "", string(commitID))
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -47,17 +48,17 @@ func (u *Update) Run(params *UpdateParams) error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	err = ensureLanguageProject(lang, u.prime.Project())
+	err = ensureLanguageProject(lang, u.prime.Project(), u.prime.Auth())
 	if err != nil {
 		return err
 	}
 
-	err = ensureLanguagePlatform(lang)
+	err = ensureLanguagePlatform(lang, u.prime.Auth())
 	if err != nil {
 		return err
 	}
 
-	err = ensureVersion(lang)
+	err = ensureVersion(lang, u.prime.Auth())
 	if err != nil {
 		if lang.Version == "" {
 			return locale.WrapInputError(err, "err_language_project", "Language: {{.V0}} is already installed, you can update it by running {{.V0}}@<version>", lang.Name)
@@ -112,8 +113,8 @@ func parseLanguage(langName string) (*model.Language, error) {
 	}, nil
 }
 
-func ensureLanguagePlatform(language *model.Language) error {
-	platformLanguages, err := model.FetchLanguages()
+func ensureLanguagePlatform(language *model.Language, auth *authentication.Auth) error {
+	platformLanguages, err := model.FetchLanguages(auth)
 	if err != nil {
 		return err
 	}
@@ -127,13 +128,13 @@ func ensureLanguagePlatform(language *model.Language) error {
 	return locale.NewError("err_update_not_found", language.Name)
 }
 
-func ensureLanguageProject(language *model.Language, project *project.Project) error {
+func ensureLanguageProject(language *model.Language, project *project.Project, auth *authentication.Auth) error {
 	targetCommitID, err := model.BranchCommitID(project.Owner(), project.Name(), project.BranchName())
 	if err != nil {
 		return err
 	}
 
-	platformLanguage, err := model.FetchLanguageForCommit(*targetCommitID)
+	platformLanguage, err := model.FetchLanguageForCommit(*targetCommitID, auth)
 	if err != nil {
 		return err
 	}
@@ -144,18 +145,18 @@ func ensureLanguageProject(language *model.Language, project *project.Project) e
 	return nil
 }
 
-type fetchVersionsFunc func(name string) ([]string, error)
+type fetchVersionsFunc func(name string, auth *authentication.Auth) ([]string, error)
 
-func ensureVersion(language *model.Language) error {
-	return ensureVersionTestable(language, model.FetchLanguageVersions)
+func ensureVersion(language *model.Language, auth *authentication.Auth) error {
+	return ensureVersionTestable(language, model.FetchLanguageVersions, auth)
 }
 
-func ensureVersionTestable(language *model.Language, fetchVersions fetchVersionsFunc) error {
+func ensureVersionTestable(language *model.Language, fetchVersions fetchVersionsFunc, auth *authentication.Auth) error {
 	if language.Version == "" {
 		return locale.NewInputError("err_language_no_version", "No language version provided")
 	}
 
-	versions, err := fetchVersions(language.Name)
+	versions, err := fetchVersions(language.Name, auth)
 	if err != nil {
 		return err
 	}

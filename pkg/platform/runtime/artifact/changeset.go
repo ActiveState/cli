@@ -1,16 +1,21 @@
 package artifact
 
+import "github.com/ActiveState/cli/internal/rtutils/ptr"
+
 type ArtifactChangeset struct {
-	Added   []ArtifactID
-	Removed []ArtifactID
+	Added   []Artifact
+	Removed []Artifact
 	Updated []ArtifactUpdate
 }
 
 type ArtifactUpdate struct {
-	FromID      ArtifactID
-	FromVersion *string
-	ToID        ArtifactID
-	ToVersion   *string
+	From Artifact
+	To   Artifact
+
+	// IngredientChange tells us whether or not this change extends to the ingredient
+	// This can easily be calculated based on From.version!=To.version, but that's not easy to always remember.
+	// Storing it as a property helps surface the behavior and avoid the assumption that an artifact change equals an ingredient change.
+	IngredientChange bool
 }
 
 // NewArtifactChangeset parses two recipes and returns the artifact IDs of artifacts that have changed due to changes in the order requirements
@@ -21,7 +26,7 @@ func NewArtifactChangeset(old, new NamedMap, requestedOnly bool) ArtifactChanges
 	//   - add ArtifactID to the `Updated` field if `ResolvedRequirements.feature` appears in both recipes, but the resolved version has changed.
 
 	var updated []ArtifactUpdate
-	var added []ArtifactID
+	var added []Artifact
 	for name, artf := range new {
 		if requestedOnly && !new[name].RequestedByOrder {
 			continue
@@ -33,25 +38,24 @@ func NewArtifactChangeset(old, new NamedMap, requestedOnly bool) ArtifactChanges
 				continue
 			}
 			updated = append(updated, ArtifactUpdate{
-				FromID:      artfOld.ArtifactID,
-				ToID:        artf.ArtifactID,
-				FromVersion: artfOld.Version,
-				ToVersion:   artf.Version,
+				From:             artfOld,
+				To:               artf,
+				IngredientChange: ptr.From(artfOld.Version, "") != ptr.From(artf.Version, ""),
 			})
 
 		} else {
 			// If it's not an update it is a new artifact
-			added = append(added, artf.ArtifactID)
+			added = append(added, artf)
 		}
 	}
 
-	var removed []ArtifactID
+	var removed []Artifact
 	for name, artf := range old {
 		if _, noDiff := new[name]; noDiff {
 			continue
 		}
 		if !requestedOnly || old[name].RequestedByOrder {
-			removed = append(removed, artf.ArtifactID)
+			removed = append(removed, artf)
 		}
 	}
 

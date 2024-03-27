@@ -15,6 +15,17 @@ type Handler interface {
 	Close() error
 }
 
+type VoidHandler struct {
+}
+
+func (v *VoidHandler) Handle(Eventer) error {
+	return nil
+}
+
+func (v *VoidHandler) Close() error {
+	return nil
+}
+
 type Event struct{}
 
 type Eventer interface {

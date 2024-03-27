@@ -69,8 +69,14 @@ type Query {
     checkMessages(command: String!, flags: [String!]!): [MessageInfo!]!
     configChanged(key: String!): ConfigChangedResponse
     fetchLogTail: String!
+    getProcessesInUse(execDir: String!): [ProcessInfo!]!
 }
 
 type ConfigChangedResponse {
     received: Boolean!
+}
+
+type ProcessInfo {
+    exe: String!
+    pid: Int!
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
 	"github.com/vbauerster/mpb/v7"
 	"github.com/vbauerster/mpb/v7/decor"
 )
@@ -25,6 +24,7 @@ type interactiveProgress struct {
 	bar          *mpb.Bar
 	artifactName string
 	artifactSize int
+	out          output.Outputer
 }
 
 func newDownloadProgress(ctx context.Context, out output.Outputer, artifactName, downloadPath string) downloadProgress {
@@ -47,19 +47,17 @@ func newDownloadProgress(ctx context.Context, out output.Outputer, artifactName,
 		mpb.WithRefreshRate(constants.TerminalAnimationInterval),
 	)
 
-	if len(artifactName) > progress.MaxNameWidth() {
-		artifactName = artifactName[0:progress.MaxNameWidth()]
-	}
-
 	return &interactiveProgress{
 		pg:           pg,
 		artifactName: artifactName,
+		out:          out,
 	}
 }
 
 func (p *interactiveProgress) Start(size int64) {
+	p.out.Notice(locale.Tr("builds_dl_downloading", p.artifactName))
 	prependDecorators := []decor.Decorator{
-		decor.Name(p.artifactName, decor.WC{W: progress.MaxNameWidth(), C: decor.DidentRight}),
+		decor.Name(locale.T("downloading")),
 		decor.OnComplete(
 			decor.Spinner(output.SpinnerFrames, decor.WCSyncSpace), "",
 		),
@@ -103,7 +101,7 @@ type nonInteractiveProgress struct {
 }
 
 func (p *nonInteractiveProgress) Start(_ int64) {
-	p.spinner = output.StartSpinner(p.out, locale.Tl("builds_dl_downloading", "Downloading {{.V0}}", p.artifactName), constants.TerminalAnimationInterval)
+	p.spinner = output.StartSpinner(p.out, locale.Tr("builds_dl_downloading", p.artifactName), constants.TerminalAnimationInterval)
 }
 
 func (p *nonInteractiveProgress) Inc(_ int) {}

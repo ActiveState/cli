@@ -10,8 +10,8 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/commit"
+	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	gqlmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -100,7 +100,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 		preposition = " to" // need leading whitespace
 	}
 
-	targetCommit, err := model.GetCommitWithinCommitHistory(latestCommit, strfmt.UUID(targetCommitID))
+	targetCommit, err := model.GetCommitWithinCommitHistory(latestCommit, strfmt.UUID(targetCommitID), r.auth)
 	if err != nil {
 		if err == model.ErrCommitNotInHistory {
 			return locale.WrapInputError(err, "err_revert_commit_not_found", "The commit [NOTICE]{{.V0}}[/RESET] was not found in the project's commit history.", commitID)
@@ -114,7 +114,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 	var orgs []gqlmodel.Organization
 	if targetCommit.Author != nil {
 		var err error
-		orgs, err = model.FetchOrganizationsByIDs([]strfmt.UUID{*targetCommit.Author})
+		orgs, err = model.FetchOrganizationsByIDs([]strfmt.UUID{*targetCommit.Author}, r.auth)
 		if err != nil {
 			return locale.WrapError(err, "err_revert_get_organizations", "Could not get organizations for current user")
 		}
@@ -147,7 +147,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Unable to set local commit")
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, revertCommit, true, target.TriggerRevert, r.svcModel, r.cfg)
+	err = runtime.RefreshRuntime(r.auth, r.out, r.analytics, r.project, revertCommit, true, target.TriggerRevert, r.svcModel, r.cfg)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

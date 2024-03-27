@@ -32,7 +32,6 @@ var Supported = []string{"en-US", "nl-NL"}
 var translateFunction func(translationID string, args ...interface{}) string
 
 var args = os.Args[1:]
-var exit = os.Exit
 
 //go:embed locales
 var localeFiles embed.FS

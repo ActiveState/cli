@@ -162,11 +162,16 @@ func ParseUserFacing(err error) (int, error) {
 }
 
 func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
-	var ee errs.Errorable
 	stack := "not provided"
+	var ee errs.Errorable
 	isErrs := errors.As(err, &ee)
-	if isErrs {
-		stack = ee.Stack().String()
+
+	// Get the stack closest to the root as that will most accurately tell us where the error originated
+	for childErr := err; childErr != nil; childErr = errors.Unwrap(childErr) {
+		var ee2 errs.Errorable
+		if errors.As(childErr, &ee2) {
+			stack = ee2.Stack().String()
+		}
 	}
 
 	_, hasMarshaller := err.(output.Marshaller)

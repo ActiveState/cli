@@ -64,3 +64,11 @@ func ArtifactIDsFromBuildPlanMap(from Map) []ArtifactID {
 	}
 	return ids
 }
+
+func ArtifactIDsFromArtifactSlice(from []Artifact) []ArtifactID {
+	ids := make([]ArtifactID, 0, len(from))
+	for _, artifact := range from {
+		ids = append(ids, artifact.ArtifactID)
+	}
+	return ids
+}

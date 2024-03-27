@@ -1,6 +1,8 @@
 package history
 
 import (
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -8,25 +10,28 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/commit"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/go-openapi/strfmt"
 )
 
 type primeable interface {
 	primer.Projecter
 	primer.Outputer
+	primer.Auther
 }
 
 type History struct {
 	project *project.Project
 	out     output.Outputer
+	auth    *authentication.Auth
 }
 
 func NewHistory(prime primeable) *History {
 	return &History{
 		prime.Project(),
 		prime.Output(),
+		prime.Auth(),
 	}
 }
 
@@ -53,12 +58,12 @@ func (h *History) Run(params *HistoryParams) error {
 		return locale.WrapError(err, "err_history_remote_branch", "Could not get branch by local branch name")
 	}
 
-	latestRemoteID, err := model.CommonParent(remoteBranch.CommitID, &localCommitID)
+	latestRemoteID, err := model.CommonParent(remoteBranch.CommitID, &localCommitID, h.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_history_common_parent", "Could not determine common parent commit")
 	}
 
-	commits, err := model.CommitHistoryFromID(localCommitID)
+	commits, err := model.CommitHistoryFromID(localCommitID, h.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_commit_history_commit_id", "Could not get commit history from commit ID.")
 	}
@@ -69,7 +74,7 @@ func (h *History) Run(params *HistoryParams) error {
 	}
 
 	authorIDs := authorIDsForCommits(commits)
-	orgs, err := model.FetchOrganizationsByIDs(authorIDs)
+	orgs, err := model.FetchOrganizationsByIDs(authorIDs, h.auth)
 	if err != nil {
 		return err
 	}

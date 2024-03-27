@@ -25,7 +25,7 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 	pjfile := projectfile.Project{
 		Project: projectURL,
 	}
-	pjfile.Persist()
+	require.NoError(t, pjfile.Persist())
 
 	os.Setenv("SHELL", "bash")
 	os.Setenv("ACTIVESTATE_PROJECT", "SHOULD NOT BE SET")
@@ -54,7 +54,7 @@ func TestRunCommandError(t *testing.T) {
 	pjfile := projectfile.Project{
 		Project: projectURL,
 	}
-	pjfile.Persist()
+	require.NoError(t, pjfile.Persist())
 
 	os.Setenv("SHELL", "bash")
 

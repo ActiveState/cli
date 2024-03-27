@@ -152,7 +152,7 @@ func filterSecrets(proj *project.Project, cfg keypairs.Configurable, auth *authe
 	if oldExpander != nil {
 		defer project.RegisterExpander("secrets", oldExpander)
 	}
-	expander := project.NewSecretExpander(secretsapi.Get(), proj, nil, cfg, auth)
+	expander := project.NewSecretExpander(secretsapi.Get(auth), proj, nil, cfg, auth)
 	project.RegisterExpander("secrets", expander.Expand)
 	project.ExpandFromProject(fmt.Sprintf("$%s", filter), proj)
 	accessedSecrets := expander.SecretsAccessed()
@@ -174,7 +174,7 @@ func filterSecrets(proj *project.Project, cfg keypairs.Configurable, auth *authe
 
 func defsToData(defs []*secretsModels.SecretDefinition, cfg keypairs.Configurable, proj *project.Project, auth *authentication.Auth) ([]*secretData, error) {
 	data := make([]*secretData, len(defs))
-	expander := project.NewSecretExpander(secretsapi.Get(), proj, nil, cfg, auth)
+	expander := project.NewSecretExpander(secretsapi.Get(auth), proj, nil, cfg, auth)
 
 	for i, def := range defs {
 		if def.Name == nil || def.Scope == nil {

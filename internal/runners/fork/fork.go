@@ -51,7 +51,7 @@ func (f *Fork) Run(params *Params) error {
 
 	if target.Owner == "" {
 		var err error
-		target.Owner, err = determineOwner(f.auth.WhoAmI(), f.prompt)
+		target.Owner, err = determineOwner(f.auth.WhoAmI(), f.prompt, f.auth)
 		if err != nil {
 			return errs.Wrap(err, "Cannot continue without an owner")
 		}
@@ -65,7 +65,7 @@ func (f *Fork) Run(params *Params) error {
 
 	f.out.Notice(locale.Tl("fork_forking", "Creating fork of {{.V0}} at {{.V1}}...", params.Namespace.String(), url))
 
-	_, err := model.CreateCopy(params.Namespace.Owner, params.Namespace.Project, target.Owner, target.Project, params.Private)
+	_, err := model.CreateCopy(params.Namespace.Owner, params.Namespace.Project, target.Owner, target.Project, params.Private, f.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_fork_project", "Could not create fork")
 	}
@@ -87,8 +87,8 @@ func (f *Fork) Run(params *Params) error {
 	return nil
 }
 
-func determineOwner(username string, prompter prompt.Prompter) (string, error) {
-	orgs, err := model.FetchOrganizations()
+func determineOwner(username string, prompter prompt.Prompter, auth *authentication.Auth) (string, error) {
+	orgs, err := model.FetchOrganizations(auth)
 	if err != nil {
 		return "", locale.WrapError(err, "err_fork_orgs", "Could not retrieve list of organizations that you belong to.")
 	}

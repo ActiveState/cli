@@ -158,7 +158,7 @@ func (i *invite) send(orgName string, asOwner bool, emails []string) (int, error
 
 func (i *invite) sendSingle(orgName string, asOwner bool, email string) error {
 	// ignore the invitation for now
-	_, err := model.InviteUserToOrg(orgName, asOwner, email)
+	_, err := model.InviteUserToOrg(orgName, asOwner, email, i.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_invite", "Failed to send invite to {{.V0}}", email)
 	}

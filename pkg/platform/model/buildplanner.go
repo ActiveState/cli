@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -73,6 +74,28 @@ func logRequestVariables(req gqlclient.Request) {
 		}
 		logging.Debug("Build Expression: %s", string(beData))
 	}
+}
+
+type SolverError struct {
+	wrapped          error
+	validationErrors []string
+	isTransient      bool
+}
+
+func (e *SolverError) Error() string {
+	return "buildplan_error"
+}
+
+func (e *SolverError) Unwrap() error {
+	return e.wrapped
+}
+
+func (e *SolverError) ValidationErrors() []string {
+	return e.validationErrors
+}
+
+func (e *SolverError) IsTransient() bool {
+	return e.isTransient
 }
 
 func init() {
@@ -625,6 +648,21 @@ func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, 
 		})
 	}
 	return requirements, nil
+}
+
+func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID, cfg Configurable, auth *authentication.Auth) (strfmt.UUID, error) {
+	platformIDs, err := filterPlatformIDs(hostPlatform, runtime.GOARCH, platforms, cfg, auth)
+	if err != nil {
+		return "", errs.Wrap(err, "filterPlatformIDs failed")
+	}
+
+	if len(platformIDs) == 0 {
+		return "", locale.NewInputError("err_recipe_no_platform")
+	} else if len(platformIDs) > 1 {
+		logging.Debug("Received multiple platform IDs. Picking the first one: %s", platformIDs[0])
+	}
+
+	return platformIDs[0], nil
 }
 
 func (bp *BuildPlanner) BuildTarget(owner, project, commitID, target string) error {

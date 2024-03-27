@@ -3,6 +3,7 @@ package e2e
 import (
 	"testing"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -26,9 +27,13 @@ func cleanUser(t *testing.T, username string, auth *authentication.Auth) error {
 }
 
 func getProjects(org string, auth *authentication.Auth) ([]*mono_models.Project, error) {
+	authClient, err := auth.Client()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get auth client")
+	}
 	params := projects.NewListProjectsParams()
 	params.SetOrganizationName(org)
-	listProjectsOK, err := auth.Client().Projects.ListProjects(params, auth.ClientAuth())
+	listProjectsOK, err := authClient.Projects.ListProjects(params, auth.ClientAuth())
 	if err != nil {
 		return nil, err
 	}
@@ -37,10 +42,15 @@ func getProjects(org string, auth *authentication.Auth) ([]*mono_models.Project,
 }
 
 func deleteUser(name string, auth *authentication.Auth) error {
+	authClient, err := auth.Client()
+	if err != nil {
+		return errs.Wrap(err, "Could not get auth client")
+	}
+
 	params := users.NewDeleteUserParams()
 	params.SetUsername(name)
 
-	_, err := auth.Client().Users.DeleteUser(params, auth.ClientAuth())
+	_, err = authClient.Users.DeleteUser(params, auth.ClientAuth())
 	if err != nil {
 		return err
 	}

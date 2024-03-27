@@ -126,7 +126,7 @@ func (a *Client) sendEvent(category, action, source, label string, dims ...*dime
 		userID = string(*a.auth.UserID())
 	}
 
-	dim := dimensions.NewDefaultDimensions(a.projectNameSpace, a.sessionToken, a.updateTag)
+	dim := dimensions.NewDefaultDimensions(a.projectNameSpace, a.sessionToken, a.updateTag, a.auth)
 	dim.OutputType = &a.output
 	dim.UserID = &userID
 	dim.Sequence = ptr.To(a.sequence)

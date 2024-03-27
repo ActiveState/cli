@@ -906,6 +906,31 @@ func (e *BuildExpression) SetDefaultTimestamp() error {
 	return nil
 }
 
+// MaybeSetDefaultTimestamp changes the solve node's "at_time" value to "$at_time" if and only if
+// the current value is the given timestamp.
+// Buildscripts prefer to use variables for at_time and define them outside the buildexpression as
+// the expression's commit time.
+// While modern buildexpressions use variables, older ones bake in the commit time. This function
+// exists primarily to update those older buildexpressions for use in buildscripts.
+func (e *BuildExpression) MaybeSetDefaultTimestamp(ts *strfmt.DateTime) error {
+	if ts == nil {
+		return nil // nothing to compare to
+	}
+	atTimeNode, err := e.getSolveAtTimeValue()
+	if err != nil {
+		return errs.Wrap(err, "Could not get %s node", AtTimeKey)
+	}
+	if strings.HasPrefix(*atTimeNode.Str, "$") {
+		return nil
+	}
+	if atTime, err := strfmt.ParseDateTime(*atTimeNode.Str); err == nil && atTime == *ts {
+		return e.SetDefaultTimestamp()
+	} else if err != nil {
+		return errs.Wrap(err, "Invalid timestamp: %s", *atTimeNode.Str)
+	}
+	return nil
+}
+
 // normalizeTimestamp normalizes the solve node's timestamp, if possible.
 // Platform timestamps may differ from the strfmt.DateTime format. For example, Platform
 // timestamps will have microsecond precision, while strfmt.DateTime will only have millisecond

@@ -15,8 +15,8 @@ import (
 type ErrKeypairNotFound struct{ *locale.LocalizedError }
 
 // FetchRaw fetchs the current user keypair or returns a failure.
-func FetchRaw(secretsClient *secretsapi.Client, cfg authentication.Configurable) (*secretModels.Keypair, error) {
-	kpOk, err := secretsClient.Keys.GetKeypair(nil, authentication.LegacyGet().ClientAuth())
+func FetchRaw(secretsClient *secretsapi.Client, cfg authentication.Configurable, auth *authentication.Auth) (*secretModels.Keypair, error) {
+	kpOk, err := secretsClient.Keys.GetKeypair(nil, auth.ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 404 {
 			return nil, &ErrKeypairNotFound{locale.WrapInputError(err, "keypair_err_not_found")}
@@ -29,10 +29,10 @@ func FetchRaw(secretsClient *secretsapi.Client, cfg authentication.Configurable)
 }
 
 // FetchPublicKey fetchs the PublicKey for a sepcific user.
-func FetchPublicKey(secretsClient *secretsapi.Client, user *mono_models.User) (Encrypter, error) {
+func FetchPublicKey(secretsClient *secretsapi.Client, user *mono_models.User, auth *authentication.Auth) (Encrypter, error) {
 	params := keys.NewGetPublicKeyParams()
 	params.UserID = user.UserID
-	pubKeyOk, err := secretsClient.Keys.GetPublicKey(params, authentication.LegacyGet().ClientAuth())
+	pubKeyOk, err := secretsClient.Keys.GetPublicKey(params, auth.ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 404 {
 			return nil, &ErrKeypairNotFound{locale.WrapInputError(err, "keypair_err_publickey_not_found", "", user.Username, user.UserID.String())}

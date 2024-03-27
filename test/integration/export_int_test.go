@@ -16,50 +16,6 @@ type ExportIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *ExportIntegrationTestSuite) TestExport_Export() {
-	suite.OnlyRunForTags(tagsuite.Export)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	ts.PrepareProject("cli-integration-tests/Export", "efe4433a-4c27-4b13-b27f-da0b3646d98e")
-	cp := ts.Spawn("export", "recipe")
-	cp.Expect("{\"camel_flags\":")
-	cp.ExpectExitCode(0)
-}
-
-func (suite *ExportIntegrationTestSuite) TestExport_ExportArg() {
-	suite.OnlyRunForTags(tagsuite.Export)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	ts.PrepareProject("cli-integration-tests/Export", "efe4433a-4c27-4b13-b27f-da0b3646d98e")
-	cp := ts.Spawn("export", "recipe")
-	cp.Expect("{\"camel_flags\":")
-	cp.ExpectExitCode(0)
-}
-
-func (suite *ExportIntegrationTestSuite) TestExport_ExportPlatform() {
-	suite.OnlyRunForTags(tagsuite.Export)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	ts.PrepareProject("cli-integration-tests/Export", "efe4433a-4c27-4b13-b27f-da0b3646d98e")
-	cp := ts.Spawn("export", "recipe", "--platform", "linux")
-	cp.Expect("{\"camel_flags\":")
-	cp.ExpectExitCode(0)
-}
-
-func (suite *ExportIntegrationTestSuite) TestExport_InvalidPlatform() {
-	suite.OnlyRunForTags(tagsuite.Export)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	ts.PrepareProject("cli-integration-tests/Export", "efe4433a-4c27-4b13-b27f-da0b3646d98e")
-	cp := ts.Spawn("export", "recipe", "--platform", "junk")
-	cp.ExpectExitCode(1)
-	ts.IgnoreLogErrors()
-}
-
 func (suite *ExportIntegrationTestSuite) TestExport_ConfigDir() {
 	suite.OnlyRunForTags(tagsuite.Export)
 	ts := e2e.New(suite.T(), false)
@@ -145,12 +101,6 @@ func (suite *ExportIntegrationTestSuite) TestJSON() {
 	cp.Expect(`{"value":`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
-
-	cp = ts.Spawn("export", "recipe", "-o", "json")
-	cp.Expect(`{`)
-	cp.Expect(`}`)
-	cp.ExpectExitCode(0)
-	// AssertValidJSON(suite.T(), cp) // recipe is too large to fit in terminal snapshot
 
 	cp = ts.Spawn("export", "log", "-o", "json")
 	cp.Expect(`{"logFile":"`)

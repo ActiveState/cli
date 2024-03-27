@@ -94,12 +94,12 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 		}
 	}
 
-	checkpoint, err := fetchCheckpoint(commit)
+	checkpoint, err := fetchCheckpoint(commit, l.auth)
 	if err != nil {
 		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_fetch_checkpoint", nstype))
 	}
 
-	language, err := model.LanguageByCommit(*commit)
+	language, err := model.LanguageByCommit(*commit, l.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_package_list_language", "Unable to get language from project")
 	}
@@ -230,13 +230,13 @@ func prepareCommit(commit string) (*strfmt.UUID, error) {
 	return &uuid, nil
 }
 
-func fetchCheckpoint(commit *strfmt.UUID) ([]*gqlModel.Requirement, error) {
+func fetchCheckpoint(commit *strfmt.UUID, auth *authentication.Auth) ([]*gqlModel.Requirement, error) {
 	if commit == nil {
 		logging.Debug("commit id is nil")
 		return nil, nil
 	}
 
-	checkpoint, _, err := model.FetchCheckpointForCommit(*commit)
+	checkpoint, _, err := model.FetchCheckpointForCommit(*commit, auth)
 	if err != nil && errors.Is(err, model.ErrNoData) {
 		return nil, locale.WrapInputError(err, "package_no_data")
 	}

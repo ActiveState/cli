@@ -27,7 +27,7 @@ func getTime(ts *captain.TimeValue, auth *authentication.Auth, proj *project.Pro
 	}
 
 	if ts.Time == nil && proj != nil {
-		latest, err := model.FetchLatestTimeStamp()
+		latest, err := model.FetchLatestTimeStamp(auth)
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to fetch latest Platform timestamp")
 		}
@@ -37,7 +37,7 @@ func getTime(ts *captain.TimeValue, auth *authentication.Auth, proj *project.Pro
 			return nil, errs.Wrap(err, "Unable to get commit ID")
 		}
 
-		atTime, err := model.FetchTimeStampForCommit(commitID)
+		atTime, err := model.FetchTimeStampForCommit(commitID, auth)
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to get commit time")
 		}

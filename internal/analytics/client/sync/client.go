@@ -137,7 +137,7 @@ func New(source string, cfg *config.Instance, auth *authentication.Auth, out out
 }
 
 func (a *Client) readConfig() {
-	doNotReport := (!a.cfg.Closed() && a.cfg.IsSet(constants.ReportAnalyticsConfig) && !a.cfg.GetBool(constants.ReportAnalyticsConfig)) ||
+	doNotReport := (!a.cfg.Closed() && !a.cfg.GetBool(constants.ReportAnalyticsConfig)) ||
 		strings.ToLower(os.Getenv(constants.DisableAnalyticsEnvVarName)) == "true"
 	a.sendReports = !doNotReport
 	logging.Debug("Sending Google Analytics reports? %v", a.sendReports)

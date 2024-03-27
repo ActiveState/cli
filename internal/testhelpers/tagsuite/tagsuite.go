@@ -67,6 +67,7 @@ const (
 	Python          = "python"
 	Refresh         = "refresh"
 	RemoteInstaller = "remote-installer"
+	Reset           = "reset"
 	Revert          = "revert"
 	Run             = "run"
 	Scripts         = "scripts"
