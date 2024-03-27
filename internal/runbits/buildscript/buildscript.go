@@ -103,7 +103,7 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 		script = remoteScript
 	}
 
-	if err := buildscript.Update(proj, script.AtTime, script.Expr, auth); err != nil {
+	if err := buildscript.Update(proj, script.AtTime, script.Expr); err != nil {
 		return false, errs.Wrap(err, "Could not update local build script.")
 	}
 

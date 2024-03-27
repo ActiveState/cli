@@ -520,7 +520,7 @@ func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 			return errs.Wrap(err, "Could not get remote build expr and time")
 		}
 
-		err = buildscript.Update(r.Project, atTime, expr, r.Auth)
+		err = buildscript.Update(r.Project, atTime, expr)
 		if err != nil {
 			return locale.WrapError(err, "err_update_build_script")
 		}

@@ -76,7 +76,7 @@ func Initialize(path string, auth *authentication.Auth) error {
 	return nil
 }
 
-func Update(proj projecter, atTime *strfmt.DateTime, newExpr *buildexpression.BuildExpression, auth *authentication.Auth) error {
+func Update(proj projecter, atTime *strfmt.DateTime, newExpr *buildexpression.BuildExpression) error {
 	script, err := ScriptFromProject(proj)
 	if err != nil {
 		return errs.Wrap(err, "Could not read build script")

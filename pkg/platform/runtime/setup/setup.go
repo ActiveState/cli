@@ -262,8 +262,8 @@ func (s *Setup) Update(buildResult *apimodel.BuildResult, commit *bpModel.Commit
 	}
 
 	if s.target.ProjectDir() != "" && s.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript.Update(s.target, buildResult.AtTime, buildResult.BuildExpression, s.auth); err != nil {
-			return errs.Wrap(err, "Could not update build script.")
+		if err := buildscript.Update(s.target, buildResult.AtTime, buildResult.BuildExpression); err != nil {
+			return errs.Wrap(err, "Could not update build script")
 		}
 	}
 

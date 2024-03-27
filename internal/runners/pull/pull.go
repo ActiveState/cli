@@ -245,7 +245,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	if err != nil {
 		switch {
 		case errors.Is(err, model.ErrMergeFastForward):
-			return buildscript.Update(p.project, atTimeB, exprB, p.auth)
+			return buildscript.Update(p.project, atTimeB, exprB)
 		case !errors.Is(err, model.ErrMergeCommitInHistory):
 			return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
 		}
@@ -272,7 +272,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	}
 
 	// Write the merged build expression as a local build script.
-	return buildscript.Update(p.project, atTime, mergedExpr, p.auth)
+	return buildscript.Update(p.project, atTime, mergedExpr)
 }
 
 func resolveRemoteProject(prj *project.Project) (*project.Namespaced, error) {
