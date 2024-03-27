@@ -2,6 +2,7 @@ package requirements
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -310,37 +311,44 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
 
-	// Solve runtime
-	rt, buildResult, commit, changedArtifacts, err := r.solve(commitID, ns)
-	if err != nil {
-		return errs.Wrap(err, "Could not solve runtime")
-	}
-
-	// Report CVE's
-	if err := r.cveReport(requirementName, requirementVersion, *changedArtifacts, operation, ns); err != nil {
-		return err
-	}
-
-	// Start runtime update UI
-	out.Notice("")
-	if !rt.HasCache() {
-		out.Notice(output.Title(locale.T("install_runtime")))
-		out.Notice(locale.T("install_runtime_info"))
-	} else {
-		out.Notice(output.Title(locale.T("update_runtime")))
-		out.Notice(locale.T("update_runtime_info"))
-	}
-
-	// refresh or install runtime
-	err = runbit.UpdateByReference(rt, buildResult, commit, r.Auth, r.Project, r.Output)
-	if err == nil || !runbits.IsBuildError(err) {
-		// If the error is not a build error we want to retain the changes
-		if err2 := r.updateCommitID(commitID); err2 != nil {
-			return locale.WrapError(err2, "err_package_update_commit_id")
+	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
+		// Solve runtime
+		rt, buildResult, commit, changedArtifacts, err := r.solve(commitID, ns)
+		if err != nil {
+			return errs.Wrap(err, "Could not solve runtime")
 		}
+
+		// Report CVE's
+		if err := r.cveReport(requirementName, requirementVersion, *changedArtifacts, operation, ns); err != nil {
+			return err
+		}
+
+		// Start runtime update UI
+		out.Notice("")
+		if !rt.HasCache() {
+			out.Notice(output.Title(locale.T("install_runtime")))
+			out.Notice(locale.T("install_runtime_info"))
+		} else {
+			out.Notice(output.Title(locale.T("update_runtime")))
+			out.Notice(locale.T("update_runtime_info"))
+		}
+
+		// refresh or install runtime
+		err = runbit.UpdateByReference(rt, buildResult, commit, r.Auth, r.Project, r.Output)
+		if err != nil {
+			if !runbits.IsBuildError(err) {
+				// If the error is not a build error we want to retain the changes
+				if err2 := r.updateCommitID(commitID); err2 != nil {
+					return errs.Pack(err, locale.WrapError(err2, "err_package_update_commit_id"))
+				}
+			}
+			return errs.Wrap(err, "Failed to refresh runtime")
+		}
+
 	}
-	if err != nil {
-		return errs.Wrap(err, "Failed to refresh runtime")
+
+	if err := r.updateCommitID(commitID); err != nil {
+		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
 	if !hasParentCommit {
