@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -22,9 +23,10 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 	if *rerr == nil {
 		return
 	}
-	var errNoMatchingPlatform *model.ErrNoMatchingPlatform
-	var errArtifactSetup *setup.ArtifactSetupErrors
+	var noMatchingPlatformErr *model.ErrNoMatchingPlatform
+	var artifactSetupErr *setup.ArtifactSetupErrors
 	var buildPlannerErr *bpModel.BuildPlannerError
+	var artifactErr *buildplan.ArtifactError
 
 	switch {
 	case errors.Is(*rerr, rationalize.ErrHeadless):
@@ -33,18 +35,18 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 			errs.SetInput())
 
 	// Could not find a platform that matches on the given branch, so suggest alternate branches if ones exist
-	case errors.As(*rerr, &errNoMatchingPlatform):
+	case errors.As(*rerr, &noMatchingPlatformErr):
 		branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), proj.BranchName())
 		if err == nil && len(branches) > 0 {
 			// Suggest alternate branches
 			*rerr = errs.NewUserFacing(locale.Tr(
 				"err_alternate_branches",
-				errNoMatchingPlatform.HostPlatform, errNoMatchingPlatform.HostArch,
+				noMatchingPlatformErr.HostPlatform, noMatchingPlatformErr.HostArch,
 				proj.BranchName(), strings.Join(branches, "\n - ")))
 		} else {
-			libcErr := errNoMatchingPlatform.LibcVersion != ""
+			libcErr := noMatchingPlatformErr.LibcVersion != ""
 			*rerr = errs.NewUserFacing(
-				locale.Tr("err_no_platform_data_remains", errNoMatchingPlatform.HostPlatform, errNoMatchingPlatform.HostArch),
+				locale.Tr("err_no_platform_data_remains", noMatchingPlatformErr.HostPlatform, noMatchingPlatformErr.HostArch),
 				errs.SetIf(libcErr, errs.SetInput()),
 				errs.SetIf(libcErr, errs.SetTips(locale.Tr("err_user_libc_solution", api.GetPlatformURL(fmt.Sprintf("%s/%s", proj.NamespaceString(), "customize")).String()))),
 			)
@@ -52,8 +54,8 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 
 	// If there was an artifact download error, say so, rather than reporting a generic "could not
 	// update runtime" error.
-	case errors.As(*rerr, &errArtifactSetup):
-		for _, err := range errArtifactSetup.Errors() {
+	case errors.As(*rerr, &artifactSetupErr):
+		for _, err := range artifactSetupErr.Errors() {
 			if !errs.Matches(err, &setup.ArtifactDownloadError{}) {
 				continue
 			}
@@ -78,6 +80,12 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 	// Buildscript is missing and needs to be recreated
 	case errors.Is(*rerr, runtime.NeedsBuildscriptResetError):
 		*rerr = errs.WrapUserFacing(*rerr, locale.T("notice_needs_buildscript_reset"), errs.SetInput())
+
+	// Artifact build errors
+	case errors.As(*rerr, &artifactErr):
+		errMsg := locale.Tr("err_build_artifact_failed_msg", artifactErr.Artifact.DisplayName)
+		*rerr = errs.WrapUserFacing(*rerr, locale.Tr("err_build_artifact_failed", errMsg,
+			strings.Join(artifactErr.Artifact.Errors, "\n"), artifactErr.Artifact.LogURL))
 
 	// If updating failed due to unidentified errors, and the user is not authenticated, add a tip suggesting that they authenticate as
 	// this may be a private project.

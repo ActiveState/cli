@@ -1552,6 +1552,8 @@ err_build_artifacts_failed:
     The following artifacts failed to build, please refer to their logs for more information:
     
     {{.V0}}
+err_build_artifact_failed_msg:
+  other: The artifact '[ACTIONABLE]{{.V0}}[/RESET]' failed to build.
 err_build_artifact_failed:
   other: |
     [NOTICE]{{.V0}}[/RESET]

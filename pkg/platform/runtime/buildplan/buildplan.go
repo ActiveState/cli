@@ -27,6 +27,7 @@ type ArtifactListing struct {
 
 type ArtifactError struct {
 	*locale.LocalizedError
+	Artifact *model.Artifact
 }
 
 func NewArtifactListing(build *model.Build, buildtimeClosure bool, cfg platformModel.Configurable, auth *authentication.Auth) (*ArtifactListing, error) {
@@ -222,6 +223,7 @@ func unpackArtifacts(nodeID strfmt.UUID, lookup map[strfmt.UUID]interface{}, res
 		if !allowFailedArtifacts {
 			return &ArtifactError{
 				locale.NewError("err_artifact_failed", "Artifact '{{.V0}}' failed to build", trimDisplayName(targetArtifact.DisplayName)),
+				targetArtifact,
 			}
 		}
 	}
