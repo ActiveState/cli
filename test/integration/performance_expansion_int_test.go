@@ -43,7 +43,6 @@ func (suite *PerformanceExpansionIntegrationTestSuite) startSvc(ts *e2e.Session)
 
 func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance() {
 	suite.OnlyRunForTags(tagsuite.Performance)
-	baseline := DefaultMaxTime //nolint:ineffassign
 
 	// Establish baseline
 	// Must not be called as a subtest as it breaks the running of other subtests
@@ -63,7 +62,7 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 		verbose: true,
 	})
 	variance := float64(median) + (float64(median) * DefaultVariance)
-	baseline = time.Duration(variance)
+	baseline := time.Duration(variance)
 
 	suite.Require().NotEqual(DefaultMaxTime, baseline)
 

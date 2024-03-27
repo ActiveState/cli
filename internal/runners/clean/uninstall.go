@@ -104,7 +104,7 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 	}
 
 	if err := events.WaitForEvents(5*time.Second, u.an.Close, logging.Close); err != nil {
-		return errs.Wrap(err, "Could not complete uninstallation")
+		return errs.Wrap(err, "Failed to wait for analytics and logging to close")
 	}
 
 	return nil

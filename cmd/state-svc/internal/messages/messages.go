@@ -76,8 +76,7 @@ func (m *Messages) Check(command string, flags []string) ([]*graph.MessageInfo, 
 	}
 	allMessages := cacheValue.([]*graph.MessageInfo)
 
-	// copy the base params
-	conditionParams := &(*m.baseParams) //nolint:staticcheck
+	conditionParams := *m.baseParams // copy
 	conditionParams.UserEmail = m.auth.Email()
 	conditionParams.UserName = m.auth.WhoAmI()
 	conditionParams.Command = command
@@ -87,10 +86,10 @@ func (m *Messages) Check(command string, flags []string) ([]*graph.MessageInfo, 
 		conditionParams.UserID = id.String()
 	}
 
-	logging.Debug("Checking %d messages with params: %#v", len(allMessages), *conditionParams)
+	logging.Debug("Checking %d messages with params: %#v", len(allMessages), conditionParams)
 
 	lastReportMap := m.cfg.GetStringMap(ConfigKeyLastReport)
-	msgs, err := check(conditionParams, allMessages, lastReportMap, time.Now())
+	msgs, err := check(&conditionParams, allMessages, lastReportMap, time.Now())
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not check messages")
 	}

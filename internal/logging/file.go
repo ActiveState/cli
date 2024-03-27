@@ -95,7 +95,7 @@ func (l *fileHandler) emit(ctx *MessageContext, message string, args ...interfac
 
 	message = l.formatter.Format(ctx, message, args...)
 	if l.verbose.value() {
-		fmt.Fprintf(os.Stderr, "(PID %d) %s", os.Getpid(), message)
+		fmt.Fprintf(os.Stderr, "(PID %d) %s\n", os.Getpid(), message)
 	}
 
 	if l.file == nil {

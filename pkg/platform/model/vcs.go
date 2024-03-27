@@ -330,12 +330,15 @@ func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64, auth *authent
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not get auth client")
 		}
-		res, err = authClient.VersionControl.GetCommitHistory(params, auth.ClientAuth()) //nolint:staticcheck,ineffassign
+		res, err = authClient.VersionControl.GetCommitHistory(params, auth.ClientAuth())
+		if err != nil {
+			return nil, locale.WrapError(err, "err_get_commit_history", "", api.ErrorMessageFromPayload(err))
+		}
 	} else {
 		res, err = mono.New().VersionControl.GetCommitHistory(params, nil)
-	}
-	if err != nil {
-		return nil, locale.WrapError(err, "err_get_commit_history", "", api.ErrorMessageFromPayload(err))
+		if err != nil {
+			return nil, locale.WrapError(err, "err_get_commit_history", "", api.ErrorMessageFromPayload(err))
+		}
 	}
 
 	return res.Payload, nil

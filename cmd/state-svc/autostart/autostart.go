@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 )
 
@@ -26,12 +27,12 @@ func RegisterConfigListener(cfg *config.Instance) error {
 		if cfg.GetBool(constants.AutostartSvcConfigKey) {
 			logging.Debug("Enabling autostart")
 			if err := autostart.Enable(app.Path(), Options); err != nil {
-				logging.Error("Failed to enable autostart: %s", err)
+				multilog.Error("Failed to enable autostart: %s", errs.JoinMessage(err))
 			}
 		} else {
 			logging.Debug("Disabling autostart")
 			if err := autostart.Disable(app.Path(), Options); err != nil {
-				logging.Error("Failed to disable autostart: %s", err)
+				multilog.Error("Failed to disable autostart: %s", errs.JoinMessage(err))
 			}
 		}
 	})

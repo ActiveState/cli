@@ -598,17 +598,15 @@ func (s *Session) InstallerLog() string {
 	if err != nil {
 		return fmt.Sprintf("Could not list log dir: %v", err)
 	}
-	lines := []string{}
 	for _, file := range files {
 		if !strings.HasPrefix(filepath.Base(file), "state-installer") {
 			continue
 		}
 		b := fileutils.ReadFileUnsafe(file)
-		lines = append(lines, filepath.Base(file)+":"+strings.Split(string(b), "\n")[0]) //nolint:staticcheck,ineffassign
 		return string(b) + "\n\nCurrent time: " + time.Now().String()
 	}
 
-	return fmt.Sprintf("Could not find state-installer log, checked under %s, found: \n%v\n, files: \n%v\n", logDir, lines, files)
+	return fmt.Sprintf("Could not find state-installer log, checked under %s, found: \n, files: \n%v\n", logDir, files)
 }
 
 func (s *Session) SvcLog() string {

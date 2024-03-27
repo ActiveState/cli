@@ -62,7 +62,7 @@ func link(fpath, symlink string) error {
 
 func newShortcut(target string) (*ole.IDispatch, error) {
 	// ALWAYS errors with "Incorrect function", which can apparently be safely ignored..
-	ole.CoInitialize(0) //nolint:errcheck
+	_ = ole.CoInitialize(0)
 
 	oleShellObject, err := oleutil.CreateObject("WScript.Shell")
 	if err != nil {

@@ -7,7 +7,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 const (
@@ -28,7 +28,7 @@ func GetTerminalColumns() int {
 		uintptr(syscall.TIOCGWINSZ),
 		uintptr(unsafe.Pointer(&ws)))
 	if err != 0 {
-		multilog.Error("Error getting terminal size: %v", err)
+		logging.Error("Error getting terminal size: %v", err)
 		return termSizeFallback
 	}
 

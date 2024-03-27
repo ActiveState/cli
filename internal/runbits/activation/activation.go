@@ -27,7 +27,7 @@ func ActivateAndWait(
 	ss subshell.SubShell,
 	cfg *config.Instance,
 	an analytics.Dispatcher,
-	changeDirectory bool) (rerr error) {
+	changeDirectory bool) error {
 
 	logging.Debug("Activating and waiting")
 

@@ -1,3 +1,6 @@
+//go:build !darwin
+// +build !darwin
+
 package camel
 
 import (
@@ -17,7 +20,7 @@ import (
 // InstallFromArchive will unpack the installer archive, locate the install script, and then use the installer
 // script to install an ActivePython runtime to the configured runtime dir. Any failures
 // during this process will result in a failed installation and the install-dir being removed.
-func (m *MetaData) pythonRelocationDir(installRoot string) (string, error) { //nolint:unused
+func (m *MetaData) pythonRelocationDir(installRoot string) (string, error) {
 	python, err := locatePythonExecutable(installRoot)
 	if err != nil {
 		return "", err
@@ -33,7 +36,7 @@ func (m *MetaData) pythonRelocationDir(installRoot string) (string, error) { //n
 }
 
 // locatePythonExecutable will locate the path to the python binary in the runtime dir.
-func locatePythonExecutable(installDir string) (string, error) { //nolint:unused
+func locatePythonExecutable(installDir string) (string, error) {
 	binPath := filepath.Join(installDir, "bin")
 	python2 := filepath.Join(installDir, "bin", constants.ActivePython2Executable)
 	python3 := filepath.Join(installDir, "bin", constants.ActivePython3Executable)
@@ -57,7 +60,7 @@ func locatePythonExecutable(installDir string) (string, error) { //nolint:unused
 }
 
 // extractRelocationPrefix will extract the prefix that needs to be replaced for this installation.
-func extractPythonRelocationPrefix(installDir string, python string) (string, error) { //nolint:unused
+func extractPythonRelocationPrefix(installDir string, python string) (string, error) {
 	prefixBytes, err := exec.Command(python, "-c", "import activestate; print('\\n'.join(activestate.prefixes))").Output()
 	logging.Debug("bin: %s", python)
 	logging.Debug("OUTPUT: %s", string(prefixBytes))

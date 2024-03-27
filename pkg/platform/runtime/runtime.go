@@ -284,8 +284,8 @@ func (r *Runtime) recordCompletion(err error) {
 		errorType = "buildplan"
 	case errs.Matches(err, &setup.ArtifactSetupErrors{}):
 		if setupErrors := (&setup.ArtifactSetupErrors{}); errors.As(err, &setupErrors) {
-			// Label the loop so we can break out of it when we find the first download
-			// or build error.
+		// Label the loop so we can break out of it when we find the first download
+		// or build error.
 		Loop:
 			for _, err := range setupErrors.Errors() {
 				switch {
