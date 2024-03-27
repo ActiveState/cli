@@ -3,6 +3,7 @@ package reset
 import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -125,8 +126,10 @@ func (r *Reset) Run(params *Params) error {
 
 	// Ensure the buildscript exists. Normally we should never do this, but reset is used for resetting from a corrupted
 	// state, so it is appropriate.
-	if err := buildscript.Initialize(r.project.Dir(), r.auth); err != nil {
-		return errs.Wrap(err, "Unable to initialize buildscript")
+	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		if err := buildscript.Initialize(r.project.Dir(), r.auth); err != nil {
+			return errs.Wrap(err, "Unable to initialize buildscript")
+		}
 	}
 
 	_, err = runtime.SolveAndUpdate(r.auth, r.out, r.analytics, r.project, &commitID, target.TriggerReset, r.svcModel, r.cfg, runtime.OptOrderChanged)
