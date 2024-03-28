@@ -4,7 +4,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,7 +17,7 @@ func (i *Installer) sanitizeInstallPath() error {
 		return nil
 	}
 
-	files, err := ioutil.ReadDir(i.path)
+	files, err := os.ReadDir(i.path)
 	if err != nil {
 		return errs.Wrap(err, "Could not installation directory: %s", i.path)
 	}

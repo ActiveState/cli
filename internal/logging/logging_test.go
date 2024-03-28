@@ -28,7 +28,7 @@ func (l *Test1Handler) Output() io.Writer {
 }
 
 func (l *Test1Handler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
-	l.messages = append(l.messages, fmt.Sprintf("%s", message))
+	l.messages = append(l.messages, message)
 
 	return nil
 }

@@ -35,24 +35,24 @@ func createFromMixed(data [][]interface{}, format byte) []*TabulateRow {
 	for index_1, element := range data {
 		normalized := make([]string, len(element))
 		for index, el := range element {
-			switch el.(type) {
+			switch v := el.(type) {
 			case int32:
-				quoted := strconv.QuoteRuneToASCII(el.(int32))
+				quoted := strconv.QuoteRuneToASCII(v)
 				normalized[index] = quoted[1 : len(quoted)-1]
 			case int:
-				normalized[index] = strconv.Itoa(el.(int))
+				normalized[index] = strconv.Itoa(v)
 			case int64:
-				normalized[index] = strconv.FormatInt(el.(int64), 10)
+				normalized[index] = strconv.FormatInt(v, 10)
 			case bool:
-				normalized[index] = strconv.FormatBool(el.(bool))
+				normalized[index] = strconv.FormatBool(v)
 			case float64:
-				normalized[index] = strconv.FormatFloat(el.(float64), format, -1, 64)
+				normalized[index] = strconv.FormatFloat(v, format, -1, 64)
 			case uint64:
-				normalized[index] = strconv.FormatUint(el.(uint64), 10)
+				normalized[index] = strconv.FormatUint(v, 10)
 			case nil:
 				normalized[index] = "nil"
 			default:
-				normalized[index] = fmt.Sprintf("%s", el)
+				normalized[index] = fmt.Sprintf("%s", v)
 			}
 		}
 		rows[index_1] = &TabulateRow{Elements: normalized}

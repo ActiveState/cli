@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package deploy
@@ -60,7 +61,8 @@ func link(fpath, symlink string) error {
 }
 
 func newShortcut(target string) (*ole.IDispatch, error) {
-	ole.CoInitialize(0) // ALWAYS errors with "Incorrect function", which can apparently be safely ignored..
+	// ALWAYS errors with "Incorrect function", which can apparently be safely ignored..
+	_ = ole.CoInitialize(0)
 
 	oleShellObject, err := oleutil.CreateObject("WScript.Shell")
 	if err != nil {

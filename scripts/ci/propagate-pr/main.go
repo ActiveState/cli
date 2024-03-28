@@ -135,7 +135,7 @@ func run() error {
 		stdout, stderr, err = merge(root, v.SourceBranch, commitMessage)
 		if err != nil {
 			conflictOnlyInVersionTxt := strings.Count(stdout, "CONFLICT (content): Merge conflict in") == 1 &&
-				strings.Index(stdout, "Merge conflict in version.txt") != -1
+				strings.Contains(stdout, "Merge conflict in version.txt")
 
 			if conflictOnlyInVersionTxt {
 				// Abort the conflicted merge and then redo it, preferring the target branch's version.txt.

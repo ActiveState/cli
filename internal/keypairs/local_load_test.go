@@ -38,7 +38,10 @@ func (suite *KeypairLocalLoadTestSuite) TestNoKeyFileFound() {
 func (suite *KeypairLocalLoadTestSuite) assertTooPermissive(fileMode os.FileMode) {
 	tmpKeyName := fmt.Sprintf("test-rsa-%0.4o", fileMode)
 	keyFile := suite.createConfigDirFile(tmpKeyName+".key", fileMode)
-	defer osutil.RemoveConfigFile(suite.cfg.ConfigPath(), tmpKeyName+".key")
+	defer func() {
+		err := osutil.RemoveConfigFile(suite.cfg.ConfigPath(), tmpKeyName+".key")
+		suite.Require().NoError(err)
+	}()
 	suite.Require().NoError(keyFile.Close())
 
 	kp, err := keypairs.Load(suite.cfg, tmpKeyName)
@@ -62,7 +65,8 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_KeypairParseError() {
 	keyFile := suite.createConfigDirFile(keyName+".key", 0600)
 	defer osutil.RemoveConfigFile(suite.cfg.ConfigPath(), keyName+".key")
 
-	keyFile.WriteString("this will never parse")
+	_, err := keyFile.WriteString("this will never parse")
+	suite.Require().NoError(err)
 	suite.Require().NoError(keyFile.Close())
 
 	kp, err := keypairs.Load(suite.cfg, keyName)
@@ -75,7 +79,8 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_EncryptedKeypairParseFailu
 	keyFile := suite.createConfigDirFile(keyName+".key", 0600)
 	defer osutil.RemoveConfigFile(suite.cfg.ConfigPath(), keyName+".key")
 
-	keyFile.WriteString(suite.readTestFile("test-keypair-encrypted.key"))
+	_, err := keyFile.WriteString(suite.readTestFile("test-keypair-encrypted.key"))
+	suite.Require().NoError(err)
 	suite.Require().NoError(keyFile.Close())
 
 	kp, err := keypairs.Load(suite.cfg, keyName)
@@ -88,7 +93,8 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_UnencryptedKeypairParseSuc
 	keyFile := suite.createConfigDirFile(keyName+".key", 0600)
 	defer osutil.RemoveConfigFile(suite.cfg.ConfigPath(), keyName+".key")
 
-	keyFile.WriteString(suite.readTestFile("test-keypair.key"))
+	_, err := keyFile.WriteString(suite.readTestFile("test-keypair.key"))
+	suite.Require().NoError(err)
 	suite.Require().NoError(keyFile.Close())
 
 	kp, err := keypairs.Load(suite.cfg, keyName)
@@ -101,7 +107,8 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_WithDefaults() {
 	keyFile := suite.createConfigDirFile(keyName+".key", 0600)
 	defer osutil.RemoveConfigFile(suite.cfg.ConfigPath(), keyName+".key")
 
-	keyFile.WriteString(suite.readTestFile("test-keypair.key"))
+	_, err := keyFile.WriteString(suite.readTestFile("test-keypair.key"))
+	suite.Require().NoError(err)
 	suite.Require().NoError(keyFile.Close())
 
 	kp, err := keypairs.LoadWithDefaults(suite.cfg)

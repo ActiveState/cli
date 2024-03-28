@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -14,7 +13,7 @@ import (
 )
 
 func TestCreateUpdate(t *testing.T) {
-	dir, err := ioutil.TempDir(os.TempDir(), "update-generator-test")
+	dir, err := os.MkdirTemp(os.TempDir(), "update-generator-test")
 	if err != nil {
 		log.Fatalf("Cannot create temp dir: %s", err.Error())
 	}

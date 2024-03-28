@@ -65,7 +65,7 @@ require (
 	golang.org/x/net v0.8.0
 	golang.org/x/sys v0.12.0
 	golang.org/x/term v0.6.0
-	golang.org/x/text v0.8.0
+	golang.org/x/text v0.14.0
 	gopkg.in/AlecAivazis/survey.v1 v1.8.8
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/toast.v1 v1.0.0-20180812000517-0a84660828b2

@@ -441,16 +441,6 @@ func (s *Session) DeleteUUIDProjects(org string) {
 	s.NotifyProjectCreated(org, deleteUUIDProjects)
 }
 
-func observeSendFn(s *Session) func(string, int, error) {
-	return func(msg string, num int, err error) {
-		if err == nil {
-			return
-		}
-
-		s.T.Fatalf("Could not send data to terminal\nerror: %v", err)
-	}
-}
-
 func (s *Session) DebugMessage(prefix string) string {
 	var sectionStart, sectionEnd string
 	sectionStart = "\n=== "
@@ -604,18 +594,19 @@ func (s *Session) InstallerLog() string {
 	if !fileutils.DirExists(logDir) {
 		return ""
 	}
-	files := fileutils.ListDirSimple(logDir, false)
-	lines := []string{}
+	files, err := fileutils.ListDirSimple(logDir, false)
+	if err != nil {
+		return fmt.Sprintf("Could not list log dir: %v", err)
+	}
 	for _, file := range files {
 		if !strings.HasPrefix(filepath.Base(file), "state-installer") {
 			continue
 		}
 		b := fileutils.ReadFileUnsafe(file)
-		lines = append(lines, filepath.Base(file)+":"+strings.Split(string(b), "\n")[0])
 		return string(b) + "\n\nCurrent time: " + time.Now().String()
 	}
 
-	return fmt.Sprintf("Could not find state-installer log, checked under %s, found: \n%v\n, files: \n%v\n", logDir, lines, files)
+	return fmt.Sprintf("Could not find state-installer log, checked under %s, found: \n, files: \n%v\n", logDir, files)
 }
 
 func (s *Session) SvcLog() string {
@@ -623,7 +614,10 @@ func (s *Session) SvcLog() string {
 	if !fileutils.DirExists(logDir) {
 		return ""
 	}
-	files := fileutils.ListDirSimple(logDir, false)
+	files, err := fileutils.ListDirSimple(logDir, false)
+	if err != nil {
+		return fmt.Sprintf("Could not list log dir: %v", err)
+	}
 	lines := []string{}
 	for _, file := range files {
 		if !strings.HasPrefix(filepath.Base(file), "state-svc") {
@@ -648,7 +642,7 @@ func (s *Session) LogFiles() []string {
 		return result
 	}
 
-	filepath.WalkDir(logDir, func(path string, f fs.DirEntry, err error) error {
+	err := filepath.WalkDir(logDir, func(path string, f fs.DirEntry, err error) error {
 		if err != nil {
 			panic(err)
 		}
@@ -659,6 +653,9 @@ func (s *Session) LogFiles() []string {
 		result = append(result, path)
 		return nil
 	})
+	if err != nil {
+		fmt.Printf("Error walking log dir: %v", err)
+	}
 
 	return result
 }

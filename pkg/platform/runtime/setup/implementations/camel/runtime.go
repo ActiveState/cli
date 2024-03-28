@@ -1,7 +1,6 @@
 package camel
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -27,7 +26,7 @@ func (s *Setup) DeleteOutdatedArtifacts(_ artifact.ArtifactChangeset, _, already
 	if len(alreadyInstalled) != 0 {
 		return nil
 	}
-	files, err := ioutil.ReadDir(s.store.InstallPath())
+	files, err := os.ReadDir(s.store.InstallPath())
 	if err != nil {
 		return errs.Wrap(err, "Error reading previous camel installation")
 	}

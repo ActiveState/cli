@@ -14,7 +14,7 @@ type packedErrors struct {
 func (e *packedErrors) IsTransient() {}
 
 func (e *packedErrors) Error() string {
-	return fmt.Sprintf("packed multiple errors from rtutils")
+	return "packed multiple errors from rtutils"
 }
 
 func (e *packedErrors) Unwrap() []error {
@@ -32,8 +32,8 @@ func CurrentFile() string {
 	pc = pc[:n]
 	frames := runtime.CallersFrames(pc)
 
-	frame, _ := frames.Next()
-	frame, _ = frames.Next() // Skip rtutils.go
+	frames.Next()
+	frame, _ := frames.Next() // Skip rtutils.go
 
 	return frame.File
 }

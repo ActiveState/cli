@@ -69,7 +69,7 @@ func init() {
 	procGetStdHandle = kernel32.NewProc("GetStdHandle")
 	hStdout, _, _ = procGetStdHandle.Call(uintptr(stdOutHandle))
 	bufferInfo = getConsoleScreenBufferInfo(hStdout)
-	syscall.LoadDLL("")
+	_, _ = syscall.LoadDLL("")
 }
 
 type Styler struct {

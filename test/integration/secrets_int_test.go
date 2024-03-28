@@ -14,7 +14,6 @@ import (
 
 type SecretsIntegrationTestSuite struct {
 	tagsuite.Suite
-	originalWd string
 }
 
 func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {

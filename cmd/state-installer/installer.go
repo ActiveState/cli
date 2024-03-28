@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -194,7 +193,7 @@ func detectCorruptedInstallDir(path string) error {
 	}
 
 	// Detect if the install dir has files in it
-	files, err := ioutil.ReadDir(path)
+	files, err := os.ReadDir(path)
 	if err != nil {
 		return errs.Wrap(err, "Could not read directory: %s", path)
 	}

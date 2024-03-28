@@ -2,7 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -30,7 +29,7 @@ type GitTestSuite struct {
 func (suite *GitTestSuite) BeforeTest(suiteName, testName string) {
 
 	var err error
-	suite.dir, err = ioutil.TempDir("", testName)
+	suite.dir, err = os.MkdirTemp("", testName)
 	suite.NoError(err, "could not create a temporary directory")
 
 	repo, err := git.PlainInit(suite.dir, false)
@@ -51,6 +50,7 @@ func (suite *GitTestSuite) BeforeTest(suiteName, testName string) {
 	suite.NoError(err, "could not add tempfile to staging")
 
 	_, err = worktree.Add("activestate.yaml")
+	suite.NoError(err, "could not add projectfile to staging")
 
 	commit, err := worktree.Commit("commit for test", &git.CommitOptions{
 		Author: &object.Signature{
@@ -59,11 +59,12 @@ func (suite *GitTestSuite) BeforeTest(suiteName, testName string) {
 			When:  time.Now(),
 		},
 	})
+	suite.NoError(err, "could not create a commit")
 
 	_, err = repo.CommitObject(commit)
 	suite.NoError(err, "could not commit testfile")
 
-	suite.anotherDir, err = ioutil.TempDir("", "TestMoveFiles")
+	suite.anotherDir, err = os.MkdirTemp("", "TestMoveFiles")
 	suite.NoError(err, "could not create another temporary directory")
 }
 

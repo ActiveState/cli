@@ -151,7 +151,7 @@ func (p *PackageValue) Set(s string) error {
 		p.Version = strings.TrimSpace(v[1])
 		s = v[0]
 	}
-	if strings.Index(s, "/") == -1 {
+	if !strings.Contains(s, "/") {
 		p.Name = strings.TrimSpace(s)
 		return nil
 	}

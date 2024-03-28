@@ -105,7 +105,7 @@ func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 	cp := ts.Spawn(tagsuite.Auth, "--output", method)
 	cp.Expect(`"}`)
 	cp.ExpectExitCode(0)
-	suite.Contains(cp.Output(), fmt.Sprintf("%s", string(expected)))
+	suite.Contains(cp.Output(), string(expected))
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {

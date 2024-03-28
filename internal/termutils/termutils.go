@@ -3,7 +3,7 @@ package termutils
 import (
 	"os"
 
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 
 	"github.com/ActiveState/cli/internal/logging"
 )
@@ -12,7 +12,7 @@ const fallbackWidth = 100
 const maxWidth = 160
 
 func GetWidth() int {
-	termWidth, _, err := terminal.GetSize(int(os.Stdout.Fd()))
+	termWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
 		logging.Debug("Cannot get terminal size: %v", err)
 		termWidth = fallbackWidth

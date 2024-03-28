@@ -2,7 +2,6 @@ package envdef_test
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -108,7 +107,7 @@ func (suite *EnvironmentTestSuite) TestSharedTests() {
 		IsError     bool                           `json:"error"`
 	}
 
-	td, err := ioutil.ReadFile("runtime_test_cases.json")
+	td, err := os.ReadFile("runtime_test_cases.json")
 	require.NoError(suite.T(), err)
 
 	cases := &[]testCase{}
@@ -172,7 +171,7 @@ func (suite *EnvironmentTestSuite) TestGetEnv() {
 }
 
 func (suite *EnvironmentTestSuite) TestFindBinPathFor() {
-	tmpDir, err := ioutil.TempDir("", "")
+	tmpDir, err := os.MkdirTemp("", "")
 	require.NoError(suite.T(), err, "creating temporary directory")
 	defer os.RemoveAll(tmpDir)
 

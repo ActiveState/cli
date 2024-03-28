@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/google/uuid"
 )
@@ -124,9 +124,9 @@ func storageDirectory(base BaseDirLocation) (string, error) {
 
 // readFile reads the content of a file
 func readFile(filePath string) ([]byte, error) {
-	b, err := ioutil.ReadFile(filePath)
+	b, err := os.ReadFile(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("ioutil.ReadFile %s failed: %w", filePath, err)
+		return nil, fmt.Errorf("os.ReadFile %s failed: %w", filePath, err)
 	}
 	return b, nil
 }
@@ -177,7 +177,7 @@ func fileExists(path string) bool {
 }
 
 // writeFile writes data to a file, if it exists it is overwritten, if it doesn't exist it is created and data is written
-func writeFile(filePath string, data []byte) error {
+func writeFile(filePath string, data []byte) (rerr error) {
 	err := mkdirUnlessExists(filepath.Dir(filePath))
 	if err != nil {
 		return err
@@ -190,7 +190,12 @@ func writeFile(filePath string, data []byte) error {
 		if err := os.Chmod(filePath, 0644); err != nil {
 			return fmt.Errorf("os.Chmod %s failed: %w", filePath, err)
 		}
-		defer os.Chmod(filePath, stat.Mode().Perm())
+		defer func() {
+			err = os.Chmod(filePath, stat.Mode().Perm())
+			if err != nil {
+				rerr = errs.Pack(rerr, errs.Wrap(err, "os.Chmod %s failed", filePath))
+			}
+		}()
 	}
 
 	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)

@@ -8,6 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 
@@ -247,7 +250,7 @@ func transformVersion(requirements *buildexpression.Var) *buildexpression.Ap {
 					Assignment: &buildexpression.Var{Name: "value", Value: &buildexpression.Value{Str: o.Value.Str}},
 				}}
 			case buildexpression.RequirementComparatorKey:
-				ap.Name = strings.Title(*o.Value.Str)
+				ap.Name = cases.Title(language.English).String(*o.Value.Str)
 			}
 		}
 		aps = append(aps, ap)
@@ -333,7 +336,7 @@ func valueString(v *buildexpression.Value) string {
 		return *v.Ident
 	}
 
-	return fmt.Sprintf("[\n]") // participle does not create v.List if it's empty
+	return "[\n]" // participle does not create v.List if it's empty
 }
 
 // inlineFunctions contains buildscript function names whose arguments should all be written on a

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -15,10 +16,18 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
+
+func setup(t *testing.T) {
+	root, err := environment.GetRootPath()
+	assert.NoError(t, err, "Should detect root path")
+	err = os.Chdir(filepath.Join(root, "test"))
+	assert.NoError(t, err, "Should change to test directory")
+}
 
 func TestBash(t *testing.T) {
 	setup(t)
@@ -47,7 +56,8 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 	pjfile := projectfile.Project{
 		Project: projectURL,
 	}
-	pjfile.Persist()
+	err := pjfile.Persist()
+	require.NoError(t, err)
 	os.Setenv("ComSpec", "C:\\WINDOWS\\system32\\cmd.exe")
 	os.Setenv("ACTIVESTATE_PROJECT", "SHOULD NOT BE SET")
 	os.Unsetenv("SHELL")
@@ -77,7 +87,8 @@ func TestRunCommandError(t *testing.T) {
 	pjfile := projectfile.Project{
 		Project: projectURL,
 	}
-	pjfile.Persist()
+	err := pjfile.Persist()
+	require.NoError(t, err)
 
 	os.Unsetenv("SHELL")
 

@@ -3,7 +3,6 @@ package workflow_helpers
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"sync"
 	"time"
@@ -106,7 +105,7 @@ func (rlt *rateLimitTransport) RoundTrip(req *http.Request) (*http.Response, err
 
 	if rlErr, ok := ghErr.(*github.RateLimitError); ok {
 		rlt.delayNextRequest = false
-		retryAfter := rlErr.Rate.Reset.Sub(time.Now())
+		retryAfter := time.Until(rlErr.Rate.Reset.Time)
 		logging.Debug("Rate limit %d reached, sleeping for %s (until %s) before retrying",
 			rlErr.Rate.Limit, retryAfter, time.Now().Add(retryAfter))
 		time.Sleep(retryAfter)
@@ -149,7 +148,7 @@ func drainBody(b io.ReadCloser) (r1, r2 io.ReadCloser, err error) {
 	if err = b.Close(); err != nil {
 		return nil, b, err
 	}
-	return ioutil.NopCloser(&buf), ioutil.NopCloser(bytes.NewReader(buf.Bytes())), nil
+	return io.NopCloser(&buf), io.NopCloser(bytes.NewReader(buf.Bytes())), nil
 }
 
 func isWriteMethod(method string) bool {

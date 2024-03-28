@@ -4,7 +4,6 @@
 package camel
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -22,7 +21,7 @@ import (
 func (m *MetaData) Prepare(installRoot string) error {
 	frameWorkDir := "Library/Frameworks/Python.framework/Versions/"
 	m.BinaryLocations = []MetaDataBinary{
-		MetaDataBinary{
+		{
 			Path:     filepath.Join(frameWorkDir, "Current", "bin"),
 			Relative: true,
 		},
@@ -38,7 +37,7 @@ func (m *MetaData) Prepare(installRoot string) error {
 	libDir := filepath.Join(installRoot, frameWorkDir, "Current", "lib")
 	dirRe := regexp.MustCompile(`python\d+.\d+`)
 
-	files, err := ioutil.ReadDir(libDir)
+	files, err := os.ReadDir(libDir)
 	if err != nil {
 		return errs.Wrap(err, "OS failure")
 	}
@@ -67,7 +66,7 @@ func (m *MetaData) Prepare(installRoot string) error {
 		// the binaries are actually in a versioned directory
 		// this version is likely the same as the found above, but it doesn't hurt to get explicitly
 		dirRe = regexp.MustCompile(`\d+(?:\.\d+)+`)
-		files, err = ioutil.ReadDir(filepath.Join(installRoot, frameWorkDir))
+		files, err = os.ReadDir(filepath.Join(installRoot, frameWorkDir))
 		if err != nil {
 			return errs.Wrap(err, "OS failure")
 		}

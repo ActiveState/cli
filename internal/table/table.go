@@ -13,15 +13,9 @@ import (
 
 const dash = "\u2500"
 const linebreak = "\n"
-const linebreakRune = '\n'
 const padding = 2
 
 type FormatFunc func(string, ...interface{}) string
-
-type entry struct {
-	line   string
-	length int
-}
 
 type row struct {
 	columns []string
@@ -180,7 +174,7 @@ func renderRow(providedColumns []string, colWidths []int) string {
 
 	// Combine column widths if we have a spanned column
 	if len(widths) < len(colWidths) {
-		widths[len(widths)-1] = mathutils.Total(colWidths[len(widths)-1 : len(colWidths)]...)
+		widths[len(widths)-1] = mathutils.Total(colWidths[len(widths)-1:]...)
 	}
 
 	croppedColumns := []colorize.CroppedLines{}
@@ -214,9 +208,4 @@ func renderRow(providedColumns []string, colWidths []int) string {
 	}
 
 	return strings.TrimRight(strings.Join(lines, linebreak), linebreak)
-}
-
-func pad(v string) string {
-	padded := strings.Repeat(" ", padding)
-	return padded + v + padded
 }

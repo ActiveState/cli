@@ -3,7 +3,6 @@ package camel
 import (
 	"bytes"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -42,7 +41,7 @@ func (as *ArtifactSetup) EnvDef(tmpDir string) (*envdef.EnvironmentDefinition, e
 	// First: We need to identify the values for <archiveName> and <relInstallDir>
 
 	var archiveName string
-	fs, err := ioutil.ReadDir(tmpDir)
+	fs, err := os.ReadDir(tmpDir)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not read temporary installation directory %s", tmpDir)
 	}
@@ -205,7 +204,7 @@ func fileTransformsInDir(instDir string, searchDir string, searchString string, 
 			return nil
 		}
 
-		b, err := ioutil.ReadFile(path)
+		b, err := os.ReadFile(path)
 		if err != nil {
 			return errs.Wrap(err, "Could not read file path %s", path)
 		}

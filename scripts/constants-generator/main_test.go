@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -15,7 +14,7 @@ func init() {
 }
 
 func TestGenerate(t *testing.T) {
-	targetDir, err := ioutil.TempDir("", "constants-generator-test")
+	targetDir, err := os.MkdirTemp("", "constants-generator-test")
 	require.NoError(t, err)
 	target := filepath.Join(targetDir, "generated.go")
 	if _, err := os.Stat(target); err == nil {

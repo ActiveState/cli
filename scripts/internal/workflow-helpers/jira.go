@@ -2,7 +2,6 @@ package workflow_helpers
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"sort"
@@ -190,16 +189,14 @@ func UpdateJiraFixVersion(client *jira.Client, issue *jira.Issue, versionID stri
 		switch fixVersion.Name {
 		case VersionNextFeasible:
 			issueUpdate.Fields.Labels = append(issueUpdate.Fields.Labels, "WasNextFeasible")
-			break
 		case VersionNextUnscheduled:
 			issueUpdate.Fields.Labels = append(issueUpdate.Fields.Labels, "WasNextUnscheduled")
-			break
 		}
 	}
 
 	issueUpdate.Fields.FixVersions = []*jira.FixVersion{{ID: versionID}}
 	_, response, err := client.Issue.Update(issueUpdate)
-	res, err2 := ioutil.ReadAll(response.Body)
+	res, err2 := io.ReadAll(response.Body)
 	if err2 != nil {
 		res = []byte(err2.Error())
 	}

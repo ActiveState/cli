@@ -189,6 +189,6 @@ func isFreshInstall() bool {
 		multilog.Error("Could not stat file: %s, error: %v", exe, err)
 		return true
 	}
-	diff := time.Now().Sub(stat.ModTime())
+	diff := time.Since(stat.ModTime())
 	return diff < 24*time.Hour
 }

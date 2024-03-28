@@ -6,8 +6,6 @@ type AnalyticsEvent struct {
 	source         string
 	label          string
 	dimensionsJson string
-	outputType     string
-	userID         string
 }
 
 func NewAnalyticsEvent(category, action, source, label, dimensionsJson string) *AnalyticsEvent {

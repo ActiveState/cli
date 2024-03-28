@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,7 +39,7 @@ func (i *Installer) PrepareBinTargets() error {
 
 	// Move aside conflicting executables in target
 	if fileutils.DirExists(sourceBinPath) {
-		files, err := ioutil.ReadDir(sourceBinPath)
+		files, err := os.ReadDir(sourceBinPath)
 		if err != nil {
 			return errs.Wrap(err, "Could not read target dir")
 		}
@@ -73,7 +72,7 @@ func (i *Installer) sanitizeInstallPath() error {
 		return nil
 	}
 
-	files, err := ioutil.ReadDir(i.path)
+	files, err := os.ReadDir(i.path)
 	if err != nil {
 		return errs.Wrap(err, "Could not installation directory: %s", i.path)
 	}
@@ -113,7 +112,7 @@ func removeOldExecutables(dir string) error {
 		return nil
 	}
 
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		return errs.Wrap(err, "Could not read installer dir")
 	}

@@ -49,12 +49,12 @@ const (
 	BuildRequestID   = "BUILD_REQUEST_ID"
 
 	// Version Comparators
-	ComparatorEQ  string = "eq"
-	ComparatorGT         = "gt"
-	ComparatorGTE        = "gte"
-	ComparatorLT         = "lt"
-	ComparatorLTE        = "lte"
-	ComparatorNE         = "ne"
+	ComparatorEQ  = "eq"
+	ComparatorGT  = "gt"
+	ComparatorGTE = "gte"
+	ComparatorLT  = "lt"
+	ComparatorLTE = "lte"
+	ComparatorNE  = "ne"
 
 	// Version Requirement keys
 	VersionRequirementComparatorKey = "comparator"

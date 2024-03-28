@@ -280,7 +280,7 @@ func (c *Client) runWithFiles(ctx context.Context, gqlReq RequestWithFiles, resp
 	c.Log(fmt.Sprintf(">> variables: %s", string(varJson)))
 	fnames := []string{}
 	for _, file := range gqlReq.Files() {
-		fnames = append(fnames, fmt.Sprintf("%s", file.Name))
+		fnames = append(fnames, file.Name)
 	}
 	c.Log(fmt.Sprintf(">> files: %v", fnames))
 

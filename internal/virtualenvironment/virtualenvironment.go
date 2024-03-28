@@ -13,8 +13,6 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-var persisted *VirtualEnvironment
-
 // VirtualEnvironment represents our virtual environment, it pulls together and virtualizes the runtime environment
 type VirtualEnvironment struct {
 	activationID string

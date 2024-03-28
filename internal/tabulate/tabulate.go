@@ -56,7 +56,7 @@ type Row struct {
 // The user can define his own format, just by adding an entry to this map
 // and calling it with Render function e.g t.Render("customFormat")
 var TableFormats = map[string]TableFormat{
-	"simple": TableFormat{
+	"simple": {
 		LineTop:         Line{"", "-", "  ", ""},
 		LineBelowHeader: Line{"", "-", "  ", ""},
 		LineBottom:      Line{"", "-", "  ", ""},
@@ -65,13 +65,13 @@ var TableFormats = map[string]TableFormat{
 		TitleRow:        Row{"", "  ", ""},
 		Padding:         1,
 	},
-	"plain": TableFormat{
+	"plain": {
 		HeaderRow: Row{"", "  ", ""},
 		DataRow:   Row{"", "  ", ""},
 		TitleRow:  Row{"", "  ", ""},
 		Padding:   1,
 	},
-	"grid": TableFormat{
+	"grid": {
 		LineTop:         Line{"+", "-", "+", "+"},
 		LineBelowHeader: Line{"+", "=", "+", "+"},
 		LineBetweenRows: Line{"+", "-", "+", "+"},
@@ -174,7 +174,7 @@ func (t *Tabulate) padCenter(width int, str string) string {
 func (t *Tabulate) buildLine(padded_widths []int, padding []int, l Line) string {
 	cells := make([]string, len(padded_widths))
 
-	for i, _ := range cells {
+	for i := range cells {
 		b := createBuffer()
 		b.Write(l.Hline, padding[i]+MIN_PADDING)
 		cells[i] = b.String()
@@ -196,7 +196,7 @@ func (t *Tabulate) buildLine(padded_widths []int, padding []int, l Line) string 
 }
 
 // Build Row based on padded_widths from t.GetWidths()
-func (t *Tabulate) buildRow(elements []string, padded_widths []int, paddings []int, d Row) string {
+func (t *Tabulate) buildRow(elements []string, padded_widths []int, d Row) string {
 
 	var buffer bytes.Buffer
 	buffer.WriteString(d.Begin)
@@ -219,15 +219,15 @@ func (t *Tabulate) buildRow(elements []string, padded_widths []int, paddings []i
 	return buffer.String()
 }
 
-//SetWrapDelimiter assigns the character ina  string that the rednderer
-//will attempt to split strings on when a cell must be wrapped
+// SetWrapDelimiter assigns the character ina  string that the rednderer
+// will attempt to split strings on when a cell must be wrapped
 func (t *Tabulate) SetWrapDelimiter(r rune) {
 	t.WrapDelimiter = r
 }
 
-//SetSplitConcat assigns the character that will be used when a WrapDelimiter is
-//set but the renderer cannot abide by the desired split.  This may happen when
-//the WrapDelimiter is a space ' ' but a single word is longer than the width of a cell
+// SetSplitConcat assigns the character that will be used when a WrapDelimiter is
+// set but the renderer cannot abide by the desired split.  This may happen when
+// the WrapDelimiter is a space ' ' but a single word is longer than the width of a cell
 func (t *Tabulate) SetSplitConcat(r string) {
 	t.SplitConcat = r
 }
@@ -260,9 +260,7 @@ func (t *Tabulate) Render(format ...interface{}) string {
 	if len(t.Headers) < len(t.Data[0].Elements) {
 		diff := len(t.Data[0].Elements) - len(t.Headers)
 		padded_header := make([]string, diff)
-		for _, e := range t.Headers {
-			padded_header = append(padded_header, e)
-		}
+		padded_header = append(padded_header, t.Headers...)
 		t.Headers = padded_header
 	}
 
@@ -270,7 +268,7 @@ func (t *Tabulate) Render(format ...interface{}) string {
 	cols := t.getWidths(t.Headers, t.Data)
 
 	padded_widths := make([]int, len(cols))
-	for i, _ := range padded_widths {
+	for i := range padded_widths {
 		padded_widths[i] = cols[i] + MIN_PADDING*t.TableFormat.Padding
 	}
 
@@ -289,7 +287,7 @@ func (t *Tabulate) Render(format ...interface{}) string {
 		if len(t.TitleAlign) > 0 {
 			t.SetAlign(t.TitleAlign) // Temporary replace alignment with the title alignment
 		}
-		lines = append(lines, t.buildRow([]string{t.Title}, []int{totalWidth}, nil, t.TableFormat.TitleRow))
+		lines = append(lines, t.buildRow([]string{t.Title}, []int{totalWidth}, t.TableFormat.TitleRow))
 		t.SetAlign(savedAlign)
 	}
 
@@ -299,7 +297,7 @@ func (t *Tabulate) Render(format ...interface{}) string {
 	}
 
 	// Add Header
-	lines = append(lines, t.buildRow(t.padRow(t.Headers, t.TableFormat.Padding), padded_widths, cols, t.TableFormat.HeaderRow))
+	lines = append(lines, t.buildRow(t.padRow(t.Headers, t.TableFormat.Padding), padded_widths, t.TableFormat.HeaderRow))
 
 	// Add Line Below Header if not hidden
 	if !inSlice("belowheader", t.HideLines) {
@@ -308,9 +306,9 @@ func (t *Tabulate) Render(format ...interface{}) string {
 
 	// Add Data Rows
 	for index, element := range t.Data {
-		lines = append(lines, t.buildRow(t.padRow(element.Elements, t.TableFormat.Padding), padded_widths, cols, t.TableFormat.DataRow))
+		lines = append(lines, t.buildRow(t.padRow(element.Elements, t.TableFormat.Padding), padded_widths, t.TableFormat.DataRow))
 		if index < len(t.Data)-1 {
-			if element.Continuos != true && !inSlice("betweenLine", t.HideLines) {
+			if !element.Continuos && !inSlice("betweenLine", t.HideLines) {
 				lines = append(lines, t.buildLine(padded_widths, cols, t.TableFormat.LineBetweenRows))
 			}
 		}
@@ -332,9 +330,8 @@ func (t *Tabulate) Render(format ...interface{}) string {
 // Calculate the max column width for each element
 func (t *Tabulate) getWidths(headers []string, data []*TabulateRow) []int {
 	widths := make([]int, len(headers))
-	current_max := len(t.EmptyVar)
 	for i := 0; i < len(headers); i++ {
-		current_max = runewidth.StringWidth(headers[i])
+		current_max := runewidth.StringWidth(headers[i])
 		for _, item := range data {
 			if len(item.Elements) > i && len(widths) > i {
 				element := item.Elements[i]

@@ -57,7 +57,7 @@ type intention uint16
 
 const (
 	pushCustomNamespace  intention = 0x0001 // User is pushing to a custom remote, ignoring the namespace in the current yaml
-	pushFromNoPermission           = 0x0002 // User made modifications to someone elses project, and it now trying to push them
+	pushFromNoPermission intention = 0x0002 // User made modifications to someone elses project, and it now trying to push them
 
 	// The rest is supplemental
 	intendCreateProject = 0x0008

@@ -61,7 +61,10 @@ func (f *JSON) Fprint(writer io.Writer, value interface{}) {
 		b = []byte(colorize.StripColorCodes(string(b)))
 	}
 
-	writer.Write(b)
+	_, err := writer.Write(b)
+	if err != nil {
+		multilog.Error("Could not write json output, error: %v", err)
+	}
 }
 
 type StructuredError struct {
@@ -80,9 +83,9 @@ func (f *JSON) Error(value interface{}) {
 
 	var b []byte
 	var err error
-	switch value.(type) {
+	switch value := value.(type) {
 	case []byte:
-		b = value.([]byte)
+		b = value
 	default:
 		b, err = json.Marshal(toStructuredError(value))
 	}
@@ -92,7 +95,10 @@ func (f *JSON) Error(value interface{}) {
 	}
 	b = []byte(colorize.StripColorCodes(string(b)))
 
-	f.cfg.OutWriter.Write(b)
+	_, err = f.cfg.OutWriter.Write(b)
+	if err != nil {
+		multilog.Error("Could not write json output, error: %v", err)
+	}
 }
 
 // Notice is ignored by JSON, as they are considered as non-critical output and there's currently no reliable way to

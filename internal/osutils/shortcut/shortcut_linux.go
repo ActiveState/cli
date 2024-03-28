@@ -33,7 +33,7 @@ func Save(target, path string, args []string, opts SaveOpts) (file string, err e
 
 	name := opts.Name
 	if name == "" {
-		filepath.Base(path)
+		name = filepath.Base(path)
 	}
 
 	exec := []string{target}

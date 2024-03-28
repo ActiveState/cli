@@ -1569,3 +1569,5 @@ update_runtime_info:
   other: "Changes to your runtime may require some dependencies to be rebuilt.\n"
 err_buildscript_notexist:
   other: Your project does not have a buildscript.as file. Please refer to the documentation on how to create one.
+svcctl_cannot_create_debug_info:
+  other: "Cannot create debug info: {{.V0}}"

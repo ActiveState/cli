@@ -22,7 +22,7 @@ func (se SignalError) Error() string {
 
 // Signal returns the received signal
 func (se SignalError) Signal() os.Signal {
-	return se.Signal()
+	return se.sig
 }
 
 // NewAwaitingSigHandler constructs a signal handler awaiting a function to return
@@ -41,7 +41,7 @@ func (as *Awaiting) Close() error {
 
 // WaitForFunc waits for `f` to return, unless a signal on the sigCh is received.  In that case, we return a SignalError.
 func (as *Awaiting) WaitForFunc(f func() error) error {
-	errCh := make(chan error, 0)
+	errCh := make(chan error)
 	as.Resume()
 
 	go func() {

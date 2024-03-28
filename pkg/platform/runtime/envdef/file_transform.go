@@ -3,7 +3,7 @@ package envdef
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -111,7 +111,7 @@ func (ft *FileTransform) ApplyTransform(baseDir string, constants Constants) err
 
 	for _, f := range ft.In {
 		fp := filepath.Join(baseDir, f)
-		fileBytes, err := ioutil.ReadFile(fp)
+		fileBytes, err := os.ReadFile(fp)
 		if err != nil {
 			return errs.Wrap(err, "Could not read file contents of %s.", fp)
 		}

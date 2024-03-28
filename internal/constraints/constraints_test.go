@@ -2,27 +2,13 @@ package constraints
 
 import (
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"text/template"
 
-	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/stretchr/testify/assert"
 )
-
-var cwd string
-
-func setProjectDir(t *testing.T) {
-	var err error
-	cwd, err = environment.GetRootPath()
-	assert.NoError(t, err, "Should fetch cwd")
-	err = os.Chdir(filepath.Join(cwd, "internal", "constraints", "testdata"))
-	assert.NoError(t, err, "Should change dir without issue.")
-	projectfile.Reset()
-}
 
 // This test is not for constraints, but verifies that sysinfo is working
 // correctly in a Linux development environment such that constraints will have
@@ -91,15 +77,6 @@ func TestSysinfoMacOSEnv(t *testing.T) {
 	for _, compiler := range compilers {
 		assert.True(t, compiler.Major > 0, "Determined compiler version")
 	}
-}
-
-func sliceContains(s []int, v int) bool {
-	for _, sv := range s {
-		if sv == v {
-			return true
-		}
-	}
-	return false
 }
 
 func TestConditional_Eval(t *testing.T) {

@@ -2,7 +2,7 @@ package envdef
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 
@@ -57,7 +57,7 @@ func TestRelocateFile(t *testing.T) {
 }
 
 func TestApplyConstTransforms(t *testing.T) {
-	dir, err := ioutil.TempDir("", "installdir")
+	dir, err := os.MkdirTemp("", "installdir")
 	assert.NoError(t, err)
 
 	dir, err = fileutils.GetLongPathName(dir)

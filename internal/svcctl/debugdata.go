@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 )
@@ -35,18 +36,23 @@ type debugData struct {
 	waitDur      time.Duration
 }
 
-func newDebugData(ipComm IPCommunicator, kind execKind, argText string) *debugData {
+func newDebugData(ipComm IPCommunicator, kind execKind, argText string) (*debugData, error) {
 	sock := ipComm.SockPath().String()
 	sockDir := filepath.Dir(sock)
+
+	sockDirList, err := fileutils.ListDirSimple(sockDir, false)
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to list sock dir")
+	}
 
 	return &debugData{
 		argText:     argText,
 		sockInfo:    newFileInfo(sock),
 		sockDirInfo: newFileInfo(sockDir),
-		sockDirList: fileutils.ListDirSimple(sockDir, false),
+		sockDirList: sockDirList,
 		execStart:   time.Now(),
 		execKind:    kind,
-	}
+	}, nil
 }
 
 func (d *debugData) Error() string {

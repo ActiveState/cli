@@ -1,7 +1,6 @@
 package camel_test
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -17,7 +16,7 @@ type MetaDataTestSuite struct {
 
 func (suite *MetaDataTestSuite) BeforeTest(suiteName, testName string) {
 	var err error
-	suite.dir, err = ioutil.TempDir("", "metadata-test")
+	suite.dir, err = os.MkdirTemp("", "metadata-test")
 	suite.Require().NoError(err)
 }
 

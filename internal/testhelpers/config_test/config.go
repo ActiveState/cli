@@ -29,7 +29,7 @@ func (m *Mock) Set(key string, value interface{}) error {
 
 func (m *Mock) GetString(key string) string {
 	if value, found := m.cfg[key]; found {
-		return value.(interface{}).(string) // assume we stored the correct type
+		return value.(string)
 	} else {
 		return ""
 	}
@@ -37,5 +37,5 @@ func (m *Mock) GetString(key string) string {
 
 func (m *Mock) GetBool(key string) bool {
 	value, found := m.cfg[key]
-	return found && value.(interface{}).(bool) // assume we stored the correct type
+	return found && value.(bool)
 }

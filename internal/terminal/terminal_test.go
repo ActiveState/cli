@@ -1,9 +1,9 @@
+//go:build linux || darwin
 // +build linux darwin
 
 package terminal
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -31,7 +31,7 @@ func TestColorSupport(t *testing.T) {
 	require.NoError(t, err, "open pseudo-terminal")
 	defer ptm.Close()
 	defer pts.Close()
-	tf, err := ioutil.TempFile("", "")
+	tf, err := os.CreateTemp("", "")
 	require.NoError(t, err, "open dummy-file")
 	defer func() {
 		tf.Close()

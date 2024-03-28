@@ -1,7 +1,7 @@
 package osutil
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"time"
@@ -38,7 +38,7 @@ func captureWrites(fnToExec func(), reader, writer *os.File) (string, error) {
 		return "", err
 	}
 
-	writeBytes, err := ioutil.ReadAll(reader)
+	writeBytes, err := io.ReadAll(reader)
 	if err != nil {
 		err = reader.Close()
 	}
@@ -104,9 +104,15 @@ func writeLinesAndClosePipe(writer *os.File, lines []interface{}, callbackFn fun
 			callbackFn()
 		}
 		if lineStr, ok := line.(string); ok {
-			writer.WriteString(lineStr + "\n")
+			_, err := writer.WriteString(lineStr + "\n")
+			if err != nil {
+				log.Panicf("Error writing to stdin: %v", err)
+			}
 		} else if lineRune, ok := line.(rune); ok {
-			writer.WriteString(string(lineRune))
+			_, err := writer.WriteString(string(lineRune))
+			if err != nil {
+				log.Panicf("Error writing to stdin: %v", err)
+			}
 		} else {
 			log.Panicf("Unsupported line: %v", line)
 		}

@@ -37,7 +37,8 @@ func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().NoError(err, "Should change dir without issue.")
 	projectFile, err := projectfile.Get()
 	suite.Require().NoError(err, errs.JoinMessage(err))
-	projectFile.Persist()
+	err = projectFile.Persist()
+	suite.Require().NoError(err, "Should persist projectfile without issue.")
 	suite.projectFile = projectFile
 	suite.Require().Nil(err, "Should retrieve projectfile without issue.")
 	suite.project, err = project.Get()

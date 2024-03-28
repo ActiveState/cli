@@ -2,7 +2,6 @@ package version
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,7 +20,7 @@ func Detect(relPath string) (semver.Version, error) {
 	if err != nil {
 		return semver.Version{}, fmt.Errorf("Could not access version.txt file at %s: %w", versionFile, err)
 	}
-	data, err := ioutil.ReadFile(versionFile)
+	data, err := os.ReadFile(versionFile)
 	if err != nil {
 		return semver.Version{}, fmt.Errorf("Could not read from file %s: %w", versionFile, err)
 	}

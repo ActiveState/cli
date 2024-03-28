@@ -154,7 +154,10 @@ func startAndWait(ctx context.Context, ipComm IPCommunicator, exec, argText stri
 		args = args[:len(args)-1]
 	}
 
-	debugInfo := newDebugData(ipComm, startSvc, argText)
+	debugInfo, err := newDebugData(ipComm, startSvc, argText)
+	if err != nil {
+		return locale.WrapError(err, "svcctl_cannot_create_debug_info", err.Error())
+	}
 
 	if _, err := osutils.ExecuteAndForget(exec, args); err != nil {
 		return locale.WrapError(err, "svcctl_cannot_exec_and_forget", "Cannot execute service in background: {{.V0}}", err.Error())
@@ -212,7 +215,10 @@ func waitUp(ctx context.Context, ipComm IPCommunicator, debugInfo *debugData) er
 }
 
 func stopAndWait(ctx context.Context, ipComm IPCommunicator) error {
-	debugInfo := newDebugData(ipComm, stopSvc, "")
+	debugInfo, err := newDebugData(ipComm, stopSvc, "")
+	if err != nil {
+		return locale.WrapError(err, "svcctl_cannot_create_debug_info", err.Error())
+	}
 
 	if err := ipComm.StopServer(ctx); err != nil {
 		return locale.WrapError(err, "svcctl_stop_req_failed", "Service stop request failed")

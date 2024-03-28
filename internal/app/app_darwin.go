@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,7 +24,7 @@ const (
 func (a *App) install() error {
 	// Create all of the necessary directories and files in a temporary directory
 	// Then move the temporary directory to the final location which for macOS will be the Applications directory
-	tmpDir, err := ioutil.TempDir("", fmt.Sprintf("%s-", a.Name))
+	tmpDir, err := os.MkdirTemp("", fmt.Sprintf("%s-", a.Name))
 	if err != nil {
 		return errs.Wrap(err, "Could not create temporary directory")
 	}

@@ -2,7 +2,7 @@ package logging
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,7 +17,7 @@ func TestEmit_Parallel(t *testing.T) {
 	fh := newFileHandler()
 	defer fh.Close()
 
-	loggingFile, err := ioutil.TempFile("", "")
+	loggingFile, err := os.CreateTemp("", "")
 	assert.NoError(t, err)
 	fh.file = loggingFile
 

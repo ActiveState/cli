@@ -2,7 +2,6 @@ package osutil
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -18,7 +17,7 @@ func CreateConfigFile(configPath string, fileName string, fileMode os.FileMode) 
 
 // ReadConfigFile will read the contents of a file in the config dir.
 func ReadConfigFile(configPath, fileName string) (string, error) {
-	contents, err := ioutil.ReadFile(filepath.Join(configPath, fileName))
+	contents, err := os.ReadFile(filepath.Join(configPath, fileName))
 	return string(contents), err
 }
 
@@ -47,7 +46,7 @@ func GetTestFile(fileName ...string) string {
 // path of the calling function file. This function assumes it is called directly from a function
 // in a file in the directory the `testdata` exists in.
 func ReadTestFile(fileName string) (string, error) {
-	contents, err := ioutil.ReadFile(GetTestFile(fileName))
+	contents, err := os.ReadFile(GetTestFile(fileName))
 	return string(contents), err
 }
 
@@ -58,7 +57,7 @@ func CopyTestFileToConfigDir(configPath, testFileName, targetFileName string, ta
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filepath.Join(configPath, targetFileName), []byte(testFileContent), targetFileMode)
+	return os.WriteFile(filepath.Join(configPath, targetFileName), []byte(testFileContent), targetFileMode)
 }
 
 // getCallerPath returns the filesystem path of the caller to this func so long as it's not

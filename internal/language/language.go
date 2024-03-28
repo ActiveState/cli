@@ -189,7 +189,7 @@ func (l Language) Header() string {
 	return ""
 }
 
-// TempPattern returns the ioutil.TempFile pattern to be used to form the temp
+// TempPattern returns the os.CreateTemp pattern to be used to form the temp
 // file name.
 func (l Language) TempPattern() string {
 	return filePatternPrefix + l.data().ext

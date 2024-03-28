@@ -3,7 +3,7 @@ package testhelper
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -29,7 +29,7 @@ func dataPath(t *testing.T) string {
 }
 
 func LoadRecipe(t *testing.T, name string) *inventory_models.Recipe {
-	d, err := ioutil.ReadFile(filepath.Join(dataPath(t), "recipes", fmt.Sprintf("%s.json", name)))
+	d, err := os.ReadFile(filepath.Join(dataPath(t), "recipes", fmt.Sprintf("%s.json", name)))
 	require.NoError(t, err)
 
 	var recipe inventory_models.Recipe
@@ -40,7 +40,7 @@ func LoadRecipe(t *testing.T, name string) *inventory_models.Recipe {
 }
 
 func LoadBuildPlan(t *testing.T, name string) *model.BuildPlan {
-	d, err := ioutil.ReadFile(filepath.Join(dataPath(t), "buildplans", fmt.Sprintf("%s.json", name)))
+	d, err := os.ReadFile(filepath.Join(dataPath(t), "buildplans", fmt.Sprintf("%s.json", name)))
 	require.NoError(t, err)
 
 	var bp model.BuildPlan
@@ -66,11 +66,11 @@ func save(dir, name string, m interface{}) error {
 		return err
 	}
 
-	return ioutil.WriteFile(fn, d, 0666)
+	return os.WriteFile(fn, d, 0666)
 }
 
 func LoadBuildResponse(t *testing.T, name string) *headchef_models.V1BuildStatusResponse {
-	d, err := ioutil.ReadFile(filepath.Join(dataPath(t), "builds", fmt.Sprintf("%s.json", name)))
+	d, err := os.ReadFile(filepath.Join(dataPath(t), "builds", fmt.Sprintf("%s.json", name)))
 	require.NoError(t, err)
 
 	var status headchef_models.V1BuildStatusResponse

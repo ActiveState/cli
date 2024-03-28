@@ -18,8 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 )
 
-const awsProfileName = "default"
-
 var sourcePath, awsRegionName, awsBucketName, awsBucketPrefix string
 
 var sess *session.Session
@@ -53,12 +51,6 @@ func run() {
 	}
 }
 
-type logger struct{}
-
-func (l *logger) Log(v ...interface{}) {
-	fmt.Printf("AWS Log: %v", v)
-}
-
 func createSession() {
 	// Specify profile to load for the session's config
 	var err error
@@ -87,14 +79,24 @@ func getFileList() []string {
 	// Get list of files to upload
 	fmt.Printf("Getting list of files\n")
 	fileList := []string{}
-	os.MkdirAll(sourcePath, os.ModePerm)
-	filepath.Walk(sourcePath, func(p string, f os.FileInfo, err error) error {
+
+	err := os.MkdirAll(sourcePath, os.ModePerm)
+	if err != nil {
+		fmt.Println("Failed to create directory", sourcePath, err)
+		os.Exit(1)
+	}
+
+	if err = filepath.Walk(sourcePath, func(p string, f os.FileInfo, err error) error {
 		if isDirectory(p) {
 			return nil
 		}
 		fileList = append(fileList, p)
 		return nil
-	})
+	}); err != nil {
+		fmt.Println("Failed to walk directory", sourcePath, err)
+		os.Exit(1)
+	}
+
 	return fileList
 }
 
@@ -111,7 +113,12 @@ func prepareFile(p string) *s3.PutObjectInput {
 	fileInfo, _ := file.Stat()
 	size := fileInfo.Size()
 	buffer := make([]byte, size)
-	file.Read(buffer)
+
+	_, err = file.Read(buffer)
+	if err != nil {
+		fmt.Println("Failed to read file", file, err)
+		os.Exit(1)
+	}
 
 	defer file.Close()
 	var key string

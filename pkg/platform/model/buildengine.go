@@ -17,16 +17,6 @@ const (
 	Alternative
 )
 
-// buildEngineFromResponse handles a headchef build status response and returns
-// the relevant engine.
-func buildEngineFromResponse(resp *headchef_models.V1BuildStatusResponse) BuildEngine {
-	if resp == nil || resp.BuildEngine == nil {
-		return UnknownEngine
-	}
-
-	return ParseBuildEngine(*resp.BuildEngine)
-}
-
 func (be BuildEngine) String() string {
 	switch be {
 	case Camel:

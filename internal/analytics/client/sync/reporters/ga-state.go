@@ -53,7 +53,9 @@ func (r *GaCLIReporter) Event(category, action, source, label string, d *dimensi
 	r.ga.CustomDimensionMap(legacyDimensionMap(d))
 
 	if category == anaConsts.CatRunCmd {
-		r.ga.Send(ga.NewPageview())
+		if err := r.ga.Send(ga.NewPageview()); err != nil {
+			return errs.Wrap(err, "Could not send GA Pageview")
+		}
 	}
 	event := ga.NewEvent(category, action)
 	if label != "" {

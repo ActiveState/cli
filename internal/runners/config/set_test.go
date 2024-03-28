@@ -13,7 +13,8 @@ import (
 func TestSetUnknownKey(t *testing.T) {
 	cfg, err := config.New()
 	assert.NoError(t, err)
-	cfg.Set("unknown", nil)
+	err = cfg.Set("unknown", nil)
+	assert.NoError(t, err)
 
 	outputer := outputhelper.NewCatcher()
 	set := Set{outputer, cfg, nil, blackhole.New()}

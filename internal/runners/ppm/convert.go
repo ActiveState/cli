@@ -2,13 +2,11 @@ package ppm
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/skratchdot/open-golang/open"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -150,15 +148,6 @@ func (cf *ConversionFlow) explainVirtualEnv() (conversionResult, error) {
 		return cf.explainAskFeedback()
 	}
 	return canceled, nil
-}
-
-func (cf *ConversionFlow) openInBrowser(what, url string) {
-	cf.out.Print(locale.Tl("ppm_convert_open_browser", "Opening {{.V0}} in your browser", what))
-	err := open.Run(url)
-	if err != nil {
-		multilog.Error("Could not open %s in browser: %v", url, err)
-		cf.out.Error(locale.Tr("browser_fallback", what, url))
-	}
 }
 
 func (cf *ConversionFlow) explainAskFeedback() (conversionResult, error) {

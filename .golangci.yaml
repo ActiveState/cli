@@ -1,10 +1,15 @@
-run:
-  skip-dirs:
+issues:
+  exclude-dirs:
     - vendor
+  exclude-rules:
+    - linters:
+        - staticcheck
+      text: "SA9004"
 
 linters-settings:
   errcheck:
     exclude-functions:
+      - fmt.Fprintln
       - (*github.com/ActiveState/termtest.TermTest).Expect
       - (*github.com/ActiveState/termtest.TermTest).ExpectExitCode
       - (*github.com/ActiveState/termtest.TermTest).ExpectNotExitCode
@@ -13,9 +18,24 @@ linters-settings:
       - (*github.com/ActiveState/termtest.TermTest).WaitForInput
       - (*github.com/ActiveState/termtest.TermTest).SendLine
       - (*github.com/ActiveState/termtest.TermTest).ExpectInput
+      - (*github.com/ActiveState/termtest.TermTest).ExpectExit
       - (*github.com/ActiveState/termtest.TermTest).Wait
       - (*github.com/ActiveState/logging.fileHandler).Printf
       - (*github.com/ActiveState/logging.standardHandler).Printf
+      - (*github.com/ActiveState/cli/internal/testhelpers/e2e.Session).Close
+      - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).ExpectInput
+      - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).Send
+      - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).SendLine
+      - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).SendEnter
+      - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).SendKeyDown
+      - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).ExpectRe
+      - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).Wait
+      - (*github.com/ActiveState/cli/internal/testhelpers/e2e.Session).ClearCache
+      - (*github.com/ActiveState/cli/internal/testhelpers/e2e.Dirs).Close
+      - (*github.com/ActiveState/cli/pkg/platform/runtime/artifactcache.testArtifactCache).Store
+      - github.com/ActiveState/cli/internal/testhelpers/osutil.RemoveConfigFile
+      - (*github.com/ActiveState/cli/internal/logging.standardHandler).Emit
+      - (*github.com/ActiveState/cli/internal/logging.fileHandler).Emit
   govet:
     disable:
       - composites

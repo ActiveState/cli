@@ -254,7 +254,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestExecEvents() {
 		ts.DebugMessage("Should have a runtime attempt, events:\n"+suite.summarizeEvents(runtimeEvents)))
 
 	suite.assertGtEvents(events, 0, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcStateTool,
-		fmt.Sprintf("Expected new heartbeats after state exec"))
+		"Expected new heartbeats after state exec")
 
 	cp.ExpectExitCode(0)
 }
