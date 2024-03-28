@@ -34,7 +34,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/sysinfo"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 type Params struct {
@@ -424,7 +424,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 			an.EventWithLabel(anaConst.CatInstallerFunnel, "forward-activate-default-err", err.Error())
 			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err)))
 		}
-	case !params.isUpdate && terminal.IsTerminal(int(os.Stdin.Fd())) && os.Getenv(constants.InstallerNoSubshell) != "true" && os.Getenv("TERM") != "dumb":
+	case !params.isUpdate && term.IsTerminal(int(os.Stdin.Fd())) && os.Getenv(constants.InstallerNoSubshell) != "true" && os.Getenv("TERM") != "dumb":
 		if err := ss.SetEnv(osutils.InheritEnv(envMap(binPath))); err != nil {
 			return locale.WrapError(err, "err_subshell_setenv")
 		}
@@ -488,38 +488,4 @@ func assertCompatibility() error {
 	}
 
 	return nil
-}
-
-func noArgs() bool {
-	return len(os.Args[1:]) == 0
-}
-
-func shouldUpdateInstalledStateTool(stateExePath string) bool {
-	logging.Debug("Checking if installed state tool is an older version.")
-
-	stdout, _, err := osutils.ExecSimple(stateExePath, []string{"--version", "--output", "json"}, os.Environ())
-	if err != nil {
-		logging.Debug("Could not determine state tool version.")
-		return true // probably corrupted install
-	}
-	stdout = strings.Split(stdout, "\x00")[0] // TODO: DX-328
-
-	versionData := installation.VersionData{}
-	err = json.Unmarshal([]byte(stdout), &versionData)
-	if err != nil {
-		logging.Debug("Could not read state tool version output")
-		return true
-	}
-
-	if versionData.Channel != constants.ChannelName {
-		logging.Debug("State tool channel is different from installer.")
-		return false // do not update, require --force
-	}
-
-	if versionData.Version != constants.Version {
-		logging.Debug("State tool version is different from installer.")
-		return true
-	}
-
-	return false
 }

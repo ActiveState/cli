@@ -70,7 +70,7 @@ func run() error {
 		if err != nil {
 			return errs.Wrap(err, "failed to parse Jira key from branch name")
 		}
-		if strings.ToLower(detectedIssueID) != strings.ToLower(jiraIssueID) {
+		if !strings.EqualFold(detectedIssueID, jiraIssueID) {
 			return errs.New("Branch name contains story ID %s, but story being targeted is %s", detectedIssueID, jiraIssueID)
 		}
 	}

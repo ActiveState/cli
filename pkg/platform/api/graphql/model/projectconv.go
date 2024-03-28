@@ -67,18 +67,6 @@ func makeStrfmtDateTime(t Time) strfmt.DateTime {
 	return dt
 }
 
-func newStrfmtURI(s *string) *strfmt.URI {
-	if s == nil || *s == "" {
-		return nil
-	}
-
-	var uri strfmt.URI
-	if err := uri.UnmarshalText([]byte(*s)); err != nil {
-		panic(err) // should only happen if the backend is storing bad data
-	}
-	return &uri
-}
-
 func forkedProjectToMonoForkedFrom(fp *ForkedProject) *mono_models.ProjectForkedFrom {
 	if fp == nil {
 		return nil

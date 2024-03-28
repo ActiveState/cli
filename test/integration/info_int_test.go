@@ -55,7 +55,7 @@ func (suite *InfoIntegrationTestSuite) TestJSON() {
 	cp := ts.Spawn("info", "pylint", "--language", "python", "-o", "json")
 	cp.Expect(`"description":`)
 	cp.Expect(`"authors":`)
-	cp.Expect(`"versions":`)
+	cp.Expect(`"version":`)
 	cp.ExpectExitCode(0)
 	//AssertValidJSON(suite.T(), cp)
 

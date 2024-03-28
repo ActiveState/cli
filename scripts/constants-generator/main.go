@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -79,7 +78,9 @@ func run(args []string) {
 
 	wd, _ := os.Getwd()
 	log("Writing generated constants to: %s (pwd: %s)", target, wd)
-	ioutil.WriteFile(target, buf.Bytes(), 0666)
+	if err := os.WriteFile(target, buf.Bytes(), 0666); err != nil {
+		logFatal("Failed to write file: %v", err)
+	}
 
 	log("Constants file generated")
 }

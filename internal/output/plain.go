@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/colorize"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -39,8 +38,6 @@ const (
 	// OmitEmpty omits empty values from output
 	OmitEmpty PlainOpts = "omitEmpty"
 )
-
-const dash = "\u2500"
 
 // Plain is our plain outputer, it uses reflect to marshal the data.
 // Semantic highlighting tags are supported as [NOTICE]foo[/RESET]
@@ -119,8 +116,6 @@ func wordWrapWithWidth(text string, width int) string {
 }
 
 const nilText = "<nil>"
-
-var byteType = reflect.TypeOf([]byte(nil))
 
 // sprint will marshal and return the given value as a string
 func sprint(value interface{}) (string, error) {
@@ -413,14 +408,6 @@ func localizedField(input string) string {
 		out = in[1]
 	}
 	return out
-}
-
-func trimValue(value string, size int) string {
-	value = strings.Replace(value, fileutils.LineEnd, " ", -1)
-	if len(value) > size {
-		value = value[0:size-5] + " [..]"
-	}
-	return value
 }
 
 func shiftColsVal(opts []string) int {

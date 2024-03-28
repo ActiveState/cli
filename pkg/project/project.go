@@ -132,7 +132,7 @@ func (p *Project) Events() []*Event {
 // EventByName returns a reference to a projectfile.Script with a given name.
 func (p *Project) EventByName(name string, bashifyPaths bool) *Event {
 	for _, event := range p.Events() {
-		if strings.ToLower(event.Name()) == strings.ToLower(name) {
+		if strings.EqualFold(event.Name(), name) {
 			event.BashifyPaths = bashifyPaths
 			return event
 		}
