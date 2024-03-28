@@ -53,7 +53,8 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 
 	params := packages.InstallRunParams{}
 
-	return captain.NewCommand(
+	var packagesRaw string
+	cmd := captain.NewCommand(
 		"install",
 		locale.Tl("package_install_title", "Installing Package"),
 		locale.T("package_install_cmd_description"),
@@ -75,14 +76,25 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        locale.T("package_arg_nameversion"),
 				Description: locale.T("package_arg_nameversion_wildcard_description"),
-				Value:       &params.Package,
+				Value:       &packagesRaw,
 				Required:    true,
 			},
 		},
-		func(_ *captain.Command, _ []string) error {
+		func(_ *captain.Command, args []string) error {
+			for _, p := range args {
+				if err := params.Packages.Set(p); err != nil {
+					return locale.WrapInputError(err, "err_install_packages_args", "Invalid package arguments")
+				}
+			}
 			return runner.Run(params, model.NamespacePackage)
 		},
-	).SetGroup(PackagesGroup).SetSupportsStructuredOutput()
+	)
+
+	cmd.SetGroup(PackagesGroup)
+	cmd.SetSupportsStructuredOutput()
+	cmd.SetHasVariableArguments()
+
+	return cmd
 }
 
 func newUninstallCommand(prime *primer.Values) *captain.Command {

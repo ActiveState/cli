@@ -57,7 +57,7 @@ func newBundleInstallCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        locale.T("bundle_arg_nameversion"),
 				Description: locale.T("bundle_arg_nameversion_description"),
-				Value:       &params.Package,
+				Value:       &params.Packages,
 				Required:    true,
 			},
 		},
