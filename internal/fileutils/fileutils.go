@@ -330,7 +330,10 @@ func WriteFile(filePath string, data []byte) (rerr error) {
 			return errs.Wrap(err, "os.Chmod %s failed", filePath)
 		}
 		defer func() {
-			rerr = os.Chmod(filePath, stat.Mode().Perm())
+			err = os.Chmod(filePath, stat.Mode().Perm())
+			if err != nil {
+				rerr = errs.Wrap(err, "os.Chmod %s failed", filePath)
+			}
 		}()
 	}
 
