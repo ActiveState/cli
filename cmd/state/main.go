@@ -24,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/profile"
@@ -250,6 +251,13 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		}
 		if !out.Type().IsStructured() {
 			err = errs.AddTips(err, locale.Tl("err_tip_run_help", "Run → '[ACTIONABLE]state {{.V0}}--help[/RESET]' for general help", cmdName))
+		}
+		if osutils.IsAccessDeniedError(err) && !errs.IsUserFacing(err) && !locale.IsInputError(err) {
+			err = locale.WrapInputError(err,
+				"err_permission_catchall",
+				"You do not have permission to perform that operation. "+
+					"Please view the log file at '[ACTIONABLE]{{.V0}}[/RESET]' for more details.",
+				logging.FilePath())
 		}
 		errors.ReportError(err, cmds.Command(), an)
 	}

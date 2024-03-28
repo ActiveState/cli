@@ -1384,7 +1384,7 @@ func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 		},
 	)
 	if err != nil {
-		multilog.Error("Could not set project mapping in config, error: %v", err)
+		multilog.Error("Could not set project mapping in config, error: %s", errs.JoinMessage(err))
 	}
 }
 
