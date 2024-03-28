@@ -38,7 +38,7 @@ func getEquivalentBuildScript(proj *project.Project, customCommit *strfmt.UUID, 
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get remote build expression and time")
 	}
-	return buildscript.NewFromCommit(atTime, expr)
+	return buildscript.NewFromBuildExpression(atTime, expr)
 }
 
 // Sync synchronizes the local build script with the remote one.
@@ -47,7 +47,7 @@ func getEquivalentBuildScript(proj *project.Project, customCommit *strfmt.UUID, 
 // commit with them in order to update the remote one.
 func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, auth *authentication.Auth) (synced bool, err error) {
 	logging.Debug("Synchronizing local build script using commit %s", commitID)
-	script, err := buildscript.ScriptFromProjectWithFallback(proj, auth)
+	script, err := buildscript.ScriptFromProject(proj)
 	if err != nil {
 		return false, errs.Wrap(err, "Could not get local build script")
 	}
@@ -103,7 +103,7 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 		script = remoteScript
 	}
 
-	if err := buildscript.Update(proj, script.AtTime, script.Expr, auth); err != nil {
+	if err := buildscript.Update(proj, script.AtTime, script.Expr); err != nil {
 		return false, errs.Wrap(err, "Could not update local build script.")
 	}
 

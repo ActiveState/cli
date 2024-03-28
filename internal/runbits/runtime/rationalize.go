@@ -8,50 +8,45 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *error) {
-	if rerr == nil {
+	if *rerr == nil {
 		return
 	}
-	var errNoMatchingPlatform *model.ErrNoMatchingPlatform
-	var errArtifactSetup *setup.ArtifactSetupErrors
+	var noMatchingPlatformErr *model.ErrNoMatchingPlatform
+	var artifactSetupErr *setup.ArtifactSetupErrors
+	var buildPlannerErr *bpModel.BuildPlannerError
+	var artifactErr *buildplan.ArtifactError
 
-	isUpdateErr := errs.Matches(*rerr, &ErrUpdate{})
 	switch {
-	case proj == nil:
-		multilog.Error("runtime:rationalizeError called with nil project, error: %s", errs.JoinMessage(*rerr))
-		*rerr = errs.Pack(*rerr, errs.New("project is nil"))
-
-	case proj.IsHeadless():
-		*rerr = errs.NewUserFacing(
-			locale.Tl(
-				"err_runtime_headless",
-				"Cannot initialize runtime for a headless project. Please visit {{.V0}} to convert your project and try again.",
-				proj.URL(),
-			),
-			errs.SetInput(),
-		)
+	case errors.Is(*rerr, rationalize.ErrHeadless):
+		*rerr = errs.WrapUserFacing(*rerr,
+			locale.Tr("err_headless", proj.URL()),
+			errs.SetInput())
 
 	// Could not find a platform that matches on the given branch, so suggest alternate branches if ones exist
-	case isUpdateErr && errors.As(*rerr, &errNoMatchingPlatform):
+	case errors.As(*rerr, &noMatchingPlatformErr):
 		branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), proj.BranchName())
 		if err == nil && len(branches) > 0 {
 			// Suggest alternate branches
 			*rerr = errs.NewUserFacing(locale.Tr(
 				"err_alternate_branches",
-				errNoMatchingPlatform.HostPlatform, errNoMatchingPlatform.HostArch,
+				noMatchingPlatformErr.HostPlatform, noMatchingPlatformErr.HostArch,
 				proj.BranchName(), strings.Join(branches, "\n - ")))
 		} else {
-			libcErr := errNoMatchingPlatform.LibcVersion != ""
+			libcErr := noMatchingPlatformErr.LibcVersion != ""
 			*rerr = errs.NewUserFacing(
-				locale.Tr("err_no_platform_data_remains", errNoMatchingPlatform.HostPlatform, errNoMatchingPlatform.HostArch),
+				locale.Tr("err_no_platform_data_remains", noMatchingPlatformErr.HostPlatform, noMatchingPlatformErr.HostArch),
 				errs.SetIf(libcErr, errs.SetInput()),
 				errs.SetIf(libcErr, errs.SetTips(locale.Tr("err_user_libc_solution", api.GetPlatformURL(fmt.Sprintf("%s/%s", proj.NamespaceString(), "customize")).String()))),
 			)
@@ -59,8 +54,8 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 
 	// If there was an artifact download error, say so, rather than reporting a generic "could not
 	// update runtime" error.
-	case isUpdateErr && errors.As(*rerr, &errArtifactSetup):
-		for _, err := range errArtifactSetup.Errors() {
+	case errors.As(*rerr, &artifactSetupErr):
+		for _, err := range artifactSetupErr.Errors() {
 			if !errs.Matches(err, &setup.ArtifactDownloadError{}) {
 				continue
 			}
@@ -72,13 +67,34 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 			break // it only takes one download failure to report the runtime failure as due to download error
 		}
 
+	// We communicate buildplanner errors verbatim as the intend is that these are curated by the buildplanner
+	case errors.As(*rerr, &buildPlannerErr):
+		*rerr = errs.WrapUserFacing(*rerr,
+			buildPlannerErr.LocalizedError(),
+			errs.SetIf(buildPlannerErr.InputError(), errs.SetInput()))
+
+	// User has modified the buildscript and needs to run `state commit`
+	case errors.Is(*rerr, runtime.NeedsCommitError):
+		*rerr = errs.WrapUserFacing(*rerr, locale.T("notice_commit_build_script"), errs.SetInput())
+
+	// Buildscript is missing and needs to be recreated
+	case errors.Is(*rerr, runtime.NeedsBuildscriptResetError):
+		*rerr = errs.WrapUserFacing(*rerr, locale.T("notice_needs_buildscript_reset"), errs.SetInput())
+
+	// Artifact build errors
+	case errors.As(*rerr, &artifactErr):
+		errMsg := locale.Tr("err_build_artifact_failed_msg", artifactErr.Artifact.DisplayName)
+		*rerr = errs.WrapUserFacing(*rerr, locale.Tr("err_build_artifact_failed", errMsg,
+			strings.Join(artifactErr.Artifact.Errors, "\n"), artifactErr.Artifact.LogURL))
+
 	// If updating failed due to unidentified errors, and the user is not authenticated, add a tip suggesting that they authenticate as
 	// this may be a private project.
 	// Note since we cannot assert the actual error type we do not wrap this as user-facing, as we do not know what we're
 	// dealing with so the localized underlying errors are more appropriate.
-	case isUpdateErr && !auth.Authenticated():
+	case !auth.Authenticated(): // MUST BE LAST
 		*rerr = errs.AddTips(*rerr,
 			locale.T("tip_private_project_auth"),
 		)
+
 	}
 }

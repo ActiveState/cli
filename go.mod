@@ -78,6 +78,7 @@ require (
 	github.com/charmbracelet/bubbles v0.18.0
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/lipgloss v0.9.1
+	github.com/imacks/bitflags-go v1.0.0
 	github.com/zijiren233/yaml-comment v0.2.1
 )
 

@@ -55,11 +55,10 @@ type Runtime struct {
 
 // NeedsCommitError is an error returned when the local runtime's build script has changes that need
 // staging. This is not a fatal error. A runtime can still be used, but a warning should be emitted.
-type NeedsCommitError struct{ error }
+var NeedsCommitError = errors.New("runtime needs commit")
 
-func IsNeedsCommitError(err error) bool {
-	return errs.Matches(err, &NeedsCommitError{})
-}
+// NeedsBuildscriptResetError is an error returned when the runtime is improperly referenced in the project (eg. missing buildscript)
+var NeedsBuildscriptResetError = errors.New("needs runtime reset")
 
 func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel, auth *authentication.Auth, cfg Configurable, out output.Outputer) (*Runtime, error) {
 	rt := &Runtime{
@@ -80,7 +79,7 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 	return rt, nil
 }
 
-// New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
+// New attempts to create a new runtime from local storage.
 func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, auth *authentication.Auth, cfg Configurable, out output.Outputer) (*Runtime, error) {
 	logging.Debug("Initializing runtime for: %s/%s@%s", target.Owner(), target.Name(), target.CommitUUID())
 
@@ -125,34 +124,29 @@ func (r *Runtime) validateCache() error {
 		return nil
 	}
 
-	commitID := r.target.CommitUUID().String()
-	_, err := r.store.GetAndValidateBuildExpression(commitID)
-	if err != nil {
-		bp := model.NewBuildPlannerModel(r.auth)
-		bpExpr, err := bp.GetBuildExpression(commitID)
-		if err != nil {
-			return errs.Wrap(err, "Unable to get remote build expression")
-		}
-		if err := r.store.StoreBuildExpression(bpExpr, commitID); err != nil {
-			return errs.Wrap(err, "Unable to store build expression")
-		}
-	}
-
 	// Check if local build script has changes that should be committed.
 	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		cachedScript, err := r.store.BuildScript()
-		switch {
-		case err == nil:
-			script, err := buildscript.ScriptFromProject(r.target)
-			if err != nil && !errs.Matches(err, buildscript.ErrBuildscriptNotExist) {
-				return errs.Wrap(err, "Unable to get local build script")
+		script, err := buildscript.ScriptFromProject(r.target)
+		if err != nil {
+			if errs.Matches(err, buildscript.ErrBuildscriptNotExist) {
+				return errs.Pack(err, NeedsBuildscriptResetError)
 			}
-			if script != nil && !script.Equals(cachedScript) {
-				return &NeedsCommitError{errs.New("Runtime changes should be committed")}
-			}
+			return errs.Wrap(err, "Could not get buildscript from project")
+		}
 
-		case !errors.Is(err, store.ErrNoBuildScriptFile):
-			return errs.Wrap(err, "Unable to read cached build script")
+		cachedScript, err := r.store.BuildScript()
+		if err != nil {
+			if errors.Is(err, store.ErrNoBuildScriptFile) {
+				logging.Warning("No buildscript file exists in store, unable to check if buildscript is dirty. This can happen if you cleared your cache.")
+			} else {
+				return errs.Wrap(err, "Could not retrieve buildscript from store")
+			}
+		}
+
+		if cachedScript != nil {
+			if script != nil && !script.Equals(cachedScript) {
+				return NeedsCommitError
+			}
 		}
 	}
 
@@ -171,7 +165,7 @@ func (r *Runtime) Setup(eventHandler events.Handler) *setup.Setup {
 	return setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out, r.svcm)
 }
 
-func (r *Runtime) Update(setup *setup.Setup, buildResult *model.BuildResult, eventHandler events.Handler) (rerr error) {
+func (r *Runtime) Update(setup *setup.Setup, buildResult *model.BuildResult, commit *bpModel.Commit) (rerr error) {
 	if r.disabled {
 		logging.Debug("Skipping update as it is disabled")
 		return nil // nothing to do
@@ -183,7 +177,7 @@ func (r *Runtime) Update(setup *setup.Setup, buildResult *model.BuildResult, eve
 		r.recordCompletion(rerr)
 	}()
 
-	if err := setup.Update(buildResult); err != nil {
+	if err := setup.Update(buildResult, commit); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}
 
@@ -198,7 +192,6 @@ func (r *Runtime) Update(setup *setup.Setup, buildResult *model.BuildResult, eve
 }
 
 // SolveAndUpdate updates the runtime by downloading all necessary artifacts from the Platform and installing them locally.
-// This function is usually called, after New() returned with a NeedsUpdateError
 func (r *Runtime) SolveAndUpdate(eventHandler events.Handler) error {
 	if r.disabled {
 		logging.Debug("Skipping update as it is disabled")
@@ -206,12 +199,12 @@ func (r *Runtime) SolveAndUpdate(eventHandler events.Handler) error {
 	}
 
 	setup := r.Setup(eventHandler)
-	br, err := setup.Solve()
+	br, commit, err := setup.Solve()
 	if err != nil {
 		return errs.Wrap(err, "Could not solve")
 	}
 
-	return r.Update(setup, br, eventHandler)
+	return r.Update(setup, br, commit)
 }
 
 // HasCache tells us whether this runtime has any cached files. Note this does NOT tell you whether the cache is valid.
