@@ -50,14 +50,14 @@ func (a *Add) Run(ps AddRunParams) error {
 	}
 
 	if err := requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(
-		params.name,
-		params.version,
 		nil,
-		params.BitWidth,
-		bpModel.OperationAdded,
-		nil,
-		&model.NamespacePlatform,
-		nil,
+		&requirements.Requirement{
+			Name:          params.name,
+			Version:       params.version,
+			Operation:     bpModel.OperationAdded,
+			BitWidth:      params.BitWidth,
+			NamespaceType: &model.NamespacePlatform,
+		},
 	); err != nil {
 		return locale.WrapError(err, "err_add_platform", "Could not add platform.")
 	}

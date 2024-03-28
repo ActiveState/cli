@@ -47,13 +47,14 @@ func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) (rerr
 	}
 
 	return requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(
-		params.Package.Name,
-		params.Package.Version,
-		params.Revision.Int,
-		0, // bit-width placeholder that does not apply here
-		bpModel.OperationAdded,
-		ns,
-		nsTypeV,
 		ts,
+		&requirements.Requirement{
+			Name:          params.Package.Name,
+			Version:       params.Package.Version,
+			Revision:      *params.Revision.Int,
+			Operation:     bpModel.OperationAdded,
+			Namespace:     ns,
+			NamespaceType: nsTypeV,
+		},
 	)
 }

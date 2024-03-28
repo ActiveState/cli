@@ -5,7 +5,6 @@ import (
 
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
@@ -67,19 +66,12 @@ func (u *Update) Run(params *UpdateParams) error {
 	}
 
 	op := requirements.NewRequirementOperation(u.prime)
-	if err != nil {
-		return errs.Wrap(err, "Could not create requirement operation.")
-	}
-
-	err = op.ExecuteRequirementOperation(
-		lang.Name,
-		lang.Version,
-		nil,
-		0, // bit-width placeholder that does not apply here
-		bpModel.OperationAdded,
-		nil,
-		&model.NamespaceLanguage,
-		nil)
+	err = op.ExecuteRequirementOperation(nil, &requirements.Requirement{
+		Name:          lang.Name,
+		Version:       lang.Version,
+		NamespaceType: &model.NamespaceLanguage,
+		Operation:     bpModel.OperationAdded,
+	})
 	if err != nil {
 		return locale.WrapError(err, "err_language_update", "Could not update language: {{.V0}}", lang.Name)
 	}
