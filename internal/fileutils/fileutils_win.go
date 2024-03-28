@@ -90,7 +90,7 @@ func HideFile(path string) error {
 	if err != nil {
 		return fmt.Errorf("Hide file (UTF16 conversion): %w", err)
 	}
-	uipPath := uintptr(unsafe.Pointer(&utfPath))
+	uipPath := uintptr(unsafe.Pointer(utfPath))
 	r1, _, err := setFileAttrs.Call(uipPath, 2)
 	if r1 == 0 && !errors.Is(err, windows.ERROR_SUCCESS) {
 		return fmt.Errorf("Hide file (set attributes): %w", err)

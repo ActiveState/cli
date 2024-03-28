@@ -1,7 +1,7 @@
 package logging
 
 import (
-	"io/fs" //nolint:staticcheck
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"

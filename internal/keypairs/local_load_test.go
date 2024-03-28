@@ -38,7 +38,10 @@ func (suite *KeypairLocalLoadTestSuite) TestNoKeyFileFound() {
 func (suite *KeypairLocalLoadTestSuite) assertTooPermissive(fileMode os.FileMode) {
 	tmpKeyName := fmt.Sprintf("test-rsa-%0.4o", fileMode)
 	keyFile := suite.createConfigDirFile(tmpKeyName+".key", fileMode)
-	defer osutil.RemoveConfigFile(suite.cfg.ConfigPath(), tmpKeyName+".key") //nolint:errcheck
+	defer func() {
+		err := osutil.RemoveConfigFile(suite.cfg.ConfigPath(), tmpKeyName+".key")
+		suite.Require().NoError(err)
+	}()
 	suite.Require().NoError(keyFile.Close())
 
 	kp, err := keypairs.Load(suite.cfg, tmpKeyName)

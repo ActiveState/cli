@@ -156,7 +156,7 @@ func startAndWait(ctx context.Context, ipComm IPCommunicator, exec, argText stri
 
 	debugInfo, err := newDebugData(ipComm, startSvc, argText)
 	if err != nil {
-		return locale.WrapError(err, "svcctl_cannot_create_debug_info", "Cannot create debug info: {{.V0}}", err.Error())
+		return locale.WrapError(err, "svcctl_cannot_create_debug_info", err.Error())
 	}
 
 	if _, err := osutils.ExecuteAndForget(exec, args); err != nil {
@@ -217,7 +217,7 @@ func waitUp(ctx context.Context, ipComm IPCommunicator, debugInfo *debugData) er
 func stopAndWait(ctx context.Context, ipComm IPCommunicator) error {
 	debugInfo, err := newDebugData(ipComm, stopSvc, "")
 	if err != nil {
-		return locale.WrapError(err, "svcctl_cannot_create_debug_info", "Cannot create debug info: {{.V0}}", err.Error())
+		return locale.WrapError(err, "svcctl_cannot_create_debug_info", err.Error())
 	}
 
 	if err := ipComm.StopServer(ctx); err != nil {

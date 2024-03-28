@@ -155,7 +155,10 @@ func filterSecrets(proj *project.Project, cfg keypairs.Configurable, auth *authe
 	oldExpander := project.RegisteredExpander("secrets")
 	if oldExpander != nil {
 		defer func() {
-			rerr = project.RegisterExpander("secrets", oldExpander)
+			err := project.RegisterExpander("secrets", oldExpander)
+			if err != nil {
+				rerr = errs.Wrap(err, "Could not register old secrets expander")
+			}
 		}()
 	}
 	expander := project.NewSecretExpander(secretsapi.Get(auth), proj, nil, cfg, auth)

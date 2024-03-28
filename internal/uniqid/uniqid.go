@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/google/uuid"
 )
@@ -190,7 +191,10 @@ func writeFile(filePath string, data []byte) (rerr error) {
 			return fmt.Errorf("os.Chmod %s failed: %w", filePath, err)
 		}
 		defer func() {
-			rerr = os.Chmod(filePath, stat.Mode().Perm())
+			err = os.Chmod(filePath, stat.Mode().Perm())
+			if err != nil {
+				rerr = errs.Wrap(err, "os.Chmod %s failed", filePath)
+			}
 		}()
 	}
 
