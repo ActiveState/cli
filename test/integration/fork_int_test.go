@@ -13,7 +13,6 @@ import (
 
 type ForkIntegrationTestSuite struct {
 	tagsuite.Suite
-	username string
 }
 
 func (suite *ForkIntegrationTestSuite) cleanup(ts *e2e.Session) {

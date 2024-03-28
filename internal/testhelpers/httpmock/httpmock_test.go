@@ -1,7 +1,7 @@
 package httpmock
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -18,7 +18,7 @@ func TestMock(t *testing.T) {
 
 	Register("GET", "test")
 	resp, err := http.Get(prefix + "test")
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	require.NoError(t, err, "Can call configured http mock")
 	assert.Equal(t, 200, resp.StatusCode)
@@ -26,7 +26,7 @@ func TestMock(t *testing.T) {
 
 	RegisterWithCode("GET", "test", 501)
 	resp, err = http.Get(prefix + "test")
-	body, _ = ioutil.ReadAll(resp.Body)
+	body, _ = io.ReadAll(resp.Body)
 	resp.Body.Close()
 	require.NoError(t, err, "Can call configured http mock")
 	assert.Equal(t, 501, resp.StatusCode)
@@ -34,7 +34,7 @@ func TestMock(t *testing.T) {
 
 	RegisterWithResponse("GET", "test", 501, "custom")
 	resp, err = http.Get(prefix + "test")
-	body, _ = ioutil.ReadAll(resp.Body)
+	body, _ = io.ReadAll(resp.Body)
 	resp.Body.Close()
 	require.NoError(t, err, "Can call configured http mock")
 	assert.Equal(t, 501, resp.StatusCode)
@@ -42,7 +42,7 @@ func TestMock(t *testing.T) {
 
 	RegisterWithResponseBody("GET", "test", 501, "body")
 	resp, err = http.Get(prefix + "test")
-	body, _ = ioutil.ReadAll(resp.Body)
+	body, _ = io.ReadAll(resp.Body)
 	resp.Body.Close()
 	require.NoError(t, err, "Can call configured http mock")
 	assert.Equal(t, 501, resp.StatusCode)
@@ -50,7 +50,7 @@ func TestMock(t *testing.T) {
 
 	RegisterWithResponseBytes("GET", "test", 501, []byte("body"))
 	resp, err = http.Get(prefix + "test")
-	body, _ = ioutil.ReadAll(resp.Body)
+	body, _ = io.ReadAll(resp.Body)
 	resp.Body.Close()
 	require.NoError(t, err, "Can call configured http mock")
 	assert.Equal(t, 501, resp.StatusCode)

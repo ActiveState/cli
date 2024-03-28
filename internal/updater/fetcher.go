@@ -3,7 +3,7 @@ package updater
 import (
 	"crypto/sha256"
 	"fmt"
-	"io/ioutil"
+	"io"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
@@ -35,7 +35,7 @@ func (f *Fetcher) Fetch(update *UpdateInstaller, targetDir string) error {
 		return errs.Wrap(err, msg)
 	}
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		msg := "Could not read response body"
 		f.analyticsEvent(update.AvailableUpdate.Version, msg)

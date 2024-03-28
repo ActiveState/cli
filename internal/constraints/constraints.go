@@ -18,23 +18,6 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-var cache = make(map[string]interface{})
-
-func getCache(key string, getter func() (interface{}, error)) (interface{}, error) {
-	if v, ok := cache[key]; ok {
-		return v, nil
-	}
-	v, err := getter()
-	if err != nil {
-		return nil, err
-	}
-	cache[key] = v
-	return v, err
-}
-
-// For testing.
-var osOverride, osVersionOverride, archOverride, libcOverride, compilerOverride string
-
 type Conditional struct {
 	params map[string]interface{}
 	funcs  template.FuncMap
@@ -146,7 +129,9 @@ func (c *Conditional) Eval(conditional string) (bool, error) {
 	}
 
 	result := bytes.Buffer{}
-	tpl.Execute(&result, c.params)
+	if err := tpl.Execute(&result, c.params); err != nil {
+		return false, locale.WrapInputError(err, "err_conditional", "Invalid 'if' condition: '{{.V0}}', error: '{{.V1}}'.", conditional, err.Error())
+	}
 
 	return result.String() == "1", nil
 }
