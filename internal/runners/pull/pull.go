@@ -277,9 +277,9 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) (strfmt.U
 		return "", errs.Wrap(err, "Could not update build script with merged changes")
 	}
 
-	if err := buildscript.Update(p.project, nil, p.out); err == nil {
+	if synced, err := buildscriptRunbits.Sync(p.project, nil, p.out, p.auth); err == nil && synced {
 		return localcommit.Get(p.project.Dir())
-	} else {
+	} else if err != nil {
 		return "", errs.Wrap(err, "Could not commit merged build script")
 	}
 
