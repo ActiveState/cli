@@ -5,6 +5,7 @@ import (
 	"os"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"time"
 
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
@@ -98,6 +99,30 @@ func (w *Watcher) check() {
 func (w *Watcher) RecordUsage(e entry) {
 	logging.Debug("Recording usage of %s (%d)", e.Exec, e.PID)
 	w.an.EventWithSource(anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, e.Source, e.Dims)
+}
+
+func (w *Watcher) GetProcessesInUse(execDir string) []entry {
+	inUse := make([]entry, 0)
+
+	execDir = strings.ToLower(execDir) // match case-insensitively
+	for _, proc := range w.watching {
+		if !strings.Contains(strings.ToLower(proc.Exec), execDir) {
+			continue
+		}
+		isRunning, err := proc.IsRunning()
+		if err != nil && !errs.Matches(err, &processError{}) {
+			multilog.Error("Could not check if runtime process is running: %s", errs.JoinMessage(err))
+			// Any errors should not affect fetching which processes are currently in use. We just won't
+			// include this one in the list.
+		}
+		if !isRunning {
+			logging.Debug("Runtime process %d:%s is not running", proc.PID, proc.Exec)
+			continue
+		}
+		inUse = append(inUse, proc) // append a copy
+	}
+
+	return inUse
 }
 
 func (w *Watcher) Close() error {

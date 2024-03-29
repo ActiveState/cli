@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -19,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -185,7 +186,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return &errUnrecognizedLanguage{Name: languageName}
 	}
 
-	version, err := deriveVersion(lang, languageVersion)
+	version, err := deriveVersion(lang, languageVersion, r.auth)
 	if err != nil {
 		if inferred || !locale.IsInputError(err) {
 			return locale.WrapError(err, "err_init_lang", "", languageName, languageVersion)
@@ -266,7 +267,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return errs.Wrap(err, "Unable to create local commit file")
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, proj, commitID, true, target.TriggerInit, r.svcModel, r.config)
+	_, err = runtime.SolveAndUpdate(r.auth, r.out, r.analytics, proj, &commitID, target.TriggerInit, r.svcModel, r.config, runtime.OptOrderChanged)
 	if err != nil {
 		logging.Debug("Deleting remotely created project due to runtime setup error")
 		err2 := model.DeleteProject(namespace.Owner, namespace.Project, r.auth)
@@ -303,7 +304,26 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	return nil
 }
 
-func deriveVersion(lang language.Language, version string) (string, error) {
+func getKnownVersions(lang language.Language, auth *authentication.Auth) ([]string, error) {
+	pkgs, err := model.SearchIngredientsStrict(model.NewNamespaceLanguage().String(), lang.Requirement(), false, true, nil, auth)
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to fetch Platform languages")
+	}
+
+	if len(pkgs) == 0 {
+		return nil, &errUnrecognizedLanguage{Name: lang.Requirement()}
+	}
+
+	knownVersions := make([]string, len(pkgs))
+	for i, pkg := range pkgs {
+		knownVersions[i] = pkg.Version
+	}
+	return knownVersions, nil
+}
+
+var versionRe = regexp.MustCompile(`^\d(\.\d+)*$`)
+
+func deriveVersion(lang language.Language, version string, auth *authentication.Auth) (string, error) {
 	err := lang.Validate()
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to validate language")
@@ -325,6 +345,28 @@ func deriveVersion(lang language.Language, version string) (string, error) {
 
 		multilog.Error("Could not find requested language in fetched languages (using hardcoded default version): %s", lang)
 		return lang.RecommendedVersion(), nil
+	}
+
+	// If a bare version number was given, and if it is a partial version number (e.g. python@3.10),
+	// append a '.x' suffix.
+	if versionRe.MatchString(version) {
+		knownVersions, err := getKnownVersions(lang, auth)
+		if err != nil {
+			return "", errs.Wrap(err, "Unable to get known versions for language %s", lang.Requirement())
+		}
+
+		validVersionPrefix := false
+		for _, knownVersion := range knownVersions {
+			if knownVersion == version {
+				return version, nil // e.g. python@3.10.10
+			} else if strings.HasPrefix(knownVersion, version) {
+				validVersionPrefix = true // not an exact match, e.g. python@3.10
+			}
+		}
+
+		if validVersionPrefix {
+			version += ".x"
+		}
 	}
 
 	return version, nil

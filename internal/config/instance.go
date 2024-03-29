@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
+	mediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
@@ -120,8 +121,6 @@ func (i *Instance) GetThenSet(key string, valueF func(currentValue interface{}) 
 const CancelSet = "__CANCEL__"
 
 func (i *Instance) setWithCallback(key string, valueF func(currentValue interface{}) (interface{}, error)) (rerr error) {
-	logging.Debug("Setting config: %s", key)
-
 	defer func() {
 		if rerr != nil {
 			logging.Warning("setWithCallback error: %v", errs.JoinMessage(rerr))
@@ -165,10 +164,10 @@ func (i *Instance) Set(key string, value interface{}) error {
 }
 
 func (i *Instance) IsSet(key string) bool {
-	return i.Get(key) != nil
+	return i.rawGet(key) != nil
 }
 
-func (i *Instance) Get(key string) interface{} {
+func (i *Instance) rawGet(key string) interface{} {
 	row := i.db.QueryRow(`SELECT value FROM config WHERE key=?`, key)
 	if row.Err() != nil {
 		multilog.Error("config:get query failed: %s", errs.JoinMessage(row.Err()))
@@ -189,6 +188,17 @@ func (i *Instance) Get(key string) interface{} {
 	}
 
 	return result
+}
+
+func (i *Instance) Get(key string) interface{} {
+	result := i.rawGet(key)
+	if result != nil {
+		return result
+	}
+	if opt := mediator.GetOption(key); mediator.KnownOption(opt) {
+		return opt.Default
+	}
+	return nil
 }
 
 // GetString retrieves a string for a given key

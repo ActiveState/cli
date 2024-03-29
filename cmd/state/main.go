@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
+	"github.com/ActiveState/cli/internal/migrator"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -85,7 +86,7 @@ func main() {
 
 	// Configuration options
 	// This should only be used if the config option is not exclusive to one package.
-	configMediator.RegisterOption(constants.OptinBuildscriptsConfig, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
+	configMediator.RegisterOption(constants.OptinBuildscriptsConfig, configMediator.Bool, false)
 
 	// Set up our output formatter/writer
 	outFlags := parseOutputFlags(os.Args)
@@ -160,6 +161,15 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		return logData
 	})
 
+	auth := authentication.New(cfg)
+	defer events.Close("auth", auth.Close)
+
+	if err := auth.Sync(); err != nil {
+		logging.Warning("Could not sync authenticated state: %s", errs.JoinMessage(err))
+	}
+
+	projectfile.RegisterMigrator(migrator.NewMigrator(auth, cfg))
+
 	// Retrieve project file
 	pjPath, err := projectfile.GetProjectFilePath()
 	if err != nil && errs.Matches(err, &projectfile.ErrorNoProjectFromEnv{}) {
@@ -183,13 +193,6 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	pjNamespace := ""
 	if pj != nil {
 		pjNamespace = pj.Namespace().String()
-	}
-
-	auth := authentication.New(cfg)
-	defer events.Close("auth", auth.Close)
-
-	if err := auth.Sync(); err != nil {
-		logging.Warning("Could not sync authenticated state: %s", errs.JoinMessage(err))
 	}
 
 	an := anAsync.New(anaConst.SrcStateTool, svcmodel, cfg, auth, out, pjNamespace)

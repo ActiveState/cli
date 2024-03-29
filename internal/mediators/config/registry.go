@@ -17,6 +17,7 @@ var EmptyEvent = func(value interface{}) (interface{}, error) { return value, ni
 type Option struct {
 	Name         string
 	Type         Type
+	Default      interface{}
 	GetEvent     Event
 	SetEvent     Event
 	isRegistered bool
@@ -31,13 +32,19 @@ var registry = make(Registry)
 func GetOption(key string) Option {
 	rule, ok := registry[key]
 	if !ok {
-		return Option{key, String, EmptyEvent, EmptyEvent, false}
+		return Option{key, String, "", EmptyEvent, EmptyEvent, false}
 	}
 	return rule
 }
 
-func RegisterOption(key string, t Type, get Event, set Event) {
-	registry[key] = Option{key, t, get, set, true}
+// Registers a config option without get/set events.
+func RegisterOption(key string, t Type, defaultValue interface{}) {
+	RegisterOptionWithEvents(key, t, defaultValue, EmptyEvent, EmptyEvent)
+}
+
+// Registers a config option with get/set events.
+func RegisterOptionWithEvents(key string, t Type, defaultValue interface{}, get, set Event) {
+	registry[key] = Option{key, t, defaultValue, get, set, true}
 }
 
 func KnownOption(rule Option) bool {
