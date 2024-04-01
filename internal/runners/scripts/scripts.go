@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -36,7 +37,7 @@ func (s *Scripts) Run() error {
 	logging.Debug("Execute scripts command")
 
 	if s.project == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 	s.output.Notice(locale.Tr("operating_message", s.project.NamespaceString(), s.project.Dir()))
 
