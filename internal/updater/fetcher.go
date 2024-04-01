@@ -4,12 +4,15 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"net"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
@@ -37,6 +40,9 @@ func (f *Fetcher) Fetch(update *UpdateInstaller, targetDir string) error {
 
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
+		if err2, ok := err.(net.Error); ok && err2.Timeout() {
+			return locale.NewInputError("err_user_network_timeout", "", locale.Tr("err_user_network_solution", constants.ForumsURL))
+		}
 		msg := "Could not read response body"
 		f.analyticsEvent(update.AvailableUpdate.Version, msg)
 		return errs.Wrap(err, msg)
