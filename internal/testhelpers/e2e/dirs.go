@@ -1,7 +1,6 @@
 package e2e
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -30,7 +29,7 @@ type Dirs struct {
 // NewDirs creates all temporary directories
 func NewDirs(base string) (*Dirs, error) {
 	if base == "" {
-		tmpDir, err := ioutil.TempDir("", "")
+		tmpDir, err := os.MkdirTemp("", "")
 		if err != nil {
 			return nil, err
 		}

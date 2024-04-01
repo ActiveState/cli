@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/alecthomas/template"
 
@@ -75,7 +76,7 @@ func (r *RoundTripper) UserAgent() string {
 	}
 
 	var userAgent bytes.Buffer
-	agentTemplate.Execute(&userAgent, struct {
+	err = agentTemplate.Execute(&userAgent, struct {
 		UserAgent    string
 		OS           string
 		OSVersion    string
@@ -86,6 +87,9 @@ func (r *RoundTripper) UserAgent() string {
 		OSVersion:    osVersionStr,
 		Architecture: sysinfo.Architecture().String(),
 	})
+	if err != nil {
+		multilog.Error("Could not execute user agent template: %v", err)
+	}
 
 	return userAgent.String()
 }

@@ -46,7 +46,10 @@ func (l *Log) Run(params *LogParams) (rerr error) {
 
 	// Fetch list of log files.
 	logDir := filepath.Dir(logging.FilePath())
-	logFiles := fileutils.ListDirSimple(logDir, false)
+	logFiles, err := fileutils.ListDirSimple(logDir, false)
+	if err != nil {
+		return errs.Wrap(err, "failed to list log files")
+	}
 
 	// Filter down the list based on the given prefix.
 	filteredLogFiles := []*logFile{}

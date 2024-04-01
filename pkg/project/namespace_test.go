@@ -4,16 +4,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ActiveState/cli/internal/environment"
 )
-
-func newUUID(uuid string) *strfmt.UUID {
-	u := strfmt.UUID(uuid)
-	return &u
-}
 
 func TestParseNamespace(t *testing.T) {
 	_, err := ParseNamespace("valid/namespace")

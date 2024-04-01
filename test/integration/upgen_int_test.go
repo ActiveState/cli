@@ -2,7 +2,7 @@ package integration
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -39,7 +39,7 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 	suite.Require().FileExists(archivePath, "Make sure you ran 'state run generate-update'")
 	suite.T().Logf("file %s exists\n", archivePath)
 
-	tempPath, err := ioutil.TempDir("", "")
+	tempPath, err := os.MkdirTemp("", "")
 	suite.Require().NoError(err)
 
 	ts := e2e.New(suite.T(), false)

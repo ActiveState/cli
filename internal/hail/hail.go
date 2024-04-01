@@ -2,7 +2,6 @@ package hail
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -153,5 +152,5 @@ func newWatcher(file string) (*watcher, error) {
 }
 
 func (w *watcher) data() ([]byte, error) {
-	return ioutil.ReadFile(w.file)
+	return os.ReadFile(w.file)
 }

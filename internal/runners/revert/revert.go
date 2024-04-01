@@ -122,7 +122,9 @@ func (r *Revert) Run(params *Params) (rerr error) {
 
 	if !r.out.Type().IsStructured() {
 		r.out.Print(locale.Tl("revert_info", "You are about to revert{{.V0}} the following commit:", preposition))
-		commit.PrintCommit(r.out, targetCommit, orgs)
+		if err := commit.PrintCommit(r.out, targetCommit, orgs); err != nil {
+			return locale.WrapError(err, "err_revert_print_commit", "Could not print commit")
+		}
 	}
 
 	defaultChoice := params.Force || !r.out.Config().Interactive
@@ -163,8 +165,6 @@ func (r *Revert) Run(params *Params) (rerr error) {
 	r.out.Notice(locale.T("operation_success_local"))
 	return nil
 }
-
-type revertFunc func(params revertParams, bp *model.BuildPlanner) (strfmt.UUID, error)
 
 type revertParams struct {
 	organization   string

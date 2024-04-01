@@ -63,10 +63,6 @@ func (r *RegistryKeyMock) Close() error {
 	return nil
 }
 
-func openKeyMock(path string) (osutils.RegistryKey, error) {
-	return &RegistryKeyMock{}, nil
-}
-
 func TestCmdEnv_unset(t *testing.T) {
 	type fields struct {
 		registryMock *RegistryKeyMock

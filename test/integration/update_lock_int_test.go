@@ -29,7 +29,8 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	defer cfg.Close()
 
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	pjfile.Save(cfg)
+	err = pjfile.Save(cfg)
+	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("update", "lock"),
@@ -88,7 +89,8 @@ func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 
 			yamlPath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 			pjfile.SetPath(yamlPath)
-			pjfile.Save(cfg)
+			err = pjfile.Save(cfg)
+			suite.Require().NoError(err)
 
 			cp := ts.SpawnWithOpts(
 				e2e.OptArgs("update", "lock", "--set-channel", tt.lock),
@@ -143,7 +145,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmation() {
 			defer cfg.Close()
 
 			pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-			pjfile.Save(cfg)
+			err = pjfile.Save(cfg)
+			suite.Require().NoError(err)
 
 			args := []string{"update", "lock"}
 			if tt.Forced {
@@ -181,7 +184,8 @@ func (suite *UpdateIntegrationTestSuite) TestLockUnlock() {
 	defer cfg.Close()
 
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	pjfile.Save(cfg)
+	err = pjfile.Save(cfg)
+	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("update", "lock", "--non-interactive"),

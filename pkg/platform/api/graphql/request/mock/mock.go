@@ -3,7 +3,7 @@ package mock
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -47,8 +47,6 @@ type Mock struct {
 	responders []*Responder
 }
 
-var mock *httpmock.HTTPMock
-
 // Init initializes the mocking helper
 func Init() *Mock {
 	mock := &Mock{
@@ -71,7 +69,7 @@ func (m *Mock) Close() {
 
 // Close de-activates the mocking helper
 func (m *Mock) handleRequest(req *http.Request) (int, string) {
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		return 500, err.Error()
 	}

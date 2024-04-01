@@ -2,7 +2,7 @@ package updater
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -103,7 +103,7 @@ func (u *Checker) getUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 	var resp *http.Response
 	if resp, err = u.retryhttp.Get(infoURL); err == nil {
 		var res []byte
-		res, err = ioutil.ReadAll(resp.Body)
+		res, err = io.ReadAll(resp.Body)
 		switch {
 		// If there was an error reading the response.
 		case err != nil:

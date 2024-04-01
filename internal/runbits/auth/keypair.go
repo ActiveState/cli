@@ -38,11 +38,6 @@ func generateKeypairForUser(cfg keypairs.Configurable, passphrase string, auth *
 	return nil
 }
 
-func validateLocalPrivateKey(cfg keypairs.Configurable, publicKey string) bool {
-	localKeypair, err := keypairs.LoadWithDefaults(cfg)
-	return err == nil && localKeypair.MatchPublicKey(publicKey)
-}
-
 // processExistingKeypairForUser will attempt to ensure the stored private-key for the user is encrypted
 // using the provided passphrase. If passphrase match fails, processExistingKeypairForUser will then try
 // validate that the locally stored private-key has a public-key matching the one provided in the keypair.
@@ -96,7 +91,9 @@ func recoverKeypairFromPreviousPassphrase(keypairRes *secretsModels.Keypair, pas
 			// previous passphrase is valid, encrypt private-key with new passphrase and upload
 			encodedKeypair, err := keypairs.EncodeKeypair(keypair, passphrase)
 			if err == nil {
-				err = keypairs.SaveEncodedKeypair(cfg, secretsapi.Get(auth), encodedKeypair, auth)
+				if saveErr := keypairs.SaveEncodedKeypair(cfg, secretsapi.Get(auth), encodedKeypair, auth); saveErr != nil {
+					return saveErr
+				}
 			}
 		}
 	}
