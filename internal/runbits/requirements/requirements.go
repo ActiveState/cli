@@ -220,12 +220,8 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		return errs.Wrap(err, "Could not solve runtime")
 	}
 
-	var requirementNames []string
-	for _, requirement := range requirements {
-		requirementNames = append(requirementNames, requirement.Name)
-	}
-	// Report CVE's
-	if err := r.cveReport(*changedArtifacts, requirements[0].Operation, requirements[0].Namespace, requirementNames...); err != nil {
+	// Report CVEs
+	if err := r.cveReport(*changedArtifacts, requirements...); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
@@ -253,7 +249,8 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		out.Notice(locale.Tr("install_initial_success", r.Project.Source().Path()))
 	}
 
-	// TODO: Print the result
+	// Print the result
+	r.outputResults(requirements...)
 
 	out.Notice(locale.T("operation_success_local"))
 
@@ -327,11 +324,20 @@ func (r *RequirementOperation) resolveNamespace(ts *time.Time, requirement *Requ
 }
 
 func (r *RequirementOperation) validatePackages(requirements ...*Requirement) error {
+	var requirementNames []string
+	for _, requirement := range requirements {
+		requirementNames = append(requirementNames, requirement.Name)
+	}
+
+	pg := output.StartSpinner(r.Output, locale.Tr("progress_search", strings.Join(requirementNames, ",")), constants.TerminalAnimationInterval)
 	for _, requirement := range requirements {
 		if err := r.validatePackage(requirement); err != nil {
 			return errs.Wrap(err, "Could not validate package")
 		}
 	}
+	pg.Stop(locale.T("progress_found"))
+	pg = nil
+
 	return nil
 }
 
@@ -341,10 +347,7 @@ func (r *RequirementOperation) validatePackage(requirement *Requirement) error {
 	}
 
 	requirement.originalRequirementName = requirement.Name
-	var pg *output.Spinner
 	if requirement.validatePkg {
-		pg = output.StartSpinner(r.Output, locale.Tr("progress_search", requirement.Name), constants.TerminalAnimationInterval)
-
 		normalized, err := model.FetchNormalizedName(*requirement.Namespace, requirement.Name, r.Auth)
 		if err != nil {
 			multilog.Error("Failed to normalize '%s': %v", requirement.Name, err)
@@ -385,9 +388,6 @@ func (r *RequirementOperation) validatePackage(requirement *Requirement) error {
 				}
 			}
 		}
-
-		pg.Stop(locale.T("progress_found"))
-		pg = nil
 	}
 
 	return nil
@@ -505,49 +505,58 @@ func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) 
 	return rt, buildResult, &changedArtifacts, nil
 }
 
-func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChangeset, operation bpModel.Operation, ns *model.Namespace, requirementNames ...string) error {
-	if !r.Auth.Authenticated() || operation == bpModel.OperationRemoved {
+func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChangeset, requirements ...*Requirement) error {
+	if !r.Auth.Authenticated() {
 		return nil
 	}
 
 	pg := output.StartSpinner(r.Output, locale.T("progress_cve_search"), constants.TerminalAnimationInterval)
 
-	ingredients := []*request.Ingredient{}
-	for _, artifact := range artifactChangeset.Added {
-		ingredients = append(ingredients, &request.Ingredient{
-			Namespace: artifact.Namespace,
-			Name:      artifact.Name,
-			Version:   *artifact.Version,
-		})
-	}
-	for _, artifact := range artifactChangeset.Updated {
-		if !artifact.IngredientChange {
-			continue // For CVE reporting we only care about ingredient changes
+	var ingredientVulnerabilities []*model.VulnerabilityIngredient
+	var requirementNames []string
+	for _, requirement := range requirements {
+		if requirement.Operation == bpModel.OperationRemoved {
+			continue
 		}
-		ingredients = append(ingredients, &request.Ingredient{
-			Namespace: artifact.To.Namespace,
-			Name:      artifact.To.Name,
-			Version:   *artifact.To.Version,
-		})
-	}
 
-	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(r.Auth, ingredients)
-	if err != nil {
-		return errs.Wrap(err, "Failed to retrieve vulnerabilities")
-	}
+		ingredients := []*request.Ingredient{}
+		for _, artifact := range artifactChangeset.Added {
+			ingredients = append(ingredients, &request.Ingredient{
+				Namespace: artifact.Namespace,
+				Name:      artifact.Name,
+				Version:   *artifact.Version,
+			})
+		}
+		for _, artifact := range artifactChangeset.Updated {
+			if !artifact.IngredientChange {
+				continue // For CVE reporting we only care about ingredient changes
+			}
+			ingredients = append(ingredients, &request.Ingredient{
+				Namespace: artifact.To.Namespace,
+				Name:      artifact.To.Name,
+				Version:   *artifact.To.Version,
+			})
+		}
 
-	// No vulnerabilities, nothing further to do here
-	if len(ingredientVulnerabilities) == 0 {
-		pg.Stop(locale.T("progress_safe"))
-		pg = nil
-		return nil
-	}
+		ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(r.Auth, ingredients)
+		if err != nil {
+			return errs.Wrap(err, "Failed to retrieve vulnerabilities")
+		}
 
-	vulnerabilities := model.CombineVulnerabilities(ingredientVulnerabilities, requirementNames...)
+		// No vulnerabilities, nothing further to do here
+		if len(ingredientVulnerabilities) == 0 {
+			pg.Stop(locale.T("progress_safe"))
+			pg = nil
+			return nil
+		}
+
+		requirementNames = append(requirementNames, requirement.Name)
+	}
 
 	pg.Stop(locale.T("progress_unsafe"))
 	pg = nil
 
+	vulnerabilities := model.CombineVulnerabilities(ingredientVulnerabilities, requirementNames...)
 	r.summarizeCVEs(r.Output, vulnerabilities)
 
 	if r.shouldPromptForSecurity(vulnerabilities) {
@@ -671,6 +680,40 @@ func (r *RequirementOperation) promptForSecurity() (bool, error) {
 	}
 
 	return confirm, nil
+}
+
+func (r *RequirementOperation) outputResults(requirements ...*Requirement) {
+	for _, requirement := range requirements {
+		r.outputResult(requirement)
+	}
+}
+
+func (r *RequirementOperation) outputResult(requirement *Requirement) {
+	// Print the result
+	message := locale.Tr(fmt.Sprintf("%s_version_%s", requirement.Namespace.Type(), requirement.Operation), requirement.Name, requirement.Version)
+	if requirement.Version == "" {
+		message = locale.Tr(fmt.Sprintf("%s_%s", requirement.Namespace.Type(), requirement.Operation), requirement.Name)
+	}
+
+	r.Output.Print(output.Prepare(
+		message,
+		&struct {
+			Name      string `json:"name"`
+			Version   string `json:"version,omitempty"`
+			Type      string `json:"type"`
+			Operation string `json:"operation"`
+		}{
+			requirement.Name,
+			requirement.Version,
+			requirement.Namespace.Type().String(),
+			requirement.Operation.String(),
+		}))
+
+	if requirement.originalRequirementName != requirement.Name {
+		r.Output.Notice(locale.Tl("package_version_differs",
+			"Note: the actual package name ({{.V0}}) is different from the requested package name ({{.V1}})",
+			requirement.Name, requirement.originalRequirementName))
+	}
 }
 
 func supportedLanguageByName(supported []medmodel.SupportedLanguage, langName string) medmodel.SupportedLanguage {
