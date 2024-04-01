@@ -194,7 +194,7 @@ func (p *PackageValueNSRequired) Set(s string) error {
 		return errs.Wrap(err, "PackageValueNSRequired.Set failed")
 	}
 	if p.Namespace == "" {
-		return locale.NewInputError("err_package_value_ns_required", "invalid package name format: %s (expected '<namespace>/<name>[@version]')", s)
+		return locale.NewInputError("err_package_value_ns_required", "invalid package name format: {{.V0}} (expected '<namespace>/<name>[@version]')", s)
 	}
 	return nil
 }
