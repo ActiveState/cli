@@ -59,6 +59,7 @@ func New(prime primeable) *Revert {
 	}
 }
 
+const remoteCommitID = "REMOTE"
 const headCommitID = "HEAD"
 
 func (r *Revert) Run(params *Params) (rerr error) {
@@ -69,14 +70,18 @@ func (r *Revert) Run(params *Params) (rerr error) {
 	}
 
 	commitID := params.CommitID
-	if !strfmt.IsUUID(commitID) && !strings.EqualFold(commitID, headCommitID) {
+	if strings.EqualFold(commitID, headCommitID) {
+		r.out.Notice(locale.T("warn_revert_head"))
+		commitID = remoteCommitID
+	}
+	if !strfmt.IsUUID(commitID) && !strings.EqualFold(commitID, remoteCommitID) {
 		return locale.NewInputError("err_invalid_commit_id", "Invalid commit ID")
 	}
 	latestCommit, err := localcommit.Get(r.project.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
-	if strings.EqualFold(commitID, headCommitID) {
+	if strings.EqualFold(commitID, remoteCommitID) {
 		commitID = latestCommit.String()
 	}
 
