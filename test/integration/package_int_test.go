@@ -667,6 +667,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_NoPrompt() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("install", "urllib3@2.0.2"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Warning: Dependency has 2 known vulnerabilities")
 	cp.ExpectExitCode(0)
