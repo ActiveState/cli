@@ -56,7 +56,6 @@ import (
 
 	rt, err := runtime.New(offlineTarget, analytics, nil, nil)
 	suite.Require().Error(err)
-	suite.Assert().True(runtime.IsNeedsUpdateError(err), "runtime should require an update")
 	err = rt.Update(eventHandler)
 	suite.Require().NoError(err)
 

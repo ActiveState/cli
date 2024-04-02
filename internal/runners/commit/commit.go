@@ -105,7 +105,7 @@ func (c *Commit) Run() (rerr error) {
 	if err != nil {
 		return errs.Wrap(err, "Could not get remote build expr and time for provided commit")
 	}
-	remoteScript, err := buildscript.NewFromCommit(atTime, exprProject)
+	remoteScript, err := buildscript.NewFromBuildExpression(atTime, exprProject)
 	if err != nil {
 		return errs.Wrap(err, "Could not convert build expression to build script")
 	}
@@ -142,7 +142,7 @@ func (c *Commit) Run() (rerr error) {
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the remote build expression and time")
 	}
-	if err := buildscript.Update(c.proj, newAtTime, newBuildExpr, c.auth); err != nil {
+	if err := buildscript.Update(c.proj, newAtTime, newBuildExpr); err != nil {
 		return errs.Wrap(err, "Could not update local build script")
 	}
 
