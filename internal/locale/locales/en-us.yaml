@@ -656,6 +656,10 @@ bundle_added:
   other: "[SUCCESS]✔ {{.V0}} Bundle successfully installed![/RESET]"
 bundle_version_added:
   other: "[SUCCESS]✔ {{.V0}} Bundle @ version {{.V1}} successfully installed![/RESET]"
+language_updated:
+  other: "Language updated: [NOTICE]{{.V0}}[/RESET]"
+language_version_updated:
+  other: "Language updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
 err_package_updated:
   other: Failed to update package
 err_bundle_updated:
@@ -864,10 +868,6 @@ arg_languages_install_description:
   other: The language to update in the form of <language>@<version>
 err_language_format:
   other: The language and version provided is not formatting correctly, must be in the form of <language>@<version>
-err_update_not_found:
-  other: "Could not find the requested language: [NOTICE]{{.V0}}[/RESET]. Please ensure the language name is correct and supported by the ActiveState platform"
-err_language_version_not_found:
-  other: The requested version [NOTICE]{{.V0}}[/RESET] for the language [NOTICE]{{.V1}}[/RESET] is not available
 err_language_mismatch:
   other: Cannot change languages, only changes to the current project's language is allowed
 err_no_recipes:

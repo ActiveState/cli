@@ -57,13 +57,8 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	cp.Expect("python")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("languages", "install", "python")
-	cp.Expect("Language: python is already installed")
-	cp.ExpectExitCode(1)
-	ts.IgnoreLogErrors()
-
 	cp = ts.Spawn("languages", "install", "python@3.9.16")
-	cp.Expect("Language added: python@3.9.16")
+	cp.Expect("Language updated: python@3.9.16")
 	// This can take a little while
 	cp.ExpectExitCode(0, termtest.OptExpectTimeout(60*time.Second))
 
@@ -117,6 +112,42 @@ func (suite *LanguagesIntegrationTestSuite) TestSearch() {
 	cp.Expect("ruby")
 	cp.Expect("3.2")
 	cp.ExpectExitCode(0)
+}
+
+func (suite *LanguagesIntegrationTestSuite) TestWildcards() {
+	suite.OnlyRunForTags(tagsuite.Languages)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	// Test explicit wildcard.
+	cp = ts.Spawn("languages", "install", "python@3.9.x")
+	cp.Expect("Language updated: python@3.9.x")
+	cp.ExpectExitCode(0)
+	cp = ts.Spawn("history")
+	cp.Expect("→ >=3.9,<3.10")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("reset", "-n")
+	cp.Expect("Successfully reset")
+	cp.ExpectExitCode(0)
+
+	// Test implicit wildcard.
+	cp = ts.Spawn("languages", "install", "python@3.9")
+	cp.Expect("Language updated: python@3.9")
+	cp.ExpectExitCode(0)
+	cp = ts.Spawn("history")
+	cp.Expect("→ >=3.9,<3.10")
+	cp.ExpectExitCode(0)
+
+	// Test non-matching version.
+	cp = ts.Spawn("languages", "install", "python@100")
+	cp.Expect("Failed")
+	cp.ExpectNotExitCode(0)
 }
 
 func TestLanguagesIntegrationTestSuite(t *testing.T) {

@@ -298,7 +298,7 @@ func (r *RequirementOperation) resolveNamespace(ts *time.Time, requirement *Requ
 		}
 	}
 
-	requirement.validatePkg = requirement.Operation == bpModel.OperationAdded && requirement.Namespace != nil && (requirement.Namespace.Type() == model.NamespacePackage || requirement.Namespace.Type() == model.NamespaceBundle)
+	requirement.validatePkg = requirement.Operation == bpModel.OperationAdded && requirement.Namespace != nil && (requirement.Namespace.Type() == model.NamespacePackage || requirement.Namespace.Type() == model.NamespaceBundle || requirement.Namespace.Type() == model.NamespaceLanguage)
 	if (requirement.Namespace == nil || !requirement.Namespace.IsValid()) && requirement.NamespaceType != nil && (*requirement.NamespaceType == model.NamespacePackage || *requirement.NamespaceType == model.NamespaceBundle) {
 		pg := output.StartSpinner(r.Output, locale.Tr("progress_pkg_nolang", requirement.Name), constants.TerminalAnimationInterval)
 

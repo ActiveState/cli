@@ -53,36 +53,13 @@ func (u *Update) Run(params *UpdateParams) error {
 		return err
 	}
 
-	err = ensureLanguagePlatform(lang, u.prime.Auth())
-	if err != nil {
-		return err
-	}
-
-	err = ensureVersion(lang, u.prime.Auth())
-	if err != nil {
-		if lang.Version == "" {
-			return locale.WrapInputError(err, "err_language_project", "Language: {{.V0}} is already installed, you can update it by running {{.V0}}@<version>", lang.Name)
-		}
-		return err
-	}
-
 	op := requirements.NewRequirementOperation(u.prime)
-	err = op.ExecuteRequirementOperation(nil, &requirements.Requirement{
+	return op.ExecuteRequirementOperation(nil, &requirements.Requirement{
 		Name:          lang.Name,
 		Version:       lang.Version,
 		NamespaceType: &model.NamespaceLanguage,
 		Operation:     bpModel.OperationAdded,
 	})
-	if err != nil {
-		return locale.WrapError(err, "err_language_update", "Could not update language: {{.V0}}", lang.Name)
-	}
-
-	langName := lang.Name
-	if lang.Version != "" {
-		langName = langName + "@" + lang.Version
-	}
-	u.prime.Output().Notice(locale.Tl("language_added", "Language added: {{.V0}}", langName))
-	return nil
 }
 
 func parseLanguage(langName string) (*model.Language, error) {
@@ -106,21 +83,6 @@ func parseLanguage(langName string) (*model.Language, error) {
 	}, nil
 }
 
-func ensureLanguagePlatform(language *model.Language, auth *authentication.Auth) error {
-	platformLanguages, err := model.FetchLanguages(auth)
-	if err != nil {
-		return err
-	}
-
-	for _, pl := range platformLanguages {
-		if strings.EqualFold(pl.Name, language.Name) {
-			return nil
-		}
-	}
-
-	return locale.NewError("err_update_not_found", language.Name)
-}
-
 func ensureLanguageProject(language *model.Language, project *project.Project, auth *authentication.Auth) error {
 	targetCommitID, err := model.BranchCommitID(project.Owner(), project.Name(), project.BranchName())
 	if err != nil {
@@ -136,29 +98,4 @@ func ensureLanguageProject(language *model.Language, project *project.Project, a
 		return locale.NewInputError("err_language_mismatch")
 	}
 	return nil
-}
-
-type fetchVersionsFunc func(name string, auth *authentication.Auth) ([]string, error)
-
-func ensureVersion(language *model.Language, auth *authentication.Auth) error {
-	return ensureVersionTestable(language, model.FetchLanguageVersions, auth)
-}
-
-func ensureVersionTestable(language *model.Language, fetchVersions fetchVersionsFunc, auth *authentication.Auth) error {
-	if language.Version == "" {
-		return locale.NewInputError("err_language_no_version", "No language version provided")
-	}
-
-	versions, err := fetchVersions(language.Name, auth)
-	if err != nil {
-		return err
-	}
-
-	for _, ver := range versions {
-		if language.Version == ver {
-			return nil
-		}
-	}
-
-	return locale.NewInputError("err_language_version_not_found", "", language.Version, language.Name)
 }
