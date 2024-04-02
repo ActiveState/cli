@@ -20,7 +20,7 @@ type CommitIntegrationTestSuite struct {
 }
 
 func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
-	suite.OnlyRunForTags(tagsuite.Commit)
+	suite.OnlyRunForTags(tagsuite.Commit, tagsuite.BuildScripts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -64,7 +64,7 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 }
 
 func (suite *CommitIntegrationTestSuite) TestCommitAtTimeChange() {
-	suite.OnlyRunForTags(tagsuite.Commit)
+	suite.OnlyRunForTags(tagsuite.Commit, tagsuite.BuildScripts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

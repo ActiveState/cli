@@ -149,17 +149,17 @@ func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
 	}
 }
 
-func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project string) (*BuildResult, error) {
+func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project string) (*BuildResult, *model.Commit, error) {
 	logging.Debug("FetchBuildResult, commitID: %s, owner: %s, project: %s", commitID, owner, project)
 	resp := bpModel.NewBuildPlanResponse(owner, project)
 	err := bp.client.Run(request.BuildPlan(commitID.String(), owner, project), resp)
 	if err != nil {
-		return nil, processBuildPlannerError(err, "failed to fetch build plan")
+		return nil, nil, processBuildPlannerError(err, "failed to fetch build plan")
 	}
 
 	build, err := resp.Build()
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not get build from response")
+		return nil, nil, errs.Wrap(err, "Could not get build from response")
 	}
 
 	// The BuildPlanner will return a build plan with a status of
@@ -168,7 +168,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	if build.Status == bpModel.Planning {
 		build, err = bp.pollBuildPlan(commitID.String(), owner, project)
 		if err != nil {
-			return nil, errs.Wrap(err, "failed to poll build plan")
+			return nil, nil, errs.Wrap(err, "failed to poll build plan")
 		}
 	}
 
@@ -184,21 +184,21 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		}
 	}
 
-	id, err := resp.CommitID()
+	commit, err := resp.Commit()
 	if err != nil {
-		return nil, errs.Wrap(err, "Response does not contain commitID")
+		return nil, nil, errs.Wrap(err, "Response does not contain commitID")
 	}
 
 	expr, atTime, err := bp.GetBuildExpressionAndTime(commitID.String())
 	if err != nil {
-		return nil, errs.Wrap(err, "Failed to get build expression and time")
+		return nil, nil, errs.Wrap(err, "Failed to get build expression and time")
 	}
 
 	res := BuildResult{
 		BuildEngine:     buildEngine,
 		Build:           build,
 		BuildReady:      build.Status == bpModel.Completed,
-		CommitID:        id,
+		CommitID:        commit.CommitID,
 		BuildExpression: expr,
 		AtTime:          atTime,
 		BuildStatus:     build.Status,
@@ -211,12 +211,12 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	// This is specified in the build planner queries.
 	for _, id := range build.BuildLogIDs {
 		if res.RecipeID != "" {
-			return nil, errs.Wrap(err, "Build plan contains multiple recipe IDs")
+			return nil, nil, errs.Wrap(err, "Build plan contains multiple recipe IDs")
 		}
 		res.RecipeID = strfmt.UUID(id.ID)
 	}
 
-	return &res, nil
+	return &res, commit, nil
 }
 
 func (bp *BuildPlanner) pollBuildPlan(commitID, owner, project string) (*bpModel.Build, error) {

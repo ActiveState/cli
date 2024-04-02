@@ -173,7 +173,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		})
 	}
 
-	err = runtime.RefreshRuntime(p.auth, p.out, p.analytics, p.project, *resultingCommit, true, target.TriggerPull, p.svcModel, p.cfg)
+	_, err = runtime.SolveAndUpdate(p.auth, p.out, p.analytics, p.project, resultingCommit, target.TriggerPull, p.svcModel, p.cfg, runtime.OptOrderChanged)
 	if err != nil {
 		return locale.WrapError(err, "err_pull_refresh", "Could not refresh runtime after pull")
 	}
@@ -224,7 +224,7 @@ func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *pr
 // mergeBuildScript merges the local build script with the remote buildexpression (not script).
 func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	// Get the build script to merge.
-	scriptA, err := buildscript.ScriptFromProjectWithFallback(p.project, p.auth)
+	scriptA, err := buildscript.ScriptFromProject(p.project)
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
 	}
@@ -236,7 +236,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	if err != nil {
 		return errs.Wrap(err, "Unable to get buildexpression and time for remote commit")
 	}
-	scriptB, err := buildscript.NewFromCommit(atTimeB, exprB)
+	scriptB, err := buildscript.NewFromBuildExpression(atTimeB, exprB)
 	if err != nil {
 		return errs.Wrap(err, "Could not convert build expression to build script")
 	}
@@ -246,7 +246,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	if err != nil {
 		switch {
 		case errors.Is(err, model.ErrMergeFastForward):
-			return buildscript.Update(p.project, atTimeB, exprB, p.auth)
+			return buildscript.Update(p.project, atTimeB, exprB)
 		case !errors.Is(err, model.ErrMergeCommitInHistory):
 			return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
 		}
@@ -273,7 +273,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	}
 
 	// Write the merged build expression as a local build script.
-	return buildscript.Update(p.project, atTime, mergedExpr, p.auth)
+	return buildscript.Update(p.project, atTime, mergedExpr)
 }
 
 func resolveRemoteProject(prj *project.Project) (*project.Namespaced, error) {

@@ -434,7 +434,7 @@ func TestBuildExpression(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify conversions between buildscripts and buildexpressions is accurate.
-	script, err := NewFromCommit(nil, expr)
+	script, err := NewFromBuildExpression(nil, expr)
 	require.NoError(t, err)
 	require.NotNil(t, script)
 	newExpr := script.Expr
@@ -445,7 +445,7 @@ func TestBuildExpression(t *testing.T) {
 	assert.Equal(t, string(exprBytes), string(newExprBytes))
 
 	// Verify comparisons between buildscripts is accurate.
-	newScript, err := NewFromCommit(nil, newExpr)
+	newScript, err := NewFromBuildExpression(nil, newExpr)
 	require.NoError(t, err)
 	assert.True(t, script.Equals(newScript))
 

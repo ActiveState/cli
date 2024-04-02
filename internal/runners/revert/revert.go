@@ -155,7 +155,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Unable to set local commit")
 	}
 
-	err = runtime.RefreshRuntime(r.auth, r.out, r.analytics, r.project, revertCommit, true, target.TriggerRevert, r.svcModel, r.cfg)
+	_, err = runtime.SolveAndUpdate(r.auth, r.out, r.analytics, r.project, &revertCommit, target.TriggerRevert, r.svcModel, r.cfg, runtime.OptOrderChanged)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
