@@ -12,6 +12,7 @@ func (c *Checkout) rationalizeError(err *error) {
 	var errAlreadyCheckedOut *ErrAlreadyCheckedOut
 	var errProjectNotFound *model.ErrProjectNotFound
 	var errNoPermssion *ErrNoPermission
+	var errCommit *errCommitDoesNotBelong
 
 	switch {
 	case err == nil:
@@ -30,6 +31,11 @@ func (c *Checkout) rationalizeError(err *error) {
 	case errors.As(*err, &errNoPermssion):
 		*err = errs.WrapUserFacing(*err,
 			locale.Tl("err_checkout_os_permissions", "You do not have permission to check out to '{{.V0}}'. Please try elsewhere.", errNoPermssion.Path),
+			errs.SetInput(),
+		)
+	case errors.As(*err, &errCommit):
+		*err = errs.WrapUserFacing(*err,
+			locale.Tl("err_commit_does_not_belong", "The commit '{{.V0}}' does not belong to this project", errCommit.CommitID.String()),
 			errs.SetInput(),
 		)
 	}
