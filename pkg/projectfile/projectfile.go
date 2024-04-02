@@ -481,7 +481,7 @@ func Parse(configFilepath string) (_ *Project, rerr error) {
 		// the same version migrations
 		project.ConfigVersion = updatedConfigVersion
 		if err := NewYamlField("config_version", ConfigVersion).Save(project.Path()); err != nil {
-			return nil, errs.Wrap(err, "Could not save config_version")
+			return nil, errs.Pack(errMigrate, errs.Wrap(err, "Could not save config_version"))
 		}
 
 		if errMigrate != nil {
