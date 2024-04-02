@@ -38,7 +38,7 @@ func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) (
 		req := &requirements.Requirement{
 			Name:      p.Name,
 			Version:   p.Version,
-			Operation: bpModel.OperationAdded,
+			Operation: bpModel.OperationRemoved,
 		}
 
 		if p.Namespace != "" {
