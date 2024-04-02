@@ -108,13 +108,15 @@ type ErrNoMatches struct {
 var versionRe = regexp.MustCompile(`^\d(\.\d+)*$`)
 
 type Requirement struct {
-	Name                    string
-	Version                 string
-	Revision                int
-	BitWidth                int // Only needed for platform requirements
-	Namespace               *model.Namespace
-	NamespaceType           *model.NamespaceType
-	Operation               bpModel.Operation
+	Name          string
+	Version       string
+	Revision      int
+	BitWidth      int // Only needed for platform requirements
+	Namespace     *model.Namespace
+	NamespaceType *model.NamespaceType
+	Operation     bpModel.Operation
+
+	// The following fields are set during execution
 	langName                string
 	langVersion             string
 	validatePkg             bool
@@ -172,7 +174,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 	}
 
 	if !hasParentCommit {
-		// Use first requirement to make initial commit
+		// Use first requirement to extract language for initial commit
 		requirement := requirements[0]
 		languageFromNs := model.LanguageFromNamespace(requirement.Namespace.String())
 		parentCommitID, err = model.CommitInitial(model.HostPlatform, languageFromNs, requirement.langVersion, r.Auth)
@@ -324,12 +326,7 @@ func (r *RequirementOperation) resolveNamespace(ts *time.Time, requirement *Requ
 }
 
 func (r *RequirementOperation) validatePackages(requirements ...*Requirement) error {
-	var requirementNames []string
-	for _, requirement := range requirements {
-		requirementNames = append(requirementNames, requirement.Name)
-	}
-
-	pg := output.StartSpinner(r.Output, locale.Tr("progress_search", strings.Join(requirementNames, ", ")), constants.TerminalAnimationInterval)
+	pg := output.StartSpinner(r.Output, locale.Tr("progress_search", strings.Join(requirementNames(requirements...), ", ")), constants.TerminalAnimationInterval)
 	for _, requirement := range requirements {
 		if err := r.validatePackage(requirement); err != nil {
 			return errs.Wrap(err, "Could not validate package")
@@ -510,9 +507,9 @@ func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChan
 		return nil
 	}
 
-	pg := output.StartSpinner(r.Output, locale.T("progress_cve_search"), constants.TerminalAnimationInterval)
+	names := requirementNames(requirements...)
+	pg := output.StartSpinner(r.Output, locale.T("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
 
-	var requirementNames []string
 	var ingredients []*request.Ingredient
 	for _, requirement := range requirements {
 		if requirement.Operation == bpModel.OperationRemoved {
@@ -526,6 +523,7 @@ func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChan
 				Version:   *artifact.Version,
 			})
 		}
+
 		for _, artifact := range artifactChangeset.Updated {
 			if !artifact.IngredientChange {
 				continue // For CVE reporting we only care about ingredient changes
@@ -536,8 +534,6 @@ func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChan
 				Version:   *artifact.To.Version,
 			})
 		}
-
-		requirementNames = append(requirementNames, requirement.Name)
 	}
 
 	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(r.Auth, ingredients)
@@ -556,7 +552,7 @@ func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChan
 	pg.Stop(locale.T("progress_unsafe"))
 	pg = nil
 
-	vulnerabilities := model.CombineVulnerabilities(ingredientVulnerabilities, requirementNames...)
+	vulnerabilities := model.CombineVulnerabilities(ingredientVulnerabilities, names...)
 	r.summarizeCVEs(r.Output, vulnerabilities)
 
 	if r.shouldPromptForSecurity(vulnerabilities) {
@@ -857,4 +853,12 @@ func packageCommitMessage(op bpModel.Operation, name, version string) string {
 func commitMessageMultiple(requirements ...*Requirement) string {
 	// TODO: Replace this placeholder with a proper message
 	return locale.Tl("commit_message_multiple", "Committing changes to multiple requirements")
+}
+
+func requirementNames(requirements ...*Requirement) []string {
+	names := []string{}
+	for _, requirement := range requirements {
+		names = append(names, requirement.Name)
+	}
+	return names
 }
