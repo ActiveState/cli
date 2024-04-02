@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -84,7 +85,7 @@ func (s *Switch) Run(params SwitchParams) error {
 	logging.Debug("ExecuteSwitch")
 
 	if s.project == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 	s.out.Notice(locale.Tr("operating_message", s.project.NamespaceString(), s.project.Dir()))
 

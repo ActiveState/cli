@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
@@ -92,7 +93,7 @@ func (o *listOutput) MarshalStructured(format output.Format) interface{} {
 // Run executes the list behavior.
 func (l *List) Run(params ListRunParams) error {
 	if l.proj == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 	l.out.Notice(locale.Tr("operating_message", l.proj.NamespaceString(), l.proj.Dir()))
 
@@ -119,7 +120,7 @@ func (l *List) Run(params ListRunParams) error {
 // usable localized error.
 func checkSecretsAccess(proj *project.Project, auth *authentication.Auth) error {
 	if proj == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 	allowed, err := access.Secrets(proj.Owner(), auth)
 	if err != nil {

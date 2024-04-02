@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	runbitsRuntime "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
@@ -202,7 +203,7 @@ func targetFromProject(projectString string) (*strfmt.UUID, error) {
 func targetFromProjectFile(proj *project.Project) (*strfmt.UUID, error) {
 	logging.Debug("commit from project file")
 	if proj == nil {
-		return nil, locale.NewInputError("err_no_project")
+		return nil, rationalize.ErrNoProject
 	}
 	commit, err := localcommit.Get(proj.Dir())
 	if err != nil {
