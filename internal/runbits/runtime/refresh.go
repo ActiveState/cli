@@ -19,9 +19,9 @@ import (
 type Opts int
 
 const (
-	OptNone Opts = 1 << iota
-	OptMinimalUI
-	OptOrderChanged
+	OptNone         Opts = 1 << iota
+	OptMinimalUI         // Only print progress output, don't decorate the UI in any other way
+	OptOrderChanged      // Indicate that the order has changed, and the runtime should be refreshed regardless of internal dirty checking mechanics
 )
 
 type Configurable interface {
