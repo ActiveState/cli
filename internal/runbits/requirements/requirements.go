@@ -321,8 +321,20 @@ func (r *RequirementOperation) resolveNamespace(ts *time.Time, requirement *Requ
 }
 
 func (r *RequirementOperation) validatePackages(requirements ...*Requirement) error {
-	pg := output.StartSpinner(r.Output, locale.Tr("progress_search", strings.Join(requirementNames(requirements...), ", ")), constants.TerminalAnimationInterval)
+	var requirementsToValidate []*Requirement
 	for _, requirement := range requirements {
+		if !requirement.validatePkg {
+			continue
+		}
+		requirementsToValidate = append(requirementsToValidate, requirement)
+	}
+
+	if len(requirementsToValidate) == 0 {
+		return nil
+	}
+
+	pg := output.StartSpinner(r.Output, locale.Tr("progress_search", strings.Join(requirementNames(requirementsToValidate...), ", ")), constants.TerminalAnimationInterval)
+	for _, requirement := range requirementsToValidate {
 		if err := r.validatePackage(requirement); err != nil {
 			return errs.Wrap(err, "Could not validate package")
 		}
@@ -339,45 +351,43 @@ func (r *RequirementOperation) validatePackage(requirement *Requirement) error {
 	}
 
 	requirement.originalRequirementName = requirement.Name
-	if requirement.validatePkg {
-		normalized, err := model.FetchNormalizedName(*requirement.Namespace, requirement.Name, r.Auth)
+	normalized, err := model.FetchNormalizedName(*requirement.Namespace, requirement.Name, r.Auth)
+	if err != nil {
+		multilog.Error("Failed to normalize '%s': %v", requirement.Name, err)
+	}
+
+	packages, err := model.SearchIngredientsStrict(requirement.Namespace.String(), normalized, false, false, nil, r.Auth) // ideally case-sensitive would be true (PB-4371)
+	if err != nil {
+		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
+	}
+
+	if len(packages) == 0 {
+		suggestions, err := getSuggestions(*requirement.Namespace, requirement.Name, r.Auth)
 		if err != nil {
-			multilog.Error("Failed to normalize '%s': %v", requirement.Name, err)
+			multilog.Error("Failed to retrieve suggestions: %v", err)
 		}
 
-		packages, err := model.SearchIngredientsStrict(requirement.Namespace.String(), normalized, false, false, nil, r.Auth) // ideally case-sensitive would be true (PB-4371)
-		if err != nil {
-			return locale.WrapError(err, "package_err_cannot_obtain_search_results")
-		}
-
-		if len(packages) == 0 {
-			suggestions, err := getSuggestions(*requirement.Namespace, requirement.Name, r.Auth)
-			if err != nil {
-				multilog.Error("Failed to retrieve suggestions: %v", err)
-			}
-
-			if len(suggestions) == 0 {
-				return &ErrNoMatches{
-					locale.WrapInputError(err, "package_ingredient_alternatives_nosuggest", "", requirement.Name),
-					requirement.Name, nil}
-			}
-
+		if len(suggestions) == 0 {
 			return &ErrNoMatches{
-				locale.WrapInputError(err, "package_ingredient_alternatives", "", requirement.Name, strings.Join(suggestions, "\n")),
-				requirement.Name, ptr.To(strings.Join(suggestions, "\n"))}
+				locale.WrapInputError(err, "package_ingredient_alternatives_nosuggest", "", requirement.Name),
+				requirement.Name, nil}
 		}
 
-		requirement.Name = normalized
+		return &ErrNoMatches{
+			locale.WrapInputError(err, "package_ingredient_alternatives", "", requirement.Name, strings.Join(suggestions, "\n")),
+			requirement.Name, ptr.To(strings.Join(suggestions, "\n"))}
+	}
 
-		// If a bare version number was given, and if it is a partial version number (e.g. requests@2),
-		// we'll want to ultimately append a '.x' suffix.
-		if versionRe.MatchString(requirement.Version) {
-			for _, knownVersion := range packages[0].Versions {
-				if knownVersion.Version == requirement.Version {
-					break
-				} else if strings.HasPrefix(knownVersion.Version, requirement.Version) {
-					requirement.appendVersionWildcard = true
-				}
+	requirement.Name = normalized
+
+	// If a bare version number was given, and if it is a partial version number (e.g. requests@2),
+	// we'll want to ultimately append a '.x' suffix.
+	if versionRe.MatchString(requirement.Version) {
+		for _, knownVersion := range packages[0].Versions {
+			if knownVersion.Version == requirement.Version {
+				break
+			} else if strings.HasPrefix(knownVersion.Version, requirement.Version) {
+				requirement.appendVersionWildcard = true
 			}
 		}
 	}
