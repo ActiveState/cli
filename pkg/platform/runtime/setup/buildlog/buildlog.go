@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/go-openapi/strfmt"
@@ -214,11 +213,6 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 
 				// NOTE: fix to ignore current noop "final pkg artifact"
 				if m.ArtifactID == recipeID {
-					break
-				}
-
-				if _, ok := artifactsDone[m.ArtifactID]; ok {
-					multilog.Critical("buildlogstreamer sent duplicate ArtifactSucceededMessage for artifact %s", m.ArtifactID.String())
 					break
 				}
 
