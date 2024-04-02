@@ -74,7 +74,7 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 }
 
 func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
-	suite.OnlyRunForTags(tagsuite.Pull)
+	suite.OnlyRunForTags(tagsuite.Pull, tagsuite.BuildScripts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
