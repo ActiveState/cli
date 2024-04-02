@@ -52,17 +52,17 @@ func (pl *PidLock) TryLock() (err error) {
 	b := make([]byte, 100)
 	n, err := pl.file.Read(b)
 	if err != nil && err != io.EOF {
-		LockRelease(pl.file)
+		_ = LockRelease(pl.file)
 		return errs.Wrap(err, "failed to read PID from lockfile %s", pl.path)
 	}
 	if n > 0 {
 		pid, err := strconv.ParseInt(string(b[:n]), 10, 64)
 		if err != nil {
-			LockRelease(pl.file)
+			_ = LockRelease(pl.file)
 			return errs.Wrap(err, "failed to parse PID from lockfile %s", pl.path)
 		}
 		if PidExists(int(pid)) {
-			LockRelease(pl.file)
+			_ = LockRelease(pl.file)
 			err := fmt.Errorf("pid %d exists", pid)
 			return NewAlreadyLockedError(err, pl.path, "pid parsed")
 		}
@@ -71,7 +71,7 @@ func (pl *PidLock) TryLock() (err error) {
 	// write PID into lock file
 	_, err = pl.file.Write([]byte(fmt.Sprintf("%d", os.Getpid())))
 	if err != nil {
-		LockRelease(pl.file)
+		_ = LockRelease(pl.file)
 		return errs.Wrap(err, "failed to write pid to lockfile %s", pl.path)
 	}
 

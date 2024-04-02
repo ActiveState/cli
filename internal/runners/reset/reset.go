@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -60,7 +61,7 @@ func New(prime primeable) *Reset {
 
 func (r *Reset) Run(params *Params) error {
 	if r.project == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 	r.out.Notice(locale.Tr("operating_message", r.project.NamespaceString(), r.project.Dir()))
 

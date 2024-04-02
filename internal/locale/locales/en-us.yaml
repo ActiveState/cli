@@ -1134,8 +1134,13 @@ err_user_network_solution:
   other: |
     Please ensure your device has access to internet during installation. Make sure software like a VPN, Firewall or Anti-Virus are not blocking your connectivity.
     If your issue persists consider reporting it on our forums at {{.V0}}.
+err_user_network_timeout:
+  other: "Request failed due to timeout. {{.V0}}"
 err_user_libc_solution:
   other: If you specified a glibc version, please check it is configured → [ACTIONABLE]{{.V0}}[/RESET].
+warn_revert_head:
+  other: |
+    [NOTICE]DEPRECATION WARNING[/RESET]: 'state revert HEAD' has been deprecated in favor of '[ACTIONABLE]state revert REMOTE[/RESET]'. Please use '[ACTIONABLE]state revert REMOTE[/RESET]' instead.
 err_revert_get_commit:
   other: "Could not fetch commit details for commit with ID: {{.V0}}"
 err_revert_commit:
@@ -1575,3 +1580,6 @@ err_headless:
   other: Cannot operate on a headless project. Please visit {{.V0}} to convert your project and try again.
 notice_needs_buildscript_reset:
   other: Your project is missing its buildscript file, please run '[ACTIONABLE]state reset LOCAL[/RESET]' to recreate it.
+
+svcctl_cannot_create_debug_info:
+  other: "Cannot create debug info: {{.V0}}"

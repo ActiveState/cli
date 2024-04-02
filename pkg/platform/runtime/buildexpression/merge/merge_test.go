@@ -89,7 +89,6 @@ runtime = solve(
 	],
 	requirements = [
 		Req(name = "language/perl"),
-		Req(name = "language/perl/JSON"),
 		Req(name = "language/perl/DateTime")
 	]
 )
@@ -108,6 +107,7 @@ runtime = solve(
 	],
 	requirements = [
 		Req(name = "language/perl"),
+		Req(name = "language/perl/JSON"),
 		Req(name = "language/perl/DateTime")
 	]
 )

@@ -49,11 +49,6 @@ func init() {
 	configMediator.RegisterOption(constants.SecurityPromptLevelConfig, configMediator.String, vulnModel.SeverityCritical)
 }
 
-const (
-	promptDefault      = true
-	promptDefaultLevel = vulnModel.SeverityCritical
-)
-
 type PackageVersion struct {
 	captain.NameVersionValue
 }

@@ -3,7 +3,6 @@ package osutils
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -26,7 +25,7 @@ func Executables(bins []string) ([]string, error) {
 			continue
 		}
 
-		entries, err := ioutil.ReadDir(bin)
+		entries, err := os.ReadDir(bin)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not read directory: %s", bin)
 		}
@@ -163,7 +162,7 @@ func ExecuteAndForget(command string, args []string, opts ...func(cmd *exec.Cmd)
 	// Wait for the command to finish in a go-routine.  If we do not do that, and the parent process keeps running,
 	// the launched process will keep around flagged <defunct> (at least on Linux)
 	go func() {
-		cmd.Wait()
+		_ = cmd.Wait()
 	}()
 
 	return cmd.Process, nil
@@ -199,8 +198,8 @@ func ExecuteInBackground(command string, args []string, opts ...func(cmd *exec.C
 	// Copy the output in a separate goroutine so printing can't block indefinitely.
 	// We use a WaitGroup to wait for the command to exit and for the goroutine to return.
 	go func() {
-		io.Copy(&stdoutBuf, stdoutIn)
-		io.Copy(&stderrBuf, stderrIn)
+		_, _ = io.Copy(&stdoutBuf, stdoutIn)
+		_, _ = io.Copy(&stderrBuf, stderrIn)
 	}()
 
 	// Return a function that can be called to get the output so far

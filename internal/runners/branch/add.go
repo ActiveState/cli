@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -33,7 +34,7 @@ func (a *Add) Run(params AddParams) error {
 	logging.Debug("ExecuteAdd")
 
 	if a.project == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 
 	project, err := model.LegacyFetchProjectByName(a.project.Owner(), a.project.Name())

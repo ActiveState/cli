@@ -17,7 +17,7 @@ func osSpecificRemoveTray(installPath, trayExec string) error {
 	if shortcutFile := filepath.Dir(sc.Path()); fileutils.FileExists(shortcutFile) {
 		err := os.Remove(shortcutFile)
 		if err != nil {
-			errs.Wrap(err, "Unable to remove shortcut file")
+			return errs.Wrap(err, "Unable to remove shortcut file")
 		}
 	}
 	return nil

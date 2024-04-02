@@ -140,7 +140,7 @@ func normalizeResponse(res *http.Response, err error) (*http.Response, error) {
 
 func normalizeRetryResponse(res *http.Response, err error, numTries int) (*http.Response, error) {
 	if err2, ok := err.(net.Error); ok && err2.Timeout() {
-		return res, locale.WrapInputError(&UserNetworkError{-1}, "err_user_network_timeout", "Request failed due to timeout. {{.V0}}", locale.Tr("err_user_network_solution", constants.ForumsURL))
+		return res, locale.WrapInputError(&UserNetworkError{-1}, "err_user_network_timeout", "", locale.Tr("err_user_network_solution", constants.ForumsURL))
 	}
 	return res, err
 }

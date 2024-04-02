@@ -109,6 +109,7 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 	cp = ts.SpawnCmd(pythonExe, "-c", `print(__import__('sys').version)`)
 	cp.Expect("3.8.8") // current runtime still works
 	cp.ExpectExitCode(0)
+	ts.IgnoreLogErrors() // Should see an error related to the interrupted setup
 }
 
 func (suite *RuntimeIntegrationTestSuite) TestInUse() {

@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -78,7 +79,7 @@ func (c *Commit) Run() (rerr error) {
 	defer rationalizeError(&rerr)
 
 	if c.proj == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 
 	pg := output.StartSpinner(c.out, locale.T("progress_commit"), constants.TerminalAnimationInterval)

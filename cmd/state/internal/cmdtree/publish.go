@@ -46,7 +46,7 @@ func newPublish(prime *primer.Values) *captain.Command {
 				Name: "namespace",
 				Description: locale.Tl(
 					"author_upload_namespace_description",
-					"The namespace of the ingredient. Defaults to org/<orgname>. Must start with 'org/<orgname>'.",
+					"The namespace of the ingredient. Must start with 'private/<orgname>'.",
 				),
 				Value: &params.Namespace,
 			},

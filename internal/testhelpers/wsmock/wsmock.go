@@ -77,13 +77,17 @@ func (s *WsMock) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if strings.Contains(msg, requestContains) {
 				responseFile = s.getResponseFile(responseFile)
 				response := string(fileutils.ReadFileUnsafe(responseFile))
-				conn.WriteMessage(websocket.TextMessage, []byte(response))
+				if err := conn.WriteMessage(websocket.TextMessage, []byte(response)); err != nil {
+					panic(fmt.Sprintf("Could not write response to websocket: %v", err))
+				}
 				break
 			}
 		}
 
 		for _, response := range s.responseQueue {
-			conn.WriteMessage(websocket.TextMessage, []byte(response))
+			if err := conn.WriteMessage(websocket.TextMessage, []byte(response)); err != nil {
+				panic(fmt.Sprintf("Could not write response to websocket: %v", err))
+			}
 		}
 		s.responseQueue = []string{}
 	}

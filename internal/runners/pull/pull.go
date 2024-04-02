@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	buildscriptRunbits "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/commit"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
@@ -85,7 +86,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 	defer rationalizeError(&rerr)
 
 	if p.project == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 	p.out.Notice(locale.Tr("operating_message", p.project.NamespaceString(), p.project.Dir()))
 

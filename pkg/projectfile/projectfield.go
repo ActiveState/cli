@@ -2,8 +2,8 @@ package projectfile
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 
@@ -59,20 +59,14 @@ func (p *projectField) setQuery(key, value string) {
 	p.url.RawQuery = q.Encode()
 }
 
-func (p *projectField) unsetQuery(key string) {
-	q := p.url.Query()
-	q.Del(key)
-	p.url.RawQuery = q.Encode()
-}
-
 func (p *projectField) Marshal() string {
 	return p.url.String()
 }
 
 func (p *projectField) Save(path string) error {
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
-		return errs.Wrap(err, "ioutil.ReadFile %s failed", path)
+		return errs.Wrap(err, "os.ReadFile %s failed", path)
 	}
 
 	projectValue := p.url.String()
@@ -81,8 +75,8 @@ func (p *projectField) Save(path string) error {
 		return locale.NewInputError("err_set_project")
 	}
 
-	if err := ioutil.WriteFile(path, out, 0664); err != nil {
-		return errs.Wrap(err, "ioutil.WriteFile %s failed", path)
+	if err := os.WriteFile(path, out, 0664); err != nil {
+		return errs.Wrap(err, "os.WriteFile %s failed", path)
 	}
 
 	return nil

@@ -5,9 +5,9 @@ import (
 
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -45,7 +45,7 @@ func (u *Update) Run(params *UpdateParams) error {
 	}
 
 	if u.prime.Project() == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 
 	err = ensureLanguageProject(lang, u.prime.Project(), u.prime.Auth())
@@ -67,10 +67,6 @@ func (u *Update) Run(params *UpdateParams) error {
 	}
 
 	op := requirements.NewRequirementOperation(u.prime)
-	if err != nil {
-		return errs.Wrap(err, "Could not create requirement operation.")
-	}
-
 	err = op.ExecuteRequirementOperation(
 		lang.Name,
 		lang.Version,
@@ -120,7 +116,7 @@ func ensureLanguagePlatform(language *model.Language, auth *authentication.Auth)
 	}
 
 	for _, pl := range platformLanguages {
-		if strings.ToLower(pl.Name) == strings.ToLower(language.Name) {
+		if strings.EqualFold(pl.Name, language.Name) {
 			return nil
 		}
 	}

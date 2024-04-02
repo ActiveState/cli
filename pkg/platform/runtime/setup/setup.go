@@ -394,7 +394,10 @@ func (s *Setup) updateArtifacts(buildResult *apimodel.BuildResult) ([]artifact.A
 		// Under normal conditions, we should never access fmt or os.Stdin from this context.
 		fmt.Printf("Waiting for input because %s was set\n", constants.RuntimeSetupWaitEnvVarName)
 		ch := make([]byte, 1)
-		os.Stdin.Read(ch) // block until input is sent
+		_, err = os.Stdin.Read(ch) // block until input is sent
+		if err != nil {
+			return artifacts, locale.WrapError(err, "err_runtime_setup")
+		}
 	}
 
 	// Uninstall outdated artifacts.
@@ -955,11 +958,15 @@ func (s *Setup) obtainArtifact(a artifact.ArtifactDownload, extension string) (s
 
 func (s *Setup) unpackArtifact(ua unarchiver.Unarchiver, tarballPath string, targetDir string, progress progress.Reporter) (int, error) {
 	f, i, err := ua.PrepareUnpacking(tarballPath, targetDir)
-	progress.ReportSize(int(i))
-	defer f.Close()
 	if err != nil {
 		return 0, errs.Wrap(err, "Prepare for unpacking failed")
 	}
+	defer f.Close()
+
+	if err := progress.ReportSize(int(i)); err != nil {
+		return 0, errs.Wrap(err, "Could not report size")
+	}
+
 	var numUnpackedFiles int
 	ua.SetNotifier(func(_ string, _ int64, isDir bool) {
 		if !isDir {

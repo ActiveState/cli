@@ -2,7 +2,6 @@ package store
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -132,7 +131,7 @@ func (s *Store) Artifacts() (StoredArtifactMap, error) {
 		return stored, nil
 	}
 
-	files, err := ioutil.ReadDir(jsonDir)
+	files, err := os.ReadDir(jsonDir)
 	if err != nil {
 		return stored, errs.Wrap(err, "Readdir %s failed", jsonDir)
 	}

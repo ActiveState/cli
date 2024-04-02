@@ -9,8 +9,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 )
 
-const dotInterval = time.Second
-
 type DotProgressDigester struct {
 	out     output.Outputer
 	spinner *output.Spinner

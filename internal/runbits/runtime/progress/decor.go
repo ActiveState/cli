@@ -25,11 +25,6 @@ type bar struct {
 	total   int64
 }
 
-func (b *bar) setInternalTotal(v int64) {
-	b.Bar.SetTotal(v, false)
-	b.total = v
-}
-
 // Completed reports whether the bar has reached 100%. We have our own assertion prior to the mpb one as for whatever
 // reason mpb reports completed even when it isn't, and I've not been able to diagnose why.
 func (b *bar) Completed() bool {
@@ -52,25 +47,6 @@ func (p *ProgressDigester) trimName(name string) string {
 func (p *ProgressDigester) addTotalBar(name string, total int64, options ...mpb.BarOption) *bar {
 	logging.Debug("Adding total bar: %s", name)
 	return p.addBar(name, total, false, append(options, mpb.BarFillerClearOnComplete())...)
-}
-
-// addSpinnerBar adds a bar with a spinning progress indicator
-func (p *ProgressDigester) addSpinnerBar(name string, options ...mpb.BarOption) *bar {
-	logging.Debug("Adding spinner bar: %s", name)
-	return &bar{
-		p.mainProgress.Add(1,
-			mpb.NewBarFiller(mpb.SpinnerStyle(output.SpinnerFrames...)),
-			append(options,
-				mpb.BarFillerClearOnComplete(),
-				mpb.PrependDecorators(
-					decor.Name(name, decor.WC{W: p.maxNameWidth, C: decor.DidentRight}),
-				),
-				mpb.AppendDecorators(
-					decor.OnComplete(decor.NewPercentage("", decor.WC{W: 5}), ""),
-				),
-			)...,
-		), time.Now(), 1,
-	}
 }
 
 // addArtifactBar adds a bar counting the progress in a specific artifact setup step
