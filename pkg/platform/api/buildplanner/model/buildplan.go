@@ -282,51 +282,51 @@ func (b *BuildPlanByProject) CommitID() (strfmt.UUID, error) {
 }
 
 type BuildPlanByCommit struct {
-	commit *Commit `json:"commit"`
+	CommitInfo *Commit `json:"commit"`
 }
 
 func (b *BuildPlanByCommit) Commit() (*Commit, error) {
-	if b.commit == nil {
+	if b.CommitInfo == nil {
 		return nil, errs.New("BuildPlanByCommit.Build: Commit is nil")
 	}
 
-	if IsErrorResponse(b.commit.Type) {
-		return nil, ProcessCommitError(b.commit, "Could not get build from commit response")
+	if IsErrorResponse(b.CommitInfo.Type) {
+		return nil, ProcessCommitError(b.CommitInfo, "Could not get build from commit response")
 	}
 
-	return b.commit, nil
+	return b.CommitInfo, nil
 }
 
 func (b *BuildPlanByCommit) Build() (*Build, error) {
-	if b.commit == nil {
+	if b.CommitInfo == nil {
 		return nil, errs.New("BuildPlanByCommit.Build: Commit is nil")
 	}
 
-	if IsErrorResponse(b.commit.Type) {
-		return nil, ProcessCommitError(b.commit, "Could not get build from commit response")
+	if IsErrorResponse(b.CommitInfo.Type) {
+		return nil, ProcessCommitError(b.CommitInfo, "Could not get build from commit response")
 	}
 
-	if b.commit.Build == nil {
+	if b.CommitInfo.Build == nil {
 		return nil, errs.New("BuildPlanByCommit.Build: Commit does not contain build")
 	}
 
-	if IsErrorResponse(b.commit.Build.Type) {
-		return nil, ProcessBuildError(b.commit.Build, "Could not get build from commit response")
+	if IsErrorResponse(b.CommitInfo.Build.Type) {
+		return nil, ProcessBuildError(b.CommitInfo.Build, "Could not get build from commit response")
 	}
 
-	return b.commit.Build, nil
+	return b.CommitInfo.Build, nil
 }
 
 func (b *BuildPlanByCommit) CommitID() (strfmt.UUID, error) {
-	if b.commit == nil {
+	if b.CommitInfo == nil {
 		return "", errs.New("BuildPlanByCommit.CommitID: Commit is nil")
 	}
 
-	if IsErrorResponse(b.commit.Type) {
-		return "", ProcessCommitError(b.commit, "Could not get commit ID from commit response")
+	if IsErrorResponse(b.CommitInfo.Type) {
+		return "", ProcessCommitError(b.CommitInfo, "Could not get commit ID from commit response")
 	}
 
-	return b.commit.CommitID, nil
+	return b.CommitInfo.CommitID, nil
 }
 
 func IsErrorResponse(errorType string) bool {
