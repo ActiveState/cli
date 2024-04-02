@@ -329,7 +329,7 @@ func (r *RequirementOperation) validatePackages(requirements ...*Requirement) er
 		requirementNames = append(requirementNames, requirement.Name)
 	}
 
-	pg := output.StartSpinner(r.Output, locale.Tr("progress_search", strings.Join(requirementNames, ",")), constants.TerminalAnimationInterval)
+	pg := output.StartSpinner(r.Output, locale.Tr("progress_search", strings.Join(requirementNames, ", ")), constants.TerminalAnimationInterval)
 	for _, requirement := range requirements {
 		if err := r.validatePackage(requirement); err != nil {
 			return errs.Wrap(err, "Could not validate package")
@@ -512,14 +512,13 @@ func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChan
 
 	pg := output.StartSpinner(r.Output, locale.T("progress_cve_search"), constants.TerminalAnimationInterval)
 
-	var ingredientVulnerabilities []*model.VulnerabilityIngredient
 	var requirementNames []string
+	var ingredients []*request.Ingredient
 	for _, requirement := range requirements {
 		if requirement.Operation == bpModel.OperationRemoved {
 			continue
 		}
 
-		ingredients := []*request.Ingredient{}
 		for _, artifact := range artifactChangeset.Added {
 			ingredients = append(ingredients, &request.Ingredient{
 				Namespace: artifact.Namespace,
@@ -538,19 +537,20 @@ func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChan
 			})
 		}
 
-		ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(r.Auth, ingredients)
-		if err != nil {
-			return errs.Wrap(err, "Failed to retrieve vulnerabilities")
-		}
-
-		// No vulnerabilities, nothing further to do here
-		if len(ingredientVulnerabilities) == 0 {
-			pg.Stop(locale.T("progress_safe"))
-			pg = nil
-			return nil
-		}
-
 		requirementNames = append(requirementNames, requirement.Name)
+	}
+
+	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(r.Auth, ingredients)
+	if err != nil {
+		return errs.Wrap(err, "Failed to retrieve vulnerabilities")
+	}
+
+	// No vulnerabilities, nothing further to do here
+	if len(ingredientVulnerabilities) == 0 {
+		logging.Debug("No vulnerabilities found for ingredients")
+		pg.Stop(locale.T("progress_safe"))
+		pg = nil
+		return nil
 	}
 
 	pg.Stop(locale.T("progress_unsafe"))
