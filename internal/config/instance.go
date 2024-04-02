@@ -110,8 +110,6 @@ func (i *Instance) GetThenSet(key string, valueF func(currentValue interface{}) 
 const CancelSet = "__CANCEL__"
 
 func (i *Instance) setWithCallback(key string, valueF func(currentValue interface{}) (interface{}, error)) (rerr error) {
-	logging.Debug("Setting config: %s", key)
-
 	defer func() {
 		if rerr != nil {
 			logging.Warning("setWithCallback error: %v", errs.JoinMessage(rerr))

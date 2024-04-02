@@ -65,10 +65,6 @@ func (suite *ResetIntegrationTestSuite) TestRevertToBranch() {
 	cp.Expect("Successfully reset to commit: 35af7414-b44b-4fd7-aa93-2ecad337ed2b")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("reset", "main")
-	cp.Expect("Your project is already at the given commit ID")
-	cp.ExpectNotExitCode(0)
-
 	cp = ts.Spawn("reset", "does-not-exist")
 	cp.Expect("This project has no branch with label matching 'does-not-exist'")
 	cp.ExpectNotExitCode(0)

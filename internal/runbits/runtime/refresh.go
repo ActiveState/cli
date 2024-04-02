@@ -2,45 +2,67 @@ package runtime
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
+	"github.com/imacks/bitflags-go"
 )
 
-// RefreshRuntime should be called after runtime mutations.
-func RefreshRuntime(
+type Opts int
+
+const (
+	OptNone         Opts = 1 << iota
+	OptMinimalUI         // Only print progress output, don't decorate the UI in any other way
+	OptOrderChanged      // Indicate that the order has changed, and the runtime should be refreshed regardless of internal dirty checking mechanics
+)
+
+type Configurable interface {
+	GetString(key string) string
+	GetBool(key string) bool
+}
+
+// SolveAndUpdate should be called after runtime mutations.
+func SolveAndUpdate(
 	auth *authentication.Auth,
 	out output.Outputer,
 	an analytics.Dispatcher,
 	proj *project.Project,
-	commitID strfmt.UUID,
-	changed bool,
+	customCommitID *strfmt.UUID,
 	trigger target.Trigger,
 	svcm *model.SvcModel,
 	cfg Configurable,
-) (rerr error) {
-	target := target.NewProjectTarget(proj, &commitID, trigger)
+	opts Opts,
+) (_ *runtime.Runtime, rerr error) {
+	defer rationalizeError(auth, proj, &rerr)
+
+	if proj == nil {
+		return nil, rationalize.ErrNoProject
+	}
+
+	if proj.IsHeadless() {
+		return nil, rationalize.ErrHeadless
+	}
+
+	target := target.NewProjectTarget(proj, customCommitID, trigger)
 	rt, err := runtime.New(target, an, svcm, auth, cfg, out)
 	if err != nil {
-		return locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+		return nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
 	}
 
-	if !changed && !rt.NeedsUpdate() {
+	if !bitflags.Has(opts, OptOrderChanged) && !bitflags.Has(opts, OptMinimalUI) && !rt.NeedsUpdate() {
 		out.Notice(locale.Tl("pkg_already_uptodate", "Requested dependencies are already configured and installed."))
-		return nil
+		return rt, nil
 	}
 
-	if rt.NeedsUpdate() {
+	if rt.NeedsUpdate() && !bitflags.Has(opts, OptMinimalUI) {
 		if !rt.HasCache() {
 			out.Notice(output.Title(locale.T("install_runtime")))
 			out.Notice(locale.T("install_runtime_info"))
@@ -50,61 +72,36 @@ func RefreshRuntime(
 		}
 	}
 
-	return RefreshRuntimeByReference(rt, auth, out, proj, cfg)
-}
-
-// RefreshRuntimeByReference will update the given runtime if necessary. Unlike RefreshRuntime this won't print any UI
-// except for the progress of sourcing the runtime.
-// This allows us to pass in an already instantiated runtime, so we can handle certain runtime logic external from this runbit.
-func RefreshRuntimeByReference(
-	rt *runtime.Runtime,
-	auth *authentication.Auth,
-	out output.Outputer,
-	proj *project.Project,
-	cfg Configurable,
-) (rerr error) {
-	if cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		_, err := buildscript.Sync(proj, ptr.To(rt.Target().CommitUUID()), out, auth)
-		if err != nil {
-			return locale.WrapError(err, "err_update_build_script")
-		}
-	}
-
 	if rt.NeedsUpdate() {
-		pg := runbits.NewRuntimeProgressIndicator(out)
+		pg := NewRuntimeProgressIndicator(out)
 		defer rtutils.Closer(pg.Close, &rerr)
 
 		err := rt.SolveAndUpdate(pg)
 		if err != nil {
-			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
+			return nil, locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
 		}
 	}
 
-	return nil
+	return rt, nil
 }
 
-// UpdateByReference will update the given runtime if necessary. This is functionally the same as RefreshRuntimeByReference
+// UpdateByReference will update the given runtime if necessary. This is functionally the same as SolveAndUpdateByReference
 // except that it does not do its own solve.
 func UpdateByReference(
 	rt *runtime.Runtime,
 	buildResult *model.BuildResult,
+	commit *bpModel.Commit,
 	auth *authentication.Auth,
-	out output.Outputer,
 	proj *project.Project,
-	cfg Configurable,
+	out output.Outputer,
 ) (rerr error) {
-	if cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		_, err := buildscript.Sync(proj, ptr.To(rt.Target().CommitUUID()), out, auth)
-		if err != nil {
-			return locale.WrapError(err, "err_update_build_script")
-		}
-	}
+	defer rationalizeError(auth, proj, &rerr)
 
 	if rt.NeedsUpdate() {
-		pg := runbits.NewRuntimeProgressIndicator(out)
+		pg := NewRuntimeProgressIndicator(out)
 		defer rtutils.Closer(pg.Close, &rerr)
 
-		err := rt.Setup(pg).Update(buildResult)
+		err := rt.Setup(pg).Update(buildResult, commit)
 		if err != nil {
 			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
 		}

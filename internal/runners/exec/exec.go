@@ -7,8 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/ActiveState/cli/internal/runbits"
+	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/shirou/gopsutil/v3/process"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -31,7 +30,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -85,7 +83,6 @@ func NewParams() *Params {
 func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	var projectDir string
 	var projectNamespace string
-	var rtTarget setup.Targeter
 
 	if len(args) == 0 {
 		return nil
@@ -103,7 +100,6 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		if err != nil {
 			return locale.WrapInputError(err, "exec_no_project_at_path", "Could not find project file at {{.V0}}", projectDir)
 		}
-		rtTarget = target.NewProjectTarget(proj, nil, trigger)
 		projectNamespace = proj.NamespaceString()
 	} else {
 		proj = s.proj
@@ -119,27 +115,13 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		}
 		projectDir = filepath.Dir(proj.Source().Path())
 		projectNamespace = proj.NamespaceString()
-		rtTarget = target.NewProjectTarget(proj, nil, trigger)
 	}
 
 	s.out.Notice(locale.Tr("operating_message", projectNamespace, projectDir))
 
-	rt, err := runtime.New(rtTarget, s.analytics, s.svcModel, s.auth, s.cfg, s.out)
-	switch {
-	case err == nil:
-		break
-	case runtime.IsNeedsCommitError(err):
-		s.out.Notice(locale.T("notice_commit_build_script"))
-	default:
+	rt, err := rtrunbit.SolveAndUpdate(s.auth, s.out, s.analytics, proj, nil, trigger, s.svcModel, s.cfg, rtrunbit.OptMinimalUI)
+	if err != nil {
 		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
-	}
-
-	if rt.NeedsUpdate() {
-		pg := runbits.NewRuntimeProgressIndicator(s.out)
-		defer rtutils.Closer(pg.Close, &rerr)
-		if err := rt.SolveAndUpdate(pg); err != nil {
-			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
-		}
 	}
 
 	venv := virtualenvironment.New(rt)

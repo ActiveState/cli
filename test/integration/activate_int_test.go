@@ -561,7 +561,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
 	ts.PrepareActiveStateYAML(contents)
 
 	cp := ts.Spawn("activate")
-	cp.Expect("Cannot initialize runtime for a headless project", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Cannot operate on a headless project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 }

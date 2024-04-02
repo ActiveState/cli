@@ -203,7 +203,7 @@ func (e *BuildPlannerError) Unwrap() error {
 // the commit and build.
 type BuildPlan interface {
 	Build() (*Build, error)
-	CommitID() (strfmt.UUID, error)
+	Commit() (*Commit, error)
 }
 
 func NewBuildPlanResponse(owner, project string) BuildPlan {
@@ -215,6 +215,22 @@ func NewBuildPlanResponse(owner, project string) BuildPlan {
 
 type BuildPlanByProject struct {
 	Project *Project `json:"project"`
+}
+
+func (b *BuildPlanByProject) Commit() (*Commit, error) {
+	if b.Project == nil {
+		return nil, errs.New("BuildPlanByProject.Build: Project is nil")
+	}
+
+	if IsErrorResponse(b.Project.Type) {
+		return nil, ProcessProjectError(b.Project, "Could not get build from project response")
+	}
+
+	if b.Project.Commit == nil {
+		return nil, errs.New("BuildPlanByProject.Build: Commit is nil")
+	}
+
+	return b.Project.Commit, nil
 }
 
 func (b *BuildPlanByProject) Build() (*Build, error) {
@@ -266,39 +282,51 @@ func (b *BuildPlanByProject) CommitID() (strfmt.UUID, error) {
 }
 
 type BuildPlanByCommit struct {
-	Commit *Commit `json:"commit"`
+	CommitInfo *Commit `json:"commit"`
 }
 
-func (b *BuildPlanByCommit) Build() (*Build, error) {
-	if b.Commit == nil {
+func (b *BuildPlanByCommit) Commit() (*Commit, error) {
+	if b.CommitInfo == nil {
 		return nil, errs.New("BuildPlanByCommit.Build: Commit is nil")
 	}
 
-	if IsErrorResponse(b.Commit.Type) {
-		return nil, ProcessCommitError(b.Commit, "Could not get build from commit response")
+	if IsErrorResponse(b.CommitInfo.Type) {
+		return nil, ProcessCommitError(b.CommitInfo, "Could not get build from commit response")
 	}
 
-	if b.Commit.Build == nil {
+	return b.CommitInfo, nil
+}
+
+func (b *BuildPlanByCommit) Build() (*Build, error) {
+	if b.CommitInfo == nil {
+		return nil, errs.New("BuildPlanByCommit.Build: Commit is nil")
+	}
+
+	if IsErrorResponse(b.CommitInfo.Type) {
+		return nil, ProcessCommitError(b.CommitInfo, "Could not get build from commit response")
+	}
+
+	if b.CommitInfo.Build == nil {
 		return nil, errs.New("BuildPlanByCommit.Build: Commit does not contain build")
 	}
 
-	if IsErrorResponse(b.Commit.Build.Type) {
-		return nil, ProcessBuildError(b.Commit.Build, "Could not get build from commit response")
+	if IsErrorResponse(b.CommitInfo.Build.Type) {
+		return nil, ProcessBuildError(b.CommitInfo.Build, "Could not get build from commit response")
 	}
 
-	return b.Commit.Build, nil
+	return b.CommitInfo.Build, nil
 }
 
 func (b *BuildPlanByCommit) CommitID() (strfmt.UUID, error) {
-	if b.Commit == nil {
+	if b.CommitInfo == nil {
 		return "", errs.New("BuildPlanByCommit.CommitID: Commit is nil")
 	}
 
-	if IsErrorResponse(b.Commit.Type) {
-		return "", ProcessCommitError(b.Commit, "Could not get commit ID from commit response")
+	if IsErrorResponse(b.CommitInfo.Type) {
+		return "", ProcessCommitError(b.CommitInfo, "Could not get commit ID from commit response")
 	}
 
-	return b.Commit.CommitID, nil
+	return b.CommitInfo.CommitID, nil
 }
 
 func IsErrorResponse(errorType string) bool {

@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
@@ -119,7 +120,7 @@ func (s *Switch) Run(params SwitchParams) error {
 		return errs.Wrap(err, "Unable to set local commit")
 	}
 
-	err = runtime.RefreshRuntime(s.auth, s.out, s.analytics, s.project, identifier.CommitID(), false, target.TriggerSwitch, s.svcModel, s.cfg)
+	_, err = runtime.SolveAndUpdate(s.auth, s.out, s.analytics, s.project, ptr.To(identifier.CommitID()), target.TriggerSwitch, s.svcModel, s.cfg, runtime.OptNone)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
