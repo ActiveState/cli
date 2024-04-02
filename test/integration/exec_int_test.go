@@ -120,7 +120,7 @@ echo "Number of arguments: $#"
 	}
 
 	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("exec", "--", fmt.Sprintf("%s", testScript), args[0], args[1], args[2]),
+		e2e.OptArgs("exec", "--", testScript, args[0], args[1], args[2]),
 	)
 	cp.Expect(args[0])
 	cp.Expect(args[1])
@@ -157,7 +157,7 @@ echo "Hello $name!"
 	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("exec", "--", fmt.Sprintf("%s", testScript)),
+		e2e.OptArgs("exec", "--", testScript),
 	)
 	cp.SendLine("ActiveState")
 	cp.Expect("Hello ActiveState!")

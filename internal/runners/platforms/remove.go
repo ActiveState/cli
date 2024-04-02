@@ -4,6 +4,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -31,7 +32,7 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 	logging.Debug("Execute platforms remove")
 
 	if r.prime.Project() == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 
 	params, err := prepareParams(ps.Params, r.prime.Auth())

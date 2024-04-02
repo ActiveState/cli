@@ -6,7 +6,6 @@ package clean
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -30,7 +29,7 @@ func (u *Uninstall) runUninstall(params *UninstallParams) error {
 	// we aggregate installation errors, such that we can display all installation problems in the end
 	// TODO: This behavior should be replaced with a proper rollback mechanism https://www.pivotaltracker.com/story/show/178134918
 	var aggErr error
-	logFile, err := ioutil.TempFile("", "state-clean-uninstall")
+	logFile, err := os.CreateTemp("", "state-clean-uninstall")
 	if err != nil {
 		logging.Error("Could not create temporary log file: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "err_clean_logfile", "Could not create temporary log file")
@@ -87,7 +86,7 @@ func (u *Uninstall) runUninstall(params *UninstallParams) error {
 }
 
 func removeConfig(configPath string, out output.Outputer) error {
-	logFile, err := ioutil.TempFile("", "state-clean-config")
+	logFile, err := os.CreateTemp("", "state-clean-config")
 	if err != nil {
 		return locale.WrapError(err, "err_clean_logfile", "Could not create temporary log file")
 	}

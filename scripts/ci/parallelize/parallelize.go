@@ -128,7 +128,10 @@ func runJob(job Job) {
 	if err != nil {
 		failure("Executing job %s failed, error: %s", job.ID, errs.JoinMessage(err))
 	}
-	outfile.WriteString(fmt.Sprintf("\n%d", code)) // last entry is the exit code
+	_, err = outfile.WriteString(fmt.Sprintf("\n%d", code)) // last entry is the exit code
+	if err != nil {
+		fmt.Printf("Could not write exit code to file: %s\n", errs.JoinMessage(err))
+	}
 	fmt.Printf("%s: Completed, exit code: %d\n", job.ID, code)
 }
 

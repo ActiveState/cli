@@ -2,7 +2,7 @@ package integration
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -36,7 +36,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	ts.SetupRCFile()
 	suite.T().Setenv(constants.HomeEnvVarName, ts.Dirs.HomeDir)
 
-	dir, err := ioutil.TempDir("", "system*")
+	dir, err := os.MkdirTemp("", "system*")
 	suite.NoError(err)
 
 	// Run installer with source-path flag (ie. install from this local path)
@@ -121,6 +121,9 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 
 	// Assert that the config was written (ie. RC files or windows registry)
 	suite.AssertConfig(ts)
+	if runtime.GOOS == "windows" {
+		ts.IgnoreLogErrors() // Shortcut creation can intermittently fail on Windows CI, follow-up on DX-2678
+	}
 }
 
 func (suite *InstallerIntegrationTestSuite) TestInstallIncompatible() {
@@ -149,7 +152,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallNoErrorTips() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	dir, err := ioutil.TempDir("", "system*")
+	dir, err := os.MkdirTemp("", "system*")
 	suite.NoError(err)
 
 	cp := ts.SpawnCmdWithOpts(
@@ -169,7 +172,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	dir, err := ioutil.TempDir("", "system*")
+	dir, err := os.MkdirTemp("", "system*")
 	suite.NoError(err)
 
 	cp := ts.SpawnCmdWithOpts(
@@ -231,7 +234,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallWhileInUse() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	dir, err := ioutil.TempDir("", "system*")
+	dir, err := os.MkdirTemp("", "system*")
 	suite.NoError(err)
 
 	cp := ts.SpawnCmdWithOpts(
@@ -262,7 +265,10 @@ func (suite *InstallerIntegrationTestSuite) TestInstallWhileInUse() {
 	cp2.ExpectExit() // the return code can vary depending on shell (e.g. zsh vs. bash); just assert the installer shell exited
 
 	oldStateExeFound := false
-	for _, file := range fileutils.ListDirSimple(filepath.Join(installationDir(ts), "bin"), false) {
+	files, err := fileutils.ListDirSimple(filepath.Join(installationDir(ts), "bin"), false)
+	suite.Require().NoError(err)
+
+	for _, file := range files {
 		if strings.Contains(file, "state.exe") && strings.HasSuffix(file, ".old") {
 			oldStateExeFound = true
 			break

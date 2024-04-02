@@ -21,9 +21,6 @@ type primeable interface {
 	primer.Outputer
 }
 
-type templateParams struct {
-}
-
 func New(primer primeable) *GithubActions {
 	return &GithubActions{primer.Project(), primer.Output()}
 }

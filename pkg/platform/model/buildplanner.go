@@ -214,7 +214,6 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 			return nil, errs.Wrap(err, "Build plan contains multiple recipe IDs")
 		}
 		res.RecipeID = strfmt.UUID(id.ID)
-		break
 	}
 
 	return &res, nil
@@ -450,18 +449,22 @@ func (bp *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID,
 		}
 
 		// Add the platform.
-		expr.UpdatePlatform(model.OperationAdded, params.PlatformID)
+		if err := expr.UpdatePlatform(model.OperationAdded, params.PlatformID); err != nil {
+			return "", errs.Wrap(err, "Unable to add platform")
+		}
 
 		// Create a requirement for the given language and version.
 		versionRequirements, err := VersionStringToRequirements(params.Version)
 		if err != nil {
 			return "", errs.Wrap(err, "Unable to read version")
 		}
-		expr.UpdateRequirement(model.OperationAdded, bpModel.Requirement{
+		if err := expr.UpdateRequirement(model.OperationAdded, bpModel.Requirement{
 			Name:               params.Language,
 			Namespace:          "language", // TODO: make this a constant DX-1738
 			VersionRequirement: versionRequirements,
-		})
+		}); err != nil {
+			return "", errs.Wrap(err, "Unable to add language requirement")
+		}
 	}
 
 	// Create the project.
@@ -601,7 +604,7 @@ func isExactVersion(version string) bool {
 }
 
 func isWildcardVersion(version string) bool {
-	return strings.Index(version, ".x") >= 0 || strings.Index(version, ".X") >= 0
+	return strings.Contains(version, ".x") || strings.Contains(version, ".X")
 }
 
 func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, error) {

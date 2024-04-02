@@ -3,7 +3,6 @@ package envdef
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -101,7 +100,7 @@ func (ev *EnvironmentVariable) UnmarshalJSON(data []byte) error {
 // NewEnvironmentDefinition returns an environment definition unmarshaled from a
 // file
 func NewEnvironmentDefinition(fp string) (*EnvironmentDefinition, error) {
-	blob, err := ioutil.ReadFile(fp)
+	blob, err := os.ReadFile(fp)
 	if err != nil {
 		return nil, locale.WrapError(err, "envdef_file_not_found", "", fp)
 	}
@@ -119,7 +118,7 @@ func (ed *EnvironmentDefinition) WriteFile(filepath string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filepath, blob, 0666)
+	return os.WriteFile(filepath, blob, 0666)
 }
 
 // WriteFile marshals an environment definition to a file

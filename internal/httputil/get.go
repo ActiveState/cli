@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -110,7 +110,7 @@ func _testHTTPGet(url string) ([]byte, error) {
 	path := strings.Replace(url, constants.APIArtifactURL, "", 1)
 	path = filepath.Join(environment.GetRootPathUnsafe(), "test", path)
 
-	body, err := ioutil.ReadFile(path)
+	body, err := os.ReadFile(path)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not read file contents: %s", path)
 	}

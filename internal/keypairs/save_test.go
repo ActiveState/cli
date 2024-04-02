@@ -2,7 +2,7 @@ package keypairs_test
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -58,7 +58,7 @@ func (suite *KeypairSaveTestSuite) TestSave_Succeeds() {
 	var bodyKeypair *secrets_models.KeypairChange
 	var bodyErr error
 	httpmock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {
-		reqBody, _ := ioutil.ReadAll(req.Body)
+		reqBody, _ := io.ReadAll(req.Body)
 		bodyErr = json.Unmarshal(reqBody, &bodyKeypair)
 		return 204, "empty"
 	})

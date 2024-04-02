@@ -185,6 +185,10 @@ run_description:
   other: Run your project scripts
 scripts_description:
   other: Show project scripts
+runtime_setup_in_use_err:
+  other: |
+    Could not update your runtime as it is currently in use. Please stop any active runtime processes and try again. State Tool found the following processes to be using the runtime:
+    {{.V0}}
 runtime_alternative_file_transforms_err:
   other: "Could not apply necessary file transformations after unpacking."
 scripts_no_scripts:
@@ -1132,8 +1136,13 @@ err_user_network_solution:
   other: |
     Please ensure your device has access to internet during installation. Make sure software like a VPN, Firewall or Anti-Virus are not blocking your connectivity.
     If your issue persists consider reporting it on our forums at {{.V0}}.
+err_user_network_timeout:
+  other: "Request failed due to timeout. {{.V0}}"
 err_user_libc_solution:
   other: If you specified a glibc version, please check it is configured → [ACTIONABLE]{{.V0}}[/RESET].
+warn_revert_head:
+  other: |
+    [NOTICE]DEPRECATION WARNING[/RESET]: 'state revert HEAD' has been deprecated in favor of '[ACTIONABLE]state revert REMOTE[/RESET]'. Please use '[ACTIONABLE]state revert REMOTE[/RESET]' instead.
 err_revert_get_commit:
   other: "Could not fetch commit details for commit with ID: {{.V0}}"
 err_revert_commit:
@@ -1565,3 +1574,5 @@ update_runtime_info:
   other: "Changes to your runtime may require some dependencies to be rebuilt.\n"
 err_buildscript_notexist:
   other: Your project does not have a buildscript.as file. Please refer to the documentation on how to create one.
+svcctl_cannot_create_debug_info:
+  other: "Cannot create debug info: {{.V0}}"

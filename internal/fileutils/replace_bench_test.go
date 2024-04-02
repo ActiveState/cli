@@ -3,7 +3,6 @@ package fileutils
 import (
 	"bufio"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"testing"
@@ -62,7 +61,7 @@ func BenchmarkRead(b *testing.B) {
 			defer func() {
 				f.Close()
 			}()
-			r, err := ioutil.ReadAll(f)
+			r, err := io.ReadAll(f)
 			if err != nil {
 				bb.Errorf("Received error reading: %v", err)
 			}

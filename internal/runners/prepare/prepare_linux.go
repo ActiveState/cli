@@ -1,14 +1,11 @@
 package prepare
 
 import (
-	"path/filepath"
-
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
-	"github.com/ActiveState/cli/internal/osutils/user"
 )
 
 func (r *Prepare) prepareOS() error {
@@ -25,14 +22,6 @@ func (r *Prepare) prepareOS() error {
 	}
 
 	return nil
-}
-
-func prependHomeDir(path string) (string, error) {
-	homeDir, err := user.HomeDir()
-	if err != nil {
-		return "", errs.Wrap(err, "Could not get home directory")
-	}
-	return filepath.Join(homeDir, path), nil
 }
 
 func cleanOS() error {

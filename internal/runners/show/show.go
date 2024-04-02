@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/secrets"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -167,7 +168,7 @@ func (s *Show) Run(params Params) error {
 		commitID = *branch.CommitID
 	} else {
 		if s.project == nil {
-			return locale.NewInputError("err_no_project")
+			return rationalize.ErrNoProject
 		}
 
 		if s.project.IsHeadless() {

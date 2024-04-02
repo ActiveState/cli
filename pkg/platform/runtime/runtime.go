@@ -168,7 +168,7 @@ func (r *Runtime) Target() setup.Targeter {
 }
 
 func (r *Runtime) Setup(eventHandler events.Handler) *setup.Setup {
-	return setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out)
+	return setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out, r.svcm)
 }
 
 func (r *Runtime) Update(setup *setup.Setup, buildResult *model.BuildResult, eventHandler events.Handler) (rerr error) {
@@ -284,17 +284,20 @@ func (r *Runtime) recordCompletion(err error) {
 		errorType = "buildplan"
 	case errs.Matches(err, &setup.ArtifactSetupErrors{}):
 		if setupErrors := (&setup.ArtifactSetupErrors{}); errors.As(err, &setupErrors) {
+		// Label the loop so we can break out of it when we find the first download
+		// or build error.
+		Loop:
 			for _, err := range setupErrors.Errors() {
 				switch {
 				case errs.Matches(err, &setup.ArtifactDownloadError{}):
 					errorType = "download"
-					break // it only takes one download failure to report the runtime failure as due to download error
+					break Loop // it only takes one download failure to report the runtime failure as due to download error
 				case errs.Matches(err, &setup.ArtifactInstallError{}):
 					errorType = "install"
 					// Note: do not break because there could be download errors, and those take precedence
 				case errs.Matches(err, &setup.BuildError{}), errs.Matches(err, &buildlog.BuildError{}):
 					errorType = "build"
-					break // it only takes one build failure to report the runtime failure as due to build error
+					break Loop // it only takes one build failure to report the runtime failure as due to build error
 				}
 			}
 		}
@@ -333,7 +336,9 @@ func (r *Runtime) recordUsage() {
 		multilog.Critical("Could not marshal dimensions for runtime-usage: %s", errs.JoinMessage(err))
 	}
 	if r.svcm != nil {
-		r.svcm.ReportRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), anaConsts.SrcStateTool, dimsJson)
+		if err := r.svcm.ReportRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), anaConsts.SrcStateTool, dimsJson); err != nil {
+			multilog.Critical("Could not report runtime usage: %s", errs.JoinMessage(err))
+		}
 	}
 }
 

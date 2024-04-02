@@ -160,6 +160,7 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 
 	suite.FileExists(filepath.Join(globalExecDir, "python3"+osutils.ExeExtension))
 	err = os.RemoveAll(projectExecDir)
+	suite.Assert().NoError(err, "should have removed executor directory, to ensure that it gets re-created")
 
 	cp = ts.Spawn("activate")
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
