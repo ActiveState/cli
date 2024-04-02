@@ -47,6 +47,7 @@ type Params struct {
 	activate        *project.Namespaced
 	activateDefault *project.Namespaced
 	showVersion     bool
+	nonInteractive  bool
 }
 
 func newParams() *Params {
@@ -109,7 +110,6 @@ func main() {
 		return
 	}
 
-	var garbageBool bool
 	var garbageString string
 
 	// We have old install one liners around that use `-activate` instead of `--activate`
@@ -189,8 +189,8 @@ func main() {
 				Name:  "version", // note: no shorthand because install.sh uses -v for selecting version
 				Value: &params.showVersion,
 			},
+			{Name: "non-interactive", Shorthand: "n", Hidden: true, Value: &params.nonInteractive}, // don't prompt
 			// The remaining flags are for backwards compatibility (ie. we don't want to error out when they're provided)
-			{Name: "nnn", Shorthand: "n", Hidden: true, Value: &garbageBool}, // don't prompt; useless cause we don't prompt anyway
 			{Name: "channel", Hidden: true, Value: &garbageString},
 			{Name: "bbb", Shorthand: "b", Hidden: true, Value: &garbageString},
 			{Name: "vvv", Shorthand: "v", Hidden: true, Value: &garbageString},
@@ -341,7 +341,7 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 		return err
 	}
 
-	installer, err := NewInstaller(cfg, out, payloadPath, params)
+	installer, err := NewInstaller(cfg, out, an, payloadPath, params)
 	if err != nil {
 		out.Print(fmt.Sprintf("[ERROR]Could not create installer: %s[/RESET]", errs.JoinMessage(err)))
 		return err

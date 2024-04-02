@@ -42,7 +42,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.OptArgs(installationDir(ts)),
+		e2e.OptArgs(installationDir(ts), "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=false"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -59,7 +59,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	// Ensure installing overtop doesn't result in errors
 	cp = ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.OptArgs(installationDir(ts)),
+		e2e.OptArgs(installationDir(ts), "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=false"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -73,7 +73,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(installationDir(ts), installation.InstallDirMarker), []byte{}))
 	cp = ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.OptArgs(installationDir(ts)),
+		e2e.OptArgs(installationDir(ts), "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=false"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -137,7 +137,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallIncompatible() {
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.OptArgs(installationDir(ts)),
+		e2e.OptArgs(installationDir(ts), "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=false", sysinfo.VersionOverrideEnvVar+"=10.0.0"),
 	)
 
@@ -157,7 +157,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallNoErrorTips() {
 
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.OptArgs(installationDir(ts), "--activate", "ActiveState/DoesNotExist"),
+		e2e.OptArgs(installationDir(ts), "--activate", "ActiveState/DoesNotExist", "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=true"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -177,7 +177,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.OptArgs(installationDir(ts), "--activate", "ActiveState-CLI/Python3"),
+		e2e.OptArgs(installationDir(ts), "--activate", "ActiveState-CLI/Python3", "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=true"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -207,7 +207,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
 
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.OptArgs(installationDir(ts)),
+		e2e.OptArgs(installationDir(ts), "-n"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 	)
 	cp.Expect("Done")
@@ -217,7 +217,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
 	// State Service.app should be overwritten cleanly without error.
 	cp = ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.OptArgs(installationDir(ts)+"2"),
+		e2e.OptArgs(installationDir(ts)+"2", "-n"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 	)
 	cp.Expect("Done")
@@ -239,7 +239,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallWhileInUse() {
 
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.OptArgs(installationDir(ts)),
+		e2e.OptArgs(installationDir(ts), "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=true"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -255,7 +255,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallWhileInUse() {
 	// executables. Verify that this works without error.
 	cp2 := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.OptArgs(installationDir(ts), "-f"),
+		e2e.OptArgs(installationDir(ts), "-f", "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=true"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
