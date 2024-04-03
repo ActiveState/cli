@@ -8,6 +8,7 @@ import (
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/errs"
 )
 
 const (
@@ -104,4 +105,10 @@ func (suite *Suite) OnlyRunForTags(tags ...string) {
 	}
 
 	suite.T().Skipf("Run only if any of the following tags are set: %s", strings.Join(tags, ", "))
+}
+
+func (suite *Suite) NoError(err error, msgAndArgs ...interface{}) {
+	for _, err := range errs.Unpack(err) {
+		suite.Suite.NoError(err, msgAndArgs...)
+	}
 }
