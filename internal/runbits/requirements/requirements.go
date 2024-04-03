@@ -126,11 +126,11 @@ type Requirement struct {
 // For now, be aware that you should never provide BOTH ns AND nsType, one or the other should always be nil, but never both.
 // The refactor should clean this up.
 func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requirements ...*Requirement) (rerr error) {
-	if len(requirements) == 0 {
-		return locale.NewError("err_no_requirements", "No requirements were provided")
-	}
-
 	defer r.rationalizeError(&rerr)
+
+	if len(requirements) == 0 {
+		return locale.NewInputError("err_no_requirements", "No requirements were provided")
+	}
 
 	out := r.Output
 	var pg *output.Spinner
@@ -171,7 +171,18 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 
 	if !hasParentCommit {
 		// Use first requirement to extract language for initial commit
-		requirement := requirements[0]
+		var requirement *Requirement
+		for _, r := range requirements {
+			if r.Namespace.Type() == model.NamespacePackage || r.Namespace.Type() == model.NamespaceBundle {
+				requirement = r
+				break
+			}
+		}
+
+		if requirement == nil {
+			return locale.NewError("err_install_init_invalid_requirement", "Could not find compatible requirement for initial commit")
+		}
+
 		languageFromNs := model.LanguageFromNamespace(requirement.Namespace.String())
 		parentCommitID, err = model.CommitInitial(model.HostPlatform, languageFromNs, requirement.langVersion, r.Auth)
 		if err != nil {
@@ -320,7 +331,6 @@ func (r *RequirementOperation) resolveNamespace(ts *time.Time, requirement *Requ
 		requirement.validatePkg = false
 
 		pg.Stop(locale.T("progress_found"))
-		pg = nil
 	}
 
 	if requirement.Namespace == nil {
@@ -350,7 +360,6 @@ func (r *RequirementOperation) validatePackages(requirements ...*Requirement) er
 		}
 	}
 	pg.Stop(locale.T("progress_found"))
-	pg = nil
 
 	return nil
 }
