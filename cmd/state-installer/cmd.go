@@ -51,7 +51,11 @@ type Params struct {
 }
 
 func newParams() *Params {
-	return &Params{activate: &project.Namespaced{}, activateDefault: &project.Namespaced{}}
+	return &Params{
+		activate:        &project.Namespaced{},
+		activateDefault: &project.Namespaced{},
+		nonInteractive:  !term.IsTerminal(int(os.Stdin.Fd())),
+	}
 }
 
 func main() {

@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/updater"
@@ -52,10 +53,9 @@ func (i *Installer) Install() (rerr error) {
 	if err != nil {
 		return errs.Wrap(err, "Could not determine if running as Windows administrator")
 	}
-	if isAdmin {
-		prompter := prompt.New(!i.Params.nonInteractive, i.an)
-		defaultChoice := !prompter.IsInteractive() // default to no for interactive, yes for non-interactive
-		confirm, err := prompter.Confirm("", locale.T("installer_prompt_is_admin"), &defaultChoice)
+	if isAdmin && !i.Params.nonInteractive {
+		prompter := prompt.New(true, i.an)
+		confirm, err := prompter.Confirm("", locale.T("installer_prompt_is_admin"), ptr.To(false))
 		if err != nil {
 			return errs.Wrap(err, "Unable to confirm")
 		}
