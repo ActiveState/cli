@@ -60,7 +60,7 @@ func (i *Installer) Install() (rerr error) {
 			return errs.Wrap(err, "Unable to confirm")
 		}
 		if !confirm {
-			return // halt installation
+			return locale.NewInputError("installer_aborted", "Installation aborted by the user")
 		}
 	}
 
