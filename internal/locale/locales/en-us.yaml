@@ -1324,6 +1324,9 @@ secrets_unstable_warning:
     The secrets feature is currently unstable and not ready for production use. If you want to opt-in to unstable features, run the following command:
 
     [ACTIONABLE]state config set optin.unstable true[/RESET]
+installer_prompt_is_admin:
+  other: |
+    You are installing the State Tool as an administrator. The State Tool was designed to be installed without administrator privileges, and you may run into issues if you continue. Are you sure you want to do this?
 err_update_corrupt_install:
   other: |
     Unfortunately your current installation appears to have been corrupted. Please reinstall the State Tool by first
