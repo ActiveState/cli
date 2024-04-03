@@ -156,11 +156,7 @@ func (suite *InitIntegrationTestSuite) TestInit_AlreadyExists() {
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_Resolved() {
-	suite.OnlyRunForTags(tagsuite.Init)
-	if runtime.GOOS == "darwin" {
-		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
-		return
-	}
+	suite.OnlyRunForTags(tagsuite.Init, tagsuite.Languages)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
@@ -181,7 +177,7 @@ func (suite *InitIntegrationTestSuite) TestInit_Resolved() {
 	// Run `state languages` to verify a full language version was resolved.
 	cp = ts.Spawn("languages")
 	cp.Expect("python")
-	cp.Expect("Auto → 3.10.") // note: the patch version is variable, so just expect that it exists
+	cp.Expect(">=3.10,<3.11 → 3.10.") // note: the patch version is variable, so just expect that it exists
 	cp.ExpectExitCode(0)
 }
 

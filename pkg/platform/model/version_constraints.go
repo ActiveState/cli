@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 type versionConstraints struct {
@@ -33,6 +34,18 @@ func GqlReqVersionConstraintsString(requirement *gqlModel.Requirement) string {
 
 	constraints := make([]*versionConstraints, len(requirement.VersionConstraints))
 	for i, constraint := range requirement.VersionConstraints {
+		constraints[i] = &versionConstraints{constraint.Comparator, constraint.Version}
+	}
+	return versionConstraintsToString(constraints)
+}
+
+func MonoConstraintsToString(monoConstraints mono_models.Constraints) string {
+	if monoConstraints == nil {
+		return ""
+	}
+
+	constraints := make([]*versionConstraints, len(monoConstraints))
+	for i, constraint := range monoConstraints {
 		constraints[i] = &versionConstraints{constraint.Comparator, constraint.Version}
 	}
 	return versionConstraintsToString(constraints)
