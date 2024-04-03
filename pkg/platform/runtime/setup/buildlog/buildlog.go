@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/go-openapi/strfmt"
@@ -100,6 +99,19 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 		defer close(ch)
 		defer close(errCh)
 
+		// It is currently possible for the buildlogstreamer to send the same event twice.
+		// This happens, when nomad looses track of a build job and the HC re-schedules it.
+		// The following code is used to identify duplicate events.
+		uniqueEvents := make(map[string]struct{})
+		observed := func(id ...string) bool {
+			idStr := strings.Join(id, ".")
+			_, ok := uniqueEvents[idStr]
+			if !ok {
+				uniqueEvents[idStr] = struct{}{}
+			}
+			return ok
+		}
+
 		artifactsDone := make(map[artifact.ArtifactID]struct{})
 
 		// Set up log file
@@ -168,10 +180,16 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 
 			switch msg.MessageType() {
 			case BuildStarted:
+				if observed(msg.MessageTypeValue()) {
+					break
+				}
 				if err := writeLogFile("", "Build Started"); err != nil {
 					errCh <- errs.Wrap(err, "Could not write to build log file")
 				}
 			case BuildFailed:
+				if observed(msg.MessageTypeValue()) {
+					break
+				}
 				m := msg.messager.(BuildFailedMessage)
 				if err := writeLogFile("", m.ErrorMessage); err != nil {
 					errCh <- errs.Wrap(err, "Could not write to build log file")
@@ -182,13 +200,20 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 				errCh <- &BuildError{locale.WrapError(artifactErr, "err_logstream_build_failed", "Build failed with error message: {{.V0}}.", m.ErrorMessage)}
 				return
 			case BuildSucceeded:
+				if observed(msg.MessageTypeValue()) {
+					break
+				}
 				buildSuccess()
 				return
 			case ArtifactStarted:
 				m := msg.messager.(ArtifactMessage)
 				// NOTE: fix to ignore current noop "final pkg artifact"
-				if artifact.ArtifactID(m.ArtifactID) == recipeID {
-					continue
+				if m.ArtifactID == recipeID {
+					break
+				}
+
+				if observed(msg.MessageTypeValue(), m.ArtifactID.String()) {
+					break
 				}
 
 				if err := writeLogFile(m.ArtifactID, "Artifact Build Started"); err != nil {
@@ -217,8 +242,7 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 					break
 				}
 
-				if _, ok := artifactsDone[m.ArtifactID]; ok {
-					multilog.Critical("buildlogstreamer sent duplicate ArtifactSucceededMessage for artifact %s", m.ArtifactID.String())
+				if observed(msg.MessageTypeValue(), m.ArtifactID.String()) {
 					break
 				}
 
@@ -249,8 +273,12 @@ Artifact Build Succeeded.
 					return
 				}
 			case ArtifactFailed:
-
 				m := msg.messager.(ArtifactFailedMessage)
+
+				if observed(msg.MessageTypeValue(), m.ArtifactID.String()) {
+					break
+				}
+
 				artifactName, _ := resolveArtifactName(m.ArtifactID, artifactMap)
 
 				artifactsDone[m.ArtifactID] = struct{}{}
@@ -271,6 +299,11 @@ Artifact Build Failed.
 				}
 			case ArtifactProgress:
 				m := msg.messager.(ArtifactProgressMessage)
+
+				if _, ok := artifactsDone[m.ArtifactID]; ok {
+					// ignore progress reports for artifacts that have finished
+					break
+				}
 
 				if err := writeLogFile(m.ArtifactID, "Log: "+m.Body.Message); err != nil {
 					errCh <- errs.Wrap(err, "Could not write to log file")
