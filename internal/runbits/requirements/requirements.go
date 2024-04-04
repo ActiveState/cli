@@ -817,20 +817,25 @@ func getSuggestions(ns model.Namespace, name string, auth *authentication.Auth) 
 }
 
 func commitMessage(requirements ...*Requirement) string {
-	if len(requirements) == 1 {
-		req := requirements[0]
-		switch req.Namespace.Type() {
-		case model.NamespaceLanguage:
-			return languageCommitMessage(req.Operation, req.Name, req.Version)
-		case model.NamespacePlatform:
-			return platformCommitMessage(req.Operation, req.Name, req.Version, req.BitWidth)
-		case model.NamespacePackage, model.NamespaceBundle:
-			return packageCommitMessage(req.Operation, req.Name, req.Version)
-		}
-	} else {
+	switch len(requirements) {
+	case 0:
+		return ""
+	case 1:
+		return requirementCommitMessage(requirements[0])
+	default:
 		return commitMessageMultiple(requirements...)
 	}
+}
 
+func requirementCommitMessage(req *Requirement) string {
+	switch req.Namespace.Type() {
+	case model.NamespaceLanguage:
+		return languageCommitMessage(req.Operation, req.Name, req.Version)
+	case model.NamespacePlatform:
+		return platformCommitMessage(req.Operation, req.Name, req.Version, req.BitWidth)
+	case model.NamespacePackage, model.NamespaceBundle:
+		return packageCommitMessage(req.Operation, req.Name, req.Version)
+	}
 	return ""
 }
 
@@ -880,8 +885,12 @@ func packageCommitMessage(op bpModel.Operation, name, version string) string {
 }
 
 func commitMessageMultiple(requirements ...*Requirement) string {
-	// TODO: Replace this placeholder with a proper message
-	return locale.Tl("commit_message_multiple", "Committing changes to multiple requirements")
+	var commitDetails []string
+	for _, req := range requirements {
+		commitDetails = append(commitDetails, requirementCommitMessage(req))
+	}
+
+	return locale.Tl("commit_message_multiple", "Committing changes to multiple requirements: {{.V0}}", strings.Join(commitDetails, ", "))
 }
 
 func requirementNames(requirements ...*Requirement) []string {
