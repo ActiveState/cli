@@ -281,7 +281,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 }
 
 type ResolveNamespaceError struct {
-	*locale.LocalizedError
+	error
 	Name string
 }
 
@@ -289,7 +289,7 @@ func (r *RequirementOperation) resolveNamespaces(ts *time.Time, requirements ...
 	for _, requirement := range requirements {
 		if err := r.resolveNamespace(ts, requirement); err != nil {
 			return &ResolveNamespaceError{
-				locale.WrapError(err, "err_resolve_namespace", "Could not resolve namespace for requirement: {{.Name}}"),
+				err,
 				requirement.Name,
 			}
 		}
