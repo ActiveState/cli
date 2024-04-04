@@ -103,6 +103,9 @@ type ErrNoMatches struct {
 
 var versionRe = regexp.MustCompile(`^\d(\.\d+)*$`)
 
+// Requirement represents a package, language or platform requirement
+// For now, be aware that you should never provide BOTH ns AND nsType, one or the other should always be nil, but never both.
+// The refactor should clean this up.
 type Requirement struct {
 	Name          string
 	Version       string
@@ -123,8 +126,6 @@ type Requirement struct {
 
 // ExecuteRequirementOperation executes the operation on the requirement
 // This has become quite unwieldy, and is ripe for a refactor - https://activestatef.atlassian.net/browse/DX-1897
-// For now, be aware that you should never provide BOTH ns AND nsType, one or the other should always be nil, but never both.
-// The refactor should clean this up.
 func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requirements ...*Requirement) (rerr error) {
 	defer r.rationalizeError(&rerr)
 
