@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/termtest"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
 
@@ -352,7 +351,7 @@ func (suite *AnalyticsIntegrationTestSuite) summarizeEventSequence(events []repo
 }
 
 type TestingSuiteForAnalytics interface {
-	Require() *require.Assertions
+	Require() *tagsuite.Assertions
 }
 
 func parseAnalyticsEvents(suite TestingSuiteForAnalytics, ts *e2e.Session) []reporters.TestLogEntry {
