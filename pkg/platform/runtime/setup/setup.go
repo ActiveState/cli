@@ -666,8 +666,14 @@ func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifa
 			return errs.Wrap(err, "Could not handle BuildSkipped event")
 		}
 		err = s.installFromBuildResult(buildResult, artifacts, artifactsToInstall, downloads, setup, resolver, installFunc)
+		if err != nil {
+			err = errs.Wrap(err, "Installing via build result failed")
+		}
 	} else {
 		err = s.installFromBuildLog(buildResult, artifacts, artifactsToInstall, setup, resolver, installFunc, logFilePath)
+		if err != nil {
+			err = errs.Wrap(err, "Installing via buildlog streamer failed")
+		}
 	}
 
 	return err
