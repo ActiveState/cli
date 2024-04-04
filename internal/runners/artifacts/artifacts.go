@@ -311,19 +311,17 @@ func getTerminalArtifactMap(
 		return nil, false, false, errs.New("Unhandled case")
 	}
 
-	buildComplete := buildPlan.BuildStatus == bpModel.Completed
-
 	bpm, err := buildplan.NewMapFromBuildPlan(buildPlan.Build, false, false, nil, true)
 	if err != nil {
-		return nil, buildComplete, false, errs.Wrap(err, "Could not get buildplan")
+		return nil, buildPlan.BuildReady, false, errs.Wrap(err, "Could not get buildplan")
 	}
 
 	// Communicate whether there were failed artifacts
 	for _, artifact := range buildPlan.Build.Artifacts {
 		if !bpModel.IsSuccessArtifactStatus(artifact.Status) {
-			return bpm, buildComplete, true, nil
+			return bpm, buildPlan.BuildReady, true, nil
 		}
 	}
 
-	return bpm, buildComplete, false, nil
+	return bpm, buildPlan.BuildReady, false, nil
 }
