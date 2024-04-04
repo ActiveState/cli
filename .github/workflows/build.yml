@@ -39,9 +39,7 @@ jobs:
         go-version:
           - 1.20.x
         sys:
-          - {os: ubuntu-20.04}
-          - {os: macos-11, shell: zsh}
-          - {os: windows-2019}
+          - {os: windows-2019, shell: wsl-bash}
       fail-fast: false
     runs-on: ${{ matrix.sys.os }}
     env:
@@ -56,6 +54,13 @@ jobs:
 
     # === OS Specific Steps ===
     steps:
+      - # === Install WSL ===
+        name: Install WSL
+        if: runner.os == 'Windows'
+        uses: Vampire/setup-wsl@v3
+        with:
+          distribution: Ubuntu-22.04
+
       - # === Disable Windows Defender as it slows things down significantly ===
         name: Disabling Windows Defender
         if: runner.os == 'Windows'
