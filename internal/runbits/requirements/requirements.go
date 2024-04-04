@@ -101,6 +101,10 @@ type ErrNoMatches struct {
 	Alternatives *string
 }
 
+var errNoRequirements = errs.New("No requirements were provided")
+
+var errInitialNoRequirement = errs.New("Could not find compatible requirement for initial commit")
+
 var versionRe = regexp.MustCompile(`^\d(\.\d+)*$`)
 
 // Requirement represents a package, language or platform requirement
@@ -130,7 +134,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 	defer r.rationalizeError(&rerr)
 
 	if len(requirements) == 0 {
-		return locale.NewInputError("err_no_requirements", "No requirements were provided")
+		return errNoRequirements
 	}
 
 	out := r.Output
@@ -151,11 +155,11 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 	out.Notice(locale.Tr("operating_message", r.Project.NamespaceString(), r.Project.Dir()))
 
 	if err := r.resolveNamespaces(ts, requirements...); err != nil {
-		return locale.WrapError(err, "err_resolve_namespaces", "Could not resolve one or more package namespaces")
+		return errs.Wrap(err, "Could not resolve namespaces")
 	}
 
 	if err := r.validatePackages(requirements...); err != nil {
-		return locale.WrapError(err, "err_validate_packages", "Could not validate one or more packages")
+		return errs.Wrap(err, "Could not validate packages")
 	}
 
 	parentCommitID, err := localcommit.Get(r.Project.Dir())
@@ -181,7 +185,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 
 		if requirement == nil {
-			return locale.NewError("err_install_init_invalid_requirement", "Could not find compatible requirement for initial commit")
+			return errInitialNoRequirement
 		}
 
 		languageFromNs := model.LanguageFromNamespace(requirement.Namespace.String())
@@ -276,10 +280,18 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 	return nil
 }
 
+type ResolveNamespaceError struct {
+	*locale.LocalizedError
+	Name string
+}
+
 func (r *RequirementOperation) resolveNamespaces(ts *time.Time, requirements ...*Requirement) error {
 	for _, requirement := range requirements {
 		if err := r.resolveNamespace(ts, requirement); err != nil {
-			return errs.Wrap(err, "Could not resolve namespace")
+			return &ResolveNamespaceError{
+				locale.WrapError(err, "err_resolve_namespace", "Could not resolve namespace for requirement: {{.Name}}"),
+				requirement.Name,
+			}
 		}
 	}
 	return nil
