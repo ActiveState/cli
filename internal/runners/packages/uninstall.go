@@ -12,7 +12,7 @@ import (
 
 // UninstallRunParams tracks the info required for running Uninstall.
 type UninstallRunParams struct {
-	Packages captain.PackagesValue
+	Packages captain.PackagesValueNoVersion
 }
 
 // Uninstall manages the uninstalling execution context.
@@ -37,7 +37,6 @@ func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) (
 	for _, p := range params.Packages {
 		req := &requirements.Requirement{
 			Name:      p.Name,
-			Version:   p.Version,
 			Operation: bpModel.OperationRemoved,
 		}
 
