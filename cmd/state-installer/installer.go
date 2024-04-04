@@ -53,7 +53,7 @@ func (i *Installer) Install() (rerr error) {
 	if err != nil {
 		return errs.Wrap(err, "Could not determine if running as Windows administrator")
 	}
-	if isAdmin && !i.Params.nonInteractive {
+	if isAdmin && !i.Params.force && !i.Params.isUpdate && !i.Params.nonInteractive {
 		prompter := prompt.New(true, i.an)
 		confirm, err := prompter.Confirm("", locale.T("installer_prompt_is_admin"), ptr.To(false))
 		if err != nil {
