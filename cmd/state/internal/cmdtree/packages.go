@@ -120,7 +120,7 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, args []string) error {
 			for _, p := range args {
 				if err := params.Packages.Set(p); err != nil {
-					return locale.WrapInputError(err, "err_install_packages_args", "Invalid package uninstall arguments")
+					return locale.WrapInputError(err, "err_uninstall_packages_args", "Invalid package uninstall arguments")
 				}
 			}
 			return runner.Run(params, model.NamespacePackage)
