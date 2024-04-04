@@ -47,7 +47,7 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 			installPath := filepath.Join(ts.Dirs.Work, "install")
 			stateExePath := filepath.Join(installPath, "bin", constants.StateCmd+osutils.ExeExtension)
 
-			args := []string{}
+			args := []string{"-n"}
 			if tt.Version != "" {
 				args = append(args, "--version", tt.Version)
 			}
