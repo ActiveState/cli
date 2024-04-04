@@ -69,6 +69,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			installDir := filepath.Join(ts.Dirs.Work, "install")
 			argsPlain := []string{script}
 			argsPlain = append(argsPlain, "-t", installDir)
+			argsPlain = append(argsPlain, "-n")
 			if tt.Channel != "" {
 				argsPlain = append(argsPlain, "-b", tt.Channel)
 			}
@@ -161,7 +162,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
 	defer ts.Close()
 
 	script := scriptPath(suite.T(), ts.Dirs.Work)
-	argsPlain := []string{script, "-t", ts.Dirs.Work}
+	argsPlain := []string{script, "-t", ts.Dirs.Work, "-n"}
 	argsPlain = append(argsPlain, "-b", constants.ChannelName)
 	var cp *e2e.SpawnedCmd
 	if runtime.GOOS != "windows" {
@@ -184,7 +185,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_VersionDoesNotExist
 	defer ts.Close()
 
 	script := scriptPath(suite.T(), ts.Dirs.Work)
-	args := []string{script, "-t", ts.Dirs.Work}
+	args := []string{script, "-t", ts.Dirs.Work, "-n"}
 	args = append(args, "-v", "does-not-exist")
 	var cp *e2e.SpawnedCmd
 	if runtime.GOOS != "windows" {
