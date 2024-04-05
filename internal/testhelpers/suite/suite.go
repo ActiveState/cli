@@ -11,6 +11,7 @@ import (
 
 type tSuite interface {
 	testify.TestingSuite
+	IsHelperSuite() bool
 }
 
 type Suite struct {
@@ -22,13 +23,15 @@ func (suite *Suite) NoError(err error, msgAndArgs ...interface{}) {
 		return
 	}
 
-	errMsg := fmt.Sprintf("All error messages: %s", errs.JoinMessage(err))
-	msgAndArgs = append(msgAndArgs, errMsg)
-	suite.Suite.NoError(err, msgAndArgs...)
+	suite.Fail(fmt.Sprintf("Received unexpected error:\n%+v", errs.JoinMessage(err)), msgAndArgs...)
 }
 
 func (suite *Suite) Require() *Assertions {
 	return &Assertions{suite.Suite.Require()}
+}
+
+func (suite *Suite) IsHelperSuite() bool {
+	return true
 }
 
 type Assertions struct {
@@ -40,9 +43,7 @@ func (a *Assertions) NoError(err error, msgAndArgs ...interface{}) {
 		return
 	}
 
-	errMsg := fmt.Sprintf("All error messages: %s", errs.JoinMessage(err))
-	msgAndArgs = append(msgAndArgs, errMsg)
-	a.Assertions.NoError(err, msgAndArgs...)
+	a.Fail(fmt.Sprintf("Received unexpected error:\n%+v", errs.JoinMessage(err)), msgAndArgs...)
 }
 
 func Run(t *testing.T, suite tSuite) {
