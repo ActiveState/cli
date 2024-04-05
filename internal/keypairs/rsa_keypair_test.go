@@ -6,7 +6,7 @@ import (
 	"encoding/pem"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	"github.com/ActiveState/cli/internal/keypairs"
 )
@@ -186,7 +186,6 @@ func (suite *RSAKeypairTestSuite) TestParseEncryptedRSA_IncorrectPassphrase() {
 	suite.Require().Nil(kp2)
 	suite.Error(err)
 }
-
 
 func Test_RSAKeypair_TestSuite(t *testing.T) {
 	suite.Run(t, new(RSAKeypairTestSuite))

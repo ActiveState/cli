@@ -13,9 +13,9 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/stretchr/testify/suite"
 )
 
 type InitIntegrationTestSuite struct {

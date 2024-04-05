@@ -12,9 +12,9 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/stretchr/testify/suite"
 	"golang.org/x/net/context"
 )
 

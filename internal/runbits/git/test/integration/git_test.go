@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics/client/blackhole"
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 

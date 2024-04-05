@@ -12,9 +12,9 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
-	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v2"
 )
 

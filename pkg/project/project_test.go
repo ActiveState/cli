@@ -12,10 +12,10 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/stretchr/testify/suite"
 )
 
 type ProjectTestSuite struct {

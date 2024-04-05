@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/termtest"
-	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
@@ -21,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	helperSuite "github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 )
@@ -351,7 +352,7 @@ func (suite *AnalyticsIntegrationTestSuite) summarizeEventSequence(events []repo
 }
 
 type TestingSuiteForAnalytics interface {
-	Require() *tagsuite.Assertions
+	Require() *helperSuite.Assertions
 }
 
 func parseAnalyticsEvents(suite TestingSuiteForAnalytics, ts *e2e.Session) []reporters.TestLogEntry {

@@ -3,9 +3,9 @@ package model
 import (
 	"testing"
 
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/stretchr/testify/suite"
 )
 
 type VCSTestSuite struct {

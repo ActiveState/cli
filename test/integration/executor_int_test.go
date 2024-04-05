@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils"
