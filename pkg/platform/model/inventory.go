@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -57,13 +58,17 @@ type Authors []*inventory_models.Author
 
 var platformCache []*Platform
 
-func GetIngredientByNameAndVersion(namespace string, name string, version string, auth *authentication.Auth) (*inventory_models.FullIngredientVersion, error) {
+func GetIngredientByNameAndVersion(namespace string, name string, version string, ts *time.Time, auth *authentication.Auth) (*inventory_models.FullIngredientVersion, error) {
 	client := inventory.Get(auth)
 
 	params := inventory_operations.NewGetNamespaceIngredientVersionParams()
 	params.SetNamespace(namespace)
 	params.SetName(name)
 	params.SetVersion(version)
+
+	if ts != nil {
+		params.SetStateAt(ptr.To(strfmt.DateTime(*ts)))
+	}
 	params.SetHTTPClient(api.NewHTTPClient())
 
 	response, err := client.GetNamespaceIngredientVersion(params, auth.ClientAuth())

@@ -146,10 +146,15 @@ func (r *Runner) Run(params *Params) error {
 
 	var ingredient *ParentIngredient
 
+	latestRevisionTime, err := model.FetchLatestRevisionTimeStamp(r.auth)
+	if err != nil {
+		return errs.Wrap(err, "Unable to determine latest revision time")
+	}
+
 	isRevision := false
 	if params.Version != "" {
 		// Attempt to get the version if it already exists, it not existing is not an error though
-		i, err := model.GetIngredientByNameAndVersion(reqVars.Namespace, reqVars.Name, params.Version, r.auth)
+		i, err := model.GetIngredientByNameAndVersion(reqVars.Namespace, reqVars.Name, params.Version, &latestRevisionTime, r.auth)
 		if err != nil {
 			var notFound *inventory_operations.GetNamespaceIngredientVersionNotFound
 			if !errors.As(err, &notFound) {
@@ -163,8 +168,7 @@ func (r *Runner) Run(params *Params) error {
 
 	if ingredient == nil {
 		// Attempt to find the existing ingredient, if we didn't already get it from the version specific call above
-		ts := time.Now()
-		ingredients, err := model.SearchIngredientsStrict(reqVars.Namespace, reqVars.Name, true, false, &ts, r.auth)
+		ingredients, err := model.SearchIngredientsStrict(reqVars.Namespace, reqVars.Name, true, false, &latestRevisionTime, r.auth)
 		if err != nil && !errs.Matches(err, &model.ErrSearch404{}) { // 404 means either the ingredient or the namespace was not found, which is fine
 			return locale.WrapError(err, "err_uploadingredient_search", "Could not search for ingredient")
 		}
@@ -311,7 +315,7 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRev
 	if params.Description != "" {
 		r.Description = params.Description
 	}
-	if r.Description == "" && !isRevision {
+	if r.Description == "" && !params.Edit {
 		r.Description = "Not Provided"
 	}
 
