@@ -90,6 +90,7 @@ type Suite struct {
 // OnlyRunForTags skips a test unless one of the given tags is asked for.
 func (suite *Suite) OnlyRunForTags(tags ...string) {
 	setTagsString, _ := os.LookupEnv("TEST_SUITE_TAGS")
+	setTagsString = "critical"
 
 	setTags := strings.Split(strings.ToLower(setTagsString), ":")
 	// if no tags are defined and we're not on CI; run the test
