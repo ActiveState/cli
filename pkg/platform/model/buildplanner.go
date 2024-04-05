@@ -278,17 +278,21 @@ func removeEmptyTargets(bp *bpModel.Build) {
 	bp.Artifacts = artifacts
 }
 
+type StageCommitRequirement struct {
+	Name      string
+	Version   []bpModel.VersionRequirement
+	Namespace Namespace
+	Revision  *int
+	Operation bpModel.Operation
+}
+
 type StageCommitParams struct {
 	Owner        string
 	Project      string
 	ParentCommit string
 	Description  string
-	// Commits can have either an operation (e.g. installing a package)...
-	RequirementName      string
-	RequirementVersion   []bpModel.VersionRequirement
-	RequirementNamespace Namespace
-	RequirementRevision  *int
-	Operation            bpModel.Operation
+	// Commits can have either requirements (e.g. installing a package)...
+	Requirements []StageCommitRequirement
 	// ... or commits can have an expression (e.g. from pull). When pulling an expression, we do not
 	// compute its changes into a series of above operations. Instead, we just pass the new
 	// expression directly.
@@ -306,28 +310,35 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 			return "", errs.Wrap(err, "Failed to get build expression")
 		}
 
-		if params.RequirementNamespace.Type() == NamespacePlatform {
-			err = expression.UpdatePlatform(params.Operation, strfmt.UUID(params.RequirementName))
-			if err != nil {
-				return "", errs.Wrap(err, "Failed to update build expression with platform")
-			}
-		} else {
-			requirement := bpModel.Requirement{
-				Namespace:          params.RequirementNamespace.String(),
-				Name:               params.RequirementName,
-				VersionRequirement: params.RequirementVersion,
-				Revision:           params.RequirementRevision,
-			}
+		var containsPackageOperation bool
+		for _, req := range params.Requirements {
+			if req.Namespace.Type() == NamespacePlatform {
+				err = expression.UpdatePlatform(req.Operation, strfmt.UUID(req.Name))
+				if err != nil {
+					return "", errs.Wrap(err, "Failed to update build expression with platform")
+				}
+			} else {
+				requirement := bpModel.Requirement{
+					Namespace:          req.Namespace.String(),
+					Name:               req.Name,
+					VersionRequirement: req.Version,
+					Revision:           req.Revision,
+				}
 
-			err = expression.UpdateRequirement(params.Operation, requirement)
-			if err != nil {
-				return "", errs.Wrap(err, "Failed to update build expression with requirement")
+				err = expression.UpdateRequirement(req.Operation, requirement)
+				if err != nil {
+					return "", errs.Wrap(err, "Failed to update build expression with requirement")
+				}
+				containsPackageOperation = true
 			}
+		}
 
+		if containsPackageOperation {
 			if err := expression.SetDefaultTimestamp(); err != nil {
 				return "", errs.Wrap(err, "Failed to set default timestamp")
 			}
 		}
+
 	}
 
 	// With the updated build expression call the stage commit mutation

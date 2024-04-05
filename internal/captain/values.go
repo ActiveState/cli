@@ -228,6 +228,31 @@ func (p *PackagesValue) Type() string {
 	return "packages"
 }
 
+type PackagesValueNoVersion []PackageValueNoVersion
+
+var _ FlagMarshaler = &PackagesValueNoVersion{}
+
+func (p *PackagesValueNoVersion) String() string {
+	var result []string
+	for _, pkg := range *p {
+		result = append(result, pkg.String())
+	}
+	return strings.Join(result, ", ")
+}
+
+func (p *PackagesValueNoVersion) Set(s string) error {
+	pf := &PackageValueNoVersion{}
+	if err := pf.Set(s); err != nil {
+		return err
+	}
+	*p = append(*p, *pf)
+	return nil
+}
+
+func (p *PackagesValueNoVersion) Type() string {
+	return "packages"
+}
+
 type TimeValue struct {
 	raw  string
 	Time *time.Time
