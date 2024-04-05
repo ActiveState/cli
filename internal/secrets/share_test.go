@@ -3,8 +3,8 @@ package secrets_test
 import (
 	"testing"
 
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/go-openapi/strfmt"
-	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/secrets"

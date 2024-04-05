@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/camel"
-	"github.com/stretchr/testify/suite"
 )
 
 type MetaDataTestSuite struct {

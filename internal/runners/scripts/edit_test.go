@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/config"

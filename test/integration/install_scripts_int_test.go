@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
 
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
