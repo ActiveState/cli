@@ -150,6 +150,10 @@ func executablePaths(t *testing.T) (string, string, string) {
 	svcExec := filepath.Join(buildDir, constants.StateSvcCmd+osutils.ExeExtension)
 	executorExec := filepath.Join(buildDir, constants.StateExecutorCmd+osutils.ExeExtension)
 
+	stateExec = osutils.FindExeOnPATH(constants.StateCmd + osutils.ExeExtension)
+	svcExec = osutils.FindExeOnPATH(constants.StateSvcCmd + osutils.ExeExtension)
+	executorExec = osutils.FindExeOnPATH(constants.StateExecutorCmd + osutils.ExeExtension)
+
 	if !fileutils.FileExists(stateExec) {
 		t.Fatal("E2E tests require a State Tool binary. Run `state run build`.")
 	}
