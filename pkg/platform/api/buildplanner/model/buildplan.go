@@ -343,6 +343,11 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 			commit.Type, commit.Message,
 			locale.NewInputError("err_buildplanner_parse_error", "The platform failed to parse the build expression, received message: {{.V0}}. Path: {{.V1}}", commit.Message, commit.ParseError.Path),
 		}
+	case ValidationErrorType:
+		return &CommitError{
+			commit.Type, commit.Message,
+			locale.NewInputError("err_buildplanner_validation_error", "The platform encountered a validation error, received message: {{.V0}}", commit.Message),
+		}
 	case ForbiddenErrorType:
 		return &CommitError{
 			commit.Type, commit.Message,
