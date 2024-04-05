@@ -19,8 +19,8 @@ runtime = solve(
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/perl"),
-		Req(name = "language/perl/DateTime")
+		Req(name = "language:perl"),
+		Req(name = "language/perl:DateTime")
 	]
 )
 
@@ -37,8 +37,8 @@ runtime = solve(
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/perl"),
-		Req(name = "language/perl/JSON")
+		Req(name = "language:perl"),
+		Req(name = "language/perl:JSON")
 	]
 )
 
@@ -69,9 +69,9 @@ runtime = solve(
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/perl"),
-		Req(name = "language/perl/JSON"),
-		Req(name = "language/perl/DateTime")
+		Req(name = "language:perl"),
+		Req(name = "language/perl:JSON"),
+		Req(name = "language/perl:DateTime")
 	]
 )
 
@@ -88,9 +88,9 @@ runtime = solve(
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/perl"),
-		Req(name = "language/perl/JSON"),
-		Req(name = "language/perl/DateTime")
+		Req(name = "language:perl"),
+		Req(name = "language/perl:JSON"),
+		Req(name = "language/perl:DateTime")
 	]
 )
 
@@ -107,8 +107,8 @@ runtime = solve(
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/perl"),
-		Req(name = "language/perl/DateTime")
+		Req(name = "language:perl"),
+		Req(name = "language/perl:DateTime")
 	]
 )
 
@@ -139,8 +139,8 @@ runtime = solve(
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/perl"),
-		Req(name = "language/perl/DateTime")
+		Req(name = "language:perl"),
+		Req(name = "language/perl:DateTime")
 	]
 )
 
@@ -157,7 +157,7 @@ runtime = solve(
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/perl"),
+		Req(name = "language:perl"),
 	]
 )
 
@@ -173,8 +173,8 @@ runtime = solve(
 		"12345"
 	],
 	requirements = [
-		Req(name = "language/perl"),
-		Req(name = "language/perl/JSON")
+		Req(name = "language:perl"),
+		Req(name = "language/perl:JSON")
 	]
 )
 

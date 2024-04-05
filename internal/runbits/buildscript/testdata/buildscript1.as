@@ -14,8 +14,8 @@ sources = solve(
 		"96b7e6f2-bebf-564c-bc1c-f04482398f38"
 	],
 	requirements = [
-		Req(name = "language/python", version = Eq(value = "3.10.11")),
-		Req(name = "language/python/requests")
+		Req(name = "language:python", version = Eq(value = "3.10.11")),
+		Req(name = "language/python:requests")
 	],
 	solver_version = null
 )

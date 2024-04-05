@@ -33,8 +33,8 @@ runtime = solve(
 	at_time = at_time,
 	platforms = ["linux", "windows"],
 	requirements = [
-		Req(name = "language/python"),
-		Req(name = "language/python/requests", version = Eq(value = "3.10.10"))
+		Req(name = "language:python"),
+		Req(name = "language/python:requests", version = Eq(value = "3.10.10"))
 	]
 )
 
@@ -66,14 +66,14 @@ main = runtime
 								Name: "Req",
 								Arguments: []*Value{
 									{Assignment: &Assignment{
-										"name", &Value{Str: ptr.To(`"language/python"`)},
+										"name", &Value{Str: ptr.To(`"language:python"`)},
 									}},
 								}}},
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
 									{Assignment: &Assignment{
-										"name", &Value{Str: ptr.To(`"language/python/requests"`)},
+										"name", &Value{Str: ptr.To(`"language/python:requests"`)},
 									}},
 									{Assignment: &Assignment{
 										"version", &Value{FuncCall: &FuncCall{
@@ -102,7 +102,7 @@ func TestComplex(t *testing.T) {
 linux_runtime = solve(
 		at_time = at_time,
 		requirements=[
-			Req(name = "language/python")
+			Req(name = "language:python")
 		],
 		platforms=["67890"]
 )
@@ -110,7 +110,7 @@ linux_runtime = solve(
 win_runtime = solve(
 		at_time = at_time,
 		requirements=[
-			Req(name = "language/perl")
+			Req(name = "language:perl")
 		],
 		platforms=["12345"]
 )
@@ -140,7 +140,7 @@ main = merge(
 								Name: "Req",
 								Arguments: []*Value{
 									{Assignment: &Assignment{
-										"name", &Value{Str: ptr.To(`"language/python"`)}},
+										"name", &Value{Str: ptr.To(`"language:python"`)}},
 									},
 								},
 							}},
@@ -162,7 +162,7 @@ main = merge(
 								Name: "Req",
 								Arguments: []*Value{
 									{Assignment: &Assignment{
-										"name", &Value{Str: ptr.To(`"language/perl"`)}},
+										"name", &Value{Str: ptr.To(`"language:perl"`)}},
 									},
 								},
 							}},
@@ -191,9 +191,9 @@ runtime = solve(
 	at_time = at_time,
 	platforms = ["96b7e6f2-bebf-564c-bc1c-f04482398f38", "96b7e6f2-bebf-564c-bc1c-f04482398f38"],
 	requirements = [
-		Req(name = "language/python"),
-		Req(name = "language/python/requests", version = Eq(value = "3.10.10")),
-		Req(name = "language/python/argparse", version = And(left = Gt(value = "1.0"), right = Lt(value = "2.0")))
+		Req(name = "language:python"),
+		Req(name = "language/python:requests", version = Eq(value = "3.10.10")),
+		Req(name = "language/python:argparse", version = And(left = Gt(value = "1.0"), right = Lt(value = "2.0")))
 	],
 	solver_version = 0
 )
@@ -230,7 +230,7 @@ func TestExample(t *testing.T) {
 								Name: "Req",
 								Arguments: []*Value{
 									{Assignment: &Assignment{
-										"name", &Value{Str: ptr.To(`"language/python"`)}},
+										"name", &Value{Str: ptr.To(`"language:python"`)}},
 									},
 								},
 							}},
@@ -238,7 +238,7 @@ func TestExample(t *testing.T) {
 								Name: "Req",
 								Arguments: []*Value{
 									{Assignment: &Assignment{
-										"name", &Value{Str: ptr.To(`"language/python/requests"`)}},
+										"name", &Value{Str: ptr.To(`"language/python:requests"`)}},
 									},
 									{Assignment: &Assignment{
 										"version", &Value{FuncCall: &FuncCall{
@@ -254,7 +254,7 @@ func TestExample(t *testing.T) {
 								Name: "Req",
 								Arguments: []*Value{
 									{Assignment: &Assignment{
-										"name", &Value{Str: ptr.To(`"language/python/argparse"`)}},
+										"name", &Value{Str: ptr.To(`"language/python:argparse"`)}},
 									},
 									{Assignment: &Assignment{
 										"version", &Value{FuncCall: &FuncCall{
@@ -297,7 +297,7 @@ func TestString(t *testing.T) {
 runtime = solve(
 		at_time = at_time,
 		platforms=["12345", "67890"],
-		requirements=[Req(name = "language/python", version = Eq(value = "3.10.10"))]
+		requirements=[Req(name = "language:python", version = Eq(value = "3.10.10"))]
 )
 
 main = runtime
@@ -313,7 +313,7 @@ runtime = solve(
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/python", version = Eq(value = "3.10.10"))
+		Req(name = "language:python", version = Eq(value = "3.10.10"))
 	]
 )
 
@@ -343,7 +343,7 @@ func TestJson(t *testing.T) {
 runtime = solve(
 		at_time = at_time,
 		requirements=[
-			Req(name = "language/python")
+			Req(name = "language:python")
 		],
 		platforms=["12345", "67890"]
 )

@@ -104,7 +104,7 @@ func marshalReq(args []*Value) ([]byte, error) {
 		}
 
 		switch {
-		// Marshal the name argument (e.g. name = "<namespace>/<name>") into
+		// Marshal the name argument (e.g. name = "<namespace>:<name>") into
 		// {"name": "<name>", "namespace": "<namespace>"}
 		case assignment.Key == buildexpression.RequirementNameKey && assignment.Value.Str != nil:
 			name, namespace := separateNamespace(*assignment.Value.Str)
@@ -162,10 +162,10 @@ func marshalReq(args []*Value) ([]byte, error) {
 func separateNamespace(combined string) (string, string) {
 	var name, namespace string
 	s := strings.Trim(combined, `"`)
-	lastSlashIndex := strings.LastIndex(s, "/")
-	if lastSlashIndex != -1 {
-		namespace = s[:lastSlashIndex]
-		name = s[lastSlashIndex+1:]
+	colonIndex := strings.Index(s, ":")
+	if colonIndex != -1 {
+		namespace = s[:colonIndex]
+		name = s[colonIndex+1:]
 	}
 
 	return name, namespace

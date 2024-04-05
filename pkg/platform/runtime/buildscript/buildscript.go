@@ -177,7 +177,7 @@ func transformRequirements(reqs *buildexpression.Var) *buildexpression.Var {
 //
 // into something like
 //
-//	Req(name = "<namespace>/<name>", version = <op>(value = "<version>"))
+//	Req(name = "<namespace>:<name>", version = <op>(value = "<version>"))
 func transformRequirement(req *buildexpression.Value) *buildexpression.Value {
 	newReq := &buildexpression.Value{
 		Ap: &buildexpression.Ap{
@@ -195,7 +195,7 @@ func transformRequirement(req *buildexpression.Value) *buildexpression.Value {
 			name += *arg.Value.Str
 
 		case buildexpression.RequirementNamespaceKey:
-			name = fmt.Sprintf("%s/%s", *arg.Value.Str, name)
+			name = fmt.Sprintf("%s:%s", *arg.Value.Str, name)
 
 		case buildexpression.RequirementVersionRequirementsKey:
 			version = transformVersion(arg)
