@@ -79,8 +79,8 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 		d.out.Notice(locale.Tr("operating_message", d.project.NamespaceString(), d.project.Dir()))
 	}
 
-	terminalArtfMap, _, err := getTerminalArtifactMap(
-		d.project, params.Namespace, params.CommitID, d.auth, d.analytics, d.svcModel, d.out, d.config)
+	terminalArtfMap, _, _, err := getTerminalArtifactMap(
+		d.project, params.Namespace, params.CommitID, d.auth, d.out)
 	if err != nil {
 		return errs.Wrap(err, "Could not get build plan map")
 	}

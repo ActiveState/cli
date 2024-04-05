@@ -1555,6 +1555,8 @@ builds_dl_downloading:
   other: Downloading {{.V0}}
 warn_has_failed_artifacts:
   other: "Warning: This project has failed builds, and some artifacts will be missing as a result.\n"
+warn_build_not_complete:
+  other: "Warning: This project has not finished building all artifacts, this is only reporting on artifacts that have finished building.\n"
 err_build_artifacts_failed:
   other: |
     The following artifacts failed to build, please refer to their logs for more information:
