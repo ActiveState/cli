@@ -391,11 +391,6 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 			commit.Type, commit.Error.Message,
 			locale.NewInputError("err_buildplanner_no_change_since_last_commit", "No new changes to commit."),
 		}, commit.Error.Message)
-	case ValidationErrorType:
-		return &CommitError{
-			commit.Type, commit.Error.Message,
-			locale.NewInputError("err_buildplanner_validation_error", "Invalid request: {{.V0}}", commit.Message),
-		}
 	default:
 		return errs.New(fallbackMessage)
 	}
