@@ -12,7 +12,7 @@ import (
 
 // UninstallRunParams tracks the info required for running Uninstall.
 type UninstallRunParams struct {
-	Package captain.PackageValueNoVersion
+	Packages captain.PackagesValueNoVersion
 }
 
 // Uninstall manages the uninstalling execution context.
@@ -33,23 +33,21 @@ func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) (
 		return rationalize.ErrNoProject
 	}
 
-	var nsTypeV *model.NamespaceType
-	var ns *model.Namespace
+	var reqs []*requirements.Requirement
+	for _, p := range params.Packages {
+		req := &requirements.Requirement{
+			Name:      p.Name,
+			Operation: bpModel.OperationRemoved,
+		}
 
-	if params.Package.Namespace != "" {
-		ns = ptr.To(model.NewRawNamespace(params.Package.Namespace))
-	} else {
-		nsTypeV = &nsType
+		if p.Namespace != "" {
+			req.Namespace = ptr.To(model.NewRawNamespace(p.Namespace))
+		} else {
+			req.NamespaceType = &nsType
+		}
+
+		reqs = append(reqs, req)
 	}
 
-	return requirements.NewRequirementOperation(u.prime).ExecuteRequirementOperation(
-		params.Package.Name,
-		"",
-		nil,
-		0, // bit-width placeholder that does not apply here
-		bpModel.OperationRemoved,
-		ns,
-		nsTypeV,
-		nil,
-	)
+	return requirements.NewRequirementOperation(u.prime).ExecuteRequirementOperation(nil, reqs...)
 }

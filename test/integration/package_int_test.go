@@ -352,6 +352,51 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	})
 }
 
+func (suite *PackageIntegrationTestSuite) TestPackage_operation_multiple() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	if runtime.GOOS == "darwin" {
+		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
+		return
+	}
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	user := ts.CreateNewUser()
+	namespace := fmt.Sprintf("%s/%s", user.Username, "python3-pkgtest")
+
+	cp := ts.Spawn("fork", "ActiveState-CLI/Packages", "--org", user.Username, "--name", "python3-pkgtest")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("checkout", namespace, ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("history", "--output=json")
+	cp.ExpectExitCode(0)
+
+	suite.Run("install", func() {
+		cp := ts.Spawn("install", "requests", "urllib3@1.25.6")
+		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", user.Username))
+		cp.ExpectRe("(?:Package added|being built)", termtest.OptExpectTimeout(30*time.Second))
+		cp.Wait()
+	})
+
+	suite.Run("install (update)", func() {
+		cp := ts.Spawn("install", "urllib3@1.25.8")
+		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", user.Username))
+		cp.ExpectRe("(?:Package updated|being built)", termtest.OptExpectTimeout(30*time.Second))
+		cp.Wait()
+	})
+
+	suite.Run("uninstall", func() {
+		cp := ts.Spawn("uninstall", "requests", "urllib3")
+		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", user.Username))
+		cp.ExpectRe("(?:Package uninstalled|being built)", termtest.OptExpectTimeout(30*time.Second))
+		cp.Wait()
+	})
+}
+
 func (suite *PackageIntegrationTestSuite) TestPackage_Duplicate() {
 	suite.OnlyRunForTags(tagsuite.Package)
 
@@ -667,6 +712,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_NoPrompt() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("install", "urllib3@2.0.2"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Warning: Dependency has 2 known vulnerabilities")
 	cp.ExpectExitCode(0)
@@ -692,6 +738,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Prompt() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("install", "urllib3@2.0.2"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Warning: Dependency has 2 known vulnerabilities")
 	cp.Expect("Do you want to continue")

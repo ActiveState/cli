@@ -1263,7 +1263,7 @@ package_ingredient_alternatives_nolang:
 progress_search:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalog"
 progress_cve_search:
-  other: " • Searching for vulnerabilities (CVEs) on [ACTIONABLE]{{.V0}}[/RESET] and its dependencies"
+  other: " • Searching for new vulnerabilities (CVEs) on [ACTIONABLE]{{.V0}}[/RESET] and any dependencies"
 setup_runtime:
   other: "Setting Up Runtime"
 progress_solve:
@@ -1588,3 +1588,7 @@ notice_needs_buildscript_reset:
 
 svcctl_cannot_create_debug_info:
   other: "Cannot create debug info: {{.V0}}"
+err_initial_no_requirement:
+  other: |
+    Could not find compatible requirement for initial commit. Please ensure that you are trying to install a valid package.
+    To check for available packages run '[ACTIONABLE]state search <package_name>[/RESET]'.

@@ -54,15 +54,12 @@ func (u *Update) Run(params *UpdateParams) error {
 	}
 
 	op := requirements.NewRequirementOperation(u.prime)
-	return op.ExecuteRequirementOperation(
-		lang.Name,
-		lang.Version,
-		nil,
-		0, // bit-width placeholder that does not apply here
-		bpModel.OperationAdded,
-		nil,
-		&model.NamespaceLanguage,
-		nil)
+	return op.ExecuteRequirementOperation(nil, &requirements.Requirement{
+		Name:          lang.Name,
+		Version:       lang.Version,
+		NamespaceType: &model.NamespaceLanguage,
+		Operation:     bpModel.OperationAdded,
+	})
 }
 
 func parseLanguage(langName string) (*model.Language, error) {
