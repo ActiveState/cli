@@ -104,12 +104,14 @@ func marshalReq(args []*Value) ([]byte, error) {
 		}
 
 		switch {
-		// Marshal the name argument (e.g. name = "<namespace>/<name>") into
-		// {"name": "<name>", "namespace": "<namespace>"}
+		// Marshal the name argument (e.g. name = "<name>") into {"name": "<name>"}
 		case assignment.Key == buildexpression.RequirementNameKey && assignment.Value.Str != nil:
-			name, namespace := separateNamespace(*assignment.Value.Str)
-			requirement[buildexpression.RequirementNameKey] = name
-			requirement[buildexpression.RequirementNamespaceKey] = namespace
+			requirement[buildexpression.RequirementNameKey] = strings.Trim(*assignment.Value.Str, `"`)
+
+		// Marshal the namespace argument (e.g. namespace = "<namespace>") into
+		// {"namespace": "<namespace>"}
+		case assignment.Key == buildexpression.RequirementNamespaceKey && assignment.Value.Str != nil:
+			requirement[buildexpression.RequirementNamespaceKey] = strings.Trim(*assignment.Value.Str, `"`)
 
 		// Marshal the version argument (e.g. version = <op>(value = "<version>")) into
 		// {"version_requirements": [{"comparator": "<op>", "version": "<version>"}]}
@@ -157,16 +159,4 @@ func marshalReq(args []*Value) ([]byte, error) {
 	}
 
 	return json.Marshal(requirement)
-}
-
-func separateNamespace(combined string) (string, string) {
-	var name, namespace string
-	s := strings.Trim(combined, `"`)
-	lastSlashIndex := strings.LastIndex(s, "/")
-	if lastSlashIndex != -1 {
-		namespace = s[:lastSlashIndex]
-		name = s[lastSlashIndex+1:]
-	}
-
-	return name, namespace
 }
