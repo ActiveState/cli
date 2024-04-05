@@ -594,7 +594,7 @@ func processBuildPlannerError(bpErr error, fallbackMessage string) error {
 			return &bpModel.BuildPlannerError{Err: locale.NewInputError("err_buildplanner_deprecated", "Encountered deprecation error: {{.V0}}", graphqlErr.Message)}
 		}
 	}
-	return &bpModel.BuildPlannerError{Err: errs.Wrap(bpErr, fallbackMessage)}
+	return &bpModel.BuildPlannerError{Err: locale.NewInputError("err_buildplanner", "{{.V0}}: Encountered unexpected error: {{.V1}}", fallbackMessage, bpErr.Error())}
 }
 
 var versionRe = regexp.MustCompile(`^\d+(\.\d+)*$`)
