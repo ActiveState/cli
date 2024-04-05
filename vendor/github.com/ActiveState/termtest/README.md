@@ -78,3 +78,4 @@ cp.Expect("0123456789012345")  // this matches
 
 Custom matchers that match against either the raw / or processed pseudo-terminal output can be specified in the `go-expect` package.  See `expect_opt.go` for examples.
 
+
