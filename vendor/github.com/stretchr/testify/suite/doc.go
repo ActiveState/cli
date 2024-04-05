@@ -34,7 +34,7 @@
 //	import (
 //	    "testing"
 //	    "github.com/stretchr/testify/assert"
-//	    "github.com/ActiveState/cli/internal/testhelpers/suite"
+//	    "github.com/stretchr/testify/suite"
 //	)
 //
 //	// Define the suite, and absorb the built-in basic suite
