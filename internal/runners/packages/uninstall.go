@@ -43,7 +43,7 @@ func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) (
 		nsTypeV = &nsType
 	}
 
-	ts, err := getTime(nil, u.prime.Auth(), u.prime.Project())
+	ts, err := getTime(&captain.TimeValue{}, u.prime.Auth(), u.prime.Project())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get timestamp from params")
 	}
