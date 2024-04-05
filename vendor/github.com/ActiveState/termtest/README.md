@@ -61,20 +61,15 @@ cp.Expect("0123456789012345")  // this matches
 - Programme sends string "line 1\nline 2\n".
 - Terminal output is "line 1    \nline 2    \n".
 - The following does NOT match:
-
   ```
   cp.Expect("line 1\nline 2\n")  // this does NOT match
   ```
-
 - The following does MATCH:
-
   ```
   cp.Expect("line 1")
   cp.Expect("line 2")
   ```
-
 - The following does MATCH:
-
   ```
   cp.Expect("line 1    line 2    ")
   ```
@@ -82,3 +77,4 @@ cp.Expect("0123456789012345")  // this matches
 ### Custom matchers
 
 Custom matchers that match against either the raw / or processed pseudo-terminal output can be specified in the `go-expect` package.  See `expect_opt.go` for examples.
+
