@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -91,11 +91,12 @@ func (suite *ConditionIntegrationTestSuite) TestConditionOSName() {
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("run", "OSName"),
 	)
-	if runtime.GOOS == "windows" {
+	switch runtime.GOOS {
+	case "windows":
 		cp.Expect(`using-windows`)
-	} else if runtime.GOOS == "darwin" {
+	case "darwin":
 		cp.Expect(`using-macos`)
-	} else {
+	default:
 		cp.Expect(`using-linux`)
 	}
 	cp.ExpectExitCode(0)

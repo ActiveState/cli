@@ -7,7 +7,7 @@ import (
 	"encoding/base64"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	"github.com/ActiveState/cli/internal/keypairs"
 )

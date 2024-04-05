@@ -4,10 +4,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 )
 
 const (

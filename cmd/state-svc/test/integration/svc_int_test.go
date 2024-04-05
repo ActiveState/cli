@@ -19,9 +19,9 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/shirou/gopsutil/v3/process"
-	"github.com/stretchr/testify/suite"
 )
 
 type SvcIntegrationTestSuite struct {

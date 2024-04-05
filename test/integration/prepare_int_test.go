@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"

@@ -6,8 +6,8 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/unarchiver"
-	"github.com/stretchr/testify/suite"
 )
 
 type UnarchiverTestSuite struct {
