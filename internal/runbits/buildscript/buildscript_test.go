@@ -21,7 +21,7 @@ runtime = solve(
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/perl")
+		Req(name = "perl", namespace = "language")
 	]
 )
 
@@ -47,7 +47,7 @@ runtime = solve(
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/perl")
+		Req(name = "perl", namespace = "language")
 	]
 )
 
@@ -88,11 +88,11 @@ sources = solve(
 		"96b7e6f2-bebf-564c-bc1c-f04482398f38"
 	],
 	requirements = [
-		Req(name = "language/python", version = Eq(value = "3.10.11")),
+		Req(name = "python", namespace = "language", version = Eq(value = "3.10.11")),
 <<<<<<< local
-		Req(name = "language/python/requests")
+		Req(name = "requests", namespace = "language/python")
 =======
-		Req(name = "language/python/requests", version = Eq(value = "2.30.0"))
+		Req(name = "requests", namespace = "language/python", version = Eq(value = "2.30.0"))
 >>>>>>> remote
 	],
 	solver_version = null
