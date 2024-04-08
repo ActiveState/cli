@@ -289,13 +289,6 @@ jobs:
           state run deploy-installers
           state run deploy-remote-installer
 
-      - # === Install Linux version of State Tool ===
-        name: Install Linux State Tool
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          bash ./installers/install.sh -n
-
       - # === Integration Tests ===
         name: Integration Tests
         id: integration_tests
