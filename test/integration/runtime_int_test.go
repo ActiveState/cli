@@ -130,7 +130,7 @@ func (suite *RuntimeIntegrationTestSuite) TestInUse() {
 	)
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("perl")
-	time.Sleep(5 * time.Second) // allow time for perl to start up
+	time.Sleep(1 * time.Second) // allow time for perl to start up
 
 	cp2 := ts.SpawnWithOpts(
 		e2e.OptArgs("install", "DateTime"),

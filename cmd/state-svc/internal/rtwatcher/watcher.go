@@ -104,15 +104,12 @@ func (w *Watcher) RecordUsage(e entry) {
 func (w *Watcher) GetProcessesInUse(execDir string) []entry {
 	inUse := make([]entry, 0)
 
-	logging.Debug("Looking for runtime processes in use for %s", execDir)
 	execDir = strings.ToLower(execDir) // match case-insensitively
 	for _, proc := range w.watching {
-		logging.Debug("Checking %s", proc.Exec)
 		if !strings.Contains(strings.ToLower(proc.Exec), execDir) {
 			continue
 		}
 
-		logging.Debug("Found %s", proc.Exec)
 		isRunning, err := proc.IsRunning()
 		if err != nil && !errs.Matches(err, &processError{}) {
 			multilog.Error("Could not check if runtime process is running: %s", errs.JoinMessage(err))
@@ -123,7 +120,6 @@ func (w *Watcher) GetProcessesInUse(execDir string) []entry {
 			logging.Debug("Runtime process %d:%s is not running", proc.PID, proc.Exec)
 			continue
 		}
-		logging.Debug("Runtime process %d:%s is running", proc.PID, proc.Exec)
 		inUse = append(inUse, proc) // append a copy
 	}
 
