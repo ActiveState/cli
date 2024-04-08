@@ -27,6 +27,7 @@ func (e entry) IsRunning() (bool, error) {
 
 	proc, err := process.NewProcess(int32(e.PID))
 	if err != nil {
+		logging.Debug("Could not find process error: %v", err)
 		if errors.Is(err, process.ErrorProcessNotRunning) {
 			logging.Debug("Process %d is no longer running", e.PID)
 			return false, nil
@@ -36,11 +37,13 @@ func (e entry) IsRunning() (bool, error) {
 
 	exe, err := proc.Exe()
 	if err != nil {
+		logging.Debug("Could not get executable of process error: %v", err)
 		return false, &processError{errs.Wrap(err, "Could not get executable of process: %d", e.PID)}
 	}
 
 	match, err := fileutils.PathsMatch(exe, e.Exec)
 	if err != nil {
+		logging.Debug("Could not compare paths error: %v", err)
 		return false, errs.Wrap(err, "Could not compare paths: %s, %s", exe, e.Exec)
 	}
 	if match {

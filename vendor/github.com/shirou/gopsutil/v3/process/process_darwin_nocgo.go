@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/labstack/gommon/log"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/internal/common"
 )
@@ -24,6 +25,7 @@ func (p *Process) ExeWithContext(ctx context.Context) (string, error) {
 	}
 	txtFound := 0
 	lines := strings.Split(string(out), "\n")
+	log.Debugf("lsof output: %v", lines)
 	for i := 1; i < len(lines); i++ {
 		if lines[i] == "ftxt" {
 			txtFound++
