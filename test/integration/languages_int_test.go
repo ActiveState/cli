@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/termtest"
 	goversion "github.com/hashicorp/go-version"
@@ -145,7 +146,11 @@ func (suite *LanguagesIntegrationTestSuite) TestWildcards() {
 	cp.ExpectExitCode(0)
 
 	// Test non-matching version.
-	cp = ts.Spawn("languages", "install", "python@100")
+	// Enable the runtime to actually solve the build and invalidate the version.
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("languages", "install", "python@100"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
 	cp.Expect("Failed")
 	cp.ExpectNotExitCode(0)
 }
