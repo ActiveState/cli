@@ -117,7 +117,7 @@ func (suite *RuntimeIntegrationTestSuite) TestInUse() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl-5.32", ".")
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl-5.36", ".")
 	cp.Expect("Skipping runtime setup")
 	cp.ExpectExitCode(0)
 
