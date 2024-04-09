@@ -149,10 +149,10 @@ func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
 	}
 }
 
-func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project string) (*BuildResult, *model.Commit, error) {
+func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project string, target *string) (*BuildResult, *model.Commit, error) {
 	logging.Debug("FetchBuildResult, commitID: %s, owner: %s, project: %s", commitID, owner, project)
 	resp := bpModel.NewBuildPlanResponse(owner, project)
-	err := bp.client.Run(request.BuildPlan(commitID.String(), owner, project), resp)
+	err := bp.client.Run(request.BuildPlan(commitID.String(), owner, project, target), resp)
 	if err != nil {
 		return nil, nil, processBuildPlannerError(err, "failed to fetch build plan")
 	}
@@ -166,7 +166,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	// "planning" if the build plan is not ready yet. We need to
 	// poll the BuildPlanner until the build is ready.
 	if build.Status == bpModel.Planning {
-		build, err = bp.pollBuildPlan(commitID.String(), owner, project)
+		build, err = bp.pollBuildPlan(commitID.String(), owner, project, target)
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "failed to poll build plan")
 		}
@@ -219,13 +219,13 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	return &res, commit, nil
 }
 
-func (bp *BuildPlanner) pollBuildPlan(commitID, owner, project string) (*bpModel.Build, error) {
+func (bp *BuildPlanner) pollBuildPlan(commitID, owner, project string, target *string) (*bpModel.Build, error) {
 	resp := model.NewBuildPlanResponse(owner, project)
 	ticker := time.NewTicker(pollInterval)
 	for {
 		select {
 		case <-ticker.C:
-			err := bp.client.Run(request.BuildPlan(commitID, owner, project), resp)
+			err := bp.client.Run(request.BuildPlan(commitID, owner, project, target), resp)
 			if err != nil {
 				return nil, processBuildPlannerError(err, "failed to fetch build plan")
 			}

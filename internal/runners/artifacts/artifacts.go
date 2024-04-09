@@ -35,6 +35,7 @@ type Params struct {
 	All       bool
 	Namespace *project.Namespaced
 	CommitID  string
+	Target    string
 	Full      bool
 }
 
@@ -108,7 +109,7 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 	}
 
 	terminalArtfMap, buildComplete, hasFailedArtifacts, err := getTerminalArtifactMap(
-		b.project, params.Namespace, params.CommitID, b.auth, b.out)
+		b.project, params.Namespace, params.CommitID, params.Target, b.auth, b.out)
 	if err != nil {
 		return errs.Wrap(err, "Could not get terminal artifact map")
 	}
@@ -226,6 +227,7 @@ func getTerminalArtifactMap(
 	pj *project.Project,
 	namespace *project.Namespaced,
 	commit string,
+	target string,
 	auth *authentication.Auth,
 	out output.Outputer) (_ buildplan.TerminalArtifactMap, completed bool, hasFailedArtifacts bool, rerr error) {
 	if pj == nil && !namespace.IsValid() {
@@ -251,6 +253,11 @@ func getTerminalArtifactMap(
 		pb.Stop(message + "\n") // extra empty line
 	}()
 
+	var targetPtr *string
+	if target != "" {
+		targetPtr = &target
+	}
+
 	var err error
 	var buildPlan *model.BuildResult
 	switch {
@@ -262,7 +269,7 @@ func getTerminalArtifactMap(
 		}
 
 		bp := model.NewBuildPlannerModel(auth)
-		buildPlan, _, err = bp.FetchBuildResult(localCommitID, pj.Owner(), pj.Name())
+		buildPlan, _, err = bp.FetchBuildResult(localCommitID, pj.Owner(), pj.Name(), targetPtr)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
 		}
@@ -270,7 +277,7 @@ func getTerminalArtifactMap(
 	// Return artifact map from the given commitID for the current project.
 	case !namespaceProvided && commitIdProvided:
 		bp := model.NewBuildPlannerModel(auth)
-		buildPlan, _, err = bp.FetchBuildResult(commitID, pj.Owner(), pj.Name())
+		buildPlan, _, err = bp.FetchBuildResult(commitID, pj.Owner(), pj.Name(), targetPtr)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
 		}
@@ -294,7 +301,7 @@ func getTerminalArtifactMap(
 		commitID = *commitUUID
 
 		bp := model.NewBuildPlannerModel(auth)
-		buildPlan, _, err = bp.FetchBuildResult(commitID, namespace.Owner, namespace.Project)
+		buildPlan, _, err = bp.FetchBuildResult(commitID, namespace.Owner, namespace.Project, targetPtr)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
 		}
@@ -302,7 +309,7 @@ func getTerminalArtifactMap(
 	// Return the artifact map for the given commitID of the given project.
 	case namespaceProvided && commitIdProvided:
 		bp := model.NewBuildPlannerModel(auth)
-		buildPlan, _, err = bp.FetchBuildResult(commitID, namespace.Owner, namespace.Project)
+		buildPlan, _, err = bp.FetchBuildResult(commitID, namespace.Owner, namespace.Project, targetPtr)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
 		}
