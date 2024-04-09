@@ -17,7 +17,7 @@ func (suite *ResetIntegrationTestSuite) TestReset() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Branches#35af7414-b44b-4fd7-aa93-2ecad337ed2b", ".")
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Reset#3a2d095d-efd6-4be0-b824-21de94fc4ad6", ".")
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out")
 	cp.ExpectExitCode(0)
@@ -31,11 +31,11 @@ func (suite *ResetIntegrationTestSuite) TestReset() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("reset")
-	cp.Expect("Your project will be reset to 35af7414-b44b-4fd7-aa93-2ecad337ed2b")
+	cp.Expect("Your project will be reset to 3a2d095d-efd6-4be0-b824-21de94fc4ad6")
 	cp.Expect("Are you sure")
 	cp.Expect("(y/N)")
 	cp.SendLine("y")
-	cp.Expect("Successfully reset to commit: 35af7414-b44b-4fd7-aa93-2ecad337ed2b")
+	cp.Expect("Successfully reset to commit: 3a2d095d-efd6-4be0-b824-21de94fc4ad6")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("history")
