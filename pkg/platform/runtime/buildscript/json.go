@@ -7,6 +7,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
@@ -154,7 +155,8 @@ func marshalReq(args []*Value) ([]byte, error) {
 			requirement[buildexpression.RequirementVersionRequirementsKey] = &Value{List: &requirements}
 
 		default:
-			return nil, errs.New("Invalid or unknown argument: %v", assignment)
+			logging.Debug("Adding unknown argument: %v", assignment)
+			requirement[assignment.Key] = assignment.Value
 		}
 	}
 
