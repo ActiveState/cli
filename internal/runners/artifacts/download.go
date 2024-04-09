@@ -28,6 +28,7 @@ type DownloadParams struct {
 	OutputDir string
 	Namespace *project.Namespaced
 	CommitID  string
+	Target    string
 }
 
 type Download struct {
@@ -80,7 +81,7 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 	}
 
 	terminalArtfMap, _, _, err := getTerminalArtifactMap(
-		d.project, params.Namespace, params.CommitID, d.auth, d.out)
+		d.project, params.Namespace, params.CommitID, params.Target, d.auth, d.out)
 	if err != nil {
 		return errs.Wrap(err, "Could not get build plan map")
 	}

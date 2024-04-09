@@ -34,6 +34,11 @@ func newArtifactsCommand(prime *primer.Values) *captain.Command {
 				Value:       &params.CommitID,
 			},
 			{
+				Name:        "target",
+				Description: locale.Tl("artifacts_flags_target_description", "The target to report artifacts for"),
+				Value:       &params.Target,
+			},
+			{
 				Name:        "full-id",
 				Description: "List artifacts with their full identifier",
 				Value:       &params.Full,
@@ -71,6 +76,11 @@ func newArtifactsDownloadCommand(prime *primer.Values) *captain.Command {
 				Description: locale.Tl("artifacts_download_flags_commit_description", "The commit ID to download artifacts from"),
 				Value:       &params.CommitID,
 			},
+			{
+				Name:        "target",
+				Description: locale.Tl("artifacts_flags_target_description", "The target to download artifacts from"),
+				Value:       &params.Target,
+			},
 		},
 		[]*captain.Argument{
 			{
@@ -80,8 +90,8 @@ func newArtifactsDownloadCommand(prime *primer.Values) *captain.Command {
 				Required:    true,
 			},
 			{
-				Name:        "target",
-				Description: locale.Tl("artifacts_download_arg_target", "The target directory to download the artifact to"),
+				Name:        "path",
+				Description: locale.Tl("artifacts_download_arg_target", "The target path to download the artifact to"),
 				Value:       &params.OutputDir,
 			},
 		},
