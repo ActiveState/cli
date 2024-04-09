@@ -91,7 +91,7 @@ func newArtifactsDownloadCommand(prime *primer.Values) *captain.Command {
 			},
 			{
 				Name:        "path",
-				Description: locale.Tl("artifacts_download_arg_target", "The target path to download the artifact to"),
+				Description: locale.Tl("artifacts_download_arg_path", "The target path to download the artifact to"),
 				Value:       &params.OutputDir,
 			},
 		},
