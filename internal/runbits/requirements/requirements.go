@@ -1,6 +1,7 @@
 package requirements
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
@@ -543,6 +544,7 @@ func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) 
 
 func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChangeset, requirements ...*Requirement) error {
 	if !r.Auth.Authenticated() {
+		logging.Debug("Skipping CVE report as user is not authenticated")
 		return nil
 	}
 
@@ -574,6 +576,12 @@ func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChan
 			})
 		}
 	}
+
+	ingData, err := json.MarshalIndent(ingredients, "", "  ")
+	if err != nil {
+		return errs.Wrap(err, "Failed to marshal ingredients")
+	}
+	logging.Debug("Ingredients for CVE report: ", string(ingData))
 
 	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(r.Auth, ingredients)
 	if err != nil {
