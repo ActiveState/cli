@@ -1,8 +1,9 @@
 package request
 
-func BuildPlanByCommitID(commitID string) *buildPlanByCommitID {
+func BuildPlanByCommitID(commitID, target string) *buildPlanByCommitID {
 	bp := &buildPlanByCommitID{map[string]interface{}{
 		"commitID": commitID,
+		"target":   target,
 	}}
 
 	return bp
@@ -14,12 +15,12 @@ type buildPlanByCommitID struct {
 
 func (b *buildPlanByCommitID) Query() string {
 	return `
-query ($commitID: ID!) {
+query ($commitID: ID!, $target: String) {
   commit(commitId: $commitID) {
     ... on Commit {
       __typename
       expr
-      build {
+      build(target: $target) {
         __typename
         ... on BuildCompleted {
           buildLogIds {
