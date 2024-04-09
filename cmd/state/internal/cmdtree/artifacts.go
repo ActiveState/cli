@@ -78,7 +78,7 @@ func newArtifactsDownloadCommand(prime *primer.Values) *captain.Command {
 			},
 			{
 				Name:        "target",
-				Description: locale.Tl("artifacts_flags_target_description", "The target to download artifacts from"),
+				Description: locale.Tl("artifacts_dl_flags_target_description", "The target to download artifacts from"),
 				Value:       &params.Target,
 			},
 		},
