@@ -401,7 +401,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	bp := model.NewBuildPlannerModel(s.auth)
-	buildResult, err := bp.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
+	buildResult, err := bp.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name(), nil)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Failed to fetch build result")
 	}
