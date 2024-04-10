@@ -366,18 +366,22 @@ scripts:
     value: |
       set -e
 
-      if [ "$BASE_BRANCH" == "" ]; then
+      echo "Github base ref: $GITHUB_BASE_REF"
+      echo "Base branch: $BASE_BRANCH"
+      if [ "$GITHUB_BASE_REF" == "" ]; then
         BASE_BRANCH="master"
       fi
 
       git fetch origin $BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH
 
-      changed_files=$(git diff --name-only origin/$BASE_BRANCH)
+      CHANGED=$(git diff --name-only origin/$BASE_BRANCH)
       echo "Checking formatting for changed files in branch $BASE_BRANCH"
-      echo "Changed files: $changed_files"
+      echo "Changed files: $CHANGED"
       missing_newline_at_eof=0
-      for file in $changed_files; do
+      for file in $CHANGED; do
+          echo "Checking file: $file"
           if file "$file" | grep -q 'text|ASCII'; then
+              echo "Checking for newline at end of file: $file"
               if [ "$(tail -c 1 "$FILE")" != "" ]; then
                   echo "Missing newline at end of file: $file"
                   missing_newline_at_eof=1
