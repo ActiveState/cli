@@ -192,7 +192,7 @@ func (s *Setup) Solve() (*apimodel.BuildResult, *bpModel.Commit, error) {
 	}
 
 	bp := model.NewBuildPlannerModel(s.auth)
-	buildResult, commit, err := bp.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
+	buildResult, commit, err := bp.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name(), nil)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Failed to fetch build result")
 	}
