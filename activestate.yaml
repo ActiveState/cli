@@ -372,7 +372,7 @@ scripts:
         BASE_BRANCH="master"
       fi
 
-      git fetch origin $GIHUB_BASE_REF:refs/remotes/origin/$GITHUB_BASE_REF
+      git fetch origin $GITHUB_BASE_REF:refs/remotes/origin/$GITHUB_BASE_REF
 
       CHANGED=$(git diff --name-only origin/$BASE_BRANCH)
       echo "Checking formatting for changed files in branch $BASE_BRANCH"
