@@ -376,7 +376,8 @@ scripts:
       git fetch origin $BRANCH:refs/remotes/origin/$BRANCH
 
       changed_files=$(git diff --name-only origin/$BRANCH)
-
+      echo "Checking formatting for changed files in branch $BRANCH"
+      echo "Changed files: $changed_files"
       missing_newline_at_eof=0
       for file in $changed_files; do
           if file "$file" | grep -q 'text|ASCII'; then
