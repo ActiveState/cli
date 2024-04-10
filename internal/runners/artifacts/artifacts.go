@@ -1,6 +1,7 @@
 package artifacts
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -12,9 +13,11 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
@@ -92,12 +95,19 @@ type errInvalidCommitId struct {
 	id string
 }
 
-func rationalizeArtifactsError(err *error, auth *authentication.Auth) {
-	switch {
-	case err == nil:
+func rationalizeArtifactsError(rerr *error, auth *authentication.Auth) {
+	if rerr == nil {
 		return
+	}
+
+	var planningError *bpModel.BuildPlannerError
+	switch {
+	case errors.As(*rerr, &planningError):
+		// Forward API error to user.
+		*rerr = errs.WrapUserFacing(*rerr, planningError.Error())
+
 	default:
-		rationalizeCommonError(err, auth)
+		rationalizeCommonError(rerr, auth)
 	}
 }
 
@@ -253,7 +263,7 @@ func getTerminalArtifactMap(
 		pb.Stop(message + "\n") // extra empty line
 	}()
 
-	var targetPtr *string
+	targetPtr := ptr.To(request.TargetAll)
 	if target != "" {
 		targetPtr = &target
 	}
