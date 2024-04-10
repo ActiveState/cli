@@ -366,25 +366,25 @@ scripts:
     value: |
       set -e
 
-      BASE_BRANCH=$GITHUB_BASE_REF
+      TARGET_BRANCH=$GITHUB_BASE_REF
       if [ "$GITHUB_BASE_REF" == "" ]; then
-        BASE_BRANCH="master"
+        TARGET_BRANCH="master"
       fi
 
-      git fetch --quiet origin $BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH
+      git fetch --quiet origin $TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH
 
-      CHANGED=$(git diff --name-only origin/$BASE_BRANCH)
-      missing_newline_at_eof=0
-      for file in $CHANGED; do
-          if file "$file" | grep -q -E 'text|ASCII'; then
-              if [ $(tail -c 1 "$file" | wc -l) -eq 0 ]; then
-                  echo "Missing newline at end of file: $file"
-                  missing_newline_at_eof=1
+      CHANGED=$(git diff --name-only origin/$TARGET_BRANCH)
+      NO_NEWLINE=0
+      for FILE in $CHANGED; do
+          if file "$FILE" | grep -q -E 'text|ASCII'; then
+              if [ $(tail -c 1 "$FILE" | wc -l) -eq 0 ]; then
+                  echo "Missing newline at end of file: $FILE"
+                  NO_NEWLINE=1
               fi
           fi
       done
 
-      if [ "$missing_newline_at_eof" -ne 0 ]; then
+      if [ "$NO_NEWLINE" -ne 0 ]; then
           echo "Error: Some text files are missing a newline at the end."
           exit 1
       else
