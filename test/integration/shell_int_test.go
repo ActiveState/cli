@@ -5,9 +5,11 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
+	"time"
 
-	"github.com/ActiveState/cli/internal/testhelpers/suite"
+	"github.com/ActiveState/termtest"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -17,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/subshell/zsh"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
 
@@ -470,6 +473,51 @@ func (suite *ShellIntegrationTestSuite) TestProjectOrder() {
 		e2e.OptWD(emptyDir),
 	)
 	cp.ExpectNotExitCode(0)
+}
+
+func (suite *ShellIntegrationTestSuite) TestScriptAlias() {
+	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Shell)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl-5.32", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	suite.NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "testargs.pl"), []byte(`
+printf "Argument: '%s'.\n", $ARGV[0];
+`)))
+
+	// Append a run script to activestate.yaml.
+	asyFilename := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
+	contents := string(fileutils.ReadFileUnsafe(asyFilename))
+	lang := "bash"
+	splat := "$@"
+	if runtime.GOOS == "windows" {
+		lang = "powershell"
+		splat = "@args"
+	}
+	contents = strings.Replace(contents, "events:", fmt.Sprintf(`
+  - name: args
+    language: %s
+    value: perl testargs.pl %s
+
+events:`, lang, splat), 1)
+	suite.Require().NoError(fileutils.WriteFile(asyFilename, []byte(contents)))
+
+	// Verify that running a script as a command with an argument containing special characters works.
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("shell"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectInput()
+	cp.SendLine(`args "<3"`)
+	cp.Expect("Argument: '<3'", termtest.OptExpectTimeout(5*time.Second))
+	cp.SendLine("exit")
+	cp.Expect("Deactivated")
+	cp.ExpectExit() // exit code varies depending on shell; just assert the shell exited
 }
 
 func TestShellIntegrationTestSuite(t *testing.T) {
