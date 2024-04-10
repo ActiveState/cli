@@ -5,6 +5,8 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
+const TargetAll = "__all__"
+
 func BuildPlan(commitID, organization, project string, target *string) gqlclient.Request {
 	if organization == "" && project == "" {
 		return BuildPlanByCommitID(commitID, ptr.From(target, ""))
