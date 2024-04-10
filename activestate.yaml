@@ -374,8 +374,8 @@ scripts:
 
       git fetch origin $GITHUB_BASE_REF:refs/remotes/origin/$GITHUB_BASE_REF
 
-      CHANGED=$(git diff --name-only origin/$BASE_BRANCH)
-      echo "Checking formatting for changed files in branch $BASE_BRANCH"
+      CHANGED=$(git diff --name-only origin/$GITHUB_BASE_REF)
+      echo "Checking formatting for changed files in branch $GITHUB_BASE_REF"
       echo "Changed files: $CHANGED"
       missing_newline_at_eof=0
       for file in $CHANGED; do
