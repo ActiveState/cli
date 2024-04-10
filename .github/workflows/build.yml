@@ -177,8 +177,6 @@ jobs:
         shell: bash
         if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\"]'), github.ref)"
         run: parallelize results Check-Format
-        env:
-          BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
 
       - # === Unit Tests ===
         name: Unit Tests
