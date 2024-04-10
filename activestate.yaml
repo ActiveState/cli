@@ -365,18 +365,15 @@ scripts:
     description: "Checks if the code is formatted correctly"
     value: |
       set -e
-      if [ "$GITHUB_HEAD_REF" != "" ]; then
-        BRANCH=${GITHUB_HEAD_REF}
-      elif [ "$GITHUB_REF" != "" ]; then
-        BRANCH=$(echo $GITHUB_REF | awk -F'/' '{print $NF}')
-      else
-        BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+      if [ "$BASE_BRANCH" == "" ]; then
+        BASE_BRANCH="master"
       fi
 
-      git fetch origin $BRANCH:refs/remotes/origin/$BRANCH
+      git fetch origin $BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH
 
-      changed_files=$(git diff --name-only origin/$BRANCH)
-      echo "Checking formatting for changed files in branch $BRANCH"
+      changed_files=$(git diff --name-only origin/$BASE_BRANCH)
+      echo "Checking formatting for changed files in branch $BASE_BRANCH"
       echo "Changed files: $changed_files"
       missing_newline_at_eof=0
       for file in $changed_files; do
