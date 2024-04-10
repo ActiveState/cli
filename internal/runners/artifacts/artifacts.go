@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
@@ -77,8 +78,6 @@ type structuredArtifact struct {
 	Name string `json:"name"`
 	URL  string `json:"url"`
 }
-
-const DefaultTarget = "__all__"
 
 func New(p primeable) *Artifacts {
 	return &Artifacts{
@@ -264,7 +263,7 @@ func getTerminalArtifactMap(
 		pb.Stop(message + "\n") // extra empty line
 	}()
 
-	targetPtr := ptr.To(DefaultTarget)
+	targetPtr := ptr.To(request.TargetAll)
 	if target != "" {
 		targetPtr = &target
 	}

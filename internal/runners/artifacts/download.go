@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
@@ -80,7 +81,7 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 		d.out.Notice(locale.Tr("operating_message", d.project.NamespaceString(), d.project.Dir()))
 	}
 
-	target := DefaultTarget
+	target := request.TargetAll
 	if params.Target != "" {
 		target = params.Target
 	}
