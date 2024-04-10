@@ -388,7 +388,7 @@ scripts:
           echo "Error: Some text files are missing a newline at the end."
           exit 1
       else
-          echo "Success: All text files end with a newline."
+          echo "Success: All modified text files end with a newline."
       fi
   - name: grab-mergecommits
     language: bash
