@@ -382,7 +382,8 @@ scripts:
           echo "Checking file: $file"
           if file "$file" | grep -q 'text|ASCII'; then
               echo "Checking for newline at end of file: $file"
-              if [ "$(tail -c 1 "$FILE")" != "" ]; then
+              echo "Tail result: $(tail -c 1 $file)"
+              if [ "$(tail -c 1 "$file")" != "" ]; then
                   echo "Missing newline at end of file: $file"
                   missing_newline_at_eof=1
               fi
