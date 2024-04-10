@@ -371,7 +371,7 @@ scripts:
         BASE_BRANCH="master"
       fi
 
-      git fetch origin $BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH
+      git fetch --quiet origin $BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH
 
       CHANGED=$(git diff --name-only origin/$BASE_BRANCH)
       missing_newline_at_eof=0
