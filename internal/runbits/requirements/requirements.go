@@ -526,7 +526,7 @@ func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) 
 	var oldBuildPlan *bpModel.Build
 	if oldCommit.ParentCommitID != "" {
 		bp := model.NewBuildPlannerModel(r.Auth)
-		oldBuildResult, _, err := bp.FetchBuildResult(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name())
+		oldBuildResult, _, err := bp.FetchBuildResult(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
 		if err != nil {
 			return nil, nil, nil, nil, errs.Wrap(err, "Failed to fetch build result")
 		}
