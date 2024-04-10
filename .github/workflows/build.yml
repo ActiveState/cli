@@ -132,7 +132,7 @@ jobs:
             {
                 "ID": "Check-Format",
                 "Args": ["state", "run", "check-format"]
-            }
+            },
             {
                 "ID": "Unit-Tests",
                 "Args": ["state", "run", "test", "-json", "2>&1"]
