@@ -1,12 +1,14 @@
 package sscommon
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -107,7 +109,7 @@ func runWithBash(env []string, name string, args ...string) error {
 	return runDirect(env, "bash", "-c", quotedArgs)
 }
 
-func runWithCmd(env []string, name string, args ...string) error {
+func runWithCmd(env []string, name string, args ...string) (rerr error) {
 	ext := filepath.Ext(name)
 	switch ext {
 	case ".py":
@@ -117,6 +119,7 @@ func runWithCmd(env []string, name string, args ...string) error {
 			return err
 		}
 		name = pythonPath
+
 	case ".pl":
 		args = append([]string{name}, args...)
 		perlPath, err := binaryPathCmd(env, "perl")
@@ -124,11 +127,27 @@ func runWithCmd(env []string, name string, args ...string) error {
 			return err
 		}
 		name = perlPath
+
 	case ".bat":
-		// No action required
+		// Use powershell to run the bat file because passing arguments with special characters to
+		// batch files has limitations.
+		ps1Script := fmt.Sprintf("& %q @args\nexit $LASTEXITCODE", name)
+		ps1File, err := fileutils.WriteTempFile("*.ps1", []byte(ps1Script))
+		if err != nil {
+			return errs.Wrap(err, "Unable to write temporary powershell script")
+		}
+		defer func() {
+			err = os.Remove(ps1File)
+			if err != nil {
+				rerr = errs.Pack(rerr, errs.Wrap(err, "Could not remove temporary powershell script"))
+			}
+		}()
+		return runWithCmd(env, ps1File, args...)
+
 	case ".ps1":
 		args = append([]string{"-executionpolicy", "bypass", "-file", name}, args...)
 		name = "powershell"
+
 	case ".sh":
 		bashPath, err := osutils.BashifyPath(name)
 		if err != nil {
@@ -139,6 +158,7 @@ func runWithCmd(env []string, name string, args ...string) error {
 		}
 		args = append([]string{bashPath}, args...)
 		name = "bash"
+
 	default:
 		return locale.NewInputError("err_sscommon_unsupported_language", "", ext)
 	}
