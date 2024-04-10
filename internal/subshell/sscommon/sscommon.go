@@ -131,7 +131,13 @@ func runWithCmd(env []string, name string, args ...string) (rerr error) {
 	case ".bat":
 		// Use powershell to run the bat file because passing arguments with special characters to
 		// batch files has limitations.
-		ps1Script := fmt.Sprintf("& %q @args\nexit $LASTEXITCODE", name)
+		ps1Script := fmt.Sprintf(`
+		try {
+			& %q @args
+			exit $LASTEXITCODE
+		} catch {
+			exit 1 # file not found
+		}`, name)
 		ps1File, err := fileutils.WriteTempFile("*.ps1", []byte(ps1Script))
 		if err != nil {
 			return errs.Wrap(err, "Unable to write temporary powershell script")
