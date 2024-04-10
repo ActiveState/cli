@@ -376,7 +376,7 @@ scripts:
       CHANGED=$(git diff --name-only origin/$BASE_BRANCH)
       missing_newline_at_eof=0
       for file in $CHANGED; do
-          if file "$file" | grep -E 'text|ASCII'; then
+          if file "$file" | grep -q -E 'text|ASCII'; then
               if [ "$(tail -c 1 "$file")" != "" ]; then
                   echo "Missing newline at end of file: $file"
                   missing_newline_at_eof=1
