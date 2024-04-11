@@ -63,8 +63,7 @@ func NewDeleteUserOK() *DeleteUserOK {
 	return &DeleteUserOK{}
 }
 
-/*
-DeleteUserOK describes a response with status code 200, with default header values.
+/* DeleteUserOK describes a response with status code 200, with default header values.
 
 User deleted
 */
@@ -96,8 +95,7 @@ func NewDeleteUserBadRequest() *DeleteUserBadRequest {
 	return &DeleteUserBadRequest{}
 }
 
-/*
-DeleteUserBadRequest describes a response with status code 400, with default header values.
+/* DeleteUserBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -129,8 +127,7 @@ func NewDeleteUserForbidden() *DeleteUserForbidden {
 	return &DeleteUserForbidden{}
 }
 
-/*
-DeleteUserForbidden describes a response with status code 403, with default header values.
+/* DeleteUserForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -162,8 +159,7 @@ func NewDeleteUserNotFound() *DeleteUserNotFound {
 	return &DeleteUserNotFound{}
 }
 
-/*
-DeleteUserNotFound describes a response with status code 404, with default header values.
+/* DeleteUserNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -195,8 +191,7 @@ func NewDeleteUserInternalServerError() *DeleteUserInternalServerError {
 	return &DeleteUserInternalServerError{}
 }
 
-/*
-DeleteUserInternalServerError describes a response with status code 500, with default header values.
+/* DeleteUserInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

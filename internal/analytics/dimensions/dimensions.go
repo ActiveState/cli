@@ -22,7 +22,7 @@ import (
 
 type Values struct {
 	Version          *string
-	BranchName       *string
+	ChannelName      *string
 	UserID           *string
 	OSName           *string
 	OSVersion        *string
@@ -76,7 +76,7 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 
 	return &Values{
 		ptr.To(constants.Version),
-		ptr.To(constants.BranchName),
+		ptr.To(constants.ChannelName),
 		ptr.To(userIDString),
 		ptr.To(osName),
 		ptr.To(osVersion),
@@ -107,7 +107,7 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 func (v *Values) Clone() *Values {
 	return &Values{
 		Version:          ptr.Clone(v.Version),
-		BranchName:       ptr.Clone(v.BranchName),
+		ChannelName:      ptr.Clone(v.ChannelName),
 		UserID:           ptr.Clone(v.UserID),
 		OSName:           ptr.Clone(v.OSName),
 		OSVersion:        ptr.Clone(v.OSVersion),
@@ -142,8 +142,8 @@ func (m *Values) Merge(mergeWith ...*Values) {
 		if dim.Version != nil {
 			m.Version = dim.Version
 		}
-		if dim.BranchName != nil {
-			m.BranchName = dim.BranchName
+		if dim.ChannelName != nil {
+			m.ChannelName = dim.ChannelName
 		}
 		if dim.UserID != nil {
 			m.UserID = dim.UserID

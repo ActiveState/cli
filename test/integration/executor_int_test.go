@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
@@ -35,7 +35,7 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorForwards() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("shell", "ActiveState-CLI/Python3"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput()
@@ -62,7 +62,7 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorExitCode() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("shell", "ActiveState-CLI/Python3"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput()
@@ -83,7 +83,7 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorSizeOnDisk() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	execFilePath := filepath.Join(ts.Dirs.Bin, constants.StateExecutorCmd+exeutils.Extension)
+	execFilePath := filepath.Join(ts.Dirs.Bin, constants.StateExecutorCmd+osutils.ExeExtension)
 	fi, err := os.Stat(execFilePath)
 	suite.Require().NoError(err, "should be able to obtain executor file info")
 

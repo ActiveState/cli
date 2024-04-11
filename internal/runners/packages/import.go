@@ -12,15 +12,15 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/go-openapi/strfmt"
 )
 
 const (
@@ -99,18 +99,18 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	i.out.Notice(locale.Tl("operating_message", "", i.proj.NamespaceString(), i.proj.Dir()))
+	i.out.Notice(locale.Tr("operating_message", i.proj.NamespaceString(), i.proj.Dir()))
 
 	if params.FileName == "" {
 		params.FileName = defaultImportFile
 	}
 
-	latestCommit, err := model.BranchCommitID(i.proj.Owner(), i.proj.Name(), i.proj.BranchName())
+	latestCommit, err := localcommit.Get(i.proj.Dir())
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_commit")
 	}
 
-	reqs, err := fetchCheckpoint(latestCommit)
+	reqs, err := fetchCheckpoint(&latestCommit)
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_fetch_checkpoint")
 	}
@@ -125,41 +125,37 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return errs.Wrap(err, "Could not import changeset")
 	}
 
-	packageReqs := model.FilterCheckpointNamespace(reqs, model.NamespacePackage, model.NamespaceBundle)
-	if len(packageReqs) > 0 {
-		err = removeRequirements(i.Prompter, i.proj, params, packageReqs)
-		if err != nil {
-			return locale.WrapError(err, "err_cannot_remove_existing")
-		}
+	bp := model.NewBuildPlannerModel(i.auth)
+	be, err := bp.GetBuildExpression(latestCommit.String())
+	if err != nil {
+		return locale.WrapError(err, "err_cannot_get_build_expression", "Could not get build expression")
+	}
+
+	if err := applyChangeset(changeset, be); err != nil {
+		return locale.WrapError(err, "err_cannot_apply_changeset", "Could not apply changeset")
+	}
+
+	if err := be.SetDefaultTimestamp(); err != nil {
+		return locale.WrapError(err, "err_cannot_set_timestamp", "Could not set timestamp")
 	}
 
 	msg := locale.T("commit_reqstext_message")
-	commitID, err := commitChangeset(i.proj, msg, changeset)
+	commitID, err := bp.StageCommit(model.StageCommitParams{
+		Owner:        i.proj.Owner(),
+		Project:      i.proj.Name(),
+		ParentCommit: latestCommit.String(),
+		Description:  msg,
+		Expression:   be,
+	})
 	if err != nil {
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
 
-	return runbits.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, commitID, true, target.TriggerImport, i.svcModel)
-}
-
-func removeRequirements(conf Confirmer, project *project.Project, params *ImportRunParams, reqs []*gqlModel.Requirement) error {
-	if !params.NonInteractive {
-		msg := locale.T("confirm_remove_existing_prompt")
-
-		defaultChoice := params.NonInteractive
-		confirmed, err := conf.Confirm(locale.T("confirm"), msg, &defaultChoice)
-		if err != nil {
-			return err
-		}
-		if !confirmed {
-			return locale.NewInputError("err_action_was_not_confirmed", "Cancelled Import.")
-		}
+	if err := localcommit.Set(i.proj.Dir(), commitID.String()); err != nil {
+		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
-	removal := model.ChangesetFromRequirements(model.OperationRemoved, reqs)
-	msg := locale.T("commit_reqstext_remove_existing_message")
-	_, err := commitChangeset(project, msg, removal)
-	return err
+	return runbits.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, commitID, true, target.TriggerImport, i.svcModel, i.cfg)
 }
 
 func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model.Changeset, error) {
@@ -176,20 +172,34 @@ func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model
 	return changeset, err
 }
 
-func commitChangeset(project *project.Project, msg string, changeset model.Changeset) (strfmt.UUID, error) {
-	localCommitID, err := commitmediator.Get(project)
-	if err != nil {
-		return "", errs.Wrap(err, "Unable to get local commit")
-	}
-	commitID, err := model.CommitChangeset(localCommitID, msg, changeset)
-	if err != nil {
-		return "", errs.AddTips(locale.WrapError(err, "err_packages_removed"),
-			locale.T("commit_failed_push_tip"),
-			locale.T("commit_failed_pull_tip"))
+func applyChangeset(changeset model.Changeset, be *buildexpression.BuildExpression) error {
+	for _, change := range changeset {
+		var expressionOperation bpModel.Operation
+		switch change.Operation {
+		case string(model.OperationAdded):
+			expressionOperation = bpModel.OperationAdded
+		case string(model.OperationRemoved):
+			expressionOperation = bpModel.OperationRemoved
+		case string(model.OperationUpdated):
+			expressionOperation = bpModel.OperationUpdated
+		}
+
+		req := bpModel.Requirement{
+			Name:      change.Requirement,
+			Namespace: change.Namespace,
+		}
+
+		for _, constraint := range change.VersionConstraints {
+			req.VersionRequirement = append(req.VersionRequirement, bpModel.VersionRequirement{
+				bpModel.VersionRequirementComparatorKey: constraint.Comparator,
+				bpModel.VersionRequirementVersionKey:    constraint.Version,
+			})
+		}
+
+		if err := be.UpdateRequirement(expressionOperation, req); err != nil {
+			return errs.Wrap(err, "Could not update build expression")
+		}
 	}
 
-	if err := commitmediator.Set(project, commitID.String()); err != nil {
-		return "", locale.WrapError(err, "err_package_update_commit_id")
-	}
-	return commitID, nil
+	return nil
 }

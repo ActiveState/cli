@@ -33,6 +33,7 @@ languages:
 		e2e.OptArgs("scripts"),
 	)
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func TestPjFileIntegrationTestSuite(t *testing.T) {

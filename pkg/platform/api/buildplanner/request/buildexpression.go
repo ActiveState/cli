@@ -16,6 +16,7 @@ query ($commitID: ID!) {
   commit(commitId: $commitID) {
     ... on Commit {
       __typename
+      atTime
       expr
     }
     ... on Error{
@@ -31,6 +32,6 @@ query ($commitID: ID!) {
 `
 }
 
-func (b *buildScriptByCommitID) Vars() map[string]interface{} {
-	return b.vars
+func (b *buildScriptByCommitID) Vars() (map[string]interface{}, error) {
+	return b.vars, nil
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/project"
@@ -115,7 +116,7 @@ func (suite *EditTestSuite) TestGetOpenCmd_EditorSet() {
 	originalPath := os.Getenv("PATH")
 	defer os.Setenv("PATH", originalPath)
 
-	wd, err := os.Getwd()
+	wd, err := osutils.Getwd()
 	suite.NoError(err, "could not get current working directory")
 
 	err = os.Setenv("PATH", wd)
@@ -136,7 +137,7 @@ func (suite *EditTestSuite) TestGetOpenCmd_EditorSet_NotInPath() {
 }
 
 func (suite *EditTestSuite) TestGetOpenCmd_EditorSet_InvalidFilepath() {
-	wd, err := os.Getwd()
+	wd, err := osutils.Getwd()
 	suite.NoError(err, "could not get current working directory")
 
 	executeable := "someExecutable"
@@ -154,7 +155,7 @@ func (suite *EditTestSuite) TestGetOpenCmd_EditorSet_NoExtensionWindows() {
 		suite.T().Skip("the test for file extensions is only relevant for Windows")
 	}
 
-	wd, err := os.Getwd()
+	wd, err := osutils.Getwd()
 	suite.NoError(err, "could not get current working director")
 
 	os.Setenv("EDITOR", filepath.Join(wd, "executable"))

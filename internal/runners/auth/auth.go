@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
+	"github.com/ActiveState/cli/internal/runbits/auth"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
@@ -84,18 +84,18 @@ func (a *Auth) Run(params *AuthParams) error {
 
 func (a *Auth) authenticate(params *AuthParams) error {
 	if params.Prompt || params.Username != "" {
-		return authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, params.NonInteractive, a.Cfg, a.Outputer, a.Prompter, a.Auth)
+		return auth.AuthenticateWithInput(params.Username, params.Password, params.Totp, params.NonInteractive, a.Cfg, a.Outputer, a.Prompter, a.Auth)
 	}
 
 	if params.Token != "" {
-		return authlet.AuthenticateWithToken(params.Token, a.Auth)
+		return auth.AuthenticateWithToken(params.Token, a.Auth)
 	}
 
 	if params.NonInteractive {
 		return locale.NewInputError("err_auth_needinput")
 	}
 
-	return authlet.AuthenticateWithBrowser(a.Outputer, a.Auth, a.Prompter)
+	return auth.AuthenticateWithBrowser(a.Outputer, a.Auth, a.Prompter, a.Cfg)
 }
 
 func (a *Auth) verifyAuthentication() error {

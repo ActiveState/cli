@@ -39,9 +39,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 	}{
 		// {"install-release-latest", "", "release", "", ""},
 		{"install-prbranch", "", "", "", ""},
-		{"install-prbranch-with-version", constants.Version, constants.BranchName, "", ""},
-		{"install-prbranch-and-activate", "", constants.BranchName, "ActiveState-CLI/small-python", ""},
-		{"install-prbranch-and-activate-by-command", "", constants.BranchName, "", "ActiveState-CLI/small-python"},
+		{"install-prbranch-with-version", constants.Version, constants.ChannelName, "", ""},
+		{"install-prbranch-and-activate", "", constants.ChannelName, "ActiveState-CLI/small-python", ""},
+		{"install-prbranch-and-activate-by-command", "", constants.ChannelName, "", "ActiveState-CLI/small-python"},
 	}
 
 	for _, tt := range tests {
@@ -57,7 +57,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			} else {
 				scriptBaseName += "ps1"
 			}
-			scriptUrl := baseUrl + constants.BranchName + "/" + scriptBaseName
+			scriptUrl := baseUrl + constants.ChannelName + "/" + scriptBaseName
 
 			// Fetch it.
 			b, err := httputil.GetDirect(scriptUrl)
@@ -66,7 +66,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			suite.Require().NoError(fileutils.WriteFile(script, b))
 
 			// Construct installer command to execute.
+			installDir := filepath.Join(ts.Dirs.Work, "install")
 			argsPlain := []string{script}
+			argsPlain = append(argsPlain, "-t", installDir)
 			if tt.Channel != "" {
 				argsPlain = append(argsPlain, "-b", tt.Channel)
 			}
@@ -86,27 +88,26 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				argsWithActive = append(argsWithActive, "-c", cmd)
 			}
 
+			// Make the directory to install to.
 			appInstallDir := filepath.Join(ts.Dirs.Work, "app")
 			suite.NoError(fileutils.Mkdir(appInstallDir))
 
-			var cp *e2e.SpawnedCmd
-			if runtime.GOOS != "windows" {
-				cp = ts.SpawnCmdWithOpts(
-					"bash", e2e.OptArgs(argsWithActive...),
-					e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-					e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
-					e2e.OptAppendEnv(fmt.Sprintf("%s=FOO", constants.OverrideSessionTokenEnvVarName)),
-				)
-			} else {
-				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.OptArgs(argsWithActive...),
-					e2e.OptAppendEnv("SHELL="),
-					e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-					e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
-					e2e.OptAppendEnv(fmt.Sprintf("%s=FOO", constants.OverrideSessionTokenEnvVarName)),
-				)
+			// Perform the installation.
+			cmd := "bash"
+			opts := []e2e.SpawnOptSetter{
+				e2e.OptArgs(argsWithActive...),
+				e2e.OptAppendEnv(constants.DisableRuntime + "=false"),
+				e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
+				e2e.OptAppendEnv(fmt.Sprintf("%s=FOO", constants.OverrideSessionTokenEnvVarName)),
+				e2e.OptAppendEnv(fmt.Sprintf("%s=false", constants.DisableActivateEventsEnvVarName)),
 			}
-
-			expectStateToolInstallation(cp)
+			if runtime.GOOS == "windows" {
+				cmd = "powershell.exe"
+				opts = append(opts, e2e.OptAppendEnv("SHELL="))
+			}
+			cp := ts.SpawnCmdWithOpts(cmd, opts...)
+			cp.Expect("Preparing Installer for State Tool Package Manager")
+			cp.Expect("Installation Complete", e2e.RuntimeSourcingTimeoutOpt)
 
 			if tt.Activate != "" || tt.ActivateByCommand != "" {
 				cp.Expect("Creating a Virtual Environment")
@@ -118,34 +119,20 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				cp.Expect("ActiveState")
 			}
 
-			// We get the default install path and use that to directly invoke
-			// the state tool. This is to avoid inadvertently using the state
-			// tool that is already on the PATH.
-			installPath, err := installation.InstallPathForBranch(constants.BranchName)
-			suite.NoError(err)
-
-			binPath := filepath.Join(installPath, "bin")
-
-			if runtime.GOOS != "windows" {
-				cp.SendLine("echo $PATH")
-			} else {
-				cp.SendLine("echo %PATH%")
-			}
-			cp.Expect(installPath)
 			cp.SendLine("state --version")
 			cp.Expect("Version " + constants.Version)
-			cp.Expect("Branch " + constants.BranchName)
+			cp.Expect("Channel " + constants.ChannelName)
 			cp.Expect("Built")
 			cp.SendLine("exit")
 
 			cp.ExpectExitCode(0)
 
-			stateExec, err := installation.StateExecFromDir(ts.Dirs.HomeDir)
+			stateExec, err := installation.StateExecFromDir(installDir)
 			suite.NoError(err)
 			suite.FileExists(stateExec)
 
-			suite.assertBinDirContents(binPath)
-			suite.assertCorrectVersion(ts, binPath, tt.Version, tt.Channel)
+			suite.assertBinDirContents(filepath.Join(installDir, "bin"))
+			suite.assertCorrectVersion(ts, installDir, tt.Version, tt.Channel)
 			suite.assertAnalytics(ts)
 			suite.DirExists(ts.Dirs.Config)
 
@@ -172,7 +159,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
 
 	script := scriptPath(suite.T(), ts.Dirs.Work)
 	argsPlain := []string{script, "-t", ts.Dirs.Work}
-	argsPlain = append(argsPlain, "-b", constants.BranchName)
+	argsPlain = append(argsPlain, "-b", constants.ChannelName)
 	var cp *e2e.SpawnedCmd
 	if runtime.GOOS != "windows" {
 		cp = ts.SpawnCmdWithOpts("bash", e2e.OptArgs(argsPlain...))
@@ -185,6 +172,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
 	// because of powershell.
 	// Since we asserted the expected error above we don't need to go on a wild goose chase here.
 	cp.ExpectExit()
+	ts.IgnoreLogErrors()
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstall_VersionDoesNotExist() {
@@ -206,6 +194,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_VersionDoesNotExist
 		cp.Expect("Could not download")
 	}
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 // scriptPath returns the path to an installation script copied to targetDir, if useTestUrl is true, the install script is modified to download from the local test server instead
@@ -230,16 +219,11 @@ func scriptPath(t *testing.T, targetDir string) string {
 	return target
 }
 
-func expectStateToolInstallation(cp *e2e.SpawnedCmd) {
-	cp.Expect("Preparing Installer for State Tool Package Manager")
-	cp.Expect("Installation Complete", e2e.RuntimeSourcingTimeoutOpt)
-}
-
 // assertBinDirContents checks if given files are or are not in the bin directory
 func (suite *InstallScriptsIntegrationTestSuite) assertBinDirContents(dir string) {
 	binFiles := listFilesOnly(dir)
-	suite.Contains(binFiles, "state"+osutils.ExeExt)
-	suite.Contains(binFiles, "state-svc"+osutils.ExeExt)
+	suite.Contains(binFiles, "state"+osutils.ExeExtension)
+	suite.Contains(binFiles, "state-svc"+osutils.ExeExtension)
 }
 
 // listFilesOnly is a helper function for assertBinDirContents filtering a directory recursively for base filenames
@@ -252,10 +236,10 @@ func listFilesOnly(dir string) []string {
 	return funk.Map(files, filepath.Base).([]string)
 }
 
-func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Session, installDir, expectedVersion, expectedBranch string) {
+func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Session, installDir, expectedVersion, expectedChannel string) {
 	type versionData struct {
 		Version string `json:"version"`
-		Branch  string `json:"branch"`
+		Channel string `json:"channel"`
 	}
 
 	stateExec, err := installation.StateExecFromDir(installDir)
@@ -270,8 +254,8 @@ func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Se
 	if expectedVersion != "" {
 		suite.Equal(expectedVersion, actual.Version)
 	}
-	if expectedBranch != "" {
-		suite.Equal(expectedBranch, actual.Branch)
+	if expectedChannel != "" {
+		suite.Equal(expectedChannel, actual.Channel)
 	}
 }
 

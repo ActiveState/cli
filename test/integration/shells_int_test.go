@@ -2,11 +2,14 @@ package integration
 
 import (
 	"fmt"
+	"path/filepath"
 	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
@@ -34,7 +37,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 	// Checkout the first instance. It doesn't matter which shell is used.
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/small-python"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
@@ -42,6 +45,11 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 	for _, shell := range shells {
 		suite.T().Run(fmt.Sprintf("using_%s", shell), func(t *testing.T) {
 			ts.SetT(t)
+
+			if shell == e2e.Zsh {
+				err := fileutils.Touch(filepath.Join(ts.Dirs.HomeDir, ".zshrc"))
+				suite.Require().NoError(err)
+			}
 
 			// Run the checkout in a particular shell.
 			cp = ts.SpawnShellWithOpts(shell)
@@ -54,7 +62,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 
 			// There are 2 or more instances checked out, so we should get a prompt in whichever shell we
 			// use.
-			cp = ts.SpawnShellWithOpts(shell, e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
+			cp = ts.SpawnShellWithOpts(shell, e2e.OptAppendEnv(constants.DisableRuntime+"=false"))
 			cp.SendLine(e2e.QuoteCommand(shell, ts.ExecutablePath(), "shell", "small-python"))
 			cp.Expect("Multiple project paths")
 

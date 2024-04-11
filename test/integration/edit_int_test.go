@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -70,6 +71,7 @@ func (suite *EditIntegrationTestSuite) TestEdit() {
 	cp.Expect("Script changes detected")
 	cp.SendLine("Y")
 	cp.ExpectExitCode(0)
+	ts.IgnoreLogErrors() // ignore EditProject does not exist API errors
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
@@ -79,7 +81,7 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 	}
 	ts, env := suite.setup()
 	defer ts.Close()
-	extraEnv := e2e.OptAppendEnv("ACTIVESTATE_NONINTERACTIVE=true")
+	extraEnv := e2e.OptAppendEnv(constants.NonInteractiveEnvVarName + "=true")
 
 	cp := ts.SpawnWithOpts(e2e.OptArgs("scripts", "edit", "test-script"), env, extraEnv)
 	cp.Expect("Watching file changes")
@@ -87,14 +89,12 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 	cp.Expect("Script changes detected")
 	cp.SendCtrlC()
 	cp.Wait()
+
+	ts.IgnoreLogErrors() // ignore EditProject does not exist API errors
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 	suite.OnlyRunForTags(tagsuite.Edit)
-	if runtime.GOOS == "windows" {
-		// https://www.pivotaltracker.com/story/show/174477457
-		suite.T().Skipf("Skipping on windows due to random failures")
-	}
 
 	ts, env := suite.setup()
 	defer ts.Close()
@@ -117,6 +117,8 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 	v, err := s.Value()
 	suite.Require().NoError(err)
 	suite.Contains(v, "more info!", "Output of edit command:\n%s", cp.Output())
+
+	ts.IgnoreLogErrors() // ignore EditProject does not exist API errors
 }
 
 func TestEditIntegrationTestSuite(t *testing.T) {

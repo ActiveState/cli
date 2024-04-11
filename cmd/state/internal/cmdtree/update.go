@@ -31,7 +31,6 @@ func newUpdateCommand(prime *primer.Values) *captain.Command {
 	)
 	cmd.SetGroup(UtilsGroup)
 	cmd.SetSkipChecks(true)
-	cmd.SetDoesNotSupportStructuredOutput()
 	return cmd
 }
 
@@ -58,6 +57,7 @@ func newUpdateLockCommand(prime *primer.Values, globals *globalOptions) *captain
 		},
 	)
 	cmd.SetSkipChecks(true)
+	cmd.SetSupportsStructuredOutput()
 	return cmd
 }
 
@@ -78,6 +78,5 @@ func newUpdateUnlockCommand(prime *primer.Values, globals *globalOptions) *capta
 		},
 	)
 	cmd.SetSkipChecks(true)
-	cmd.SetDoesNotSupportStructuredOutput()
 	return cmd
 }

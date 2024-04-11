@@ -22,14 +22,13 @@ import (
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/internal/runbits/checkout"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
+	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
-	"github.com/ActiveState/cli/pkg/cmdlets/checker"
-	"github.com/ActiveState/cli/pkg/cmdlets/checkout"
-	"github.com/ActiveState/cli/pkg/cmdlets/git"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -82,8 +81,6 @@ func NewActivate(prime primeable) *Activate {
 
 func (r *Activate) Run(params *ActivateParams) (rerr error) {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
-
-	checker.RunUpdateNotifier(r.analytics, r.svcModel, r.out)
 
 	r.out.Notice(output.Title(locale.T("info_activating_state")))
 
@@ -142,6 +139,16 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		return locale.NewInputError("err_conflicting_branch_while_checkedout", "", params.Branch, proj.BranchName())
 	}
 
+	if proj != nil {
+		commitID, err := localcommit.Get(proj.Dir())
+		if err != nil {
+			return errs.Wrap(err, "Unable to get local commit")
+		}
+		if cid := params.Namespace.CommitID; cid != nil && *cid != commitID {
+			return locale.NewInputError("err_activate_commit_id_mismatch")
+		}
+	}
+
 	// Have to call this once the project has been set
 	r.analytics.Event(anaConsts.CatActivationFlow, "start")
 
@@ -160,12 +167,12 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		} else {
 			r.out.Notice(locale.Tl(
 				"activate_default_optin_msg",
-				"To make this project always available for use without activating it in the future, run your activate command with the `[ACTIONABLE]--default[/RESET]` flag.",
+				"To make this project always available for use without activating it in the future, run your activate command with the '[ACTIONABLE]--default[/RESET]' flag.",
 			))
 		}
 	}
 
-	rt, err := runtime.NewFromProject(proj, target.TriggerActivate, r.analytics, r.svcModel, r.out, r.auth)
+	rt, err := runtime.NewFromProject(proj, nil, target.TriggerActivate, r.analytics, r.svcModel, r.out, r.auth, r.config)
 	if err != nil {
 		return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
 	}
@@ -185,12 +192,12 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		}
 	}
 
-	commitID, err := commitmediator.Get(proj)
+	commitID, err := localcommit.Get(proj.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 	if commitID == "" {
-		err := locale.NewInputError("err_project_no_commit", "Your project does not have a commit ID, please run `state push` first.", model.ProjectURL(proj.Owner(), proj.Name(), ""))
+		err := locale.NewInputError("err_project_no_commit", "Your project does not have a commit ID, please run [ACTIONIABLE]'state push'[/RESET] first.", model.ProjectURL(proj.Owner(), proj.Name(), ""))
 		return errs.AddTips(err, "Run → [ACTIONABLE]state push[/RESET] to create your project")
 	}
 

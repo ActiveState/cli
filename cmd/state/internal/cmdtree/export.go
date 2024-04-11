@@ -24,7 +24,7 @@ func newExportCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
 			return runner.Run(ccmd)
-		}).SetGroup(UtilsGroup)
+		}).SetGroup(UtilsGroup).SetSupportsStructuredOutput()
 }
 
 func newRecipeCommand(prime *primer.Values) *captain.Command {
@@ -59,7 +59,7 @@ func newRecipeCommand(prime *primer.Values) *captain.Command {
 		},
 		func(_ *captain.Command, _ []string) error {
 			return recipe.Run(&params)
-		}).SetUnstable(true)
+		}).SetSupportsStructuredOutput().SetUnstable(true)
 }
 
 func newJWTCommand(prime *primer.Values) *captain.Command {
@@ -76,7 +76,7 @@ func newJWTCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
 			return jwt.Run(&params)
-		})
+		}).SetSupportsStructuredOutput()
 }
 
 func newPrivateKeyCommand(prime *primer.Values) *captain.Command {
@@ -93,7 +93,7 @@ func newPrivateKeyCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
 			return privateKey.Run(&params)
-		})
+		}).SetSupportsStructuredOutput()
 }
 
 func newAPIKeyCommand(prime *primer.Values) *captain.Command {
@@ -117,7 +117,7 @@ func newAPIKeyCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			params.IsAuthed = prime.Auth().Authenticated
 			return apikey.Run(params)
-		})
+		}).SetSupportsStructuredOutput()
 }
 
 func newExportConfigCommand(prime *primer.Values) *captain.Command {
@@ -142,7 +142,7 @@ func newExportConfigCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
 			return runner.Run(ccmd, &params)
-		}).SetUnstable(true)
+		}).SetSupportsStructuredOutput().SetUnstable(true)
 }
 
 func newExportGithubActionCommand(prime *primer.Values) *captain.Command {
@@ -158,7 +158,7 @@ func newExportGithubActionCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
 			return runner.Run(&params)
-		}).SetUnstable(true).SetDoesNotSupportStructuredOutput()
+		}).SetUnstable(true)
 }
 
 func newExportDocsCommand(prime *primer.Values) *captain.Command {
@@ -177,7 +177,6 @@ func newExportDocsCommand(prime *primer.Values) *captain.Command {
 		})
 
 	cmd.SetHidden(true)
-	cmd.SetDoesNotSupportStructuredOutput()
 
 	return cmd
 }
@@ -196,6 +195,42 @@ func newExportEnvCommand(prime *primer.Values) *captain.Command {
 			return runner.Run()
 		})
 
+	cmd.SetSupportsStructuredOutput()
+	cmd.SetUnstable(true)
+
+	return cmd
+}
+
+func newLogCommand(prime *primer.Values) *captain.Command {
+	runner := export.NewLog(prime)
+	params := &export.LogParams{}
+
+	cmd := captain.NewCommand(
+		"log",
+		locale.Tl("export_log_title", "Show Log File"),
+		locale.Tl("export_log_description", "Show the path to a State Tool log file"),
+		prime,
+		[]*captain.Flag{
+			{
+				Name:        "index",
+				Shorthand:   "i",
+				Description: locale.Tl("flag_export_log_index", "The 0-based index of the log file to show, starting with the newest"),
+				Value:       &params.Index,
+			},
+		},
+		[]*captain.Argument{
+			{
+				Name:        "prefix",
+				Description: locale.Tl("arg_export_log_prefix", "The prefix of the log file to show (e.g. state or state-svc). The default is 'state'"),
+				Required:    false,
+				Value:       &params.Prefix,
+			},
+		},
+		func(ccmd *captain.Command, _ []string) error {
+			return runner.Run(params)
+		})
+
+	cmd.SetSupportsStructuredOutput()
 	cmd.SetUnstable(true)
 
 	return cmd

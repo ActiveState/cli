@@ -52,12 +52,10 @@ func NewGetAdminMetadataParamsWithHTTPClient(client *http.Client) *GetAdminMetad
 	}
 }
 
-/*
-GetAdminMetadataParams contains all the parameters to send to the API endpoint
+/* GetAdminMetadataParams contains all the parameters to send to the API endpoint
+   for the get admin metadata operation.
 
-	for the get admin metadata operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetAdminMetadataParams struct {
 

@@ -16,7 +16,7 @@ import (
 
 // IngredientOptionSetIDRevision Ingredient Option Set ID Revision
 //
-// # Identifies the ingredient option set associated with an ingredient version
+// Identifies the ingredient option set associated with an ingredient version
 //
 // swagger:model ingredientOptionSetIdRevision
 type IngredientOptionSetIDRevision struct {

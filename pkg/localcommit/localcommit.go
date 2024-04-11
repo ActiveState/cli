@@ -1,111 +1,54 @@
 package localcommit
 
 import (
-	"bytes"
-	"errors"
-	"fmt"
-	"path/filepath"
-
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
 
-type ErrLocalCommitFile struct {
-	*locale.LocalizedError // for backwards compatibility with runners that don't implement rationalizers
-	errorMsg               string
-	IsDoesNotExist         bool
-	File                   string
-}
+// proj holds the project instance most recently accessed, if any.
+// Using globals in this way is an anti-pattern, but because the commit mechanic is going through a lot of changes
+// we're currently handling it this way to help further refactors. Once we've landed the go-forward mechanic we should
+// remove this anti-pattern.
+// https://activestatef.atlassian.net/browse/DX-2524
+var proj *project.Project
 
-func (e *ErrLocalCommitFile) Error() string {
-	return e.errorMsg
-}
-
-func IsFileDoesNotExistError(err error) bool {
-	var errLocalCommit *ErrLocalCommitFile
-	if errors.As(err, &errLocalCommit) {
-		return errLocalCommit.IsDoesNotExist
+func setupProject(pjpath string) error {
+	if proj != nil && proj.Dir() == pjpath {
+		return nil
 	}
-	return false
-}
-
-func getCommitFile(projectDir string) string {
-	return filepath.Join(projectDir, constants.ProjectConfigDirName, constants.CommitIdFileName)
-}
-
-func Get(projectDir string) (strfmt.UUID, error) {
-	configDir := filepath.Join(projectDir, constants.ProjectConfigDirName)
-	commitFile := getCommitFile(projectDir)
-	if !fileutils.DirExists(configDir) || !fileutils.TargetExists(commitFile) {
-		return "", &ErrLocalCommitFile{
-			locale.NewError("err_local_commit_file", commitFile),
-			"local commit file does not exist",
-			true, commitFile}
-	}
-
-	b, err := fileutils.ReadFile(commitFile)
+	var err error
+	proj, err = project.FromPath(pjpath)
 	if err != nil {
-		return "", &ErrLocalCommitFile{
-			locale.NewError("err_local_commit_file", commitFile),
-			"local commit could not be read",
-			false, commitFile}
-	}
-
-	commitID := string(b)
-	if !strfmt.IsUUID(commitID) {
-		return "", &ErrLocalCommitFile{
-			locale.NewError("err_local_commit_file", commitFile),
-			"local commit is not uuid formatted",
-			false, commitFile}
-	}
-
-	return strfmt.UUID(commitID), nil
-}
-
-func Set(projectDir, commitID string) error {
-	if !strfmt.IsUUID(commitID) {
-		return locale.NewInputError("err_commit_id_invalid", commitID)
-	}
-
-	commitFile := getCommitFile(projectDir)
-	err := fileutils.WriteFile(commitFile, []byte(commitID))
-	if err != nil {
-		return locale.WrapError(err, "err_set_commit_id", "Unable to set your project runtime's commit ID")
+		return errs.Wrap(err, "Could not get project info to set up project")
 	}
 	return nil
 }
 
-func AddToGitIgnore(projectDir string) error {
-	gitIgnore := filepath.Join(projectDir, ".gitignore")
-	if !fileutils.TargetExists(gitIgnore) {
-		err := fileutils.WriteFile(gitIgnore, []byte(locale.Tr("commit_id_gitignore", constants.ProjectConfigDirName, constants.CommitIdFileName)))
-		if err != nil {
-			return locale.WrapError(err, "err_commit_id_gitignore_create",
-				"Unable to create a .gitignore file with your project runtime's commit ID file in it")
-		}
-		return nil
+func Get(pjpath string) (strfmt.UUID, error) {
+	if err := setupProject(pjpath); err != nil {
+		return "", errs.Wrap(err, "Could not setup project")
 	}
 
-	b, err := fileutils.ReadFile(gitIgnore)
-	if err != nil {
-		return locale.WrapError(err, "err_commit_id_gitignore_read", "Unable to read .gitignore file")
+	if !strfmt.IsUUID(proj.LegacyCommitID()) {
+		return "", locale.NewInputError("err_commit_id_invalid", "Commit ID in activestate.yaml is not UUID formatted: {{.V0}}.", proj.LegacyCommitID())
 	}
-	if bytes.Contains(b, []byte(fmt.Sprintf("%s/%s", constants.ProjectConfigDirName, constants.CommitIdFileName))) {
-		return nil // already done
-	}
-	newline := "\n"
-	if crlf := bytes.IndexByte(b, '\r'); crlf != -1 {
-		newline = "\r" + newline
-	}
-	b = append(b, []byte(newline)...)
-	b = append(b, []byte(locale.Tr("commit_id_gitignore", constants.ProjectConfigDirName, constants.CommitIdFileName))...)
 
-	err = fileutils.WriteFile(gitIgnore, b)
-	if err != nil {
-		return locale.WrapError(err, "err_commit_id_gitignore_add",
-			"Unable to add your project runtime's commit ID file to .gitignore")
+	return strfmt.UUID(proj.LegacyCommitID()), nil
+}
+
+func Set(pjpath, commitID string) error {
+	if !strfmt.IsUUID(commitID) {
+		return locale.NewInputError("err_commit_id_invalid", commitID)
+	}
+
+	if err := setupProject(pjpath); err != nil {
+		return errs.Wrap(err, "Could not setup project")
+	}
+
+	if err := proj.SetLegacyCommit(commitID); err != nil {
+		return errs.Wrap(err, "Could not set commit ID")
 	}
 
 	return nil

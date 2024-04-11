@@ -34,11 +34,11 @@ func (suite *AuthIntegrationTestSuite) TestAuth() {
 	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	username, password := ts.CreateNewUser()
+	user := ts.CreateNewUser()
 	ts.LogoutUser()
-	suite.interactiveLogin(ts, username, password)
+	suite.interactiveLogin(ts, user.Username, user.Password)
 	ts.LogoutUser()
-	suite.loginFlags(ts, username)
+	suite.loginFlags(ts, user.Username)
 	suite.ensureLogout(ts)
 }
 
@@ -78,6 +78,7 @@ func (suite *AuthIntegrationTestSuite) loginFlags(ts *e2e.Session, username stri
 	cp := ts.Spawn(tagsuite.Auth, "--username", username, "--password", "bad-password")
 	cp.Expect("You are not authorized, did you provide valid login credentials?")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *AuthIntegrationTestSuite) ensureLogout(ts *e2e.Session) {

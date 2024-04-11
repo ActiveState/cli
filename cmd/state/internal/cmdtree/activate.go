@@ -87,6 +87,6 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 		},
 	)
 	cmd.SetGroup(EnvironmentUsageGroup)
-	cmd.SetDoesNotSupportStructuredOutput()
+	cmd.DeprioritizeInHelpListing()
 	return cmd
 }

@@ -8,12 +8,10 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -74,6 +72,7 @@ func NewConditional(a *authentication.Auth) *Conditional {
 }
 
 type projectable interface {
+	Source() *projectfile.Project
 	Owner() string
 	Name() string
 	NamespaceString() string
@@ -81,8 +80,8 @@ type projectable interface {
 	Path() string
 	Dir() string
 	URL() string
-	LegacyCommitID() string       // for commitmediator.Get
-	LegacySetCommit(string) error // for commitmediator.Set; remove in DX-2307
+	LegacyCommitID() string
+	SetLegacyCommit(string) error
 }
 
 func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName string) *Conditional {
@@ -100,11 +99,7 @@ func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName
 		pjName = pj.Name()
 		pjNamespace = pj.NamespaceString()
 		pjURL = pj.URL()
-		commitID, err := commitmediator.Get(pj)
-		if err != nil {
-			multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
-		}
-		pjCommit = commitID.String()
+		pjCommit = pj.LegacyCommitID() // Not using localcommit due to import cycle. See anti-pattern comment in localcommit pkg.
 		pjBranch = pj.BranchName()
 		pjDir = pj.Dir()
 	}

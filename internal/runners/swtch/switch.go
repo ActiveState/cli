@@ -2,13 +2,14 @@ package swtch
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -23,6 +24,7 @@ type Switch struct {
 	project   *project.Project
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
+	cfg       *config.Instance
 }
 
 type SwitchParams struct {
@@ -74,6 +76,7 @@ func New(prime primeable) *Switch {
 		project:   prime.Project(),
 		analytics: prime.Analytics(),
 		svcModel:  prime.SvcModel(),
+		cfg:       prime.Config(),
 	}
 }
 
@@ -83,7 +86,7 @@ func (s *Switch) Run(params SwitchParams) error {
 	if s.project == nil {
 		return locale.NewInputError("err_no_project")
 	}
-	s.out.Notice(locale.Tl("operating_message", "", s.project.NamespaceString(), s.project.Dir()))
+	s.out.Notice(locale.Tr("operating_message", s.project.NamespaceString(), s.project.Dir()))
 
 	project, err := model.LegacyFetchProjectByName(s.project.Owner(), s.project.Name())
 	if err != nil {
@@ -92,7 +95,7 @@ func (s *Switch) Run(params SwitchParams) error {
 
 	identifier, err := resolveIdentifier(project, params.Identifier)
 	if err != nil {
-		return locale.WrapError(err, "err_resolve_identifier", "Could not resolve identifier {{.V0}}", params.Identifier)
+		return locale.WrapError(err, "err_resolve_identifier", "Could not resolve identifier '{{.V0}}'", params.Identifier)
 	}
 
 	if id, ok := identifier.(branchIdentifier); ok {
@@ -110,12 +113,12 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.NewInputError("err_identifier_branch_not_on_branch", "Commit does not belong to history for branch [ACTIONABLE]{{.V0}}[/RESET]", s.project.BranchName())
 	}
 
-	err = commitmediator.Set(s.project, identifier.CommitID().String())
+	err = localcommit.Set(s.project.Dir(), identifier.CommitID().String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to set local commit")
 	}
 
-	err = runbits.RefreshRuntime(s.auth, s.out, s.analytics, s.project, identifier.CommitID(), false, target.TriggerSwitch, s.svcModel)
+	err = runbits.RefreshRuntime(s.auth, s.out, s.analytics, s.project, identifier.CommitID(), false, target.TriggerSwitch, s.svcModel, s.cfg)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
@@ -139,7 +142,7 @@ func resolveIdentifier(project *mono_models.Project, idParam string) (identifier
 
 	branch, err := model.BranchForProjectByName(project, idParam)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_identifier_branch", "Could not get branch {{.V0}} for current project", idParam)
+		return nil, locale.WrapError(err, "err_identifier_branch", "Could not get branch '{{.V0}}' for current project", idParam)
 
 	}
 

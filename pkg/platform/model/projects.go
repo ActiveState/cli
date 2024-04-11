@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/go-openapi/strfmt"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -19,8 +19,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
-
-type ErrProjectNameConflict struct{ *locale.LocalizedError }
 
 type ErrProjectNotFound struct {
 	Organization string
@@ -97,6 +95,16 @@ func LanguageByCommit(commitID strfmt.UUID) (Language, error) {
 	return languages[0], nil
 }
 
+func FetchTimeStampForCommit(commitID strfmt.UUID) (*time.Time, error) {
+	_, atTime, err := FetchCheckpointForCommit(commitID)
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to fetch checkpoint for commit ID")
+	}
+
+	t := time.Time(atTime)
+	return &t, nil
+}
+
 // DefaultBranchForProjectName retrieves the default branch for the given project owner/name.
 func DefaultBranchForProjectName(owner, name string) (*mono_models.Branch, error) {
 	proj, err := LegacyFetchProjectByName(owner, name)
@@ -166,7 +174,7 @@ func BranchForProjectByName(pj *mono_models.Project, name string) (*mono_models.
 
 	return nil, locale.NewInputError(
 		"err_no_matching_branch_label",
-		"This project has no branch with label matching [NOTICE]{{.V0}}[/RESET].",
+		"This project has no branch with label matching '[NOTICE]{{.V0}}[/RESET]'.",
 		name,
 	)
 }
@@ -179,8 +187,8 @@ func CreateEmptyProject(owner, name string, private bool) (*mono_models.Project,
 	pj, err := authentication.Client().Projects.AddProject(addParams, authentication.ClientAuth())
 	if err != nil {
 		msg := api.ErrorMessageFromPayload(err)
-		if _, ok := err.(*projects.AddProjectConflict); ok {
-			return nil, &ErrProjectNameConflict{locale.WrapInputError(err, msg)}
+		if errs.Matches(err, &projects.AddProjectConflict{}) || errs.Matches(err, &projects.AddProjectNotFound{}) {
+			return nil, locale.WrapInputError(err, msg)
 		}
 		return nil, locale.WrapError(err, msg)
 	}
@@ -225,8 +233,8 @@ func CreateCopy(sourceOwner, sourceName, targetOwner, targetName string, makePri
 			if _, err := authentication.Client().Projects.DeleteProject(deleteParams, authentication.ClientAuth()); err != nil {
 				return nil, locale.WrapError(
 					err, "err_fork_private_but_project_created",
-					"Your project was created but could not be made private, please head over to https://{{.V0}}/{{.V1}}/{{.V2}} to manually update your privacy settings.",
-					constants.PlatformURL, targetOwner, targetName)
+					"Your project was created but could not be made private, please head over to {{.V0}} to manually update your privacy settings.",
+					api.GetPlatformURL(fmt.Sprintf("%s/%s", targetOwner, targetName)).String())
 			}
 			return nil, locale.WrapError(err, "err_fork_private", "Your fork could not be made private.")
 		}
@@ -248,6 +256,9 @@ func MakeProjectPrivate(owner, name string) error {
 	_, err := authentication.Client().Projects.EditProject(editParams, authentication.ClientAuth())
 	if err != nil {
 		msg := api.ErrorMessageFromPayload(err)
+		if errs.Matches(err, &projects.EditProjectBadRequest{}) {
+			return locale.WrapInputError(err, msg) // user does not have permission
+		}
 		return locale.WrapError(err, msg)
 	}
 
@@ -256,11 +267,13 @@ func MakeProjectPrivate(owner, name string) error {
 
 // ProjectURL creates a valid platform URL for the given project parameters
 func ProjectURL(owner, name, commitID string) string {
-	url := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, owner, name)
+	url := api.GetPlatformURL(fmt.Sprintf("%s/%s", owner, name))
 	if commitID != "" {
-		url = url + "?commitID=" + commitID
+		query := url.Query()
+		query.Add("commitID", commitID)
+		url.RawQuery = query.Encode()
 	}
-	return url
+	return url.String()
 }
 
 func AddBranch(projectID strfmt.UUID, label string) (strfmt.UUID, error) {

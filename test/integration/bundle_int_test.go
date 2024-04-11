@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
@@ -82,6 +83,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_project_invalid() {
 	cp := ts.Spawn("bundles", "--namespace", "junk/junk")
 	cp.Expect("The requested project junk does not exist under junk")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_searchSimple() {
@@ -100,6 +102,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchSimple() {
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
 	}
+	cp.Send("q")
 	cp.ExpectExitCode(0)
 }
 
@@ -118,6 +121,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithExactTerm() {
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
 	}
+	cp.Send("q")
 	cp.ExpectExitCode(0)
 }
 
@@ -130,6 +134,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithExactTermWrongTerm
 	cp := ts.Spawn("bundles", "search", "xxxUtilitiesxxx", "--exact-term")
 	cp.Expect("No bundles in our catalog match")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_searchWithLang() {
@@ -139,7 +144,15 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithLang() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("bundles", "search", "Utilities", "--language=perl")
-	cp.Expect("Utilities")
+	expectations := []string{
+		"Name",
+		"Utilities",
+		"1.00",
+	}
+	for _, expectation := range expectations {
+		cp.Expect(expectation)
+	}
+	cp.Send("q")
 	cp.ExpectExitCode(0)
 }
 
@@ -152,6 +165,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithWrongLang() {
 	cp := ts.Spawn("bundles", "search", "Utilities", "--language=python")
 	cp.Expect("No bundles in our catalog match")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_searchWithBadLang() {
@@ -163,6 +177,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithBadLang() {
 	cp := ts.Spawn("bundles", "search", "Utilities", "--language=bad")
 	cp.Expect("Cannot obtain search")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_detached_operation() {
@@ -197,6 +212,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_detached_operation() {
 		cp := ts.Spawn("bundles", "install", "Utilities@0.7.6")
 		cp.ExpectRe("(?:bundle updated|being built)")
 		cp.ExpectExitCode(1)
+		ts.IgnoreLogErrors()
 	})
 	*/
 
@@ -217,7 +233,7 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 	defer ts.Close()
 
 	cp := ts.Spawn("bundles", "search", "Email", "--language", "Perl", "-o", "json")
-	cp.Expect(`"package":"Email"`)
+	cp.Expect(`"Name":"Email"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
@@ -230,7 +246,7 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("bundles", "install", "Testing", "--output", "json"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect(`"name":"Testing"`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
@@ -238,7 +254,7 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("bundles", "uninstall", "Testing", "-o", "editor"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect(`"name":"Testing"`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)

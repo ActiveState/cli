@@ -15,7 +15,7 @@ var channel string // can be set through linker flag -ldflags "-X main.channel=t
 
 func main() {
 	if channel == "" {
-		channel = constants.BranchName
+		channel = constants.ChannelName
 	}
-	fmt.Printf(`{"version": "%s", "branch": "%s"}`, version, channel)
+	fmt.Printf(`{"version": "%s", "channel": "%s"}`, version, channel)
 }

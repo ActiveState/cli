@@ -30,7 +30,7 @@ func NewLog(prime primeable) *EventLog {
 func (e *EventLog) Run(params *EventLogParams) error {
 	pid := process.ActivationPID(e.cfg)
 	if pid == -1 {
-		return locale.NewInputError("err_eventlog_pid", "Could not find parent process ID, make sure you're running this command from inside an activated state (run `state activate` first).")
+		return locale.NewInputError("err_eventlog_pid", "Could not find parent process ID, make sure you're running this command from inside an activated state (run '[ACTIONABLE]state activate[/RESET]' first).")
 	}
 
 	filepath := logging.FilePathFor(logging.FileNameFor(int(pid)))

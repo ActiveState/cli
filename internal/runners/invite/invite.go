@@ -53,7 +53,7 @@ func (i *invite) Run(params *Params, args []string) error {
 		return locale.NewInputError("err_no_projectfile", "Must be in a project directory.")
 	}
 	if !i.auth.Authenticated() {
-		return locale.NewInputError("err_invite_not_logged_in", "You need to authenticate with [ACTIONABLE]`state auth`[/RESET] before you can invite new members.")
+		return locale.NewInputError("err_invite_not_logged_in", "You need to authenticate with '[ACTIONABLE]state auth[/RESET]' before you can invite new members.")
 	}
 
 	if len(args) > 1 {

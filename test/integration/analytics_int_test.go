@@ -496,6 +496,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 
 	cp := ts.Spawn("clean", "uninstall", "badarg", "--mono")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	events := parseAnalyticsEvents(suite, ts)
 	suite.assertSequentialEvents(events)
@@ -522,6 +523,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "ActiveState-CLI/Alternate-Python"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+		e2e.OptAppendEnv(constants.DisableActivateEventsEnvVarName+"=false"),
 		e2e.OptWD(ts.Dirs.Work),
 	)
 

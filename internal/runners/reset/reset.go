@@ -2,13 +2,14 @@ package reset
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -28,6 +29,7 @@ type Reset struct {
 	project   *project.Project
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
+	cfg       *config.Instance
 }
 
 type primeable interface {
@@ -48,6 +50,7 @@ func New(prime primeable) *Reset {
 		prime.Project(),
 		prime.Analytics(),
 		prime.SvcModel(),
+		prime.Config(),
 	}
 }
 
@@ -55,7 +58,7 @@ func (r *Reset) Run(params *Params) error {
 	if r.project == nil {
 		return locale.NewInputError("err_no_project")
 	}
-	r.out.Notice(locale.Tl("operating_message", "", r.project.NamespaceString(), r.project.Dir()))
+	r.out.Notice(locale.Tr("operating_message", r.project.NamespaceString(), r.project.Dir()))
 
 	var commitID strfmt.UUID
 	if params.CommitID == "" {
@@ -63,7 +66,7 @@ func (r *Reset) Run(params *Params) error {
 		if err != nil {
 			return locale.WrapError(err, "err_reset_latest_commit", "Could not get latest commit ID")
 		}
-		localCommitID, err := commitmediator.Get(r.project)
+		localCommitID, err := localcommit.Get(r.project.Dir())
 		if err != nil {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
@@ -76,7 +79,7 @@ func (r *Reset) Run(params *Params) error {
 			return locale.NewInputError("Invalid commit ID")
 		}
 		commitID = strfmt.UUID(params.CommitID)
-		localCommitID, err := commitmediator.Get(r.project)
+		localCommitID, err := localcommit.Get(r.project.Dir())
 		if err != nil {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
@@ -100,12 +103,12 @@ func (r *Reset) Run(params *Params) error {
 		return locale.NewInputError("err_reset_aborted", "Reset aborted by user")
 	}
 
-	err = commitmediator.Set(r.project, commitID.String())
+	err = localcommit.Set(r.project.Dir(), commitID.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to set local commit")
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, commitID, true, target.TriggerReset, r.svcModel)
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, commitID, true, target.TriggerReset, r.svcModel, r.cfg)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

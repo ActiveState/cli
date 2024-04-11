@@ -2,11 +2,13 @@ package model
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/go-openapi/strfmt"
 )
@@ -32,8 +34,8 @@ const (
 	ArtifactFailedPermanently = "FAILED_PERMANENTLY"
 	ArtifactFailedTransiently = "FAILED_TRANSIENTLY"
 	ArtifactReady             = "READY"
-	ArtifactRunning           = "RUNNING"
 	ArtifactSkipped           = "SKIPPED"
+	ArtifactStarted           = "STARTED"
 	ArtifactSucceeded         = "SUCCEEDED"
 
 	// Tag types
@@ -83,6 +85,7 @@ const (
 	NoChangeSinceLastCommitErrorType  = "NoChangeSinceLastCommit"
 	HeadOnBranchMovedErrorType        = "HeadOnBranchMoved"
 	ForbiddenErrorType                = "Forbidden"
+	GenericSolveErrorType             = "GenericSolveError"
 	RemediableSolveErrorType          = "RemediableSolveError"
 	PlanningErrorType                 = "PlanningError"
 	MergeConflictType                 = "MergeConflict"
@@ -99,6 +102,11 @@ func IsStateToolArtifact(mimeType string) bool {
 	return mimeType == XArtifactMimeType ||
 		mimeType == XActiveStateArtifactMimeType ||
 		mimeType == XCamelInstallerMimeType
+}
+
+func IsSuccessArtifactStatus(status string) bool {
+	return status == ArtifactSucceeded || status == ArtifactBlocked ||
+		status == ArtifactStarted || status == ArtifactReady
 }
 
 func (o Operation) String() string {
@@ -173,11 +181,22 @@ func (e *BuildPlannerError) Error() string {
 	}
 
 	var err error
-	err = locale.NewError("buildplan_err", "", croppedMessage, errorLines)
+
+	if croppedMessage != "" {
+		err = locale.NewError("buildplan_err_cropped", "", croppedMessage, errorLines)
+	} else {
+		err = locale.NewError("buildplan_err", "", errorLines)
+	}
+
 	if e.IsTransient {
 		err = errs.AddTips(err, locale.Tr("transient_solver_tip"))
 	}
+
 	return err.Error()
+}
+
+func (e *BuildPlannerError) Unwrap() error {
+	return errors.Unwrap(e.Err)
 }
 
 // BuildPlan is the top level object returned by the build planner. It contains
@@ -302,6 +321,12 @@ func IsErrorResponse(errorType string) bool {
 		errorType == ComitHasNoParentErrorType
 }
 
+type CommitError struct {
+	Type                   string
+	Message                string
+	*locale.LocalizedError // for legacy, non-user-facing error usages
+}
+
 func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 	if commit.Error == nil {
 		return errs.New(fallbackMessage)
@@ -309,48 +334,79 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 
 	switch commit.Type {
 	case NotFoundErrorType:
-		return locale.NewInputError("err_buildplanner_commit_not_found", "Could not find commit, received message: {{.V0}}", commit.Message)
+		return &CommitError{
+			commit.Type, commit.Message,
+			locale.NewInputError("err_buildplanner_commit_not_found", "Could not find commit, received message: {{.V0}}", commit.Message),
+		}
 	case ParseErrorType:
-		return locale.NewInputError("err_buildplanner_parse_error", "The platform failed to parse the build expression, received message: {{.V0}}. Path: {{.V1}}", commit.Message, commit.ParseError.Path)
+		return &CommitError{
+			commit.Type, commit.Message,
+			locale.NewInputError("err_buildplanner_parse_error", "The platform failed to parse the build expression, received message: {{.V0}}. Path: {{.V1}}", commit.Message, commit.ParseError.Path),
+		}
+	case ValidationErrorType:
+		return &CommitError{
+			commit.Type, commit.Message,
+			locale.NewInputError("err_buildplanner_validation_error", "The platform encountered a validation error, received message: {{.V0}}", commit.Message),
+		}
 	case ForbiddenErrorType:
-		return locale.NewInputError("err_buildplanner_forbidden", "Operation forbidden: {{.V0}}, received message: {{.V1}}", commit.Operation, commit.Message)
+		return &CommitError{
+			commit.Type, commit.Message,
+			locale.NewInputError("err_buildplanner_forbidden", "Operation forbidden: {{.V0}}, received message: {{.V1}}", commit.Operation, commit.Message),
+		}
 	case HeadOnBranchMovedErrorType:
-		return errs.Wrap(locale.NewInputError("err_buildplanner_head_on_branch_moved", "The branch you're trying to update has changed remotely, please run '[ACTIONABLE]state pull[/RESET]'."), "received message: "+commit.Error.Message)
+		return errs.Wrap(&CommitError{
+			commit.Type, commit.Error.Message,
+			locale.NewInputError("err_buildplanner_head_on_branch_moved"),
+		}, "received message: "+commit.Error.Message)
 	case NoChangeSinceLastCommitErrorType:
-		return errs.Wrap(locale.NewInputError("err_buildplanner_no_change_since_last_commit", "No new changes to commit."), commit.Error.Message)
+		return errs.Wrap(&CommitError{
+			commit.Type, commit.Error.Message,
+			locale.NewInputError("err_buildplanner_no_change_since_last_commit", "No new changes to commit."),
+		}, commit.Error.Message)
 	default:
 		return errs.New(fallbackMessage)
 	}
 }
 
 func ProcessBuildError(build *Build, fallbackMessage string) error {
+	logging.Debug("ProcessBuildError: build.Type=%s", build.Type)
 	if build.Type == PlanningErrorType {
-		var errs []string
-		var isTransient bool
-		for _, se := range build.SubErrors {
-			if se.Type != RemediableSolveErrorType {
-				continue
-			}
-
-			if se.Message != "" {
-				errs = append(errs, se.Message)
-				isTransient = se.IsTransient
-			}
-			for _, ve := range se.ValidationErrors {
-				if ve.Error != "" {
-					errs = append(errs, ve.Error)
-				}
-			}
-		}
-		return &BuildPlannerError{
-			ValidationErrors: errs,
-			IsTransient:      isTransient,
-		}
+		return processPlanningError(build.Message, build.SubErrors)
 	} else if build.Error == nil {
 		return errs.New(fallbackMessage)
 	}
 
 	return locale.NewInputError("err_buildplanner_build", "Encountered error processing build response")
+}
+
+func processPlanningError(message string, subErrors []*BuildExprLocation) error {
+	var errs []string
+	var isTransient bool
+
+	if message != "" {
+		errs = append(errs, message)
+	}
+
+	for _, se := range subErrors {
+		if se.Type != RemediableSolveErrorType && se.Type != GenericSolveErrorType {
+			continue
+		}
+
+		if se.Message != "" {
+			errs = append(errs, se.Message)
+			isTransient = se.IsTransient
+		}
+
+		for _, ve := range se.ValidationErrors {
+			if ve.Error != "" {
+				errs = append(errs, ve.Error)
+			}
+		}
+	}
+	return &BuildPlannerError{
+		ValidationErrors: errs,
+		IsTransient:      isTransient,
+	}
 }
 
 func ProcessProjectError(project *Project, fallbackMessage string) error {
@@ -386,11 +442,11 @@ type ProjectCreatedError struct {
 func (p *ProjectCreatedError) Error() string { return p.Message }
 
 func ProcessProjectCreatedError(pcErr *projectCreated, fallbackMessage string) error {
-	if pcErr.Type != "" {
-		// These will be handled individually per type as user-facing errors in DX-2300.
-		return &ProjectCreatedError{pcErr.Type, pcErr.Message}
+	if pcErr.Error == nil {
+		return errs.New(fallbackMessage)
 	}
-	return errs.New(fallbackMessage)
+
+	return &ProjectCreatedError{pcErr.Type, pcErr.Message}
 }
 
 type BuildExpression struct {
@@ -474,6 +530,12 @@ type MergeCommitResult struct {
 	MergedCommit *mergedCommit `json:"mergeCommit"`
 }
 
+type BuildTargetResult struct {
+	Project *Project `json:"Project"`
+	*Error
+	*NotFoundError
+}
+
 // Error contains an error message.
 type Error struct {
 	Message string `json:"message"`
@@ -489,6 +551,7 @@ type Project struct {
 // Commit contains the build and any errors.
 type Commit struct {
 	Type       string          `json:"__typename"`
+	AtTime     strfmt.DateTime `json:"atTime"`
 	Expression json.RawMessage `json:"expr"`
 	CommitID   strfmt.UUID     `json:"commitId"`
 	Build      *Build          `json:"build"`
@@ -581,14 +644,15 @@ type Commit struct {
 //	    }
 //	}
 type Build struct {
-	Type        string         `json:"__typename"`
-	BuildPlanID strfmt.UUID    `json:"buildPlanID"`
-	Status      string         `json:"status"`
-	Terminals   []*NamedTarget `json:"terminals"`
-	Artifacts   []*Artifact    `json:"artifacts"`
-	Steps       []*Step        `json:"steps"`
-	Sources     []*Source      `json:"sources"`
-	BuildLogIDs []*BuildLogID  `json:"buildLogIds"`
+	Type                 string                 `json:"__typename"`
+	BuildPlanID          strfmt.UUID            `json:"buildPlanID"`
+	Status               string                 `json:"status"`
+	Terminals            []*NamedTarget         `json:"terminals"`
+	Artifacts            []*Artifact            `json:"artifacts"`
+	Steps                []*Step                `json:"steps"`
+	Sources              []*Source              `json:"sources"`
+	BuildLogIDs          []*BuildLogID          `json:"buildLogIds"`
+	ResolvedRequirements []*ResolvedRequirement `json:"resolvedRequirements"`
 	*Error
 	*PlanningError
 }
@@ -610,6 +674,7 @@ type NamedTarget struct {
 type Artifact struct {
 	Type                string        `json:"__typename"`
 	NodeID              strfmt.UUID   `json:"nodeId"`
+	DisplayName         string        `json:"displayName"`
 	MimeType            string        `json:"mimeType"`
 	GeneratedBy         strfmt.UUID   `json:"generatedBy"`
 	RuntimeDependencies []strfmt.UUID `json:"runtimeDependencies"`
@@ -642,6 +707,11 @@ type Source struct {
 	Version   string      `json:"version"`
 }
 
+type ResolvedRequirement struct {
+	Requirement *Requirement `json:"requirement"`
+	Source      strfmt.UUID  `json:"resolvedSource"`
+}
+
 // NotFoundError represents an error that occurred because a resource was not found.
 type NotFoundError struct {
 	Type                  string `json:"type"`
@@ -651,7 +721,6 @@ type NotFoundError struct {
 
 // PlanningError represents an error that occurred during planning.
 type PlanningError struct {
-	Message   string               `json:"message"`
 	SubErrors []*BuildExprLocation `json:"subErrors"`
 }
 
@@ -718,6 +787,7 @@ type Requirement struct {
 	Name               string               `json:"name"`
 	Namespace          string               `json:"namespace"`
 	VersionRequirement []VersionRequirement `json:"version_requirements,omitempty"`
+	Revision           *int                 `json:"revision,omitempty"`
 }
 
 type VersionRequirement map[string]string

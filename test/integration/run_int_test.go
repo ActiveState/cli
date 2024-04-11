@@ -14,6 +14,7 @@ import (
 
 	"github.com/ActiveState/termtest"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -196,6 +197,7 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 	cp.SendCtrlC()
 	suite.expectTerminateBatchJob(cp)
 	cp.ExpectExitCode(123)
+	ts.IgnoreLogErrors()
 	suite.Require().NotContains(
 		cp.Output(), "not printed after second interrupt",
 	)
@@ -230,9 +232,11 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 
 	suite.createProjectFile(ts, 2)
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("activate"))
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Activated")
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("activate"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
@@ -292,7 +296,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Perl_Variable() {
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate"),
 		e2e.OptAppendEnv(
-			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
+			constants.DisableRuntime+"=false",
 			"PERL_VERSION=does_not_exist",
 		),
 	)

@@ -21,7 +21,7 @@ func newConfigCommand(prime *primer.Values) *captain.Command {
 				return err
 			}
 			return runner.Run(ccmd.Usage)
-		}).SetGroup(UtilsGroup)
+		}).SetGroup(UtilsGroup).SetSupportsStructuredOutput()
 }
 
 func newConfigGetCommand(prime *primer.Values) *captain.Command {
@@ -43,12 +43,12 @@ func newConfigGetCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			runner := config.NewGet(prime)
 			return runner.Run(params)
-		})
+		}).SetSupportsStructuredOutput()
 }
 
 func newConfigSetCommand(prime *primer.Values) *captain.Command {
 	params := config.SetParams{}
-	return captain.NewCommand(
+	cmd := captain.NewCommand(
 		"set",
 		locale.Tl("config_set_title", "Set config value"),
 		locale.Tl("config_set_description", "Set config values using the terminal"),
@@ -72,4 +72,7 @@ func newConfigSetCommand(prime *primer.Values) *captain.Command {
 			runner := config.NewSet(prime)
 			return runner.Run(params)
 		})
+	cmd.SetSkipChecks(true)
+	cmd.SetSupportsStructuredOutput()
+	return cmd
 }

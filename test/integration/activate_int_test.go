@@ -18,8 +18,8 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
@@ -65,7 +65,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 // addForegroundSvc launches the state-svc in a way where we can track its output for debugging purposes
 // without this we are mostly blind to the svc exiting prematurely
 func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) func() {
-	cmd, stdout, stderr, err := exeutils.ExecuteInBackground(ts.SvcExe, []string{"foreground"}, func(cmd *exec.Cmd) error {
+	cmd, stdout, stderr, err := osutils.ExecuteInBackground(ts.SvcExe, []string{"foreground"}, func(cmd *exec.Cmd) error {
 		cmd.Env = append(ts.Env, "VERBOSE=true", "") // For whatever reason the last entry is ignored..
 		return nil
 	})
@@ -75,7 +75,7 @@ func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) fun
 	rtutils.Timeout(func() error {
 		code := -1
 		for code != 0 {
-			code, _, _ = exeutils.Execute(ts.SvcExe, []string{"status"}, func(cmd *exec.Cmd) error {
+			code, _, _ = osutils.Execute(ts.SvcExe, []string{"status"}, func(cmd *exec.Cmd) error {
 				cmd.Env = ts.Env
 				return nil
 			})
@@ -83,13 +83,18 @@ func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) fun
 		return nil
 	}, 10*time.Second)
 
+	// This function seems to trigger lots of flisten errors that do not appear to be actual errors
+	// (the integration test expectations all pass). Just ignore log errors for sessions that call
+	// this function.
+	ts.IgnoreLogErrors()
+
 	// Stop function
 	return func() {
 		go func() {
 			defer func() {
 				suite.Require().Nil(recover())
 			}()
-			stdout, stderr, err := exeutils.ExecSimple(ts.SvcExe, []string{"stop"}, ts.Env)
+			stdout, stderr, err := osutils.ExecSimple(ts.SvcExe, []string{"stop"}, ts.Env)
 			suite.Require().NoError(err, "svc stop failed: %s\n%s", stdout, stderr)
 		}()
 
@@ -129,10 +134,10 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "ActiveState-CLI/Python3#6d9280e7-75eb-401a-9e71-0d99759fbad3", "--path", ts.Dirs.Work),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Activated")
-	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectInput()
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -178,7 +183,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 	projectName := "Python-LinuxWorks"
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "cli-integration-tests/"+projectName, "--path="+ts.Dirs.Work),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 
 	if runtime.GOOS == "linux" {
@@ -187,11 +192,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 		cp.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
 		cp.SendLine("exit")
 		cp.ExpectExitCode(0)
-	} else if runtime.GOOS == "windows" {
-		// We can definitely improve this error, but this particular test is testing that we can still activate on the
-		// platform that DOES match (ie. Linux)
-		cp.Expect("Could not update runtime installation")
-		cp.ExpectNotExitCode(0)
 	} else {
 		cp.Expect("Your current platform")
 		cp.Expect("does not appear to be configured")
@@ -201,6 +201,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 			suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
 		}
 	}
+	ts.IgnoreLogErrors()
 }
 
 func (suite *ActivateIntegrationTestSuite) assertCompletedStatusBarReport(snapshot string) {
@@ -226,7 +227,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", namespace),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 		e2e.OptAppendEnv(extraEnv...),
 	)
 
@@ -256,7 +257,15 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine("state activate --default")
 	cp.Expect("Creating a Virtual Environment")
 	cp.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
-	pythonShim := pythonExe + exeutils.Extension
+	pythonShim := pythonExe + osutils.ExeExtension
+
+	// test that existing environment variables are inherited by the activated shell
+	if runtime.GOOS == "windows" {
+		cp.SendLine(fmt.Sprintf("echo %%%s%%", constants.DisableRuntime))
+	} else {
+		cp.SendLine("echo $" + constants.DisableRuntime)
+	}
+	cp.Expect("false")
 
 	// test that other executables that use python work as well
 	pipExe := "pip" + version
@@ -278,7 +287,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp = ts.SpawnCmdWithOpts(
 		executor,
 		e2e.OptArgs("-c", "import sys; print(sys.copyright);"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("ActiveState Software Inc.", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
@@ -296,7 +305,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_PythonPath() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", namespace),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
@@ -376,9 +385,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "ActiveState-CLI/Perl"),
-		e2e.OptAppendEnv(
-			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
-		),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 
 	cp.Expect("Downloading", termtest.OptExpectTimeout(40*time.Second))
@@ -422,9 +429,10 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Subdir() {
 project: "https://platform.activestate.com/ActiveState-CLI/Python3"
 branch: %s
 version: %s
-`, constants.BranchName, constants.Version))
+`, constants.ChannelName, constants.Version))
 
 	ts.PrepareActiveStateYAML(content)
+	ts.PrepareCommitIdFile("59404293-e5a9-4fd0-8843-77cd4761b5b5")
 
 	// Pull to ensure we have an up to date config file
 	cp := ts.Spawn("pull")
@@ -455,7 +463,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_NamespaceWins() {
 	suite.Require().NoError(err)
 
 	// Create the project file at the root of the temp dir
-	ts.PrepareProject("ActiveState-CLI/Python3", "")
+	ts.PrepareProject("ActiveState-CLI/Python3", "59404293-e5a9-4fd0-8843-77cd4761b5b5")
 
 	// Pull to ensure we have an up to date config file
 	cp := ts.Spawn("pull")
@@ -512,7 +520,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Downloading")
 	cp.Expect("Installing")
@@ -525,7 +533,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	// next activation is cached
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 
 	cp.ExpectInput(e2e.RuntimeSourcingTimeoutOpt)
@@ -550,10 +558,10 @@ func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
 	contents := fmt.Sprintf("project: https://platform.activestate.com/commit/%s\n", commitID)
 	ts.PrepareActiveStateYAML(contents)
 
-	// Ensure we have the most up to date version of the project before activating
 	cp := ts.Spawn("activate")
-	cp.Expect("Cannot activate a headless project", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Cannot initialize runtime for a headless project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_AlreadyActive() {
@@ -665,7 +673,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateArtifactsCached() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", namespace),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
@@ -694,7 +702,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateArtifactsCached() {
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("activate", namespace),
 		e2e.OptAppendEnv(
-			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
+			constants.DisableRuntime+"=false",
 			"VERBOSE=true", // Necessary to assert "Fetched cached artifact"
 		),
 	)

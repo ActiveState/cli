@@ -17,9 +17,6 @@ jobs:
     name: Target & Verify PR
     runs-on: ubuntu-20.04
     env:
-      ACTIVESTATE_CI: true
-      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
-      SHELL: bash
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
       JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
@@ -31,7 +28,9 @@ jobs:
     steps:
       - # === Checkout code ===
         name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - # === Install Go ===
         name: Install Go
@@ -43,21 +42,6 @@ jobs:
         name: Install State Tool
         uses: ActiveState/setup-state-tool@v1
 
-      - # === Setup ===
-        name: Setup
-        shell: bash
-        run: |
-          bin=$(pwd)/.github/deps/${{ runner.os }}/bin
-          echo "Adding $bin to PATH"
-          echo "$bin" >> $GITHUB_PATH
-          ls -ahl $bin
-          printenv
-
-      - # === Install Deps ===
-        name: Install Deps
-        shell: bash
-        run: state run install-deps
-
       - # === Preprocess ===
         name: Preprocess
         shell: bash
@@ -65,6 +49,7 @@ jobs:
 
       - # === Set Target PR & FixVersion ===
         name: Set Target PR and FixVersion
+        if: github.event.action == 'opened' || github.event.action == 'reopened'
         shell: bash
         run: go run scripts/ci/target-version-pr/main.go ${{ github.event.pull_request.number }}
 

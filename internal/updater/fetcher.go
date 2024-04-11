@@ -3,33 +3,41 @@ package updater
 import (
 	"crypto/sha256"
 	"fmt"
+	"io/ioutil"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/httpreq"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
 const CfgUpdateTag = "update_tag"
 
 type Fetcher struct {
-	httpreq *httpreq.Client
-	an      analytics.Dispatcher
+	retryhttp *retryhttp.Client
+	an        analytics.Dispatcher
 }
 
 func NewFetcher(an analytics.Dispatcher) *Fetcher {
-	return &Fetcher{httpreq.New(), an}
+	return &Fetcher{retryhttp.DefaultClient, an}
 }
 
 func (f *Fetcher) Fetch(update *UpdateInstaller, targetDir string) error {
 	logging.Debug("Fetching update: %s", update.url)
-	b, _, err := f.httpreq.Get(update.url)
+	resp, err := f.retryhttp.Get(update.url)
 	if err != nil {
 		msg := fmt.Sprintf("Fetch %s failed", update.url)
+		f.analyticsEvent(update.AvailableUpdate.Version, msg)
+		return errs.Wrap(err, msg)
+	}
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		msg := "Could not read response body"
 		f.analyticsEvent(update.AvailableUpdate.Version, msg)
 		return errs.Wrap(err, msg)
 	}

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -35,13 +36,13 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	// Use.
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("use", "ActiveState-CLI/Python3"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	// Verify runtime works.
-	pythonExe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExt)
+	pythonExe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExtension)
 	cp = ts.SpawnCmd(pythonExe, "--version")
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
@@ -55,7 +56,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	// Use it.
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("use", "ActiveState-CLI/Python-3.9"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
@@ -68,7 +69,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	// Switch back using just the project name.
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("use", "Python3"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
@@ -82,6 +83,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	cp = ts.SpawnWithOpts(e2e.OptArgs("use", "NotCheckedOut"))
 	cp.Expect("Cannot find the NotCheckedOut project.")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *UseIntegrationTestSuite) TestUseCwd() {
@@ -100,7 +102,7 @@ func (suite *UseIntegrationTestSuite) TestUseCwd() {
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("use"),
 		e2e.OptWD(pythonDir),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
@@ -113,6 +115,7 @@ func (suite *UseIntegrationTestSuite) TestUseCwd() {
 	)
 	cp.Expect("Unable to use project")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *UseIntegrationTestSuite) TestReset() {
@@ -131,12 +134,12 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("use", "ActiveState-CLI/Python3"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
-	python3Exe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExt)
+	python3Exe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExtension)
 	suite.True(fileutils.TargetExists(python3Exe), python3Exe+" not found")
 
 	cfg, err := config.New()
@@ -152,6 +155,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cp.SendLine("n")
 	cp.Expect("Reset aborted by user")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	cp = ts.SpawnWithOpts(e2e.OptArgs("use", "reset", "--non-interactive"))
 	cp.Expect("Stopped using your project runtime")
@@ -178,6 +182,7 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("use", "show"))
 	cp.Expect("No project is being used")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	cp = ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/Python3"))
 	cp.Expect("Skipping runtime setup")
@@ -186,7 +191,7 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("use", "ActiveState-CLI/Python3"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
@@ -236,7 +241,7 @@ func (suite *UseIntegrationTestSuite) TestSetupNotice() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/Python3"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Setting Up Runtime")
 	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
@@ -253,7 +258,7 @@ func (suite *UseIntegrationTestSuite) TestSetupNotice() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("use", "Python3"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Setting Up Runtime")
 	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
@@ -272,7 +277,7 @@ func (suite *UseIntegrationTestSuite) TestJSON() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("use", "-o", "json"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect(`"namespace":`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.Expect(`"path":`)

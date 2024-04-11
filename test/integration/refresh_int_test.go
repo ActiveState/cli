@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -22,7 +23,7 @@ func (suite *RefreshIntegrationTestSuite) TestRefresh() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("refresh"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Setting Up Runtime")
 	cp.Expect("Runtime updated", e2e.RuntimeSourcingTimeoutOpt)
@@ -30,15 +31,16 @@ func (suite *RefreshIntegrationTestSuite) TestRefresh() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("exec", "--", "python3", "-c", "import requests"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("ModuleNotFoundError")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI/Branches", "secondbranch", "46c83477-d580-43e2-a0c6-f5d3677517f1")
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("refresh"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Setting Up Runtime")
 	cp.Expect("Runtime updated", e2e.RuntimeSourcingTimeoutOpt)
@@ -46,7 +48,7 @@ func (suite *RefreshIntegrationTestSuite) TestRefresh() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("exec", "--", "python3", "-c", "import requests"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 

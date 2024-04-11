@@ -1,16 +1,21 @@
 package commit
 
 import (
+	"errors"
+	"time"
+
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/pkg/localcommit"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -20,6 +25,7 @@ type primeable interface {
 	primer.Auther
 	primer.Analyticer
 	primer.SvcModeler
+	primer.Configurer
 }
 
 type Commit struct {
@@ -28,6 +34,7 @@ type Commit struct {
 	auth      *authentication.Auth
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
+	cfg       *config.Instance
 }
 
 func New(p primeable) *Commit {
@@ -37,58 +44,123 @@ func New(p primeable) *Commit {
 		auth:      p.Auth(),
 		analytics: p.Analytics(),
 		svcModel:  p.SvcModel(),
+		cfg:       p.Config(),
 	}
 }
 
-func (c *Commit) Run() error {
+var ErrNoChanges = errors.New("buildscript has no changes")
+
+func rationalizeError(err *error) {
+	var buildPlannerErr *bpModel.BuildPlannerError
+
+	switch {
+	case err == nil:
+		return
+
+	case errors.Is(*err, ErrNoChanges):
+		*err = errs.WrapUserFacing(*err, locale.Tl(
+			"commit_notice_no_change",
+			"No change to the buildscript was found.",
+		), errs.SetInput())
+
+	case errs.Matches(*err, buildscript.ErrBuildscriptNotExist):
+		*err = errs.WrapUserFacing(*err, locale.T("err_buildscript_not_exist"))
+
+	// We communicate buildplanner errors verbatim as the intend is that these are curated by the buildplanner
+	case errors.As(*err, &buildPlannerErr):
+		*err = errs.WrapUserFacing(*err,
+			buildPlannerErr.LocalizedError(),
+			errs.SetIf(buildPlannerErr.InputError(), errs.SetInput()))
+	}
+}
+
+func (c *Commit) Run() (rerr error) {
+	defer rationalizeError(&rerr)
+
 	if c.proj == nil {
 		return locale.NewInputError("err_no_project")
 	}
 
-	changesCommitted, err := buildscript.Sync(c.proj, nil, c.out, c.auth)
+	pg := output.StartSpinner(c.out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
+	defer func() {
+		if pg != nil {
+			pg.Stop(locale.T("progress_fail") + "\n")
+		}
+	}()
+
+	// Get buildscript.as representation
+	script, err := buildscript.ScriptFromProject(c.proj)
 	if err != nil {
-		return locale.WrapError(
-			err, "err_commit_sync_buildscript",
-			"Could not synchronize the buildscript.",
-		)
+		return errs.Wrap(err, "Could not get local build script")
 	}
 
-	trigger := target.TriggerCommit
-	rti, err := runtime.NewFromProject(c.proj, trigger, c.analytics, c.svcModel, c.out, c.auth)
+	// Get equivalent build script for current state of the project
+	localCommitID, err := localcommit.Get(c.proj.Dir())
 	if err != nil {
-		return locale.WrapInputError(
-			err, "err_commit_runtime_new",
-			"Could not update runtime for this project.",
-		)
+		return errs.Wrap(err, "Unable to get local commit ID")
+	}
+	bp := model.NewBuildPlannerModel(c.auth)
+	exprProject, atTime, err := bp.GetBuildExpressionAndTime(localCommitID.String())
+	if err != nil {
+		return errs.Wrap(err, "Could not get remote build expr and time for provided commit")
+	}
+	remoteScript, err := buildscript.NewFromCommit(atTime, exprProject)
+	if err != nil {
+		return errs.Wrap(err, "Could not convert build expression to build script")
 	}
 
-	execDir := setup.ExecDir(rti.Target().Dir())
-
-	if !changesCommitted {
-		c.out.Print(output.Prepare(
-			locale.Tl(
-				"commit_notice_no_change",
-				"No change to the buildscript was found.",
-			),
-			struct{}{},
-		))
-
-		return nil
+	// Check if there is anything to commit
+	if script.Equals(remoteScript) {
+		return ErrNoChanges
 	}
+
+	var exprAtTime *time.Time
+	if atTime := script.AtTime; atTime != nil {
+		atTimeTime := time.Time(*atTime)
+		exprAtTime = &atTimeTime
+	}
+
+	stagedCommitID, err := bp.StageCommit(model.StageCommitParams{
+		Owner:        c.proj.Owner(),
+		Project:      c.proj.Name(),
+		ParentCommit: localCommitID.String(),
+		Expression:   script.Expr,
+		TimeStamp:    exprAtTime,
+	})
+	if err != nil {
+		return errs.Wrap(err, "Could not update project to reflect build script changes.")
+	}
+
+	// Update local commit ID
+	if err := localcommit.Set(c.proj.Dir(), stagedCommitID.String()); err != nil {
+		return errs.Wrap(err, "Could not set local commit ID")
+	}
+
+	// Update our local build expression to match the committed one. This allows our API a way to ensure forward compatibility.
+	newBuildExpr, newAtTime, err := bp.GetBuildExpressionAndTime(stagedCommitID.String())
+	if err != nil {
+		return errs.Wrap(err, "Unable to get the remote build expression and time")
+	}
+	if err := buildscript.Update(c.proj, newAtTime, newBuildExpr, c.auth); err != nil {
+		return errs.Wrap(err, "Could not update local build script")
+	}
+
+	pg.Stop(locale.T("progress_success") + "\n")
+	pg = nil
 
 	c.out.Print(output.Prepare(
 		locale.Tl(
-			"refresh_project_statement",
-			"", c.proj.NamespaceString(), c.proj.Dir(), execDir,
+			"commit_success",
+			"", stagedCommitID.String(), c.proj.NamespaceString(),
 		),
 		&struct {
-			Namespace   string `json:"namespace"`
-			Path        string `json:"path"`
-			Executables string `json:"executables"`
+			Namespace string `json:"namespace"`
+			Path      string `json:"path"`
+			CommitID  string `json:"commit_id"`
 		}{
 			c.proj.NamespaceString(),
 			c.proj.Dir(),
-			execDir,
+			stagedCommitID.String(),
 		},
 	))
 

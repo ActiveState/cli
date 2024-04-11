@@ -25,15 +25,8 @@ const ServiceCommandName = "state-svc"
 // ConfigFileName holds the name of the file that the user uses to configure their project, not to be confused with InternalConfigFileNameLegacy
 const ConfigFileName = "activestate.yaml"
 
-// ProjectConfigDirName is the name of the directory that holds project-specific data like commit ID.
-// This folder does not hold ConfigFileName. It is a sibling to that file in a given directory.
-const ProjectConfigDirName = ".activestate"
-
 // BuildScriptFileName holds the name of the file that represents the build script used to generate the runtime
-const BuildScriptFileName = "buildscript.yaml"
-
-// CommitIdFileName is the name of the file in ProjectConfigDirName that contains a project's commit ID.
-const CommitIdFileName = "commit"
+const BuildScriptFileName = "buildscript.as"
 
 // InternalConfigNamespace holds the appdata folder name under which we store our config
 const InternalConfigNamespace = "activestate"
@@ -62,12 +55,8 @@ const DisableUpdates = "ACTIVESTATE_CLI_DISABLE_UPDATES"
 // DisableLanguageTemplates is the env var used to disable templating for new activestate.yaml files
 const DisableLanguageTemplates = "ACTIVESTATE_CLI_DISABLE_LANGUAGE_TEMPLATES"
 
-// DisableProjectMigrationPrompt is the env var used to disable the project migration prompt for legacy projects.
-// This is set by default for integration tests for backward-compatibility with old integration tests.
-const DisableProjectMigrationPrompt = "ACTIVESTATE_CLI_DISABLE_PROJECT_MIGRATION_PROMPT"
-
-// UpdateBranchEnvVarName is the env var that is used to override which branch to pull the update from
-const UpdateBranchEnvVarName = "ACTIVESTATE_CLI_UPDATE_BRANCH"
+// UpdateChannelEnvVarName is the env var that is used to override which channel to pull the update from
+const UpdateChannelEnvVarName = "ACTIVESTATE_CLI_UPDATE_CHANNEL"
 
 // InstallBuildDependencies is the env var that is used to override whether to install build dependencies
 const InstallBuildDependencies = "ACTIVESTATE_CLI_INSTALL_BUILD_DEPENDENCIES"
@@ -93,6 +82,9 @@ const ActivatedStateEnvVarName = "ACTIVESTATE_ACTIVATED"
 // ActivatedStateIDEnvVarName is the name of the environment variable that is set when in an activated state, its value will be a unique id identifying a specific instance of an activated state
 const ActivatedStateIDEnvVarName = "ACTIVESTATE_ACTIVATED_ID"
 
+// ActivatedStateNamespaceEnvVarName is the name of the environment variable that specifies the activated state's org/project namespace.
+const ActivatedStateNamespaceEnvVarName = "ACTIVESTATE_ACTIVATED_NAMESPACE"
+
 // ForwardedStateEnvVarName is the name of the environment variable that is set when in an activated state, its value will be the path of the project
 const ForwardedStateEnvVarName = "ACTIVESTATE_FORWARDED"
 
@@ -107,6 +99,9 @@ const APIHostEnvVarName = "ACTIVESTATE_API_HOST"
 
 // APIInsecureEnvVarName is the name of the environment variable that specifies whether the API hostURI should be insecure.
 const APIInsecureEnvVarName = "ACTIVESTATE_API_INSECURE"
+
+// APIServiceOverrideEnvVarName is the name of the environment variable that specifies an optional override of the full API URL, the service name will be appended.
+const APIServiceOverrideEnvVarName = "ACTIVESTATE_API_SERVICE_OVERRIDE_"
 
 // CPUProfileEnvVarName is the name of the environment variable that specifies whether CPU profiling should be run.
 const CPUProfileEnvVarName = "ACTIVESTATE_PROFILE_CPU"
@@ -189,6 +184,9 @@ const SvcAuthPollingRateEnvVarName = "ACTIVESTATE_SVC_AUTH_POLLING_RATE"
 // log rotation timer interval (1 minute).
 const SvcLogRotateIntervalEnvVarName = "ACTIVESTATE_CLI_LOG_ROTATE_INTERVAL_MS"
 
+// DisableActivateEventsEnvVarName is the environment variable used to disable events when activating or checking out a project
+const DisableActivateEventsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ACTIVATE_EVENTS"
+
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
 
@@ -234,14 +232,14 @@ const DefaultRSABitLength int = 4096
 // ExpanderMaxDepth defines the maximum depth to fully expand a given value.
 const ExpanderMaxDepth = int(10)
 
-// ReleaseBranch is the branch used for release builds
-const ReleaseBranch = "release"
+// ReleaseChannel is the channel used for release builds
+const ReleaseChannel = "release"
 
-// BetaBranch is the branch used for beta builds
-const BetaBranch = "beta"
+// BetaChannel is the channel used for beta builds
+const BetaChannel = "beta"
 
-// ExperimentalBranch is the branch used for experimental builds
-const ExperimentalBranch = "master"
+// ExperimentalChannel is the channel used for experimental builds
+const ExperimentalChannel = "master"
 
 // MonoAPIPath is the api path used for the platform api
 const MonoAPIPath = "/api/v1"
@@ -270,11 +268,20 @@ const GraphqlAPIPath = "/graphql/v1/graphql"
 // MediatorAPIPath is the path used for the platform mediator api
 const MediatorAPIPath = "/sv/mediator/api"
 
+// BuildplanAPIPath is the path used for the build planner api
+const BuildplanAPIPath = "/sv/buildplanner/graphql"
+
 // RequirementsImportAPIPath is the path used for the requirements import api
 const RequirementsImportAPIPath = "/sv/reqsvc/reqs"
 
 // BuildPlannerAPIPath is the path used for the build planner api
 const BuildPlannerAPIPath = "/sv/buildplanner/graphql"
+
+// VulnerabilitiesAPIPath is the path used for the vulnerabilities api
+const VulnerabilitiesAPIPath = "/v13s/v1/graphql"
+
+// HasuraInventoryAPIPath is the path used for the hasura inventory api
+const HasuraInventoryAPIPath = "/sv/hasura-inventory/v1/graphql"
 
 // MessagesInfoURL is the URL we check against to see what versions are deprecated
 const MessagesInfoURL = "https://state-tool.s3.amazonaws.com/messages.json"
@@ -288,8 +295,8 @@ const DateTimeFormatUser = "2 Jan 2006 15:04"
 // DateTimeFormatRecord is the datetime format we use when recording for internal use
 const DateTimeFormatRecord = "Mon Jan 2 2006 15:04:05 -0700 MST"
 
-// PlatformSignupURL is the account creation url used by the platform
-const PlatformSignupURL = "https://platform.activestate.com" + "/create-account"
+// PlatformSignupPath is the account creation path used by the platform
+const PlatformSignupPath = "/create-account"
 
 // DocumentationURL is the url for the state tool documentation
 const DocumentationURL = "http://docs.activestate.com/platform/state/"
@@ -380,6 +387,9 @@ const RuntimeBuildPlanStore = "build_plan"
 // BuildExpressionStore holds the cached build expression for the current commit ID.
 const BuildExpressionStore = "build_expression"
 
+// BuildScriptStore holds the cached buildscript for the current project.
+const BuildScriptStore = "build_script"
+
 // StateToolMarketingPage links to the marketing page for the state tool
 const StateToolMarketingPage = "https://www.activestate.com/products/platform/state-tool/"
 
@@ -425,17 +435,32 @@ const ForumsURL = "https://community.activestate.com/c/state-tool/"
 // GlobalDefaultPrefname is the pref that holds the path to the globally defaulted project
 const GlobalDefaultPrefname = "projects.active.path"
 
+// LastUsedNamespacePrefname is the pref that holds the last used org for commands that use a project
+const LastUsedNamespacePrefname = "last.used.namespace"
+
 // DefaultBranchName is the default branch name used on platform projects
 const DefaultBranchName = "main"
 
 // UnstableConfig is the config key used to determine whether the user has opted in to unstable commands
 const UnstableConfig = "optin.unstable"
 
+// OptinBuildscriptsConfig is the config key used to determine whether the user has opted in to buildscripts
+const OptinBuildscriptsConfig = "optin.buildscripts"
+
 // ReportErrorsConfig is the config key used to determine if we will send rollbar reports
 const ReportErrorsConfig = "report.errors"
 
 // ReportAnalyticsConfig is the config key used to determine if we will send analytics reports
 const ReportAnalyticsConfig = "report.analytics"
+
+// PreferredGlibcVersionConfig is the config key used to determine the preferred glibc version
+const PreferredGlibcVersionConfig = "runtime.preferred.glibc"
+
+// SecurityPromptConfig is the config key used to determine if we will prompt the user for security related actions
+const SecurityPromptConfig = "security.prompt.enabled"
+
+// SecurityPromptLevelConfig is the config key used to determine the level of security prompts
+const SecurityPromptLevelConfig = "security.prompt.level"
 
 // SvcAppName is the name we give our state-svc application
 const SvcAppName = "State Service"
@@ -500,6 +525,9 @@ const PipShim = "pip"
 // AutoUpdateConfigKey is the config key for storing whether or not autoupdates can be performed
 const AutoUpdateConfigKey = "autoupdate"
 
+// PreservePs1ConfigKey is the config key that specifies whether to modify the shell PS1/prompt to show [org/project] info.
+const PreservePs1ConfigKey = "shell.preserve.prompt"
+
 // DefaultAnalyticsPixel is the default url for the analytics pixel
 const DefaultAnalyticsPixel = "https://state-tool.s3.amazonaws.com/pixel"
 
@@ -519,3 +547,6 @@ const PlatformApiPrintRequestsEnvVarName = "ACTIVESTATE_CLI_PLATFORM_API_PRINT_R
 
 // ActiveStateCIEnvVarName is the environment variable set when running in an ActiveState CI environment.
 const ActiveStateCIEnvVarName = "ACTIVESTATE_CI"
+
+// OverrideSandbox is the environment variable to set when overriding the sandbox for integration tests.
+const OverrideSandbox = "ACTIVESTATE_TEST_OVERRIDE_SANDBOX"

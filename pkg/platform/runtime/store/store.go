@@ -7,17 +7,17 @@ import (
 	"path/filepath"
 	"strings"
 
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 )
 
@@ -66,6 +66,10 @@ func (s *Store) buildPlanFile() string {
 
 func (s *Store) buildExpressionFile() string {
 	return filepath.Join(s.storagePath, constants.BuildExpressionStore)
+}
+
+func (s *Store) buildScriptFile() string {
+	return filepath.Join(s.storagePath, constants.BuildScriptStore)
 }
 
 // BuildEngine returns the runtime build engine value stored in the runtime directory
@@ -255,7 +259,12 @@ func (s *Store) InstallPath() string {
 	return s.installPath
 }
 
+var ErrNoBuildPlanFile = errs.New("no build plan file")
+
 func (s *Store) BuildPlanRaw() ([]byte, error) {
+	if !fileutils.FileExists(s.buildPlanFile()) {
+		return nil, ErrNoBuildPlanFile
+	}
 	data, err := fileutils.ReadFile(s.buildPlanFile())
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not read build plan file.")
@@ -325,4 +334,21 @@ func (s *Store) StoreBuildExpression(expr *buildexpression.BuildExpression, comm
 		return errs.Wrap(err, "Could not marshal buildexpression")
 	}
 	return fileutils.WriteFile(s.buildExpressionFile(), data)
+}
+
+var ErrNoBuildScriptFile = errs.New("no buildscript file")
+
+func (s *Store) BuildScript() (*buildscript.Script, error) {
+	if !fileutils.FileExists(s.buildScriptFile()) {
+		return nil, ErrNoBuildScriptFile
+	}
+	bytes, err := fileutils.ReadFile(s.buildScriptFile())
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not read buildscript file")
+	}
+	return buildscript.New(bytes)
+}
+
+func (s *Store) StoreBuildScript(script *buildscript.Script) error {
+	return fileutils.WriteFile(s.buildScriptFile(), []byte(script.String()))
 }

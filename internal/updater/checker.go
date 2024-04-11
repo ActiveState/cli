@@ -2,6 +2,9 @@ package updater
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"net"
+	"net/http"
 	"net/url"
 	"os"
 	"runtime"
@@ -12,14 +15,10 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/httpreq"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
-
-type httpGetter interface {
-	Get(string) ([]byte, int, error)
-}
 
 type Configurable interface {
 	GetString(string) string
@@ -37,7 +36,7 @@ type Checker struct {
 	cfg        Configurable
 	an         analytics.Dispatcher
 	apiInfoURL string
-	httpreq    httpGetter
+	retryhttp  *retryhttp.Client
 	cache      *AvailableUpdate
 	done       chan struct{}
 
@@ -49,10 +48,10 @@ func NewDefaultChecker(cfg Configurable, an analytics.Dispatcher) *Checker {
 	if url, ok := os.LookupEnv("_TEST_UPDATE_INFO_URL"); ok {
 		infoURL = url
 	}
-	return NewChecker(cfg, an, infoURL, httpreq.New())
+	return NewChecker(cfg, an, infoURL, retryhttp.DefaultClient)
 }
 
-func NewChecker(cfg Configurable, an analytics.Dispatcher, infoURL string, httpget httpGetter) *Checker {
+func NewChecker(cfg Configurable, an analytics.Dispatcher, infoURL string, httpget *retryhttp.Client) *Checker {
 	return &Checker{
 		cfg,
 		an,
@@ -94,54 +93,65 @@ func (u *Checker) getUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 	tag := u.cfg.GetString(CfgUpdateTag)
 	infoURL := u.infoURL(tag, desiredVersion, desiredChannel, runtime.GOOS)
 	logging.Debug("Getting update info: %s", infoURL)
+
+	var info *AvailableUpdate
+	var err error
 	var label string
 	var msg string
-	res, code, err := u.httpreq.Get(infoURL)
-	if err != nil {
-		if code == 404 || strings.Contains(string(res), "Could not retrieve update info") {
-			// The above string match can be removed once https://www.pivotaltracker.com/story/show/179426519 is resolved
+	dims := &dimensions.Values{Version: ptr.To(desiredVersion)} // will change to info.Version if possible
+
+	var resp *http.Response
+	if resp, err = u.retryhttp.Get(infoURL); err == nil {
+		var res []byte
+		res, err = ioutil.ReadAll(resp.Body)
+		switch {
+		// If there was an error reading the response.
+		case err != nil:
+			label = anaConst.UpdateLabelFailed
+			msg = anaConst.UpdateErrorFetch
+			err = errs.Wrap(err, "Could not read update info")
+
+		// If the response was a 404 not found, or if the response body indicates failure.
+		// The above string match can be removed once https://www.pivotaltracker.com/story/show/179426519 is resolved
+		case resp.StatusCode == 404 || strings.Contains(string(res), "Could not retrieve update info"):
 			logging.Debug("Update info 404s: %v", errs.JoinMessage(err))
 			label = anaConst.UpdateLabelUnavailable
 			msg = anaConst.UpdateErrorNotFound
-			err = nil
-		} else if code == 403 || code == 503 {
-			// The request could not be satisfied or service is unavailable. This happens when Cloudflare
-			// blocks access, or the service is unavailable in a particular geographic location.
+
+		// The request could not be satisfied or service is unavailable. This happens when Cloudflare
+		// blocks access, or the service is unavailable in a particular geographic location.
+		case resp.StatusCode == 403 || resp.StatusCode == 503:
 			logging.Warning("Update info request blocked or service unavailable: %v", err)
 			label = anaConst.UpdateLabelUnavailable
 			msg = anaConst.UpdateErrorBlocked
-			err = nil
-		} else {
-			label = anaConst.UpdateLabelFailed
-			msg = anaConst.UpdateErrorFetch
-			err = errs.Wrap(err, "Could not fetch update info from %s", infoURL)
+
+		// If all went well.
+		default:
+			if err = json.Unmarshal(res, &info); err == nil {
+				label = anaConst.UpdateLabelAvailable
+				dims.Version = ptr.To(info.Version)
+			} else {
+				label = anaConst.UpdateLabelFailed
+				msg = anaConst.UpdateErrorFetch
+				err = errs.Wrap(err, "Could not unmarshal update info: %s", res)
+			}
 		}
 
-		u.an.EventWithLabel(
-			anaConst.CatUpdates,
-			anaConst.ActUpdateCheck,
-			label,
-			&dimensions.Values{
-				Version: ptr.To(desiredVersion),
-				Error:   ptr.To(msg),
-			},
-		)
-		return nil, err
+	} else { // retryhttp returned err
+		label = anaConst.UpdateLabelFailed
+		msg = anaConst.UpdateErrorFetch
+		err = errs.Wrap(err, "Could not fetch update info from %s", infoURL)
+		if e, ok := err.(net.Error); ok && e.Timeout() {
+			logging.Debug("Silencing network timeout error: %v", err)
+			err = errs.Silence(err)
+		}
 	}
 
-	var info *AvailableUpdate
-	if err := json.Unmarshal(res, &info); err != nil {
-		return nil, errs.Wrap(err, "Could not unmarshal update info: %s", res)
+	if msg != "" {
+		dims.Error = ptr.To(msg)
 	}
 
-	u.an.EventWithLabel(
-		anaConst.CatUpdates,
-		anaConst.ActUpdateCheck,
-		anaConst.UpdateLabelAvailable,
-		&dimensions.Values{
-			Version: ptr.To(info.Version),
-		},
-	)
+	u.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateCheck, label, dims)
 
-	return info, nil
+	return info, err
 }

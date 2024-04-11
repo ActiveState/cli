@@ -52,12 +52,10 @@ func NewSignupWithGithubParamsWithHTTPClient(client *http.Client) *SignupWithGit
 	}
 }
 
-/*
-SignupWithGithubParams contains all the parameters to send to the API endpoint
+/* SignupWithGithubParams contains all the parameters to send to the API endpoint
+   for the signup with github operation.
 
-	for the signup with github operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type SignupWithGithubParams struct {
 

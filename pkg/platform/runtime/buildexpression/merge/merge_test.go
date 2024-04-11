@@ -1,70 +1,50 @@
 package merge
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMergeAdd(t *testing.T) {
-	scriptA, err := buildscript.NewScript([]byte(
-		`let:
-	runtime = solve(
-		platforms = [
-			"12345",
-			"67890"
-		],
-		requirements = [
-			{
-				name = "perl",
-				namespace = "language"
-			},
-			{
-				name = "DateTime",
-				namespace = "language/perl"
-			}
-		]
-	)
+	scriptA, err := buildscript.New([]byte(
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
+	platforms = [
+		"12345",
+		"67890"
+	],
+	requirements = [
+		Req(name = "perl", namespace = "language"),
+		Req(name = "DateTime", namespace = "language/perl")
+	]
+)
 
-in:
-	runtime`))
+main = runtime`))
 	require.NoError(t, err)
-	bytes, err := json.Marshal(scriptA)
-	require.NoError(t, err)
-	exprA, err := buildexpression.New(bytes)
-	require.NoError(t, err)
+	exprA := scriptA.Expr
 
-	scriptB, err := buildscript.NewScript([]byte(
-		`let:
-	runtime = solve(
-		platforms = [
-			"12345",
-			"67890"
-		],
-		requirements = [
-			{
-				name = "perl",
-				namespace = "language"
-			},
-			{
-				name = "JSON",
-				namespace = "language/perl"
-			}
-		]
-	)
+	scriptB, err := buildscript.New([]byte(
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
+	platforms = [
+		"12345",
+		"67890"
+	],
+	requirements = [
+		Req(name = "perl", namespace = "language"),
+		Req(name = "JSON", namespace = "language/perl")
+	]
+)
 
-in:
-	runtime`))
+main = runtime`))
 	require.NoError(t, err)
-	bytes, err = json.Marshal(scriptB)
-	require.NoError(t, err)
-	exprB, err := buildexpression.New(bytes)
-	require.NoError(t, err)
+	exprB := scriptB.Expr
 
 	strategies := &mono_models.MergeStrategies{
 		OverwriteChanges: []*mono_models.CommitChangeEditable{
@@ -77,94 +57,64 @@ in:
 	mergedExpr, err := Merge(exprA, exprB, strategies)
 	require.NoError(t, err)
 
-	mergedScript, err := buildscript.NewScriptFromBuildExpression(mergedExpr)
+	mergedScript, err := buildscript.NewFromCommit(scriptA.AtTime, mergedExpr)
 	require.NoError(t, err)
 
 	assert.Equal(t,
-		`let:
-	runtime = solve(
-		platforms = [
-			"12345",
-			"67890"
-		],
-		requirements = [
-			{
-				name = "perl",
-				namespace = "language"
-			},
-			{
-				name = "JSON",
-				namespace = "language/perl"
-			},
-			{
-				name = "DateTime",
-				namespace = "language/perl"
-			}
-		]
-	)
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
+	platforms = [
+		"12345",
+		"67890"
+	],
+	requirements = [
+		Req(name = "perl", namespace = "language"),
+		Req(name = "JSON", namespace = "language/perl"),
+		Req(name = "DateTime", namespace = "language/perl")
+	]
+)
 
-in:
-	runtime`, mergedScript.String())
+main = runtime`, mergedScript.String())
 }
 
 func TestMergeRemove(t *testing.T) {
-	scriptA, err := buildscript.NewScript([]byte(
-		`let:
-	runtime = solve(
-		platforms = [
-			"12345",
-			"67890"
-		],
-		requirements = [
-			{
-				name = "perl",
-				namespace = "language"
-			},
-			{
-				name = "JSON",
-				namespace = "language/perl"
-			},
-			{
-				name = "DateTime",
-				namespace = "language/perl"
-			}
-		]
-	)
+	scriptA, err := buildscript.New([]byte(
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
+	platforms = [
+		"12345",
+		"67890"
+	],
+	requirements = [
+		Req(name = "perl", namespace = "language"),
+		Req(name = "JSON", namespace = "language/perl"),
+		Req(name = "DateTime", namespace = "language/perl")
+	]
+)
 
-in:
-	runtime`))
+main = runtime`))
 	require.NoError(t, err)
-	bytes, err := json.Marshal(scriptA)
-	require.NoError(t, err)
-	exprA, err := buildexpression.New(bytes)
-	require.NoError(t, err)
+	exprA := scriptA.Expr
 
-	scriptB, err := buildscript.NewScript([]byte(
-		`let:
-	runtime = solve(
-		platforms = [
-			"12345",
-			"67890"
-		],
-		requirements = [
-			{
-				name = "perl",
-				namespace = "language"
-			},
-			{
-				name = "DateTime",
-				namespace = "language/perl"
-			}
-		]
-	)
+	scriptB, err := buildscript.New([]byte(
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
+	platforms = [
+		"12345",
+		"67890"
+	],
+	requirements = [
+		Req(name = "perl", namespace = "language"),
+		Req(name = "DateTime", namespace = "language/perl")
+	]
+)
 
-in:
-	runtime`))
+main = runtime`))
 	require.NoError(t, err)
-	bytes, err = json.Marshal(scriptB)
-	require.NoError(t, err)
-	exprB, err := buildexpression.New(bytes)
-	require.NoError(t, err)
+	exprB := scriptB.Expr
 
 	strategies := &mono_models.MergeStrategies{
 		OverwriteChanges: []*mono_models.CommitChangeEditable{
@@ -177,81 +127,60 @@ in:
 	mergedExpr, err := Merge(exprA, exprB, strategies)
 	require.NoError(t, err)
 
-	mergedScript, err := buildscript.NewScriptFromBuildExpression(mergedExpr)
+	mergedScript, err := buildscript.NewFromCommit(scriptA.AtTime, mergedExpr)
 	require.NoError(t, err)
 
 	assert.Equal(t,
-		`let:
-	runtime = solve(
-		platforms = [
-			"12345",
-			"67890"
-		],
-		requirements = [
-			{
-				name = "perl",
-				namespace = "language"
-			},
-			{
-				name = "DateTime",
-				namespace = "language/perl"
-			}
-		]
-	)
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
+	platforms = [
+		"12345",
+		"67890"
+	],
+	requirements = [
+		Req(name = "perl", namespace = "language"),
+		Req(name = "DateTime", namespace = "language/perl")
+	]
+)
 
-in:
-	runtime`, mergedScript.String())
+main = runtime`, mergedScript.String())
 }
 
 func TestMergeConflict(t *testing.T) {
-	scriptA, err := buildscript.NewScript([]byte(
-		`let:
-	runtime = solve(
-		platforms = [
-			"12345",
-			"67890"
-		],
-		requirements = [
-			{
-				name = "perl",
-				namespace = "language"
-			}
-		]
-	)
+	scriptA, err := buildscript.New([]byte(
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
+	platforms = [
+		"12345",
+		"67890"
+	],
+	requirements = [
+		Req(name = "perl", namespace = "language"),
+	]
+)
 
-in:
-	runtime`))
+main = runtime`))
 	require.NoError(t, err)
-	bytes, err := json.Marshal(scriptA)
-	require.NoError(t, err)
-	exprA, err := buildexpression.New(bytes)
-	require.NoError(t, err)
+	exprA := scriptA.Expr
 
-	scriptB, err := buildscript.NewScript([]byte(
-		`let:
-	runtime = solve(
-		platforms = [
-			"12345"
-		],
-		requirements = [
-			{
-				name = "perl",
-				namespace = "language"
-			},
-			{
-				name = "JSON",
-				namespace = "language/perl"
-			}
-		]
-	)
+	scriptB, err := buildscript.New([]byte(
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
+	platforms = [
+		"12345"
+	],
+	requirements = [
+		Req(name = "perl", namespace = "language"),
+		Req(name = "JSON", namespace = "language/perl")
+	]
+)
 
-in:
-	runtime`))
+main = runtime`))
 	require.NoError(t, err)
-	bytes, err = json.Marshal(scriptB)
-	require.NoError(t, err)
-	exprB, err := buildexpression.New(bytes)
-	require.NoError(t, err)
+	exprB := scriptB.Expr
 
 	assert.False(t, isAutoMergePossible(exprA, exprB)) // platforms do not match
 

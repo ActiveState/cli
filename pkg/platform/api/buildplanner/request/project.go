@@ -1,13 +1,11 @@
 package request
 
-import "github.com/ActiveState/cli/internal/logging"
-
-func BuildPlanByProject(organization, project, commitID string) *buildPlanByProject {
-	logging.Debug("BuildPlanByProject")
+func BuildPlanByProject(organization, project, commitID, target string) *buildPlanByProject {
 	bp := &buildPlanByProject{map[string]interface{}{
 		"organization": organization,
 		"project":      project,
 		"commitID":     commitID,
+		"target":       target,
 	}}
 
 	return bp
@@ -19,7 +17,7 @@ type buildPlanByProject struct {
 
 func (b *buildPlanByProject) Query() string {
 	return `
-query ($commitID: String!, $organization: String!, $project: String!) {
+query ($commitID: String!, $organization: String!, $project: String!, $target: String) {
   project(organization: $organization, project: $project) {
     ... on Project {
       commit(vcsRef: $commitID) {
@@ -27,7 +25,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
           __typename
           expr
           commitId
-          build {
+          build(target: $target) {
             __typename
             ... on BuildCompleted {
               buildLogIds {
@@ -71,6 +69,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                 ... on ArtifactSucceeded {
                   __typename
                   nodeId
+                  displayName
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -82,6 +81,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                 ... on ArtifactUnbuilt {
                   __typename
                   nodeId
+                  displayName
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -90,6 +90,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                 ... on ArtifactStarted {
                   __typename
                   nodeId
+                  displayName
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -98,6 +99,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                 ... on ArtifactTransientlyFailed {
                   __typename
                   nodeId
+                  displayName
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -110,6 +112,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                 ... on ArtifactPermanentlyFailed {
                   __typename
                   nodeId
+                  displayName
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -120,6 +123,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                 ... on ArtifactFailed {
                   __typename
                   nodeId
+                  displayName
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -127,6 +131,17 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                   logURL
                   errors
                 }
+              }
+              resolvedRequirements {
+                requirement {
+                  name
+                  namespace
+                  version_requirements: versionRequirements {
+                   	comparator
+                    version
+                  }
+                }
+                resolvedSource
               }
             }
             ... on Error {
@@ -192,6 +207,6 @@ query ($commitID: String!, $organization: String!, $project: String!) {
 `
 }
 
-func (b *buildPlanByProject) Vars() map[string]interface{} {
-	return b.vars
+func (b *buildPlanByProject) Vars() (map[string]interface{}, error) {
+	return b.vars, nil
 }

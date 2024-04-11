@@ -57,8 +57,7 @@ func NewGetOrderOK() *GetOrderOK {
 	return &GetOrderOK{}
 }
 
-/*
-GetOrderOK describes a response with status code 200, with default header values.
+/* GetOrderOK describes a response with status code 200, with default header values.
 
 Get the solver order for the given commit
 */
@@ -90,8 +89,7 @@ func NewGetOrderForbidden() *GetOrderForbidden {
 	return &GetOrderForbidden{}
 }
 
-/*
-GetOrderForbidden describes a response with status code 403, with default header values.
+/* GetOrderForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -123,8 +121,7 @@ func NewGetOrderNotFound() *GetOrderNotFound {
 	return &GetOrderNotFound{}
 }
 
-/*
-GetOrderNotFound describes a response with status code 404, with default header values.
+/* GetOrderNotFound describes a response with status code 404, with default header values.
 
 order was not found
 */
@@ -156,8 +153,7 @@ func NewGetOrderInternalServerError() *GetOrderInternalServerError {
 	return &GetOrderInternalServerError{}
 }
 
-/*
-GetOrderInternalServerError describes a response with status code 500, with default header values.
+/* GetOrderInternalServerError describes a response with status code 500, with default header values.
 
 error retrieving order
 */

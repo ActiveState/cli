@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -181,7 +182,7 @@ func (suite *ExecIntegrationTestSuite) TestExecWithPath() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("exec", "--path", pythonDir, "which", "python3"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Operating on project ActiveState-CLI/Python-3.9", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectRe(regexp.MustCompile("cache/[0-9A-Fa-f]+/usr/bin/python3").String())
@@ -189,7 +190,7 @@ func (suite *ExecIntegrationTestSuite) TestExecWithPath() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("exec", "echo", "python3", "--path", pythonDir, "--", "--path", "doesNotExist", "--", "extra"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("python3 --path doesNotExist -- extra")
 	cp.ExpectExitCode(0)

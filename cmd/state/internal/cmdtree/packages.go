@@ -43,6 +43,7 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 
 	cmd.SetGroup(PackagesGroup)
 	cmd.SetAliases("pkg", "package")
+	cmd.SetSupportsStructuredOutput()
 
 	return cmd
 }
@@ -57,11 +58,23 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("package_install_title", "Installing Package"),
 		locale.T("package_install_cmd_description"),
 		prime,
-		[]*captain.Flag{},
+		[]*captain.Flag{
+			{
+				Name:        "ts",
+				Description: locale.T("package_flag_ts_description"),
+				Value:       &params.Timestamp,
+			},
+			{
+				Name:        "revision",
+				Shorthand:   "r",
+				Description: locale.T("package_flag_rev_description"),
+				Value:       &params.Revision,
+			},
+		},
 		[]*captain.Argument{
 			{
 				Name:        locale.T("package_arg_nameversion"),
-				Description: locale.T("package_arg_nameversion_description"),
+				Description: locale.T("package_arg_nameversion_wildcard_description"),
 				Value:       &params.Package,
 				Required:    true,
 			},
@@ -69,7 +82,7 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params, model.NamespacePackage)
 		},
-	).SetGroup(PackagesGroup)
+	).SetGroup(PackagesGroup).SetSupportsStructuredOutput()
 }
 
 func newUninstallCommand(prime *primer.Values) *captain.Command {
@@ -87,14 +100,14 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        locale.T("package_arg_name"),
 				Description: locale.T("package_arg_name_description"),
-				Value:       &params.Name,
+				Value:       &params.Package,
 				Required:    true,
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params, model.NamespacePackage)
 		},
-	).SetGroup(PackagesGroup)
+	).SetGroup(PackagesGroup).SetSupportsStructuredOutput()
 }
 
 func newImportCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
@@ -120,7 +133,7 @@ func newImportCommand(prime *primer.Values, globals *globalOptions) *captain.Com
 			params.NonInteractive = globals.NonInteractive
 			return runner.Run(params)
 		},
-	).SetGroup(PackagesGroup)
+	).SetGroup(PackagesGroup).SetSupportsStructuredOutput()
 }
 
 func newSearchCommand(prime *primer.Values) *captain.Command {
@@ -130,7 +143,7 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"search",
-		locale.Tl("package_search_title", "Searching Packages"),
+		"",
 		locale.T("package_search_cmd_description"),
 		prime,
 		[]*captain.Flag{
@@ -144,19 +157,24 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 				Description: locale.T("package_search_flag_exact-term_description"),
 				Value:       &params.ExactTerm,
 			},
+			{
+				Name:        "ts",
+				Description: locale.T("package_flag_ts_description"),
+				Value:       &params.Timestamp,
+			},
 		},
 		[]*captain.Argument{
 			{
 				Name:        locale.T("package_arg_name"),
 				Description: locale.T("package_arg_name_description"),
-				Value:       &params.Name,
+				Value:       &params.Ingredient,
 				Required:    true,
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params, model.NamespacePackage)
 		},
-	).SetGroup(PackagesGroup).SetUnstable(true)
+	).SetGroup(PackagesGroup).SetSupportsStructuredOutput().SetUnstable(true)
 }
 
 func newInfoCommand(prime *primer.Values) *captain.Command {
@@ -166,7 +184,7 @@ func newInfoCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"info",
-		locale.Tl("package_info_title", "Displaying Package Information"),
+		"",
 		locale.T("package_info_cmd_description"),
 		prime,
 		[]*captain.Flag{
@@ -174,6 +192,11 @@ func newInfoCommand(prime *primer.Values) *captain.Command {
 				Name:        "language",
 				Description: locale.T("package_info_flag_language_description"),
 				Value:       &params.Language,
+			},
+			{
+				Name:        "ts",
+				Description: locale.T("package_flag_ts_description"),
+				Value:       &params.Timestamp,
 			},
 		},
 		[]*captain.Argument{
@@ -187,5 +210,5 @@ func newInfoCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params, model.NamespacePackage)
 		},
-	).SetGroup(PackagesGroup)
+	).SetGroup(PackagesGroup).SetSupportsStructuredOutput()
 }

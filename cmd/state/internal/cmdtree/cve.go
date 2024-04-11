@@ -10,47 +10,55 @@ import (
 
 func newCveCommand(prime *primer.Values) *captain.Command {
 	runner := cve.NewCve(prime)
+	params := cve.Params{Namespace: &project.Namespaced{}}
 
 	cmd := captain.NewCommand(
 		"security",
-		locale.Tl("cve_title", "Vulnerability Summary"),
-		locale.Tl("cve_description", "Show a summary of project vulnerabilities"),
-		prime,
-		[]*captain.Flag{},
-		[]*captain.Argument{},
-		func(_ *captain.Command, _ []string) error {
-			return runner.Run()
-		},
-	)
-	cmd.SetGroup(PlatformGroup)
-	cmd.SetAliases("cve")
-	cmd.SetUnstable(true)
-	return cmd
-}
-
-func newReportCommand(prime *primer.Values) *captain.Command {
-	report := cve.NewReport(prime)
-	params := cve.ReportParams{
-		Namespace: &project.Namespaced{},
-	}
-
-	return captain.NewCommand(
-		"report",
-		locale.Tl("cve_report_title", "Vulnerability Report"),
-		locale.Tl("cve_report_cmd_description", "Show a detailed report of project vulnerabilities"),
+		locale.T("cve_title"),
+		locale.T("cve_description"),
 		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
-				Name:        locale.Tl("cve_report_namespace_arg", "org/project"),
-				Description: locale.Tl("cve_report_namespace_arg_description", "The project for which the report is created"),
+				Name:        locale.T("cve_namespace_arg"),
+				Description: locale.T("cve_namespace_arg_description"),
 				Value:       params.Namespace,
 			},
+		}, func(_ *captain.Command, _ []string) error {
+			return runner.Run(&params)
 		},
-		func(_ *captain.Command, _ []string) error {
+	)
+	cmd.SetGroup(PlatformGroup)
+	cmd.SetAliases("cve")
+	cmd.SetSupportsStructuredOutput()
+	cmd.SetUnstable(true)
+	return cmd
+}
+
+// newReportCommand is a hidden, legacy alias of the parent command
+func newReportCommand(prime *primer.Values) *captain.Command {
+	report := cve.NewCve(prime)
+	params := cve.Params{Namespace: &project.Namespaced{}}
+
+	cmd := captain.NewCommand(
+		"report",
+		locale.T("cve_title"),
+		locale.T("cve_description"),
+		prime,
+		[]*captain.Flag{},
+		[]*captain.Argument{
+			{
+				Name:        locale.T("cve_namespace_arg"),
+				Description: locale.T("cve_namespace_arg_description"),
+				Value:       params.Namespace,
+			},
+		}, func(_ *captain.Command, _ []string) error {
 			return report.Run(&params)
 		},
 	)
+	cmd.SetSupportsStructuredOutput()
+	cmd.SetHidden(true)
+	return cmd
 }
 
 func newOpenCommand(prime *primer.Values) *captain.Command {
@@ -73,5 +81,5 @@ func newOpenCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return open.Run(params)
 		},
-	).SetDoesNotSupportStructuredOutput()
+	)
 }

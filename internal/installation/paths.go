@@ -8,8 +8,8 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 )
 
 type InstallMarkerMeta struct {
-	Branch  string `json:"branch"`
+	Channel  string `json:"channel"`
 	Version string `json:"version"`
 }
 
@@ -33,18 +33,18 @@ func IsStateExeDoesNotExistError(err error) bool {
 }
 
 func DefaultInstallPath() (string, error) {
-	return InstallPathForBranch(constants.BranchName)
+	return InstallPathForChannel(constants.ChannelName)
 }
 
-// InstallPathForBranch gets the installation path for the given branch.
-func InstallPathForBranch(branch string) (string, error) {
+// InstallPathForBranch gets the installation path for the given channel.
+func InstallPathForChannel(channel string) (string, error) {
 	if v := os.Getenv(constants.InstallPathOverrideEnvVarName); v != "" {
 		return filepath.Clean(v), nil
 	}
 
-	installPath, err := installPathForBranch(branch)
+	installPath, err := installPathForChannel(channel)
 	if err != nil {
-		return "", errs.Wrap(err, "Unable to determine install path for branch")
+		return "", errs.Wrap(err, "Unable to determine install path for channel")
 	}
 
 	return installPath, nil
@@ -81,7 +81,7 @@ func InstallPathFromExecPath() (string, error) {
 }
 
 func InstallPathFromReference(dir string) (string, error) {
-	cmdName := constants.StateCmd + exeutils.Extension
+	cmdName := constants.StateCmd + osutils.ExeExtension
 	installPath := filepath.Dir(dir)
 	binPath, err := BinPathFromInstallPath(installPath)
 	if err != nil {

@@ -76,7 +76,7 @@ func legacyDimensionMap(d *dimensions.Values) map[string]string {
 		// Commented out idx 1 so it's clear why we start with 2. We used to log the hostname while dogfooding internally.
 		// "1": "hostname (deprecated)"
 		"2": ptr.From(d.Version, ""),
-		"3": ptr.From(d.BranchName, ""),
+		"3": ptr.From(d.ChannelName, ""),
 		"4": ptr.From(d.UserID, ""),
 		"5": ptr.From(d.OutputType, ""),
 		"6": ptr.From(d.OSName, ""),

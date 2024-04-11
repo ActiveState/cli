@@ -19,7 +19,7 @@ func newCleanCommand(prime *primer.Values) *captain.Command {
 			prime.Output().Print(ccmd.Help())
 			return nil
 		},
-	).SetGroup(UtilsGroup)
+	).SetGroup(UtilsGroup).SetSupportsStructuredOutput()
 }
 
 func newCleanUninstallCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
@@ -62,7 +62,7 @@ func newCleanUninstallCommand(prime *primer.Values, globals *globalOptions) *cap
 			params.NonInteractive = globals.NonInteractive // distinct from --force
 			return runner.Run(&params)
 		},
-	).SetDoesNotSupportStructuredOutput()
+	)
 }
 
 func newCleanCacheCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
@@ -86,7 +86,7 @@ func newCleanCacheCommand(prime *primer.Values, globals *globalOptions) *captain
 			params.Force = globals.NonInteractive
 			return runner.Run(&params)
 		},
-	).SetDoesNotSupportStructuredOutput()
+	)
 }
 
 func newCleanConfigCommand(prime *primer.Values) *captain.Command {
@@ -109,5 +109,5 @@ func newCleanConfigCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, _ []string) error {
 			return runner.Run(&params)
 		},
-	).SetDoesNotSupportStructuredOutput()
+	)
 }

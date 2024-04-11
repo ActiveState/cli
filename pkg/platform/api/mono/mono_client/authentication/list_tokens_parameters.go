@@ -52,12 +52,10 @@ func NewListTokensParamsWithHTTPClient(client *http.Client) *ListTokensParams {
 	}
 }
 
-/*
-ListTokensParams contains all the parameters to send to the API endpoint
+/* ListTokensParams contains all the parameters to send to the API endpoint
+   for the list tokens operation.
 
-	for the list tokens operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type ListTokensParams struct {
 	timeout    time.Duration

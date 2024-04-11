@@ -26,7 +26,7 @@ func newRevertCommand(prime *primer.Values, globals *globalOptions) *captain.Com
 		[]*captain.Argument{
 			{
 				Name:        "commit-id",
-				Description: locale.Tl("revert_arg_commit_id", "The commit ID to revert changes from"),
+				Description: locale.Tl("revert_arg_commit_id", "The commit ID to revert changes from, or HEAD for the latest commit"),
 				Required:    true,
 				Value:       &params.CommitID,
 			},
@@ -35,5 +35,5 @@ func newRevertCommand(prime *primer.Values, globals *globalOptions) *captain.Com
 			params.Force = globals.NonInteractive
 			return runner.Run(params)
 		},
-	).SetGroup(VCSGroup)
+	).SetGroup(VCSGroup).SetSupportsStructuredOutput()
 }

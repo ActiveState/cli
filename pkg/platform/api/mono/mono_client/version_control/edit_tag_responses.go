@@ -69,8 +69,7 @@ func NewEditTagOK() *EditTagOK {
 	return &EditTagOK{}
 }
 
-/*
-EditTagOK describes a response with status code 200, with default header values.
+/* EditTagOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -102,8 +101,7 @@ func NewEditTagBadRequest() *EditTagBadRequest {
 	return &EditTagBadRequest{}
 }
 
-/*
-EditTagBadRequest describes a response with status code 400, with default header values.
+/* EditTagBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -135,8 +133,7 @@ func NewEditTagForbidden() *EditTagForbidden {
 	return &EditTagForbidden{}
 }
 
-/*
-EditTagForbidden describes a response with status code 403, with default header values.
+/* EditTagForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -168,8 +165,7 @@ func NewEditTagNotFound() *EditTagNotFound {
 	return &EditTagNotFound{}
 }
 
-/*
-EditTagNotFound describes a response with status code 404, with default header values.
+/* EditTagNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -201,8 +197,7 @@ func NewEditTagConflict() *EditTagConflict {
 	return &EditTagConflict{}
 }
 
-/*
-EditTagConflict describes a response with status code 409, with default header values.
+/* EditTagConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -234,8 +229,7 @@ func NewEditTagInternalServerError() *EditTagInternalServerError {
 	return &EditTagInternalServerError{}
 }
 
-/*
-EditTagInternalServerError describes a response with status code 500, with default header values.
+/* EditTagInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

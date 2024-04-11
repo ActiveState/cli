@@ -12,8 +12,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -55,34 +53,31 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	ts.LoginAsPersistentUser()
 	pname := strutils.UUID()
 	namespace := fmt.Sprintf("%s/%s", suite.username, pname)
-	wd := filepath.Join(ts.Dirs.Work, namespace)
 	cp := ts.Spawn(
 		"init",
 		"--language",
 		suite.languageFull,
 		namespace,
-		wd,
+		".",
 	)
 	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(suite.username, pname.String())
 
-	pjfilepath := filepath.Join(ts.Dirs.Work, namespace, constants.ConfigFileName)
+	pjfilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 	suite.Require().FileExists(pjfilepath)
 
 	// Check that languages were reset
-	pjfile, err := projectfile.Parse(pjfilepath)
+	pj, err := project.FromPath(pjfilepath)
 	suite.Require().NoError(err)
-	commitID, err := commitmediator.Get(pjfile)
-	suite.Require().NoError(err)
-	suite.Require().NotEmpty(commitID.String(), "commitID was not set after running push for project creation")
-	suite.Require().NotEmpty(pjfile.BranchName(), "branch was not set after running push for project creation")
+	suite.Require().NotEmpty(ts.CommitID(), "commitID was not set after running push for project creation")
+	suite.Require().NotEmpty(pj.BranchName(), "branch was not set after running push for project creation")
 
 	// ensure that we are logged out
 	cp = ts.Spawn(tagsuite.Auth, "logout")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(e2e.OptArgs("install", suite.extraPackage), e2e.OptWD(wd))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("install", suite.extraPackage))
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|being built", termtest.OptExpectTimeout(60*time.Second)) // while cold storage is off
@@ -92,15 +87,15 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 		cp.ExpectExitCode(0)
 	}
 
-	pjfile, err = projectfile.Parse(pjfilepath)
+	pj, err = project.FromPath(pjfilepath)
 	suite.Require().NoError(err)
-	if !strings.Contains(pjfile.Project, fmt.Sprintf("/%s?", namespace)) {
-		suite.FailNow("project field should include project (not headless): " + pjfile.Project)
+	if !strings.Contains(pj.Source().Project, fmt.Sprintf("/%s?", namespace)) {
+		suite.FailNow("project field should include project (not headless): " + pj.Source().Project)
 	}
 
 	ts.LoginAsPersistentUser()
 
-	cp = ts.SpawnWithOpts(e2e.OptArgs("push", namespace), e2e.OptWD(wd))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("push", namespace))
 	cp.Expect("Pushing to project")
 	cp.ExpectExitCode(0)
 }
@@ -114,7 +109,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	suite.OnlyRunForTags(tagsuite.Push)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	username, _ := ts.CreateNewUser()
+	user := ts.CreateNewUser()
 	pname := strutils.UUID()
 
 	cp := ts.SpawnWithOpts(e2e.OptArgs("activate", suite.baseProject, "--path", ts.Dirs.Work))
@@ -157,12 +152,12 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 
 	pjfile, err = projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	suite.Require().Contains(pjfile.Project, username)
+	suite.Require().Contains(pjfile.Project, user.Username)
 	suite.Require().Contains(pjfile.Project, pname.String())
 }
 
 func (suite *PushIntegrationTestSuite) TestCarlisle() {
-	suite.OnlyRunForTags(tagsuite.Push, tagsuite.Carlisle, tagsuite.Headless)
+	suite.OnlyRunForTags(tagsuite.Push, tagsuite.Carlisle)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	pname := strutils.UUID()
@@ -173,7 +168,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 		e2e.OptArgs(
 			"activate", suite.baseProject,
 			"--path", wd),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	// The activestate.yaml on Windows runs custom activation to set shortcuts and file associations.
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
@@ -188,7 +183,8 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp = ts.SpawnWithOpts(e2e.OptArgs(
 		"install", suite.extraPackage),
 		e2e.OptWD(wd),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|being built", e2e.RuntimeSourcingTimeoutOpt) // while cold storage is off
@@ -222,6 +218,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoProject() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
 	cp.Expect("No project found")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
@@ -239,6 +236,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoAuth() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
 	cp.Expect("you need to be authenticated")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
@@ -258,6 +256,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoChanges() {
 	cp = ts.SpawnWithOpts(e2e.OptArgs("push"))
 	cp.Expect("no local changes to push")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
@@ -278,6 +277,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NameInUse() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("push", "-n", "ActiveState-CLI/push-error-test"))
 	cp.Expect("already in use")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
@@ -303,6 +303,7 @@ func (suite *PushIntegrationTestSuite) TestPush_Aborted() {
 	cp.SendLine("n")
 	cp.Expect("Project creation aborted by user", termtest.OptExpectTimeout(5*time.Second))
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
@@ -323,6 +324,7 @@ func (suite *PushIntegrationTestSuite) TestPush_InvalidHistory() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("push", "ActiveState-CLI/push-error-test"))
 	cp.Expect("commit history does not match")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
@@ -342,6 +344,7 @@ func (suite *PushIntegrationTestSuite) TestPush_PullNeeded() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
 	cp.Expect("changes available that need to be merged")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
@@ -350,27 +353,18 @@ func (suite *PushIntegrationTestSuite) TestPush_PullNeeded() {
 
 func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
 	suite.OnlyRunForTags(tagsuite.Push)
-	projectLine := "project: https://platform.activestate.com/ActiveState-CLI/cli?branch=main"
 	unPushedCommit := "882ae76e-fbb7-4989-acc9-9a8b87d49388"
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	wd := filepath.Join(ts.Dirs.Work, "cli")
-	pjfilepath := filepath.Join(ts.Dirs.Work, "cli", constants.ConfigFileName)
-	suite.Require().NoError(fileutils.WriteFile(pjfilepath, []byte(projectLine)))
-	// Remove the following lines in DX-2307.
-	pjfile, err := projectfile.Parse(pjfilepath)
-	suite.Require().NoError(err)
-	suite.Require().NoError(pjfile.LegacySetCommit(unPushedCommit))
-	// Re-enable the following lines in DX-2307.
-	//commitIdFile := filepath.Join(ts.Dirs.Work, "cli", constants.ProjectConfigDirName, constants.CommitIdFileName)
-	//suite.Require().NoError(fileutils.WriteFile(commitIdFile, []byte(unPushedCommit)))
+	ts.PrepareProject("ActiveState-CLI/cli", unPushedCommit)
 
 	ts.LoginAsPersistentUser()
-	cp := ts.SpawnWithOpts(e2e.OptArgs("push"), e2e.OptWD(wd))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
 	cp.Expect("Your project has new changes available")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func TestPushIntegrationTestSuite(t *testing.T) {

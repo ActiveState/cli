@@ -6,10 +6,9 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -28,10 +27,10 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_Branch() {
 	ts.PrepareProject("ActiveState-CLI/Branches", "b5b327f8-468e-4999-a23e-8bee886e6b6d")
 	pjfilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 
-	pjfile, err := projectfile.Parse(pjfilepath)
+	pj, err := project.FromPath(pjfilepath)
 	suite.Require().NoError(err)
-	suite.Require().Equal("main", pjfile.BranchName(), "branch was not set to 'main' after pull")
-	mainBranchCommitID, err := commitmediator.Get(pjfile)
+	suite.Require().Equal("main", pj.BranchName(), "branch was not set to 'main' after pull")
+	mainBranchCommitID := ts.CommitID()
 	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(e2e.OptArgs("switch", "secondbranch"))
@@ -43,12 +42,11 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_Branch() {
 	}
 
 	// Check that branch and commitID were updated
-	pjfile, err = projectfile.Parse(pjfilepath)
+	pj, err = project.FromPath(pjfilepath)
 	suite.Require().NoError(err)
-	commitID, err := commitmediator.Get(pjfile)
 	suite.Require().NoError(err)
-	suite.Require().NotEqual(mainBranchCommitID, commitID, "commitID was not updated after switching branches")
-	suite.Require().Equal("secondbranch", pjfile.BranchName(), "branch was not updated after switching branches")
+	suite.NotEqual(mainBranchCommitID, ts.CommitID(), "commitID was not updated after switching branches", pj.Dir())
+	suite.Equal("secondbranch", pj.BranchName(), "branch was not updated after switching branches")
 }
 
 func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID() {
@@ -62,11 +60,10 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID() {
 	ts.PrepareProject("ActiveState-CLI/History", "b5b327f8-468e-4999-a23e-8bee886e6b6d")
 	pjfilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 
-	pjfile, err := projectfile.Parse(pjfilepath)
+	pj, err := project.FromPath(pjfilepath)
 	suite.Require().NoError(err)
-	suite.Require().Equal("main", pjfile.BranchName(), "branch was not set to 'main' after pull")
-	originalCommitID, err := commitmediator.Get(pjfile)
-	suite.Require().NoError(err)
+	suite.Require().Equal("main", pj.BranchName(), "branch was not set to 'main' after pull")
+	originalCommitID := ts.CommitID()
 
 	cp := ts.SpawnWithOpts(e2e.OptArgs("switch", "efce7c7a-c61a-4b04-bb00-f8e7edfd247f"))
 	cp.Expect("Successfully switched to commit:")
@@ -75,10 +72,9 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID() {
 	}
 
 	// Check that branch and commitID were updated
-	pjfile, err = projectfile.Parse(pjfilepath)
+	pj, err = project.FromPath(pjfilepath)
 	suite.Require().NoError(err)
-	commitID, err := commitmediator.Get(pjfile)
-	suite.Require().NotEqual(originalCommitID, commitID, "commitID was not updated after switching branches")
+	suite.Require().NotEqual(originalCommitID, ts.CommitID(), "commitID was not updated after switching branches")
 }
 
 func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID_NotInHistory() {
@@ -92,24 +88,22 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID_NotInHistory() {
 	ts.PrepareProject("ActiveState-CLI/History", "b5b327f8-468e-4999-a23e-8bee886e6b6d")
 	pjfilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 
-	pjfile, err := projectfile.Parse(pjfilepath)
+	pj, err := project.FromPath(pjfilepath)
 	suite.Require().NoError(err)
-	suite.Require().Equal("main", pjfile.BranchName(), "branch was not set to 'main' after pull")
-	originalCommitID, err := commitmediator.Get(pjfile)
-	suite.Require().NoError(err)
+	suite.Require().Equal("main", pj.BranchName(), "branch was not set to 'main' after pull")
+	originalCommitID := ts.CommitID()
 
 	cp := ts.SpawnWithOpts(e2e.OptArgs("switch", "76dff77a-66b9-43e3-90be-dc75917dd661"))
 	cp.Expect("Commit does not belong")
 	if runtime.GOOS != "windows" {
 		cp.ExpectExitCode(1)
+		ts.IgnoreLogErrors()
 	}
 
 	// Check that branch and commitID were not updated
-	pjfile, err = projectfile.Parse(pjfilepath)
+	pj, err = project.FromPath(pjfilepath)
 	suite.Require().NoError(err)
-	commitID, err := commitmediator.Get(pjfile)
-	suite.Require().NoError(err)
-	suite.Equal(originalCommitID, commitID, "commitID was updated after switching branches")
+	suite.Equal(originalCommitID, ts.CommitID(), "commitID was updated after switching branches")
 }
 
 func (suite *SwitchIntegrationTestSuite) TestJSON() {

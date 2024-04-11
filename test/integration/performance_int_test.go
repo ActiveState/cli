@@ -12,8 +12,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 
@@ -36,7 +37,7 @@ func (suite *PerformanceIntegrationTestSuite) TestVersionPerformance() {
 	defer ts.Close()
 
 	// Start svc first, as we don't want to measure svc startup time which would only happen the very first invocation
-	stdout, stderr, err := exeutils.ExecSimple(ts.SvcExe, []string{"start"}, []string{})
+	stdout, stderr, err := osutils.ExecSimple(ts.SvcExe, []string{"start"}, []string{})
 	suite.Require().NoError(err, fmt.Sprintf("Full error:\n%v\nstdout:\n%s\nstderr:\n%s", errs.JoinMessage(err), stdout, stderr))
 
 	performanceTest([]string{"--version"}, "", StateVersionTotalSamples, StateVersionMaxTime, false, suite.Suite, ts)
@@ -54,7 +55,7 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 	for x := 0; x < samples+1; x++ {
 		opts := []e2e.SpawnOptSetter{
 			e2e.OptArgs(commands...),
-			e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_UPDATES=true", "ACTIVESTATE_PROFILE=true"),
+			e2e.OptAppendEnv(constants.DisableUpdates+"=true", constants.ProfileEnvVarName+"=true"),
 		}
 		termtestLogs := &bytes.Buffer{}
 		if verbose {

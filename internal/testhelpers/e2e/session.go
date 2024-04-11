@@ -3,7 +3,6 @@ package e2e
 import (
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,6 +13,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
@@ -25,7 +25,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/logging"
@@ -43,7 +42,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile" // remove in DX-2307
 )
 
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
@@ -57,12 +55,13 @@ type Session struct {
 	retainDirs      bool
 	createdProjects []*project.Namespaced
 	// users created during session
-	users       []string
-	t           *testing.T
-	Exe         string
-	SvcExe      string
-	ExecutorExe string
-	spawned     []*SpawnedCmd
+	users           []string
+	T               *testing.T
+	Exe             string
+	SvcExe          string
+	ExecutorExe     string
+	spawned         []*SpawnedCmd
+	ignoreLogErrors bool
 }
 
 var (
@@ -70,9 +69,8 @@ var (
 	PersistentPassword string
 	PersistentToken    string
 
-	defaultTimeout            = 40 * time.Second
-	RuntimeSourcingTimeout    = 3 * time.Minute
-	RuntimeSourcingTimeoutOpt = termtest.OptExpectTimeout(3 * time.Minute)
+	defaultTimeout         = 40 * time.Second
+	RuntimeSourcingTimeout = 3 * time.Minute
 )
 
 func init() {
@@ -82,21 +80,21 @@ func init() {
 
 	// Get username / password from `state secrets` so we can run tests without needing special env setup
 	if PersistentUsername == "" {
-		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_USERNAME"}, []string{})
+		out, stderr, err := osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_USERNAME"}, []string{})
 		if err != nil {
 			fmt.Printf("WARNING!!! Could not retrieve username via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
 		PersistentUsername = strings.TrimSpace(out)
 	}
 	if PersistentPassword == "" {
-		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_PASSWORD"}, []string{})
+		out, stderr, err := osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_PASSWORD"}, []string{})
 		if err != nil {
 			fmt.Printf("WARNING!!! Could not retrieve password via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
 		PersistentPassword = strings.TrimSpace(out)
 	}
 	if PersistentToken == "" {
-		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_TOKEN"}, []string{})
+		out, stderr, err := osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_TOKEN"}, []string{})
 		if err != nil {
 			fmt.Printf("WARNING!!! Could not retrieve token via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
@@ -118,24 +116,24 @@ func (s *Session) CopyExeToDir(from, to string) string {
 	var err error
 	to, err = filepath.Abs(filepath.Join(to, filepath.Base(from)))
 	if err != nil {
-		s.t.Fatal(err)
+		s.T.Fatal(err)
 	}
 	if fileutils.TargetExists(to) {
 		return to
 	}
 
 	err = fileutils.CopyFile(from, to)
-	require.NoError(s.t, err, "Could not copy %s to %s", from, to)
+	require.NoError(s.T, err, "Could not copy %s to %s", from, to)
 
 	// Ensure modTime is the same as source exe
 	stat, err := os.Stat(from)
-	require.NoError(s.t, err)
+	require.NoError(s.T, err)
 	t := stat.ModTime()
-	require.NoError(s.t, os.Chtimes(to, t, t))
+	require.NoError(s.T, os.Chtimes(to, t, t))
 
 	permissions, _ := permbits.Stat(to)
 	permissions.SetUserExecute(true)
-	require.NoError(s.t, permbits.Chmod(to, permissions))
+	require.NoError(s.T, permbits.Chmod(to, permissions))
 	return to
 }
 
@@ -148,9 +146,9 @@ func executablePaths(t *testing.T) (string, string, string) {
 	root := environment.GetRootPathUnsafe()
 	buildDir := fileutils.Join(root, "build")
 
-	stateExec := filepath.Join(buildDir, constants.StateCmd+osutils.ExeExt)
-	svcExec := filepath.Join(buildDir, constants.StateSvcCmd+osutils.ExeExt)
-	executorExec := filepath.Join(buildDir, constants.StateExecutorCmd+osutils.ExeExt)
+	stateExec := filepath.Join(buildDir, constants.StateCmd+osutils.ExeExtension)
+	svcExec := filepath.Join(buildDir, constants.StateSvcCmd+osutils.ExeExtension)
+	executorExec := filepath.Join(buildDir, constants.StateExecutorCmd+osutils.ExeExtension)
 
 	if !fileutils.FileExists(stateExec) {
 		t.Fatal("E2E tests require a State Tool binary. Run `state run build`.")
@@ -172,59 +170,9 @@ func New(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
 func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session {
 	dirs, err := NewDirs("")
 	require.NoError(t, err)
-	var env []string
-	env = append(env, os.Environ()...)
-	env = append(env, []string{
-		constants.ConfigEnvVarName + "=" + dirs.Config,
-		constants.CacheEnvVarName + "=" + dirs.Cache,
-		constants.DisableRuntime + "=true",
-		constants.ProjectEnvVarName + "=",
-		constants.E2ETestEnvVarName + "=true",
-		constants.DisableUpdates + "=true",
-		constants.DisableProjectMigrationPrompt + "=true",
-		constants.OptinUnstableEnvVarName + "=true",
-		constants.ServiceSockDir + "=" + dirs.SockRoot,
-		constants.HomeEnvVarName + "=" + dirs.HomeDir,
-		"NO_COLOR=true",
-	}...)
+	env := sandboxedTestEnvironment(t, dirs, updatePath, extraEnv...)
 
-	if updatePath {
-		// add bin path
-		// Remove release state tool installation from PATH in tests
-		// This is a workaround as our test sessions are not compeltely
-		// sandboxed. This should be addressed in: https://activestatef.atlassian.net/browse/DX-2285
-		oldPath, _ := os.LookupEnv("PATH")
-		installPath, err := installation.InstallPathForBranch("release")
-		require.NoError(t, err)
-
-		binPath := filepath.Join(installPath, "bin")
-		oldPath = strings.Replace(oldPath, binPath+string(os.PathListSeparator), "", -1)
-		newPath := fmt.Sprintf(
-			"PATH=%s%s%s",
-			dirs.Bin, string(os.PathListSeparator), oldPath,
-		)
-		env = append(env, newPath)
-		t.Setenv("PATH", newPath)
-
-		cfg, err := config.New()
-		require.NoError(t, err)
-
-		// In order to ensure that the release state tool does not appear on the PATH
-		// when a new subshell is started we remove the installation entries from the
-		// rc file. This is added back later in the session's Close method.
-		// Again, this is a workaround to be addressed in: https://activestatef.atlassian.net/browse/DX-2285
-		if runtime.GOOS != "windows" {
-			s := bash.SubShell{}
-			err = s.CleanUserEnv(cfg, sscommon.InstallID, false)
-			require.NoError(t, err)
-		}
-		t.Setenv(constants.HomeEnvVarName, dirs.HomeDir)
-	}
-
-	// add session environment variables
-	env = append(env, extraEnv...)
-
-	session := &Session{Dirs: dirs, Env: env, retainDirs: retainDirs, t: t}
+	session := &Session{Dirs: dirs, Env: env, retainDirs: retainDirs, T: t}
 
 	// Mock installation directory
 	exe, svcExe, execExe := executablePaths(t)
@@ -232,16 +180,15 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	session.SvcExe = session.copyExeToBinDir(svcExe)
 	session.ExecutorExe = session.copyExeToBinDir(execExe)
 
-	// Set up environment for test runs. This is separate
-	// from the environment for the session itself.
-	// Setting environment variables here allows helper
-	// functions access to them.
-	// This is a workaround as our test sessions are not compeltely
-	// sandboxed. This should be addressed in: https://activestatef.atlassian.net/browse/DX-2285
-	t.Setenv(constants.HomeEnvVarName, dirs.HomeDir)
-
 	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
-	require.NoError(session.t, err)
+	require.NoError(session.T, err)
+
+	cfg, err := config.New()
+	require.NoError(session.T, err)
+
+	if err := cfg.Set(constants.SecurityPromptConfig, false); err != nil {
+		require.NoError(session.T, err)
+	}
 
 	return session
 }
@@ -251,7 +198,7 @@ func NewNoPathUpdate(t *testing.T, retainDirs bool, extraEnv ...string) *Session
 }
 
 func (s *Session) SetT(t *testing.T) {
-	s.t = t
+	s.T = t
 }
 
 func (s *Session) ClearCache() error {
@@ -291,7 +238,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 
 	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
 		termtest.OptErrorHandler(func(tt *termtest.TermTest, err error) error {
-			s.t.Fatal(s.DebugMessage(errs.JoinMessage(err)))
+			s.T.Fatal(s.DebugMessage(errs.JoinMessage(err)))
 			return err
 		}),
 		termtest.OptDefaultTimeout(defaultTimeout),
@@ -353,13 +300,12 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 	cmd := exec.Command(shell, args...)
 
 	cmd.Env = spawnOpts.Env
-
 	if spawnOpts.Dir != "" {
 		cmd.Dir = spawnOpts.Dir
 	}
 
 	tt, err := termtest.New(cmd, spawnOpts.TermtestOpts...)
-	require.NoError(s.t, err)
+	require.NoError(s.T, err)
 
 	spawn := &SpawnedCmd{tt, spawnOpts}
 
@@ -377,15 +323,22 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 // PrepareActiveStateYAML creates an activestate.yaml in the session's work directory from the
 // given YAML contents.
 func (s *Session) PrepareActiveStateYAML(contents string) {
-	require.NoError(s.t, fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.ConfigFileName), []byte(contents)))
+	require.NoError(s.T, fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.ConfigFileName), []byte(contents)))
 }
 
 func (s *Session) PrepareCommitIdFile(commitID string) {
-	// Replace the contents of this function with the line below in DX-2307.
-	//require.NoError(s.t, fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.ProjectConfigDirName, constants.CommitIdFileName), []byte(commitID)))
 	pjfile, err := projectfile.Parse(filepath.Join(s.Dirs.Work, constants.ConfigFileName))
-	require.NoError(s.t, err)
-	require.NoError(s.t, pjfile.LegacySetCommit(commitID))
+	require.NoError(s.T, err)
+	require.NoError(s.T, pjfile.SetLegacyCommit(commitID))
+}
+
+// CommitID is used to grab the current commit ID for the project in our working directory.
+// For integration tests you should use this function instead of localcommit.Get() and pjfile.LegacyCommitID() as it
+// is guaranteed to give a fresh result from disk, whereas the ones above use caching which tests don't like.
+func (s *Session) CommitID() string {
+	pjfile, err := projectfile.Parse(filepath.Join(s.Dirs.Work, constants.ConfigFileName))
+	require.NoError(s.T, err)
+	return pjfile.LegacyCommitID()
 }
 
 // PrepareProject creates a very simple activestate.yaml file for the given org/project and, if a
@@ -404,12 +357,12 @@ func (s *Session) PrepareFile(path, contents string) {
 	contents = strings.TrimSpace(contents)
 
 	err := os.MkdirAll(filepath.Dir(path), 0770)
-	require.NoError(s.t, err, errMsg)
+	require.NoError(s.T, err, errMsg)
 
 	bs := append([]byte(contents), '\n')
 
-	err = ioutil.WriteFile(path, bs, 0660)
-	require.NoError(s.t, err, errMsg)
+	err = os.WriteFile(path, bs, 0660)
+	require.NoError(s.T, err, errMsg)
 }
 
 // LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
@@ -431,21 +384,22 @@ func (s *Session) LogoutUser() {
 	p.ExpectExitCode(0)
 }
 
-func (s *Session) CreateNewUser() (string, string) {
+func (s *Session) CreateNewUser() *mono_models.UserEditable {
 	uid, err := uuid.NewRandom()
-	require.NoError(s.t, err)
+	require.NoError(s.T, err)
 
 	username := fmt.Sprintf("user-%s", uid.String()[0:8])
 	password := uid.String()[8:]
 	email := fmt.Sprintf("%s@test.tld", username)
-
-	params := users.NewAddUserParams()
-	params.SetUser(&mono_models.UserEditable{
+	user := &mono_models.UserEditable{
 		Username: username,
 		Password: password,
 		Name:     username,
 		Email:    email,
-	})
+	}
+
+	params := users.NewAddUserParams()
+	params.SetUser(user)
 
 	// The default mono API client host is "testing.tld" inside unit tests.
 	// Since we actually want to create production users, we need to manually instantiate a mono API
@@ -457,7 +411,7 @@ func (s *Session) CreateNewUser() (string, string) {
 	}
 	serviceURL.Host = strings.Replace(serviceURL.Host, string(api.ServiceMono)+api.TestingPlatform, host, 1)
 	_, err = mono.Init(serviceURL, nil).Users.AddUser(params)
-	require.NoError(s.t, err, "Error creating new user")
+	require.NoError(s.T, err, "Error creating new user")
 
 	p := s.Spawn(tagsuite.Auth, "--username", username, "--password", password)
 	p.Expect("logged in")
@@ -465,7 +419,7 @@ func (s *Session) CreateNewUser() (string, string) {
 
 	s.users = append(s.users, username)
 
-	return username, password
+	return user
 }
 
 // NotifyProjectCreated indicates that the given project was created on the Platform and needs to
@@ -493,7 +447,7 @@ func observeSendFn(s *Session) func(string, int, error) {
 			return
 		}
 
-		s.t.Fatalf("Could not send data to terminal\nerror: %v", err)
+		s.T.Fatalf("Could not send data to terminal\nerror: %v", err)
 	}
 }
 
@@ -542,7 +496,7 @@ No logs
 		"Z":          sectionEnd,
 	}, nil)
 	if err != nil {
-		s.t.Fatalf("Parsing template failed: %s", errs.JoinMessage(err))
+		s.T.Fatalf("Parsing template failed: %s", errs.JoinMessage(err))
 	}
 
 	return v
@@ -557,7 +511,7 @@ func (s *Session) Close() error {
 	}
 
 	cfg, err := config.NewCustom(s.Dirs.Config, singlethread.New(), true)
-	require.NoError(s.t, err, "Could not read e2e session configuration: %s", errs.JoinMessage(err))
+	require.NoError(s.T, err, "Could not read e2e session configuration: %s", errs.JoinMessage(err))
 
 	if !s.retainDirs {
 		defer s.Dirs.Close()
@@ -566,7 +520,7 @@ func (s *Session) Close() error {
 	s.spawned = []*SpawnedCmd{}
 
 	if os.Getenv("PLATFORM_API_TOKEN") == "" {
-		s.t.Log("PLATFORM_API_TOKEN env var not set, not running suite tear down")
+		s.T.Log("PLATFORM_API_TOKEN env var not set, not running suite tear down")
 		return nil
 	}
 
@@ -596,7 +550,7 @@ func (s *Session) Close() error {
 		if runtime.GOOS == "linux" {
 			projects, err := getProjects(org, auth)
 			if err != nil {
-				s.t.Errorf("Could not fetch projects: %v", errs.JoinMessage(err))
+				s.T.Errorf("Could not fetch projects: %v", errs.JoinMessage(err))
 			}
 			for _, proj := range projects {
 				if strfmt.IsUUID(proj.Name) {
@@ -609,14 +563,14 @@ func (s *Session) Close() error {
 	for _, proj := range s.createdProjects {
 		err := model.DeleteProject(proj.Owner, proj.Project, auth)
 		if err != nil {
-			s.t.Errorf("Could not delete project %s: %v", proj.Project, errs.JoinMessage(err))
+			s.T.Errorf("Could not delete project %s: %v", proj.Project, errs.JoinMessage(err))
 		}
 	}
 
 	for _, user := range s.users {
-		err := cleanUser(s.t, user, auth)
+		err := cleanUser(s.T, user, auth)
 		if err != nil {
-			s.t.Errorf("Could not delete user %s: %v", user, errs.JoinMessage(err))
+			s.T.Errorf("Could not delete user %s: %v", user, errs.JoinMessage(err))
 		}
 	}
 
@@ -625,17 +579,21 @@ func (s *Session) Close() error {
 	// does not appear on the PATH when a new subshell is started. This is a
 	// workaround to be addressed in: https://activestatef.atlassian.net/browse/DX-2285
 	if runtime.GOOS != "windows" {
-		installPath, err := installation.InstallPathForBranch("release")
+		installPath, err := installation.InstallPathForChannel("release")
 		if err != nil {
-			s.t.Errorf("Could not get install path: %v", errs.JoinMessage(err))
+			s.T.Errorf("Could not get install path: %v", errs.JoinMessage(err))
 		}
 		binDir := filepath.Join(installPath, "bin")
 
 		ss := bash.SubShell{}
 		err = ss.WriteUserEnv(cfg, map[string]string{"PATH": binDir}, sscommon.InstallID, false)
 		if err != nil {
-			s.t.Errorf("Could not clean user env: %v", errs.JoinMessage(err))
+			s.T.Errorf("Could not clean user env: %v", errs.JoinMessage(err))
 		}
+	}
+
+	if !s.ignoreLogErrors {
+		s.detectLogErrors()
 	}
 
 	return nil
@@ -673,7 +631,7 @@ func (s *Session) SvcLog() string {
 		}
 		b := fileutils.ReadFileUnsafe(file)
 		lines = append(lines, filepath.Base(file)+":"+strings.Split(string(b), "\n")[0])
-		if !strings.Contains(string(b), fmt.Sprintf("state-svc%s foreground", exeutils.Extension)) {
+		if !strings.Contains(string(b), fmt.Sprintf("state-svc%s foreground", osutils.ExeExtension)) {
 			continue
 		}
 
@@ -742,12 +700,22 @@ func (s *Session) DebugLogsDump() string {
 	return result
 }
 
-var errorOrPanicRegex = regexp.MustCompile(`(?:\[ERR:|Panic:)`)
+// IgnoreLogErrors disables log error checking after the session closes.
+// Normally, logged errors automatically cause test failures, so calling this is needed for tests
+// with expected errors.
+func (s *Session) IgnoreLogErrors() {
+	s.ignoreLogErrors = true
+}
 
-func (s *Session) DetectLogErrors() {
+var errorOrPanicRegex = regexp.MustCompile(`(?:\[ERR |\[CRT |Panic:)`)
+
+func (s *Session) detectLogErrors() {
 	for _, path := range s.LogFiles() {
+		if !strings.HasPrefix(filepath.Base(path), "state-") {
+			continue
+		}
 		if contents := string(fileutils.ReadFileUnsafe(path)); errorOrPanicRegex.MatchString(contents) {
-			s.t.Errorf("Found error and/or panic in log file %s, contents:\n%s", path, contents)
+			s.T.Errorf("Found error and/or panic in log file %s\nIf this was expected, call session.IgnoreLogErrors() to avoid this check\nLog contents:\n%s", path, contents)
 		}
 	}
 }
@@ -756,9 +724,11 @@ func (s *Session) SetupRCFile() {
 	if runtime.GOOS == "windows" {
 		return
 	}
+	s.T.Setenv("HOME", s.Dirs.HomeDir)
+	defer s.T.Setenv("HOME", os.Getenv("HOME"))
 
 	cfg, err := config.New()
-	require.NoError(s.t, err)
+	require.NoError(s.T, err)
 
 	s.SetupRCFileCustom(subshell.New(cfg))
 }
@@ -769,14 +739,14 @@ func (s *Session) SetupRCFileCustom(subshell subshell.SubShell) {
 	}
 
 	rcFile, err := subshell.RcFile()
-	require.NoError(s.t, err)
+	require.NoError(s.T, err)
 
 	if fileutils.TargetExists(filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile))) {
 		err = fileutils.CopyFile(rcFile, filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile)))
 	} else {
-		err = fileutils.Touch(rcFile)
+		err = fileutils.Touch(filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile)))
 	}
-	require.NoError(s.t, err)
+	require.NoError(s.T, err)
 }
 
 func RunningOnCI() bool {

@@ -1,12 +1,9 @@
 package main
 
 import (
-	"bufio"
 	"context"
-	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -25,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -32,11 +30,10 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/rollbar"
-	"github.com/ActiveState/cli/internal/runbits/legacy/projectmigration"
+	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcctl"
-	cmdletErrors "github.com/ActiveState/cli/pkg/cmdlets/errors"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -86,6 +83,10 @@ func main() {
 	}
 	rollbar.SetConfig(cfg)
 
+	// Configuration options
+	// This should only be used if the config option is not exclusive to one package.
+	configMediator.RegisterOption(constants.OptinBuildscriptsConfig, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
+
 	// Set up our output formatter/writer
 	outFlags := parseOutputFlags(os.Args)
 	shellName, _ := subshell.DetectShell(cfg)
@@ -104,20 +105,9 @@ func main() {
 	// Run our main command logic, which is logic that defers to the error handling logic below
 	err = run(os.Args, isInteractive, cfg, out)
 	if err != nil {
-		exitCode, err = cmdletErrors.ParseUserFacing(err)
+		exitCode, err = errors.ParseUserFacing(err)
 		if err != nil {
 			out.Error(err)
-		}
-
-		// If a state tool error occurs in a VSCode integrated terminal, we want
-		// to pause and give time to the user to read the error message.
-		// But not, if we exit, because the last command in the activated sub-shell failed.
-		var eerr *exec.ExitError
-		isExitError := errors.As(err, &eerr)
-		if !isExitError && outFlags.ConfirmExit {
-			out.Print(locale.T("confirm_exit_on_error_prompt"))
-			br := bufio.NewReader(os.Stdin)
-			br.ReadLine()
 		}
 	}
 }
@@ -212,13 +202,6 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	// Set up prompter
 	prompter := prompt.New(isInteractive, an)
 
-	// This is an anti-pattern. DO NOT DO THIS! Normally we should be passing prompt and out as
-	// arguments everywhere it is needed. However, we need to support legacy projects with commitId in
-	// activestate.yaml, and whenever that commitId is needed, we need to prompt the user to migrate
-	// their project. This would result in a lot of boilerplate for a legacy feature, so we're
-	// working around it with package "globals".
-	projectmigration.Register(prompter, out)
-
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)
 
@@ -239,7 +222,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	cmds.OnExecStart(msger.OnExecStart)
 	cmds.OnExecStop(msger.OnExecStop)
 
-	if childCmd != nil && !childCmd.SkipChecks() {
+	if childCmd != nil && !childCmd.SkipChecks() && !out.Type().IsStructured() {
 		// Auto update to latest state tool version
 		if updated, err := autoUpdate(svcmodel, args, cfg, an, out); err == nil && updated {
 			return nil // command will be run by updated exe
@@ -249,10 +232,10 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 		if childCmd.Name() != "update" && pj != nil && pj.IsLocked() {
 			if (pj.Version() != "" && pj.Version() != constants.Version) ||
-				(pj.VersionBranch() != "" && pj.VersionBranch() != constants.BranchName) {
+				(pj.Channel() != "" && pj.Channel() != constants.ChannelName) {
 				return errs.AddTips(
-					locale.NewInputError("lock_version_mismatch", "", pj.Source().Lock, constants.BranchName, constants.Version),
-					locale.Tl("lock_update_legacy_version", "", constants.DocumentationURLLocking),
+					locale.NewInputError("lock_version_mismatch", "", pj.Source().Lock, constants.ChannelName, constants.Version),
+					locale.Tr("lock_update_legacy_version", constants.DocumentationURLLocking),
 					locale.T("lock_update_lock"),
 				)
 			}
@@ -265,8 +248,10 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		if childCmd != nil {
 			cmdName = childCmd.JoinedSubCommandNames() + " "
 		}
-		err = errs.AddTips(err, locale.Tl("err_tip_run_help", "Run → [ACTIONABLE]`state {{.V0}}--help`[/RESET] for general help", cmdName))
-		cmdletErrors.ReportError(err, cmds.Command(), an)
+		if !out.Type().IsStructured() {
+			err = errs.AddTips(err, locale.Tl("err_tip_run_help", "Run → '[ACTIONABLE]state {{.V0}}--help[/RESET]' for general help", cmdName))
+		}
+		errors.ReportError(err, cmds.Command(), an)
 	}
 
 	return err

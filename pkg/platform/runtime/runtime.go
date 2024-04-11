@@ -1,9 +1,7 @@
 package runtime
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,10 +20,12 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -35,14 +35,22 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+type Configurable interface {
+	GetString(key string) string
+	GetBool(key string) bool
+}
+
 type Runtime struct {
-	disabled  bool
-	target    setup.Targeter
-	store     *store.Store
-	analytics analytics.Dispatcher
-	svcm      *model.SvcModel
-	auth      *authentication.Auth
-	completed bool
+	disabled          bool
+	target            setup.Targeter
+	store             *store.Store
+	analytics         analytics.Dispatcher
+	svcm              *model.SvcModel
+	auth              *authentication.Auth
+	completed         bool
+	cfg               Configurable
+	out               output.Outputer
+	resolvedArtifacts []*artifact.Artifact
 }
 
 // NeedsUpdateError is an error returned when the runtime is not completely installed yet.
@@ -61,13 +69,15 @@ func IsNeedsCommitError(err error) bool {
 	return errs.Matches(err, &NeedsCommitError{})
 }
 
-func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel, auth *authentication.Auth) (*Runtime, error) {
+func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel, auth *authentication.Auth, cfg Configurable, out output.Outputer) (*Runtime, error) {
 	rt := &Runtime{
 		target:    target,
 		store:     store.New(target.Dir()),
 		analytics: an,
 		svcm:      svcModel,
 		auth:      auth,
+		cfg:       cfg,
+		out:       out,
 	}
 
 	err := rt.validateCache()
@@ -79,11 +89,11 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 }
 
 // New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
-func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, auth *authentication.Auth) (*Runtime, error) {
+func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, auth *authentication.Auth, cfg Configurable, out output.Outputer) (*Runtime, error) {
 	logging.Debug("Initializing runtime for: %s/%s@%s", target.Owner(), target.Name(), target.CommitUUID())
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
-		fmt.Fprintln(os.Stderr, locale.T("notice_runtime_disabled"))
+		out.Notice(locale.T("notice_runtime_disabled"))
 		return &Runtime{disabled: true, target: target, analytics: an}, nil
 	}
 	recordAttempt(an, target)
@@ -94,7 +104,7 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, a
 		InstanceID:       ptr.To(instanceid.ID()),
 	})
 
-	r, err := newRuntime(target, an, svcm, auth)
+	r, err := newRuntime(target, an, svcm, auth, cfg, out)
 	if err == nil {
 		an.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeCache, &dimensions.Values{
 			CommitID: ptr.To(target.CommitUUID().String()),
@@ -116,34 +126,35 @@ func (r *Runtime) validateCache() error {
 		return nil
 	}
 
-	return nil // remove in DX-2307 to re-enable buildscripts below
-
-	// Check if local build script has changes that should be committed.
-	script, err := buildscript.NewScriptFromProject(r.target, r.auth)
-	if err != nil {
-		return errs.Wrap(err, "Unable to get local build script")
-	}
-
 	commitID := r.target.CommitUUID().String()
-	expr, err := r.store.GetAndValidateBuildExpression(commitID)
+	_, err := r.store.GetAndValidateBuildExpression(commitID)
 	if err != nil {
 		bp := model.NewBuildPlannerModel(r.auth)
-		bpExpr, err := bp.GetBuildExpression(r.target.Owner(), r.target.Name(), commitID)
+		bpExpr, err := bp.GetBuildExpression(commitID)
 		if err != nil {
 			return errs.Wrap(err, "Unable to get remote build expression")
 		}
 		if err := r.store.StoreBuildExpression(bpExpr, commitID); err != nil {
 			return errs.Wrap(err, "Unable to store build expression")
 		}
-		data, err := json.Marshal(bpExpr)
-		if err != nil {
-			return errs.Wrap(err, "Unable to marshal buildexpression to JSON: %v", err)
-		}
-		expr = string(data)
 	}
 
-	if !script.EqualsBuildExpressionBytes([]byte(expr)) {
-		return &NeedsCommitError{errs.New("Runtime changes should be committed")}
+	// Check if local build script has changes that should be committed.
+	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		cachedScript, err := r.store.BuildScript()
+		switch {
+		case err == nil:
+			script, err := buildscript.ScriptFromProject(r.target)
+			if err != nil && !errs.Matches(err, buildscript.ErrBuildscriptNotExist) {
+				return errs.Wrap(err, "Unable to get local build script")
+			}
+			if script != nil && !script.Equals(cachedScript) {
+				return &NeedsCommitError{errs.New("Runtime changes should be committed")}
+			}
+
+		case !errors.Is(err, store.ErrNoBuildScriptFile):
+			return errs.Wrap(err, "Unable to read cached build script")
+		}
 	}
 
 	return nil
@@ -171,12 +182,12 @@ func (r *Runtime) Update(eventHandler events.Handler) (rerr error) {
 		r.recordCompletion(rerr)
 	}()
 
-	if err := setup.New(r.target, eventHandler, r.auth, r.analytics).Update(); err != nil {
+	if err := setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out).Update(); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}
 
 	// Reinitialize
-	rt, err := newRuntime(r.target, r.analytics, r.svcm, r.auth)
+	rt, err := newRuntime(r.target, r.analytics, r.svcm, r.auth, r.cfg, r.out)
 	if err != nil {
 		return errs.Wrap(err, "Could not reinitialize runtime after update")
 	}
@@ -355,4 +366,30 @@ func (r *Runtime) ExecutableDirs() (envdef.ExecutablePaths, error) {
 
 func IsRuntimeDir(dir string) bool {
 	return store.New(dir).HasMarker()
+}
+
+func (r *Runtime) ResolvedArtifacts() ([]*artifact.Artifact, error) {
+	if r.resolvedArtifacts == nil {
+		runtimeStore := r.store
+		if runtimeStore == nil {
+			runtimeStore = store.New(r.target.Dir())
+		}
+
+		plan, err := runtimeStore.BuildPlan()
+		if err != nil {
+			return nil, errs.Wrap(err, "Unable to fetch build plan")
+		}
+
+		r.resolvedArtifacts = make([]*artifact.Artifact, len(plan.Sources))
+		for i, source := range plan.Sources {
+			r.resolvedArtifacts[i] = &artifact.Artifact{
+				ArtifactID: source.NodeID,
+				Name:       source.Name,
+				Namespace:  source.Namespace,
+				Version:    &source.Version,
+			}
+		}
+	}
+
+	return r.resolvedArtifacts, nil
 }

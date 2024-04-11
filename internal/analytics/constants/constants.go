@@ -228,3 +228,12 @@ const UpdateErrorNoInstaller = "Downloaded update does not have installer"
 
 // UpdateErrorInstallPath is sent if the install path could not be detected
 const UpdateErrorInstallPath = "Could not detect install path"
+
+// CatInteractions is the event category used for tracking user interactions.
+const CatInteractions = "interactions"
+
+// ActVcsConflict is the event action sent when `state pull` results in a conflict.
+const ActVcsConflict = "vcs-conflict"
+
+// LabelVcsConflictMergeStrategyFailed is the label to use when a merge fails.
+const LabelVcsConflictMergeStrategyFailed = "Failed"

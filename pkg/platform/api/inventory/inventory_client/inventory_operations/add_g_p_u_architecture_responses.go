@@ -52,8 +52,7 @@ func NewAddGPUArchitectureCreated() *AddGPUArchitectureCreated {
 	return &AddGPUArchitectureCreated{}
 }
 
-/*
-AddGPUArchitectureCreated describes a response with status code 201, with default header values.
+/* AddGPUArchitectureCreated describes a response with status code 201, with default header values.
 
 The added GPU architecture
 */
@@ -85,8 +84,7 @@ func NewAddGPUArchitectureBadRequest() *AddGPUArchitectureBadRequest {
 	return &AddGPUArchitectureBadRequest{}
 }
 
-/*
-AddGPUArchitectureBadRequest describes a response with status code 400, with default header values.
+/* AddGPUArchitectureBadRequest describes a response with status code 400, with default header values.
 
 If the GPU architecture is invalid
 */
@@ -120,8 +118,7 @@ func NewAddGPUArchitectureDefault(code int) *AddGPUArchitectureDefault {
 	}
 }
 
-/*
-AddGPUArchitectureDefault describes a response with status code -1, with default header values.
+/* AddGPUArchitectureDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */

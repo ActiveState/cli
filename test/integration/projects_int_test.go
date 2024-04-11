@@ -150,6 +150,7 @@ func (suite *ProjectsIntegrationTestSuite) TestEdit_Visibility() {
 	cp = ts.Spawn("checkout", namespace)
 	cp.Expect("does not exist under ActiveState-CLI")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	ts.LoginAsPersistentUser()
 

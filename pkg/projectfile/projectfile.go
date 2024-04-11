@@ -75,10 +75,10 @@ var projectMapMutex = &sync.Mutex{}
 
 const LocalProjectsConfigKey = "projects"
 
-// VersionInfo is used in cases where we only care about parsing the version field. In all other cases the version is parsed via
-// the Project struct
+// VersionInfo is used in cases where we only care about parsing the version and channel fields.
+// In all other cases the version is parsed via the Project struct
 type VersionInfo struct {
-	Branch  string
+	Channel string `yaml:"branch"` // branch for backward compatibility
 	Version string
 	Lock    string `yaml:"lock"`
 }
@@ -102,7 +102,7 @@ type Project struct {
 	Cache         string        `yaml:"cache,omitempty"`
 	path          string        // "private"
 	parsedURL     projectURL    // parsed url data
-	parsedBranch  string
+	parsedChannel string
 	parsedVersion string
 }
 
@@ -113,7 +113,7 @@ type Build map[string]string
 // ConstantFields are the common fields for the Constant type. This is required
 // for type composition related to its yaml.Unmarshaler implementation.
 type ConstantFields struct {
-	Conditional Conditional `yaml:"if"`
+	Conditional Conditional `yaml:"if,omitempty"`
 }
 
 // Constant covers the constant structure, which goes under Project
@@ -175,7 +175,7 @@ type SecretScopes struct {
 type Secret struct {
 	Name        string      `yaml:"name"`
 	Description string      `yaml:"description"`
-	Conditional Conditional `yaml:"if"`
+	Conditional Conditional `yaml:"if,omitempty"`
 }
 
 var _ ConstrainedEntity = &Secret{}
@@ -227,7 +227,7 @@ type ConstrainedEntity interface {
 type Package struct {
 	Name        string      `yaml:"name"`
 	Version     string      `yaml:"version"`
-	Conditional Conditional `yaml:"if"`
+	Conditional Conditional `yaml:"if,omitempty"`
 	Build       Build       `yaml:"build,omitempty"`
 }
 
@@ -268,7 +268,7 @@ func MakePackagesFromConstrainedEntities(items []ConstrainedEntity) (packages []
 // for type composition related to its yaml.Unmarshaler implementation.
 type EventFields struct {
 	Scope       []string    `yaml:"scope"`
-	Conditional Conditional `yaml:"if"`
+	Conditional Conditional `yaml:"if,omitempty"`
 	id          string
 }
 
@@ -337,7 +337,7 @@ type ScriptFields struct {
 	Filename    string      `yaml:"filename,omitempty"`
 	Standalone  bool        `yaml:"standalone,omitempty"`
 	Language    string      `yaml:"language,omitempty"`
-	Conditional Conditional `yaml:"if"`
+	Conditional Conditional `yaml:"if,omitempty"`
 }
 
 // Script covers the script structure, which goes under Project
@@ -414,7 +414,7 @@ func Parse(configFilepath string) (_ *Project, rerr error) {
 		return nil, err
 	}
 
-	re, _ := regexp.Compile(`activestate.(\w+).yaml`)
+	re, _ := regexp.Compile(`activestate[._-](\w+)\.yaml`)
 	for _, file := range files {
 		match := re.FindStringSubmatch(file.Name())
 		if len(match) == 0 {
@@ -478,7 +478,7 @@ func (p *Project) Init() error {
 			return errs.Wrap(err, "ParseLock %s failed", p.Lock)
 		}
 
-		p.parsedBranch = parsedLock.Branch
+		p.parsedChannel = parsedLock.Channel
 		p.parsedVersion = parsedLock.Version
 	}
 
@@ -558,21 +558,20 @@ func (p *Project) Path() string {
 	return p.path
 }
 
-// LegacyCommitID is for use by commitmediator.Get() ONLY.
+// LegacyCommitID is for use by legacy mechanics ONLY
 // It returns a pre-migrated project's commit ID from activestate.yaml.
 func (p *Project) LegacyCommitID() string {
 	return p.parsedURL.LegacyCommitID
 }
 
-// LegacySetCommit is for use by commitmediator.Set() ONLY.
-// It changes the legacy commit ID in activestate.yaml.
-// Remove this in DX-2307.
-func (p *Project) LegacySetCommit(commitID string) error {
+// SetLegacyCommit sets the commit id within the current project file. This is done
+// in-place so that line order is preserved.
+func (p *Project) SetLegacyCommit(commitID string) error {
 	pf := NewProjectField()
 	if err := pf.LoadProject(p.Project); err != nil {
 		return errs.Wrap(err, "Could not load activestate.yaml")
 	}
-	pf.LegacySetCommit(commitID)
+	pf.SetLegacyCommitID(commitID)
 	if err := pf.Save(p.path); err != nil {
 		return errs.Wrap(err, "Could not save activestate.yaml")
 	}
@@ -582,7 +581,6 @@ func (p *Project) LegacySetCommit(commitID string) error {
 	return nil
 }
 
-// Remove this function in DX-2307.
 func (p *Project) Dir() string {
 	return filepath.Dir(p.path)
 }
@@ -592,12 +590,12 @@ func (p *Project) SetPath(path string) {
 	p.path = path
 }
 
-// VersionBranch returns the branch as it was interpreted from the lock
-func (p *Project) VersionBranch() string {
-	return p.parsedBranch
+// Channel returns the channel as it was interpreted from the lock
+func (p *Project) Channel() string {
+	return p.parsedChannel
 }
 
-// Version returns the branch as it was interpreted from the lock
+// Version returns the version as it was interpreted from the lock
 func (p *Project) Version() string {
 	return p.parsedVersion
 }
@@ -634,7 +632,7 @@ func (p *Project) parseURL() (projectURL, error) {
 
 func validateUUID(uuidStr string) error {
 	if ok := strfmt.Default.Validates("uuid", uuidStr); !ok {
-		return locale.NewError("invalid_uuid_val", "Invalid commit ID {{.V0}} in activestate.yaml.  You could replace it with 'latest'", uuidStr)
+		return locale.NewError("invalid_uuid_val", "Invalid commit ID {{.V0}} in activestate.yaml. Please remove it and run `[ACTIONABLE]state pull[/RESET]` to reset it", uuidStr)
 	}
 
 	var uuid strfmt.UUID
@@ -711,7 +709,9 @@ func (p *Project) save(cfg ConfigGetter, path string) error {
 		return errs.Wrap(err, "f.Write %s failed", path)
 	}
 
-	StoreProjectMapping(cfg, fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
+	if cfg != nil {
+		StoreProjectMapping(cfg, fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
+	}
 
 	return nil
 }
@@ -758,6 +758,10 @@ func (p *Project) SetBranch(branch string) error {
 }
 
 // GetProjectFilePath returns the path to the project activestate.yaml
+// It considers projects in the following order:
+// 1. Environment variable (e.g. `state shell` sets one)
+// 2. Working directory (i.e. walk up directory tree looking for activestate.yaml)
+// 3. Fall back on default project
 func GetProjectFilePath() (string, error) {
 	defer profile.Measure("GetProjectFilePath", time.Now())
 	lookup := []func() (string, error){
@@ -779,13 +783,21 @@ func GetProjectFilePath() (string, error) {
 }
 
 func getProjectFilePathFromEnv() (string, error) {
-	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
+	var projectFilePath string
+
+	if activatedProjectDirPath := os.Getenv(constants.ActivatedStateEnvVarName); activatedProjectDirPath != "" {
+		projectFilePath = filepath.Join(activatedProjectDirPath, constants.ConfigFileName)
+	} else {
+		projectFilePath = os.Getenv(constants.ProjectEnvVarName)
+	}
+
 	if projectFilePath != "" {
 		if fileutils.FileExists(projectFilePath) {
 			return projectFilePath, nil
 		}
 		return "", &ErrorNoProjectFromEnv{locale.NewInputError("err_project_env_file_not_exist", "", projectFilePath)}
 	}
+
 	return "", nil
 }
 
@@ -922,17 +934,16 @@ func FromExactPath(path string) (*Project, error) {
 
 // CreateParams are parameters that we create a custom activestate.yaml file from
 type CreateParams struct {
-	Owner          string
-	Project        string
-	BranchName     string
-	Directory      string
-	Content        string
-	Language       string
-	Private        bool
-	path           string
-	ProjectURL     string
-	Cache          string
-	LegacyCommitID string // remove in DX-2307
+	Owner      string
+	Project    string
+	BranchName string
+	Directory  string
+	Content    string
+	Language   string
+	Private    bool
+	path       string
+	ProjectURL string
+	Cache      string
 }
 
 // Create will create a new activestate.yaml with a projectURL for the given details
@@ -953,7 +964,12 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	if params.ProjectURL == "" {
-		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, params.Owner, params.Project))
+		// Note: cannot use api.GetPlatformURL() due to import cycle.
+		host := constants.DefaultAPIHost
+		if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
+			host = hostOverride
+		}
+		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", host, params.Owner, params.Project))
 		if err != nil {
 			return nil, errs.Wrap(err, "url parse new project url failed")
 		}
@@ -961,11 +977,6 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 
 		if params.BranchName != "" {
 			q.Set("branch", params.BranchName)
-		}
-
-		// Remove this block in DX-2307.
-		if params.LegacyCommitID != "" {
-			q.Set("commitID", params.LegacyCommitID)
 		}
 
 		u.RawQuery = q.Encode()
@@ -1116,7 +1127,7 @@ func ParseLock(lock string) (*VersionInfo, error) {
 	}
 
 	return &VersionInfo{
-		Branch:  split[0],
+		Channel: split[0],
 		Version: split[1],
 		Lock:    lock,
 	}, nil
@@ -1337,6 +1348,7 @@ func GetProjectPaths(cfg ConfigGetter, namespace string) []string {
 // StoreProjectMapping associates the namespace with the project
 // path in the config
 func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
+	SetRecentlyUsedNamespace(cfg, namespace)
 	err := cfg.GetThenSet(
 		LocalProjectsConfigKey,
 		func(v interface{}) (interface{}, error) {
@@ -1433,5 +1445,12 @@ func CleanProjectMapping(cfg ConfigGetter) {
 	)
 	if err != nil {
 		logging.Debug("Could not clean project mapping in config, error: %v", err)
+	}
+}
+
+func SetRecentlyUsedNamespace(cfg ConfigGetter, namespace string) {
+	err := cfg.Set(constants.LastUsedNamespacePrefname, namespace)
+	if err != nil {
+		logging.Debug("Could not set recently used namespace in config, error: %v", err)
 	}
 }

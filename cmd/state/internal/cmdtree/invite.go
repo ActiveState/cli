@@ -44,7 +44,6 @@ func newInviteCommand(prime *primer.Values) *captain.Command {
 	cmd.SetGroup(PlatformGroup)
 	cmd.SetUnstable(true)
 	cmd.SetHasVariableArguments()
-	cmd.SetDoesNotSupportStructuredOutput()
 
 	return cmd
 }

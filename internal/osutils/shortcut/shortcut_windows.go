@@ -68,7 +68,8 @@ func (s *Shortcut) Enable() error {
 	if err != nil {
 		oleErr := &ole.OleError{}
 		if errors.As(err, &oleErr) {
-			return errs.Wrap(err, "oleutil CreateShortcut returned error: %s, parent error: %s", oleErr.Description(), oleErr.SubError())
+			logging.Debug("OLE Error details: %s\n%s\n%s\n%s\n%s", oleErr.Code(), oleErr.Description(), oleErr.Error(), oleErr.String(), oleErr.SubError())
+			return errs.Wrap(err, "oleutil CreateShortcut returned error: %s", oleErr.String())
 		}
 		return errs.Wrap(err, "Could not call CreateShortcut on shell object")
 	}

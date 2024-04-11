@@ -21,23 +21,25 @@ Examples:
 {{- end }}
 
 {{- childCommands .Cmd}}
+{{- if gt (len .Cmd.Arguments) 0}}
+
+Arguments:
+{{-  range .Cmd.Arguments }}
+  <{{ .Name }}> {{ if .Required }}          {{ else }}(optional){{ end }} {{ .Description }}
+{{-  end }}
+{{-  end }}
+
 {{- if .Cobra.HasAvailableFlags}}
 
 Flags:
-{{.Cobra.LocalFlags.FlagUsages | trimTrailingWhitespaces}}
+{{.Cmd.LocalFlagUsages | trimTrailingWhitespaces}}
 {{- end}}
 {{- if .Cobra.HasAvailableInheritedFlags}}
 
 Global Flags:
-{{.Cobra.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}
+{{.Cmd.InheritedFlagUsages | trimTrailingWhitespaces}}
 {{- end}}
-{{- if gt (len .Cmd.Arguments) 0}}
 
-Arguments:
-    {{-  range .Cmd.Arguments }}
-  <{{ .Name }}> {{ if .Required }}          {{ else }}(optional){{ end }} {{ .Description }}
-    {{-  end }}
-{{- end}}
 {{- if .Cobra.HasHelpSubCommands}}
 
 Additional help topics:

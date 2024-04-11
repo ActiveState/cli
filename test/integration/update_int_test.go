@@ -16,10 +16,10 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -32,15 +32,15 @@ type UpdateIntegrationTestSuite struct {
 type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...interface{}) bool
 
 // Todo https://www.pivotaltracker.com/story/show/177863116
-// Update to release branch when possible
+// Update to release channel when possible
 var (
-	targetBranch     = "beta"
+	targetChannel    = "beta"
 	oldUpdateVersion = "beta@0.32.2-SHA3e1d435"
 )
 
 func init() {
-	if constants.BranchName == targetBranch {
-		targetBranch = "master"
+	if constants.ChannelName == targetChannel {
+		targetChannel = "master"
 	}
 }
 
@@ -51,13 +51,14 @@ func (suite *UpdateIntegrationTestSuite) env(disableUpdates, forceUpdate bool) [
 	env := []string{}
 
 	if disableUpdates {
-		env = append(env, "ACTIVESTATE_CLI_DISABLE_UPDATES=true")
+		env = append(env, constants.DisableUpdates+"=true")
 	} else {
-		env = append(env, "ACTIVESTATE_CLI_DISABLE_UPDATES=false")
+		env = append(env, constants.DisableUpdates+"=false")
 	}
 
 	if forceUpdate {
-		env = append(env, "ACTIVESTATE_FORCE_UPDATE=true")
+		env = append(env, constants.TestAutoUpdateEnvVarName+"=true")
+		env = append(env, constants.ForceUpdateEnvVarName+"=true")
 	}
 
 	dir, err := ioutil.TempDir("", "system*")
@@ -82,19 +83,19 @@ func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, expecte
 	matcher(expected, version.Version, fmt.Sprintf("Version could not be matched, output:\n\n%s", out))
 }
 
-func (suite *UpdateIntegrationTestSuite) branchCompare(ts *e2e.Session, expected string, matcher matcherFunc) {
-	type branchData struct {
-		Branch string `json:"branch"`
+func (suite *UpdateIntegrationTestSuite) channelCompare(ts *e2e.Session, expected string, matcher matcherFunc) {
+	type channelData struct {
+		Channel string `json:"channel"`
 	}
 
 	cp := ts.SpawnWithOpts(e2e.OptArgs("--version", "--output=json"), e2e.OptAppendEnv(suite.env(true, false)...))
 	cp.ExpectExitCode(0, termtest.OptExpectTimeout(30*time.Second))
 
-	branch := branchData{}
+	channel := channelData{}
 	out := cp.StrippedSnapshot()
-	json.Unmarshal([]byte(out), &branch)
+	json.Unmarshal([]byte(out), &channel)
 
-	matcher(expected, branch.Branch, fmt.Sprintf("Branch could not be matched, output:\n\n%s", out))
+	matcher(expected, channel.Channel, fmt.Sprintf("Channel could not be matched, output:\n\n%s", out))
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
@@ -102,6 +103,11 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
+
+	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+	suite.Require().NoError(err)
+	defer cfg.Close()
+	cfg.Set(constants.AutoUpdateConfigKey, "false")
 
 	search, found := "Update Available", false
 	for i := 0; i < 4; i++ {
@@ -208,8 +214,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
 
 	suite.Require().True(found, "Expecting to find %q and %q", searchA, searchB)
 
-	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateCmd+exeutils.Extension), "State Tool executable at install dir should no longer exist")
-	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateSvcCmd+exeutils.Extension), "State Service executable at install dir should no longer exist")
+	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateCmd+osutils.ExeExtension), "State Tool executable at install dir should no longer exist")
+	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateSvcCmd+osutils.ExeExtension), "State Service executable at install dir should no longer exist")
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
@@ -220,12 +226,12 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 		Channel string
 	}{
 		{"release-channel", "release"},
-		{"specific-update", targetBranch},
+		{"specific-update", targetChannel},
 	}
 
 	for _, tt := range tests {
 		suite.Run(tt.Name, func() {
-			// TODO: Update targetBranch and specificVersion after a v0.34.0 release
+			// TODO: Update targetChannel and specificVersion after a v0.34.0 release
 			suite.T().Skip("Skipping these tests for now as the update changes need to be available in an older version of the state tool.")
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
@@ -240,7 +246,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			cp.Expect("Updating")
 			cp.ExpectExitCode(0, termtest.OptExpectTimeout(1*time.Minute))
 
-			suite.branchCompare(ts, tt.Channel, suite.Equal)
+			suite.channelCompare(ts, tt.Channel, suite.Equal)
 		})
 	}
 }
@@ -296,7 +302,6 @@ func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir
 		e2e.OptArgs("--version"),
 		e2e.OptAppendEnv(suite.env(false, true)...),
 		e2e.OptAppendEnv(fmt.Sprintf("HOME=%s", fakeHome)),
-		e2e.OptAppendEnv("ACTIVESTATE_TEST_AUTO_UPDATE=true"),
 	}
 	if opts != nil {
 		spawnOpts = append(spawnOpts, opts...)
@@ -361,7 +366,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateToCurrent() {
 
 	suite.installLatestReleaseVersion(ts, installDir)
 
-	suite.testAutoUpdate(ts, installDir, e2e.OptAppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_UPDATE_BRANCH=%s", constants.BranchName)))
+	suite.testAutoUpdate(ts, installDir, e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.UpdateChannelEnvVarName, constants.ChannelName)))
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateToCurrent() {
@@ -379,5 +384,5 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateToCurrent() {
 
 	suite.installLatestReleaseVersion(ts, installDir)
 
-	suite.testUpdate(ts, installDir, e2e.OptAppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_UPDATE_BRANCH=%s", constants.BranchName)))
+	suite.testUpdate(ts, installDir, e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.UpdateChannelEnvVarName, constants.ChannelName)))
 }

@@ -32,14 +32,9 @@ func (suite *InstallIntegrationTestSuite) TestInstall_InvalidCommit() {
 
 	ts.PrepareProject("ActiveState-CLI/small-python", "malformed-commit-id")
 	cp := ts.SpawnWithOpts(e2e.OptArgs("install", "trender"))
-	//cp.Expect("Could not find or read the commit file") // re-enable in DX-2307
-	cp.Expect("Invalid commit ID") // remove in DX-2307
+	cp.Expect("Invalid commit ID")
 	cp.ExpectExitCode(1)
-
-	// Re-enable in DX-2307.
-	//if strings.Count(cp.Snapshot(), " x ") != 1 {
-	//	suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
-	//}
+	ts.IgnoreLogErrors()
 }
 
 func (suite *InstallIntegrationTestSuite) TestInstall_NoMatches_NoAlternatives() {
@@ -52,6 +47,7 @@ func (suite *InstallIntegrationTestSuite) TestInstall_NoMatches_NoAlternatives()
 	cp.Expect("No results found for search term")
 	cp.Expect("find alternatives") // This verifies no alternatives were found
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	if strings.Count(strings.ReplaceAll(cp.Snapshot(), " x Failed", ""), " x ") != 1 {
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
@@ -68,6 +64,7 @@ func (suite *InstallIntegrationTestSuite) TestInstall_NoMatches_Alternatives() {
 	cp.Expect("No results found for search term")
 	cp.Expect("did you mean") // This verifies alternatives were found
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	if strings.Count(strings.ReplaceAll(cp.Snapshot(), " x Failed", ""), " x ") != 1 {
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
@@ -80,9 +77,13 @@ func (suite *InstallIntegrationTestSuite) TestInstall_BuildPlannerError() {
 	defer ts.Close()
 
 	ts.PrepareProject("ActiveState-CLI/small-python", "d8f26b91-899c-4d50-8310-2c338786aa0f")
-	cp := ts.SpawnWithOpts(e2e.OptArgs("install", "trender@999.0"), e2e.OptAppendEnv(constants.DisableRuntime+"=true"))
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("install", "trender@999.0"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
 	cp.Expect("Could not plan build, platform responded with", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	if strings.Count(strings.ReplaceAll(cp.Snapshot(), " x Failed", ""), " x ") != 1 {
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())

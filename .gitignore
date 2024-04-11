@@ -15,3 +15,7 @@ node_modules
 cmd/state-offline-installer/artifacts.tar.gz
 cmd/state-offline-installer/LICENSE.txt
 cmd/state-remote-installer/resource.syso
+cmd/state/versioninfo.json
+cmd/state/resource.syso
+cmd/state-svc/versioninfo.json
+cmd/state-svc/resource.syso

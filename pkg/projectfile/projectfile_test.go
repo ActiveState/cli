@@ -12,8 +12,10 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
@@ -206,57 +208,102 @@ func TestSave(t *testing.T) {
 	os.Remove(tmpfile.Name())
 }
 
-// Call getProjectFilePath
 func TestGetProjectFilePath(t *testing.T) {
 	Reset()
+	currentDir, err := os.Getwd()
+	require.NoError(t, err)
+	defer os.Chdir(currentDir)
 
-	root, err := environment.GetRootPath()
-	assert.NoError(t, err, "Should detect root path")
-	cwd, err := os.Getwd()
-	assert.NoError(t, err, "Should fetch cwd")
-	defer os.Chdir(cwd) // restore
-	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
+	rootDir, err := fileutils.ResolvePath(fileutils.TempDirUnsafe())
+	assert.NoError(t, err)
+	defer os.RemoveAll(rootDir)
 
-	configPath, err := GetProjectFilePath()
-	require.Nil(t, err)
-	expectedPath := filepath.Join(root, "pkg", "projectfile", "testdata", constants.ConfigFileName)
-	assert.Equal(t, expectedPath, configPath, "Project path is properly detected")
+	// First, set up a new project with a subproject.
+	projectDir := filepath.Join(rootDir, "project")
+	require.NoError(t, fileutils.Mkdir(projectDir))
+	projectYaml := filepath.Join(projectDir, constants.ConfigFileName)
+	require.NoError(t, fileutils.Touch(projectYaml))
+	subprojectDir := filepath.Join(projectDir, "subproject")
+	require.NoError(t, fileutils.Mkdir(subprojectDir))
+	subprojectYaml := filepath.Join(subprojectDir, constants.ConfigFileName)
+	require.NoError(t, fileutils.Mkdir(subprojectDir))
+	require.NoError(t, fileutils.Touch(subprojectYaml))
 
-	defer os.Unsetenv(constants.ProjectEnvVarName)
-
-	os.Setenv(constants.ProjectEnvVarName, "/some/path")
-	configPath, err = GetProjectFilePath()
-	errt := &ErrorNoProjectFromEnv{}
-	require.ErrorAs(t, err, &errt)
-
-	expectedPath = filepath.Join(root, "pkg", "projectfile", "testdata", constants.ConfigFileName)
-	os.Setenv(constants.ProjectEnvVarName, expectedPath)
-	configPath, err = GetProjectFilePath()
-	require.Nil(t, err)
-	assert.Equal(t, expectedPath, configPath, "Project path is properly detected using the ProjectEnvVarName")
-
-	os.Unsetenv(constants.ProjectEnvVarName)
+	// Then set up a separate, default project.
+	defaultDir := filepath.Join(rootDir, "default")
+	require.NoError(t, fileutils.Mkdir(defaultDir))
+	defaultYaml := filepath.Join(defaultDir, constants.ConfigFileName)
+	require.NoError(t, fileutils.Touch(defaultYaml))
 	cfg, err := config.New()
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
-	cfg.Set(constants.GlobalDefaultPrefname, "") // ensure it is unset
-	tmpDir, err := ioutil.TempDir("", "")
-	assert.NoError(t, err, "Should create temp dir")
-	defer os.RemoveAll(tmpDir)
-	os.Chdir(tmpDir)
-	_, err = GetProjectFilePath()
-	assert.Error(t, err, "GetProjectFilePath should fail")
-	cfg.Set(constants.GlobalDefaultPrefname, expectedPath)
-	configPath, err = GetProjectFilePath()
-	assert.NoError(t, err, "GetProjectFilePath should succeed")
-	assert.Equal(t, expectedPath, configPath, "Project path is properly detected using default path from config")
+	cfg.Set(constants.GlobalDefaultPrefname, defaultDir)
+
+	// Now set up an empty directory.
+	emptyDir := filepath.Join(rootDir, "empty")
+	require.NoError(t, fileutils.Mkdir(emptyDir))
+
+	// Now change to the project directory and assert GetProjectFilePath() returns it over the
+	// default project.
+	require.NoError(t, os.Chdir(projectDir))
+	path, err := GetProjectFilePath()
+	assert.NoError(t, err)
+	assert.Equal(t, projectYaml, path)
+
+	// `state shell` sets an environment variable, so run `state shell` in this project and then
+	// change to the subproject directory. Assert GetProjectFilePath() still returns the parent
+	// project.
+	require.NoError(t, os.Setenv(constants.ActivatedStateEnvVarName, projectDir))
+	defer os.Unsetenv(constants.ProfileEnvVarName)
+	require.NoError(t, os.Chdir(subprojectDir))
+	path, err = GetProjectFilePath()
+	assert.NoError(t, err)
+	assert.Equal(t, projectYaml, path)
+
+	// If the project were to not exist, GetProjectFilePath() should return a typed error.
+	require.NoError(t, os.Setenv(constants.ActivatedStateEnvVarName, filepath.Join(rootDir, "does-not-exist")))
+	path, err = GetProjectFilePath()
+	errNoProjectFromEnv := &ErrorNoProjectFromEnv{}
+	assert.ErrorAs(t, err, &errNoProjectFromEnv)
+
+	// After exiting out of the shell, the environment variable is no longer set. Assert
+	// GetProjectFilePath() returns the subproject.
+	require.NoError(t, os.Unsetenv(constants.ActivatedStateEnvVarName))
+	path, err = GetProjectFilePath()
+	assert.NoError(t, err)
+	assert.Equal(t, subprojectYaml, path)
+
+	// If a project's subdirectory does not contain an activestate.yaml file, GetProjectFilePath()
+	// should walk up the tree until it finds one.
+	require.NoError(t, os.Remove(subprojectYaml))
+	path, err = GetProjectFilePath()
+	assert.NoError(t, err)
+	assert.Equal(t, projectYaml, path)
+
+	// Change to an empty directory and assert GetProjectFilePath() returns the default project.
+	require.NoError(t, os.Chdir(emptyDir))
+	path, err = GetProjectFilePath()
+	assert.NoError(t, err)
+	assert.Equal(t, defaultYaml, path)
+
+	// If the default project no longer exists, GetProjectFilePath() should return a typed error.
+	cfg.Set(constants.GlobalDefaultPrefname, filepath.Join(rootDir, "does-not-exist"))
+	path, err = GetProjectFilePath()
+	errNoDefaultProject := &ErrorNoDefaultProject{}
+	assert.ErrorAs(t, err, &errNoDefaultProject)
+
+	// If none of the above, GetProjectFilePath() should return a typed error.
+	cfg.Set(constants.GlobalDefaultPrefname, "")
+	path, err = GetProjectFilePath()
+	errNoProject := &ErrorNoProject{}
+	assert.ErrorAs(t, err, &errNoProject)
 }
 
 // TestGet the config
 func TestGet(t *testing.T) {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
-	cwd, _ := os.Getwd()
+	cwd, _ := osutils.Getwd()
 	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
 
 	config := Get()
@@ -270,7 +317,7 @@ func TestGet(t *testing.T) {
 
 func TestGetActivated(t *testing.T) {
 	root, _ := environment.GetRootPath()
-	cwd, _ := os.Getwd()
+	cwd, _ := osutils.Getwd()
 	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
 
 	config1 := Get()
@@ -322,7 +369,7 @@ func TestNewProjectfile(t *testing.T) {
 	assert.Error(t, err, "We don't accept blank paths")
 
 	setCwd(t, "")
-	dir, err = os.Getwd()
+	dir, err = osutils.Getwd()
 	assert.NoError(t, err, "Should be no error when getting the CWD")
 	_, err = testOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", dir)
 	assert.Error(t, err, "Cannot create new project if existing as.yaml ...exists")

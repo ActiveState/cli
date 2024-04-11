@@ -70,7 +70,15 @@ func (u *Update) Run(params *UpdateParams) error {
 		return errs.Wrap(err, "Could not create requirement operation.")
 	}
 
-	err = op.ExecuteRequirementOperation(lang.Name, lang.Version, 0, bpModel.OperationAdded, model.NamespaceLanguage)
+	err = op.ExecuteRequirementOperation(
+		lang.Name,
+		lang.Version,
+		nil,
+		0, // bit-width placeholder that does not apply here
+		bpModel.OperationAdded,
+		nil,
+		&model.NamespaceLanguage,
+		nil)
 	if err != nil {
 		return locale.WrapError(err, "err_language_update", "Could not update language: {{.V0}}", lang.Name)
 	}

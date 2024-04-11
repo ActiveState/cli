@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -51,7 +52,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	// Verify that argparse still exists (it was not reverted along with urllib3).
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("shell", "Revert"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.ExpectInput(e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("python3")
@@ -62,6 +63,30 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	suite.Assert().NotContains(cp.Output(), "No module named 'argparse'")
 	cp.SendLine("exit()") // exit python3
 	cp.SendLine("exit")   // exit state shell
+	cp.ExpectExitCode(0)
+}
+
+func (suite *RevertIntegrationTestSuite) TestRevertHead() {
+	suite.OnlyRunForTags(tagsuite.Revert)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Revert", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "requests")
+	cp.Expect("Package added")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("revert", "HEAD", "--non-interactive")
+	cp.Expect("Successfully reverted")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("history")
+	cp.Expect("- requests")
+	cp.Expect("+ requests")
 	cp.ExpectExitCode(0)
 }
 
@@ -83,8 +108,9 @@ func (suite *RevertIntegrationTestSuite) TestRevert_failsOnCommitNotInHistory() 
 	cp.Expect(fmt.Sprintf("Operating on project %s", namespace))
 	cp.SendLine("Y")
 	cp.Expect(commitID)
-	cp.Expect("The target commit is not within the current commit's history")
+	cp.Expect("not found")
 	cp.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *RevertIntegrationTestSuite) TestRevertTo() {
@@ -140,8 +166,9 @@ func (suite *RevertIntegrationTestSuite) TestRevertTo_failsOnCommitNotInHistory(
 	cp.Expect(fmt.Sprintf("Operating on project %s", namespace))
 	cp.SendLine("Y")
 	cp.Expect(commitID)
-	cp.Expect("The target commit is not")
+	cp.Expect("not found")
 	cp.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *RevertIntegrationTestSuite) TestJSON() {

@@ -15,9 +15,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -43,6 +43,7 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("status"))
 	cp.Expect("Service cannot be reached")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("start"))
 	cp.Expect("Starting")
@@ -91,6 +92,7 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 
 	suite.OnlyRunForTags(tagsuite.Service)
 	ts := e2e.New(suite.T(), false)
+	ts.IgnoreLogErrors()
 	defer ts.Close()
 
 	// SIGINT (^C)
@@ -145,6 +147,7 @@ func (suite *SvcIntegrationTestSuite) TestStartDuplicateErrorOutput() {
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("foreground"))
 	cp.Expect("An existing server instance appears to be in use")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("stop"))
 	cp.ExpectExitCode(0)
@@ -189,7 +192,7 @@ func (suite *SvcIntegrationTestSuite) GetNumStateSvcProcesses() int {
 	for _, p := range procs {
 		if name, err := p.Name(); err == nil {
 			name = filepath.Base(name) // just in case an absolute path is returned
-			if svcName := constants.ServiceCommandName + exeutils.Extension; name == svcName {
+			if svcName := constants.ServiceCommandName + osutils.ExeExtension; name == svcName {
 				count++
 			}
 		}

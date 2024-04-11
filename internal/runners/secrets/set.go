@@ -45,7 +45,7 @@ func NewSet(p setPrimeable) *Set {
 
 // Run executes the set behavior.
 func (s *Set) Run(params SetRunParams) error {
-	s.out.Notice(locale.Tl("operating_message", "", s.proj.NamespaceString(), s.proj.Dir()))
+	s.out.Notice(locale.Tr("operating_message", s.proj.NamespaceString(), s.proj.Dir()))
 	if err := checkSecretsAccess(s.proj, s.auth); err != nil {
 		return locale.WrapError(err, "secrets_err_check_access")
 	}

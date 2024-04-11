@@ -29,7 +29,7 @@ func newUseCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return use.NewUse(prime).Run(params)
 		},
-	).SetGroup(EnvironmentUsageGroup)
+	).SetGroup(EnvironmentUsageGroup).SetSupportsStructuredOutput()
 	return cmd
 }
 
@@ -47,7 +47,7 @@ func newUseResetCommand(prime *primer.Values, globals *globalOptions) *captain.C
 			params.Force = globals.NonInteractive
 			return use.NewReset(prime).Run(params)
 		},
-	).SetDoesNotSupportStructuredOutput()
+	)
 }
 
 func newUseShowCommand(prime *primer.Values) *captain.Command {
@@ -61,6 +61,6 @@ func newUseShowCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return use.NewShow(prime).Run()
 		},
-	)
+	).SetSupportsStructuredOutput()
 	return cmd
 }

@@ -52,8 +52,7 @@ func NewAddIngredientVersionAuthorOK() *AddIngredientVersionAuthorOK {
 	return &AddIngredientVersionAuthorOK{}
 }
 
-/*
-AddIngredientVersionAuthorOK describes a response with status code 200, with default header values.
+/* AddIngredientVersionAuthorOK describes a response with status code 200, with default header values.
 
 The author added to the ingredient version
 */
@@ -85,8 +84,7 @@ func NewAddIngredientVersionAuthorBadRequest() *AddIngredientVersionAuthorBadReq
 	return &AddIngredientVersionAuthorBadRequest{}
 }
 
-/*
-AddIngredientVersionAuthorBadRequest describes a response with status code 400, with default header values.
+/* AddIngredientVersionAuthorBadRequest describes a response with status code 400, with default header values.
 
 If the author ID doesn't exist
 */
@@ -120,8 +118,7 @@ func NewAddIngredientVersionAuthorDefault(code int) *AddIngredientVersionAuthorD
 	}
 }
 
-/*
-AddIngredientVersionAuthorDefault describes a response with status code -1, with default header values.
+/* AddIngredientVersionAuthorDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

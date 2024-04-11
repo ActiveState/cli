@@ -8,7 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/osutils"
 	wc "github.com/ActiveState/cli/scripts/internal/workflow-controllers"
 	wh "github.com/ActiveState/cli/scripts/internal/workflow-helpers"
 	"github.com/andygrunwald/go-jira"
@@ -126,24 +126,35 @@ func run() error {
 		}
 
 		root := environment.GetRootPathUnsafe()
-		stdout, stderr, err := exeutils.ExecSimpleFromDir(root, "git", []string{"checkout", v.TargetBranch}, nil)
+		stdout, stderr, err := osutils.ExecSimpleFromDir(root, "git", []string{"checkout", v.TargetBranch}, nil)
 		if err != nil {
 			return errs.Wrap(err, "failed to checkout %s, stdout:\n%s\nstderr:\n%s", v.TargetBranch, stdout, stderr)
 		}
 
-		stdout, stderr, err = exeutils.ExecSimpleFromDir(root, "git", []string{
-			"merge", v.SourceBranch,
-			"--no-edit", "-m",
-			fmt.Sprintf("Merge branch %s to adopt changes from PR #%d", v.SourceBranch, prNumber),
-		}, nil)
+		commitMessage := fmt.Sprintf("Merge branch %s to adopt changes from PR #%d", v.SourceBranch, prNumber)
+		stdout, stderr, err = merge(root, v.SourceBranch, commitMessage)
 		if err != nil {
-			return errs.Wrap(err,
-				"failed to merge %s into %s. please manually merge the following branches: %s"+
-					"\nstdout:\n%s\nstderr:\n%s",
-				v.SourceBranch, v.TargetBranch, intend[i:].String(), stdout, stderr)
+			conflictOnlyInVersionTxt := strings.Count(stdout, "CONFLICT (content): Merge conflict in") == 1 &&
+				strings.Index(stdout, "Merge conflict in version.txt") != -1
+
+			if conflictOnlyInVersionTxt {
+				// Abort the conflicted merge and then redo it, preferring the target branch's version.txt.
+				stdout, stderr, err = osutils.ExecSimpleFromDir(root, "git", []string{"merge", "--abort"}, nil)
+				if err != nil {
+					return errs.Wrap(err, "failed to abort conflicted merge\nstdout: %s\nstderr: %s\n", stdout, stderr)
+				}
+				stdout, stderr, err = merge(root, v.SourceBranch, commitMessage, "-s", "ort", "-X", "ours")
+			}
+
+			if err != nil {
+				return errs.Wrap(err,
+					"failed to merge %s into %s. please manually merge the following branches: %s"+
+						"\nstdout:\n%s\nstderr:\n%s",
+					v.SourceBranch, v.TargetBranch, intend[i:].String(), stdout, stderr)
+			}
 		}
 
-		stdout, stderr, err = exeutils.ExecSimpleFromDir(root, "git", []string{"push"}, nil)
+		stdout, stderr, err = osutils.ExecSimpleFromDir(root, "git", []string{"push"}, nil)
 		if err != nil {
 			return errs.Wrap(err,
 				"failed to merge %s into %s. please manually merge the following branches: %s"+
@@ -217,4 +228,13 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (
 	}
 
 	return result, nil
+}
+
+func merge(rootDir, sourceBranch, commitMessage string, extraGitArgs ...string) (string, string, error) {
+	args := append([]string{
+		"merge", sourceBranch,
+		"-m", commitMessage,
+		"--no-edit",
+	}, extraGitArgs...)
+	return osutils.ExecSimpleFromDir(rootDir, "git", args, nil)
 }

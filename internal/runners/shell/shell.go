@@ -1,8 +1,11 @@
 package shell
 
 import (
+	"os"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -11,11 +14,11 @@ import (
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -72,7 +75,7 @@ func (u *Shell) Run(params *Params) error {
 		return locale.WrapError(err, "err_shell_cannot_load_project")
 	}
 
-	commitID, err := commitmediator.Get(proj)
+	commitID, err := localcommit.Get(proj.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -81,16 +84,18 @@ func (u *Shell) Run(params *Params) error {
 		return locale.NewInputError("err_shell_commit_id_mismatch")
 	}
 
-	rti, err := runtime.NewFromProject(proj, target.TriggerShell, u.analytics, u.svcModel, u.out, u.auth)
+	rti, err := runtime.NewFromProject(proj, nil, target.TriggerShell, u.analytics, u.svcModel, u.out, u.auth, u.config)
 	if err != nil {
 		return locale.WrapInputError(err, "err_shell_runtime_new", "Could not start a shell/prompt for this project.")
 	}
 
 	if process.IsActivated(u.config) {
-		return locale.NewInputError("err_shell_already_active", "", proj.NamespaceString(), proj.Dir())
+		activatedProjectNamespace := os.Getenv(constants.ActivatedStateNamespaceEnvVarName)
+		activatedProjectDir := os.Getenv(constants.ActivatedStateEnvVarName)
+		return locale.NewInputError("err_shell_already_active", "", activatedProjectNamespace, activatedProjectDir)
 	}
 
-	u.out.Notice(locale.Tl("shell_project_statement", "",
+	u.out.Notice(locale.Tr("shell_project_statement",
 		proj.NamespaceString(),
 		proj.Dir(),
 		setup.ExecDir(rti.Target().Dir()),

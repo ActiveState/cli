@@ -28,9 +28,8 @@ func (suite *MsgIntegrationTestSuite) TestMessage_None() {
 	cp.Expect("Usage:")
 	cp.ExpectExitCode(0)
 
-	// Since message failures should fail silently without impacting the user we need to check the logs for any
-	// potential issues.
-	ts.DetectLogErrors()
+	// Note: since message failures should fail silently without impacting the user we need to check
+	// the logs for any potential issues. This is done automatically by ts.Close().
 }
 
 func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
@@ -167,6 +166,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic_InterruptExit() {
 	cp.ExpectExitCode(1)
 	suite.Require().Contains(cp.Snapshot(), "This is a simple message")
 	suite.Require().NotContains(cp.Output(), "Usage:")
+	ts.IgnoreLogErrors()
 }
 
 func TestMsgIntegrationTestSuite(t *testing.T) {

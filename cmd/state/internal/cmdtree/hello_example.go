@@ -10,7 +10,7 @@ import (
 func newHelloCommand(prime *primer.Values) *captain.Command {
 	runner := hello.New(prime)
 
-	params := hello.NewRunParams()
+	params := hello.NewParams()
 
 	cmd := captain.NewCommand(
 		// The command's name should not be localized as we want commands to behave consistently regardless of localization.
@@ -56,6 +56,8 @@ func newHelloCommand(prime *primer.Values) *captain.Command {
 
 	// The group is used to group together commands in the --help output
 	cmd.SetGroup(UtilsGroup)
+	// Commands should support structured (JSON) output whenever possible.
+	cmd.SetSupportsStructuredOutput()
 	// Any new command should be marked unstable for the first release it goes out in.
 	cmd.SetUnstable(true)
 	// Certain commands like `state deploy` are there for backwards compatibility, but we don't want to show them in the --help output as they are not part of the happy path or our long term goals.

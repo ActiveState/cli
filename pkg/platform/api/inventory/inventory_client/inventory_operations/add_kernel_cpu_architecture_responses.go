@@ -52,8 +52,7 @@ func NewAddKernelCPUArchitectureOK() *AddKernelCPUArchitectureOK {
 	return &AddKernelCPUArchitectureOK{}
 }
 
-/*
-AddKernelCPUArchitectureOK describes a response with status code 200, with default header values.
+/* AddKernelCPUArchitectureOK describes a response with status code 200, with default header values.
 
 The CPU architecture added to the kernel
 */
@@ -85,8 +84,7 @@ func NewAddKernelCPUArchitectureBadRequest() *AddKernelCPUArchitectureBadRequest
 	return &AddKernelCPUArchitectureBadRequest{}
 }
 
-/*
-AddKernelCPUArchitectureBadRequest describes a response with status code 400, with default header values.
+/* AddKernelCPUArchitectureBadRequest describes a response with status code 400, with default header values.
 
 If the CPU architecture ID doesn't exist
 */
@@ -120,8 +118,7 @@ func NewAddKernelCPUArchitectureDefault(code int) *AddKernelCPUArchitectureDefau
 	}
 }
 
-/*
-AddKernelCPUArchitectureDefault describes a response with status code -1, with default header values.
+/* AddKernelCPUArchitectureDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

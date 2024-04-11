@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -28,6 +27,7 @@ const (
 	RequirementNamespaceKey           = "namespace"
 	RequirementVersionRequirementsKey = "version_requirements"
 	RequirementVersionKey             = "version"
+	RequirementRevisionKey            = "revision"
 	RequirementComparatorKey          = "comparator"
 
 	ctxLet         = "let"
@@ -64,6 +64,7 @@ type Value struct {
 	Str   *string
 	Null  *Null
 	Float *float64
+	Int   *int
 
 	Assignment *Var
 	Object     *[]*Var
@@ -91,7 +92,7 @@ type In struct {
 //	  "let": {
 //	    "runtime": {
 //	      "solve_legacy": {
-//	        "at_time": "2023-04-27T17:30:05.999000Z",
+//	        "at_time": "$at_time",
 //	        "build_flags": [],
 //	        "camel_flags": [],
 //	        "platforms": [
@@ -168,6 +169,11 @@ func New(data []byte) (*BuildExpression, error) {
 		return nil, errs.Wrap(err, "Could not validate requirements")
 	}
 
+	err = expr.normalizeTimestamp()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not normalize timestamp")
+	}
+
 	return expr, nil
 }
 
@@ -180,7 +186,7 @@ func NewEmpty() (*BuildExpression, error) {
 			"let": {
 				"runtime": {
 					"solve_legacy": {
-						"at_time": "",
+						"at_time": "$at_time",
 						"build_flags": [],
 						"camel_flags": [],
 						"platforms": [],
@@ -682,6 +688,21 @@ func (e *BuildExpression) getSolveNodeArguments() ([]*Value, error) {
 	return solveAp.Arguments, nil
 }
 
+func (e *BuildExpression) getSolveAtTimeValue() (*Value, error) {
+	solveAp, err := e.getSolveNode()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get solve node")
+	}
+
+	for _, arg := range solveAp.Arguments {
+		if arg.Assignment != nil && arg.Assignment.Name == AtTimeKey {
+			return arg.Assignment.Value, nil
+		}
+	}
+
+	return nil, errs.New("Could not find %s", AtTimeKey)
+}
+
 func (e *BuildExpression) getPlatformsNode() (*[]*Value, error) {
 	solveAp, err := e.getSolveNode()
 	if err != nil {
@@ -731,15 +752,19 @@ func (e *BuildExpression) addRequirement(requirement model.Requirement) error {
 		{Name: RequirementNamespaceKey, Value: &Value{Str: ptr.To(requirement.Namespace)}},
 	}
 
+	if requirement.Revision != nil {
+		obj = append(obj, &Var{Name: RequirementRevisionKey, Value: &Value{Int: requirement.Revision}})
+	}
+
 	if requirement.VersionRequirement != nil {
+		values := []*Value{}
 		for _, r := range requirement.VersionRequirement {
-			obj = append(obj, &Var{Name: RequirementVersionRequirementsKey, Value: &Value{List: &[]*Value{
-				{Object: &[]*Var{
-					{Name: RequirementComparatorKey, Value: &Value{Str: ptr.To(r[RequirementComparatorKey])}},
-					{Name: RequirementVersionKey, Value: &Value{Str: ptr.To(r[RequirementVersionKey])}},
-				}}},
+			values = append(values, &Value{Object: &[]*Var{
+				{Name: RequirementComparatorKey, Value: &Value{Str: ptr.To(r[RequirementComparatorKey])}},
+				{Name: RequirementVersionKey, Value: &Value{Str: ptr.To(r[RequirementVersionKey])}},
 			}})
 		}
+		obj = append(obj, &Var{Name: RequirementVersionRequirementsKey, Value: &Value{List: &values}})
 	}
 
 	requirementsNode, err := e.getRequirementsNode()
@@ -767,6 +792,11 @@ func (e *BuildExpression) addRequirement(requirement model.Requirement) error {
 	return nil
 }
 
+type RequirementNotFoundError struct {
+	Name                   string
+	*locale.LocalizedError // for legacy non-user-facing error usages
+}
+
 func (e *BuildExpression) removeRequirement(requirement model.Requirement) error {
 	requirementsNode, err := e.getRequirementsNode()
 	if err != nil {
@@ -789,7 +819,10 @@ func (e *BuildExpression) removeRequirement(requirement model.Requirement) error
 	}
 
 	if !found {
-		return locale.NewInputError("err_remove_requirement_not_found", "Could not remove requirement '[ACTIONABLE]{{.V0}}[/RESET]', because it does not exist.", requirement.Name)
+		return &RequirementNotFoundError{
+			requirement.Name,
+			locale.NewInputError("err_remove_requirement_not_found", "", requirement.Name),
+		}
 	}
 
 	solveNode, err := e.getSolveNode()
@@ -864,28 +897,43 @@ func (e *BuildExpression) removePlatform(platformID strfmt.UUID) error {
 	return nil
 }
 
-func (e *BuildExpression) UpdateTimestamp(timestamp strfmt.DateTime) error {
-	formatted, err := time.Parse(time.RFC3339, timestamp.String())
+func (e *BuildExpression) SetDefaultTimestamp() error {
+	atTimeNode, err := e.getSolveAtTimeValue()
 	if err != nil {
-		return errs.Wrap(err, "Could not parse latest timestamp")
+		return errs.Wrap(err, "Could not get %s node", AtTimeKey)
+	}
+	atTimeNode.Str = ptr.To("$" + AtTimeKey)
+	return nil
+}
+
+// normalizeTimestamp normalizes the solve node's timestamp, if possible.
+// Platform timestamps may differ from the strfmt.DateTime format. For example, Platform
+// timestamps will have microsecond precision, while strfmt.DateTime will only have millisecond
+// precision. This will affect comparisons between buildexpressions (which is normally done
+// byte-by-byte).
+func (e *BuildExpression) normalizeTimestamp() error {
+	atTimeNode, err := e.getSolveAtTimeValue()
+	if err != nil {
+		return errs.Wrap(err, "Could not get at time node")
 	}
 
-	solveNode, err := e.getSolveNode()
-	if err != nil {
-		return errs.Wrap(err, "Could not get solve node")
-	}
-
-	for _, arg := range solveNode.Arguments {
-		if arg.Assignment == nil {
-			continue
+	if atTimeNode.Str != nil && !strings.HasPrefix(*atTimeNode.Str, "$") {
+		atTime, err := strfmt.ParseDateTime(*atTimeNode.Str)
+		if err != nil {
+			return errs.Wrap(err, "Invalid timestamp: %s", *atTimeNode.Str)
 		}
-
-		if arg.Assignment.Name == "at_time" {
-			arg.Assignment.Value.Str = ptr.To(formatted.Format(time.RFC3339))
-		}
+		atTimeNode.Str = ptr.To(atTime.String())
 	}
 
 	return nil
+}
+
+func (e *BuildExpression) Copy() (*BuildExpression, error) {
+	bytes, err := json.Marshal(e)
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to marshal build expression during copy")
+	}
+	return New(bytes)
 }
 
 func (e *BuildExpression) MarshalJSON() ([]byte, error) {
@@ -946,6 +994,8 @@ func (v *Value) MarshalJSON() ([]byte, error) {
 		return json.Marshal(v.Assignment)
 	case v.Float != nil:
 		return json.Marshal(*v.Float)
+	case v.Int != nil:
+		return json.Marshal(*v.Int)
 	case v.Object != nil:
 		m := make(map[string]interface{})
 		for _, assignment := range *v.Object {

@@ -19,7 +19,7 @@ func newScriptsCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
 			return runner.Run()
-		}).SetGroup(AutomationGroup)
+		}).SetGroup(AutomationGroup).SetSupportsStructuredOutput()
 }
 
 func newScriptsEditCommand(prime *primer.Values) *captain.Command {
@@ -50,6 +50,6 @@ func newScriptsEditCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			return editRunner.Run(&params)
 		},
-	).SetUnstable(true).SetDoesNotSupportStructuredOutput()
+	).SetUnstable(true)
 
 }

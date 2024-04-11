@@ -63,8 +63,7 @@ func NewSetAddOnDefaultOK() *SetAddOnDefaultOK {
 	return &SetAddOnDefaultOK{}
 }
 
-/*
-SetAddOnDefaultOK describes a response with status code 200, with default header values.
+/* SetAddOnDefaultOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -96,8 +95,7 @@ func NewSetAddOnDefaultBadRequest() *SetAddOnDefaultBadRequest {
 	return &SetAddOnDefaultBadRequest{}
 }
 
-/*
-SetAddOnDefaultBadRequest describes a response with status code 400, with default header values.
+/* SetAddOnDefaultBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -129,8 +127,7 @@ func NewSetAddOnDefaultForbidden() *SetAddOnDefaultForbidden {
 	return &SetAddOnDefaultForbidden{}
 }
 
-/*
-SetAddOnDefaultForbidden describes a response with status code 403, with default header values.
+/* SetAddOnDefaultForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -162,8 +159,7 @@ func NewSetAddOnDefaultNotFound() *SetAddOnDefaultNotFound {
 	return &SetAddOnDefaultNotFound{}
 }
 
-/*
-SetAddOnDefaultNotFound describes a response with status code 404, with default header values.
+/* SetAddOnDefaultNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -195,8 +191,7 @@ func NewSetAddOnDefaultInternalServerError() *SetAddOnDefaultInternalServerError
 	return &SetAddOnDefaultInternalServerError{}
 }
 
-/*
-SetAddOnDefaultInternalServerError describes a response with status code 500, with default header values.
+/* SetAddOnDefaultInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

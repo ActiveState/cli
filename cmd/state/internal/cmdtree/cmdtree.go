@@ -47,6 +47,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newExportGithubActionCommand(prime),
 		newExportDocsCommand(prime),
 		newExportEnvCommand(prime),
+		newLogCommand(prime),
 	)
 
 	platformsCmd := newPlatformsCommand(prime)
@@ -62,7 +63,10 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	)
 
 	languagesCmd := newLanguagesCommand(prime)
-	languagesCmd.AddChildren(newLanguageInstallCommand(prime))
+	languagesCmd.AddChildren(
+		newLanguageInstallCommand(prime),
+		newLanguageSearchCommand(prime),
+	)
 
 	cleanCmd := newCleanCommand(prime)
 	cleanCmd.AddChildren(
@@ -156,6 +160,11 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	refreshCmd := newRefreshCommand(prime)
 
+	artifactsCmd := newArtifactsCommand(prime)
+	artifactsCmd.AddChildren(
+		newArtifactsDownloadCommand(prime),
+	)
+
 	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
 		newHelloCommand(prime),
@@ -204,7 +213,10 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		refreshCmd,
 		newSwitchCommand(prime),
 		newTestCommand(prime),
-		//newCommitCommand(prime), // re-enable in DX-2307
+		newCommitCommand(prime),
+		newPublish(prime),
+		newEvalCommand(prime),
+		artifactsCmd,
 	)
 
 	return &CmdTree{
@@ -229,6 +241,7 @@ var (
 	VCSGroup              = captain.NewCommandGroup(locale.Tl("group_vcs", "Version Control"), 5)
 	AutomationGroup       = captain.NewCommandGroup(locale.Tl("group_automation", "Automation"), 4)
 	UtilsGroup            = captain.NewCommandGroup(locale.Tl("group_utils", "Utilities"), 3)
+	AuthorGroup           = captain.NewCommandGroup(locale.Tl("group_author", "Author"), 6)
 )
 
 func newGlobalOptions() *globalOptions {
@@ -279,14 +292,6 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 				Value:       &globals.Output,
 			},
 			{
-				/* This option is only used for the vscode extension: It prevents the integrated terminal to close immediately after an error occurs, such that the user can read the message */
-				Name:        "confirm-exit-on-error", // Name and Shorthand should be kept in sync with cmd/state/output.go
-				Description: "prompts the user to press enter before exiting, when an error occurs",
-				Persist:     true,
-				Hidden:      true, // No need to add this to help messages
-				Value:       &opts.ConfirmExit,
-			},
-			{
 				Name:        "non-interactive", // Name and Shorthand should be kept in sync with cmd/state/output.go
 				Description: locale.T("flag_state_non_interactive_description"),
 				Shorthand:   "n",
@@ -321,6 +326,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 	cmd.SetHasVariableArguments()
 	cmd.OnExecStart(cmdCall.OnExecStart)
 	cmd.OnExecStop(cmdCall.OnExecStop)
+	cmd.SetSupportsStructuredOutput()
 
 	return cmd
 }
@@ -360,7 +366,7 @@ func (a *addCmdAs) deprecatedAlias(aliased *captain.Command, name string) {
 		func(c *captain.Command, args []string) error {
 			msg := locale.Tl(
 				"cmd_deprecated_notice",
-				"This command is deprecated. Please use `state {{.V0}}` instead.",
+				"This command is deprecated. Please use '[ACTIONABLE]state {{.V0}}[/RESET]' instead.",
 				aliased.Name(),
 			)
 

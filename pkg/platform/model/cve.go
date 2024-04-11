@@ -22,8 +22,8 @@ func FetchProjectVulnerabilities(auth *authentication.Auth, org, project string)
 	// This should be removed by https://www.pivotaltracker.com/story/show/176508740
 	if !auth.Authenticated() {
 		return nil, errs.AddTips(
-			locale.NewError("cve_needs_authentication", "You need to be authenticated in order to access vulnerability information about your project."),
-			locale.Tl("auth_tip", "Run `state auth` to authenticate."),
+			locale.NewError("cve_needs_authentication"),
+			locale.T("auth_tip"),
 		)
 	}
 	req := request.VulnerabilitiesByProject(org, project)
@@ -36,6 +36,9 @@ func FetchProjectVulnerabilities(auth *authentication.Auth, org, project string)
 
 	msg := resp.ProjectVulnerabilities.Message
 	if msg != nil {
+		if resp.ProjectVulnerabilities.TypeName == "NotFound" {
+			return nil, &ErrProjectNotFound{org, project}
+		}
 		return nil, locale.NewError("project_vulnerability_err", "Request to retrieve vulnerability information failed with error: {{.V0}}", *msg)
 	}
 
@@ -47,8 +50,8 @@ func FetchCommitVulnerabilities(auth *authentication.Auth, commitID string) (*mo
 	// This should be removed by https://www.pivotaltracker.com/story/show/176508740
 	if !auth.Authenticated() {
 		return nil, errs.AddTips(
-			locale.NewError("cve_needs_authentication", "You need to be authenticated in order to access vulnerability information about your project."),
-			locale.Tl("auth_tip", "Run `state auth` to authenticate."),
+			locale.NewError("cve_needs_authentication"),
+			locale.T("auth_tip"),
 		)
 	}
 	req := request.VulnerabilitiesByCommit(commitID)

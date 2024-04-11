@@ -214,15 +214,13 @@ func (p *Project) ProjectDir() string {
 	return p.Dir()
 }
 
-// LegacyCommitID is for use by commitmediator.Get() ONLY.
+// LegacyCommitID is for use by legacy mechanics ONLY
 func (p *Project) LegacyCommitID() string {
 	return p.projectfile.LegacyCommitID()
 }
 
-// LegacySetCommit is for use by commitmediator.Set() ONLY.
-// Remove in DX-2307.
-func (p *Project) LegacySetCommit(commitID string) error {
-	return p.projectfile.LegacySetCommit(commitID)
+func (p *Project) SetLegacyCommit(commitID string) error {
+	return p.projectfile.SetLegacyCommit(commitID)
 }
 
 func (p *Project) IsHeadless() bool {
@@ -238,8 +236,8 @@ func (p *Project) NormalizedName() string {
 // Version returns the locked state tool version
 func (p *Project) Version() string { return p.projectfile.Version() }
 
-// VersionBranch returns branch that we're pinned to (useless unless version is also set)
-func (p *Project) VersionBranch() string { return p.projectfile.VersionBranch() }
+// Channel returns channel that we're pinned to (useless unless version is also set)
+func (p *Project) Channel() string { return p.projectfile.Channel() }
 
 // IsLocked returns whether the current project is locked
 func (p *Project) IsLocked() bool { return p.Lock() != "" }

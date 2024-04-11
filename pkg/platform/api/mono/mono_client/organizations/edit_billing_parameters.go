@@ -54,12 +54,10 @@ func NewEditBillingParamsWithHTTPClient(client *http.Client) *EditBillingParams 
 	}
 }
 
-/*
-EditBillingParams contains all the parameters to send to the API endpoint
+/* EditBillingParams contains all the parameters to send to the API endpoint
+   for the edit billing operation.
 
-	for the edit billing operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type EditBillingParams struct {
 

@@ -8,10 +8,10 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/rtutils"
@@ -67,7 +67,7 @@ func (s *ScriptRun) NeedsActivation() bool {
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
 func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
-	rt, err := runtime.New(target.NewProjectTarget(s.project, nil, target.TriggerScript), s.analytics, s.svcModel, s.auth)
+	rt, err := runtime.New(target.NewProjectTarget(s.project, nil, target.TriggerScript), s.analytics, s.svcModel, s.auth, s.cfg, s.out)
 	switch {
 	case err == nil:
 		break
@@ -85,7 +85,7 @@ func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
 	venv := virtualenvironment.New(rt)
 
 	projDir := filepath.Dir(s.project.Source().Path())
-	env, err := venv.GetEnv(true, true, projDir)
+	env, err := venv.GetEnv(true, true, projDir, s.project.Namespace().String())
 	if err != nil {
 		return errs.Wrap(err, "Could not get venv environment")
 	}
@@ -95,7 +95,7 @@ func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
 	}
 
 	// search the "clean" path first (PATHS that are set by venv)
-	env, err = venv.GetEnv(false, true, "")
+	env, err = venv.GetEnv(false, true, "", "")
 	if err != nil {
 		return errs.Wrap(err, "Could not get venv environment")
 	}
@@ -190,7 +190,7 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 			err = locale.WrapInputError(
 				err,
 				"err_run_script",
-				"Script execution fell back to {{.V0}} after {{.V1}} was not detected in your project or system. Please ensure your script is compatible with one, or more, of: {{.V0}}, {{.V1}}",
+				"Script execution fell back to '{{.V0}}' after '{{.V1}}' was not detected in your project or system. Please ensure your script is compatible with one, or more, of: {{.V0}}, {{.V1}}",
 				lang.String(),
 				strings.Join(attempted, ", "),
 			)
@@ -203,5 +203,5 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 }
 
 func PathProvidesExec(path, exec string) bool {
-	return exeutils.FindExeInside(exec, path) != ""
+	return osutils.FindExeInside(exec, path) != ""
 }

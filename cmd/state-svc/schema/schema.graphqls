@@ -5,7 +5,7 @@ type Version {
 type StateVersion {
     license: String!
     version: String!
-    branch: String!
+    channel: String!
     revision: String!
     date: String!
 }

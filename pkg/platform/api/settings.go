@@ -43,6 +43,12 @@ const (
 	// ServiceBuildPlanner is our service that processes build plans.
 	ServiceBuildPlanner = "build-planner"
 
+	// ServiceVulnerabilities is Data Acquisition's Hasura service for vulnerability (CVE) information.
+	ServiceVulnerabilities = "vulnerabilities"
+
+	// ServiceHasuraInventory is the Hasura service for inventory information.
+	ServiceHasuraInventory = "hasura-inventory"
+
 	// TestingPlatform is the API host used by tests so-as not to affect production.
 	TestingPlatform = ".testing.tld"
 )
@@ -93,6 +99,16 @@ var urlsByService = map[Service]*url.URL{
 		Host:   constants.DefaultAPIHost,
 		Path:   constants.BuildPlannerAPIPath,
 	},
+	ServiceVulnerabilities: {
+		Scheme: "https",
+		Host:   constants.DefaultAPIHost,
+		Path:   constants.VulnerabilitiesAPIPath,
+	},
+	ServiceHasuraInventory: {
+		Scheme: "https",
+		Host:   constants.DefaultAPIHost,
+		Path:   constants.HasuraInventoryAPIPath,
+	},
 }
 
 // GetServiceURL returns the URL for the given service
@@ -108,6 +124,17 @@ func GetServiceURL(service Service) *url.URL {
 	if insecure := os.Getenv(constants.APIInsecureEnvVarName); insecure == "true" {
 		if serviceURL.Scheme == "https" || serviceURL.Scheme == "wss" {
 			serviceURL.Scheme = strings.TrimRight(serviceURL.Scheme, "s")
+		}
+	}
+
+	sname := strings.Replace(strings.ToUpper(string(service)), "-", "_", -1)
+	envname := constants.APIServiceOverrideEnvVarName + sname
+	if override := os.Getenv(envname); override != "" {
+		u, err := url.Parse(override)
+		if err != nil {
+			logging.Error("Could not apply %s: %s", envname, err)
+		} else {
+			return u
 		}
 	}
 
@@ -135,4 +162,18 @@ func getProjectHost(service Service) *string {
 	}
 
 	return &url.Host
+}
+
+// GetPlatformURL returns a generic Platform URL for the given path.
+// This is for retrieving non-service URLs (e.g. signup URL).
+func GetPlatformURL(path string) *url.URL {
+	host := constants.DefaultAPIHost
+	if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
+		host = hostOverride
+	}
+	return &url.URL{
+		Scheme: "https",
+		Host:   host,
+		Path:   path,
+	}
 }

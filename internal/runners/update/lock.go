@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -17,12 +18,13 @@ import (
 )
 
 // var _ captain.FlagMarshaler = (*StateToolChannelVersion)(nil)
+
 type StateToolChannelVersion struct {
-	captain.NameVersion
+	captain.NameVersionValue
 }
 
 func (stv *StateToolChannelVersion) Set(arg string) error {
-	err := stv.NameVersion.Set(arg)
+	err := stv.NameVersionValue.Set(arg)
 	if err != nil {
 		return locale.WrapInputError(
 			err,
@@ -83,13 +85,13 @@ func (l *Lock) Run(params *LockParams) error {
 	defaultChannel, lockVersion := params.Channel.Name(), params.Channel.Version()
 	prefer := true
 	if defaultChannel == "" {
-		defaultChannel = l.project.VersionBranch()
+		defaultChannel = l.project.Channel()
 		prefer = false // may be overwritten by env var
 	}
 	channel := fetchChannel(defaultChannel, prefer)
 
 	var version string
-	if l.project.IsLocked() && channel == l.project.VersionBranch() {
+	if l.project.IsLocked() && channel == l.project.Channel() {
 		version = l.project.Version()
 	}
 
@@ -100,6 +102,11 @@ func (l *Lock) Run(params *LockParams) error {
 
 	if lockVersion == "" {
 		lockVersion = exactVersion
+	}
+
+	err = l.cfg.Set(constants.AutoUpdateConfigKey, "false")
+	if err != nil {
+		return locale.WrapError(err, "err_lock_disable_autoupdate", "Unable to disable automatic updates prior to locking")
 	}
 
 	err = projectfile.AddLockInfo(l.project.Source().Path(), channel, lockVersion)

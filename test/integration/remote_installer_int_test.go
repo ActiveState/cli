@@ -8,7 +8,6 @@ import (
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -32,10 +31,10 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 		Channel string
 	}{
 		// Disabled until the target installers support the installpath override env var: DX-1350
-		// {"install-release-latest", "", constants.ReleaseBranch},
+		// {"install-release-latest", "", constants.ReleaseChannel},
 		// {"install-prbranch", "", ""},
-		// {"install-prbranch-with-version", constants.Version, constants.BranchName},
-		{"install-prbranch-and-branch", "", constants.BranchName},
+		// {"install-prbranch-with-version", constants.Version, constants.ChannelName},
+		{"install-prbranch-and-channel", "", constants.ChannelName},
 	}
 
 	for _, tt := range tests {
@@ -46,7 +45,7 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 			suite.setupTest(ts)
 
 			installPath := filepath.Join(ts.Dirs.Work, "install")
-			stateExePath := filepath.Join(installPath, "bin", constants.StateCmd+exeutils.Extension)
+			stateExePath := filepath.Join(installPath, "bin", constants.StateCmd+osutils.ExeExtension)
 
 			args := []string{}
 			if tt.Version != "" {
@@ -85,7 +84,7 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 				cp.Expect("Version " + tt.Version)
 			}
 			if tt.Channel != "" {
-				cp.Expect("Branch " + tt.Channel)
+				cp.Expect("Channel " + tt.Channel)
 			}
 			cp.Expect("Built")
 			cp.ExpectExitCode(0)
@@ -109,7 +108,7 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 func (s *RemoteInstallIntegrationTestSuite) setupTest(ts *e2e.Session) {
 	root := environment.GetRootPathUnsafe()
 	buildDir := fileutils.Join(root, "build")
-	installerExe := filepath.Join(buildDir, constants.StateRemoteInstallerCmd+osutils.ExeExt)
+	installerExe := filepath.Join(buildDir, constants.StateRemoteInstallerCmd+osutils.ExeExtension)
 	if !fileutils.FileExists(installerExe) {
 		s.T().Fatal("E2E tests require a state-remote-installer binary. Run `state run build-installer`.")
 	}

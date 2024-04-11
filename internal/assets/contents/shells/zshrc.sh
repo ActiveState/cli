@@ -2,7 +2,7 @@ if [ -f $ZDOTDIR/.zshrc ]; then source $ZDOTDIR/.zshrc; fi
 
 cd "{{.WD}}"
 
-{{if ne .Owner ""}}
+{{if and (ne .Owner "") (not .PreservePs1)}}
 export PS1="[{{.Owner}}/{{.Name}}] $PS1"
 {{end}}
 

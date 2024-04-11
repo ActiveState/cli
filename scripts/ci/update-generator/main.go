@@ -106,7 +106,7 @@ func createUpdate(outputPath, channel, version, versionNumber, platform, target 
 }
 
 func createInstaller(buildPath, outputPath, channel, platform string) error {
-	installer := filepath.Join(buildPath, "state-installer"+osutils.ExeExt)
+	installer := filepath.Join(buildPath, "state-installer"+osutils.ExeExtension)
 	if !fileutils.FileExists(installer) {
 		return errs.New("state-installer does not exist in build dir")
 	}
@@ -133,7 +133,7 @@ func run() error {
 		inDir         = defaultInputDir
 		outDir        = defaultOutputDir
 		platform      = fetchPlatform()
-		branch        = constants.BranchName
+		channel       = constants.ChannelName
 		version       = constants.Version
 		versionNumber = constants.VersionNumber
 	)
@@ -143,7 +143,7 @@ func run() error {
 		&platform, "platform", platform,
 		"Target platform in the form OS-ARCH. Defaults to running os/arch or the combination of the environment variables GOOS and GOARCH if both are set.",
 	)
-	flag.StringVar(&branch, "b", branch, "Override target branch. (Branch to receive update.)")
+	flag.StringVar(&channel, "b", channel, "Override target channel. (Channel to receive update.)")
 	flag.StringVar(&version, "v", version, "Override version number for this update.")
 	flag.Parse()
 
@@ -151,11 +151,11 @@ func run() error {
 		return err
 	}
 
-	if err := createUpdate(outDir, branch, version, versionNumber, platform, inDir); err != nil {
+	if err := createUpdate(outDir, channel, version, versionNumber, platform, inDir); err != nil {
 		return err
 	}
 
-	if err := createInstaller(binDir, outDir, branch, platform); err != nil {
+	if err := createInstaller(binDir, outDir, channel, platform); err != nil {
 		return err
 	}
 

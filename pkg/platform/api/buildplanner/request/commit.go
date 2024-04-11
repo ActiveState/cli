@@ -1,11 +1,9 @@
 package request
 
-import "github.com/ActiveState/cli/internal/logging"
-
-func BuildPlanByCommitID(commitID string) *buildPlanByCommitID {
-	logging.Debug("BuildPlanByCommitID")
+func BuildPlanByCommitID(commitID, target string) *buildPlanByCommitID {
 	bp := &buildPlanByCommitID{map[string]interface{}{
 		"commitID": commitID,
+		"target":   target,
 	}}
 
 	return bp
@@ -17,12 +15,12 @@ type buildPlanByCommitID struct {
 
 func (b *buildPlanByCommitID) Query() string {
 	return `
-query ($commitID: ID!) {
+query ($commitID: ID!, $target: String) {
   commit(commitId: $commitID) {
     ... on Commit {
       __typename
       expr
-      build {
+      build(target: $target) {
         __typename
         ... on BuildCompleted {
           buildLogIds {
@@ -66,6 +64,7 @@ query ($commitID: ID!) {
             ... on ArtifactSucceeded {
               __typename
               nodeId
+              displayName
               mimeType
               generatedBy
               runtimeDependencies
@@ -77,6 +76,7 @@ query ($commitID: ID!) {
             ... on ArtifactUnbuilt {
               __typename
               nodeId
+              displayName
               mimeType
               generatedBy
               runtimeDependencies
@@ -85,6 +85,7 @@ query ($commitID: ID!) {
             ... on ArtifactStarted {
               __typename
               nodeId
+              displayName
               mimeType
               generatedBy
               runtimeDependencies
@@ -93,6 +94,7 @@ query ($commitID: ID!) {
             ... on ArtifactTransientlyFailed {
               __typename
               nodeId
+              displayName
               mimeType
               generatedBy
               runtimeDependencies
@@ -105,6 +107,7 @@ query ($commitID: ID!) {
             ... on ArtifactPermanentlyFailed {
               __typename
               nodeId
+              displayName
               mimeType
               generatedBy
               runtimeDependencies
@@ -115,6 +118,7 @@ query ($commitID: ID!) {
             ... on ArtifactFailed {
               __typename
               nodeId
+              displayName
               mimeType
               generatedBy
               runtimeDependencies
@@ -177,6 +181,6 @@ query ($commitID: ID!) {
 `
 }
 
-func (b *buildPlanByCommitID) Vars() map[string]interface{} {
-	return b.vars
+func (b *buildPlanByCommitID) Vars() (map[string]interface{}, error) {
+	return b.vars, nil
 }
