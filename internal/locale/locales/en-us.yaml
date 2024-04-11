@@ -695,7 +695,7 @@ raw_version_updated:
 raw_updated:
   other: "Package updated: [NOTICE]{{.V0}}[/RESET]"
 raw_removed:
-  other: "Package removed: [NOTICE]{{.V0}}[/NOTICE]"
+  other: "Package removed: [NOTICE]{{.V0}}[/RESET]"
 notice_commit_build_script:
   other: |
     Your local build script has changes that should be committed. Please run '[ACTIONABLE]state commit[/RESET]' to do so.
