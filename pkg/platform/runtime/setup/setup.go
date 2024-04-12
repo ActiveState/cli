@@ -165,10 +165,10 @@ type ArtifactSetuper interface {
 }
 
 type ArtifactResolver interface {
-	ResolveArtifactName(artifact.ArtifactID) string
+	ResolveArtifactName(strfmt.UUID) string
 }
 
-type artifactInstaller func(artifact.ArtifactID, string, ArtifactSetuper) error
+type artifactInstaller func(strfmt.UUID, string, ArtifactSetuper) error
 type artifactUninstaller func() error
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
@@ -313,14 +313,14 @@ func (s *Setup) solveUpdateRecover(r interface{}) {
 	panic(r) // We're just logging the panic while we have context, we're not meant to handle it here
 }
 
-func (s *Setup) updateArtifacts(commit *bpResp.Commit) ([]artifact.ArtifactID, error) {
+func (s *Setup) updateArtifacts(commit *bpResp.Commit) ([]strfmt.UUID, error) {
 	mutex := &sync.Mutex{}
 	var installArtifactFuncs []func() error
 
 	// Fetch and install each runtime artifact.
 	// Note: despite the name, we are "pre-installing" the artifacts to a temporary location.
 	// Once all artifacts are fetched, unpacked, and prepared, final installation occurs.
-	artifacts, uninstallFunc, err := s.fetchAndInstallArtifacts(commit, func(a artifact.ArtifactID, archivePath string, as ArtifactSetuper) (rerr error) {
+	artifacts, uninstallFunc, err := s.fetchAndInstallArtifacts(commit, func(a strfmt.UUID, archivePath string, as ArtifactSetuper) (rerr error) {
 		defer func() {
 			if rerr != nil {
 				rerr = &ArtifactInstallError{errs.Wrap(rerr, "Unable to install artifact")}
@@ -439,7 +439,7 @@ func (s *Setup) updateArtifacts(commit *bpResp.Commit) ([]artifact.ArtifactID, e
 	return artifacts, nil
 }
 
-func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
+func (s *Setup) updateExecutors(artifacts []strfmt.UUID) error {
 	execPath := ExecDir(s.target.Dir())
 	if err := fileutils.MkdirUnlessExists(execPath); err != nil {
 		return locale.WrapError(err, "err_deploy_execpath", "Could not create exec directory.")
@@ -472,7 +472,7 @@ func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 // all of them were already installed.
 // It may also return an artifact uninstaller function that should be run prior to final
 // installation.
-func (s *Setup) fetchAndInstallArtifacts(commit *bpResp.Commit, installFunc artifactInstaller) ([]artifact.ArtifactID, artifactUninstaller, error) {
+func (s *Setup) fetchAndInstallArtifacts(commit *bpResp.Commit, installFunc artifactInstaller) ([]strfmt.UUID, artifactUninstaller, error) {
 	if s.target.InstallFromDir() != nil {
 		artifacts, err := s.fetchAndInstallArtifactsFromDir(installFunc)
 		return artifacts, nil, err
@@ -480,7 +480,7 @@ func (s *Setup) fetchAndInstallArtifacts(commit *bpResp.Commit, installFunc arti
 	return s.fetchAndInstallArtifactsFromBuildPlan(commit, installFunc)
 }
 
-func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(commit *bpResp.Commit, installFunc artifactInstaller) ([]artifact.ArtifactID, artifactUninstaller, error) {
+func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(commit *bpResp.Commit, installFunc artifactInstaller) ([]strfmt.UUID, artifactUninstaller, error) {
 	// If the build is not ready or if we are installing the buildtime closure
 	// then we need to include the buildtime closure in the changed artifacts
 	// and the progress reporting.
@@ -605,7 +605,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(commit *bpResp.Commit, ins
 		commit.Build.Ready(), artifactNamesList, installedList, downloadList,
 	)
 
-	artifactsToInstall := []artifact.ArtifactID{}
+	artifactsToInstall := []strfmt.UUID{}
 	var artifactsToBuild artifact.Map
 	if commit.Build.Ready() {
 		for _, a := range downloadablePrebuiltResults {
@@ -629,7 +629,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(commit *bpResp.Commit, ins
 	// Output a dependency summary if applicable.
 	if s.target.Trigger() == target.TriggerCheckout {
 		// For initial checkouts, show requested dependencies (i.e. project dependencies).
-		requestedArtifacts := make([]artifact.ArtifactID, 0)
+		requestedArtifacts := make([]strfmt.UUID, 0)
 		for _, req := range commit.Build.ResolvedRequirements {
 			for artifactId, a := range artifactsToBuild {
 				if a.Name == req.Requirement.Name && a.Namespace == req.Requirement.Namespace {
@@ -640,7 +640,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(commit *bpResp.Commit, ins
 		}
 		dependencies.OutputSummary(s.out, requestedArtifacts, artifactsToBuild)
 	} else if s.target.Trigger() == target.TriggerInit {
-		dependencies.OutputSummary(s.out, artifact.ArtifactIDsFromArtifactSlice(changedArtifacts.Added), artifactsToBuild)
+		dependencies.OutputSummary(s.out, strfmt.UUIDsFromArtifactSlice(changedArtifacts.Added), artifactsToBuild)
 	} else if len(oldBuildPlanArtifacts) > 0 {
 		dependencies.OutputChangeSummary(s.out, changedArtifacts, artifactsToBuild, oldBuildPlanArtifacts)
 	}
@@ -658,8 +658,8 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(commit *bpResp.Commit, ins
 		RequiresBuild: !commit.Build.Ready(),
 		ArtifactNames: artifactNames,
 		LogFilePath:   logFilePath,
-		ArtifactsToBuild: func() []artifact.ArtifactID {
-			return artifact.ArtifactIDsFromBuildPlanMap(artifactsToBuild) // This does not account for cached builds
+		ArtifactsToBuild: func() []strfmt.UUID {
+			return strfmt.UUIDsFromBuildPlanMap(artifactsToBuild) // This does not account for cached builds
 		}(),
 		// Yes these have the same value; this is intentional.
 		// Separating these out just allows us to be more explicit and intentional in our event handling logic.
@@ -679,7 +679,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(commit *bpResp.Commit, ins
 		s.analytics.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeDownload, dimensions)
 	}
 
-	err = s.installArtifactsFromBuild(commit, requestedArtifacts, artifact.ArtifactIDsToMap(artifactsToInstall), downloadablePrebuiltResults, setup, resolver, installFunc, logFilePath)
+	err = s.installArtifactsFromBuild(commit, requestedArtifacts, strfmt.UUIDsToMap(artifactsToInstall), downloadablePrebuiltResults, setup, resolver, installFunc, logFilePath)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -712,7 +712,7 @@ func aggregateErrors() (chan<- error, <-chan error) {
 	return bgErrs, aggErr
 }
 
-func (s *Setup) installArtifactsFromBuild(commit *bpResp.Commit, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, downloads []artifact.ArtifactDownload, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller, logFilePath string) error {
+func (s *Setup) installArtifactsFromBuild(commit *bpResp.Commit, artifacts artifact.Map, artifactsToInstall map[strfmt.UUID]struct{}, downloads []artifact.ArtifactDownload, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller, logFilePath string) error {
 	// Artifacts are installed in two stages
 	// - The first stage runs concurrently in MaxConcurrency worker threads (download, unpacking, relocation)
 	// - The second stage moves all files into its final destination is running in a single thread (using the mainthread library) to avoid file conflicts
@@ -740,7 +740,7 @@ func (s *Setup) installArtifactsFromBuild(commit *bpResp.Commit, artifacts artif
 func (s *Setup) setupArtifactSubmitFunction(
 	a artifact.ArtifactDownload,
 	ar *artifact.Artifact,
-	expectedArtifactInstalls map[artifact.ArtifactID]struct{},
+	expectedArtifactInstalls map[strfmt.UUID]struct{},
 	commit *bpResp.Commit,
 	resolver ArtifactResolver,
 	installFunc artifactInstaller,
@@ -786,7 +786,7 @@ func (s *Setup) setupArtifactSubmitFunction(
 	}
 }
 
-func (s *Setup) installFromBuildResult(commit *bpResp.Commit, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, downloads []artifact.ArtifactDownload, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller) error {
+func (s *Setup) installFromBuildResult(commit *bpResp.Commit, artifacts artifact.Map, artifactsToInstall map[strfmt.UUID]struct{}, downloads []artifact.ArtifactDownload, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller) error {
 	logging.Debug("Installing artifacts from build result")
 	errs, aggregatedErr := aggregateErrors()
 	mainthread.Run(func() {
@@ -800,7 +800,7 @@ func (s *Setup) installFromBuildResult(commit *bpResp.Commit, artifacts artifact
 			if arv, ok := artifacts[a.ArtifactID]; ok {
 				ar = &arv
 			}
-			wp.Submit(s.setupArtifactSubmitFunction(a, ar, map[artifact.ArtifactID]struct{}{}, commit, resolver, installFunc, errs))
+			wp.Submit(s.setupArtifactSubmitFunction(a, ar, map[strfmt.UUID]struct{}{}, commit, resolver, installFunc, errs))
 		}
 
 		wp.StopWait()
@@ -809,7 +809,7 @@ func (s *Setup) installFromBuildResult(commit *bpResp.Commit, artifacts artifact
 	return <-aggregatedErr
 }
 
-func (s *Setup) installFromBuildLog(commit *bpResp.Commit, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller, logFilePath string) error {
+func (s *Setup) installFromBuildLog(commit *bpResp.Commit, artifacts artifact.Map, artifactsToInstall map[strfmt.UUID]struct{}, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller, logFilePath string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -867,7 +867,7 @@ func (s *Setup) installFromBuildLog(commit *bpResp.Commit, artifacts artifact.Ma
 	return <-aggregatedErr
 }
 
-func (s *Setup) moveToInstallPath(a artifact.ArtifactID, unpackedDir string, envDef *envdef.EnvironmentDefinition, numFiles int) error {
+func (s *Setup) moveToInstallPath(a strfmt.UUID, unpackedDir string, envDef *envdef.EnvironmentDefinition, numFiles int) error {
 	// clean up the unpacked dir
 	defer os.RemoveAll(unpackedDir)
 
@@ -1041,7 +1041,7 @@ func selectArtifactResolver(commit *bpResp.Commit, artifactListing *buildplan.Ar
 	}
 }
 
-func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine, a artifact.ArtifactID) (ArtifactSetuper, error) {
+func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine, a strfmt.UUID) (ArtifactSetuper, error) {
 	switch buildEngine {
 	case model.Alternative:
 		return alternative.NewArtifactSetup(a, s.store), nil
@@ -1067,7 +1067,7 @@ func reusableArtifacts(requestedArtifacts []*bpResp.Artifact, storedArtifacts st
 	return keep
 }
 
-func (s *Setup) fetchAndInstallArtifactsFromDir(installFunc artifactInstaller) ([]artifact.ArtifactID, error) {
+func (s *Setup) fetchAndInstallArtifactsFromDir(installFunc artifactInstaller) ([]strfmt.UUID, error) {
 	artifactsDir := s.target.InstallFromDir()
 	if artifactsDir == nil {
 		return nil, errs.New("Cannot install from a directory that is nil")
@@ -1079,7 +1079,7 @@ func (s *Setup) fetchAndInstallArtifactsFromDir(installFunc artifactInstaller) (
 	}
 	logging.Debug("Found %d artifacts to install from '%s'", len(artifacts), *artifactsDir)
 
-	installedArtifacts := make([]artifact.ArtifactID, len(artifacts))
+	installedArtifacts := make([]strfmt.UUID, len(artifacts))
 
 	errors, aggregatedErr := aggregateErrors()
 	mainthread.Run(func() {
@@ -1095,7 +1095,7 @@ func (s *Setup) fetchAndInstallArtifactsFromDir(installFunc artifactInstaller) (
 			if extIndex == -1 {
 				extIndex = len(basename)
 			}
-			artifactID := artifact.ArtifactID(basename[0:extIndex])
+			artifactID := strfmt.UUID(basename[0:extIndex])
 			installedArtifacts[i] = artifactID
 
 			// Submit the artifact for setup and install.

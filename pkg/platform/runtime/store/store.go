@@ -14,9 +14,9 @@ import (
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
+	"github.com/go-openapi/strfmt"
 )
 
 // Store manages the storing and loading of persistable information about the runtime
@@ -26,13 +26,13 @@ type Store struct {
 }
 
 type StoredArtifact struct {
-	ArtifactID artifact.ArtifactID           `json:"artifactID"`
+	ArtifactID strfmt.UUID                   `json:"artifactID"`
 	Files      []string                      `json:"files"`
 	Dirs       []string                      `json:"dirs"`
 	EnvDef     *envdef.EnvironmentDefinition `json:"envdef"`
 }
 
-func NewStoredArtifact(artifactID artifact.ArtifactID, files []string, dirs []string, envDef *envdef.EnvironmentDefinition) StoredArtifact {
+func NewStoredArtifact(artifactID strfmt.UUID, files []string, dirs []string, envDef *envdef.EnvironmentDefinition) StoredArtifact {
 	return StoredArtifact{
 		ArtifactID: artifactID,
 		Files:      files,
@@ -41,7 +41,7 @@ func NewStoredArtifact(artifactID artifact.ArtifactID, files []string, dirs []st
 	}
 }
 
-type StoredArtifactMap = map[artifact.ArtifactID]StoredArtifact
+type StoredArtifactMap = map[strfmt.UUID]StoredArtifact
 
 func New(installPath string) *Store {
 	return &Store{
@@ -157,7 +157,7 @@ func (s *Store) Artifacts() (StoredArtifactMap, error) {
 }
 
 // DeleteArtifactStore deletes the stored information for a specific artifact from the store
-func (s *Store) DeleteArtifactStore(id artifact.ArtifactID) error {
+func (s *Store) DeleteArtifactStore(id strfmt.UUID) error {
 	jsonFile := filepath.Join(s.storagePath, constants.ArtifactMetaDir, id.String()+".json")
 	if !fileutils.FileExists(jsonFile) {
 		return nil
@@ -199,7 +199,7 @@ func (s *Store) Environ(inherit bool) (map[string]string, error) {
 	return envDef.GetEnv(inherit), nil
 }
 
-func (s *Store) UpdateEnviron(orderedArtifacts []artifact.ArtifactID) (*envdef.EnvironmentDefinition, error) {
+func (s *Store) UpdateEnviron(orderedArtifacts []strfmt.UUID) (*envdef.EnvironmentDefinition, error) {
 	artifacts, err := s.Artifacts()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not retrieve stored artifacts")
@@ -213,7 +213,7 @@ func (s *Store) UpdateEnviron(orderedArtifacts []artifact.ArtifactID) (*envdef.E
 	return rtGlobal, rtGlobal.WriteFile(filepath.Join(s.storagePath, constants.RuntimeDefinitionFilename))
 }
 
-func (s *Store) updateEnviron(orderedArtifacts []artifact.ArtifactID, artifacts StoredArtifactMap) (*envdef.EnvironmentDefinition, error) {
+func (s *Store) updateEnviron(orderedArtifacts []strfmt.UUID, artifacts StoredArtifactMap) (*envdef.EnvironmentDefinition, error) {
 	if len(orderedArtifacts) == 0 {
 		return nil, errs.New("Environment cannot be updated if no artifacts were installed")
 	}
