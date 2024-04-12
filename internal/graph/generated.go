@@ -33,6 +33,11 @@ type MessageInfo struct {
 	Placement MessagePlacementType `json:"placement"`
 }
 
+type ProcessInfo struct {
+	Exe string `json:"exe"`
+	Pid int    `json:"pid"`
+}
+
 type Project struct {
 	Namespace string   `json:"namespace"`
 	Locations []string `json:"locations"`

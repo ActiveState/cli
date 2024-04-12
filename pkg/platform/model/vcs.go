@@ -206,7 +206,7 @@ func NewNamespacePlatform() Namespace {
 func NewOrgNamespace(orgName string) Namespace {
 	return Namespace{
 		nsType: NamespaceOrg,
-		value:  fmt.Sprintf("org/%s", orgName),
+		value:  fmt.Sprintf("private/%s", orgName),
 	}
 }
 
@@ -331,11 +331,14 @@ func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64, auth *authent
 			return nil, errs.Wrap(err, "Could not get auth client")
 		}
 		res, err = authClient.VersionControl.GetCommitHistory(params, auth.ClientAuth())
+		if err != nil {
+			return nil, locale.WrapError(err, "err_get_commit_history", "", api.ErrorMessageFromPayload(err))
+		}
 	} else {
 		res, err = mono.New().VersionControl.GetCommitHistory(params, nil)
-	}
-	if err != nil {
-		return nil, locale.WrapError(err, "err_get_commit_history", "", api.ErrorMessageFromPayload(err))
+		if err != nil {
+			return nil, locale.WrapError(err, "err_get_commit_history", "", api.ErrorMessageFromPayload(err))
+		}
 	}
 
 	return res.Payload, nil
@@ -656,27 +659,6 @@ func ResolveRequirementNameAndVersion(name, version string, word int, namespace 
 	}
 
 	return name, version, nil
-}
-
-func commitChangeset(parentCommit strfmt.UUID, op Operation, ns Namespace, requirement, version string) ([]*mono_models.CommitChangeEditable, error) {
-	var res []*mono_models.CommitChangeEditable
-	if ns.Type() == NamespaceLanguage {
-		res = append(res, &mono_models.CommitChangeEditable{
-			Operation:         string(OperationUpdated),
-			Namespace:         ns.String(),
-			Requirement:       requirement,
-			VersionConstraint: version,
-		})
-	} else {
-		res = append(res, &mono_models.CommitChangeEditable{
-			Operation:         string(op),
-			Namespace:         ns.String(),
-			Requirement:       requirement,
-			VersionConstraint: version,
-		})
-	}
-
-	return res, nil
 }
 
 func ChangesetFromRequirements(op Operation, reqs []*gqlModel.Requirement) Changeset {

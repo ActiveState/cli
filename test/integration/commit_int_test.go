@@ -9,10 +9,10 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/stretchr/testify/suite"
 )
 
 type CommitIntegrationTestSuite struct {
@@ -20,7 +20,7 @@ type CommitIntegrationTestSuite struct {
 }
 
 func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
-	suite.OnlyRunForTags(tagsuite.Commit)
+	suite.OnlyRunForTags(tagsuite.Commit, tagsuite.BuildScripts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -64,7 +64,7 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 }
 
 func (suite *CommitIntegrationTestSuite) TestCommitAtTimeChange() {
-	suite.OnlyRunForTags(tagsuite.Commit)
+	suite.OnlyRunForTags(tagsuite.Commit, tagsuite.BuildScripts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

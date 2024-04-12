@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
+	"github.com/ActiveState/cli/internal/migrator"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -30,6 +31,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -121,7 +123,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		if err != nil {
 			return err
 		}
-		defer cleanup()
+		defer rtutils.Closer(cleanup, &rerr)
 	}
 
 	logging.CurrentHandler().SetVerbose(os.Getenv("VERBOSE") != "" || argsHaveVerbose(args))
@@ -160,6 +162,15 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		return logData
 	})
 
+	auth := authentication.New(cfg)
+	defer events.Close("auth", auth.Close)
+
+	if err := auth.Sync(); err != nil {
+		logging.Warning("Could not sync authenticated state: %s", errs.JoinMessage(err))
+	}
+
+	projectfile.RegisterMigrator(migrator.NewMigrator(auth, cfg))
+
 	// Retrieve project file
 	pjPath, err := projectfile.GetProjectFilePath()
 	if err != nil && errs.Matches(err, &projectfile.ErrorNoProjectFromEnv{}) {
@@ -185,13 +196,6 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		pjNamespace = pj.Namespace().String()
 	}
 
-	auth := authentication.New(cfg)
-	defer events.Close("auth", auth.Close)
-
-	if err := auth.Sync(); err != nil {
-		logging.Warning("Could not sync authenticated state: %s", errs.JoinMessage(err))
-	}
-
 	an := anAsync.New(anaConst.SrcStateTool, svcmodel, cfg, auth, out, pjNamespace)
 	defer func() {
 		if err := events.WaitForEvents(time.Second, an.Wait); err != nil {
@@ -207,8 +211,13 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 	conditional := constraints.NewPrimeConditional(auth, pj, sshell.Shell())
 	project.RegisterConditional(conditional)
-	project.RegisterExpander("mixin", project.NewMixin(auth).Expander)
-	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(auth), prompter, cfg, auth))
+	if err := project.RegisterExpander("mixin", project.NewMixin(auth).Expander); err != nil {
+		logging.Debug("Could not register mixin expander: %v", err)
+	}
+
+	if err := project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(auth), prompter, cfg, auth)); err != nil {
+		logging.Debug("Could not register secrets expander: %v", err)
+	}
 
 	// Run the actual command
 	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, ipcClient, svcmodel, an), args...)

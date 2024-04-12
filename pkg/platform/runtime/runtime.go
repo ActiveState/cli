@@ -53,21 +53,12 @@ type Runtime struct {
 	resolvedArtifacts []*artifact.Artifact
 }
 
-// NeedsUpdateError is an error returned when the runtime is not completely installed yet.
-type NeedsUpdateError struct{ error }
-
-// IsNeedsUpdateError checks if the error is a NeedsUpdateError
-func IsNeedsUpdateError(err error) bool {
-	return errs.Matches(err, &NeedsUpdateError{})
-}
-
 // NeedsCommitError is an error returned when the local runtime's build script has changes that need
 // staging. This is not a fatal error. A runtime can still be used, but a warning should be emitted.
-type NeedsCommitError struct{ error }
+var NeedsCommitError = errors.New("runtime needs commit")
 
-func IsNeedsCommitError(err error) bool {
-	return errs.Matches(err, &NeedsCommitError{})
-}
+// NeedsBuildscriptResetError is an error returned when the runtime is improperly referenced in the project (eg. missing buildscript)
+var NeedsBuildscriptResetError = errors.New("needs runtime reset")
 
 func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel, auth *authentication.Auth, cfg Configurable, out output.Outputer) (*Runtime, error) {
 	rt := &Runtime{
@@ -88,7 +79,7 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 	return rt, nil
 }
 
-// New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
+// New attempts to create a new runtime from local storage.
 func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, auth *authentication.Auth, cfg Configurable, out output.Outputer) (*Runtime, error) {
 	logging.Debug("Initializing runtime for: %s/%s@%s", target.Owner(), target.Name(), target.CommitUUID())
 
@@ -110,50 +101,52 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, a
 			CommitID: ptr.To(target.CommitUUID().String()),
 		})
 	}
+
 	return r, err
 }
 
-func (r *Runtime) validateCache() error {
+func (r *Runtime) NeedsUpdate() bool {
+	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
+		return false
+	}
 	if !r.store.MarkerIsValid(r.target.CommitUUID()) {
 		if r.target.ReadOnly() {
 			logging.Debug("Using forced cache")
 		} else {
-			return &NeedsUpdateError{errs.New("Runtime requires setup.")}
+			return true
 		}
 	}
+	return false
+}
 
+func (r *Runtime) validateCache() error {
 	if r.target.ProjectDir() == "" {
 		return nil
 	}
 
-	commitID := r.target.CommitUUID().String()
-	_, err := r.store.GetAndValidateBuildExpression(commitID)
-	if err != nil {
-		bp := model.NewBuildPlannerModel(r.auth)
-		bpExpr, err := bp.GetBuildExpression(commitID)
-		if err != nil {
-			return errs.Wrap(err, "Unable to get remote build expression")
-		}
-		if err := r.store.StoreBuildExpression(bpExpr, commitID); err != nil {
-			return errs.Wrap(err, "Unable to store build expression")
-		}
-	}
-
 	// Check if local build script has changes that should be committed.
 	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		cachedScript, err := r.store.BuildScript()
-		switch {
-		case err == nil:
-			script, err := buildscript.ScriptFromProject(r.target)
-			if err != nil && !errs.Matches(err, buildscript.ErrBuildscriptNotExist) {
-				return errs.Wrap(err, "Unable to get local build script")
+		script, err := buildscript.ScriptFromProject(r.target)
+		if err != nil {
+			if errs.Matches(err, buildscript.ErrBuildscriptNotExist) {
+				return errs.Pack(err, NeedsBuildscriptResetError)
 			}
-			if script != nil && !script.Equals(cachedScript) {
-				return &NeedsCommitError{errs.New("Runtime changes should be committed")}
-			}
+			return errs.Wrap(err, "Could not get buildscript from project")
+		}
 
-		case !errors.Is(err, store.ErrNoBuildScriptFile):
-			return errs.Wrap(err, "Unable to read cached build script")
+		cachedScript, err := r.store.BuildScript()
+		if err != nil {
+			if errors.Is(err, store.ErrNoBuildScriptFile) {
+				logging.Warning("No buildscript file exists in store, unable to check if buildscript is dirty. This can happen if you cleared your cache.")
+			} else {
+				return errs.Wrap(err, "Could not retrieve buildscript from store")
+			}
+		}
+
+		if cachedScript != nil {
+			if script != nil && !script.Equals(cachedScript) {
+				return NeedsCommitError
+			}
 		}
 	}
 
@@ -168,9 +161,11 @@ func (r *Runtime) Target() setup.Targeter {
 	return r.target
 }
 
-// Update updates the runtime by downloading all necessary artifacts from the Platform and installing them locally.
-// This function is usually called, after New() returned with a NeedsUpdateError
-func (r *Runtime) Update(eventHandler events.Handler) (rerr error) {
+func (r *Runtime) Setup(eventHandler events.Handler) *setup.Setup {
+	return setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out, r.svcm)
+}
+
+func (r *Runtime) Update(setup *setup.Setup, buildResult *model.BuildResult, commit *bpModel.Commit) (rerr error) {
 	if r.disabled {
 		logging.Debug("Skipping update as it is disabled")
 		return nil // nothing to do
@@ -182,7 +177,7 @@ func (r *Runtime) Update(eventHandler events.Handler) (rerr error) {
 		r.recordCompletion(rerr)
 	}()
 
-	if err := setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out).Update(); err != nil {
+	if err := setup.Update(buildResult, commit); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}
 
@@ -194,6 +189,22 @@ func (r *Runtime) Update(eventHandler events.Handler) (rerr error) {
 	*r = *rt
 
 	return nil
+}
+
+// SolveAndUpdate updates the runtime by downloading all necessary artifacts from the Platform and installing them locally.
+func (r *Runtime) SolveAndUpdate(eventHandler events.Handler) error {
+	if r.disabled {
+		logging.Debug("Skipping update as it is disabled")
+		return nil // nothing to do
+	}
+
+	setup := r.Setup(eventHandler)
+	br, commit, err := setup.Solve()
+	if err != nil {
+		return errs.Wrap(err, "Could not solve")
+	}
+
+	return r.Update(setup, br, commit)
 }
 
 // HasCache tells us whether this runtime has any cached files. Note this does NOT tell you whether the cache is valid.
@@ -266,17 +277,20 @@ func (r *Runtime) recordCompletion(err error) {
 		errorType = "buildplan"
 	case errs.Matches(err, &setup.ArtifactSetupErrors{}):
 		if setupErrors := (&setup.ArtifactSetupErrors{}); errors.As(err, &setupErrors) {
+		// Label the loop so we can break out of it when we find the first download
+		// or build error.
+		Loop:
 			for _, err := range setupErrors.Errors() {
 				switch {
 				case errs.Matches(err, &setup.ArtifactDownloadError{}):
 					errorType = "download"
-					break // it only takes one download failure to report the runtime failure as due to download error
+					break Loop // it only takes one download failure to report the runtime failure as due to download error
 				case errs.Matches(err, &setup.ArtifactInstallError{}):
 					errorType = "install"
 					// Note: do not break because there could be download errors, and those take precedence
 				case errs.Matches(err, &setup.BuildError{}), errs.Matches(err, &buildlog.BuildError{}):
 					errorType = "build"
-					break // it only takes one build failure to report the runtime failure as due to build error
+					break Loop // it only takes one build failure to report the runtime failure as due to build error
 				}
 			}
 		}
@@ -315,7 +329,9 @@ func (r *Runtime) recordUsage() {
 		multilog.Critical("Could not marshal dimensions for runtime-usage: %s", errs.JoinMessage(err))
 	}
 	if r.svcm != nil {
-		r.svcm.ReportRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), anaConsts.SrcStateTool, dimsJson)
+		if err := r.svcm.ReportRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), anaConsts.SrcStateTool, dimsJson); err != nil {
+			multilog.Critical("Could not report runtime usage: %s", errs.JoinMessage(err))
+		}
 	}
 }
 
@@ -366,6 +382,18 @@ func (r *Runtime) ExecutableDirs() (envdef.ExecutablePaths, error) {
 
 func IsRuntimeDir(dir string) bool {
 	return store.New(dir).HasMarker()
+}
+
+func (r *Runtime) BuildPlan() (*bpModel.Build, error) {
+	runtimeStore := r.store
+	if runtimeStore == nil {
+		runtimeStore = store.New(r.target.Dir())
+	}
+	plan, err := runtimeStore.BuildPlan()
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to fetch build plan")
+	}
+	return plan, nil
 }
 
 func (r *Runtime) ResolvedArtifacts() ([]*artifact.Artifact, error) {

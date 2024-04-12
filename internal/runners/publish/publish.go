@@ -146,10 +146,15 @@ func (r *Runner) Run(params *Params) error {
 
 	var ingredient *ParentIngredient
 
+	latestRevisionTime, err := model.FetchLatestRevisionTimeStamp(r.auth)
+	if err != nil {
+		return errs.Wrap(err, "Unable to determine latest revision time")
+	}
+
 	isRevision := false
 	if params.Version != "" {
 		// Attempt to get the version if it already exists, it not existing is not an error though
-		i, err := model.GetIngredientByNameAndVersion(reqVars.Namespace, reqVars.Name, params.Version, r.auth)
+		i, err := model.GetIngredientByNameAndVersion(reqVars.Namespace, reqVars.Name, params.Version, &latestRevisionTime, r.auth)
 		if err != nil {
 			var notFound *inventory_operations.GetNamespaceIngredientVersionNotFound
 			if !errors.As(err, &notFound) {
@@ -163,8 +168,7 @@ func (r *Runner) Run(params *Params) error {
 
 	if ingredient == nil {
 		// Attempt to find the existing ingredient, if we didn't already get it from the version specific call above
-		ts := time.Now()
-		ingredients, err := model.SearchIngredientsStrict(reqVars.Namespace, reqVars.Name, true, false, &ts, r.auth)
+		ingredients, err := model.SearchIngredientsStrict(reqVars.Namespace, reqVars.Name, true, false, &latestRevisionTime, r.auth)
 		if err != nil && !errs.Matches(err, &model.ErrSearch404{}) { // 404 means either the ingredient or the namespace was not found, which is fine
 			return locale.WrapError(err, "err_uploadingredient_search", "Could not search for ingredient")
 		}
@@ -192,15 +196,6 @@ func (r *Runner) Run(params *Params) error {
 				"Ingredient with namespace '[ACTIONABLE]{{.V0}}[/RESET]' and name '[ACTIONABLE]{{.V1}}[/RESET]' already exists. "+
 					"To edit an existing ingredient you need to pass the '[ACTIONABLE]--edit[/RESET]' flag.",
 				reqVars.Namespace, reqVars.Name)
-		}
-	}
-
-	// Validate user input
-	if params.Edit {
-		// Description is not currently supported for edit
-		// https://activestatef.atlassian.net/browse/DX-1886
-		if params.Description != "" {
-			return locale.NewInputError("err_uploadingredient_edit_description_not_supported")
 		}
 	}
 
@@ -320,7 +315,7 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRev
 	if params.Description != "" {
 		r.Description = params.Description
 	}
-	if r.Description == "" && !isRevision {
+	if r.Description == "" && !params.Edit {
 		r.Description = "Not Provided"
 	}
 
@@ -332,6 +327,11 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRev
 				Email: author.Email,
 			})
 		}
+	}
+
+	// User input trumps inheritance from previous ingredient
+	if len(params.Depends) != 0 || len(params.DependsRuntime) != 0 || len(params.DependsBuild) != 0 || len(params.DependsTest) != 0 {
+		r.Dependencies = []request.PublishVariableDep{}
 	}
 
 	if len(params.Depends) != 0 {

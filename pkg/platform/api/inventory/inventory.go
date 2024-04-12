@@ -2,7 +2,7 @@ package inventory
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -80,7 +80,7 @@ type RawResponder struct{}
 
 func (r *RawResponder) ReadResponse(res runtime.ClientResponse, cons runtime.Consumer) (interface{}, error) {
 	defer res.Body().Close()
-	bytes, err := ioutil.ReadAll(res.Body())
+	bytes, err := io.ReadAll(res.Body())
 	if err != nil {
 		return nil, err
 	}

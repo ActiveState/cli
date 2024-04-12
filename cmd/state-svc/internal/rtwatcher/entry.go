@@ -28,7 +28,7 @@ func (e entry) IsRunning() (bool, error) {
 	proc, err := process.NewProcess(int32(e.PID))
 	if err != nil {
 		if errors.Is(err, process.ErrorProcessNotRunning) {
-			logging.Debug("Process %d is no longer running", e.PID)
+			logging.Debug("Process %d is no longer running, recieved error: %s", e.PID, err.Error())
 			return false, nil
 		}
 		return false, errs.Wrap(err, "Could not find process: %d", e.PID)

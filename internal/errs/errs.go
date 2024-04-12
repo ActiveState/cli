@@ -45,7 +45,7 @@ type PackedErrors struct {
 func (e *PackedErrors) IsTransient() {}
 
 func (e *PackedErrors) Error() string {
-	return fmt.Sprintf("packed multiple errors")
+	return "packed multiple errors"
 }
 
 func (e *PackedErrors) Unwrap() []error {

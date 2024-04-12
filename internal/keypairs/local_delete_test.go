@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -37,7 +37,8 @@ func (suite *KeypairLocalDeleteTestSuite) Test_Success() {
 	cfg, err := config.New()
 	suite.Require().NoError(err)
 	defer func() { suite.Require().NoError(cfg.Close()) }()
-	osutil.CopyTestFileToConfigDir(cfg.ConfigPath(), "test-keypair.key", "custom-name.key", 0600)
+	err = osutil.CopyTestFileToConfigDir(cfg.ConfigPath(), "test-keypair.key", "custom-name.key", 0600)
+	suite.Require().NoError(err)
 
 	err = keypairs.Delete(suite.cfg, "custom-name")
 	suite.Require().Nil(err)
@@ -55,7 +56,8 @@ func (suite *KeypairLocalDeleteTestSuite) TestWithDefaults_Success() {
 	cfg, err := config.New()
 	suite.Require().NoError(err)
 	defer func() { suite.Require().NoError(cfg.Close()) }()
-	osutil.CopyTestFileToConfigDir(cfg.ConfigPath(), "test-keypair.key", constants.KeypairLocalFileName+".key", 0600)
+	err = osutil.CopyTestFileToConfigDir(cfg.ConfigPath(), "test-keypair.key", constants.KeypairLocalFileName+".key", 0600)
+	suite.Require().NoError(err)
 
 	err = keypairs.DeleteWithDefaults(suite.cfg)
 	suite.Require().Nil(err)

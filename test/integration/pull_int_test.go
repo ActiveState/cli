@@ -11,11 +11,11 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/stretchr/testify/suite"
 )
 
 type PullIntegrationTestSuite struct {
@@ -74,7 +74,7 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 }
 
 func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
-	suite.OnlyRunForTags(tagsuite.Pull)
+	suite.OnlyRunForTags(tagsuite.Pull, tagsuite.BuildScripts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -96,7 +96,7 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.NoError(err, "Error loading project")
 
-	_, err = buildscript.ScriptFromProjectWithFallback(proj, nil)
+	_, err = buildscript.ScriptFromProject(proj)
 	suite.Require().NoError(err) // just verify it's a valid build script
 
 	cp = ts.Spawn("pull")
@@ -104,7 +104,7 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	cp.ExpectNotExitCode(0)
 	ts.IgnoreLogErrors()
 
-	_, err = buildscript.ScriptFromProjectWithFallback(proj, nil)
+	_, err = buildscript.ScriptFromProject(proj)
 	suite.Assert().Error(err)
 	bytes := fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName))
 	suite.Assert().Contains(string(bytes), "<<<<<<<", "No merge conflict markers are in build script")

@@ -21,7 +21,7 @@ const (
 	compilersCacheKey         = "compilers"
 )
 
-var versionRegex = regexp.MustCompile("^(\\d+)\\D(\\d+)(?:\\D(\\d+))?")
+var versionRegex = regexp.MustCompile(`^(\d+)\D(\d+)(?:\D(\d+))?`)
 
 // OsInfo represents an OS returned by OS().
 type OsInfo int
@@ -172,7 +172,7 @@ func getCompilerVersion(args []string) (int, int, error) {
 	if err != nil {
 		return 0, 0, nil
 	}
-	regex := regexp.MustCompile("(\\d+)\\D(\\d+)\\D\\d+")
+	regex := regexp.MustCompile(`(\d+)\D(\d+)\D\d+`)
 	parts := regex.FindStringSubmatch(string(cc))
 	if len(parts) != 3 {
 		return 0, 0, fmt.Errorf("Unable to parse version string '%s'", cc)

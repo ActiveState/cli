@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -56,7 +57,7 @@ func NewEdit(prime primeable) *Edit {
 
 func (e *Edit) Run(params *EditParams) error {
 	if e.project == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 
 	script := e.project.ScriptByName(params.Name)

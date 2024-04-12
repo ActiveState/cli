@@ -12,7 +12,7 @@ func RemoveFromStrings(slice []string, indexes ...int) []string {
 			out = append(out, s)
 		}
 	}
-	return out[:len(out)]
+	return out[:]
 }
 
 func GetInt(slice []int, index int) (int, bool) {

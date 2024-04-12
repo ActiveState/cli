@@ -4,20 +4,21 @@ import (
 	"os"
 	"strings"
 
-	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 )
 
 const (
 	Activate        = "activate"
 	Analytics       = "analytics"
+	Artifacts       = "artifacts"
 	Auth            = "auth"
 	Automation      = "automation"
 	Branches        = "branches"
 	Bundle          = "bundle"
-	Builds          = "builds"
+	BuildScripts    = "buildscripts"
 	Carlisle        = "carlisle"
 	Checkout        = "checkout"
 	CLIDeploy       = "cli-deploy"

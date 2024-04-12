@@ -34,7 +34,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/sysinfo"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 type Params struct {
@@ -47,10 +47,15 @@ type Params struct {
 	activate        *project.Namespaced
 	activateDefault *project.Namespaced
 	showVersion     bool
+	nonInteractive  bool
 }
 
 func newParams() *Params {
-	return &Params{activate: &project.Namespaced{}, activateDefault: &project.Namespaced{}}
+	return &Params{
+		activate:        &project.Namespaced{},
+		activateDefault: &project.Namespaced{},
+		nonInteractive:  !term.IsTerminal(int(os.Stdin.Fd())),
+	}
 }
 
 func main() {
@@ -109,7 +114,6 @@ func main() {
 		return
 	}
 
-	var garbageBool bool
 	var garbageString string
 
 	// We have old install one liners around that use `-activate` instead of `--activate`
@@ -189,8 +193,8 @@ func main() {
 				Name:  "version", // note: no shorthand because install.sh uses -v for selecting version
 				Value: &params.showVersion,
 			},
+			{Name: "non-interactive", Shorthand: "n", Hidden: true, Value: &params.nonInteractive}, // don't prompt
 			// The remaining flags are for backwards compatibility (ie. we don't want to error out when they're provided)
-			{Name: "nnn", Shorthand: "n", Hidden: true, Value: &garbageBool}, // don't prompt; useless cause we don't prompt anyway
 			{Name: "channel", Hidden: true, Value: &garbageString},
 			{Name: "bbb", Shorthand: "b", Hidden: true, Value: &garbageString},
 			{Name: "vvv", Shorthand: "v", Hidden: true, Value: &garbageString},
@@ -341,7 +345,7 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 		return err
 	}
 
-	installer, err := NewInstaller(cfg, out, payloadPath, params)
+	installer, err := NewInstaller(cfg, out, an, payloadPath, params)
 	if err != nil {
 		out.Print(fmt.Sprintf("[ERROR]Could not create installer: %s[/RESET]", errs.JoinMessage(err)))
 		return err
@@ -424,7 +428,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 			an.EventWithLabel(anaConst.CatInstallerFunnel, "forward-activate-default-err", err.Error())
 			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err)))
 		}
-	case !params.isUpdate && terminal.IsTerminal(int(os.Stdin.Fd())) && os.Getenv(constants.InstallerNoSubshell) != "true" && os.Getenv("TERM") != "dumb":
+	case !params.isUpdate && term.IsTerminal(int(os.Stdin.Fd())) && os.Getenv(constants.InstallerNoSubshell) != "true" && os.Getenv("TERM") != "dumb":
 		if err := ss.SetEnv(osutils.InheritEnv(envMap(binPath))); err != nil {
 			return locale.WrapError(err, "err_subshell_setenv")
 		}
@@ -488,38 +492,4 @@ func assertCompatibility() error {
 	}
 
 	return nil
-}
-
-func noArgs() bool {
-	return len(os.Args[1:]) == 0
-}
-
-func shouldUpdateInstalledStateTool(stateExePath string) bool {
-	logging.Debug("Checking if installed state tool is an older version.")
-
-	stdout, _, err := osutils.ExecSimple(stateExePath, []string{"--version", "--output", "json"}, os.Environ())
-	if err != nil {
-		logging.Debug("Could not determine state tool version.")
-		return true // probably corrupted install
-	}
-	stdout = strings.Split(stdout, "\x00")[0] // TODO: DX-328
-
-	versionData := installation.VersionData{}
-	err = json.Unmarshal([]byte(stdout), &versionData)
-	if err != nil {
-		logging.Debug("Could not read state tool version output")
-		return true
-	}
-
-	if versionData.Channel != constants.ChannelName {
-		logging.Debug("State tool channel is different from installer.")
-		return false // do not update, require --force
-	}
-
-	if versionData.Version != constants.Version {
-		logging.Debug("State tool version is different from installer.")
-		return true
-	}
-
-	return false
 }

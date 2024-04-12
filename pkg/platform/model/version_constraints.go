@@ -8,6 +8,7 @@ import (
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 type versionConstraints struct {
@@ -49,6 +50,18 @@ func BuildPlannerVersionConstraintsToString(requirements []bpModel.VersionRequir
 		constraints = append(constraints, &versionConstraints{constraint[bpModel.VersionRequirementComparatorKey], constraint[bpModel.VersionRequirementVersionKey]})
 	}
 
+	return versionConstraintsToString(constraints)
+}
+
+func MonoConstraintsToString(monoConstraints mono_models.Constraints) string {
+	if monoConstraints == nil {
+		return ""
+	}
+
+	constraints := make([]*versionConstraints, len(monoConstraints))
+	for i, constraint := range monoConstraints {
+		constraints[i] = &versionConstraints{constraint.Comparator, constraint.Version}
+	}
 	return versionConstraintsToString(constraints)
 }
 

@@ -185,6 +185,10 @@ run_description:
   other: Run your project scripts
 scripts_description:
   other: Show project scripts
+runtime_setup_in_use_err:
+  other: |
+    Could not update your runtime as it is currently in use. Please stop any active runtime processes and try again. State Tool found the following processes to be using the runtime:
+    {{.V0}}
 runtime_alternative_file_transforms_err:
   other: "Could not apply necessary file transformations after unpacking."
 scripts_no_scripts:
@@ -652,6 +656,10 @@ bundle_added:
   other: "[SUCCESS]✔ {{.V0}} Bundle successfully installed![/RESET]"
 bundle_version_added:
   other: "[SUCCESS]✔ {{.V0}} Bundle @ version {{.V1}} successfully installed![/RESET]"
+language_updated:
+  other: "Language updated: [NOTICE]{{.V0}}[/RESET]"
+language_version_updated:
+  other: "Language updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
 err_package_updated:
   other: Failed to update package
 err_bundle_updated:
@@ -687,7 +695,7 @@ raw_version_updated:
 raw_updated:
   other: "Package updated: [NOTICE]{{.V0}}[/RESET]"
 raw_removed:
-  other: "Package removed: [NOTICE]{{.V0}}[/NOTICE]"
+  other: "Package removed: [NOTICE]{{.V0}}[/RESET]"
 notice_commit_build_script:
   other: |
     Your local build script has changes that should be committed. Please run '[ACTIONABLE]state commit[/RESET]' to do so.
@@ -860,10 +868,6 @@ arg_languages_install_description:
   other: The language to update in the form of <language>@<version>
 err_language_format:
   other: The language and version provided is not formatting correctly, must be in the form of <language>@<version>
-err_update_not_found:
-  other: "Could not find the requested language: [NOTICE]{{.V0}}[/RESET]. Please ensure the language name is correct and supported by the ActiveState platform"
-err_language_version_not_found:
-  other: The requested version [NOTICE]{{.V0}}[/RESET] for the language [NOTICE]{{.V1}}[/RESET] is not available
 err_language_mismatch:
   other: Cannot change languages, only changes to the current project's language is allowed
 err_no_recipes:
@@ -1083,8 +1087,6 @@ err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory or its parent directories.
 err_project_not_found:
   other: Could not find project at [NOTICE]{{.V0}}[/RESET]
-err_projectfile_parse:
-  other: Unable to parse {{.V0}}
 err_non_interactive_prompt:
   other: Prompt "{{.V0}}" cannot be resolved in non-interactive mode.
 err_read_projectfile:
@@ -1132,8 +1134,13 @@ err_user_network_solution:
   other: |
     Please ensure your device has access to internet during installation. Make sure software like a VPN, Firewall or Anti-Virus are not blocking your connectivity.
     If your issue persists consider reporting it on our forums at {{.V0}}.
+err_user_network_timeout:
+  other: "Request failed due to timeout. {{.V0}}"
 err_user_libc_solution:
   other: If you specified a glibc version, please check it is configured → [ACTIONABLE]{{.V0}}[/RESET].
+warn_revert_head:
+  other: |
+    [NOTICE]DEPRECATION WARNING[/RESET]: 'state revert HEAD' has been deprecated in favor of '[ACTIONABLE]state revert REMOTE[/RESET]'. Please use '[ACTIONABLE]state revert REMOTE[/RESET]' instead.
 err_revert_get_commit:
   other: "Could not fetch commit details for commit with ID: {{.V0}}"
 err_revert_commit:
@@ -1256,7 +1263,7 @@ package_ingredient_alternatives_nolang:
 progress_search:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalog"
 progress_cve_search:
-  other: " • Searching for vulnerabilities (CVEs) on [ACTIONABLE]{{.V0}}[/RESET] and its dependencies"
+  other: " • Searching for new vulnerabilities (CVEs) on [ACTIONABLE]{{.V0}}[/RESET] and any dependencies"
 setup_runtime:
   other: "Setting Up Runtime"
 progress_solve:
@@ -1277,6 +1284,8 @@ progress_unsafe:
   other: " [ERROR]x Unsafe[/RESET]"
 progress_commit:
   other: " • Creating commit"
+progress_solve_preruntime:
+  other: " • Resolving Dependencies"
 progress_pkg_nolang:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] across all languages in the ActiveState Catalog"
 progress_build_log:
@@ -1291,8 +1300,11 @@ unstable_feature_banner:
   other: "[NOTICE]Beta Feature: This feature is still in beta and may be unstable.[/RESET]\n"
 warning_vulnerable:
   other: |
-    • [ERROR]Warning:[/RESET] Dependency has [ERROR]{{.V0}} known vulnerabilities (CVEs)[/RESET]. Severity: {{.V1}}. Run `[ACTIONABLE]state security[/RESET]` for more info.
-warning_vulnerable_simple:
+    [ERROR]Warning: Dependency has {{.V0}} direct and {{.V1}} indirect known vulnerabilities (CVEs)[/RESET]
+warning_vulnerable_indirectonly:
+  other: |
+    [ERROR]Warning: Dependency has {{.V0}} indirect known vulnerabilities (CVEs)[/RESET]
+warning_vulnerable_directonly:
   other: |
     [ERROR]Warning: Dependency has {{.V0}} known vulnerabilities (CVEs)[/RESET]
 more_info_vulnerabilities:
@@ -1312,6 +1324,9 @@ secrets_unstable_warning:
     The secrets feature is currently unstable and not ready for production use. If you want to opt-in to unstable features, run the following command:
 
     [ACTIONABLE]state config set optin.unstable true[/RESET]
+installer_prompt_is_admin:
+  other: |
+    You are installing the State Tool as an administrator. The State Tool was designed to be installed without administrator privileges, and you may run into issues if you continue. Are you sure you want to do this?
 err_update_corrupt_install:
   other: |
     Unfortunately your current installation appears to have been corrupted. Please reinstall the State Tool by first
@@ -1540,13 +1555,40 @@ builds_dl_downloading:
   other: Downloading {{.V0}}
 warn_has_failed_artifacts:
   other: "Warning: This project has failed builds, and some artifacts will be missing as a result.\n"
+warn_build_not_complete:
+  other: "Warning: This project has not finished building all artifacts, this is only reporting on artifacts that have finished building.\n"
 err_build_artifacts_failed:
   other: |
     The following artifacts failed to build, please refer to their logs for more information:
     
     {{.V0}}
+err_build_artifact_failed_msg:
+  other: The artifact '[ACTIONABLE]{{.V0}}[/RESET]' failed to build.
 err_build_artifact_failed:
   other: |
     [NOTICE]{{.V0}}[/RESET]
     [DISABLED]├─ Message:[/RESET] [ERROR]{{.V1}}[/RESET]
     [DISABLED]└─ Log:[/RESET] [ACTIONABLE]{{.V2}}[/RESET]
+install_runtime:
+  other: Installing Runtime
+install_runtime_info:
+  other: "Installing your runtime and dependencies.\n"
+update_runtime:
+  other: Updating Runtime
+update_runtime_info:
+  other: "Changes to your runtime may require some dependencies to be rebuilt.\n"
+err_buildscript_notexist:
+  other: Your project does not have a buildscript.as file. Please refer to the documentation on how to create one.
+err_projectfile_version_too_high:
+  other: Your local checkout of this project depends on a newer version of the State Tool. Please update your State Tool by running [ACTIONABLE]state update[/RESET].
+err_headless:
+  other: Cannot operate on a headless project. Please visit {{.V0}} to convert your project and try again.
+notice_needs_buildscript_reset:
+  other: Your project is missing its buildscript file, please run '[ACTIONABLE]state reset LOCAL[/RESET]' to recreate it.
+
+svcctl_cannot_create_debug_info:
+  other: "Cannot create debug info: {{.V0}}"
+err_initial_no_requirement:
+  other: |
+    Could not find compatible requirement for initial commit. Please ensure that you are trying to install a valid package.
+    To check for available packages run '[ACTIONABLE]state search <package_name>[/RESET]'.

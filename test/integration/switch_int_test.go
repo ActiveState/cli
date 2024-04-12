@@ -7,9 +7,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/stretchr/testify/suite"
 )
 
 type SwitchIntegrationTestSuite struct {
@@ -72,7 +72,7 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID() {
 	}
 
 	// Check that branch and commitID were updated
-	pj, err = project.FromPath(pjfilepath)
+	_, err = project.FromPath(pjfilepath)
 	suite.Require().NoError(err)
 	suite.Require().NotEqual(originalCommitID, ts.CommitID(), "commitID was not updated after switching branches")
 }
@@ -101,7 +101,7 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID_NotInHistory() {
 	}
 
 	// Check that branch and commitID were not updated
-	pj, err = project.FromPath(pjfilepath)
+	_, err = project.FromPath(pjfilepath)
 	suite.Require().NoError(err)
 	suite.Equal(originalCommitID, ts.CommitID(), "commitID was updated after switching branches")
 }

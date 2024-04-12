@@ -4,6 +4,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -31,7 +32,7 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 	logging.Debug("Execute platforms remove")
 
 	if r.prime.Project() == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 
 	params, err := prepareParams(ps.Params, r.prime.Auth())
@@ -40,14 +41,14 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 	}
 
 	if err := requirements.NewRequirementOperation(r.prime).ExecuteRequirementOperation(
-		params.name,
-		params.version,
 		nil,
-		params.BitWidth,
-		bpModel.OperationRemoved,
-		nil,
-		&model.NamespacePlatform,
-		nil,
+		&requirements.Requirement{
+			Name:          params.name,
+			Version:       params.version,
+			Operation:     bpModel.OperationRemoved,
+			BitWidth:      params.BitWidth,
+			NamespaceType: &model.NamespacePlatform,
+		},
 	); err != nil {
 		return locale.WrapError(err, "err_remove_platform", "Could not remove platform.")
 	}

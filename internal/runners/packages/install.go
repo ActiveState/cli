@@ -12,7 +12,7 @@ import (
 
 // InstallRunParams tracks the info required for running Install.
 type InstallRunParams struct {
-	Package   captain.PackageValue
+	Packages  captain.PackagesValue
 	Timestamp captain.TimeValue
 	Revision  captain.IntValue
 }
@@ -31,14 +31,26 @@ func NewInstall(prime primeable) *Install {
 func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) (rerr error) {
 	defer rationalizeError(a.prime.Auth(), &rerr)
 
-	var nsTypeV *model.NamespaceType
-	var ns *model.Namespace
-
 	logging.Debug("ExecuteInstall")
-	if params.Package.Namespace != "" {
-		ns = ptr.To(model.NewRawNamespace(params.Package.Namespace))
-	} else {
-		nsTypeV = &nsType
+	var reqs []*requirements.Requirement
+	for _, p := range params.Packages {
+		req := &requirements.Requirement{
+			Name:      p.Name,
+			Version:   p.Version,
+			Operation: bpModel.OperationAdded,
+		}
+
+		if p.Namespace != "" {
+			req.Namespace = ptr.To(model.NewRawNamespace(p.Namespace))
+		} else {
+			req.NamespaceType = &nsType
+		}
+
+		if params.Revision.Int != nil {
+			req.Revision = *params.Revision.Int
+		}
+
+		reqs = append(reqs, req)
 	}
 
 	ts, err := getTime(&params.Timestamp, a.prime.Auth(), a.prime.Project())
@@ -46,14 +58,5 @@ func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) (rerr
 		return errs.Wrap(err, "Unable to get timestamp from params")
 	}
 
-	return requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(
-		params.Package.Name,
-		params.Package.Version,
-		params.Revision.Int,
-		0, // bit-width placeholder that does not apply here
-		bpModel.OperationAdded,
-		ns,
-		nsTypeV,
-		ts,
-	)
+	return requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(ts, reqs...)
 }

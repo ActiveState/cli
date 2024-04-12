@@ -2,7 +2,6 @@ package zsh
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -163,7 +162,7 @@ func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, ou
 			return err
 		}
 
-		path, err := ioutil.TempDir("", "state-zsh")
+		path, err := os.MkdirTemp("", "state-zsh")
 		if err != nil {
 			return errs.Wrap(err, "OS failure")
 		}

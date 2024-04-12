@@ -6,7 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 )
 
 type MainTestSuite struct {

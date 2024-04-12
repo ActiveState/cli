@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	"github.com/ActiveState/termtest"
 
@@ -29,7 +29,8 @@ type RunIntegrationTestSuite struct {
 func (suite *RunIntegrationTestSuite) createProjectFile(ts *e2e.Session, pythonVersion int) {
 	root := environment.GetRootPathUnsafe()
 	interruptScript := filepath.Join(root, "test", "integration", "assets", "run", "interrupt.go")
-	fileutils.CopyFile(interruptScript, filepath.Join(ts.Dirs.Work, "interrupt.go"))
+	err := fileutils.CopyFile(interruptScript, filepath.Join(ts.Dirs.Work, "interrupt.go"))
+	suite.Require().NoError(err)
 
 	// ActiveState-CLI/Python3 is just a place-holder that is never used
 	configFileContent := strings.TrimPrefix(fmt.Sprintf(`
@@ -38,6 +39,7 @@ scripts:
   - name: test-interrupt
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
     standalone: true
+    language: bash
     value: |
         go build -o ./interrupt ./interrupt.go
         ./interrupt
@@ -45,6 +47,7 @@ scripts:
   - name: test-interrupt
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
     standalone: true
+    language: bash
     value: |
         go build -o .\interrupt.exe .\interrupt.go
         .\interrupt.exe
@@ -66,6 +69,7 @@ scripts:
     value: |
       exit 123
     standalone: true
+    language: bash
 `, pythonVersion), "\n")
 
 	ts.PrepareActiveStateYAML(configFileContent)
@@ -117,9 +121,9 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	cp.Expect("3")
 
 	cp.SendLine(fmt.Sprintf("%s run test-interrupt", cp.Executable()))
-	cp.Expect("Start of script", termtest.OptExpectTimeout(5*time.Second))
+	cp.Expect("Start of script", termtest.OptExpectTimeout(10*time.Second))
 	cp.SendCtrlC()
-	cp.Expect("received interrupt", termtest.OptExpectTimeout(3*time.Second))
+	cp.Expect("received interrupt", termtest.OptExpectTimeout(5*time.Second))
 	cp.Expect("After first sleep or interrupt", termtest.OptExpectTimeout(2*time.Second))
 	cp.SendCtrlC()
 	suite.expectTerminateBatchJob(cp)

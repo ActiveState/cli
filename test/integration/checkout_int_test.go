@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -320,6 +320,30 @@ func (suite *CheckoutIntegrationTestSuite) TestFail() {
 	cp.Expect("Something Went Wrong")
 	cp.ExpectNotExitCode(0)
 	suite.Assert().DirExists(filepath.Join(ts.Dirs.Work, "fail"), "state checkout fail did not leave created directory there despite --force flag override")
+}
+
+func (suite *CheckoutIntegrationTestSuite) TestBranch() {
+	suite.OnlyRunForTags(tagsuite.Checkout)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Branches", "--branch", "firstbranch", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	asy := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
+	suite.Assert().Contains(string(fileutils.ReadFileUnsafe(asy)), "branch=firstbranch", "activestate.yaml does not have correct branch")
+
+	suite.Require().NoError(os.Remove(asy))
+
+	// Infer branch name from commit.
+	cp = ts.Spawn("checkout", "ActiveState-CLI/Branches#46c83477-d580-43e2-a0c6-f5d3677517f1", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	suite.Assert().Contains(string(fileutils.ReadFileUnsafe(asy)), "branch=secondbranch", "activestate.yaml does not have correct branch")
 }
 
 func TestCheckoutIntegrationTestSuite(t *testing.T) {
