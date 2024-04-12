@@ -117,7 +117,6 @@ func newPublish(prime *primer.Values) *captain.Command {
 				Name:        locale.Tl("filepath", "filepath"),
 				Description: locale.Tl("author_upload_filepath_description", "A tar.gz or zip archive containing the source files of the ingredient."),
 				Value:       &params.Filepath,
-				Required:    true,
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
