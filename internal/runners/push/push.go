@@ -15,7 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
-	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -236,7 +236,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 			Project:   targetNamespace.Project,
 			TargetRef: branch.Label, // using branch name will fast-forward
 			OtherRef:  commitID.String(),
-			Strategy:  bpResp.MergeCommitStrategyFastForward,
+			Strategy:  types.MergeCommitStrategyFastForward,
 		})
 		if err != nil {
 			return errs.Wrap(err, "Could not push")

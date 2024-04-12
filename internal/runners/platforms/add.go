@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
-	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -55,7 +55,7 @@ func (a *Add) Run(ps AddRunParams) error {
 		&requirements.Requirement{
 			Name:          params.name,
 			Version:       params.version,
-			Operation:     bpResp.OperationAdded,
+			Operation:     types.OperationAdded,
 			BitWidth:      params.BitWidth,
 			NamespaceType: &model.NamespacePlatform,
 		},

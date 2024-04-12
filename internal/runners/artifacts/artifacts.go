@@ -19,6 +19,7 @@ import (
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
@@ -147,7 +148,7 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 			Artifacts: []*structuredArtifact{},
 		}
 		for _, artifact := range artifacts {
-			if artifact.MimeType == bpResp.XActiveStateBuilderMimeType {
+			if artifact.MimeType == types.XActiveStateBuilderMimeType {
 				continue
 			}
 			if artifact.URL == "" {
@@ -162,7 +163,7 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 				Name: name,
 				URL:  artifact.URL,
 			}
-			if bpResp.IsStateToolArtifact(artifact.MimeType) {
+			if bpModel.IsStateToolArtifact(artifact.MimeType) {
 				if !params.All {
 					continue
 				}
@@ -336,7 +337,7 @@ func getTerminalArtifactMap(
 
 	// Communicate whether there were failed artifacts
 	for _, artifact := range commit.Build.Artifacts {
-		if !bpResp.IsSuccessArtifactStatus(artifact.Status) {
+		if !bpModel.IsSuccessArtifactStatus(artifact.Status) {
 			return bpm, commit.Build.Ready(), true, nil
 		}
 	}

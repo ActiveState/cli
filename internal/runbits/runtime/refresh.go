@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -89,7 +89,7 @@ func SolveAndUpdate(
 // except that it does not do its own solve.
 func UpdateByReference(
 	rt *runtime.Runtime,
-	commit *bpResp.Commit,
+	commit *response.Commit,
 	auth *authentication.Auth,
 	proj *project.Project,
 	out output.Outputer,

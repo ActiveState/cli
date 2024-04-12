@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/go-openapi/strfmt"
 )
@@ -38,7 +39,7 @@ func (bp *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID,
 		}
 
 		// Add the platform.
-		if err := expr.UpdatePlatform(response.OperationAdded, params.PlatformID); err != nil {
+		if err := expr.UpdatePlatform(types.OperationAdded, params.PlatformID); err != nil {
 			return "", errs.Wrap(err, "Unable to add platform")
 		}
 
@@ -47,7 +48,7 @@ func (bp *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID,
 		if err != nil {
 			return "", errs.Wrap(err, "Unable to read version")
 		}
-		if err := expr.UpdateRequirement(response.OperationAdded, response.Requirement{
+		if err := expr.UpdateRequirement(types.OperationAdded, types.Requirement{
 			Name:               params.Language,
 			Namespace:          "language", // TODO: make this a constant DX-1738
 			VersionRequirement: versionRequirements,

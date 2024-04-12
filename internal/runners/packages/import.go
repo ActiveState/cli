@@ -16,7 +16,7 @@ import (
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
-	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -177,25 +177,25 @@ func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model
 
 func applyChangeset(changeset model.Changeset, be *buildexpression.BuildExpression) error {
 	for _, change := range changeset {
-		var expressionOperation bpResp.Operation
+		var expressionOperation types.Operation
 		switch change.Operation {
 		case string(model.OperationAdded):
-			expressionOperation = bpResp.OperationAdded
+			expressionOperation = types.OperationAdded
 		case string(model.OperationRemoved):
-			expressionOperation = bpResp.OperationRemoved
+			expressionOperation = types.OperationRemoved
 		case string(model.OperationUpdated):
-			expressionOperation = bpResp.OperationUpdated
+			expressionOperation = types.OperationUpdated
 		}
 
-		req := bpResp.Requirement{
+		req := types.Requirement{
 			Name:      change.Requirement,
 			Namespace: change.Namespace,
 		}
 
 		for _, constraint := range change.VersionConstraints {
-			req.VersionRequirement = append(req.VersionRequirement, bpResp.VersionRequirement{
-				bpResp.VersionRequirementComparatorKey: constraint.Comparator,
-				bpResp.VersionRequirementVersionKey:    constraint.Version,
+			req.VersionRequirement = append(req.VersionRequirement, types.VersionRequirement{
+				types.VersionRequirementComparatorKey: constraint.Comparator,
+				types.VersionRequirementVersionKey:    constraint.Version,
 			})
 		}
 

@@ -3,7 +3,7 @@ package languages
 import (
 	"strings"
 
-	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
@@ -58,7 +58,7 @@ func (u *Update) Run(params *UpdateParams) error {
 		Name:          lang.Name,
 		Version:       lang.Version,
 		NamespaceType: &model.NamespaceLanguage,
-		Operation:     bpResp.OperationAdded,
+		Operation:     types.OperationAdded,
 	})
 }
 

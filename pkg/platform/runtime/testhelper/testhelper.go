@@ -39,11 +39,11 @@ func LoadRecipe(t *testing.T, name string) *inventory_models.Recipe {
 	return &recipe
 }
 
-func LoadBuildPlan(t *testing.T, name string) *response.ProjectCommit {
+func LoadBuildPlan(t *testing.T, name string) *response.ProjectCommitResponse {
 	d, err := os.ReadFile(filepath.Join(dataPath(t), "buildplans", fmt.Sprintf("%s.json", name)))
 	require.NoError(t, err)
 
-	var bp response.ProjectCommit
+	var bp response.ProjectCommitResponse
 	err = json.Unmarshal(d, &bp)
 	require.NoError(t, err)
 

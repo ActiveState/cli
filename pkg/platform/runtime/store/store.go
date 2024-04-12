@@ -11,9 +11,10 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/go-openapi/strfmt"
@@ -67,19 +68,19 @@ func (s *Store) buildScriptFile() string {
 }
 
 // BuildEngine returns the runtime build engine value stored in the runtime directory
-func (s *Store) BuildEngine() (model.BuildEngine, error) {
+func (s *Store) BuildEngine() (types.BuildEngine, error) {
 	storeFile := s.buildEngineFile()
 
 	data, err := fileutils.ReadFile(storeFile)
 	if err != nil {
-		return model.UnknownEngine, errs.Wrap(err, "Could not read build engine cache store.")
+		return types.UnknownEngine, errs.Wrap(err, "Could not read build engine cache store.")
 	}
 
 	return model.ParseBuildEngine(string(data)), nil
 }
 
 // StoreBuildEngine stores the build engine value in the runtime directory
-func (s *Store) StoreBuildEngine(buildEngine model.BuildEngine) error {
+func (s *Store) StoreBuildEngine(buildEngine types.BuildEngine) error {
 	storeFile := s.buildEngineFile()
 	storeDir := filepath.Dir(storeFile)
 	logging.Debug("Storing build engine %s at %s", buildEngine.String(), storeFile)
@@ -267,13 +268,13 @@ func (s *Store) BuildPlanRaw() ([]byte, error) {
 	return data, nil
 }
 
-func (s *Store) BuildPlan() (*bpResp.Build, error) {
+func (s *Store) BuildPlan() (*response.Build, error) {
 	data, err := s.BuildPlanRaw()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get build plan file.")
 	}
 
-	var buildPlan bpResp.Build
+	var buildPlan response.Build
 	err = json.Unmarshal(data, &buildPlan)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not parse build plan file.")
@@ -281,7 +282,7 @@ func (s *Store) BuildPlan() (*bpResp.Build, error) {
 	return &buildPlan, err
 }
 
-func (s *Store) StoreBuildPlan(build *bpResp.Build) error {
+func (s *Store) StoreBuildPlan(build *response.Build) error {
 	data, err := json.Marshal(build)
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal buildPlan.")

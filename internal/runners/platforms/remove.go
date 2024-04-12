@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
-	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -45,7 +45,7 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 		&requirements.Requirement{
 			Name:          params.name,
 			Version:       params.version,
-			Operation:     bpResp.OperationRemoved,
+			Operation:     types.OperationRemoved,
 			BitWidth:      params.BitWidth,
 			NamespaceType: &model.NamespacePlatform,
 		},

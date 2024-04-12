@@ -1,0 +1,168 @@
+package response
+
+import (
+	"encoding/json"
+
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
+	"github.com/go-openapi/strfmt"
+)
+
+type ProjectCommitResponse struct {
+	Project *ProjectResponse `json:"project"`
+}
+
+// PostProcess must satisfy gqlclient.PostProcessor interface
+func (c *ProjectCommitResponse) PostProcess() error {
+	if c.Project == nil {
+		return errs.New("BuildPlanByProject.Build: Project is nil")
+	}
+
+	if IsErrorResponse(c.Project.Type) {
+		return ProcessProjectError(c.Project, "Could not get build from project response")
+	}
+
+	if c.Project.Commit == nil {
+		return errs.New("BuildPlanByProject.Build: Commit is nil")
+	}
+
+	if c.Project == nil {
+		return errs.New("BuildPlanByProject.Build: Project is nil")
+	}
+
+	if IsErrorResponse(c.Project.Type) {
+		return ProcessProjectError(c.Project, "Could not get build from project response")
+	}
+
+	if c.Project.Commit == nil {
+		return errs.New("BuildPlanByProject.Build: Commit is nil")
+	}
+
+	if IsErrorResponse(c.Project.Commit.Type) {
+		return ProcessCommitError(c.Project.Commit, "Could not get build from commit from project response")
+	}
+
+	if c.Project.Commit.Build == nil {
+		return errs.New("BuildPlanByProject.Build: Commit does not contain build")
+	}
+
+	if IsErrorResponse(c.Project.Commit.Build.Type) {
+		return ProcessBuildError(c.Project.Commit.Build, "Could not get build from project commit response")
+	}
+
+	// Clean up empty targets
+	// The type aliasing in the query populates the response with emtpy targets that we should remove
+	build := c.Project.Commit.Build
+	var steps []*types.Step
+	for _, step := range build.Steps {
+		if step.StepID == "" {
+			continue
+		}
+		steps = append(steps, step)
+	}
+
+	var sources []*types.Source
+	for _, source := range build.Sources {
+		if source.NodeID == "" {
+			continue
+		}
+		sources = append(sources, source)
+	}
+
+	var artifacts []*types.Artifact
+	for _, artifact := range build.Artifacts {
+		if artifact.NodeID == "" {
+			continue
+		}
+		artifacts = append(artifacts, artifact)
+	}
+
+	build.Steps = steps
+	build.Sources = sources
+	build.Artifacts = artifacts
+
+	return nil
+}
+
+func ProcessBuildError(build *Build, fallbackMessage string) error {
+	logging.Debug("ProcessBuildError: build.Type=%s", build.Type)
+	if build.Type == types.PlanningErrorType {
+		return processPlanningError(build.Message, build.SubErrors)
+	} else if build.Error == nil {
+		return errs.New(fallbackMessage)
+	}
+
+	return locale.NewInputError("err_buildplanner_build", "Encountered error processing build response")
+}
+
+func processPlanningError(message string, subErrors []*BuildExprLocation) error {
+	var errs []string
+	var isTransient bool
+
+	if message != "" {
+		errs = append(errs, message)
+	}
+
+	for _, se := range subErrors {
+		if se.Type != types.RemediableSolveErrorType && se.Type != types.GenericSolveErrorType {
+			continue
+		}
+
+		if se.Message != "" {
+			errs = append(errs, se.Message)
+			isTransient = se.IsTransient
+		}
+
+		for _, ve := range se.ValidationErrors {
+			if ve.Error != "" {
+				errs = append(errs, ve.Error)
+			}
+		}
+	}
+	return &BuildPlannerError{
+		ValidationErrors: errs,
+		IsTransient:      isTransient,
+	}
+}
+
+func ProcessProjectError(project *ProjectResponse, fallbackMessage string) error {
+	if project.Type == types.NotFoundErrorType {
+		return errs.AddTips(
+			locale.NewInputError("err_buildplanner_project_not_found", "Unable to find project, received message: {{.V0}}", project.Message),
+			locale.T("tip_private_project_auth"),
+		)
+	}
+
+	return errs.New(fallbackMessage)
+}
+
+// PlanningError represents an error that occurred during planning.
+type PlanningError struct {
+	SubErrors []*BuildExprLocation `json:"subErrors"`
+}
+
+// BuildExprLocation represents a location in the build script where an error occurred.
+type BuildExprLocation struct {
+	Type             string                        `json:"__typename"`
+	Path             string                        `json:"path"`
+	Message          string                        `json:"message"`
+	IsTransient      bool                          `json:"isTransient"`
+	ValidationErrors []*SolverErrorValidationError `json:"validationErrors"`
+	*RemediableSolveError
+}
+
+// Commit contains the build and any errors.
+type Commit struct {
+	Type       string          `json:"__typename"`
+	AtTime     strfmt.DateTime `json:"atTime"`
+	Expression json.RawMessage `json:"expr"`
+	CommitID   strfmt.UUID     `json:"commitId"`
+	Build      *Build          `json:"build"`
+	*Error
+	*ParseError
+	*ForbiddenError
+	*HeadOnBranchMovedError
+	*NoChangeSinceLastCommitError
+}

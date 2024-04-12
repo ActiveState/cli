@@ -27,7 +27,8 @@ import (
 	runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
-	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	vulnModel "github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
@@ -118,7 +119,7 @@ type Requirement struct {
 	BitWidth      int // Only needed for platform requirements
 	Namespace     *model.Namespace
 	NamespaceType *model.NamespaceType
-	Operation     bpResp.Operation
+	Operation     types.Operation
 
 	// The following fields are set during execution
 	langName                string
@@ -126,7 +127,7 @@ type Requirement struct {
 	validatePkg             bool
 	appendVersionWildcard   bool
 	originalRequirementName string
-	versionRequirements     []bpResp.VersionRequirement
+	versionRequirements     []types.VersionRequirement
 }
 
 // ExecuteRequirementOperation executes the operation on the requirement
@@ -206,7 +207,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 			Name:      requirement.Name,
 			Version:   requirement.versionRequirements,
 			Revision:  ptr.To(requirement.Revision),
-			Namespace: *requirement.Namespace,
+			Namespace: requirement.Namespace.String(),
 			Operation: requirement.Operation,
 		})
 	}
@@ -325,7 +326,7 @@ func (r *RequirementOperation) resolveNamespace(ts *time.Time, requirement *Requ
 
 	ns := requirement.Namespace
 	nsType := requirement.NamespaceType
-	requirement.validatePkg = requirement.Operation == bpResp.OperationAdded && ns != nil && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle || ns.Type() == model.NamespaceLanguage)
+	requirement.validatePkg = requirement.Operation == types.OperationAdded && ns != nil && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle || ns.Type() == model.NamespaceLanguage)
 	if (ns == nil || !ns.IsValid()) && nsType != nil && (*nsType == model.NamespacePackage || *nsType == model.NamespaceBundle) {
 		pg := output.StartSpinner(r.Output, locale.Tr("progress_pkg_nolang", requirement.Name), constants.TerminalAnimationInterval)
 
@@ -433,13 +434,13 @@ func (r *RequirementOperation) validatePackage(requirement *Requirement) error {
 func (r *RequirementOperation) checkForUpdate(parentCommitID strfmt.UUID, requirements ...*Requirement) error {
 	for _, requirement := range requirements {
 		// Check if this is an addition or an update
-		if requirement.Operation == bpResp.OperationAdded && parentCommitID != "" {
+		if requirement.Operation == types.OperationAdded && parentCommitID != "" {
 			req, err := model.GetRequirement(parentCommitID, *requirement.Namespace, requirement.Name, r.Auth)
 			if err != nil {
 				return errs.Wrap(err, "Could not get requirement")
 			}
 			if req != nil {
-				requirement.Operation = bpResp.OperationUpdated
+				requirement.Operation = types.OperationUpdated
 			}
 		}
 
@@ -481,7 +482,7 @@ func (r *RequirementOperation) resolveRequirement(requirement *Requirement) erro
 }
 
 func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) (
-	_ *runtime.Runtime, _ *bpResp.Commit, _ *artifact.ArtifactChangeset, rerr error,
+	_ *runtime.Runtime, _ *response.Commit, _ *artifact.ArtifactChangeset, rerr error,
 ) {
 	// Initialize runtime
 	var trigger target.Trigger
@@ -524,7 +525,7 @@ func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) 
 		return nil, nil, nil, errs.Wrap(err, "Could not get commit")
 	}
 
-	var oldBuildPlan *bpResp.Build
+	var oldBuildPlan *response.Build
 	if oldCommit.ParentCommitID != "" {
 		bp := bpModel.NewBuildPlannerModel(r.Auth)
 		oldCommit, err := bp.FetchCommitWithBuild(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
@@ -552,7 +553,7 @@ func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChan
 
 	var ingredients []*request.Ingredient
 	for _, requirement := range requirements {
-		if requirement.Operation == bpResp.OperationRemoved {
+		if requirement.Operation == types.OperationRemoved {
 			continue
 		}
 
@@ -840,42 +841,42 @@ func requirementCommitMessage(req *Requirement) string {
 	return ""
 }
 
-func languageCommitMessage(op bpResp.Operation, name, version string) string {
+func languageCommitMessage(op types.Operation, name, version string) string {
 	var msgL10nKey string
 	switch op {
-	case bpResp.OperationAdded:
+	case types.OperationAdded:
 		msgL10nKey = "commit_message_added_language"
-	case bpResp.OperationUpdated:
+	case types.OperationUpdated:
 		msgL10nKey = "commit_message_updated_language"
-	case bpResp.OperationRemoved:
+	case types.OperationRemoved:
 		msgL10nKey = "commit_message_removed_language"
 	}
 
 	return locale.Tr(msgL10nKey, name, version)
 }
 
-func platformCommitMessage(op bpResp.Operation, name, version string, word int) string {
+func platformCommitMessage(op types.Operation, name, version string, word int) string {
 	var msgL10nKey string
 	switch op {
-	case bpResp.OperationAdded:
+	case types.OperationAdded:
 		msgL10nKey = "commit_message_added_platform"
-	case bpResp.OperationUpdated:
+	case types.OperationUpdated:
 		msgL10nKey = "commit_message_updated_platform"
-	case bpResp.OperationRemoved:
+	case types.OperationRemoved:
 		msgL10nKey = "commit_message_removed_platform"
 	}
 
 	return locale.Tr(msgL10nKey, name, strconv.Itoa(word), version)
 }
 
-func packageCommitMessage(op bpResp.Operation, name, version string) string {
+func packageCommitMessage(op types.Operation, name, version string) string {
 	var msgL10nKey string
 	switch op {
-	case bpResp.OperationAdded:
+	case types.OperationAdded:
 		msgL10nKey = "commit_message_added_package"
-	case bpResp.OperationUpdated:
+	case types.OperationUpdated:
 		msgL10nKey = "commit_message_updated_package"
-	case bpResp.OperationRemoved:
+	case types.OperationRemoved:
 		msgL10nKey = "commit_message_removed_package"
 	}
 

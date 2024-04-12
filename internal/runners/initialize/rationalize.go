@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 )
 
@@ -58,18 +59,18 @@ func rationalizeError(owner, project string, rerr *error) {
 	// Error creating project.
 	case errors.As(*rerr, &pcErr):
 		switch pcErr.Type {
-		case bpResp.AlreadyExistsErrorType:
+		case types.AlreadyExistsErrorType:
 			*rerr = errs.WrapUserFacing(
 				pcErr,
 				locale.Tl("err_create_project_exists", "The project '{{.V0}}' already exists under '{{.V1}}'", project, owner),
 				errs.SetInput(),
 			)
-		case bpResp.ForbiddenErrorType:
+		case types.ForbiddenErrorType:
 			*rerr = errs.NewUserFacing(
 				locale.Tl("err_create_project_forbidden", "You do not have permission to create that project"),
 				errs.SetInput(),
 				errs.SetTips(locale.T("err_init_authenticated")))
-		case bpResp.NotFoundErrorType:
+		case types.NotFoundErrorType:
 			*rerr = errs.WrapUserFacing(
 				pcErr,
 				locale.Tl("err_create_project_not_found", "Could not create project because the organization '{{.V0}}' was not found.", owner),

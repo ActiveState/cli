@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
-	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
@@ -594,8 +594,8 @@ func versionStringToConstraints(version string) ([]*mono_models.Constraint, erro
 	constraints := make([]*mono_models.Constraint, len(requirements))
 	for i, constraint := range requirements {
 		constraints[i] = &mono_models.Constraint{
-			Comparator: constraint[bpResp.VersionRequirementComparatorKey],
-			Version:    constraint[bpResp.VersionRequirementVersionKey],
+			Comparator: constraint[types.VersionRequirementComparatorKey],
+			Version:    constraint[types.VersionRequirementVersionKey],
 		}
 	}
 	return constraints, nil

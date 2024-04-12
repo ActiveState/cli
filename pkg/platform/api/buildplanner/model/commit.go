@@ -7,17 +7,17 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
-	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/go-openapi/strfmt"
 )
 
 type StageCommitRequirement struct {
 	Name      string
-	Version   []response.VersionRequirement
-	Namespace model.Namespace
+	Version   []types.VersionRequirement
+	Namespace string
 	Revision  *int
-	Operation response.Operation
+	Operation types.Operation
 }
 
 type StageCommitParams struct {
@@ -46,14 +46,14 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 
 		var containsPackageOperation bool
 		for _, req := range params.Requirements {
-			if req.Namespace.Type() == model.NamespacePlatform {
+			if req.Namespace == types.NamespacePlatform {
 				err = expression.UpdatePlatform(req.Operation, strfmt.UUID(req.Name))
 				if err != nil {
 					return "", errs.Wrap(err, "Failed to update build expression with platform")
 				}
 			} else {
-				requirement := response.Requirement{
-					Namespace:          req.Namespace.String(),
+				requirement := types.Requirement{
+					Namespace:          req.Namespace,
 					Name:               req.Name,
 					VersionRequirement: req.Version,
 					Revision:           req.Revision,
@@ -134,7 +134,7 @@ type MergeCommitParams struct {
 	Project   string
 	TargetRef string // the commit ID or branch name to merge into
 	OtherRef  string // the commit ID or branch name to merge from
-	Strategy  response.MergeStrategy
+	Strategy  types.MergeStrategy
 }
 
 func (bp *BuildPlanner) MergeCommit(params *MergeCommitParams) (strfmt.UUID, error) {

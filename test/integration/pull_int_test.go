@@ -13,7 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -35,7 +35,7 @@ func (suite *PullIntegrationTestSuite) TestPull() {
 	cp.Expect("activestate.yaml has been updated")
 	cp.ExpectExitCode(0)
 
-	suite.assertMergeStrategyNotification(ts, string(bpResp.MergeCommitStrategyFastForward))
+	suite.assertMergeStrategyNotification(ts, string(types.MergeCommitStrategyFastForward))
 
 	cp = ts.Spawn("pull")
 	cp.Expect("already up to date")
@@ -70,7 +70,7 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	cp.Expect("Merged")
 	cp.ExpectExitCode(0)
 
-	suite.assertMergeStrategyNotification(ts, string(bpResp.MergeCommitStrategyRecursiveOverwriteOnConflict))
+	suite.assertMergeStrategyNotification(ts, string(types.MergeCommitStrategyRecursiveOverwriteOnConflict))
 }
 
 func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
