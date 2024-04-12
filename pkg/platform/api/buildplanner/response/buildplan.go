@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -203,71 +204,47 @@ type ProjectCommit struct {
 	Project *Project `json:"project"`
 }
 
-func (b *ProjectCommit) Commit() (*Commit, error) {
-	if b.Project == nil {
-		return nil, errs.New("BuildPlanByProject.Build: Project is nil")
+// PostProcess must satisfy gqlclient.PostProcessor interface
+func (c *ProjectCommit) PostProcess() error {
+	if c.Project == nil {
+		return errs.New("BuildPlanByProject.Build: Project is nil")
 	}
 
-	if IsErrorResponse(b.Project.Type) {
-		return nil, ProcessProjectError(b.Project, "Could not get build from project response")
+	if IsErrorResponse(c.Project.Type) {
+		return ProcessProjectError(c.Project, "Could not get build from project response")
 	}
 
-	if b.Project.Commit == nil {
-		return nil, errs.New("BuildPlanByProject.Build: Commit is nil")
+	if c.Project.Commit == nil {
+		return errs.New("BuildPlanByProject.Build: Commit is nil")
 	}
 
-	return b.Project.Commit, nil
-}
-
-func (b *ProjectCommit) Build() (*Build, error) {
-	if b.Project == nil {
-		return nil, errs.New("BuildPlanByProject.Build: Project is nil")
+	if c.Project == nil {
+		return errs.New("BuildPlanByProject.Build: Project is nil")
 	}
 
-	if IsErrorResponse(b.Project.Type) {
-		return nil, ProcessProjectError(b.Project, "Could not get build from project response")
+	if IsErrorResponse(c.Project.Type) {
+		return ProcessProjectError(c.Project, "Could not get build from project response")
 	}
 
-	if b.Project.Commit == nil {
-		return nil, errs.New("BuildPlanByProject.Build: Commit is nil")
+	if c.Project.Commit == nil {
+		return errs.New("BuildPlanByProject.Build: Commit is nil")
 	}
 
-	if IsErrorResponse(b.Project.Commit.Type) {
-		return nil, ProcessCommitError(b.Project.Commit, "Could not get build from commit from project response")
+	if IsErrorResponse(c.Project.Commit.Type) {
+		return ProcessCommitError(c.Project.Commit, "Could not get build from commit from project response")
 	}
 
-	if b.Project.Commit.Build == nil {
-		return nil, errs.New("BuildPlanByProject.Build: Commit does not contain build")
+	if c.Project.Commit.Build == nil {
+		return errs.New("BuildPlanByProject.Build: Commit does not contain build")
 	}
 
-	if IsErrorResponse(b.Project.Commit.Build.Type) {
-		return nil, ProcessBuildError(b.Project.Commit.Build, "Could not get build from project commit response")
+	if IsErrorResponse(c.Project.Commit.Build.Type) {
+		return ProcessBuildError(c.Project.Commit.Build, "Could not get build from project commit response")
 	}
 
-	build := b.Project.Commit.Build
-	build.Sanitize()
+	c.Project.Commit.Build.Sanitize()
 
-	return build, nil
-}
-
-func (b *ProjectCommit) CommitID() (strfmt.UUID, error) {
-	if b.Project == nil {
-		return "", errs.New("BuildPlanByProject.CommitID: Project is nil")
-	}
-
-	if IsErrorResponse(b.Project.Type) {
-		return "", ProcessProjectError(b.Project, "Could not get commit ID from project response")
-	}
-
-	if b.Project.Commit == nil {
-		return "", errs.New("BuildPlanByProject.CommitID: Commit is nil")
-	}
-
-	if IsErrorResponse(b.Project.Commit.Type) {
-		return "", ProcessCommitError(b.Project.Commit, "Could not get commit ID from project commit response")
-	}
-
-	return b.Project.Commit.CommitID, nil
+	return nil
 }
 
 func IsErrorResponse(errorType string) bool {
@@ -656,6 +633,37 @@ func (b *Build) Sanitize() {
 	b.Steps = steps
 	b.Sources = sources
 	b.Artifacts = artifacts
+}
+
+func (b *Build) Engine() model.BuildEngine {
+	buildEngine := model.Alternative
+	for _, s := range b.Sources {
+		if s.Namespace == "builder" && s.Name == "camel" {
+			buildEngine = model.Camel
+			break
+		}
+	}
+	return buildEngine
+}
+
+// RecipeID extracts the recipe ID from the BuildLogIDs.
+// We do this because if the build is in progress we will need to reciepe ID to
+// initialize the build log streamer.
+// This information will only be populated if the build is an alternate build.
+// This is specified in the build planner queries.
+func (b *Build) RecipeID() (strfmt.UUID, error) {
+	var result strfmt.UUID
+	for _, id := range b.BuildLogIDs {
+		if result != "" && result.String() != id.ID {
+			return result, errs.New("Build plan contains multiple recipe IDs")
+		}
+		result = strfmt.UUID(id.ID)
+	}
+	return result, nil
+}
+
+func (b *Build) Ready() bool {
+	return b.Status == Completed
 }
 
 // BuildLogID is the ID used to initiate a connection with the BuildLogStreamer.

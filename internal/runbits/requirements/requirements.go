@@ -231,7 +231,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
 		// Solve runtime
-		rt, buildResult, commit, changedArtifacts, err := r.solve(commitID, requirements[0].Namespace)
+		rt, buildResult, changedArtifacts, err := r.solve(commitID, requirements[0].Namespace)
 		if err != nil {
 			return errs.Wrap(err, "Could not solve runtime")
 		}
@@ -252,7 +252,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 
 		// refresh or install runtime
-		err = runbit.UpdateByReference(rt, buildResult, commit, r.Auth, r.Project, r.Output)
+		err = runbit.UpdateByReference(rt, buildResult, r.Auth, r.Project, r.Output)
 		if err != nil {
 			if !runbits.IsBuildError(err) {
 				// If the error is not a build error we want to retain the changes
@@ -481,7 +481,7 @@ func (r *RequirementOperation) resolveRequirement(requirement *Requirement) erro
 }
 
 func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) (
-	_ *runtime.Runtime, _ *bpModel.BuildRelay, _ *bpResp.Commit, _ *artifact.ArtifactChangeset, rerr error,
+	_ *runtime.Runtime, _ *bpModel.BuildRelay, _ *artifact.ArtifactChangeset, rerr error,
 ) {
 	// Initialize runtime
 	var trigger target.Trigger
@@ -507,13 +507,13 @@ func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) 
 	rtTarget := target.NewProjectTarget(r.Project, &commitID, trigger)
 	rt, err := runtime.New(rtTarget, r.Analytics, r.SvcModel, r.Auth, r.Config, r.Output)
 	if err != nil {
-		return nil, nil, nil, nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+		return nil, nil, nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
 	}
 
 	setup := rt.Setup(&events.VoidHandler{})
-	buildResult, commit, err := setup.Solve()
+	buildResult, err := setup.Solve()
 	if err != nil {
-		return nil, nil, nil, nil, errs.Wrap(err, "Solve failed")
+		return nil, nil, nil, errs.Wrap(err, "Solve failed")
 	}
 
 	// Get old buildplan
@@ -521,25 +521,25 @@ func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) 
 	// but also there's no guarantee the old one is sequential to the current.
 	oldCommit, err := model.GetCommit(commitID, r.Auth)
 	if err != nil {
-		return nil, nil, nil, nil, errs.Wrap(err, "Could not get commit")
+		return nil, nil, nil, errs.Wrap(err, "Could not get commit")
 	}
 
 	var oldBuildPlan *bpResp.Build
 	if oldCommit.ParentCommitID != "" {
 		bp := bpModel.NewBuildPlannerModel(r.Auth)
-		oldBuildResult, _, err := bp.FetchBuildResult(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
+		oldBuildResult, err := bp.FetchBuild(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
 		if err != nil {
-			return nil, nil, nil, nil, errs.Wrap(err, "Failed to fetch build result")
+			return nil, nil, nil, errs.Wrap(err, "Failed to fetch build result")
 		}
-		oldBuildPlan = oldBuildResult.Build
+		oldBuildPlan = oldBuildResult.Commit.Build
 	}
 
-	changedArtifacts, err := buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false, false, r.Config, r.Auth)
+	changedArtifacts, err := buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Commit.Build, false, false, r.Config, r.Auth)
 	if err != nil {
-		return nil, nil, nil, nil, errs.Wrap(err, "Could not get changed artifacts")
+		return nil, nil, nil, errs.Wrap(err, "Could not get changed artifacts")
 	}
 
-	return rt, buildResult, commit, &changedArtifacts, nil
+	return rt, buildResult, &changedArtifacts, nil
 }
 
 func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChangeset, requirements ...*Requirement) error {

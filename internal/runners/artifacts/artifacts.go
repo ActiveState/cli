@@ -270,7 +270,7 @@ func getTerminalArtifactMap(
 	}
 
 	var err error
-	var buildPlan *bpModel.BuildRelay
+	var buildResult *bpModel.BuildRelay
 	switch {
 	// Return the artifact map from this runtime.
 	case !namespaceProvided && !commitIdProvided:
@@ -280,7 +280,7 @@ func getTerminalArtifactMap(
 		}
 
 		bp := bpModel.NewBuildPlannerModel(auth)
-		buildPlan, _, err = bp.FetchBuildResult(localCommitID, pj.Owner(), pj.Name(), targetPtr)
+		buildResult, err = bp.FetchBuild(localCommitID, pj.Owner(), pj.Name(), targetPtr)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
 		}
@@ -288,7 +288,7 @@ func getTerminalArtifactMap(
 	// Return artifact map from the given commitID for the current project.
 	case !namespaceProvided && commitIdProvided:
 		bp := bpModel.NewBuildPlannerModel(auth)
-		buildPlan, _, err = bp.FetchBuildResult(commitID, pj.Owner(), pj.Name(), targetPtr)
+		buildResult, err = bp.FetchBuild(commitID, pj.Owner(), pj.Name(), targetPtr)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
 		}
@@ -312,7 +312,7 @@ func getTerminalArtifactMap(
 		commitID = *commitUUID
 
 		bp := bpModel.NewBuildPlannerModel(auth)
-		buildPlan, _, err = bp.FetchBuildResult(commitID, namespace.Owner, namespace.Project, targetPtr)
+		buildResult, err = bp.FetchBuild(commitID, namespace.Owner, namespace.Project, targetPtr)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
 		}
@@ -320,7 +320,7 @@ func getTerminalArtifactMap(
 	// Return the artifact map for the given commitID of the given project.
 	case namespaceProvided && commitIdProvided:
 		bp := bpModel.NewBuildPlannerModel(auth)
-		buildPlan, _, err = bp.FetchBuildResult(commitID, namespace.Owner, namespace.Project, targetPtr)
+		buildResult, err = bp.FetchBuild(commitID, namespace.Owner, namespace.Project, targetPtr)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
 		}
@@ -329,17 +329,17 @@ func getTerminalArtifactMap(
 		return nil, false, false, errs.New("Unhandled case")
 	}
 
-	bpm, err := buildplan.NewMapFromBuildPlan(buildPlan.Build, false, false, nil, true)
+	bpm, err := buildplan.NewMapFromBuildPlan(buildResult.Commit.Build, false, false, nil, true)
 	if err != nil {
-		return nil, buildPlan.BuildReady, false, errs.Wrap(err, "Could not get buildplan")
+		return nil, buildResult.Commit.Build.Ready(), false, errs.Wrap(err, "Could not get buildplan")
 	}
 
 	// Communicate whether there were failed artifacts
-	for _, artifact := range buildPlan.Build.Artifacts {
+	for _, artifact := range buildResult.Commit.Build.Artifacts {
 		if !bpResp.IsSuccessArtifactStatus(artifact.Status) {
-			return bpm, buildPlan.BuildReady, true, nil
+			return bpm, buildResult.Commit.Build.Ready(), true, nil
 		}
 	}
 
-	return bpm, buildPlan.BuildReady, false, nil
+	return bpm, buildResult.Commit.Build.Ready(), false, nil
 }

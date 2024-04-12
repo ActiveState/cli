@@ -16,9 +16,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/graphql"
 	"github.com/go-openapi/strfmt"
 )
@@ -39,34 +37,26 @@ func (c *client) Run(req gqlclient.Request, resp interface{}) error {
 // BuildRelay relays meta information about the request and response of a build.
 // This type will ideally be refactored out, because this is too much responsibility to hold for one type.
 type BuildRelay struct {
-	BuildEngine     model.BuildEngine
-	RecipeID        strfmt.UUID
-	Build           *bpResp.Build
-	BuildReady      bool
-	BuildExpression *buildexpression.BuildExpression
-	Commit          *bpResp.Commit
+	Commit *bpResp.Commit
 }
 
 func (b *BuildRelay) OrderedArtifacts() []artifact.ArtifactID {
-	res := make([]artifact.ArtifactID, 0, len(b.Build.Artifacts))
-	for _, a := range b.Build.Artifacts {
+	res := make([]artifact.ArtifactID, 0, len(b.Commit.Build.Artifacts))
+	for _, a := range b.Commit.Build.Artifacts {
 		res = append(res, a.NodeID)
 	}
 	return res
 }
 
-func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project string, target *string) (*BuildRelay, *response.Commit, error) {
+func (bp *BuildPlanner) FetchBuild(commitID strfmt.UUID, owner, project string, target *string) (*BuildRelay, error) {
 	logging.Debug("FetchBuildResult, commitID: %s, owner: %s, project: %s", commitID, owner, project)
 	resp := &bpResp.ProjectCommit{}
 	err := bp.client.Run(request.ProjectCommit(commitID.String(), owner, project, target), resp)
 	if err != nil {
-		return nil, nil, processBuildPlannerError(err, "failed to fetch build plan")
+		return nil, processBuildPlannerError(err, "failed to fetch build plan")
 	}
 
-	build, err := resp.Build()
-	if err != nil {
-		return nil, nil, errs.Wrap(err, "Could not get build from response")
-	}
+	build := resp.Project.Commit.Build
 
 	// The BuildPlanner will return a build plan with a status of
 	// "planning" if the build plan is not ready yet. We need to
@@ -74,49 +64,15 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	if build.Status == bpResp.Planning {
 		build, err = bp.pollBuildPlanned(commitID.String(), owner, project, target)
 		if err != nil {
-			return nil, nil, errs.Wrap(err, "failed to poll build plan")
+			return nil, errs.Wrap(err, "failed to poll build plan")
 		}
-	}
-
-	buildEngine := model.Alternative
-	for _, s := range build.Sources {
-		if s.Namespace == "builder" && s.Name == "camel" {
-			buildEngine = model.Camel
-			break
-		}
-	}
-
-	commit, err := resp.Commit()
-	if err != nil {
-		return nil, nil, errs.Wrap(err, "Response does not contain commitID")
-	}
-
-	expression, err := buildexpression.New(commit.Expression)
-	if err != nil {
-		return nil, nil, errs.Wrap(err, "failed to parse build expression")
 	}
 
 	res := BuildRelay{
-		BuildEngine:     buildEngine,
-		Build:           build,
-		BuildReady:      build.Status == bpResp.Completed,
-		Commit:          commit,
-		BuildExpression: expression,
+		Commit: resp.Project.Commit,
 	}
 
-	// We want to extract the recipe ID from the BuildLogIDs.
-	// We do this because if the build is in progress we will need to reciepe ID to
-	// initialize the build log streamer.
-	// This information will only be populated if the build is an alternate build.
-	// This is specified in the build planner queries.
-	for _, id := range build.BuildLogIDs {
-		if res.RecipeID != "" {
-			return nil, nil, errs.Wrap(err, "Build plan contains multiple recipe IDs")
-		}
-		res.RecipeID = strfmt.UUID(id.ID)
-	}
-
-	return &res, commit, nil
+	return &res, nil
 }
 
 // processBuildPlannerError will check for special error types that should be
@@ -277,10 +233,7 @@ func (bp *BuildPlanner) pollBuildPlanned(commitID, owner, project string, target
 				return nil, errs.New("Build plan response is nil")
 			}
 
-			build, err := resp.Build()
-			if err != nil {
-				return nil, errs.Wrap(err, "Could not get build from response")
-			}
+			build := resp.Project.Commit.Build
 
 			if build.Status != bpResp.Planning {
 				return build, nil
@@ -316,10 +269,7 @@ func (bp *BuildPlanner) WaitForBuild(commitID, owner, project, target string) er
 				return errs.New("Build plan response is nil")
 			}
 
-			build, err := resp.Build()
-			if err != nil {
-				return errs.Wrap(err, "Could not get build from response")
-			}
+			build := resp.Project.Commit.Build
 
 			// If the build status is planning it may not have any artifacts yet.
 			if build.Status == bpResp.Planning {
