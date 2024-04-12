@@ -231,7 +231,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
 		// Solve runtime
-		rt, buildResult, changedArtifacts, err := r.solve(commitID, requirements[0].Namespace)
+		rt, commit, changedArtifacts, err := r.solve(commitID, requirements[0].Namespace)
 		if err != nil {
 			return errs.Wrap(err, "Could not solve runtime")
 		}
@@ -252,7 +252,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 
 		// refresh or install runtime
-		err = runbit.UpdateByReference(rt, buildResult, r.Auth, r.Project, r.Output)
+		err = runbit.UpdateByReference(rt, commit, r.Auth, r.Project, r.Output)
 		if err != nil {
 			if !runbits.IsBuildError(err) {
 				// If the error is not a build error we want to retain the changes
@@ -481,7 +481,7 @@ func (r *RequirementOperation) resolveRequirement(requirement *Requirement) erro
 }
 
 func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) (
-	_ *runtime.Runtime, _ *bpModel.BuildRelay, _ *artifact.ArtifactChangeset, rerr error,
+	_ *runtime.Runtime, _ *bpResp.Commit, _ *artifact.ArtifactChangeset, rerr error,
 ) {
 	// Initialize runtime
 	var trigger target.Trigger
@@ -511,7 +511,7 @@ func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) 
 	}
 
 	setup := rt.Setup(&events.VoidHandler{})
-	buildResult, err := setup.Solve()
+	commit, err := setup.Solve()
 	if err != nil {
 		return nil, nil, nil, errs.Wrap(err, "Solve failed")
 	}
@@ -527,19 +527,19 @@ func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) 
 	var oldBuildPlan *bpResp.Build
 	if oldCommit.ParentCommitID != "" {
 		bp := bpModel.NewBuildPlannerModel(r.Auth)
-		oldBuildResult, err := bp.FetchBuild(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
+		oldCommit, err := bp.FetchCommitWithBuild(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
 		if err != nil {
 			return nil, nil, nil, errs.Wrap(err, "Failed to fetch build result")
 		}
-		oldBuildPlan = oldBuildResult.Commit.Build
+		oldBuildPlan = oldCommit.Build
 	}
 
-	changedArtifacts, err := buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Commit.Build, false, false, r.Config, r.Auth)
+	changedArtifacts, err := buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, commit.Build, false, false, r.Config, r.Auth)
 	if err != nil {
 		return nil, nil, nil, errs.Wrap(err, "Could not get changed artifacts")
 	}
 
-	return rt, buildResult, &changedArtifacts, nil
+	return rt, commit, &changedArtifacts, nil
 }
 
 func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChangeset, requirements ...*Requirement) error {

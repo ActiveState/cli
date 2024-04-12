@@ -180,7 +180,7 @@ func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth
 	return &Setup{auth, target, eventHandler, store.New(target.Dir()), an, cache, cfg, out, svcm}
 }
 
-func (s *Setup) Solve() (*bpModel.BuildRelay, error) {
+func (s *Setup) Solve() (*bpResp.Commit, error) {
 	defer func() {
 		s.solveUpdateRecover(recover())
 	}()
@@ -194,7 +194,7 @@ func (s *Setup) Solve() (*bpModel.BuildRelay, error) {
 	}
 
 	bp := bpModel.NewBuildPlannerModel(s.auth)
-	buildResult, err := bp.FetchBuild(s.target.CommitUUID(), s.target.Owner(), s.target.Name(), nil)
+	commit, err := bp.FetchCommitWithBuild(s.target.CommitUUID(), s.target.Owner(), s.target.Name(), nil)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to fetch build result")
 	}
@@ -203,10 +203,10 @@ func (s *Setup) Solve() (*bpModel.BuildRelay, error) {
 		return nil, errs.Wrap(err, "Could not handle SolveSuccess event")
 	}
 
-	return buildResult, nil
+	return commit, nil
 }
 
-func (s *Setup) Update(buildResult *bpModel.BuildRelay) (rerr error) {
+func (s *Setup) Update(commit *bpResp.Commit) (rerr error) {
 	defer func() {
 		s.solveUpdateRecover(recover())
 	}()
@@ -245,21 +245,21 @@ func (s *Setup) Update(buildResult *bpModel.BuildRelay) (rerr error) {
 	}
 
 	// Update all the runtime artifacts
-	artifacts, err := s.updateArtifacts(buildResult)
+	artifacts, err := s.updateArtifacts(commit)
 	if err != nil {
 		return errs.Wrap(err, "Failed to update artifacts")
 	}
 
-	if err := s.store.StoreBuildPlan(buildResult.Commit.Build); err != nil {
+	if err := s.store.StoreBuildPlan(commit.Build); err != nil {
 		return errs.Wrap(err, "Could not save recipe file.")
 	}
 
-	expression, err := buildexpression.New(buildResult.Commit.Expression)
+	expression, err := buildexpression.New(commit.Expression)
 	if err != nil {
 		return errs.Wrap(err, "failed to parse build expression")
 	}
 
-	script, err := buildscript.NewFromBuildExpression(&buildResult.Commit.AtTime, expression)
+	script, err := buildscript.NewFromBuildExpression(&commit.AtTime, expression)
 	if err != nil {
 		return errs.Wrap(err, "Could not convert to buildscript")
 	}
@@ -269,12 +269,12 @@ func (s *Setup) Update(buildResult *bpModel.BuildRelay) (rerr error) {
 	}
 
 	if s.target.ProjectDir() != "" && s.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		expression, err := buildexpression.New(buildResult.Commit.Expression)
+		expression, err := buildexpression.New(commit.Expression)
 		if err != nil {
 			return errs.Wrap(err, "failed to parse build expression")
 		}
 
-		if err := buildscript.Update(s.target, &buildResult.Commit.AtTime, expression); err != nil {
+		if err := buildscript.Update(s.target, &commit.AtTime, expression); err != nil {
 			return errs.Wrap(err, "Could not update build script")
 		}
 	}
@@ -313,14 +313,14 @@ func (s *Setup) solveUpdateRecover(r interface{}) {
 	panic(r) // We're just logging the panic while we have context, we're not meant to handle it here
 }
 
-func (s *Setup) updateArtifacts(buildResult *bpModel.BuildRelay) ([]artifact.ArtifactID, error) {
+func (s *Setup) updateArtifacts(commit *bpResp.Commit) ([]artifact.ArtifactID, error) {
 	mutex := &sync.Mutex{}
 	var installArtifactFuncs []func() error
 
 	// Fetch and install each runtime artifact.
 	// Note: despite the name, we are "pre-installing" the artifacts to a temporary location.
 	// Once all artifacts are fetched, unpacked, and prepared, final installation occurs.
-	artifacts, uninstallFunc, err := s.fetchAndInstallArtifacts(buildResult, func(a artifact.ArtifactID, archivePath string, as ArtifactSetuper) (rerr error) {
+	artifacts, uninstallFunc, err := s.fetchAndInstallArtifacts(commit, func(a artifact.ArtifactID, archivePath string, as ArtifactSetuper) (rerr error) {
 		defer func() {
 			if rerr != nil {
 				rerr = &ArtifactInstallError{errs.Wrap(rerr, "Unable to install artifact")}
@@ -472,23 +472,23 @@ func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 // all of them were already installed.
 // It may also return an artifact uninstaller function that should be run prior to final
 // installation.
-func (s *Setup) fetchAndInstallArtifacts(buildResult *bpModel.BuildRelay, installFunc artifactInstaller) ([]artifact.ArtifactID, artifactUninstaller, error) {
+func (s *Setup) fetchAndInstallArtifacts(commit *bpResp.Commit, installFunc artifactInstaller) ([]artifact.ArtifactID, artifactUninstaller, error) {
 	if s.target.InstallFromDir() != nil {
 		artifacts, err := s.fetchAndInstallArtifactsFromDir(installFunc)
 		return artifacts, nil, err
 	}
-	return s.fetchAndInstallArtifactsFromBuildPlan(buildResult, installFunc)
+	return s.fetchAndInstallArtifactsFromBuildPlan(commit, installFunc)
 }
 
-func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(buildResult *bpModel.BuildRelay, installFunc artifactInstaller) ([]artifact.ArtifactID, artifactUninstaller, error) {
+func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(commit *bpResp.Commit, installFunc artifactInstaller) ([]artifact.ArtifactID, artifactUninstaller, error) {
 	// If the build is not ready or if we are installing the buildtime closure
 	// then we need to include the buildtime closure in the changed artifacts
 	// and the progress reporting.
-	includeBuildtimeClosure := strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") || !buildResult.Commit.Build.Ready()
+	includeBuildtimeClosure := strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") || !commit.Build.Ready()
 
 	// Compute and handle the change summary
 	var requestedArtifacts artifact.Map // Artifacts required for the runtime to function
-	artifactListing, err := buildplan.NewArtifactListing(buildResult.Commit.Build, includeBuildtimeClosure, s.cfg, s.auth)
+	artifactListing, err := buildplan.NewArtifactListing(commit.Build, includeBuildtimeClosure, s.cfg, s.auth)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Failed to create artifact listing")
 	}
@@ -509,17 +509,17 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(buildResult *bpModel.Build
 		}
 	}
 
-	resolver, err := selectArtifactResolver(buildResult, artifactListing)
+	resolver, err := selectArtifactResolver(commit, artifactListing)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Failed to select artifact resolver")
 	}
 
-	setup, err := s.selectSetupImplementation(buildResult.Commit.Build.Engine())
+	setup, err := s.selectSetupImplementation(commit.Build.Engine())
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Failed to select setup implementation")
 	}
 
-	downloadablePrebuiltResults, err := setup.DownloadsFromBuild(*buildResult.Commit.Build, requestedArtifacts)
+	downloadablePrebuiltResults, err := setup.DownloadsFromBuild(*commit.Build, requestedArtifacts)
 	if err != nil {
 		if errors.Is(err, artifact.CamelRuntimeBuilding) {
 			return nil, nil, locale.WrapInputError(err, "build_status_in_progress", "", apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String()))
@@ -527,7 +527,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(buildResult *bpModel.Build
 		return nil, nil, errs.Wrap(err, "could not extract artifacts that are ready to download.")
 	}
 
-	// buildResult doesn't have namespace info and will happily report internal only artifacts
+	// build results don't have namespace info and will happily report internal only artifacts
 	downloadablePrebuiltResults = funk.Filter(downloadablePrebuiltResults, func(ad artifact.ArtifactDownload) bool {
 		ar, ok := requestedArtifacts[ad.ArtifactID]
 		if !ok {
@@ -542,11 +542,11 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(buildResult *bpModel.Build
 	}
 
 	// send analytics build event, if a new runtime has to be built in the cloud
-	if buildResult.Commit.Build.Status == bpResp.Started {
+	if commit.Build.Status == bpResp.Started {
 		s.analytics.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeBuild, dimensions)
 	}
 
-	changedArtifacts, err := buildplan.NewBaseArtifactChangesetByBuildPlan(buildResult.Commit.Build, false, includeBuildtimeClosure, s.cfg, s.auth)
+	changedArtifacts, err := buildplan.NewBaseArtifactChangesetByBuildPlan(commit.Build, false, includeBuildtimeClosure, s.cfg, s.auth)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Could not compute base artifact changeset")
 	}
@@ -559,7 +559,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(buildResult *bpModel.Build
 	var oldBuildPlanArtifacts artifact.Map
 
 	if oldBuildPlan != nil {
-		changedArtifacts, err = buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Commit.Build, false, includeBuildtimeClosure, s.cfg, s.auth)
+		changedArtifacts, err = buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, commit.Build, false, includeBuildtimeClosure, s.cfg, s.auth)
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "Could not compute artifact changeset")
 		}
@@ -579,7 +579,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(buildResult *bpModel.Build
 		return nil, nil, locale.WrapError(err, "err_stored_artifacts")
 	}
 
-	alreadyInstalled := reusableArtifacts(buildResult.Commit.Build.Artifacts, storedArtifacts)
+	alreadyInstalled := reusableArtifacts(commit.Build.Artifacts, storedArtifacts)
 
 	// Report resolved artifacts
 	artifactIDs, err := artifactListing.ArtifactIDs(includeBuildtimeClosure)
@@ -602,12 +602,12 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(buildResult *bpModel.Build
 	}
 	logging.Debug(
 		"Parsed artifacts.\nBuild ready: %v\nArtifact names: %v\nAlready installed: %v\nTo Download: %v",
-		buildResult.Commit.Build.Ready(), artifactNamesList, installedList, downloadList,
+		commit.Build.Ready(), artifactNamesList, installedList, downloadList,
 	)
 
 	artifactsToInstall := []artifact.ArtifactID{}
 	var artifactsToBuild artifact.Map
-	if buildResult.Commit.Build.Ready() {
+	if commit.Build.Ready() {
 		for _, a := range downloadablePrebuiltResults {
 			if _, alreadyInstalled := alreadyInstalled[a.ArtifactID]; !alreadyInstalled {
 				artifactsToInstall = append(artifactsToInstall, a.ArtifactID)
@@ -630,7 +630,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(buildResult *bpModel.Build
 	if s.target.Trigger() == target.TriggerCheckout {
 		// For initial checkouts, show requested dependencies (i.e. project dependencies).
 		requestedArtifacts := make([]artifact.ArtifactID, 0)
-		for _, req := range buildResult.Commit.Build.ResolvedRequirements {
+		for _, req := range commit.Build.ResolvedRequirements {
 			for artifactId, a := range artifactsToBuild {
 				if a.Name == req.Requirement.Name && a.Namespace == req.Requirement.Namespace {
 					requestedArtifacts = append(requestedArtifacts, artifactId)
@@ -648,14 +648,14 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(buildResult *bpModel.Build
 	// The log file we want to use for builds
 	logFilePath := logging.FilePathFor(fmt.Sprintf("build-%s.log", s.target.CommitUUID().String()+"-"+time.Now().Format("20060102150405")))
 
-	recipeID, err := buildResult.Commit.Build.RecipeID()
+	recipeID, err := commit.Build.RecipeID()
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Could not get recipe ID from build plan")
 	}
 
 	if err := s.eventHandler.Handle(events.Start{
 		RecipeID:      recipeID,
-		RequiresBuild: !buildResult.Commit.Build.Ready(),
+		RequiresBuild: !commit.Build.Ready(),
 		ArtifactNames: artifactNames,
 		LogFilePath:   logFilePath,
 		ArtifactsToBuild: func() []artifact.ArtifactID {
@@ -679,7 +679,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(buildResult *bpModel.Build
 		s.analytics.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeDownload, dimensions)
 	}
 
-	err = s.installArtifactsFromBuild(buildResult, requestedArtifacts, artifact.ArtifactIDsToMap(artifactsToInstall), downloadablePrebuiltResults, setup, resolver, installFunc, logFilePath)
+	err = s.installArtifactsFromBuild(commit, requestedArtifacts, artifact.ArtifactIDsToMap(artifactsToInstall), downloadablePrebuiltResults, setup, resolver, installFunc, logFilePath)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -688,7 +688,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(buildResult *bpModel.Build
 		multilog.Error("Could not save artifact cache updates: %v", err)
 	}
 
-	artifacts := buildResult.OrderedArtifacts()
+	artifacts := commit.Build.OrderedArtifacts()
 	logging.Debug("Returning artifacts: %v", artifacts)
 	return artifacts, uninstallArtifacts, nil
 }
@@ -712,22 +712,22 @@ func aggregateErrors() (chan<- error, <-chan error) {
 	return bgErrs, aggErr
 }
 
-func (s *Setup) installArtifactsFromBuild(buildResult *bpModel.BuildRelay, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, downloads []artifact.ArtifactDownload, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller, logFilePath string) error {
+func (s *Setup) installArtifactsFromBuild(commit *bpResp.Commit, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, downloads []artifact.ArtifactDownload, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller, logFilePath string) error {
 	// Artifacts are installed in two stages
 	// - The first stage runs concurrently in MaxConcurrency worker threads (download, unpacking, relocation)
 	// - The second stage moves all files into its final destination is running in a single thread (using the mainthread library) to avoid file conflicts
 
 	var err error
-	if buildResult.Commit.Build.Ready() {
+	if commit.Build.Ready() {
 		if err := s.handleEvent(events.BuildSkipped{}); err != nil {
 			return errs.Wrap(err, "Could not handle BuildSkipped event")
 		}
-		err = s.installFromBuildResult(buildResult, artifacts, artifactsToInstall, downloads, setup, resolver, installFunc)
+		err = s.installFromBuildResult(commit, artifacts, artifactsToInstall, downloads, setup, resolver, installFunc)
 		if err != nil {
 			err = errs.Wrap(err, "Installing via build result failed")
 		}
 	} else {
-		err = s.installFromBuildLog(buildResult, artifacts, artifactsToInstall, setup, resolver, installFunc, logFilePath)
+		err = s.installFromBuildLog(commit, artifacts, artifactsToInstall, setup, resolver, installFunc, logFilePath)
 		if err != nil {
 			err = errs.Wrap(err, "Installing via buildlog streamer failed")
 		}
@@ -737,7 +737,15 @@ func (s *Setup) installArtifactsFromBuild(buildResult *bpModel.BuildRelay, artif
 }
 
 // setupArtifactSubmitFunction returns a function that sets up an artifact and can be submitted to a workerpool
-func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, ar *artifact.Artifact, expectedArtifactInstalls map[artifact.ArtifactID]struct{}, buildResult *bpModel.BuildRelay, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller, errors chan<- error) func() {
+func (s *Setup) setupArtifactSubmitFunction(
+	a artifact.ArtifactDownload,
+	ar *artifact.Artifact,
+	expectedArtifactInstalls map[artifact.ArtifactID]struct{},
+	commit *bpResp.Commit,
+	resolver ArtifactResolver,
+	installFunc artifactInstaller,
+	errors chan<- error,
+) func() {
 	return func() {
 		// If artifact has no valid download, just count it as completed and return
 		if strings.Contains(ar.URL, "as-builds/noop") ||
@@ -755,7 +763,7 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, ar *art
 			return
 		}
 
-		as, err := s.selectArtifactSetupImplementation(buildResult.Commit.Build.Engine(), a.ArtifactID)
+		as, err := s.selectArtifactSetupImplementation(commit.Build.Engine(), a.ArtifactID)
 		if err != nil {
 			errors <- errs.Wrap(err, "Failed to select artifact setup implementation")
 			return
@@ -778,7 +786,7 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, ar *art
 	}
 }
 
-func (s *Setup) installFromBuildResult(buildResult *bpModel.BuildRelay, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, downloads []artifact.ArtifactDownload, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller) error {
+func (s *Setup) installFromBuildResult(commit *bpResp.Commit, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, downloads []artifact.ArtifactDownload, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller) error {
 	logging.Debug("Installing artifacts from build result")
 	errs, aggregatedErr := aggregateErrors()
 	mainthread.Run(func() {
@@ -792,7 +800,7 @@ func (s *Setup) installFromBuildResult(buildResult *bpModel.BuildRelay, artifact
 			if arv, ok := artifacts[a.ArtifactID]; ok {
 				ar = &arv
 			}
-			wp.Submit(s.setupArtifactSubmitFunction(a, ar, map[artifact.ArtifactID]struct{}{}, buildResult, setup, resolver, installFunc, errs))
+			wp.Submit(s.setupArtifactSubmitFunction(a, ar, map[artifact.ArtifactID]struct{}{}, commit, resolver, installFunc, errs))
 		}
 
 		wp.StopWait()
@@ -801,11 +809,11 @@ func (s *Setup) installFromBuildResult(buildResult *bpModel.BuildRelay, artifact
 	return <-aggregatedErr
 }
 
-func (s *Setup) installFromBuildLog(buildResult *bpModel.BuildRelay, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller, logFilePath string) error {
+func (s *Setup) installFromBuildLog(commit *bpResp.Commit, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller, logFilePath string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	recipeID, err := buildResult.Commit.Build.RecipeID()
+	recipeID, err := commit.Build.RecipeID()
 	if err != nil {
 		return errs.Wrap(err, "Failed to get recipe ID")
 	}
@@ -847,7 +855,7 @@ func (s *Setup) installFromBuildLog(buildResult *bpModel.BuildRelay, artifacts a
 					logging.Debug("Unmonitored artifact buildlog event discarded: %s", a.ArtifactID)
 					continue
 				}
-				wp.Submit(s.setupArtifactSubmitFunction(a, ar, artifactsToInstall, buildResult, setup, resolver, installFunc, errs))
+				wp.Submit(s.setupArtifactSubmitFunction(a, ar, artifactsToInstall, commit, resolver, installFunc, errs))
 			}
 		}()
 
@@ -1011,10 +1019,10 @@ func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine) (Setupe
 	}
 }
 
-func selectArtifactResolver(buildResult *bpModel.BuildRelay, artifactListing *buildplan.ArtifactListing) (ArtifactResolver, error) {
+func selectArtifactResolver(commit *bpResp.Commit, artifactListing *buildplan.ArtifactListing) (ArtifactResolver, error) {
 	var artifacts artifact.Map
 	var err error
-	if buildResult.Commit.Build.Ready() || strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") {
+	if commit.Build.Ready() || strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") {
 		artifacts, err = artifactListing.BuildtimeClosure()
 	} else {
 		artifacts, err = artifactListing.RuntimeClosure()
@@ -1023,13 +1031,13 @@ func selectArtifactResolver(buildResult *bpModel.BuildRelay, artifactListing *bu
 		return nil, errs.Wrap(err, "Failed to create artifact map from build plan")
 	}
 
-	switch buildResult.Commit.Build.Engine() {
+	switch commit.Build.Engine() {
 	case model.Alternative:
 		return alternative.NewResolver(artifacts), nil
 	case model.Camel:
 		return camel.NewResolver(), nil
 	default:
-		return nil, errs.New("Unknown build engine: %s", buildResult.Commit.Build.Engine())
+		return nil, errs.New("Unknown build engine: %s", commit.Build.Engine())
 	}
 }
 

@@ -237,7 +237,7 @@ func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
 func getTerminalArtifactMap(
 	pj *project.Project,
 	namespace *project.Namespaced,
-	commit string,
+	commitID string,
 	target string,
 	auth *authentication.Auth,
 	out output.Outputer) (_ buildplan.TerminalArtifactMap, completed bool, hasFailedArtifacts bool, rerr error) {
@@ -245,13 +245,13 @@ func getTerminalArtifactMap(
 		return nil, false, false, rationalize.ErrNoProject
 	}
 
-	commitID := strfmt.UUID(commit)
-	if commitID != "" && !strfmt.IsUUID(commitID.String()) {
-		return nil, false, false, &errInvalidCommitId{errs.New("Invalid commit ID"), commitID.String()}
+	commitUUID := strfmt.UUID(commitID)
+	if commitUUID != "" && !strfmt.IsUUID(commitUUID.String()) {
+		return nil, false, false, &errInvalidCommitId{errs.New("Invalid commit ID"), commitUUID.String()}
 	}
 
 	namespaceProvided := namespace.IsValid()
-	commitIdProvided := commitID != ""
+	commitIdProvided := commitUUID != ""
 
 	// Show a spinner when fetching a terminal artifact map.
 	// Sourcing the local runtime for an artifact map has its own spinner.
@@ -270,7 +270,7 @@ func getTerminalArtifactMap(
 	}
 
 	var err error
-	var buildResult *bpModel.BuildRelay
+	var commit *bpResp.Commit
 	switch {
 	// Return the artifact map from this runtime.
 	case !namespaceProvided && !commitIdProvided:
@@ -280,7 +280,7 @@ func getTerminalArtifactMap(
 		}
 
 		bp := bpModel.NewBuildPlannerModel(auth)
-		buildResult, err = bp.FetchBuild(localCommitID, pj.Owner(), pj.Name(), targetPtr)
+		commit, err = bp.FetchCommitWithBuild(localCommitID, pj.Owner(), pj.Name(), targetPtr)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
 		}
@@ -288,7 +288,7 @@ func getTerminalArtifactMap(
 	// Return artifact map from the given commitID for the current project.
 	case !namespaceProvided && commitIdProvided:
 		bp := bpModel.NewBuildPlannerModel(auth)
-		buildResult, err = bp.FetchBuild(commitID, pj.Owner(), pj.Name(), targetPtr)
+		commit, err = bp.FetchCommitWithBuild(commitUUID, pj.Owner(), pj.Name(), targetPtr)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
 		}
@@ -305,14 +305,14 @@ func getTerminalArtifactMap(
 			return nil, false, false, errs.Wrap(err, "Could not grab branch for project")
 		}
 
-		commitUUID, err := model.BranchCommitID(namespace.Owner, namespace.Project, branch.Label)
+		branchCommitUUID, err := model.BranchCommitID(namespace.Owner, namespace.Project, branch.Label)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Could not get commit ID for project")
 		}
-		commitID = *commitUUID
+		commitUUID = *branchCommitUUID
 
 		bp := bpModel.NewBuildPlannerModel(auth)
-		buildResult, err = bp.FetchBuild(commitID, namespace.Owner, namespace.Project, targetPtr)
+		commit, err = bp.FetchCommitWithBuild(commitUUID, namespace.Owner, namespace.Project, targetPtr)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
 		}
@@ -320,7 +320,7 @@ func getTerminalArtifactMap(
 	// Return the artifact map for the given commitID of the given project.
 	case namespaceProvided && commitIdProvided:
 		bp := bpModel.NewBuildPlannerModel(auth)
-		buildResult, err = bp.FetchBuild(commitID, namespace.Owner, namespace.Project, targetPtr)
+		commit, err = bp.FetchCommitWithBuild(commitUUID, namespace.Owner, namespace.Project, targetPtr)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
 		}
@@ -329,17 +329,17 @@ func getTerminalArtifactMap(
 		return nil, false, false, errs.New("Unhandled case")
 	}
 
-	bpm, err := buildplan.NewMapFromBuildPlan(buildResult.Commit.Build, false, false, nil, true)
+	bpm, err := buildplan.NewMapFromBuildPlan(commit.Build, false, false, nil, true)
 	if err != nil {
-		return nil, buildResult.Commit.Build.Ready(), false, errs.Wrap(err, "Could not get buildplan")
+		return nil, commit.Build.Ready(), false, errs.Wrap(err, "Could not get buildplan")
 	}
 
 	// Communicate whether there were failed artifacts
-	for _, artifact := range buildResult.Commit.Build.Artifacts {
+	for _, artifact := range commit.Build.Artifacts {
 		if !bpResp.IsSuccessArtifactStatus(artifact.Status) {
-			return bpm, buildResult.Commit.Build.Ready(), true, nil
+			return bpm, commit.Build.Ready(), true, nil
 		}
 	}
 
-	return bpm, buildResult.Commit.Build.Ready(), false, nil
+	return bpm, commit.Build.Ready(), false, nil
 }

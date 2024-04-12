@@ -63,7 +63,7 @@ func (e *Eval) Run(params *Params) (rerr error) {
 	}()
 
 	bp := model.NewBuildPlannerModel(e.auth)
-	if _, err := bp.FetchBuild(commitID, e.project.Owner(), e.project.Name(), &params.Target); err != nil {
+	if err := bp.WaitForBuild(commitID, e.project.Owner(), e.project.Name(), &params.Target); err != nil {
 		return locale.WrapError(err, "err_eval", "Failed to evaluate target '{{.V0}}'", params.Target)
 	}
 

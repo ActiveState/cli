@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -660,6 +661,14 @@ func (b *Build) RecipeID() (strfmt.UUID, error) {
 		result = strfmt.UUID(id.ID)
 	}
 	return result, nil
+}
+
+func (b *Build) OrderedArtifacts() []artifact.ArtifactID {
+	res := make([]artifact.ArtifactID, 0, len(b.Artifacts))
+	for _, a := range b.Artifacts {
+		res = append(res, a.NodeID)
+	}
+	return res
 }
 
 func (b *Build) Ready() bool {

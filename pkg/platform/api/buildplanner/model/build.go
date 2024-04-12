@@ -11,12 +11,9 @@ import (
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
-	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/graphql"
 	"github.com/go-openapi/strfmt"
 )
@@ -34,45 +31,25 @@ func (c *client) Run(req gqlclient.Request, resp interface{}) error {
 	return c.gqlClient.Run(req, resp)
 }
 
-// BuildRelay relays meta information about the request and response of a build.
-// This type will ideally be refactored out, because this is too much responsibility to hold for one type.
-type BuildRelay struct {
-	Commit *bpResp.Commit
-}
-
-func (b *BuildRelay) OrderedArtifacts() []artifact.ArtifactID {
-	res := make([]artifact.ArtifactID, 0, len(b.Commit.Build.Artifacts))
-	for _, a := range b.Commit.Build.Artifacts {
-		res = append(res, a.NodeID)
-	}
-	return res
-}
-
-func (bp *BuildPlanner) FetchBuild(commitID strfmt.UUID, owner, project string, target *string) (*BuildRelay, error) {
+func (bp *BuildPlanner) FetchCommitWithBuild(commitID strfmt.UUID, owner, project string, target *string) (*response.Commit, error) {
 	logging.Debug("FetchBuildResult, commitID: %s, owner: %s, project: %s", commitID, owner, project)
-	resp := &bpResp.ProjectCommit{}
+	resp := &response.ProjectCommit{}
 	err := bp.client.Run(request.ProjectCommit(commitID.String(), owner, project, target), resp)
 	if err != nil {
 		return nil, processBuildPlannerError(err, "failed to fetch build plan")
 	}
 
-	build := resp.Project.Commit.Build
-
 	// The BuildPlanner will return a build plan with a status of
 	// "planning" if the build plan is not ready yet. We need to
 	// poll the BuildPlanner until the build is ready.
-	if build.Status == bpResp.Planning {
-		build, err = bp.pollBuildPlanned(commitID.String(), owner, project, target)
+	if resp.Project.Commit.Build.Status == response.Planning {
+		resp.Project.Commit.Build, err = bp.pollBuildPlanned(commitID.String(), owner, project, target)
 		if err != nil {
 			return nil, errs.Wrap(err, "failed to poll build plan")
 		}
 	}
 
-	res := BuildRelay{
-		Commit: resp.Project.Commit,
-	}
-
-	return &res, nil
+	return resp.Project.Commit, nil
 }
 
 // processBuildPlannerError will check for special error types that should be
@@ -109,10 +86,10 @@ func processBuildPlannerError(bpErr error, fallbackMessage string) error {
 	if errors.As(bpErr, graphqlErr) {
 		code, ok := graphqlErr.Extensions[codeExtensionKey].(string)
 		if ok && code == clientDeprecationErrorKey {
-			return &bpResp.BuildPlannerError{Err: locale.NewInputError("err_buildplanner_deprecated", "Encountered deprecation error: {{.V0}}", graphqlErr.Message)}
+			return &response.BuildPlannerError{Err: locale.NewInputError("err_buildplanner_deprecated", "Encountered deprecation error: {{.V0}}", graphqlErr.Message)}
 		}
 	}
-	return &bpResp.BuildPlannerError{Err: locale.NewInputError("err_buildplanner", "{{.V0}}: Encountered unexpected error: {{.V1}}", fallbackMessage, bpErr.Error())}
+	return &response.BuildPlannerError{Err: locale.NewInputError("err_buildplanner", "{{.V0}}: Encountered unexpected error: {{.V1}}", fallbackMessage, bpErr.Error())}
 }
 
 var versionRe = regexp.MustCompile(`^\d+(\.\d+)*$`)
@@ -125,11 +102,11 @@ func isWildcardVersion(version string) bool {
 	return strings.Contains(version, ".x") || strings.Contains(version, ".X")
 }
 
-func VersionStringToRequirements(version string) ([]bpResp.VersionRequirement, error) {
+func VersionStringToRequirements(version string) ([]response.VersionRequirement, error) {
 	if isExactVersion(version) {
-		return []bpResp.VersionRequirement{{
-			bpResp.VersionRequirementComparatorKey: "eq",
-			bpResp.VersionRequirementVersionKey:    version,
+		return []response.VersionRequirement{{
+			response.VersionRequirementComparatorKey: "eq",
+			response.VersionRequirementVersionKey:    version,
 		}}, nil
 	}
 
@@ -141,12 +118,12 @@ func VersionStringToRequirements(version string) ([]bpResp.VersionRequirement, e
 		if err != nil {
 			return nil, locale.WrapInputError(err, "err_invalid_version_string", "Invalid version string")
 		}
-		requirements := []bpResp.VersionRequirement{}
+		requirements := []response.VersionRequirement{}
 		for _, change := range changeset {
 			for _, constraint := range change.VersionConstraints {
-				requirements = append(requirements, bpResp.VersionRequirement{
-					bpResp.VersionRequirementComparatorKey: constraint.Comparator,
-					bpResp.VersionRequirementVersionKey:    constraint.Version,
+				requirements = append(requirements, response.VersionRequirement{
+					response.VersionRequirementComparatorKey: constraint.Comparator,
+					response.VersionRequirementVersionKey:    constraint.Version,
 				})
 			}
 		}
@@ -156,7 +133,7 @@ func VersionStringToRequirements(version string) ([]bpResp.VersionRequirement, e
 	// Construct version constraints to be >= given version, and < given version's last part + 1.
 	// For example, given a version number of 3.10.x, constraints should be >= 3.10, < 3.11.
 	// Given 2.x, constraints should be >= 2, < 3.
-	requirements := []bpResp.VersionRequirement{}
+	requirements := []response.VersionRequirement{}
 	parts := strings.Split(version, ".")
 	for i, part := range parts {
 		if part != "x" && part != "X" {
@@ -165,18 +142,18 @@ func VersionStringToRequirements(version string) ([]bpResp.VersionRequirement, e
 		if i == 0 {
 			return nil, locale.NewInputError("err_version_wildcard_start", "A version number cannot start with a wildcard")
 		}
-		requirements = append(requirements, bpResp.VersionRequirement{
-			bpResp.VersionRequirementComparatorKey: bpResp.ComparatorGTE,
-			bpResp.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
+		requirements = append(requirements, response.VersionRequirement{
+			response.VersionRequirementComparatorKey: response.ComparatorGTE,
+			response.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
 		})
 		previousPart, err := strconv.Atoi(parts[i-1])
 		if err != nil {
 			return nil, locale.WrapInputError(err, "err_version_number_expected", "Version parts are expected to be numeric")
 		}
 		parts[i-1] = strconv.Itoa(previousPart + 1)
-		requirements = append(requirements, bpResp.VersionRequirement{
-			bpResp.VersionRequirementComparatorKey: bpResp.ComparatorLT,
-			bpResp.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
+		requirements = append(requirements, response.VersionRequirement{
+			response.VersionRequirementComparatorKey: response.ComparatorLT,
+			response.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
 		})
 	}
 	return requirements, nil
@@ -184,7 +161,7 @@ func VersionStringToRequirements(version string) ([]bpResp.VersionRequirement, e
 
 func (bp *BuildPlanner) BuildTarget(owner, project, commitID, target string) error {
 	logging.Debug("BuildTarget, owner: %s, project: %s, commitID: %s, target: %s", owner, project, commitID, target)
-	resp := &bpResp.BuildTargetResult{}
+	resp := &response.BuildTargetResult{}
 	err := bp.client.Run(request.Evaluate(owner, project, commitID, target), resp)
 	if err != nil {
 		return processBuildPlannerError(err, "Failed to evaluate target")
@@ -194,31 +171,31 @@ func (bp *BuildPlanner) BuildTarget(owner, project, commitID, target string) err
 		return errs.New("Project is nil")
 	}
 
-	if bpResp.IsErrorResponse(resp.Project.Type) {
-		return bpResp.ProcessProjectError(resp.Project, "Could not evaluate target")
+	if response.IsErrorResponse(resp.Project.Type) {
+		return response.ProcessProjectError(resp.Project, "Could not evaluate target")
 	}
 
 	if resp.Project.Commit == nil {
 		return errs.New("Commit is nil")
 	}
 
-	if bpResp.IsErrorResponse(resp.Project.Commit.Type) {
-		return bpResp.ProcessCommitError(resp.Project.Commit, "Could not process error response from evaluate target")
+	if response.IsErrorResponse(resp.Project.Commit.Type) {
+		return response.ProcessCommitError(resp.Project.Commit, "Could not process error response from evaluate target")
 	}
 
 	if resp.Project.Commit.Build == nil {
 		return errs.New("Build is nil")
 	}
 
-	if bpResp.IsErrorResponse(resp.Project.Commit.Build.Type) {
-		return bpResp.ProcessBuildError(resp.Project.Commit.Build, "Could not process error response from evaluate target")
+	if response.IsErrorResponse(resp.Project.Commit.Build.Type) {
+		return response.ProcessBuildError(resp.Project.Commit.Build, "Could not process error response from evaluate target")
 	}
 
 	return nil
 }
 
 // pollBuildPlanned polls the buildplan until it has passed the planning stage (ie. it's either planned or further along).
-func (bp *BuildPlanner) pollBuildPlanned(commitID, owner, project string, target *string) (*bpResp.Build, error) {
+func (bp *BuildPlanner) pollBuildPlanned(commitID, owner, project string, target *string) (*response.Build, error) {
 	resp := &response.ProjectCommit{}
 	ticker := time.NewTicker(pollInterval)
 	for {
@@ -235,7 +212,7 @@ func (bp *BuildPlanner) pollBuildPlanned(commitID, owner, project string, target
 
 			build := resp.Project.Commit.Build
 
-			if build.Status != bpResp.Planning {
+			if build.Status != response.Planning {
 				return build, nil
 			}
 		case <-time.After(pollTimeout):
@@ -245,7 +222,7 @@ func (bp *BuildPlanner) pollBuildPlanned(commitID, owner, project string, target
 }
 
 type ErrFailedArtifacts struct {
-	Artifacts map[strfmt.UUID]*bpResp.Artifact
+	Artifacts map[strfmt.UUID]*response.Artifact
 }
 
 func (e ErrFailedArtifacts) Error() string {
@@ -253,14 +230,14 @@ func (e ErrFailedArtifacts) Error() string {
 }
 
 // WaitForBuild polls the build until it has passed the completed stage (ie. it's either successful or failed).
-func (bp *BuildPlanner) WaitForBuild(commitID, owner, project, target string) error {
+func (bp *BuildPlanner) WaitForBuild(commitID strfmt.UUID, owner, project string, target *string) error {
 	failedArtifacts := map[strfmt.UUID]*response.Artifact{}
 	resp := &response.ProjectCommit{}
 	ticker := time.NewTicker(pollInterval)
 	for {
 		select {
 		case <-ticker.C:
-			err := bp.client.Run(request.ProjectCommit(commitID, owner, project, ptr.To(target)), resp)
+			err := bp.client.Run(request.ProjectCommit(commitID.String(), owner, project, target), resp)
 			if err != nil {
 				return processBuildPlannerError(err, "failed to fetch build plan")
 			}
@@ -272,22 +249,22 @@ func (bp *BuildPlanner) WaitForBuild(commitID, owner, project, target string) er
 			build := resp.Project.Commit.Build
 
 			// If the build status is planning it may not have any artifacts yet.
-			if build.Status == bpResp.Planning {
+			if build.Status == response.Planning {
 				continue
 			}
 
 			// If all artifacts are completed then we are done.
 			completed := true
 			for _, artifact := range build.Artifacts {
-				if artifact.Status == bpResp.ArtifactNotSubmitted {
+				if artifact.Status == response.ArtifactNotSubmitted {
 					continue
 				}
-				if artifact.Status != bpResp.ArtifactSucceeded {
+				if artifact.Status != response.ArtifactSucceeded {
 					completed = false
 				}
 
-				if artifact.Status == bpResp.ArtifactFailedPermanently ||
-					artifact.Status == bpResp.ArtifactFailedTransiently {
+				if artifact.Status == response.ArtifactFailedPermanently ||
+					artifact.Status == response.ArtifactFailedTransiently {
 					failedArtifacts[artifact.NodeID] = artifact
 				}
 			}
@@ -297,7 +274,7 @@ func (bp *BuildPlanner) WaitForBuild(commitID, owner, project, target string) er
 			}
 
 			// If the build status is completed then we are done.
-			if build.Status == bpResp.Completed {
+			if build.Status == response.Completed {
 				if len(failedArtifacts) != 0 {
 					return ErrFailedArtifacts{failedArtifacts}
 				}

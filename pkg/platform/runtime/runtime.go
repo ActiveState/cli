@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"golang.org/x/net/context"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -23,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
@@ -166,7 +165,7 @@ func (r *Runtime) Setup(eventHandler events.Handler) *setup.Setup {
 	return setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out, r.svcm)
 }
 
-func (r *Runtime) Update(setup *setup.Setup, buildResult *bpModel.BuildRelay) (rerr error) {
+func (r *Runtime) Update(setup *setup.Setup, commit *bpResp.Commit) (rerr error) {
 	if r.disabled {
 		logging.Debug("Skipping update as it is disabled")
 		return nil // nothing to do
@@ -178,7 +177,7 @@ func (r *Runtime) Update(setup *setup.Setup, buildResult *bpModel.BuildRelay) (r
 		r.recordCompletion(rerr)
 	}()
 
-	if err := setup.Update(buildResult); err != nil {
+	if err := setup.Update(commit); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}
 
@@ -200,12 +199,12 @@ func (r *Runtime) SolveAndUpdate(eventHandler events.Handler) error {
 	}
 
 	setup := r.Setup(eventHandler)
-	br, err := setup.Solve()
+	commit, err := setup.Solve()
 	if err != nil {
 		return errs.Wrap(err, "Could not solve")
 	}
 
-	return r.Update(setup, br)
+	return r.Update(setup, commit)
 }
 
 // HasCache tells us whether this runtime has any cached files. Note this does NOT tell you whether the cache is valid.
@@ -272,7 +271,7 @@ func (r *Runtime) recordCompletion(err error) {
 		errorType = "input"
 	case errs.Matches(err, &setup.BuildError{}), errs.Matches(err, &buildlog.BuildError{}):
 		errorType = "build"
-	case errs.Matches(err, &response.BuildPlannerError{}):
+	case errs.Matches(err, &bpResp.BuildPlannerError{}):
 		errorType = "buildplan"
 	case errs.Matches(err, &setup.ArtifactSetupErrors{}):
 		if setupErrors := (&setup.ArtifactSetupErrors{}); errors.As(err, &setupErrors) {
@@ -383,7 +382,7 @@ func IsRuntimeDir(dir string) bool {
 	return store.New(dir).HasMarker()
 }
 
-func (r *Runtime) BuildPlan() (*response.Build, error) {
+func (r *Runtime) BuildPlan() (*bpResp.Build, error) {
 	runtimeStore := r.store
 	if runtimeStore == nil {
 		runtimeStore = store.New(r.target.Dir())
