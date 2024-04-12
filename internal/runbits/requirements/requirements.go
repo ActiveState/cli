@@ -193,7 +193,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	if validatePkg {
 		pg = output.StartSpinner(out, locale.Tr("progress_search", requirementName), constants.TerminalAnimationInterval)
 
-		normalized, err := model.FetchNormalizedName(*ns, requirementName, r.Auth)
+		normalized, err := model.FetchNormalizedName(ns.String(), requirementName, r.Auth)
 		if err != nil {
 			multilog.Error("Failed to normalize '%s': %v", requirementName, err)
 		}

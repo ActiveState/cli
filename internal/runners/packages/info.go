@@ -64,7 +64,7 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 		ns = ptr.To(model.NewNamespacePkgOrBundle(language, nstype))
 	}
 
-	normalized, err := model.FetchNormalizedName(*ns, params.Package.Name, i.auth)
+	normalized, err := model.FetchNormalizedName(ns.String(), params.Package.Name, i.auth)
 	if err != nil {
 		multilog.Error("Failed to normalize '%s': %v", params.Package.Name, err)
 		normalized = params.Package.Name
