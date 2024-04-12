@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -42,14 +42,14 @@ func NewDownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) (
 	return downloads, nil
 }
 
-func NewDownloadsFromBuildPlan(build bpModel.Build, artifacts map[strfmt.UUID]Artifact) ([]ArtifactDownload, error) {
+func NewDownloadsFromBuildPlan(build bpResp.Build, artifacts map[strfmt.UUID]Artifact) ([]ArtifactDownload, error) {
 	var downloads []ArtifactDownload
 	for id := range artifacts {
 		for _, a := range build.Artifacts {
-			if a.Status == string(bpModel.ArtifactSucceeded) && a.NodeID == id && a.URL != "" {
-				if strings.EqualFold(a.MimeType, bpModel.XArtifactMimeType) ||
-					strings.EqualFold(a.MimeType, bpModel.XActiveStateArtifactMimeType) ||
-					strings.EqualFold(a.MimeType, bpModel.XCamelInstallerMimeType) {
+			if a.Status == string(bpResp.ArtifactSucceeded) && a.NodeID == id && a.URL != "" {
+				if strings.EqualFold(a.MimeType, bpResp.XArtifactMimeType) ||
+					strings.EqualFold(a.MimeType, bpResp.XActiveStateArtifactMimeType) ||
+					strings.EqualFold(a.MimeType, bpResp.XCamelInstallerMimeType) {
 					downloads = append(downloads, ArtifactDownload{ArtifactID: strfmt.UUID(a.NodeID), DownloadURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum})
 				}
 			}
@@ -84,11 +84,11 @@ func NewDownloadsFromCamelBuild(buildStatus *headchef_models.V1BuildStatusRespon
 	return nil, errs.New("No download found in build response: %+v", buildStatus)
 }
 
-func NewDownloadsFromCamelBuildPlan(build bpModel.Build, artifacts map[strfmt.UUID]Artifact) ([]ArtifactDownload, error) {
+func NewDownloadsFromCamelBuildPlan(build bpResp.Build, artifacts map[strfmt.UUID]Artifact) ([]ArtifactDownload, error) {
 	var downloads []ArtifactDownload
 	for id := range artifacts {
 		for _, a := range build.Artifacts {
-			if a.Status == string(bpModel.ArtifactSucceeded) && a.NodeID == id && a.URL != "" {
+			if a.Status == string(bpResp.ArtifactSucceeded) && a.NodeID == id && a.URL != "" {
 				if !strings.EqualFold(a.MimeType, "application/x-camel-installer") {
 					continue
 				}

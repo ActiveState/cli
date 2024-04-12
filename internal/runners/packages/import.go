@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -126,7 +127,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return errs.Wrap(err, "Could not import changeset")
 	}
 
-	bp := model.NewBuildPlannerModel(i.auth)
+	bp := bpModel.NewBuildPlannerModel(i.auth)
 	be, err := bp.GetBuildExpression(latestCommit.String())
 	if err != nil {
 		return locale.WrapError(err, "err_cannot_get_build_expression", "Could not get build expression")
@@ -141,7 +142,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 	}
 
 	msg := locale.T("commit_reqstext_message")
-	commitID, err := bp.StageCommit(model.StageCommitParams{
+	commitID, err := bp.StageCommit(bpModel.StageCommitParams{
 		Owner:        i.proj.Owner(),
 		Project:      i.proj.Name(),
 		ParentCommit: latestCommit.String(),
@@ -176,25 +177,25 @@ func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model
 
 func applyChangeset(changeset model.Changeset, be *buildexpression.BuildExpression) error {
 	for _, change := range changeset {
-		var expressionOperation bpModel.Operation
+		var expressionOperation bpResp.Operation
 		switch change.Operation {
 		case string(model.OperationAdded):
-			expressionOperation = bpModel.OperationAdded
+			expressionOperation = bpResp.OperationAdded
 		case string(model.OperationRemoved):
-			expressionOperation = bpModel.OperationRemoved
+			expressionOperation = bpResp.OperationRemoved
 		case string(model.OperationUpdated):
-			expressionOperation = bpModel.OperationUpdated
+			expressionOperation = bpResp.OperationUpdated
 		}
 
-		req := bpModel.Requirement{
+		req := bpResp.Requirement{
 			Name:      change.Requirement,
 			Namespace: change.Namespace,
 		}
 
 		for _, constraint := range change.VersionConstraints {
-			req.VersionRequirement = append(req.VersionRequirement, bpModel.VersionRequirement{
-				bpModel.VersionRequirementComparatorKey: constraint.Comparator,
-				bpModel.VersionRequirementVersionKey:    constraint.Version,
+			req.VersionRequirement = append(req.VersionRequirement, bpResp.VersionRequirement{
+				bpResp.VersionRequirementComparatorKey: constraint.Comparator,
+				bpResp.VersionRequirementVersionKey:    constraint.Version,
 			})
 		}
 

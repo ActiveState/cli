@@ -8,7 +8,9 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -245,13 +247,13 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	logging.Debug("Creating Platform project")
 
-	platformID, err := model.PlatformNameToPlatformID(model.HostPlatform)
+	platformID, err := model.PlatformNameToPlatformID(sysinfo.OS().String())
 	if err != nil {
-		return errs.Wrap(err, "Unable to determine Platform ID from %s", model.HostPlatform)
+		return errs.Wrap(err, "Unable to determine Platform ID from %s", sysinfo.OS().String())
 	}
 
-	bp := model.NewBuildPlannerModel(r.auth)
-	commitID, err := bp.CreateProject(&model.CreateProjectParams{
+	bp := bpModel.NewBuildPlannerModel(r.auth)
+	commitID, err := bp.CreateProject(&bpModel.CreateProjectParams{
 		Owner:       namespace.Owner,
 		Project:     namespace.Project,
 		PlatformID:  strfmt.UUID(platformID),
@@ -338,7 +340,7 @@ func deriveVersion(lang language.Language, version string, auth *authentication.
 
 	if version == "" {
 		// Return default language.
-		langs, err := model.FetchSupportedLanguages(model.HostPlatform)
+		langs, err := model.FetchSupportedLanguages(sysinfo.OS().String())
 		if err != nil {
 			multilog.Error("Failed to fetch supported languages (using hardcoded default version): %s", errs.JoinMessage(err))
 			return lang.RecommendedVersion(), nil
@@ -426,5 +428,5 @@ func (i *Initialize) getProjectName(desiredProject string, lang string) string {
 		return desiredProject
 	}
 
-	return fmt.Sprintf("%s-%s", lang, model.HostPlatform)
+	return fmt.Sprintf("%s-%s", lang, sysinfo.OS().String())
 }

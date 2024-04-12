@@ -1,4 +1,4 @@
-package model
+package response
 
 import (
 	"encoding/json"
@@ -22,7 +22,7 @@ const (
 	OperationRemoved
 	OperationUpdated
 
-	// BuildPlan statuses
+	// ProjectCommit statuses
 	Planning  = "PLANNING"
 	Planned   = "PLANNED"
 	Started   = "STARTED"
@@ -199,25 +199,11 @@ func (e *BuildPlannerError) Unwrap() error {
 	return errors.Unwrap(e.Err)
 }
 
-// BuildPlan is the top level object returned by the build planner. It contains
-// the commit and build.
-type BuildPlan interface {
-	Build() (*Build, error)
-	Commit() (*Commit, error)
-}
-
-func NewBuildPlanResponse(owner, project string) BuildPlan {
-	if owner != "" && project != "" {
-		return &BuildPlanByProject{}
-	}
-	return &BuildPlanByCommit{}
-}
-
-type BuildPlanByProject struct {
+type ProjectCommit struct {
 	Project *Project `json:"project"`
 }
 
-func (b *BuildPlanByProject) Commit() (*Commit, error) {
+func (b *ProjectCommit) Commit() (*Commit, error) {
 	if b.Project == nil {
 		return nil, errs.New("BuildPlanByProject.Build: Project is nil")
 	}
@@ -233,7 +219,7 @@ func (b *BuildPlanByProject) Commit() (*Commit, error) {
 	return b.Project.Commit, nil
 }
 
-func (b *BuildPlanByProject) Build() (*Build, error) {
+func (b *ProjectCommit) Build() (*Build, error) {
 	if b.Project == nil {
 		return nil, errs.New("BuildPlanByProject.Build: Project is nil")
 	}
@@ -258,10 +244,13 @@ func (b *BuildPlanByProject) Build() (*Build, error) {
 		return nil, ProcessBuildError(b.Project.Commit.Build, "Could not get build from project commit response")
 	}
 
-	return b.Project.Commit.Build, nil
+	build := b.Project.Commit.Build
+	build.Sanitize()
+
+	return build, nil
 }
 
-func (b *BuildPlanByProject) CommitID() (strfmt.UUID, error) {
+func (b *ProjectCommit) CommitID() (strfmt.UUID, error) {
 	if b.Project == nil {
 		return "", errs.New("BuildPlanByProject.CommitID: Project is nil")
 	}
@@ -279,54 +268,6 @@ func (b *BuildPlanByProject) CommitID() (strfmt.UUID, error) {
 	}
 
 	return b.Project.Commit.CommitID, nil
-}
-
-type BuildPlanByCommit struct {
-	CommitInfo *Commit `json:"commit"`
-}
-
-func (b *BuildPlanByCommit) Commit() (*Commit, error) {
-	if b.CommitInfo == nil {
-		return nil, errs.New("BuildPlanByCommit.Build: Commit is nil")
-	}
-
-	if IsErrorResponse(b.CommitInfo.Type) {
-		return nil, ProcessCommitError(b.CommitInfo, "Could not get build from commit response")
-	}
-
-	return b.CommitInfo, nil
-}
-
-func (b *BuildPlanByCommit) Build() (*Build, error) {
-	if b.CommitInfo == nil {
-		return nil, errs.New("BuildPlanByCommit.Build: Commit is nil")
-	}
-
-	if IsErrorResponse(b.CommitInfo.Type) {
-		return nil, ProcessCommitError(b.CommitInfo, "Could not get build from commit response")
-	}
-
-	if b.CommitInfo.Build == nil {
-		return nil, errs.New("BuildPlanByCommit.Build: Commit does not contain build")
-	}
-
-	if IsErrorResponse(b.CommitInfo.Build.Type) {
-		return nil, ProcessBuildError(b.CommitInfo.Build, "Could not get build from commit response")
-	}
-
-	return b.CommitInfo.Build, nil
-}
-
-func (b *BuildPlanByCommit) CommitID() (strfmt.UUID, error) {
-	if b.CommitInfo == nil {
-		return "", errs.New("BuildPlanByCommit.CommitID: Commit is nil")
-	}
-
-	if IsErrorResponse(b.CommitInfo.Type) {
-		return "", ProcessCommitError(b.CommitInfo, "Could not get commit ID from commit response")
-	}
-
-	return b.CommitInfo.CommitID, nil
 }
 
 func IsErrorResponse(errorType string) bool {
@@ -683,6 +624,38 @@ type Build struct {
 	ResolvedRequirements []*ResolvedRequirement `json:"resolvedRequirements"`
 	*Error
 	*PlanningError
+}
+
+// Sanitize cleans up empty targets
+// The type aliasing in the query populates the response with emtpy targets that we should remove
+func (b *Build) Sanitize() {
+	var steps []*Step
+	for _, step := range b.Steps {
+		if step.StepID == "" {
+			continue
+		}
+		steps = append(steps, step)
+	}
+
+	var sources []*Source
+	for _, source := range b.Sources {
+		if source.NodeID == "" {
+			continue
+		}
+		sources = append(sources, source)
+	}
+
+	var artifacts []*Artifact
+	for _, artifact := range b.Artifacts {
+		if artifact.NodeID == "" {
+			continue
+		}
+		artifacts = append(artifacts, artifact)
+	}
+
+	b.Steps = steps
+	b.Sources = sources
+	b.Artifacts = artifacts
 }
 
 // BuildLogID is the ID used to initiate a connection with the BuildLogStreamer.

@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
@@ -22,13 +22,13 @@ func Merge(exprA *buildexpression.BuildExpression, exprB *buildexpression.BuildE
 
 	// Update build expression requirements with merge results.
 	for _, req := range strategies.OverwriteChanges {
-		var op bpModel.Operation
+		var op bpResp.Operation
 		err := op.Unmarshal(req.Operation)
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to convert requirement operation to buildplan operation")
 		}
 
-		var versionRequirements []bpModel.VersionRequirement
+		var versionRequirements []bpResp.VersionRequirement
 		for _, constraint := range req.VersionConstraints {
 			data, err := constraint.MarshalBinary()
 			if err != nil {
@@ -42,7 +42,7 @@ func Merge(exprA *buildexpression.BuildExpression, exprB *buildexpression.BuildE
 			versionRequirements = append(versionRequirements, m)
 		}
 
-		bpReq := bpModel.Requirement{
+		bpReq := bpResp.Requirement{
 			Name:               req.Requirement,
 			Namespace:          req.Namespace,
 			VersionRequirement: versionRequirements,

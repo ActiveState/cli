@@ -1,7 +1,6 @@
 package testhelper
 
 import (
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
@@ -81,9 +80,6 @@ func (mpo *MockProgressOutput) SolverStart() error {
 }
 
 func (mpo *MockProgressOutput) SolverSuccess() error {
-	return nil
-}
-func (mpo *MockProgressOutput) SolverError(serr *model.SolverError) error {
 	return nil
 }
 func (mpo *MockProgressOutput) Close() error { return nil }

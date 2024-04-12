@@ -13,7 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/sliceutils"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -520,19 +520,19 @@ func (e *BuildExpression) validateRequirements() error {
 //	    }
 //	  ]
 //	}
-func (e *BuildExpression) Requirements() ([]model.Requirement, error) {
+func (e *BuildExpression) Requirements() ([]response.Requirement, error) {
 	requirementsNode, err := e.getRequirementsNode()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get requirements node")
 	}
 
-	var requirements []model.Requirement
+	var requirements []response.Requirement
 	for _, r := range requirementsNode {
 		if r.Object == nil {
 			continue
 		}
 
-		var req model.Requirement
+		var req response.Requirement
 		for _, o := range *r.Object {
 			if o.Name == RequirementNameKey {
 				req.Name = *o.Value.Str
@@ -572,8 +572,8 @@ func (e *BuildExpression) getRequirementsNode() ([]*Value, error) {
 	return reqs, nil
 }
 
-func getVersionRequirements(v *[]*Value) []model.VersionRequirement {
-	var reqs []model.VersionRequirement
+func getVersionRequirements(v *[]*Value) []response.VersionRequirement {
+	var reqs []response.VersionRequirement
 
 	if v == nil {
 		return reqs
@@ -584,7 +584,7 @@ func getVersionRequirements(v *[]*Value) []model.VersionRequirement {
 			continue
 		}
 
-		versionReq := make(model.VersionRequirement)
+		versionReq := make(response.VersionRequirement)
 		for _, o := range *r.Object {
 			if o.Name == RequirementComparatorKey {
 				versionReq[RequirementComparatorKey] = *o.Value.Str
@@ -723,14 +723,14 @@ func (e *BuildExpression) getPlatformsNode() (*[]*Value, error) {
 }
 
 // Update updates the BuildExpression's requirements based on the operation and requirement.
-func (e *BuildExpression) UpdateRequirement(operation model.Operation, requirement model.Requirement) error {
+func (e *BuildExpression) UpdateRequirement(operation response.Operation, requirement response.Requirement) error {
 	var err error
 	switch operation {
-	case model.OperationAdded:
+	case response.OperationAdded:
 		err = e.addRequirement(requirement)
-	case model.OperationRemoved:
+	case response.OperationRemoved:
 		err = e.removeRequirement(requirement)
-	case model.OperationUpdated:
+	case response.OperationUpdated:
 		err = e.removeRequirement(requirement)
 		if err != nil {
 			break
@@ -746,7 +746,7 @@ func (e *BuildExpression) UpdateRequirement(operation model.Operation, requireme
 	return nil
 }
 
-func (e *BuildExpression) addRequirement(requirement model.Requirement) error {
+func (e *BuildExpression) addRequirement(requirement response.Requirement) error {
 	obj := []*Var{
 		{Name: RequirementNameKey, Value: &Value{Str: ptr.To(requirement.Name)}},
 		{Name: RequirementNamespaceKey, Value: &Value{Str: ptr.To(requirement.Namespace)}},
@@ -797,7 +797,7 @@ type RequirementNotFoundError struct {
 	*locale.LocalizedError // for legacy non-user-facing error usages
 }
 
-func (e *BuildExpression) removeRequirement(requirement model.Requirement) error {
+func (e *BuildExpression) removeRequirement(requirement response.Requirement) error {
 	requirementsNode, err := e.getRequirementsNode()
 	if err != nil {
 		return errs.Wrap(err, "Could not get requirements node")
@@ -843,12 +843,12 @@ func (e *BuildExpression) removeRequirement(requirement model.Requirement) error
 	return nil
 }
 
-func (e *BuildExpression) UpdatePlatform(operation model.Operation, platformID strfmt.UUID) error {
+func (e *BuildExpression) UpdatePlatform(operation response.Operation, platformID strfmt.UUID) error {
 	var err error
 	switch operation {
-	case model.OperationAdded:
+	case response.OperationAdded:
 		err = e.addPlatform(platformID)
-	case model.OperationRemoved:
+	case response.OperationRemoved:
 		err = e.removePlatform(platformID)
 	default:
 		return errs.New("Unsupported operation")

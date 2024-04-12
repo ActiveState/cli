@@ -1,0 +1,360 @@
+package model
+
+import (
+	"errors"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/gqlclient"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
+	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
+	"github.com/ActiveState/graphql"
+	"github.com/go-openapi/strfmt"
+)
+
+const (
+	pollInterval       = 1 * time.Second
+	pollTimeout        = 30 * time.Second
+	buildStatusTimeout = 24 * time.Hour
+
+	codeExtensionKey = "code"
+)
+
+func (c *client) Run(req gqlclient.Request, resp interface{}) error {
+	logRequestVariables(req)
+	return c.gqlClient.Run(req, resp)
+}
+
+// BuildRelay relays meta information about the request and response of a build.
+// This type will ideally be refactored out, because this is too much responsibility to hold for one type.
+type BuildRelay struct {
+	BuildEngine     model.BuildEngine
+	RecipeID        strfmt.UUID
+	Build           *bpResp.Build
+	BuildReady      bool
+	BuildExpression *buildexpression.BuildExpression
+	Commit          *bpResp.Commit
+}
+
+func (b *BuildRelay) OrderedArtifacts() []artifact.ArtifactID {
+	res := make([]artifact.ArtifactID, 0, len(b.Build.Artifacts))
+	for _, a := range b.Build.Artifacts {
+		res = append(res, a.NodeID)
+	}
+	return res
+}
+
+func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project string, target *string) (*BuildRelay, *response.Commit, error) {
+	logging.Debug("FetchBuildResult, commitID: %s, owner: %s, project: %s", commitID, owner, project)
+	resp := &bpResp.ProjectCommit{}
+	err := bp.client.Run(request.ProjectCommit(commitID.String(), owner, project, target), resp)
+	if err != nil {
+		return nil, nil, processBuildPlannerError(err, "failed to fetch build plan")
+	}
+
+	build, err := resp.Build()
+	if err != nil {
+		return nil, nil, errs.Wrap(err, "Could not get build from response")
+	}
+
+	// The BuildPlanner will return a build plan with a status of
+	// "planning" if the build plan is not ready yet. We need to
+	// poll the BuildPlanner until the build is ready.
+	if build.Status == bpResp.Planning {
+		build, err = bp.pollBuildPlanned(commitID.String(), owner, project, target)
+		if err != nil {
+			return nil, nil, errs.Wrap(err, "failed to poll build plan")
+		}
+	}
+
+	buildEngine := model.Alternative
+	for _, s := range build.Sources {
+		if s.Namespace == "builder" && s.Name == "camel" {
+			buildEngine = model.Camel
+			break
+		}
+	}
+
+	commit, err := resp.Commit()
+	if err != nil {
+		return nil, nil, errs.Wrap(err, "Response does not contain commitID")
+	}
+
+	expression, err := buildexpression.New(commit.Expression)
+	if err != nil {
+		return nil, nil, errs.Wrap(err, "failed to parse build expression")
+	}
+
+	res := BuildRelay{
+		BuildEngine:     buildEngine,
+		Build:           build,
+		BuildReady:      build.Status == bpResp.Completed,
+		Commit:          commit,
+		BuildExpression: expression,
+	}
+
+	// We want to extract the recipe ID from the BuildLogIDs.
+	// We do this because if the build is in progress we will need to reciepe ID to
+	// initialize the build log streamer.
+	// This information will only be populated if the build is an alternate build.
+	// This is specified in the build planner queries.
+	for _, id := range build.BuildLogIDs {
+		if res.RecipeID != "" {
+			return nil, nil, errs.Wrap(err, "Build plan contains multiple recipe IDs")
+		}
+		res.RecipeID = strfmt.UUID(id.ID)
+	}
+
+	return &res, commit, nil
+}
+
+// processBuildPlannerError will check for special error types that should be
+// handled differently. If no special error type is found, the fallback message
+// will be used.
+// It expects the errors field to be the top-level field in the response. This is
+// different from special error types that are returned as part of the data field.
+// Example:
+//
+//	{
+//	  "errors": [
+//	    {
+//	      "message": "deprecation error",
+//	      "locations": [
+//	        {
+//	          "line": 7,
+//	          "column": 11
+//	        }
+//	      ],
+//	      "path": [
+//	        "project",
+//	        "commit",
+//	        "build"
+//	      ],
+//	      "extensions": {
+//	        "code": "CLIENT_DEPRECATION_ERROR"
+//	      }
+//	    }
+//	  ],
+//	  "data": null
+//	}
+func processBuildPlannerError(bpErr error, fallbackMessage string) error {
+	graphqlErr := &graphql.GraphErr{}
+	if errors.As(bpErr, graphqlErr) {
+		code, ok := graphqlErr.Extensions[codeExtensionKey].(string)
+		if ok && code == clientDeprecationErrorKey {
+			return &bpResp.BuildPlannerError{Err: locale.NewInputError("err_buildplanner_deprecated", "Encountered deprecation error: {{.V0}}", graphqlErr.Message)}
+		}
+	}
+	return &bpResp.BuildPlannerError{Err: locale.NewInputError("err_buildplanner", "{{.V0}}: Encountered unexpected error: {{.V1}}", fallbackMessage, bpErr.Error())}
+}
+
+var versionRe = regexp.MustCompile(`^\d+(\.\d+)*$`)
+
+func isExactVersion(version string) bool {
+	return versionRe.MatchString(version)
+}
+
+func isWildcardVersion(version string) bool {
+	return strings.Contains(version, ".x") || strings.Contains(version, ".X")
+}
+
+func VersionStringToRequirements(version string) ([]bpResp.VersionRequirement, error) {
+	if isExactVersion(version) {
+		return []bpResp.VersionRequirement{{
+			bpResp.VersionRequirementComparatorKey: "eq",
+			bpResp.VersionRequirementVersionKey:    version,
+		}}, nil
+	}
+
+	if !isWildcardVersion(version) {
+		// Ask the Platform to translate a string like ">=1.2,<1.3" into a list of requirements.
+		// Note that:
+		// - The given requirement name does not matter; it is not looked up.
+		changeset, err := reqsimport.Init().Changeset([]byte("name "+version), "")
+		if err != nil {
+			return nil, locale.WrapInputError(err, "err_invalid_version_string", "Invalid version string")
+		}
+		requirements := []bpResp.VersionRequirement{}
+		for _, change := range changeset {
+			for _, constraint := range change.VersionConstraints {
+				requirements = append(requirements, bpResp.VersionRequirement{
+					bpResp.VersionRequirementComparatorKey: constraint.Comparator,
+					bpResp.VersionRequirementVersionKey:    constraint.Version,
+				})
+			}
+		}
+		return requirements, nil
+	}
+
+	// Construct version constraints to be >= given version, and < given version's last part + 1.
+	// For example, given a version number of 3.10.x, constraints should be >= 3.10, < 3.11.
+	// Given 2.x, constraints should be >= 2, < 3.
+	requirements := []bpResp.VersionRequirement{}
+	parts := strings.Split(version, ".")
+	for i, part := range parts {
+		if part != "x" && part != "X" {
+			continue
+		}
+		if i == 0 {
+			return nil, locale.NewInputError("err_version_wildcard_start", "A version number cannot start with a wildcard")
+		}
+		requirements = append(requirements, bpResp.VersionRequirement{
+			bpResp.VersionRequirementComparatorKey: bpResp.ComparatorGTE,
+			bpResp.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
+		})
+		previousPart, err := strconv.Atoi(parts[i-1])
+		if err != nil {
+			return nil, locale.WrapInputError(err, "err_version_number_expected", "Version parts are expected to be numeric")
+		}
+		parts[i-1] = strconv.Itoa(previousPart + 1)
+		requirements = append(requirements, bpResp.VersionRequirement{
+			bpResp.VersionRequirementComparatorKey: bpResp.ComparatorLT,
+			bpResp.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
+		})
+	}
+	return requirements, nil
+}
+
+func (bp *BuildPlanner) BuildTarget(owner, project, commitID, target string) error {
+	logging.Debug("BuildTarget, owner: %s, project: %s, commitID: %s, target: %s", owner, project, commitID, target)
+	resp := &bpResp.BuildTargetResult{}
+	err := bp.client.Run(request.Evaluate(owner, project, commitID, target), resp)
+	if err != nil {
+		return processBuildPlannerError(err, "Failed to evaluate target")
+	}
+
+	if resp.Project == nil {
+		return errs.New("Project is nil")
+	}
+
+	if bpResp.IsErrorResponse(resp.Project.Type) {
+		return bpResp.ProcessProjectError(resp.Project, "Could not evaluate target")
+	}
+
+	if resp.Project.Commit == nil {
+		return errs.New("Commit is nil")
+	}
+
+	if bpResp.IsErrorResponse(resp.Project.Commit.Type) {
+		return bpResp.ProcessCommitError(resp.Project.Commit, "Could not process error response from evaluate target")
+	}
+
+	if resp.Project.Commit.Build == nil {
+		return errs.New("Build is nil")
+	}
+
+	if bpResp.IsErrorResponse(resp.Project.Commit.Build.Type) {
+		return bpResp.ProcessBuildError(resp.Project.Commit.Build, "Could not process error response from evaluate target")
+	}
+
+	return nil
+}
+
+// pollBuildPlanned polls the buildplan until it has passed the planning stage (ie. it's either planned or further along).
+func (bp *BuildPlanner) pollBuildPlanned(commitID, owner, project string, target *string) (*bpResp.Build, error) {
+	resp := &response.ProjectCommit{}
+	ticker := time.NewTicker(pollInterval)
+	for {
+		select {
+		case <-ticker.C:
+			err := bp.client.Run(request.ProjectCommit(commitID, owner, project, target), resp)
+			if err != nil {
+				return nil, processBuildPlannerError(err, "failed to fetch build plan")
+			}
+
+			if resp == nil {
+				return nil, errs.New("Build plan response is nil")
+			}
+
+			build, err := resp.Build()
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not get build from response")
+			}
+
+			if build.Status != bpResp.Planning {
+				return build, nil
+			}
+		case <-time.After(pollTimeout):
+			return nil, locale.NewError("err_buildplanner_timeout", "Timed out waiting for build plan")
+		}
+	}
+}
+
+type ErrFailedArtifacts struct {
+	Artifacts map[strfmt.UUID]*bpResp.Artifact
+}
+
+func (e ErrFailedArtifacts) Error() string {
+	return "ErrFailedArtifacts"
+}
+
+// WaitForBuild polls the build until it has passed the completed stage (ie. it's either successful or failed).
+func (bp *BuildPlanner) WaitForBuild(commitID, owner, project, target string) error {
+	failedArtifacts := map[strfmt.UUID]*response.Artifact{}
+	resp := &response.ProjectCommit{}
+	ticker := time.NewTicker(pollInterval)
+	for {
+		select {
+		case <-ticker.C:
+			err := bp.client.Run(request.ProjectCommit(commitID, owner, project, ptr.To(target)), resp)
+			if err != nil {
+				return processBuildPlannerError(err, "failed to fetch build plan")
+			}
+
+			if resp == nil {
+				return errs.New("Build plan response is nil")
+			}
+
+			build, err := resp.Build()
+			if err != nil {
+				return errs.Wrap(err, "Could not get build from response")
+			}
+
+			// If the build status is planning it may not have any artifacts yet.
+			if build.Status == bpResp.Planning {
+				continue
+			}
+
+			// If all artifacts are completed then we are done.
+			completed := true
+			for _, artifact := range build.Artifacts {
+				if artifact.Status == bpResp.ArtifactNotSubmitted {
+					continue
+				}
+				if artifact.Status != bpResp.ArtifactSucceeded {
+					completed = false
+				}
+
+				if artifact.Status == bpResp.ArtifactFailedPermanently ||
+					artifact.Status == bpResp.ArtifactFailedTransiently {
+					failedArtifacts[artifact.NodeID] = artifact
+				}
+			}
+
+			if completed {
+				return nil
+			}
+
+			// If the build status is completed then we are done.
+			if build.Status == bpResp.Completed {
+				if len(failedArtifacts) != 0 {
+					return ErrFailedArtifacts{failedArtifacts}
+				}
+				return nil
+			}
+		case <-time.After(buildStatusTimeout):
+			return locale.NewError("err_buildplanner_timeout", "Timed out waiting for build plan")
+		}
+	}
+}

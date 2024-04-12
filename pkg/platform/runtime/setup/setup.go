@@ -32,6 +32,7 @@ import (
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -152,7 +153,7 @@ type Setup struct {
 type Setuper interface {
 	// DeleteOutdatedArtifacts deletes outdated artifact as best as it can
 	DeleteOutdatedArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap, store.StoredArtifactMap) error
-	DownloadsFromBuild(build bpModel.Build, artifacts map[strfmt.UUID]artifact.Artifact) (download []artifact.ArtifactDownload, err error)
+	DownloadsFromBuild(build bpResp.Build, artifacts map[strfmt.UUID]artifact.Artifact) (download []artifact.ArtifactDownload, err error)
 }
 
 // ArtifactSetuper is the interface for an implementation of artifact setup functions
@@ -178,7 +179,7 @@ func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth
 	return &Setup{auth, target, eventHandler, store.New(target.Dir()), an, cache, cfg, out, svcm}
 }
 
-func (s *Setup) Solve() (*apimodel.BuildResult, *bpModel.Commit, error) {
+func (s *Setup) Solve() (*bpModel.BuildRelay, *bpResp.Commit, error) {
 	defer func() {
 		s.solveUpdateRecover(recover())
 	}()
@@ -191,7 +192,7 @@ func (s *Setup) Solve() (*apimodel.BuildResult, *bpModel.Commit, error) {
 		return nil, nil, errs.Wrap(err, "Could not handle SolveStart event")
 	}
 
-	bp := model.NewBuildPlannerModel(s.auth)
+	bp := bpModel.NewBuildPlannerModel(s.auth)
 	buildResult, commit, err := bp.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name(), nil)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Failed to fetch build result")
@@ -204,7 +205,7 @@ func (s *Setup) Solve() (*apimodel.BuildResult, *bpModel.Commit, error) {
 	return buildResult, commit, nil
 }
 
-func (s *Setup) Update(buildResult *apimodel.BuildResult, commit *bpModel.Commit) (rerr error) {
+func (s *Setup) Update(buildResult *bpModel.BuildRelay, commit *bpResp.Commit) (rerr error) {
 	defer func() {
 		s.solveUpdateRecover(recover())
 	}()
@@ -262,7 +263,7 @@ func (s *Setup) Update(buildResult *apimodel.BuildResult, commit *bpModel.Commit
 	}
 
 	if s.target.ProjectDir() != "" && s.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript.Update(s.target, buildResult.AtTime, buildResult.BuildExpression); err != nil {
+		if err := buildscript.Update(s.target, &buildResult.Commit.AtTime, buildResult.BuildExpression); err != nil {
 			return errs.Wrap(err, "Could not update build script")
 		}
 	}
@@ -301,7 +302,7 @@ func (s *Setup) solveUpdateRecover(r interface{}) {
 	panic(r) // We're just logging the panic while we have context, we're not meant to handle it here
 }
 
-func (s *Setup) updateArtifacts(buildResult *apimodel.BuildResult) ([]artifact.ArtifactID, error) {
+func (s *Setup) updateArtifacts(buildResult *bpModel.BuildRelay) ([]artifact.ArtifactID, error) {
 	mutex := &sync.Mutex{}
 	var installArtifactFuncs []func() error
 
@@ -460,7 +461,7 @@ func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 // all of them were already installed.
 // It may also return an artifact uninstaller function that should be run prior to final
 // installation.
-func (s *Setup) fetchAndInstallArtifacts(buildResult *apimodel.BuildResult, installFunc artifactInstaller) ([]artifact.ArtifactID, artifactUninstaller, error) {
+func (s *Setup) fetchAndInstallArtifacts(buildResult *bpModel.BuildRelay, installFunc artifactInstaller) ([]artifact.ArtifactID, artifactUninstaller, error) {
 	if s.target.InstallFromDir() != nil {
 		artifacts, err := s.fetchAndInstallArtifactsFromDir(installFunc)
 		return artifacts, nil, err
@@ -468,7 +469,7 @@ func (s *Setup) fetchAndInstallArtifacts(buildResult *apimodel.BuildResult, inst
 	return s.fetchAndInstallArtifactsFromBuildPlan(buildResult, installFunc)
 }
 
-func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(buildResult *apimodel.BuildResult, installFunc artifactInstaller) ([]artifact.ArtifactID, artifactUninstaller, error) {
+func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(buildResult *bpModel.BuildRelay, installFunc artifactInstaller) ([]artifact.ArtifactID, artifactUninstaller, error) {
 	// If the build is not ready or if we are installing the buildtime closure
 	// then we need to include the buildtime closure in the changed artifacts
 	// and the progress reporting.
@@ -530,7 +531,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(buildResult *apimodel.Buil
 	}
 
 	// send analytics build event, if a new runtime has to be built in the cloud
-	if buildResult.BuildStatus == bpModel.Started {
+	if buildResult.Build.Status == bpResp.Started {
 		s.analytics.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeBuild, dimensions)
 	}
 
@@ -700,7 +701,7 @@ func aggregateErrors() (chan<- error, <-chan error) {
 	return bgErrs, aggErr
 }
 
-func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, downloads []artifact.ArtifactDownload, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller, logFilePath string) error {
+func (s *Setup) installArtifactsFromBuild(buildResult *bpModel.BuildRelay, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, downloads []artifact.ArtifactDownload, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller, logFilePath string) error {
 	// Artifacts are installed in two stages
 	// - The first stage runs concurrently in MaxConcurrency worker threads (download, unpacking, relocation)
 	// - The second stage moves all files into its final destination is running in a single thread (using the mainthread library) to avoid file conflicts
@@ -725,7 +726,7 @@ func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifa
 }
 
 // setupArtifactSubmitFunction returns a function that sets up an artifact and can be submitted to a workerpool
-func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, ar *artifact.Artifact, expectedArtifactInstalls map[artifact.ArtifactID]struct{}, buildResult *model.BuildResult, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller, errors chan<- error) func() {
+func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, ar *artifact.Artifact, expectedArtifactInstalls map[artifact.ArtifactID]struct{}, buildResult *bpModel.BuildRelay, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller, errors chan<- error) func() {
 	return func() {
 		// If artifact has no valid download, just count it as completed and return
 		if strings.Contains(ar.URL, "as-builds/noop") ||
@@ -766,7 +767,7 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, ar *art
 	}
 }
 
-func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, downloads []artifact.ArtifactDownload, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller) error {
+func (s *Setup) installFromBuildResult(buildResult *bpModel.BuildRelay, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, downloads []artifact.ArtifactDownload, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller) error {
 	logging.Debug("Installing artifacts from build result")
 	errs, aggregatedErr := aggregateErrors()
 	mainthread.Run(func() {
@@ -789,7 +790,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts
 	return <-aggregatedErr
 }
 
-func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller, logFilePath string) error {
+func (s *Setup) installFromBuildLog(buildResult *bpModel.BuildRelay, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller, logFilePath string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -994,7 +995,7 @@ func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine) (Setupe
 	}
 }
 
-func selectArtifactResolver(buildResult *model.BuildResult, artifactListing *buildplan.ArtifactListing) (ArtifactResolver, error) {
+func selectArtifactResolver(buildResult *bpModel.BuildRelay, artifactListing *buildplan.ArtifactListing) (ArtifactResolver, error) {
 	var artifacts artifact.Map
 	var err error
 	if buildResult.BuildReady || strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") {
@@ -1031,7 +1032,7 @@ func ExecDir(targetDir string) string {
 	return filepath.Join(targetDir, "exec")
 }
 
-func reusableArtifacts(requestedArtifacts []*bpModel.Artifact, storedArtifacts store.StoredArtifactMap) store.StoredArtifactMap {
+func reusableArtifacts(requestedArtifacts []*bpResp.Artifact, storedArtifacts store.StoredArtifactMap) store.StoredArtifactMap {
 	keep := make(store.StoredArtifactMap)
 
 	for _, a := range requestedArtifacts {

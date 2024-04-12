@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -25,7 +25,7 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 	}
 	var noMatchingPlatformErr *model.ErrNoMatchingPlatform
 	var artifactSetupErr *setup.ArtifactSetupErrors
-	var buildPlannerErr *bpModel.BuildPlannerError
+	var buildPlannerErr *bpResp.BuildPlannerError
 	var artifactErr *buildplan.ArtifactError
 
 	switch {

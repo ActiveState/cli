@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"golang.org/x/net/context"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -22,7 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
@@ -165,7 +166,7 @@ func (r *Runtime) Setup(eventHandler events.Handler) *setup.Setup {
 	return setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out, r.svcm)
 }
 
-func (r *Runtime) Update(setup *setup.Setup, buildResult *model.BuildResult, commit *bpModel.Commit) (rerr error) {
+func (r *Runtime) Update(setup *setup.Setup, buildResult *bpModel.BuildRelay, commit *response.Commit) (rerr error) {
 	if r.disabled {
 		logging.Debug("Skipping update as it is disabled")
 		return nil // nothing to do
@@ -269,16 +270,14 @@ func (r *Runtime) recordCompletion(err error) {
 	// download error to be cause by an input error.
 	case locale.IsInputError(err):
 		errorType = "input"
-	case errs.Matches(err, &model.SolverError{}):
-		errorType = "solve"
 	case errs.Matches(err, &setup.BuildError{}), errs.Matches(err, &buildlog.BuildError{}):
 		errorType = "build"
-	case errs.Matches(err, &bpModel.BuildPlannerError{}):
+	case errs.Matches(err, &response.BuildPlannerError{}):
 		errorType = "buildplan"
 	case errs.Matches(err, &setup.ArtifactSetupErrors{}):
 		if setupErrors := (&setup.ArtifactSetupErrors{}); errors.As(err, &setupErrors) {
-		// Label the loop so we can break out of it when we find the first download
-		// or build error.
+			// Label the loop so we can break out of it when we find the first download
+			// or build error.
 		Loop:
 			for _, err := range setupErrors.Errors() {
 				switch {
@@ -384,7 +383,7 @@ func IsRuntimeDir(dir string) bool {
 	return store.New(dir).HasMarker()
 }
 
-func (r *Runtime) BuildPlan() (*bpModel.Build, error) {
+func (r *Runtime) BuildPlan() (*response.Build, error) {
 	runtimeStore := r.store
 	if runtimeStore == nil {
 		runtimeStore = store.New(r.target.Dir())

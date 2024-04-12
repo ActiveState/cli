@@ -24,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression/merge"
@@ -122,10 +123,10 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		// the remoteCommit ID. The commitID returned from MergeCommit with this
 		// strategy should just be the remote commit ID.
 		// If this call fails then we will try a recursive merge.
-		strategy := bpModel.MergeCommitStrategyFastForward
+		strategy := bpResp.MergeCommitStrategyFastForward
 
-		bp := model.NewBuildPlannerModel(p.auth)
-		params := &model.MergeCommitParams{
+		bp := bpModel.NewBuildPlannerModel(p.auth)
+		params := &bpModel.MergeCommitParams{
 			Owner:     remoteProject.Owner,
 			Project:   remoteProject.Project,
 			TargetRef: localCommit.String(),
@@ -136,7 +137,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		resultCommit, mergeErr := bp.MergeCommit(params)
 		if mergeErr != nil {
 			logging.Debug("Merge with fast-forward failed with error: %s, trying recursive overwrite", mergeErr.Error())
-			strategy = bpModel.MergeCommitStrategyRecursiveOverwriteOnConflict
+			strategy = bpResp.MergeCommitStrategyRecursiveOverwriteOnConflict
 			c, err := p.performMerge(*remoteCommit, *localCommit, remoteProject, p.project.BranchName(), strategy)
 			if err != nil {
 				p.notifyMergeStrategy(anaConst.LabelVcsConflictMergeStrategyFailed, *localCommit, remoteProject)
@@ -181,7 +182,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 	return nil
 }
 
-func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *project.Namespaced, branchName string, strategy bpModel.MergeStrategy) (strfmt.UUID, error) {
+func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *project.Namespaced, branchName string, strategy bpResp.MergeStrategy) (strfmt.UUID, error) {
 	if p.cfg.GetBool(constants.OptinBuildscriptsConfig) {
 		err := p.mergeBuildScript(remoteCommit, localCommit)
 		if err != nil {
@@ -195,8 +196,8 @@ func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *pr
 		namespace.String(), branchName, localCommit.String(), remoteCommit.String()),
 	)
 
-	bp := model.NewBuildPlannerModel(p.auth)
-	params := &model.MergeCommitParams{
+	bp := bpModel.NewBuildPlannerModel(p.auth)
+	params := &bpModel.MergeCommitParams{
 		Owner:     namespace.Owner,
 		Project:   namespace.Project,
 		TargetRef: localCommit.String(),
@@ -231,7 +232,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 
 	// Get the local and remote build expressions to merge.
 	exprA := scriptA.Expr
-	bp := model.NewBuildPlannerModel(p.auth)
+	bp := bpModel.NewBuildPlannerModel(p.auth)
 	exprB, atTimeB, err := bp.GetBuildExpressionAndTime(remoteCommit.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get buildexpression and time for remote commit")

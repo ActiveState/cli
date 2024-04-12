@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	gqlmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -91,7 +92,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 	}
 	r.out.Notice(locale.Tr("operating_message", r.project.NamespaceString(), r.project.Dir()))
 
-	bp := model.NewBuildPlannerModel(r.auth)
+	bp := bpModel.NewBuildPlannerModel(r.auth)
 	targetCommitID := commitID // the commit to revert the contents of, or the commit to revert to
 	revertParams := revertParams{
 		organization:   r.project.Owner(),
@@ -179,7 +180,7 @@ type revertParams struct {
 	revertCommitID string
 }
 
-func (r *Revert) revertCommit(params revertParams, bp *model.BuildPlanner) (strfmt.UUID, error) {
+func (r *Revert) revertCommit(params revertParams, bp *bpModel.BuildPlanner) (strfmt.UUID, error) {
 	newCommitID, err := bp.RevertCommit(params.organization, params.project, params.parentCommitID, params.revertCommitID)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not revert commit")
@@ -188,13 +189,13 @@ func (r *Revert) revertCommit(params revertParams, bp *model.BuildPlanner) (strf
 	return newCommitID, nil
 }
 
-func (r *Revert) revertToCommit(params revertParams, bp *model.BuildPlanner) (strfmt.UUID, error) {
+func (r *Revert) revertToCommit(params revertParams, bp *bpModel.BuildPlanner) (strfmt.UUID, error) {
 	buildExpression, err := bp.GetBuildExpression(params.revertCommitID)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get build expression")
 	}
 
-	stageCommitParams := model.StageCommitParams{
+	stageCommitParams := bpModel.StageCommitParams{
 		Owner:        params.organization,
 		Project:      params.project,
 		ParentCommit: params.parentCommitID,

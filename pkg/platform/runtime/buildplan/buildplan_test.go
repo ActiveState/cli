@@ -6,16 +6,16 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/go-openapi/strfmt"
 )
 
 func TestNewMapFromBuildPlan(t *testing.T) {
 	type args struct {
-		build                     *model.Build
+		build                     *response.Build
 		calculateBuildtimeClosure bool
 		filterStateToolArtifacts  bool
-		filterTerminal            *model.NamedTarget
+		filterTerminal            *response.NamedTarget
 	}
 	tests := []struct {
 		name    string
@@ -26,20 +26,20 @@ func TestNewMapFromBuildPlan(t *testing.T) {
 		{
 			"gozip installer",
 			args{
-				&model.Build{
-					Terminals: []*model.NamedTarget{
+				&response.Build{
+					Terminals: []*response.NamedTarget{
 						{
 							Tag: "platform:00000000-0000-0000-0000-000000000001",
 							// Step 1: Traversal starts here, this one points to an artifact
 							NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000002"},
 						},
 					},
-					Steps: []*model.Step{
+					Steps: []*response.Step{
 						{
 							// Step 4: From here we can find which other nodes are linked to this one
 							StepID:  "00000000-0000-0000-0000-000000000003",
 							Outputs: []string{"00000000-0000-0000-0000-000000000002"},
-							Inputs: []*model.NamedTarget{
+							Inputs: []*response.NamedTarget{
 								// Step 5: Now we know which nodes are responsible for producing the output
 								{Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000004"}},
 							},
@@ -48,13 +48,13 @@ func TestNewMapFromBuildPlan(t *testing.T) {
 							// Step 8: Same as step 4
 							StepID:  "00000000-0000-0000-0000-000000000005",
 							Outputs: []string{"00000000-0000-0000-0000-000000000004"},
-							Inputs: []*model.NamedTarget{
+							Inputs: []*response.NamedTarget{
 								// Step 9: Same as step 5
 								{Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000006"}},
 							},
 						},
 					},
-					Artifacts: []*model.Artifact{
+					Artifacts: []*response.Artifact{
 						{
 							// Step 2: We got an artifact, but there may be more hiding behind this one
 							NodeID:      "00000000-0000-0000-0000-000000000002",
@@ -77,7 +77,7 @@ func TestNewMapFromBuildPlan(t *testing.T) {
 							GeneratedBy: "00000000-0000-0000-0000-000000000005",
 						},
 					},
-					Sources: []*model.Source{
+					Sources: []*response.Source{
 						{
 							// Step 10: We have our ingredient
 							NodeID:    "00000000-0000-0000-0000-000000000006",

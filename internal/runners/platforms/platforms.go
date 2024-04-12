@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/captain"
@@ -75,7 +76,7 @@ type Params struct {
 func prepareParams(ps Params, auth *authentication.Auth) (Params, error) {
 	ps.name = ps.Platform.Name()
 	if ps.name == "" {
-		ps.name = model.HostPlatform
+		ps.name = sysinfo.OS().String()
 	}
 	ps.version = ps.Platform.Version()
 	if ps.version == "" {

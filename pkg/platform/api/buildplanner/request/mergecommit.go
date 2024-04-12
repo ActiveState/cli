@@ -1,8 +1,8 @@
 package request
 
-import "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+import "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 
-func MergeCommit(owner, project, targetRef, otherRef string, strategy model.MergeStrategy) *mergeCommit {
+func MergeCommit(owner, project, targetRef, otherRef string, strategy response.MergeStrategy) *mergeCommit {
 	return &mergeCommit{map[string]interface{}{
 		"organization": owner,
 		"project":      project,

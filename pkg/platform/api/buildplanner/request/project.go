@@ -1,21 +1,25 @@
 package request
 
-func BuildPlanByProject(organization, project, commitID, target string) *buildPlanByProject {
-	bp := &buildPlanByProject{map[string]interface{}{
+import "github.com/ActiveState/cli/internal/rtutils/ptr"
+
+const TargetAll = "__all__"
+
+func ProjectCommit(organization, project, commitID string, target *string) *projectCommit {
+	bp := &projectCommit{map[string]interface{}{
 		"organization": organization,
 		"project":      project,
 		"commitID":     commitID,
-		"target":       target,
+		"target":       ptr.From(target, ""),
 	}}
 
 	return bp
 }
 
-type buildPlanByProject struct {
+type projectCommit struct {
 	vars map[string]interface{}
 }
 
-func (b *buildPlanByProject) Query() string {
+func (b *projectCommit) Query() string {
 	return `
 query ($commitID: String!, $organization: String!, $project: String!, $target: String) {
   project(organization: $organization, project: $project) {
@@ -208,6 +212,6 @@ query ($commitID: String!, $organization: String!, $project: String!, $target: S
 `
 }
 
-func (b *buildPlanByProject) Vars() (map[string]interface{}, error) {
+func (b *projectCommit) Vars() (map[string]interface{}, error) {
 	return b.vars, nil
 }

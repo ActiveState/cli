@@ -8,7 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -95,7 +95,7 @@ func TestBuildExpression_Requirements(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    []model.Requirement
+		want    []response.Requirement
 		wantErr bool
 	}{
 		{
@@ -103,7 +103,7 @@ func TestBuildExpression_Requirements(t *testing.T) {
 			args: args{
 				filename: "buildexpression.json",
 			},
-			want: []model.Requirement{
+			want: []response.Requirement{
 				{
 					Name:      "jinja2-time",
 					Namespace: "language/python",
@@ -115,9 +115,9 @@ func TestBuildExpression_Requirements(t *testing.T) {
 				{
 					Name:      "python",
 					Namespace: "language",
-					VersionRequirement: []model.VersionRequirement{
+					VersionRequirement: []response.VersionRequirement{
 						map[string]string{
-							"comparator": string(model.ComparatorEQ),
+							"comparator": string(response.ComparatorEQ),
 							"version":    "3.10.10",
 						},
 					},
@@ -138,13 +138,13 @@ func TestBuildExpression_Requirements(t *testing.T) {
 			args: args{
 				filename: "buildexpression-installer-complex.json",
 			},
-			want: []model.Requirement{
+			want: []response.Requirement{
 				{
 					Name:      "perl",
 					Namespace: "language",
-					VersionRequirement: []model.VersionRequirement{
+					VersionRequirement: []response.VersionRequirement{
 						map[string]string{
-							"comparator": string(model.ComparatorEQ),
+							"comparator": string(response.ComparatorEQ),
 							"version":    "5.36.0",
 						},
 					},
@@ -157,7 +157,7 @@ func TestBuildExpression_Requirements(t *testing.T) {
 			args: args{
 				filename: "buildexpression-alternate.json",
 			},
-			want: []model.Requirement{
+			want: []response.Requirement{
 				{
 					Name:      "Path-Tiny",
 					Namespace: "language/perl",
@@ -165,9 +165,9 @@ func TestBuildExpression_Requirements(t *testing.T) {
 				{
 					Name:      "perl",
 					Namespace: "language",
-					VersionRequirement: []model.VersionRequirement{
+					VersionRequirement: []response.VersionRequirement{
 						map[string]string{
-							"comparator": string(model.ComparatorEQ),
+							"comparator": string(response.ComparatorEQ),
 							"version":    "5.36.1",
 						},
 					},
@@ -198,27 +198,27 @@ func TestBuildExpression_Requirements(t *testing.T) {
 
 func TestBuildExpression_Update(t *testing.T) {
 	type args struct {
-		requirement model.Requirement
-		operation   model.Operation
+		requirement response.Requirement
+		operation   response.Operation
 		filename    string
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    []model.Requirement
+		want    []response.Requirement
 		wantErr bool
 	}{
 		{
 			name: "add",
 			args: args{
-				requirement: model.Requirement{
+				requirement: response.Requirement{
 					Name:      "requests",
 					Namespace: "language/python",
 				},
-				operation: model.OperationAdded,
+				operation: response.OperationAdded,
 				filename:  "buildexpression.json",
 			},
-			want: []model.Requirement{
+			want: []response.Requirement{
 				{
 					Name:      "jinja2-time",
 					Namespace: "language/python",
@@ -230,9 +230,9 @@ func TestBuildExpression_Update(t *testing.T) {
 				{
 					Name:      "python",
 					Namespace: "language",
-					VersionRequirement: []model.VersionRequirement{
+					VersionRequirement: []response.VersionRequirement{
 						map[string]string{
-							"comparator": string(model.ComparatorEQ),
+							"comparator": string(response.ComparatorEQ),
 							"version":    "3.10.10",
 						},
 					},
@@ -255,14 +255,14 @@ func TestBuildExpression_Update(t *testing.T) {
 		{
 			name: "remove",
 			args: args{
-				requirement: model.Requirement{
+				requirement: response.Requirement{
 					Name:      "jupyterlab",
 					Namespace: "language/python",
 				},
-				operation: model.OperationRemoved,
+				operation: response.OperationRemoved,
 				filename:  "buildexpression.json",
 			},
-			want: []model.Requirement{
+			want: []response.Requirement{
 				{
 					Name:      "jinja2-time",
 					Namespace: "language/python",
@@ -274,9 +274,9 @@ func TestBuildExpression_Update(t *testing.T) {
 				{
 					Name:      "python",
 					Namespace: "language",
-					VersionRequirement: []model.VersionRequirement{
+					VersionRequirement: []response.VersionRequirement{
 						map[string]string{
-							"comparator": string(model.ComparatorEQ),
+							"comparator": string(response.ComparatorEQ),
 							"version":    "3.10.10",
 						},
 					},
@@ -291,20 +291,20 @@ func TestBuildExpression_Update(t *testing.T) {
 		{
 			name: "update",
 			args: args{
-				requirement: model.Requirement{
+				requirement: response.Requirement{
 					Name:      "python",
 					Namespace: "language",
-					VersionRequirement: []model.VersionRequirement{
+					VersionRequirement: []response.VersionRequirement{
 						map[string]string{
-							"comparator": string(model.ComparatorEQ),
+							"comparator": string(response.ComparatorEQ),
 							"version":    "3.11.0",
 						},
 					},
 				},
-				operation: model.OperationUpdated,
+				operation: response.OperationUpdated,
 				filename:  "buildexpression.json",
 			},
-			want: []model.Requirement{
+			want: []response.Requirement{
 				{
 					Name:      "jinja2-time",
 					Namespace: "language/python",
@@ -316,9 +316,9 @@ func TestBuildExpression_Update(t *testing.T) {
 				{
 					Name:      "python",
 					Namespace: "language",
-					VersionRequirement: []model.VersionRequirement{
+					VersionRequirement: []response.VersionRequirement{
 						map[string]string{
-							"comparator": string(model.ComparatorEQ),
+							"comparator": string(response.ComparatorEQ),
 							"version":    "3.11.0",
 						},
 					},
@@ -337,14 +337,14 @@ func TestBuildExpression_Update(t *testing.T) {
 		{
 			name: "remove not existing",
 			args: args{
-				requirement: model.Requirement{
+				requirement: response.Requirement{
 					Name:      "requests",
 					Namespace: "language/python",
 				},
-				operation: model.OperationRemoved,
+				operation: response.OperationRemoved,
 				filename:  "buildexpression.json",
 			},
-			want: []model.Requirement{
+			want: []response.Requirement{
 				{
 					Name:      "jinja2-time",
 					Namespace: "language/python",
@@ -356,9 +356,9 @@ func TestBuildExpression_Update(t *testing.T) {
 				{
 					Name:      "python",
 					Namespace: "language",
-					VersionRequirement: []model.VersionRequirement{
+					VersionRequirement: []response.VersionRequirement{
 						map[string]string{
-							"comparator": string(model.ComparatorEQ),
+							"comparator": string(response.ComparatorEQ),
 							"version":    "3.10.10",
 						},
 					},
@@ -377,20 +377,20 @@ func TestBuildExpression_Update(t *testing.T) {
 		{
 			name: "add-installer-complex",
 			args: args{
-				requirement: model.Requirement{
+				requirement: response.Requirement{
 					Name:      "JSON",
 					Namespace: "language/perl",
 				},
-				operation: model.OperationAdded,
+				operation: response.OperationAdded,
 				filename:  "buildexpression-installer-complex.json",
 			},
-			want: []model.Requirement{
+			want: []response.Requirement{
 				{
 					Name:      "perl",
 					Namespace: "language",
-					VersionRequirement: []model.VersionRequirement{
+					VersionRequirement: []response.VersionRequirement{
 						map[string]string{
-							"comparator": string(model.ComparatorEQ),
+							"comparator": string(response.ComparatorEQ),
 							"version":    "5.36.0",
 						},
 					},
@@ -405,14 +405,14 @@ func TestBuildExpression_Update(t *testing.T) {
 		{
 			name: "add-alternate",
 			args: args{
-				requirement: model.Requirement{
+				requirement: response.Requirement{
 					Name:      "JSON",
 					Namespace: "language/perl",
 				},
-				operation: model.OperationAdded,
+				operation: response.OperationAdded,
 				filename:  "buildexpression-alternate.json",
 			},
-			want: []model.Requirement{
+			want: []response.Requirement{
 				{
 					Name:      "Path-Tiny",
 					Namespace: "language/perl",
@@ -420,9 +420,9 @@ func TestBuildExpression_Update(t *testing.T) {
 				{
 					Name:      "perl",
 					Namespace: "language",
-					VersionRequirement: []model.VersionRequirement{
+					VersionRequirement: []response.VersionRequirement{
 						map[string]string{
-							"comparator": string(model.ComparatorEQ),
+							"comparator": string(response.ComparatorEQ),
 							"version":    "5.36.1",
 						},
 					},

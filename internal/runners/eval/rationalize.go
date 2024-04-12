@@ -7,8 +7,8 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
-	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 )
 
 func rationalizeError(rerr *error) {
@@ -16,7 +16,7 @@ func rationalizeError(rerr *error) {
 		return
 	}
 
-	var planningError *bpModel.BuildPlannerError
+	var planningError *bpResp.BuildPlannerError
 	var failedArtifactsError model.ErrFailedArtifacts
 
 	switch {

@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -37,7 +37,7 @@ func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) (rerr
 		req := &requirements.Requirement{
 			Name:      p.Name,
 			Version:   p.Version,
-			Operation: bpModel.OperationAdded,
+			Operation: bpResp.OperationAdded,
 		}
 
 		if p.Namespace != "" {
