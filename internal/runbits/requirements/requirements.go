@@ -385,7 +385,7 @@ func (r *RequirementOperation) validatePackage(requirement *Requirement) error {
 	}
 
 	requirement.originalRequirementName = requirement.Name
-	normalized, err := model.FetchNormalizedName(*requirement.Namespace, requirement.Name, r.Auth)
+	normalized, err := model.FetchNormalizedName(requirement.Namespace.String(), requirement.Name, r.Auth)
 	if err != nil {
 		multilog.Error("Failed to normalize '%s': %v", requirement.Name, err)
 	}
@@ -547,7 +547,7 @@ func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChan
 	}
 
 	names := requirementNames(requirements...)
-	pg := output.StartSpinner(r.Output, locale.T("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
+	pg := output.StartSpinner(r.Output, locale.Tr("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
 
 	var ingredients []*request.Ingredient
 	for _, requirement := range requirements {

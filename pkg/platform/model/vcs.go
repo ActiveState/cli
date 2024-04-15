@@ -218,6 +218,24 @@ func LanguageFromNamespace(ns string) string {
 	return values[1]
 }
 
+func IsCustomNamespace(ns string) bool {
+	supportedNamespaces := []NamespaceType{
+		NamespacePackage,
+		NamespaceBundle,
+		NamespaceLanguage,
+		NamespacePlatform,
+		NamespaceOrg,
+	}
+
+	for _, n := range supportedNamespaces {
+		if NamespaceMatch(ns, n.Matchable()) {
+			return false
+		}
+	}
+
+	return true
+}
+
 // FilterSupportedIngredients filters a list of ingredients, returning only those that are currently supported (such that they can be built) by the Platform
 func FilterSupportedIngredients(supported []model.SupportedLanguage, ingredients []*IngredientAndVersion) ([]*IngredientAndVersion, error) {
 	var res []*IngredientAndVersion

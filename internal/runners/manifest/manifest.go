@@ -36,7 +36,7 @@ func (m *Manifest) Run() (rerr error) {
 		return rationalize.ErrNoProject
 	}
 
-	m.out.Notice(locale.Tr("manifest_operating_on_project", "Operating on project: {{.V0}}, located at {{.V1}}", m.project.Namespace().String(), m.project.Dir()))
+	m.out.Notice(locale.Tl("manifest_operating_on_project", "Operating on project: [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET]\n", m.project.Namespace().String(), m.project.Dir()))
 
 	commitID, err := localcommit.Get(m.project.Dir())
 	if err != nil {

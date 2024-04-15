@@ -12,7 +12,7 @@ func newManifestCommmand(prime *primer.Values) *captain.Command {
 
 	cmd := captain.NewCommand(
 		"manifest",
-		"",
+		locale.Tl("manifest_title", "Listing Requirements For Your Project"),
 		locale.Tl("manifest_cmd_description", "List the requirements of the current project"),
 		prime,
 		[]*captain.Flag{},

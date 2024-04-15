@@ -1,8 +1,8 @@
 package manifest
 
 import (
-	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -10,36 +10,47 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	vulnModel "github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	platformModel "github.com/ActiveState/cli/pkg/platform/model"
 )
 
 type requirement struct {
-	Name            string         `json:"name" locale:"manifest_name,Name"`
-	Version         string         `json:"version" locale:"manifest_version,Version"`
-	License         string         `json:"license" locale:"manifest_license,License"`
-	Vulnerabilities map[string]int `json:"vulnerabilities" locale:"manifest_vulnerabilities,Vulnerabilities (CVEs)" opts:"omitEmpty"`
-	Namespace       string         `json:"namespace"`
+	NameOutput      string `json:"name" locale:"manifest_name,Name"`
+	VersionOutput   string `json:"version" locale:"manifest_version,Version"`
+	License         string `json:"license" locale:"manifest_license,License"`
+	Vulnerabilities string `json:"vulnerabilities" locale:"manifest_vulnerabilities,Vulnerabilities (CVEs)" opts:"omitEmpty"`
+	// Must be last of the output fields in order for our table renderer to include all the fields before it
+	NamespaceOutput string `json:"namespace" locale:"manifest_namespace,Namespace" opts:"omitEmpty,separateLine"`
+
+	// These fields are used for internal processing
+	name      string
+	namespace string
+	version   string
 }
 
 type requirementsOutput struct {
-	Requirements []*requirement `json:"requirements" opts:"verticalTable"`
+	Requirements []*requirement `json:"requirements"`
 }
 
-func newRequirementsOutput(reqs []model.Requirement, auth *authentication.Auth) (*requirementsOutput, error) {
+func newRequirementsOutput(reqs []model.Requirement, auth *authentication.Auth) (requirementsOutput, error) {
 	var requirements []*requirement
 	for _, req := range reqs {
 		r := &requirement{
-			Name:      req.Name,
-			Namespace: req.Namespace,
+			NameOutput: locale.Tl("manifest_name", "[ACTIONABLE]{{.V0}}[/RESET]", req.Name),
+			namespace:  req.Namespace,
+			name:       req.Name,
 		}
 
+		var version string
 		if req.VersionRequirement != nil {
-			r.Version = platformModel.BuildPlannerVersionConstraintsToString(req.VersionRequirement)
+			version = platformModel.BuildPlannerVersionConstraintsToString(req.VersionRequirement)
+			r.version = version
 		} else {
-			r.Version = "auto"
+			version = "auto"
 		}
+		r.VersionOutput = locale.Tl("manifest_version", "[CYAN]{{.V0}}[/RESET]", version)
 
 		normalized, err := platformModel.FetchNormalizedName(req.Namespace, req.Name, auth)
 		if err != nil {
@@ -48,16 +59,21 @@ func newRequirementsOutput(reqs []model.Requirement, auth *authentication.Auth) 
 
 		packages, err := platformModel.SearchIngredientsStrict(req.Namespace, normalized, false, false, nil, auth)
 		if err != nil {
-			return nil, locale.WrapError(err, "package_err_cannot_obtain_search_results")
+			multilog.Error("Failed to search for '%s': %v", req.Name, err)
 		}
 
 		if len(packages) == 0 {
 			multilog.Error("No packages found for '%s'", req.Name)
+			r.License = locale.Tl("manifest_license", "[CYAN]UNKNOWN[/RESET]")
 		} else {
 			pkg := packages[0]
 			if pkg.LatestVersion != nil && pkg.LatestVersion.LicenseExpression != nil {
-				r.License = *pkg.LatestVersion.LicenseExpression
+				r.License = locale.Tl("manifest_license", "[CYAN]{{.V0}}[/RESET]", *pkg.LatestVersion.LicenseExpression)
 			}
+		}
+
+		if platformModel.IsCustomNamespace(req.Namespace) {
+			r.NamespaceOutput = locale.Tl("manifest_namespace", " └─ [DISABLED]namespace:[/RESET] [CYAN]{{.V0}}[/RESET]", req.Namespace)
 		}
 
 		requirements = append(requirements, r)
@@ -65,25 +81,19 @@ func newRequirementsOutput(reqs []model.Requirement, auth *authentication.Auth) 
 
 	if auth.Authenticated() {
 		if err := addVulns(requirements, auth); err != nil {
-			return nil, errs.Wrap(err, "Failed to add vulnerabilities")
+			return requirementsOutput{}, errs.Wrap(err, "Failed to add vulnerabilities")
 		}
 	}
 
-	reqsData, err := json.MarshalIndent(requirements, "", "  ")
-	if err != nil {
-		return nil, errs.Wrap(err, "Failed to marshal requirements")
-	}
-	fmt.Println("Requirements data:", string(reqsData))
-
-	return &requirementsOutput{Requirements: requirements}, nil
+	return requirementsOutput{Requirements: requirements}, nil
 }
 
-func (o *requirementsOutput) MarshalOutput(f output.Format) interface{} {
+func (o requirementsOutput) MarshalOutput(f output.Format) interface{} {
 	return o.Requirements
 }
 
-func (o *requirementsOutput) MarshalStructured(f output.Format) interface{} {
-	return o.Requirements
+func (o requirementsOutput) MarshalStructured(_ output.Format) interface{} {
+	return o
 }
 
 func addVulns(requirements []*requirement, auth *authentication.Auth) error {
@@ -95,23 +105,17 @@ func addVulns(requirements []*requirement, auth *authentication.Auth) error {
 	var reqMap = make(map[string]*requirement)
 	for _, req := range requirements {
 		ingredients = append(ingredients, &request.Ingredient{
-			Name:      req.Name,
-			Namespace: req.Namespace,
-			Version:   req.Version,
+			Name:      req.name,
+			Namespace: req.namespace,
+			Version:   req.version,
 		})
-		reqMap[keyFunc(req.Namespace, req.Name)] = req
+		reqMap[keyFunc(req.namespace, req.name)] = req
 	}
 
 	vulns, err := platformModel.FetchVulnerabilitiesForIngredients(auth, ingredients)
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch vulnerabilities")
 	}
-
-	vulnsData, err := json.MarshalIndent(vulns, "", "  ")
-	if err != nil {
-		return errs.Wrap(err, "Failed to marshal vulnerabilities")
-	}
-	fmt.Println("Vulns data:", string(vulnsData))
 
 	for _, vuln := range vulns {
 		key := keyFunc(vuln.PrimaryNamespace, vuln.Name)
@@ -120,8 +124,48 @@ func addVulns(requirements []*requirement, auth *authentication.Auth) error {
 			logging.Error("Vulnerability found for unknown requirement: %s", key)
 			continue
 		}
-		fmt.Println("Appending vuln to req:", req.Name)
-		req.Vulnerabilities = vuln.Vulnerabilities.Count()
+
+		counts := vuln.Vulnerabilities.Count()
+		var vulnReport []string
+		critical, ok := counts[vulnModel.SeverityCritical]
+		if ok && critical > 0 {
+			vulnReport = append(
+				vulnReport,
+				locale.Tl("manifest_vulnerability_critical", fmt.Sprintf("[RED]%d Critical[/RESET]", critical)),
+			)
+		}
+
+		high, ok := counts[vulnModel.SeverityHigh]
+		if ok && high > 0 {
+			vulnReport = append(
+				vulnReport,
+				locale.Tl("manifest_vulnerability_high", fmt.Sprintf("[ORANGE]%d High[/RESET]", high)),
+			)
+		}
+
+		medium, ok := counts[vulnModel.SeverityMedium]
+		if ok && medium > 0 {
+			vulnReport = append(
+				vulnReport,
+				locale.Tl("manifest_vulnerability_medium", fmt.Sprintf("[YELLOW]%d Medium[/RESET]", medium)),
+			)
+		}
+
+		low, ok := counts[vulnModel.SeverityLow]
+		if ok && low > 0 {
+			vulnReport = append(
+				vulnReport,
+				locale.Tl("manifest_vulnerability_low", fmt.Sprintf("[GREEN]%d Low[/RESET]", low)),
+			)
+		}
+
+		req.Vulnerabilities = strings.Join(vulnReport, ", ")
+	}
+
+	for _, req := range requirements {
+		if req.Vulnerabilities == "" {
+			req.Vulnerabilities = locale.Tl("manifest_vulnerability_none", "[DISABLED]None detected[/RESET]")
+		}
 	}
 
 	return nil

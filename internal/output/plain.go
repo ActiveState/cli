@@ -37,6 +37,8 @@ const (
 	ShiftColsPrefix PlainOpts = "shiftCols="
 	// OmitEmpty omits empty values from output
 	OmitEmpty PlainOpts = "omitEmpty"
+	// HideDash hides the dash in table output
+	HideDash PlainOpts = "hideDash"
 )
 
 // Plain is our plain outputer, it uses reflect to marshal the data.
@@ -279,6 +281,7 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 
 	headers := []string{}
 	rows := [][]string{}
+	var hideDash bool
 	for _, v := range slice {
 		if !isStruct(v) {
 			return "", errors.New("Tried to sprintTable with slice that doesn't contain all structs")
@@ -309,6 +312,10 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 				headers = append(headers, localizedField(field.l10n))
 			}
 
+			if firstIteration && !funk.Contains(field.opts, string(HideDash)) {
+				hideDash = true
+			}
+
 			if funk.Contains(field.opts, string(EmptyNil)) && stringValue == nilText {
 				stringValue = ""
 			}
@@ -332,7 +339,12 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 		}
 	}
 
-	return table.New(headers).AddRow(rows...).Render(), nil
+	table := table.New(headers)
+	if hideDash {
+		table.HideDash = true
+	}
+
+	return table.AddRow(rows...).Render(), nil
 }
 
 type verticalRow struct {

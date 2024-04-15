@@ -26,6 +26,7 @@ type Table struct {
 	rows    []row
 
 	HideHeaders bool
+	HideDash    bool
 	Vertical    bool
 }
 
@@ -51,7 +52,11 @@ func (t *Table) Render() string {
 	var out string
 	if !t.HideHeaders {
 		out += "[NOTICE]" + renderRow(t.headers, colWidths) + "[/RESET]" + linebreak
-		out += "[DISABLED]" + strings.Repeat(dash, total) + "[/RESET]" + linebreak
+		if !t.HideDash {
+			out += "[DISABLED]" + strings.Repeat(dash, total) + "[/RESET]" + linebreak
+		} else {
+			out += "[DISABLED]" + strings.Repeat(" ", total) + "[/RESET]" + linebreak
+		}
 	}
 	for _, row := range t.rows {
 		out += renderRow(row.columns, colWidths) + linebreak
