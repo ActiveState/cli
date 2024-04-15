@@ -27,6 +27,8 @@ func (suite *ManifestIntegrationTestSuite) TestManifest() {
 	cp.Expect("3.9.13")
 	cp.Expect("PSF-2.0")
 	cp.Expect("1 Critical,")
+	cp.Expect("psutil")
+	cp.Expect("auto → 5.9.0")
 	cp.Expect("pexpect")
 	cp.Expect("None detected")
 }

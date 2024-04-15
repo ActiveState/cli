@@ -6,14 +6,13 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	vulnModel "github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
-	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	platformModel "github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
 type requirement struct {
@@ -27,14 +26,13 @@ type requirement struct {
 	// These fields are used for internal processing
 	name      string
 	namespace string
-	version   string
 }
 
 type requirementsOutput struct {
 	Requirements []*requirement `json:"requirements"`
 }
 
-func newRequirementsOutput(reqs []model.Requirement, auth *authentication.Auth) (requirementsOutput, error) {
+func newRequirementsOutput(reqs []model.Requirement, artifacts []*artifact.Artifact, vulns vulns, auth *authentication.Auth) (requirementsOutput, error) {
 	var requirements []*requirement
 	for _, req := range reqs {
 		r := &requirement{
@@ -46,9 +44,14 @@ func newRequirementsOutput(reqs []model.Requirement, auth *authentication.Auth) 
 		var version string
 		if req.VersionRequirement != nil {
 			version = platformModel.BuildPlannerVersionConstraintsToString(req.VersionRequirement)
-			r.version = version
 		} else {
 			version = "auto"
+			for _, a := range artifacts {
+				if a.Namespace == req.Namespace && a.Name == req.Name {
+					version = locale.Tr("constraint_resolved", version, *a.Version)
+					break
+				}
+			}
 		}
 		r.VersionOutput = locale.Tl("manifest_version", "[CYAN]{{.V0}}[/RESET]", version)
 
@@ -79,10 +82,8 @@ func newRequirementsOutput(reqs []model.Requirement, auth *authentication.Auth) 
 		requirements = append(requirements, r)
 	}
 
-	if auth.Authenticated() {
-		if err := addVulns(requirements, auth); err != nil {
-			return requirementsOutput{}, errs.Wrap(err, "Failed to add vulnerabilities")
-		}
+	if err := addVulns(requirements, vulns); err != nil {
+		return requirementsOutput{}, errs.Wrap(err, "Failed to add vulnerabilities")
 	}
 
 	return requirementsOutput{Requirements: requirements}, nil
@@ -96,32 +97,11 @@ func (o requirementsOutput) MarshalStructured(_ output.Format) interface{} {
 	return o
 }
 
-func addVulns(requirements []*requirement, auth *authentication.Auth) error {
-	keyFunc := func(namespace, name string) string {
-		return fmt.Sprintf("%s/%s", namespace, name)
-	}
-
-	var ingredients []*request.Ingredient
-	var reqMap = make(map[string]*requirement)
+func addVulns(requirements []*requirement, vulns vulns) error {
 	for _, req := range requirements {
-		ingredients = append(ingredients, &request.Ingredient{
-			Name:      req.name,
-			Namespace: req.namespace,
-			Version:   req.version,
-		})
-		reqMap[keyFunc(req.namespace, req.name)] = req
-	}
-
-	vulns, err := platformModel.FetchVulnerabilitiesForIngredients(auth, ingredients)
-	if err != nil {
-		return errs.Wrap(err, "Failed to fetch vulnerabilities")
-	}
-
-	for _, vuln := range vulns {
-		key := keyFunc(vuln.PrimaryNamespace, vuln.Name)
-		req, ok := reqMap[key]
+		vuln, ok := vulns.getVulns(req.name, req.namespace)
 		if !ok {
-			logging.Error("Vulnerability found for unknown requirement: %s", key)
+			req.Vulnerabilities = locale.Tl("manifest_vulnerability_none", "[DISABLED]None detected[/RESET]")
 			continue
 		}
 
@@ -160,12 +140,6 @@ func addVulns(requirements []*requirement, auth *authentication.Auth) error {
 		}
 
 		req.Vulnerabilities = strings.Join(vulnReport, ", ")
-	}
-
-	for _, req := range requirements {
-		if req.Vulnerabilities == "" {
-			req.Vulnerabilities = locale.Tl("manifest_vulnerability_none", "[DISABLED]None detected[/RESET]")
-		}
 	}
 
 	return nil
