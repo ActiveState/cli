@@ -312,7 +312,7 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 				headers = append(headers, localizedField(field.l10n))
 			}
 
-			if firstIteration && !funk.Contains(field.opts, string(HideDash)) {
+			if firstIteration && funk.Contains(field.opts, string(HideDash)) {
 				hideDash = true
 			}
 
