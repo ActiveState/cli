@@ -2,9 +2,12 @@ package manifest
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -96,7 +99,7 @@ func (m *Manifest) Run() (rerr error) {
 }
 
 func (m *Manifest) fetchArtifacts() ([]*artifact.Artifact, error) {
-	if m.project == nil {
+	if m.project == nil || strings.EqualFold(os.Getenv(constants.DisableRuntime), "true") {
 		return nil, nil
 	}
 
