@@ -51,6 +51,8 @@ type languageOutput struct {
 
 // Run executes the list behavior.
 func (l *Languages) Run() error {
+	l.out.Notice(locale.T("manifest_deprecation_warning"))
+
 	if l.project == nil {
 		return rationalize.ErrNoProject
 	}

@@ -1592,3 +1592,6 @@ err_initial_no_requirement:
   other: |
     Could not find compatible requirement for initial commit. Please ensure that you are trying to install a valid package.
     To check for available packages run '[ACTIONABLE]state search <package_name>[/RESET]'.
+manifest_deprecation_warning:
+  other: |
+    [WARNING]Deprecation Warning:[/RESET] This command is deprecated, please use '[ACTIONABLE]state manfiest[/RESET]' instead.
