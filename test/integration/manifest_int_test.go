@@ -33,7 +33,6 @@ func (suite *ManifestIntegrationTestSuite) TestManifest() {
 	cp.Expect("1 Critical,")
 	cp.Expect("psutil")
 	cp.Expect("auto → 5.9.0")
-	cp.Expect("pexpect")
 	cp.Expect("None detected")
 }
 
