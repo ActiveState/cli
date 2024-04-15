@@ -341,7 +341,7 @@ func WriteFile(filePath string, data []byte) (rerr error) {
 	if err != nil {
 		if !fileExists {
 			target := filepath.Dir(filePath)
-			err = fmt.Errorf("access to target %q is denied", target)
+			err = errs.Pack(err, fmt.Errorf("access to target %q is denied", target))
 		}
 		return errs.Wrap(err, "os.OpenFile %s failed", filePath)
 	}
