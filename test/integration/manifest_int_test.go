@@ -3,6 +3,7 @@ package integration
 import (
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -20,8 +21,11 @@ func (suite *ManifestIntegrationTestSuite) TestManifest() {
 	ts.LoginAsPersistentUser()
 	ts.PrepareProject("ActiveState/cli", "9eee7512-b2ab-4600-b78b-ab0cf2e817d8")
 
-	cp := ts.Spawn("manifest")
-	cp.Expect("Operating on project: ActiveState/cli")
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("manifest"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Operating on project: ActiveState/cli", e2e.RuntimeSourcingTimeoutOpt)
 	cp.Expect("Name")
 	cp.Expect("python")
 	cp.Expect("3.9.13")
