@@ -542,7 +542,8 @@ func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) 
 }
 
 func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChangeset, requirements ...*Requirement) error {
-	if !r.Auth.Authenticated() {
+	if r.shouldSkipCVEs(requirements...) {
+		logging.Debug("Skipping CVE reporting")
 		return nil
 	}
 
@@ -612,6 +613,20 @@ func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChan
 	}
 
 	return nil
+}
+
+func (r *RequirementOperation) shouldSkipCVEs(requirements ...*Requirement) bool {
+	if !r.Auth.Authenticated() {
+		return true
+	}
+
+	for _, req := range requirements {
+		if req.Operation != bpModel.OperationRemoved {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
@@ -734,7 +749,7 @@ func (r *RequirementOperation) outputResult(requirement *Requirement) {
 			requirement.Operation.String(),
 		}))
 
-	if requirement.originalRequirementName != requirement.Name {
+	if requirement.originalRequirementName != requirement.Name && requirement.Operation != bpModel.OperationRemoved {
 		r.Output.Notice(locale.Tl("package_version_differs",
 			"Note: the actual package name ({{.V0}}) is different from the requested package name ({{.V1}})",
 			requirement.Name, requirement.originalRequirementName))
