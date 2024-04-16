@@ -412,7 +412,9 @@ func (r *RequirementOperation) validatePackage(requirement *Requirement) error {
 			requirement.Name, ptr.To(strings.Join(suggestions, "\n"))}
 	}
 
-	requirement.Name = normalized
+	if normalized != "" && normalized != requirement.Name {
+		requirement.Name = normalized
+	}
 
 	// If a bare version number was given, and if it is a partial version number (e.g. requests@2),
 	// we'll want to ultimately append a '.x' suffix.
@@ -548,7 +550,7 @@ func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChan
 	}
 
 	names := requirementNames(requirements...)
-	pg := output.StartSpinner(r.Output, locale.T("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
+	pg := output.StartSpinner(r.Output, locale.Tr("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
 
 	var ingredients []*request.Ingredient
 	for _, requirement := range requirements {
@@ -909,7 +911,7 @@ func commitMessageMultiple(requirements ...*Requirement) string {
 }
 
 func requirementNames(requirements ...*Requirement) []string {
-	names := []string{}
+	var names []string
 	for _, requirement := range requirements {
 		names = append(names, requirement.Name)
 	}
