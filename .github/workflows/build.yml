@@ -41,7 +41,7 @@ jobs:
         sys:
           - {os: ubuntu-latest}
           - {os: macos-latest, shell: zsh}
-          - {os: windows-latest}
+          - {os: windows-2019}
       fail-fast: false
     runs-on: ${{ matrix.sys.os }}
     env:
