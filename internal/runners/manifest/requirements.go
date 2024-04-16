@@ -1,6 +1,7 @@
 package manifest
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 
@@ -30,9 +31,10 @@ type requirement struct {
 
 type requirementsOutput struct {
 	Requirements []*requirement `json:"requirements"`
+	out          output.Outputer
 }
 
-func newRequirementsOutput(reqs []model.Requirement, artifacts []*artifact.Artifact, vulns vulns, auth *authentication.Auth) (requirementsOutput, error) {
+func newRequirementsOutput(reqs []model.Requirement, artifacts []*artifact.Artifact, vulns vulns, auth *authentication.Auth, out output.Outputer) (requirementsOutput, error) {
 	var requirements []*requirement
 	for _, req := range reqs {
 		r := &requirement{
@@ -86,15 +88,26 @@ func newRequirementsOutput(reqs []model.Requirement, artifacts []*artifact.Artif
 		return requirementsOutput{}, errs.Wrap(err, "Failed to add vulnerabilities")
 	}
 
-	return requirementsOutput{Requirements: requirements}, nil
-}
-
-func (o requirementsOutput) MarshalOutput(f output.Format) interface{} {
-	return o.Requirements
+	return requirementsOutput{
+		Requirements: requirements,
+		out:          out,
+	}, nil
 }
 
 func (o requirementsOutput) MarshalStructured(_ output.Format) interface{} {
 	return o
+}
+
+func (o requirementsOutput) Content() string {
+	buff := bytes.Buffer{}
+	o.out.Fprint(&buff, o.Requirements)
+	return buff.String()
+}
+
+func (o requirementsOutput) Footer() string {
+	buff := bytes.Buffer{}
+	o.out.Fprint(&buff, locale.Tl("manifest_footer", "For CVE info run '[ACTIONABLE]state security[/RESET]'\n"))
+	return buff.String()
 }
 
 func addVulns(requirements []*requirement, vulns vulns) error {

@@ -23,9 +23,10 @@ const (
 
 type ContentProcessor interface {
 	Content() string
+	Footer() string
 }
 
-type view struct {
+type View struct {
 	width         int
 	height        int
 	ready         bool
@@ -34,7 +35,7 @@ type view struct {
 	processor     ContentProcessor
 }
 
-func NewView(out Outputer, processor ContentProcessor) (*view, error) {
+func NewView(out Outputer, processor ContentProcessor) (*View, error) {
 	outFD, ok := out.Config().OutWriterFD()
 	if !ok {
 		logging.Error("Could not get output writer file descriptor, falling back to stdout")
@@ -46,18 +47,18 @@ func NewView(out Outputer, processor ContentProcessor) (*view, error) {
 		return nil, errs.Wrap(err, "Could not get terminal size")
 	}
 
-	return &view{
+	return &View{
 		width:     width,
 		height:    height,
 		processor: processor,
 	}, nil
 }
 
-func (v *view) Init() tea.Cmd {
+func (v *View) Init() tea.Cmd {
 	return nil
 }
 
-func (v *view) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (v *View) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
 		cmd  tea.Cmd
 		cmds []tea.Cmd
@@ -108,18 +109,20 @@ func (v *view) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return v, tea.Batch(cmds...)
 }
 
-func (v *view) View() string {
+func (v *View) View() string {
 	return v.viewport.View() + "\n\n" + v.footerView()
 }
 
-func (v *view) setFooterMessage(msg string) {
-	v.footerMessage = msg
-}
-
-func (v *view) footerView() string {
+func (v *View) footerView() string {
 	var footerText string
 	scrollValue := v.viewport.ScrollPercent() * 100
+	footerText += v.processor.Footer()
 	footerText += locale.Tl("footer_scroll", "... {{.V0}}% scrolled, use arrow and page keys to scroll. Press Q to quit.", strconv.Itoa(int(scrollValue)))
-	footerText += v.footerMessage
 	return lipgloss.NewStyle().Render(footerText)
+}
+
+func RunView(view *View) error {
+	p := tea.NewProgram(view)
+	_, err := p.Run()
+	return err
 }
