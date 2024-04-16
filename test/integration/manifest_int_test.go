@@ -34,6 +34,8 @@ func (suite *ManifestIntegrationTestSuite) TestManifest() {
 	cp.Expect("psutil")
 	cp.Expect("auto → 5.9.0")
 	cp.Expect("None detected")
+	cp.SendLine("q")
+	cp.ExpectExitCode(0)
 }
 
 func TestManifestIntegrationTestSuite(t *testing.T) {
