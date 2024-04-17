@@ -1595,3 +1595,5 @@ err_initial_no_requirement:
 manifest_deprecation_warning:
   other: |
     [WARNING]Deprecation Warning:[/RESET] This command is deprecated, please use '[ACTIONABLE]state manfiest[/RESET]' instead.
+manifest_runtime_needs_update:
+  other: "Your project runtime needs to be updated.\nThe manifest will be generated based on the local runtime.\nTo update your runtime run [ACTIONABLE]state refresh[/RESET].\n"

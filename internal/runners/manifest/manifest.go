@@ -12,12 +12,12 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
@@ -103,9 +103,15 @@ func (m *Manifest) fetchArtifacts() ([]*artifact.Artifact, error) {
 		return nil, nil
 	}
 
-	rt, err := runtime.SolveAndUpdate(m.auth, m.out, m.analytics, m.project, nil, target.TriggerPackage, m.svcModel, m.cfg, runtime.OptMinimalUI)
+	target := target.NewProjectTarget(m.project, nil, target.TriggerPackage)
+	rt, err := runtime.New(target, m.analytics, m.svcModel, m.auth, m.cfg, m.out)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_package_list_runtime", "Could not initialize runtime")
+		return nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+	}
+
+	// This shouldn't happen, but it's good to warn the user if it does
+	if rt.NeedsUpdate() {
+		m.out.Notice(locale.T("manifest_runtime_needs_update"))
 	}
 
 	return rt.ResolvedArtifacts()

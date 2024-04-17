@@ -19,9 +19,14 @@ func (suite *ManifestIntegrationTestSuite) TestManifest() {
 	defer ts.Close()
 
 	ts.LoginAsPersistentUser()
-	ts.PrepareProject("ActiveState/cli", "9eee7512-b2ab-4600-b78b-ab0cf2e817d8")
 
 	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", "ActiveState/cli#9eee7512-b2ab-4600-b78b-ab0cf2e817d8", "."),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
+
+	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("manifest"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
@@ -34,7 +39,6 @@ func (suite *ManifestIntegrationTestSuite) TestManifest() {
 	cp.Expect("psutil")
 	cp.Expect("auto → 5.9.0")
 	cp.Expect("None detected")
-	cp.SendLine("q")
 	cp.ExpectExitCode(0)
 }
 
