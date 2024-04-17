@@ -412,7 +412,9 @@ func (r *RequirementOperation) validatePackage(requirement *Requirement) error {
 			requirement.Name, ptr.To(strings.Join(suggestions, "\n"))}
 	}
 
-	requirement.Name = normalized
+	if normalized != "" && normalized != requirement.Name {
+		requirement.Name = normalized
+	}
 
 	// If a bare version number was given, and if it is a partial version number (e.g. requests@2),
 	// we'll want to ultimately append a '.x' suffix.
@@ -542,7 +544,8 @@ func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) 
 }
 
 func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChangeset, requirements ...*Requirement) error {
-	if !r.Auth.Authenticated() {
+	if r.shouldSkipCVEs(requirements...) {
+		logging.Debug("Skipping CVE reporting")
 		return nil
 	}
 
@@ -612,6 +615,20 @@ func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChan
 	}
 
 	return nil
+}
+
+func (r *RequirementOperation) shouldSkipCVEs(requirements ...*Requirement) bool {
+	if !r.Auth.Authenticated() {
+		return true
+	}
+
+	for _, req := range requirements {
+		if req.Operation != bpModel.OperationRemoved {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
@@ -734,7 +751,7 @@ func (r *RequirementOperation) outputResult(requirement *Requirement) {
 			requirement.Operation.String(),
 		}))
 
-	if requirement.originalRequirementName != requirement.Name {
+	if requirement.originalRequirementName != requirement.Name && requirement.Operation != bpModel.OperationRemoved {
 		r.Output.Notice(locale.Tl("package_version_differs",
 			"Note: the actual package name ({{.V0}}) is different from the requested package name ({{.V1}})",
 			requirement.Name, requirement.originalRequirementName))
@@ -894,7 +911,7 @@ func commitMessageMultiple(requirements ...*Requirement) string {
 }
 
 func requirementNames(requirements ...*Requirement) []string {
-	names := []string{}
+	var names []string
 	for _, requirement := range requirements {
 		names = append(names, requirement.Name)
 	}
