@@ -43,17 +43,17 @@ func newRequirementsOutput(reqs []model.Requirement, artifacts []*artifact.Artif
 
 		var version string
 		if req.VersionRequirement != nil {
-			version = platformModel.BuildPlannerVersionConstraintsToString(req.VersionRequirement)
+			version = locale.Tl("manifest_constraint_resolved", "[CYAN]{{.V0}}[/RESET]", platformModel.BuildPlannerVersionConstraintsToString(req.VersionRequirement))
 		} else {
-			version = "auto"
+			version = locale.Tl("manifest_constraint_auto", "[CYAN]auto[/RESET]")
 			for _, a := range artifacts {
 				if a.Namespace == req.Namespace && a.Name == req.Name {
-					version = locale.Tr("constraint_resolved", version, *a.Version)
+					version = locale.Tl("manifest_constraint_resolved", "[CYAN]{{.V0}}[/RESET] → [CYAN]{{.V1}}[/RESET]", version, *a.Version)
 					break
 				}
 			}
 		}
-		r.VersionOutput = locale.Tl("manifest_version", "[CYAN]{{.V0}}[/RESET]", version)
+		r.VersionOutput = version
 
 		normalized, err := platformModel.FetchNormalizedName(req.Namespace, req.Name, auth)
 		if err != nil {
