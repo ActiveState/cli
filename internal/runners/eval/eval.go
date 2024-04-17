@@ -8,8 +8,8 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -62,7 +62,7 @@ func (e *Eval) Run(params *Params) (rerr error) {
 		}
 	}()
 
-	bp := model.NewBuildPlannerModel(e.auth)
+	bp := buildplanner.NewBuildPlannerModel(e.auth)
 	if err := bp.WaitForBuild(commitID, e.project.Owner(), e.project.Name(), &params.Target); err != nil {
 		return locale.WrapError(err, "err_eval", "Failed to evaluate target '{{.V0}}'", params.Target)
 	}

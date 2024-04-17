@@ -1,4 +1,4 @@
-package model
+package buildplanner
 
 import (
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"

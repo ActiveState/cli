@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/runbits/runtime"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
@@ -252,8 +252,8 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return errs.Wrap(err, "Unable to determine Platform ID from %s", sysinfo.OS().String())
 	}
 
-	bp := bpModel.NewBuildPlannerModel(r.auth)
-	commitID, err := bp.CreateProject(&bpModel.CreateProjectParams{
+	bp := buildplanner.NewBuildPlannerModel(r.auth)
+	commitID, err := bp.CreateProject(&buildplanner.CreateProjectParams{
 		Owner:       namespace.Owner,
 		Project:     namespace.Project,
 		PlatformID:  strfmt.UUID(platformID),

@@ -26,7 +26,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
@@ -34,6 +33,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
@@ -201,9 +201,9 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		return locale.WrapError(err, "err_resolve_requirements", "Could not resolve one or more requirements")
 	}
 
-	var stageCommitReqs []bpModel.StageCommitRequirement
+	var stageCommitReqs []buildplanner.StageCommitRequirement
 	for _, requirement := range requirements {
-		stageCommitReqs = append(stageCommitReqs, bpModel.StageCommitRequirement{
+		stageCommitReqs = append(stageCommitReqs, buildplanner.StageCommitRequirement{
 			Name:      requirement.Name,
 			Version:   requirement.versionRequirements,
 			Revision:  ptr.To(requirement.Revision),
@@ -212,7 +212,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		})
 	}
 
-	params := bpModel.StageCommitParams{
+	params := buildplanner.StageCommitParams{
 		Owner:        r.Project.Owner(),
 		Project:      r.Project.Name(),
 		ParentCommit: string(parentCommitID),
@@ -221,7 +221,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		TimeStamp:    ts,
 	}
 
-	bp := bpModel.NewBuildPlannerModel(r.Auth)
+	bp := buildplanner.NewBuildPlannerModel(r.Auth)
 	commitID, err := bp.StageCommit(params)
 	if err != nil {
 		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")
@@ -473,7 +473,7 @@ func (r *RequirementOperation) resolveRequirement(requirement *Requirement) erro
 		versionString += ".x"
 	}
 
-	requirement.versionRequirements, err = bpModel.VersionStringToRequirements(versionString)
+	requirement.versionRequirements, err = buildplanner.VersionStringToRequirements(versionString)
 	if err != nil {
 		return errs.Wrap(err, "Could not process version string into requirements")
 	}
@@ -527,7 +527,7 @@ func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) 
 
 	var oldBuildPlan *response.Build
 	if oldCommit.ParentCommitID != "" {
-		bp := bpModel.NewBuildPlannerModel(r.Auth)
+		bp := buildplanner.NewBuildPlannerModel(r.Auth)
 		oldCommit, err := bp.FetchCommitWithBuild(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
 		if err != nil {
 			return nil, nil, nil, errs.Wrap(err, "Failed to fetch build result")
@@ -622,7 +622,7 @@ func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 	}
 
 	if r.Config.GetBool(constants.OptinBuildscriptsConfig) {
-		bp := bpModel.NewBuildPlannerModel(r.Auth)
+		bp := buildplanner.NewBuildPlannerModel(r.Auth)
 		expr, atTime, err := bp.GetBuildExpressionAndTime(commitID.String())
 		if err != nil {
 			return errs.Wrap(err, "Could not get remote build expr and time")

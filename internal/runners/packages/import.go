@@ -15,11 +15,11 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
@@ -127,7 +127,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return errs.Wrap(err, "Could not import changeset")
 	}
 
-	bp := bpModel.NewBuildPlannerModel(i.auth)
+	bp := buildplanner.NewBuildPlannerModel(i.auth)
 	be, err := bp.GetBuildExpression(latestCommit.String())
 	if err != nil {
 		return locale.WrapError(err, "err_cannot_get_build_expression", "Could not get build expression")
@@ -142,7 +142,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 	}
 
 	msg := locale.T("commit_reqstext_message")
-	commitID, err := bp.StageCommit(bpModel.StageCommitParams{
+	commitID, err := bp.StageCommit(buildplanner.StageCommitParams{
 		Owner:        i.proj.Owner(),
 		Project:      i.proj.Name(),
 		ParentCommit: latestCommit.String(),

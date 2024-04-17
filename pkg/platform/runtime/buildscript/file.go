@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/pkg/localcommit"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -57,7 +57,7 @@ func Initialize(path string, auth *authentication.Auth) error {
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the local commit ID")
 	}
-	buildplanner := model.NewBuildPlannerModel(auth)
+	buildplanner := buildplanner.NewBuildPlannerModel(auth)
 	expr, atTime, err := buildplanner.GetBuildExpressionAndTime(commitId.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the remote build expression and time")

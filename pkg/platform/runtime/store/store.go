@@ -11,10 +11,10 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/go-openapi/strfmt"
@@ -76,7 +76,7 @@ func (s *Store) BuildEngine() (types.BuildEngine, error) {
 		return types.UnknownEngine, errs.Wrap(err, "Could not read build engine cache store.")
 	}
 
-	return model.ParseBuildEngine(string(data)), nil
+	return buildplanner.ParseBuildEngine(string(data)), nil
 }
 
 // StoreBuildEngine stores the build engine value in the runtime directory

@@ -7,8 +7,8 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 )
 
 func rationalizeError(rerr *error) {
@@ -17,7 +17,7 @@ func rationalizeError(rerr *error) {
 	}
 
 	var planningError *bpResp.BuildPlannerError
-	var failedArtifactsError model.ErrFailedArtifacts
+	var failedArtifactsError buildplanner.ErrFailedArtifacts
 
 	switch {
 	case errors.Is(*rerr, rationalize.ErrNotAuthenticated):

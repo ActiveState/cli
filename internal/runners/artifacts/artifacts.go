@@ -16,12 +16,12 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
@@ -163,7 +163,7 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 				Name: name,
 				URL:  artifact.URL,
 			}
-			if bpModel.IsStateToolArtifact(artifact.MimeType) {
+			if buildplanner.IsStateToolArtifact(artifact.MimeType) {
 				if !params.All {
 					continue
 				}
@@ -280,7 +280,7 @@ func getTerminalArtifactMap(
 			return nil, false, false, errs.Wrap(err, "Could not get local commit")
 		}
 
-		bp := bpModel.NewBuildPlannerModel(auth)
+		bp := buildplanner.NewBuildPlannerModel(auth)
 		commit, err = bp.FetchCommitWithBuild(localCommitID, pj.Owner(), pj.Name(), targetPtr)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
@@ -288,7 +288,7 @@ func getTerminalArtifactMap(
 
 	// Return artifact map from the given commitID for the current project.
 	case !namespaceProvided && commitIdProvided:
-		bp := bpModel.NewBuildPlannerModel(auth)
+		bp := buildplanner.NewBuildPlannerModel(auth)
 		commit, err = bp.FetchCommitWithBuild(commitUUID, pj.Owner(), pj.Name(), targetPtr)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
@@ -312,7 +312,7 @@ func getTerminalArtifactMap(
 		}
 		commitUUID = *branchCommitUUID
 
-		bp := bpModel.NewBuildPlannerModel(auth)
+		bp := buildplanner.NewBuildPlannerModel(auth)
 		commit, err = bp.FetchCommitWithBuild(commitUUID, namespace.Owner, namespace.Project, targetPtr)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
@@ -320,7 +320,7 @@ func getTerminalArtifactMap(
 
 	// Return the artifact map for the given commitID of the given project.
 	case namespaceProvided && commitIdProvided:
-		bp := bpModel.NewBuildPlannerModel(auth)
+		bp := buildplanner.NewBuildPlannerModel(auth)
 		commit, err = bp.FetchCommitWithBuild(commitUUID, namespace.Owner, namespace.Project, targetPtr)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
@@ -337,7 +337,7 @@ func getTerminalArtifactMap(
 
 	// Communicate whether there were failed artifacts
 	for _, artifact := range commit.Build.Artifacts {
-		if !bpModel.IsSuccessArtifactStatus(artifact.Status) {
+		if !buildplanner.IsSuccessArtifactStatus(artifact.Status) {
 			return bpm, commit.Build.Ready(), true, nil
 		}
 	}
