@@ -435,8 +435,8 @@ func Test_parseURL(t *testing.T) {
 			false,
 		},
 		{
-			"Invalid commit",
-			"https://platform.activestate.com/commit/nope",
+			"Invalid URL",
+			"https://platform.activestate.com/oops",
 			projectURL{},
 			true,
 		},

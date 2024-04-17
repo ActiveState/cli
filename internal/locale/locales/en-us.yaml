@@ -534,6 +534,8 @@ err_invalid_project:
   other: Your activestate.yaml is missing the 'project' field.
 err_bad_project_url:
   other: "Invalid value for 'project' field in your activestate.yaml, please ensure it is in the format of: 'https://platform.activestate.com/org/project'."
+err_bad_project_url_reset:
+  other: "Invalid value for 'project' field in your activestate.yaml. Please run '[ACTIONABLE]state reset[/RESET]' to fix it."
 err_set_commit_id:
   other: "Could not update your activestate.yaml with the latest commit ID. Please ensure you have your project defined in the format of '[ACTIONABLE]project: https://platform.activestate.com/org/project[/RESET]'"
 err_set_project:

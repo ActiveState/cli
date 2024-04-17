@@ -662,17 +662,8 @@ func (p *Project) parseURL() (projectURL, error) {
 	return parseURL(p.Project)
 }
 
-func validateUUID(uuidStr string) error {
-	if ok := strfmt.Default.Validates("uuid", uuidStr); !ok {
-		return locale.NewError("invalid_uuid_val", "Invalid commit ID {{.V0}} in activestate.yaml. Please remove it and run `[ACTIONABLE]state pull[/RESET]` to reset it", uuidStr)
-	}
-
-	var uuid strfmt.UUID
-	if err := uuid.UnmarshalText([]byte(uuidStr)); err != nil {
-		return locale.WrapError(err, "err_commit_id_unmarshal", "Failed to unmarshal the commit id {{.V0}} read from activestate.yaml.", uuidStr)
-	}
-
-	return nil
+func (p *Project) HasCommitID() bool {
+	return strfmt.IsUUID(p.LegacyCommitID())
 }
 
 func parseURL(rawURL string) (projectURL, error) {
@@ -701,12 +692,6 @@ func parseURL(rawURL string) (projectURL, error) {
 	q := u.Query()
 	if c := q.Get("commitID"); c != "" {
 		p.LegacyCommitID = c
-	}
-
-	if p.LegacyCommitID != "" {
-		if err := validateUUID(p.LegacyCommitID); err != nil {
-			return p, err
-		}
 	}
 
 	if b := q.Get("branch"); b != "" {
