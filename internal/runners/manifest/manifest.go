@@ -88,21 +88,12 @@ func (m *Manifest) Run() (rerr error) {
 		}
 	}
 
-	reqs, err := newRequirementsOutput(exprReqs, artifacts, vulns, m.auth, m.out)
+	reqs, err := newRequirementsOutput(exprReqs, artifacts, vulns, m.auth)
 	if err != nil {
 		return errs.Wrap(err, "Could not get requirements output")
 	}
 
-	if m.out.Type().IsStructured() || !m.out.Config().Interactive {
-		m.out.Print(reqs)
-		return nil
-	}
-
-	view, err := output.NewView(m.out, reqs)
-	if err != nil {
-		return errs.Wrap(err, "Could not create view")
-	}
-	output.RunView(view)
+	m.out.Print(reqs)
 
 	return nil
 }

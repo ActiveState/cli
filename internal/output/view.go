@@ -23,10 +23,9 @@ const (
 
 type ContentProcessor interface {
 	Content() string
-	Footer() string
 }
 
-type View struct {
+type view struct {
 	width         int
 	height        int
 	ready         bool
@@ -35,7 +34,7 @@ type View struct {
 	processor     ContentProcessor
 }
 
-func NewView(out Outputer, processor ContentProcessor) (*View, error) {
+func NewView(out Outputer, processor ContentProcessor) (*view, error) {
 	outFD, ok := out.Config().OutWriterFD()
 	if !ok {
 		logging.Error("Could not get output writer file descriptor, falling back to stdout")
@@ -47,18 +46,18 @@ func NewView(out Outputer, processor ContentProcessor) (*View, error) {
 		return nil, errs.Wrap(err, "Could not get terminal size")
 	}
 
-	return &View{
+	return &view{
 		width:     width,
 		height:    height,
 		processor: processor,
 	}, nil
 }
 
-func (v *View) Init() tea.Cmd {
+func (v *view) Init() tea.Cmd {
 	return nil
 }
 
-func (v *View) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (v *view) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
 		cmd  tea.Cmd
 		cmds []tea.Cmd
@@ -109,20 +108,18 @@ func (v *View) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return v, tea.Batch(cmds...)
 }
 
-func (v *View) View() string {
+func (v *view) View() string {
 	return v.viewport.View() + "\n\n" + v.footerView()
 }
 
-func (v *View) footerView() string {
-	var footerText string
-	scrollValue := v.viewport.ScrollPercent() * 100
-	footerText += v.processor.Footer()
-	footerText += locale.Tl("footer_scroll", "... {{.V0}}% scrolled, use arrow and page keys to scroll. Press Q to quit.", strconv.Itoa(int(scrollValue)))
-	return lipgloss.NewStyle().Render(footerText)
+func (v *view) setFooterMessage(msg string) {
+	v.footerMessage = msg
 }
 
-func RunView(view *View) error {
-	p := tea.NewProgram(view)
-	_, err := p.Run()
-	return err
+func (v *view) footerView() string {
+	var footerText string
+	scrollValue := v.viewport.ScrollPercent() * 100
+	footerText += locale.Tl("footer_scroll", "... {{.V0}}% scrolled, use arrow and page keys to scroll. Press Q to quit.", strconv.Itoa(int(scrollValue)))
+	footerText += v.footerMessage
+	return lipgloss.NewStyle().Render(footerText)
 }
