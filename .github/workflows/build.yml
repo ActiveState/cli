@@ -29,7 +29,6 @@ env:
 
 # === JOBS ===
 jobs:
-
   # === OS Specific Job (runs on each OS) ===
   os_specific:
     name: ${{ matrix.sys.os }}
@@ -39,8 +38,8 @@ jobs:
         go-version:
           - 1.20.x
         sys:
-          - {os: ubuntu-20.04}
-          - {os: macos-11, shell: zsh}
+          - {os: ubuntu-latest}
+          - {os: macos-latest, shell: zsh}
           - {os: windows-2019}
       fail-fast: false
     runs-on: ${{ matrix.sys.os }}
@@ -131,6 +130,10 @@ jobs:
           parallelize "$(cat <<'EOF'
           [
             {
+                "ID": "Check-Format",
+                "Args": ["state", "run", "check-format"]
+            },
+            {
                 "ID": "Unit-Tests",
                 "Args": ["state", "run", "test", "-json", "2>&1"]
             },
@@ -167,6 +170,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+
+      - # === Unit Tests ===
+        name: Check Format
+        id: check_format
+        shell: bash
+        if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\"]'), github.ref)"
+        run: parallelize results Check-Format
 
       - # === Unit Tests ===
         name: Unit Tests
