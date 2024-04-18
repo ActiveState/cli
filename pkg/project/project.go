@@ -272,11 +272,20 @@ func NewLegacy(p *projectfile.Project) (*Project, error) {
 
 // Parse will parse the given projectfile and instantiate a Project struct with it
 func Parse(fpath string) (*Project, error) {
-	pjfile, err := projectfile.Parse(fpath)
+	pjfile, pjfileErr := projectfile.Parse(fpath)
+	if pjfileErr != nil && projectfile.IsFatalError(pjfileErr) {
+		return nil, pjfileErr
+	}
+
+	project, err := New(pjfile, output.Get())
 	if err != nil {
+		if pjfileErr != nil {
+			err = errs.Pack(pjfileErr, err)
+		}
 		return nil, err
 	}
-	return New(pjfile, output.Get())
+
+	return project, pjfileErr
 }
 
 func Get() (*Project, error) {
@@ -303,16 +312,20 @@ func GetOnce() (*Project, error) {
 
 // FromPath will return the project that's located at the given path (this will walk up the directory tree until it finds the project)
 func FromPath(path string) (*Project, error) {
-	pjFile, err := projectfile.FromPath(path)
-	if err != nil {
-		return nil, err
+	pjFile, pjFileErr := projectfile.FromPath(path)
+	if pjFileErr != nil && projectfile.IsFatalError(pjFileErr) {
+		return nil, pjFileErr
 	}
+
 	project, err := New(pjFile, output.Get())
 	if err != nil {
+		if pjFileErr != nil {
+			err = errs.Pack(pjFileErr, err)
+		}
 		return nil, err
 	}
 
-	return project, nil
+	return project, pjFileErr
 }
 
 // FromEnv will return the project as per the environment configuration (eg. env var, working dir, global default, ..)
@@ -327,16 +340,20 @@ func FromEnv() (*Project, error) {
 
 // FromExactPath will return the project that's located at the given path without walking up the directory tree
 func FromExactPath(path string) (*Project, error) {
-	pjFile, err := projectfile.FromExactPath(path)
-	if err != nil {
-		return nil, err
+	pjFile, pjFileErr := projectfile.FromExactPath(path)
+	if pjFileErr != nil && projectfile.IsFatalError(pjFileErr) {
+		return nil, pjFileErr
 	}
+
 	project, err := New(pjFile, output.Get())
 	if err != nil {
+		if pjFileErr != nil {
+			err = errs.Pack(pjFileErr, err)
+		}
 		return nil, err
 	}
 
-	return project, nil
+	return project, pjFileErr
 }
 
 // Constant covers the constant structure

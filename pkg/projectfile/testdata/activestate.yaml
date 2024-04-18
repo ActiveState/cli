@@ -1,4 +1,4 @@
-project: https://platform.activestate.com/ActiveState/CodeIntel?branch=main
+project: https://platform.activestate.com/ActiveState/CodeIntel?branch=main&commitID=00010001-0001-0001-0001-000100010001
 namespace: github.com/ActiveState/CodeIntel
 environments: dev,qa,prod
 constants:
