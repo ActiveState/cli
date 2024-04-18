@@ -14,6 +14,11 @@ import (
 // https://activestatef.atlassian.net/browse/DX-2524
 var proj *project.Project
 
+type InvalidCommitID struct {
+	*locale.LocalizedError
+	CommitID string
+}
+
 func setupProject(pjpath string) error {
 	if proj != nil && proj.Dir() == pjpath {
 		return nil
@@ -31,11 +36,12 @@ func Get(pjpath string) (strfmt.UUID, error) {
 		return "", errs.Wrap(err, "Could not setup project")
 	}
 
-	if !strfmt.IsUUID(proj.LegacyCommitID()) {
-		return "", locale.NewInputError("err_commit_id_invalid", "Commit ID in activestate.yaml is not UUID formatted: {{.V0}}.", proj.LegacyCommitID())
+	commitID := proj.LegacyCommitID()
+	if !strfmt.IsUUID(commitID) {
+		return "", &InvalidCommitID{locale.NewInputError("err_commit_id_invalid", "", commitID), commitID}
 	}
 
-	return strfmt.UUID(proj.LegacyCommitID()), nil
+	return strfmt.UUID(commitID), nil
 }
 
 func Set(pjpath, commitID string) error {
