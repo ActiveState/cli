@@ -94,7 +94,7 @@ func severityReport(name, namespace string, vulns vulnerabilities) string {
 
 	for _, severity := range severities {
 		count, ok := counts[severity]
-		if !ok {
+		if !ok || count == 0 {
 			continue
 		}
 
