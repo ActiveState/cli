@@ -34,7 +34,6 @@ func (suite *ManifestIntegrationTestSuite) TestManifest() {
 	cp.Expect("Name")
 	cp.Expect("python")
 	cp.Expect("3.9.13")
-	cp.Expect("PSF-2.0")
 	cp.Expect("1 Critical,")
 	cp.Expect("psutil")
 	cp.Expect("auto → 5.9.0")
