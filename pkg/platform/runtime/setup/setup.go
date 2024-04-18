@@ -31,6 +31,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
+	buildplan2 "github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
@@ -155,7 +156,7 @@ type Setup struct {
 type Setuper interface {
 	// DeleteOutdatedArtifacts deletes outdated artifact as best as it can
 	DeleteOutdatedArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap, store.StoredArtifactMap) error
-	DownloadsFromBuild(build response.Build, artifacts map[strfmt.UUID]artifact.Artifact) (download []artifact.ArtifactDownload, err error)
+	DownloadsFromBuild(build response.BuildResponse, artifacts map[strfmt.UUID]artifact.Artifact) (download []artifact.ArtifactDownload, err error)
 }
 
 // ArtifactSetuper is the interface for an implementation of artifact setup functions
@@ -195,7 +196,7 @@ func (s *Setup) Solve() (*response.Commit, error) {
 	}
 
 	bp := bpModel.NewBuildPlannerModel(s.auth)
-	commit, err := bp.FetchCommitWithBuild(s.target.CommitUUID(), s.target.Owner(), s.target.Name(), nil)
+	commit, err := bp.FetchCommit(s.target.CommitUUID(), s.target.Owner(), s.target.Name(), nil)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to fetch build result")
 	}
@@ -543,7 +544,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(commit *response.Commit, i
 	}
 
 	// send analytics build event, if a new runtime has to be built in the cloud
-	if commit.Build.Status == types.Started {
+	if commit.Build.Status == buildplan2.Started {
 		s.analytics.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeBuild, dimensions)
 	}
 
@@ -1057,7 +1058,7 @@ func ExecDir(targetDir string) string {
 	return filepath.Join(targetDir, "exec")
 }
 
-func reusableArtifacts(requestedArtifacts []*types.Artifact, storedArtifacts store.StoredArtifactMap) store.StoredArtifactMap {
+func reusableArtifacts(requestedArtifacts []*buildplan2.Artifact, storedArtifacts store.StoredArtifactMap) store.StoredArtifactMap {
 	keep := make(store.StoredArtifactMap)
 
 	for _, a := range requestedArtifacts {

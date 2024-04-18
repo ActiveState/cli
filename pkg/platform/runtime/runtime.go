@@ -382,7 +382,7 @@ func IsRuntimeDir(dir string) bool {
 	return store.New(dir).HasMarker()
 }
 
-func (r *Runtime) BuildPlan() (*bpResp.Build, error) {
+func (r *Runtime) BuildPlan() (*bpResp.BuildResponse, error) {
 	runtimeStore := r.store
 	if runtimeStore == nil {
 		runtimeStore = store.New(r.target.Dir())

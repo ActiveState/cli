@@ -28,7 +28,7 @@ func NewFailedArtifactsFromBuild(buildStatus *headchef_models.V1BuildStatusRespo
 	return failed
 }
 
-func NewFailedArtifactsFromBuildPlan(build response.Build) []FailedArtifact {
+func NewFailedArtifactsFromBuildPlan(build response.BuildResponse) []FailedArtifact {
 	var failed []FailedArtifact
 	for _, a := range build.Artifacts {
 		// Currently, transient failures are handled as permanent failures.

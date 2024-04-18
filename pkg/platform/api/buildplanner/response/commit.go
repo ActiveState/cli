@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/go-openapi/strfmt"
 )
@@ -55,7 +56,7 @@ func (c *ProjectCommitResponse) PostProcess() error {
 	// Clean up empty targets
 	// The type aliasing in the query populates the response with emtpy targets that we should remove
 	build := c.Project.Commit.Build
-	var steps []*types.Step
+	var steps []*buildplan.Step
 	for _, step := range build.Steps {
 		if step.StepID == "" {
 			continue
@@ -63,7 +64,7 @@ func (c *ProjectCommitResponse) PostProcess() error {
 		steps = append(steps, step)
 	}
 
-	var sources []*types.Source
+	var sources []*buildplan.Source
 	for _, source := range build.Sources {
 		if source.NodeID == "" {
 			continue
@@ -71,7 +72,7 @@ func (c *ProjectCommitResponse) PostProcess() error {
 		sources = append(sources, source)
 	}
 
-	var artifacts []*types.Artifact
+	var artifacts []*buildplan.Artifact
 	for _, artifact := range build.Artifacts {
 		if artifact.NodeID == "" {
 			continue
@@ -86,7 +87,7 @@ func (c *ProjectCommitResponse) PostProcess() error {
 	return nil
 }
 
-func ProcessBuildError(build *Build, fallbackMessage string) error {
+func ProcessBuildError(build *BuildResponse, fallbackMessage string) error {
 	logging.Debug("ProcessBuildError: build.Type=%s", build.Type)
 	if build.Type == types.PlanningErrorType {
 		return processPlanningError(build.Message, build.SubErrors)
@@ -159,7 +160,7 @@ type Commit struct {
 	AtTime     strfmt.DateTime `json:"atTime"`
 	Expression json.RawMessage `json:"expr"`
 	CommitID   strfmt.UUID     `json:"commitId"`
-	Build      *Build          `json:"build"`
+	Build      *BuildResponse  `json:"build"`
 	*Error
 	*ParseError
 	*ForbiddenError

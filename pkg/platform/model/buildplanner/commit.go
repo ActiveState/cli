@@ -34,12 +34,12 @@ type StageCommitParams struct {
 	TimeStamp  *time.Time
 }
 
-func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {
+func (b *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {
 	logging.Debug("StageCommit, params: %+v", params)
 	expression := params.Expression
 	if expression == nil {
 		var err error
-		expression, err = bp.GetBuildExpression(params.ParentCommit)
+		expression, err = b.GetBuildExpression(params.ParentCommit)
 		if err != nil {
 			return "", errs.Wrap(err, "Failed to get build expression")
 		}
@@ -78,7 +78,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	// With the updated build expression call the stage commit mutation
 	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, params.Description, params.TimeStamp, expression)
 	resp := &response.StageCommitResult{}
-	err := bp.client.Run(request, resp)
+	err := b.client.Run(request, resp)
 	if err != nil {
 		return "", processBuildPlannerError(err, "failed to stage commit")
 	}
@@ -98,10 +98,10 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	return resp.Commit.CommitID, nil
 }
 
-func (bp *BuildPlanner) RevertCommit(organization, project, parentCommitID, commitID string) (strfmt.UUID, error) {
+func (b *BuildPlanner) RevertCommit(organization, project, parentCommitID, commitID string) (strfmt.UUID, error) {
 	logging.Debug("RevertCommit, organization: %s, project: %s, commitID: %s", organization, project, commitID)
 	resp := &response.RevertCommitResult{}
-	err := bp.client.Run(request.RevertCommit(organization, project, parentCommitID, commitID), resp)
+	err := b.client.Run(request.RevertCommit(organization, project, parentCommitID, commitID), resp)
 	if err != nil {
 		return "", processBuildPlannerError(err, "Failed to revert commit")
 	}
@@ -137,11 +137,11 @@ type MergeCommitParams struct {
 	Strategy  types.MergeStrategy
 }
 
-func (bp *BuildPlanner) MergeCommit(params *MergeCommitParams) (strfmt.UUID, error) {
+func (b *BuildPlanner) MergeCommit(params *MergeCommitParams) (strfmt.UUID, error) {
 	logging.Debug("MergeCommit, owner: %s, project: %s", params.Owner, params.Project)
 	request := request.MergeCommit(params.Owner, params.Project, params.TargetRef, params.OtherRef, params.Strategy)
 	resp := &response.MergeCommitResult{}
-	err := bp.client.Run(request, resp)
+	err := b.client.Run(request, resp)
 	if err != nil {
 		return "", processBuildPlannerError(err, "Failed to merge commit")
 	}

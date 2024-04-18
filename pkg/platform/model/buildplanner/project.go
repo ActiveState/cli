@@ -26,7 +26,7 @@ type CreateProjectParams struct {
 	Expr        *buildexpression.BuildExpression
 }
 
-func (bp *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID, error) {
+func (b *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID, error) {
 	logging.Debug("CreateProject, owner: %s, project: %s, language: %s, version: %s", params.Owner, params.Project, params.Language, params.Version)
 
 	expr := params.Expr
@@ -60,7 +60,7 @@ func (bp *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID,
 	// Create the project.
 	request := request.CreateProject(params.Owner, params.Project, params.Private, expr, params.Description)
 	resp := &response.CreateProjectResult{}
-	err := bp.client.Run(request, resp)
+	err := b.client.Run(request, resp)
 	if err != nil {
 		return "", processBuildPlannerError(err, "Failed to create project")
 	}

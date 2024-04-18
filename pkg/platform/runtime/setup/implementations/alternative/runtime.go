@@ -141,6 +141,6 @@ func (s *Setup) ResolveArtifactName(a artifact.ArtifactID) string {
 	return locale.T("alternative_unknown_pkg_name")
 }
 
-func (s *Setup) DownloadsFromBuild(build response.Build, artifacts map[strfmt.UUID]artifact.Artifact) (download []artifact.ArtifactDownload, err error) {
+func (s *Setup) DownloadsFromBuild(build response.BuildResponse, artifacts map[strfmt.UUID]artifact.Artifact) (download []artifact.ArtifactDownload, err error) {
 	return artifact.NewDownloadsFromBuildPlan(build, artifacts)
 }

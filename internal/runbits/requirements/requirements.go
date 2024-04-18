@@ -525,10 +525,10 @@ func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) 
 		return nil, nil, nil, errs.Wrap(err, "Could not get commit")
 	}
 
-	var oldBuildPlan *response.Build
+	var oldBuildPlan *response.BuildResponse
 	if oldCommit.ParentCommitID != "" {
 		bp := buildplanner.NewBuildPlannerModel(r.Auth)
-		oldCommit, err := bp.FetchCommitWithBuild(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
+		oldCommit, err := bp.FetchCommit(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
 		if err != nil {
 			return nil, nil, nil, errs.Wrap(err, "Failed to fetch build result")
 		}

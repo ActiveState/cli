@@ -9,10 +9,10 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-func (bp *BuildPlanner) GetBuildExpression(commitID string) (*buildexpression.BuildExpression, error) {
+func (b *BuildPlanner) GetBuildExpression(commitID string) (*buildexpression.BuildExpression, error) {
 	logging.Debug("GetBuildExpression, commitID: %s", commitID)
 	resp := &bpResp.BuildExpressionResponse{}
-	err := bp.client.Run(request.BuildExpression(commitID), resp)
+	err := b.client.Run(request.BuildExpression(commitID), resp)
 	if err != nil {
 		return nil, processBuildPlannerError(err, "failed to fetch build expression")
 	}
@@ -37,10 +37,10 @@ func (bp *BuildPlanner) GetBuildExpression(commitID string) (*buildexpression.Bu
 	return expression, nil
 }
 
-func (bp *BuildPlanner) GetBuildExpressionAndTime(commitID string) (*buildexpression.BuildExpression, *strfmt.DateTime, error) {
+func (b *BuildPlanner) GetBuildExpressionAndTime(commitID string) (*buildexpression.BuildExpression, *strfmt.DateTime, error) {
 	logging.Debug("GetBuildExpressionAndTime, commitID: %s", commitID)
 	resp := &bpResp.BuildExpressionResponse{}
-	err := bp.client.Run(request.BuildExpression(commitID), resp)
+	err := b.client.Run(request.BuildExpression(commitID), resp)
 	if err != nil {
 		return nil, nil, processBuildPlannerError(err, "failed to fetch build expression")
 	}

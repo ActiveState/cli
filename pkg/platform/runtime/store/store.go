@@ -268,13 +268,13 @@ func (s *Store) BuildPlanRaw() ([]byte, error) {
 	return data, nil
 }
 
-func (s *Store) BuildPlan() (*response.Build, error) {
+func (s *Store) BuildPlan() (*response.BuildResponse, error) {
 	data, err := s.BuildPlanRaw()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get build plan file.")
 	}
 
-	var buildPlan response.Build
+	var buildPlan response.BuildResponse
 	err = json.Unmarshal(data, &buildPlan)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not parse build plan file.")
@@ -282,7 +282,7 @@ func (s *Store) BuildPlan() (*response.Build, error) {
 	return &buildPlan, err
 }
 
-func (s *Store) StoreBuildPlan(build *response.Build) error {
+func (s *Store) StoreBuildPlan(build *response.BuildResponse) error {
 	data, err := json.Marshal(build)
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal buildPlan.")

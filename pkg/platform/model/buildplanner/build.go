@@ -11,10 +11,12 @@ import (
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/graphql"
 	"github.com/go-openapi/strfmt"
 )
@@ -32,10 +34,30 @@ func (c *client) Run(req gqlclient.Request, resp interface{}) error {
 	return c.gqlClient.Run(req, resp)
 }
 
-func (bp *BuildPlanner) FetchCommitWithBuild(commitID strfmt.UUID, owner, project string, target *string) (*response.Commit, error) {
+func (b *BuildPlanner) FetchBuild(commitID strfmt.UUID, owner, project string, target *string) (
+	*buildplan.BuildPlan, *buildexpression.BuildExpression, *response.Commit, error) {
+	commit, err := b.FetchCommit(commitID, owner, project, target)
+	if err != nil {
+		return nil, nil, nil, errs.Wrap(err, "failed to fetch commit")
+	}
+
+	bp, err := buildplan.Unmarshal(commit.Build.RawMessage)
+	if err != nil {
+		return nil, nil, nil, errs.Wrap(err, "failed to unmarshal build plan")
+	}
+
+	expression, err := buildexpression.New(commit.Expression)
+	if err != nil {
+		return nil, nil, nil, errs.Wrap(err, "failed to parse build expression")
+	}
+
+	return bp, expression, commit, nil
+}
+
+func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, target *string) (*response.Commit, error) {
 	logging.Debug("FetchBuildResult, commitID: %s, owner: %s, project: %s", commitID, owner, project)
 	resp := &response.ProjectCommitResponse{}
-	err := bp.client.Run(request.ProjectCommit(commitID.String(), owner, project, target), resp)
+	err := b.client.Run(request.ProjectCommit(commitID.String(), owner, project, target), resp)
 	if err != nil {
 		return nil, processBuildPlannerError(err, "failed to fetch build plan")
 	}
@@ -43,8 +65,8 @@ func (bp *BuildPlanner) FetchCommitWithBuild(commitID strfmt.UUID, owner, projec
 	// The BuildPlanner will return a build plan with a status of
 	// "planning" if the build plan is not ready yet. We need to
 	// poll the BuildPlanner until the build is ready.
-	if resp.Project.Commit.Build.Status == types.Planning {
-		resp.Project.Commit.Build, err = bp.pollBuildPlanned(commitID.String(), owner, project, target)
+	if resp.Project.Commit.Build.Status == buildplan.Planning {
+		resp.Project.Commit.Build, err = b.pollBuildPlanned(commitID.String(), owner, project, target)
 		if err != nil {
 			return nil, errs.Wrap(err, "failed to poll build plan")
 		}
@@ -161,13 +183,13 @@ func VersionStringToRequirements(version string) ([]types.VersionRequirement, er
 }
 
 // pollBuildPlanned polls the buildplan until it has passed the planning stage (ie. it's either planned or further along).
-func (bp *BuildPlanner) pollBuildPlanned(commitID, owner, project string, target *string) (*response.Build, error) {
+func (b *BuildPlanner) pollBuildPlanned(commitID, owner, project string, target *string) (*response.BuildResponse, error) {
 	resp := &response.ProjectCommitResponse{}
 	ticker := time.NewTicker(pollInterval)
 	for {
 		select {
 		case <-ticker.C:
-			err := bp.client.Run(request.ProjectCommit(commitID, owner, project, target), resp)
+			err := b.client.Run(request.ProjectCommit(commitID, owner, project, target), resp)
 			if err != nil {
 				return nil, processBuildPlannerError(err, "failed to fetch build plan")
 			}
@@ -178,7 +200,7 @@ func (bp *BuildPlanner) pollBuildPlanned(commitID, owner, project string, target
 
 			build := resp.Project.Commit.Build
 
-			if build.Status != types.Planning {
+			if build.Status != buildplan.Planning {
 				return build, nil
 			}
 		case <-time.After(pollTimeout):
@@ -188,7 +210,7 @@ func (bp *BuildPlanner) pollBuildPlanned(commitID, owner, project string, target
 }
 
 type ErrFailedArtifacts struct {
-	Artifacts map[strfmt.UUID]*types.Artifact
+	Artifacts map[strfmt.UUID]*buildplan.Artifact
 }
 
 func (e ErrFailedArtifacts) Error() string {
@@ -196,14 +218,14 @@ func (e ErrFailedArtifacts) Error() string {
 }
 
 // WaitForBuild polls the build until it has passed the completed stage (ie. it's either successful or failed).
-func (bp *BuildPlanner) WaitForBuild(commitID strfmt.UUID, owner, project string, target *string) error {
-	failedArtifacts := map[strfmt.UUID]*types.Artifact{}
+func (b *BuildPlanner) WaitForBuild(commitID strfmt.UUID, owner, project string, target *string) error {
+	failedArtifacts := map[strfmt.UUID]*buildplan.Artifact{}
 	resp := &response.ProjectCommitResponse{}
 	ticker := time.NewTicker(pollInterval)
 	for {
 		select {
 		case <-ticker.C:
-			err := bp.client.Run(request.ProjectCommit(commitID.String(), owner, project, target), resp)
+			err := b.client.Run(request.ProjectCommit(commitID.String(), owner, project, target), resp)
 			if err != nil {
 				return processBuildPlannerError(err, "failed to fetch build plan")
 			}
@@ -215,7 +237,7 @@ func (bp *BuildPlanner) WaitForBuild(commitID strfmt.UUID, owner, project string
 			build := resp.Project.Commit.Build
 
 			// If the build status is planning it may not have any artifacts yet.
-			if build.Status == types.Planning {
+			if build.Status == buildplan.Planning {
 				continue
 			}
 
@@ -240,7 +262,7 @@ func (bp *BuildPlanner) WaitForBuild(commitID strfmt.UUID, owner, project string
 			}
 
 			// If the build status is completed then we are done.
-			if build.Status == types.Completed {
+			if build.Status == buildplan.Completed {
 				if len(failedArtifacts) != 0 {
 					return ErrFailedArtifacts{failedArtifacts}
 				}

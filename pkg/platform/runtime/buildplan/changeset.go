@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
-func NewArtifactChangesetByBuildPlan(oldBuildPlan *response.Build, build *response.Build, requestedOnly, buildtimeClosure bool, cfg platformModel.Configurable, auth *authentication.Auth) (artifact.ArtifactChangeset, error) {
+func NewArtifactChangesetByBuildPlan(oldBuildPlan *response.BuildResponse, build *response.BuildResponse, requestedOnly, buildtimeClosure bool, cfg platformModel.Configurable, auth *authentication.Auth) (artifact.ArtifactChangeset, error) {
 	old, err := NewNamedMapFromBuildPlan(oldBuildPlan, buildtimeClosure, cfg, auth)
 	if err != nil {
 		return artifact.ArtifactChangeset{}, errs.Wrap(err, "failed to build map from old build plan")
@@ -24,7 +24,7 @@ func NewArtifactChangesetByBuildPlan(oldBuildPlan *response.Build, build *respon
 	return cs, nil
 }
 
-func NewBaseArtifactChangesetByBuildPlan(build *response.Build, requestedOnly, buildtimeClosure bool, cfg platformModel.Configurable, auth *authentication.Auth) (artifact.ArtifactChangeset, error) {
+func NewBaseArtifactChangesetByBuildPlan(build *response.BuildResponse, requestedOnly, buildtimeClosure bool, cfg platformModel.Configurable, auth *authentication.Auth) (artifact.ArtifactChangeset, error) {
 	new, err := NewNamedMapFromBuildPlan(build, buildtimeClosure, cfg, auth)
 	if err != nil {
 		return artifact.ArtifactChangeset{}, errs.Wrap(err, "failed to build map from new build plan")

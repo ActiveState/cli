@@ -43,7 +43,7 @@ func NewDownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) (
 	return downloads, nil
 }
 
-func NewDownloadsFromBuildPlan(build response.Build, artifacts map[strfmt.UUID]Artifact) ([]ArtifactDownload, error) {
+func NewDownloadsFromBuildPlan(build response.BuildResponse, artifacts map[strfmt.UUID]Artifact) ([]ArtifactDownload, error) {
 	var downloads []ArtifactDownload
 	for id := range artifacts {
 		for _, a := range build.Artifacts {
@@ -85,7 +85,7 @@ func NewDownloadsFromCamelBuild(buildStatus *headchef_models.V1BuildStatusRespon
 	return nil, errs.New("No download found in build response: %+v", buildStatus)
 }
 
-func NewDownloadsFromCamelBuildPlan(build response.Build, artifacts map[strfmt.UUID]Artifact) ([]ArtifactDownload, error) {
+func NewDownloadsFromCamelBuildPlan(build response.BuildResponse, artifacts map[strfmt.UUID]Artifact) ([]ArtifactDownload, error) {
 	var downloads []ArtifactDownload
 	for id := range artifacts {
 		for _, a := range build.Artifacts {
