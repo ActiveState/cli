@@ -38,7 +38,7 @@ func (suite *GitTestSuite) BeforeTest(suiteName, testName string) {
 	worktree, err := repo.Worktree()
 	suite.NoError(err, "could not get repository worktree")
 
-	projectURL := fmt.Sprintf("https://%s/%s/%s?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL, "test-owner", "test-project")
+	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, "test-owner", "test-project")
 
 	err = fileutils.WriteFile(filepath.Join(suite.dir, "activestate.yaml"), []byte("project: "+projectURL))
 	suite.NoError(err, "could not create a projectfile")

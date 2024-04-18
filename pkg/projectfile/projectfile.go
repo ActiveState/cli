@@ -73,8 +73,6 @@ type ErrorNoProjectFromEnv struct{ *locale.LocalizedError }
 
 type ErrorNoDefaultProject struct{ *locale.LocalizedError }
 
-var ErrInvalidCommitID = errs.New("no commit ID")
-
 // projectURL comprises all fields of a parsed project URL
 type projectURL struct {
 	Owner          string
@@ -451,12 +449,8 @@ func Parse(configFilepath string) (_ *Project, rerr error) {
 		project = secondaryProject
 	}
 
-	err = project.Init()
-	if err != nil {
-		if IsFatalError(err) {
-			return nil, errs.Wrap(err, "project.Init failed")
-		}
-		rerr = err
+	if err = project.Init(); err != nil {
+		return nil, errs.Wrap(err, "project.Init failed")
 	}
 
 	cfg, err := config.New()
@@ -491,14 +485,14 @@ func Parse(configFilepath string) (_ *Project, rerr error) {
 		}
 	}
 
-	return project, rerr
+	return project, nil
 }
 
 // Init initializes the parsedURL field from the project url string
 func (p *Project) Init() error {
-	parsedURL, parsedURLErr := p.parseURL()
-	if parsedURLErr != nil && IsFatalError(parsedURLErr) {
-		return locale.WrapInputError(parsedURLErr, "parse_project_file_url_err", "Could not parse project url: {{.V0}}.", p.Project)
+	parsedURL, err := p.parseURL()
+	if err != nil {
+		return locale.WrapInputError(err, "parse_project_file_url_err", "Could not parse project url: {{.V0}}.", p.Project)
 	}
 	p.parsedURL = parsedURL
 
@@ -520,7 +514,7 @@ func (p *Project) Init() error {
 		p.parsedVersion = parsedLock.Version
 	}
 
-	return parsedURLErr
+	return nil
 }
 
 func parse(configFilepath string) (*Project, error) {
@@ -668,11 +662,8 @@ func (p *Project) parseURL() (projectURL, error) {
 	return parseURL(p.Project)
 }
 
-func validateUUID(uuidStr string) error {
-	if uuidStr == "" || !strfmt.IsUUID(uuidStr) {
-		return ErrInvalidCommitID
-	}
-	return nil
+func (p *Project) HasCommitID() bool {
+	return strfmt.IsUUID(p.LegacyCommitID())
 }
 
 func parseURL(rawURL string) (projectURL, error) {
@@ -705,14 +696,6 @@ func parseURL(rawURL string) (projectURL, error) {
 
 	if b := q.Get("branch"); b != "" {
 		p.BranchName = b
-	}
-
-	if p.LegacyCommitID != "" {
-		if err := validateUUID(p.LegacyCommitID); err != nil {
-			return p, err
-		}
-	} else {
-		return p, ErrInvalidCommitID
 	}
 
 	return p, nil
@@ -883,7 +866,7 @@ func Get() (*Project, error) {
 
 	project, err := GetOnce()
 	if err != nil {
-		return project, err
+		return nil, err
 	}
 
 	err = project.Persist()
@@ -906,7 +889,7 @@ func GetOnce() (*Project, error) {
 
 	project, err := Parse(projectFilePath)
 	if err != nil {
-		return project, errs.Wrap(err, "Could not parse projectfile")
+		return nil, errs.Wrap(err, "Could not parse projectfile")
 	}
 
 	return project, nil
@@ -928,7 +911,7 @@ func FromPath(path string) (*Project, error) {
 	}
 	project, err := Parse(projectFilePath)
 	if err != nil {
-		return project, errs.Wrap(err, "Could not parse projectfile")
+		return nil, errs.Wrap(err, "Could not parse projectfile")
 	}
 
 	return project, nil
@@ -950,14 +933,10 @@ func FromExactPath(path string) (*Project, error) {
 	}
 	project, err := Parse(projectFilePath)
 	if err != nil {
-		return project, errs.Wrap(err, "Could not parse projectfile")
+		return nil, errs.Wrap(err, "Could not parse projectfile")
 	}
 
 	return project, nil
-}
-
-func IsFatalError(err error) bool {
-	return !errors.Is(err, ErrInvalidCommitID)
 }
 
 // CreateParams are parameters that we create a custom activestate.yaml file from
@@ -1077,11 +1056,7 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		}
 	}
 
-	pj, err := Parse(params.path)
-	if !IsFatalError(err) {
-		err = nil // ignore things like ErrInvalidCommitID
-	}
-	return pj, err
+	return Parse(params.path)
 }
 
 func createHostFile(filePath, cachePath string) error {
@@ -1455,12 +1430,10 @@ func CleanProjectMapping(cfg ConfigGetter) {
 					// Only remove the project if the activestate.yaml is parseable and there is a namespace
 					// mismatch.
 					// (We do not want to punish anyone for a syntax error when manually editing the file.)
-					if proj, err := parse(configFile); err == nil {
-						if err := proj.Init(); err == nil || !IsFatalError(err) {
-							projNamespace := fmt.Sprintf("%s/%s", proj.Owner(), proj.Name())
-							if namespace != projNamespace {
-								removals = append(removals, i)
-							}
+					if proj, err := parse(configFile); err == nil && proj.Init() == nil {
+						projNamespace := fmt.Sprintf("%s/%s", proj.Owner(), proj.Name())
+						if namespace != projNamespace {
+							removals = append(removals, i)
 						}
 					}
 				}

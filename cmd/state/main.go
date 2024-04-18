@@ -183,12 +183,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	if pjPath != "" {
 		pjf, err := projectfile.FromPath(pjPath)
 		if err != nil {
-			if projectfile.IsFatalError(err) {
-				return err
-			} else if args[1] != "reset" {
-				return locale.NewInputError("err_bad_project_url_reset")
-			}
-			// otherwise, ignore things like invalid commit ID errors for `state reset`, which will fix them
+			return err
 		}
 		pj, err = project.New(pjf, out)
 		if err != nil {
@@ -254,6 +249,13 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 				)
 			}
 		}
+	}
+
+	// Centralize handling the lack of commit ID in the project to here.
+	// We cannot throw an error during projectfile parsing, because `state reset` needs a valid
+	// primer project struct to work with.
+	if childCmd != nil && childCmd.Name() != "reset" && pj != nil && !pj.Source().HasCommitID() {
+		return locale.NewInputError("err_bad_project_url_reset")
 	}
 
 	err = cmds.Execute(args[1:])

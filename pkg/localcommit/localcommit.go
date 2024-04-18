@@ -4,7 +4,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -23,7 +22,7 @@ func setupProject(pjpath string) error {
 	}
 	var err error
 	proj, err = project.FromPath(pjpath)
-	if err != nil && projectfile.IsFatalError(err) {
+	if err != nil {
 		return errs.Wrap(err, "Could not get project info to set up project")
 	}
 	return nil

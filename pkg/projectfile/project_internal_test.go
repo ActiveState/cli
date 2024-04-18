@@ -13,8 +13,7 @@ type ProjectInternalTestSuite struct {
 func (suite *ProjectInternalTestSuite) TestPassParseURL() {
 	// url pass without commitID
 	meta, err := parseURL("https://platform.activestate.com/Org/TestParseURL")
-	suite.Equal(err, ErrInvalidCommitID, "Should return an invalid commit ID error")
-	suite.False(IsFatalError(err), "Error should be non-fatal")
+	suite.NoError(err, "Should load project without issue.")
 	suite.Equal("Org", meta.Owner, "They should match")
 	suite.Equal("TestParseURL", meta.Name, "They should match")
 	suite.Equal("", meta.LegacyCommitID, "They should match")
@@ -30,8 +29,9 @@ func (suite *ProjectInternalTestSuite) TestPassParseLegacyURL() {
 }
 
 func (suite *ProjectInternalTestSuite) TestPassParseURLWithDots() {
+	// url pass including commitID
 	meta, err := parseURL("https://platform.activestate.com/Org.Name/Project.Name")
-	suite.False(IsFatalError(err), "Should load project without fatal error")
+	suite.NoError(err, "Should load project without issue.")
 	suite.Equal("Org.Name", meta.Owner, "They should match")
 	suite.Equal("Project.Name", meta.Name, "They should match")
 	suite.Equal("", meta.LegacyCommitID, "They should match")
@@ -50,7 +50,6 @@ func (suite *ProjectInternalTestSuite) TestFailParseURL() {
 	// url fail
 	_, err := parseURL("Thisisnotavalidaprojecturl")
 	suite.Error(err, "This should fail.")
-	suite.True(IsFatalError(err), "It should be a fatal error")
 }
 
 func Test_ProjectInternalTestSuite(t *testing.T) {
