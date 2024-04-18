@@ -109,7 +109,6 @@ func (m *Manifest) fetchArtifacts() ([]*artifact.Artifact, error) {
 		return nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
 	}
 
-	// This shouldn't happen, but it's good to warn the user if it does
 	if rt.NeedsUpdate() {
 		m.out.Notice(locale.T("manifest_runtime_needs_update"))
 	}

@@ -164,8 +164,6 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newArtifactsDownloadCommand(prime),
 	)
 
-	manifestCmd := newManifestCommmand(prime)
-
 	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
 		newHelloCommand(prime),
@@ -217,7 +215,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newCommitCommand(prime),
 		newPublish(prime),
 		newEvalCommand(prime),
-		manifestCmd,
+		newManifestCommmand(prime),
 		artifactsCmd,
 	)
 

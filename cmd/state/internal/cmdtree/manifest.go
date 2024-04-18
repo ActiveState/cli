@@ -23,7 +23,6 @@ func newManifestCommmand(prime *primer.Values) *captain.Command {
 	)
 
 	cmd.SetGroup(PackagesGroup)
-	cmd.SetAliases("manifest")
 	cmd.SetSupportsStructuredOutput()
 
 	return cmd
