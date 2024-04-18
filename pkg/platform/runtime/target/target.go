@@ -35,6 +35,7 @@ const (
 	TriggerPackage            Trigger = "package"
 	TriggerLanguage           Trigger = "language"
 	TriggerPlatform           Trigger = "platform"
+	TriggerManifest           Trigger = "manifest"
 	TriggerPull               Trigger = "pull"
 	TriggerRefresh            Trigger = "refresh"
 	TriggerReset              Trigger = "reset"

@@ -103,7 +103,7 @@ func (m *Manifest) fetchArtifacts() ([]*artifact.Artifact, error) {
 		return nil, nil
 	}
 
-	target := target.NewProjectTarget(m.project, nil, target.TriggerPackage)
+	target := target.NewProjectTarget(m.project, nil, target.TriggerManifest)
 	rt, err := runtime.New(target, m.analytics, m.svcModel, m.auth, m.cfg, m.out)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
