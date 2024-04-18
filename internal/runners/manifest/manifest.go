@@ -59,20 +59,9 @@ func (m *Manifest) Run() (rerr error) {
 
 	m.out.Notice(locale.Tl("manifest_operating_on_project", "Operating on project: [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET]\n", m.project.Namespace().String(), m.project.Dir()))
 
-	commitID, err := localcommit.Get(m.project.Dir())
+	reqs, err := m.fetchRequirements()
 	if err != nil {
-		return errs.Wrap(err, "Could not get commit ID")
-	}
-
-	bp := model.NewBuildPlannerModel(m.auth)
-	expr, _, err := bp.GetBuildExpressionAndTime(commitID.String())
-	if err != nil {
-		return errs.Wrap(err, "Could not get remote build expr and time")
-	}
-
-	exprReqs, err := expr.Requirements()
-	if err != nil {
-		return errs.Wrap(err, "Could not get requirements")
+		return errs.Wrap(err, "Could not fetch requirements")
 	}
 
 	artifacts, err := m.fetchArtifacts()
@@ -80,26 +69,42 @@ func (m *Manifest) Run() (rerr error) {
 		return errs.Wrap(err, "Could not fetch artifacts")
 	}
 
-	var vulns vulnerabilities
-	if m.auth.Authenticated() {
-		vulns, err = m.fetchVulns(exprReqs)
-		if err != nil {
-			return errs.Wrap(err, "Could not fetch vulnerabilities")
-		}
-	}
-
-	reqs, err := newRequirementsOutput(exprReqs, artifacts, vulns)
+	vulns, err := m.fetchVulnerabilities(reqs)
 	if err != nil {
-		return errs.Wrap(err, "Could not get requirements output")
+		return errs.Wrap(err, "Could not fetch vulnerabilities")
 	}
 
-	m.out.Print(reqs)
+	m.out.Print(requirements{newRequirements(reqs, artifacts, vulns)})
+
+	if len(vulns) > 0 {
+		m.out.Notice(locale.Tl("manifest_vulnerabilities_info", "\nFor CVE info run '[ACTIONABLE]state security[/RESET]'"))
+	}
 
 	return nil
 }
 
+func (m *Manifest) fetchRequirements() ([]bpModel.Requirement, error) {
+	commitID, err := localcommit.Get(m.project.Dir())
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get commit ID")
+	}
+
+	bp := model.NewBuildPlannerModel(m.auth)
+	expr, _, err := bp.GetBuildExpressionAndTime(commitID.String())
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get remote build expr and time")
+	}
+
+	reqs, err := expr.Requirements()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get requirements")
+	}
+
+	return reqs, nil
+}
+
 func (m *Manifest) fetchArtifacts() ([]*artifact.Artifact, error) {
-	if m.project == nil || strings.EqualFold(os.Getenv(constants.DisableRuntime), "true") {
+	if strings.EqualFold(os.Getenv(constants.DisableRuntime), "true") {
 		return nil, nil
 	}
 
@@ -127,7 +132,11 @@ func (v vulnerabilities) addVulnerability(name, namespace string, vulns *model.V
 	v[fmt.Sprintf("%s/%s", namespace, name)] = vulns
 }
 
-func (m *Manifest) fetchVulns(reqs []bpModel.Requirement) (vulnerabilities, error) {
+func (m *Manifest) fetchVulnerabilities(reqs []bpModel.Requirement) (vulnerabilities, error) {
+	if !m.auth.Authenticated() {
+		return nil, nil
+	}
+
 	var ingredients []*request.Ingredient
 	for _, req := range reqs {
 		var version string
@@ -144,7 +153,7 @@ func (m *Manifest) fetchVulns(reqs []bpModel.Requirement) (vulnerabilities, erro
 
 	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(m.auth, ingredients)
 	if err != nil {
-		return nil, errs.Wrap(err, "Failed to fetch vulnerabilities")
+		return nil, errs.Wrap(err, "Failed to fetch ingredient vulnerabilities")
 	}
 
 	vulns := make(vulnerabilities)

@@ -14,70 +14,108 @@ import (
 )
 
 type requirement struct {
-	NameOutput      string `json:"name" locale:"manifest_name,Name"`
-	VersionOutput   string `json:"version" locale:"manifest_version,Version"`
-	Vulnerabilities string `json:"vulnerabilities" locale:"manifest_vulnerabilities,Vulnerabilities (CVEs)" opts:"omitEmpty"`
-	// Must be last of the output fields in order for our table renderer to include all the fields before it
-	NamespaceOutput string `json:"namespace" locale:"manifest_namespace,Namespace" opts:"omitEmpty,separateLine"`
-
-	// These fields are used for internal processing
-	name      string
-	namespace string
+	Name            string `json:"name"`
+	Namespace       string `json:"namespace"`
+	Version         string `json:"version"`
+	Vulnerabilities string `json:"vulnerabilities"`
 }
 
-type requirementsOutput struct {
+type requirements struct {
 	Requirements []*requirement `json:"requirements"`
 }
 
-func newRequirementsOutput(reqs []model.Requirement, artifacts []*artifact.Artifact, vulns vulnerabilities) (requirementsOutput, error) {
+func newRequirements(reqs []model.Requirement, artifacts []*artifact.Artifact, vulns vulnerabilities) []*requirement {
 	var requirements []*requirement
 	for _, req := range reqs {
-		r := &requirement{
-			NameOutput: locale.Tl("manifest_name", "[ACTIONABLE]{{.V0}}[/RESET]", req.Name),
-			namespace:  req.Namespace,
-			name:       req.Name,
-		}
-
-		var version string
-		if req.VersionRequirement != nil {
-			version = locale.Tl("manifest_constraint_resolved", "[CYAN]{{.V0}}[/RESET]", platformModel.BuildPlannerVersionConstraintsToString(req.VersionRequirement))
-		} else {
-			version = locale.Tl("manifest_constraint_auto", "[CYAN]auto[/RESET]")
-			for _, a := range artifacts {
-				if a.Namespace == req.Namespace && a.Name == req.Name {
-					version = locale.Tl("manifest_constraint_resolved", "[CYAN]{{.V0}}[/RESET] → [CYAN]{{.V1}}[/RESET]", version, *a.Version)
-					break
-				}
-			}
-		}
-		r.VersionOutput = version
-
-		if platformModel.IsCustomNamespace(req.Namespace) {
-			r.NamespaceOutput = locale.Tl("manifest_namespace", " └─ [DISABLED]namespace:[/RESET] [CYAN]{{.V0}}[/RESET]", req.Namespace)
-		}
-
-		requirements = append(requirements, r)
+		requirements = append(requirements, &requirement{
+			Name:            req.Name,
+			Namespace:       includeNamespace(req.Namespace),
+			Version:         resolveVersion(req, artifacts),
+			Vulnerabilities: severityReport(req.Name, req.Namespace, vulns),
+		})
 	}
 
-	addVulnerabilities(requirements, vulns)
-	return requirementsOutput{Requirements: requirements}, nil
+	return requirements
 }
 
-func (o requirementsOutput) MarshalOutput(f output.Format) interface{} {
-	return o.Requirements
+func (o requirements) MarshalOutput(f output.Format) interface{} {
+	type requirementOutput struct {
+		Name            string `locale:"manifest_name,Name"`
+		Version         string `locale:"manifest_version,Version"`
+		Vulnerabilities string `locale:"manifest_vulnerabilities,Vulnerabilities (CVEs)" opts:"omitEmpty"`
+		// Must be last of the output fields in order for our table renderer to include all the fields before it
+		Namespace string `locale:"manifest_namespace,Namespace" opts:"omitEmpty,separateLine"`
+	}
+
+	var requirementsOutput []requirementOutput
+	for _, req := range o.Requirements {
+		requirementOutput := requirementOutput{
+			Name:            locale.Tl("manifest_name", "[ACTIONABLE]{{.V0}}[/RESET]", req.Name),
+			Version:         req.Version,
+			Vulnerabilities: req.Vulnerabilities,
+		}
+
+		if req.Namespace != "" {
+			requirementOutput.Namespace = locale.Tl("manifest_namespace", " └─ [DISABLED]namespace:[/RESET] [CYAN]{{.V0}}[/RESET]", req.Namespace)
+		}
+
+		requirementsOutput = append(requirementsOutput, requirementOutput)
+	}
+
+	return requirementsOutput
 }
 
-func (o requirementsOutput) MarshalStructured(_ output.Format) interface{} {
+func (o requirements) MarshalStructured(_ output.Format) interface{} {
 	return o
 }
 
-func addVulnerabilities(requirements []*requirement, vulns vulnerabilities) {
-	for _, req := range requirements {
-		req.Vulnerabilities = severityReport(req.name, req.namespace, vulns)
+func includeNamespace(namespace string) string {
+	if !isCustomNamespace(namespace) {
+		return ""
 	}
+
+	return namespace
+}
+
+func isCustomNamespace(ns string) bool {
+	supportedNamespaces := []platformModel.NamespaceType{
+		platformModel.NamespacePackage,
+		platformModel.NamespaceBundle,
+		platformModel.NamespaceLanguage,
+		platformModel.NamespacePlatform,
+	}
+
+	for _, n := range supportedNamespaces {
+		if platformModel.NamespaceMatch(ns, n.Matchable()) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func resolveVersion(req model.Requirement, artifacts []*artifact.Artifact) string {
+	var version string
+	if req.VersionRequirement != nil {
+		version = locale.Tl("manifest_constraint_resolved", "[CYAN]{{.V0}}[/RESET]", platformModel.BuildPlannerVersionConstraintsToString(req.VersionRequirement))
+	} else {
+		version = locale.Tl("manifest_constraint_auto", "[CYAN]auto[/RESET]")
+		for _, a := range artifacts {
+			if a.Namespace == req.Namespace && a.Name == req.Name {
+				version = locale.Tl("manifest_constraint_resolved", "[CYAN]{{.V0}}[/RESET] → [CYAN]{{.V1}}[/RESET]", version, *a.Version)
+				break
+			}
+		}
+	}
+
+	return version
 }
 
 func severityReport(name, namespace string, vulns vulnerabilities) string {
+	if vulns == nil {
+		return ""
+	}
+
 	vuln, ok := vulns.getVulnerability(name, namespace)
 	if !ok {
 		return locale.Tl("manifest_vulnerability_none", "[DISABLED]None detected[/RESET]")
