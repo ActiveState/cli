@@ -32,7 +32,7 @@ type requirementsOutput struct {
 	Requirements []*requirement `json:"requirements"`
 }
 
-func newRequirementsOutput(reqs []model.Requirement, artifacts []*artifact.Artifact, vulns vulns, auth *authentication.Auth) (requirementsOutput, error) {
+func newRequirementsOutput(reqs []model.Requirement, artifacts []*artifact.Artifact, vulns vulnerabilities, auth *authentication.Auth) (requirementsOutput, error) {
 	var requirements []*requirement
 	for _, req := range reqs {
 		r := &requirement{
@@ -82,7 +82,7 @@ func newRequirementsOutput(reqs []model.Requirement, artifacts []*artifact.Artif
 		requirements = append(requirements, r)
 	}
 
-	if err := addVulns(requirements, vulns); err != nil {
+	if err := addVulnerabilities(requirements, vulns); err != nil {
 		return requirementsOutput{}, errs.Wrap(err, "Failed to add vulnerabilities")
 	}
 
@@ -97,9 +97,9 @@ func (o requirementsOutput) MarshalStructured(_ output.Format) interface{} {
 	return o
 }
 
-func addVulns(requirements []*requirement, vulns vulns) error {
+func addVulnerabilities(requirements []*requirement, vulns vulnerabilities) error {
 	for _, req := range requirements {
-		vuln, ok := vulns.getVulns(req.name, req.namespace)
+		vuln, ok := vulns.getVulnerability(req.name, req.namespace)
 		if !ok {
 			req.Vulnerabilities = locale.Tl("manifest_vulnerability_none", "[DISABLED]None detected[/RESET]")
 			continue

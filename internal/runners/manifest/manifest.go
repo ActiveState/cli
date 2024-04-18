@@ -80,7 +80,7 @@ func (m *Manifest) Run() (rerr error) {
 		return errs.Wrap(err, "Could not fetch artifacts")
 	}
 
-	var vulns vulns
+	var vulns vulnerabilities
 	if m.auth.Authenticated() {
 		vulns, err = m.fetchVulns(exprReqs)
 		if err != nil {
@@ -116,18 +116,18 @@ func (m *Manifest) fetchArtifacts() ([]*artifact.Artifact, error) {
 	return rt.ResolvedArtifacts()
 }
 
-type vulns map[string]*model.VulnerabilityIngredient
+type vulnerabilities map[string]*model.VulnerabilityIngredient
 
-func (v vulns) getVulns(name, namespace string) (*model.VulnerabilityIngredient, bool) {
+func (v vulnerabilities) getVulnerability(name, namespace string) (*model.VulnerabilityIngredient, bool) {
 	vuln, ok := v[fmt.Sprintf("%s/%s", namespace, name)]
 	return vuln, ok
 }
 
-func (v vulns) addVulns(name, namespace string, vuln *model.VulnerabilityIngredient) {
-	v[fmt.Sprintf("%s/%s", namespace, name)] = vuln
+func (v vulnerabilities) addVulnerability(name, namespace string, vulns *model.VulnerabilityIngredient) {
+	v[fmt.Sprintf("%s/%s", namespace, name)] = vulns
 }
 
-func (m *Manifest) fetchVulns(reqs []bpModel.Requirement) (vulns, error) {
+func (m *Manifest) fetchVulns(reqs []bpModel.Requirement) (vulnerabilities, error) {
 	var ingredients []*request.Ingredient
 	for _, req := range reqs {
 		var version string
@@ -142,14 +142,14 @@ func (m *Manifest) fetchVulns(reqs []bpModel.Requirement) (vulns, error) {
 		})
 	}
 
-	vulnerabilities, err := model.FetchVulnerabilitiesForIngredients(m.auth, ingredients)
+	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(m.auth, ingredients)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to fetch vulnerabilities")
 	}
 
-	vulns := make(vulns)
-	for _, vuln := range vulnerabilities {
-		vulns.addVulns(vuln.Name, vuln.PrimaryNamespace, vuln)
+	vulns := make(vulnerabilities)
+	for _, vuln := range ingredientVulnerabilities {
+		vulns.addVulnerability(vuln.Name, vuln.PrimaryNamespace, vuln)
 	}
 
 	return vulns, nil
