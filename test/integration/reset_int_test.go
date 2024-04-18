@@ -1,12 +1,8 @@
 package integration
 
 import (
-	"bytes"
-	"path/filepath"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -86,33 +82,6 @@ func (suite *ResetIntegrationTestSuite) TestJSON() {
 
 	cp = ts.Spawn("reset", "main", "-o", "json")
 	cp.Expect(`{"commitID":"35af7414-b44b-4fd7-aa93-2ecad337ed2b"}`)
-	cp.ExpectExitCode(0)
-}
-
-func (suite *ResetIntegrationTestSuite) TestRevertInvalidURL() {
-	suite.OnlyRunForTags(tagsuite.Reset)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	commitID := "3a2d095d-efd6-4be0-b824-21de94fc4ad6"
-
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Reset#"+commitID, ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out")
-	cp.ExpectExitCode(0)
-
-	contents := fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	contents = bytes.Replace(contents, []byte("3a2d095d-efd6-4be0-b824-21de94fc4ad6"), []byte(""), 1)
-	err := fileutils.WriteFile(filepath.Join(ts.Dirs.Work, constants.ConfigFileName), contents)
-	suite.Require().NoError(err)
-
-	cp = ts.Spawn("install", "requests")
-	cp.Expect("Invalid value")
-	cp.Expect("Please run 'state reset' to fix it.")
-	cp.ExpectNotExitCode(0)
-
-	cp = ts.Spawn("reset", "-n")
-	cp.Expect("Successfully reset to commit: " + commitID)
 	cp.ExpectExitCode(0)
 }
 

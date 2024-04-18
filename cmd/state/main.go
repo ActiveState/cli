@@ -251,13 +251,6 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		}
 	}
 
-	// Centralize handling the lack of commit ID in the project to here.
-	// We cannot throw an error during projectfile parsing, because `state reset` needs a valid
-	// primer project struct to work with.
-	if childCmd != nil && childCmd.Name() != "reset" && pj != nil && !pj.Source().HasCommitID() {
-		return locale.NewInputError("err_bad_project_url_reset")
-	}
-
 	err = cmds.Execute(args[1:])
 	if err != nil && !errs.IsSilent(err) {
 		cmdName := ""

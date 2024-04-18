@@ -73,7 +73,7 @@ func (r *Reset) Run(params *Params) error {
 			return locale.WrapError(err, "err_reset_latest_commit", "Could not get latest commit ID")
 		}
 		localCommitID, err := localcommit.Get(r.project.Dir())
-		if err != nil && !errs.Matches(err, &localcommit.InvalidCommitID{}) {
+		if err != nil {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
 		if *latestCommit == localCommitID {
@@ -105,7 +105,7 @@ func (r *Reset) Run(params *Params) error {
 	}
 
 	localCommitID, err := localcommit.Get(r.project.Dir())
-	if err != nil && !errs.Matches(err, &localcommit.InvalidCommitID{}) {
+	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 	r.out.Notice(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", commitID.String()))
