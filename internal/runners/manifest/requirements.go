@@ -6,7 +6,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	vulnModel "github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
@@ -18,7 +17,6 @@ import (
 type requirement struct {
 	NameOutput      string `json:"name" locale:"manifest_name,Name"`
 	VersionOutput   string `json:"version" locale:"manifest_version,Version"`
-	License         string `json:"license" locale:"manifest_license,License"`
 	Vulnerabilities string `json:"vulnerabilities" locale:"manifest_vulnerabilities,Vulnerabilities (CVEs)" opts:"omitEmpty"`
 	// Must be last of the output fields in order for our table renderer to include all the fields before it
 	NamespaceOutput string `json:"namespace" locale:"manifest_namespace,Namespace" opts:"omitEmpty,separateLine"`
@@ -54,26 +52,6 @@ func newRequirementsOutput(reqs []model.Requirement, artifacts []*artifact.Artif
 			}
 		}
 		r.VersionOutput = version
-
-		normalized, err := platformModel.FetchNormalizedName(req.Namespace, req.Name, auth)
-		if err != nil {
-			multilog.Error("Failed to normalize '%s': %v", req.Name, err)
-		}
-
-		packages, err := platformModel.SearchIngredientsStrict(req.Namespace, normalized, false, false, nil, auth)
-		if err != nil {
-			multilog.Error("Failed to search for '%s': %v", req.Name, err)
-		}
-
-		if len(packages) == 0 {
-			multilog.Error("No packages found for '%s'", req.Name)
-			r.License = locale.Tl("manifest_license", "[CYAN]UNKNOWN[/RESET]")
-		} else {
-			pkg := packages[0]
-			if pkg.LatestVersion != nil && pkg.LatestVersion.LicenseExpression != nil {
-				r.License = locale.Tl("manifest_license", "[CYAN]{{.V0}}[/RESET]", *pkg.LatestVersion.LicenseExpression)
-			}
-		}
 
 		if platformModel.IsCustomNamespace(req.Namespace) {
 			r.NamespaceOutput = locale.Tl("manifest_namespace", " └─ [DISABLED]namespace:[/RESET] [CYAN]{{.V0}}[/RESET]", req.Namespace)
