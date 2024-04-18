@@ -9,12 +9,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/testhelpers/suite"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -198,7 +197,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 	if runtime.GOOS == "windows" {
 		customRTPath, err = fileutils.GetLongPathName(customRTPath)
 		suite.Require().NoError(err)
-		customRTPath = strings.ToLower(customRTPath)
+		customRTPath = strings.ToUpper(customRTPath[:1]) + strings.ToLower(customRTPath[1:]) // capitalize drive letter
 	}
 	cp.Expect(customRTPath, e2e.RuntimeSourcingTimeoutOpt)
 }
