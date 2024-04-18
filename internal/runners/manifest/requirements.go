@@ -2,14 +2,13 @@ package manifest
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	vulnModel "github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	platformModel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
@@ -30,7 +29,7 @@ type requirementsOutput struct {
 	Requirements []*requirement `json:"requirements"`
 }
 
-func newRequirementsOutput(reqs []model.Requirement, artifacts []*artifact.Artifact, vulns vulnerabilities, auth *authentication.Auth) (requirementsOutput, error) {
+func newRequirementsOutput(reqs []model.Requirement, artifacts []*artifact.Artifact, vulns vulnerabilities) (requirementsOutput, error) {
 	var requirements []*requirement
 	for _, req := range reqs {
 		r := &requirement{
@@ -60,10 +59,7 @@ func newRequirementsOutput(reqs []model.Requirement, artifacts []*artifact.Artif
 		requirements = append(requirements, r)
 	}
 
-	if err := addVulnerabilities(requirements, vulns); err != nil {
-		return requirementsOutput{}, errs.Wrap(err, "Failed to add vulnerabilities")
-	}
-
+	addVulnerabilities(requirements, vulns)
 	return requirementsOutput{Requirements: requirements}, nil
 }
 
@@ -75,50 +71,38 @@ func (o requirementsOutput) MarshalStructured(_ output.Format) interface{} {
 	return o
 }
 
-func addVulnerabilities(requirements []*requirement, vulns vulnerabilities) error {
+func addVulnerabilities(requirements []*requirement, vulns vulnerabilities) {
 	for _, req := range requirements {
-		vuln, ok := vulns.getVulnerability(req.name, req.namespace)
+		req.Vulnerabilities = severityReport(req.name, req.namespace, vulns)
+	}
+}
+
+func severityReport(name, namespace string, vulns vulnerabilities) string {
+	vuln, ok := vulns.getVulnerability(name, namespace)
+	if !ok {
+		return locale.Tl("manifest_vulnerability_none", "[DISABLED]None detected[/RESET]")
+	}
+
+	counts := vuln.Vulnerabilities.Count()
+	var report []string
+	severities := []string{
+		vulnModel.SeverityCritical,
+		vulnModel.SeverityHigh,
+		vulnModel.SeverityMedium,
+		vulnModel.SeverityLow,
+	}
+
+	for _, severity := range severities {
+		count, ok := counts[severity]
 		if !ok {
-			req.Vulnerabilities = locale.Tl("manifest_vulnerability_none", "[DISABLED]None detected[/RESET]")
 			continue
 		}
 
-		counts := vuln.Vulnerabilities.Count()
-		var vulnReport []string
-		critical, ok := counts[vulnModel.SeverityCritical]
-		if ok && critical > 0 {
-			vulnReport = append(
-				vulnReport,
-				locale.Tl("manifest_vulnerability_critical", fmt.Sprintf("[RED]%d Critical[/RESET]", critical)),
-			)
-		}
-
-		high, ok := counts[vulnModel.SeverityHigh]
-		if ok && high > 0 {
-			vulnReport = append(
-				vulnReport,
-				locale.Tl("manifest_vulnerability_high", fmt.Sprintf("[ORANGE]%d High[/RESET]", high)),
-			)
-		}
-
-		medium, ok := counts[vulnModel.SeverityMedium]
-		if ok && medium > 0 {
-			vulnReport = append(
-				vulnReport,
-				locale.Tl("manifest_vulnerability_medium", fmt.Sprintf("[YELLOW]%d Medium[/RESET]", medium)),
-			)
-		}
-
-		low, ok := counts[vulnModel.SeverityLow]
-		if ok && low > 0 {
-			vulnReport = append(
-				vulnReport,
-				locale.Tl("manifest_vulnerability_low", fmt.Sprintf("[GREEN]%d Low[/RESET]", low)),
-			)
-		}
-
-		req.Vulnerabilities = strings.Join(vulnReport, ", ")
+		report = append(
+			report,
+			locale.Tr(fmt.Sprintf("manifest_vulnerability_%s", severity), strconv.Itoa(count)),
+		)
 	}
 
-	return nil
+	return strings.Join(report, ", ")
 }

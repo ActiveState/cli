@@ -88,7 +88,7 @@ func (m *Manifest) Run() (rerr error) {
 		}
 	}
 
-	reqs, err := newRequirementsOutput(exprReqs, artifacts, vulns, m.auth)
+	reqs, err := newRequirementsOutput(exprReqs, artifacts, vulns)
 	if err != nil {
 		return errs.Wrap(err, "Could not get requirements output")
 	}

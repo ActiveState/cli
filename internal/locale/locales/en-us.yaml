@@ -1597,3 +1597,11 @@ manifest_deprecation_warning:
     [WARNING]Warning:[/RESET] This command is deprecated, please use '[ACTIONABLE]state manfiest[/RESET]' instead.
 manifest_runtime_needs_update:
   other: "[WARNING]WARNING:[/RESET] Your runtime is out of date, in order to ensure an accurate manifest please run [ACTIONABLE]state refresh[/RESET].\n"
+manifest_vulnerability_critical:
+  other: "[RED]{{.V0}} Critical[/RESET]"
+manifest_vulnerability_high:
+  other: "[ORANGE]{{.V0}} High[/RESET]"
+manifest_vulnerability_medium:
+  other: "[YELLOW]{{.V0}} Medium[/RESET]"
+manifest_vulnerability_low:
+  other: "[GREEN]{{.V0}} Low[/RESET]"
