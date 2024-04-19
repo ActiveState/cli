@@ -1,7 +1,6 @@
 package manifest
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -74,7 +73,7 @@ func (m *Manifest) Run() (rerr error) {
 		return errs.Wrap(err, "Could not fetch vulnerabilities")
 	}
 
-	m.out.Print(requirements{newRequirements(reqs, artifacts, vulns)})
+	m.out.Print(newRequirements(reqs, artifacts, vulns))
 
 	if len(vulns) > 0 {
 		m.out.Notice(locale.Tl("manifest_vulnerabilities_info", "\nFor CVE info run '[ACTIONABLE]state security[/RESET]'"))
@@ -121,17 +120,6 @@ func (m *Manifest) fetchArtifacts() ([]*artifact.Artifact, error) {
 	return rt.ResolvedArtifacts()
 }
 
-type vulnerabilities map[string]*model.VulnerabilityIngredient
-
-func (v vulnerabilities) getVulnerability(name, namespace string) (*model.VulnerabilityIngredient, bool) {
-	vuln, ok := v[fmt.Sprintf("%s/%s", namespace, name)]
-	return vuln, ok
-}
-
-func (v vulnerabilities) addVulnerability(name, namespace string, vulns *model.VulnerabilityIngredient) {
-	v[fmt.Sprintf("%s/%s", namespace, name)] = vulns
-}
-
 func (m *Manifest) fetchVulnerabilities(reqs []bpModel.Requirement) (vulnerabilities, error) {
 	if !m.auth.Authenticated() {
 		return nil, nil
@@ -158,7 +146,9 @@ func (m *Manifest) fetchVulnerabilities(reqs []bpModel.Requirement) (vulnerabili
 
 	vulns := make(vulnerabilities)
 	for _, vuln := range ingredientVulnerabilities {
-		vulns.addVulnerability(vuln.Name, vuln.PrimaryNamespace, vuln)
+		vulns.addVulnerability(vuln.Name, vuln.PrimaryNamespace, &requirementVulnerabilities{
+			Count: vuln.Vulnerabilities.Count(),
+		})
 	}
 
 	return vulns, nil
