@@ -18,7 +18,6 @@ func (v *requirementVulnerabilities) String() string {
 		return locale.Tl("manifest_vulnerability_none", "[DISABLED]None detected[/RESET]")
 	}
 
-	counts := v.Count
 	var report []string
 	severities := []string{
 		model.SeverityCritical,
@@ -28,7 +27,7 @@ func (v *requirementVulnerabilities) String() string {
 	}
 
 	for _, severity := range severities {
-		count, ok := counts[severity]
+		count, ok := v.Count[severity]
 		if !ok || count == 0 {
 			continue
 		}
