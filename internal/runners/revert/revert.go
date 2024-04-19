@@ -76,7 +76,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 		commitID = remoteCommitID
 	}
 	if !strfmt.IsUUID(commitID) && !strings.EqualFold(commitID, remoteCommitID) {
-		return locale.NewInputError("err_invalid_commit_id", "Invalid commit ID")
+		return locale.NewInputError("err_revert_invalid_commit_id", "Invalid commit ID")
 	}
 	latestCommit, err := localcommit.Get(r.project.Dir())
 	if err != nil {
