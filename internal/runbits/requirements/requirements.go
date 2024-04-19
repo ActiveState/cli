@@ -385,7 +385,7 @@ func (r *RequirementOperation) validatePackage(requirement *Requirement) error {
 	}
 
 	requirement.originalRequirementName = requirement.Name
-	normalized, err := model.FetchNormalizedName(requirement.Namespace.String(), requirement.Name, r.Auth)
+	normalized, err := model.FetchNormalizedName(*requirement.Namespace, requirement.Name, r.Auth)
 	if err != nil {
 		multilog.Error("Failed to normalize '%s': %v", requirement.Name, err)
 	}

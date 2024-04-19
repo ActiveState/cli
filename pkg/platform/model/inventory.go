@@ -583,10 +583,10 @@ func FetchLatestRevisionTimeStamp(auth *authentication.Auth) (time.Time, error) 
 	return t, nil
 }
 
-func FetchNormalizedName(namespace string, name string, auth *authentication.Auth) (string, error) {
+func FetchNormalizedName(namespace Namespace, name string, auth *authentication.Auth) (string, error) {
 	client := inventory.Get(auth)
 	params := inventory_operations.NewNormalizeNamesParams()
-	params.SetNamespace(namespace)
+	params.SetNamespace(namespace.String())
 	params.SetNames(&inventory_models.UnnormalizedNames{Names: []string{name}})
 	params.SetHTTPClient(api.NewHTTPClient())
 	res, err := client.NormalizeNames(params, auth.ClientAuth())
