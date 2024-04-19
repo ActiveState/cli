@@ -10,7 +10,7 @@ import (
 )
 
 func rationalizeError(err *error) {
-	var invalidCommitIDErr *localcommit.InvalidCommitID
+	var errInvalidCommitID *localcommit.ErrInvalidCommitID
 
 	switch {
 	case err == nil:
@@ -27,9 +27,9 @@ func rationalizeError(err *error) {
 			errs.SetInput())
 
 	// Invalid commit ID.
-	case errors.As(*err, &invalidCommitIDErr):
+	case errors.As(*err, &errInvalidCommitID):
 		*err = errs.WrapUserFacing(*err,
-			locale.Tr("err_commit_id_invalid", invalidCommitIDErr.CommitID),
+			locale.Tr("err_commit_id_invalid", errInvalidCommitID.CommitID),
 			errs.SetInput())
 	}
 }

@@ -14,8 +14,8 @@ import (
 // https://activestatef.atlassian.net/browse/DX-2524
 var proj *project.Project
 
-type InvalidCommitID struct {
-	*locale.LocalizedError
+type ErrInvalidCommitID struct {
+	error
 	CommitID string
 }
 
@@ -38,7 +38,7 @@ func Get(pjpath string) (strfmt.UUID, error) {
 
 	commitID := proj.LegacyCommitID()
 	if !strfmt.IsUUID(commitID) {
-		return "", &InvalidCommitID{locale.NewInputError("err_commit_id_invalid", "", commitID), commitID}
+		return "", &ErrInvalidCommitID{errs.New("Invalid commit ID"), commitID}
 	}
 
 	return strfmt.UUID(commitID), nil
