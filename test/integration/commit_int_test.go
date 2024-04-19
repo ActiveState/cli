@@ -61,6 +61,13 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	)
 	cp.Expect("successfully created")
 	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("pkg"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("case ", e2e.RuntimeSourcingTimeoutOpt) // note: intentional trailing whitespace to not match 'casestyle'
+	cp.ExpectExitCode(0)
 }
 
 func (suite *CommitIntegrationTestSuite) TestCommitAtTimeChange() {
