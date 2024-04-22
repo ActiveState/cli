@@ -140,6 +140,14 @@ func (r *Runtime) validateBuildScript() error {
 		return nil
 	}
 
+	script, err := buildscript.ScriptFromProject(r.target)
+	if err != nil {
+		if errs.Matches(err, buildscript.ErrBuildscriptNotExist) {
+			return errs.Pack(err, NeedsBuildscriptResetError)
+		}
+		return errs.Wrap(err, "Could not get buildscript from project")
+	}
+
 	cachedCommitID, err := r.store.CommitID()
 	if err != nil {
 		logging.Debug("No commit ID to read; refresh needed")
@@ -149,14 +157,6 @@ func (r *Runtime) validateBuildScript() error {
 	if cachedCommitID != r.target.CommitUUID().String() {
 		logging.Debug("Runtime commit ID does not match project commit ID; refresh needed")
 		return nil
-	}
-
-	script, err := buildscript.ScriptFromProject(r.target)
-	if err != nil {
-		if errs.Matches(err, buildscript.ErrBuildscriptNotExist) {
-			return errs.Pack(err, NeedsBuildscriptResetError)
-		}
-		return errs.Wrap(err, "Could not get buildscript from project")
 	}
 
 	cachedScript, err := r.store.BuildScript()
