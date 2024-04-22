@@ -11,7 +11,7 @@ func (b *RawBuild) walkNodes(nodeIDs []strfmt.UUID, walk walkFunc) error {
 	lookup := make(map[strfmt.UUID]interface{})
 
 	for _, artifact := range b.Artifacts {
-		lookup[artifact.NodeID] = artifact
+		lookup[artifact.ArtifactID] = artifact
 	}
 	for _, step := range b.Steps {
 		lookup[step.StepID] = step

@@ -55,9 +55,13 @@ query ($commitID: String!, $organization: String!, $project: String!, $target: S
               sources: nodes {
                 ... on Source {
                   nodeId
+                  ingredientID
+                  ingredientVersionID
+                  revision
                   name
                   namespace
                   version
+                  licenses
                 }
               }
               steps: steps {

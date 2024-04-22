@@ -15,14 +15,14 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
@@ -120,50 +120,48 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 		b.out.Notice(locale.Tr("operating_message", b.project.NamespaceString(), b.project.Dir()))
 	}
 
-	terminalArtfMap, buildComplete, hasFailedArtifacts, err := getTerminalArtifactMap(
+	bp, err := getBuildPlan(
 		b.project, params.Namespace, params.CommitID, params.Target, b.auth, b.out)
 	if err != nil {
 		return errs.Wrap(err, "Could not get terminal artifact map")
 	}
 
-	platformMap, err := model.FetchPlatformsMap(b.auth)
+	platformMap, err := model.FetchPlatformsMap()
 	if err != nil {
 		return errs.Wrap(err, "Could not get platforms")
 	}
 
-	out := &StructuredOutput{HasFailedArtifacts: hasFailedArtifacts, BuildComplete: buildComplete}
-	for term, artifacts := range terminalArtfMap {
-		if !strings.Contains(term, "platform:") {
-			continue
-		}
-		platformUUID := strfmt.UUID(strings.TrimPrefix(term, "platform:"))
+	hasFailedArtifacts := len(bp.Artifacts()) != len(bp.Artifacts(buildplan.FilterSuccessfulArtifacts()))
+
+	out := &StructuredOutput{HasFailedArtifacts: hasFailedArtifacts, BuildComplete: bp.IsBuildReady()}
+	for _, platformUUID := range bp.Platforms() {
 		platform, ok := platformMap[platformUUID]
 		if !ok {
 			return errs.New("Platform does not exist on inventory API: %s", platformUUID)
 		}
-
 		p := &structuredPlatform{
 			ID:        string(platformUUID),
 			Name:      *platform.DisplayName,
 			Artifacts: []*structuredArtifact{},
 		}
-		for _, artifact := range artifacts {
+		for _, artifact := range bp.Artifacts(buildplan.FilterPlatformArtifacts(platformUUID)) {
 			if artifact.MimeType == types.XActiveStateBuilderMimeType {
 				continue
 			}
 			if artifact.URL == "" {
 				continue
 			}
-			name := artifact.Name
-			if artifact.Version != nil && *artifact.Version != "" {
-				name = fmt.Sprintf("%s@%s", name, *artifact.Version)
+			name := artifact.Name()
+			version := artifact.Version()
+			if version != "" {
+				name = fmt.Sprintf("%s@%s", name, version)
 			}
 			build := &structuredArtifact{
 				ID:   string(artifact.ArtifactID),
 				Name: name,
 				URL:  artifact.URL,
 			}
-			if buildplanner.IsStateToolArtifact(artifact.MimeType) {
+			if bpModel.IsStateToolArtifact(artifact.MimeType) {
 				if !params.All {
 					continue
 				}
@@ -231,24 +229,24 @@ func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
 	return nil
 }
 
-// getTerminalArtifactMap returns a project's terminal artifact map, depending on the given
+// getBuildPlan returns a project's terminal artifact map, depending on the given
 // arguments. By default, the map for the current project is returned, but a map for a given
 // commitID for the current project can be returned, as can the map for a remote project
 // (and optional commitID).
-func getTerminalArtifactMap(
+func getBuildPlan(
 	pj *project.Project,
 	namespace *project.Namespaced,
 	commitID string,
 	target string,
 	auth *authentication.Auth,
-	out output.Outputer) (_ buildplan.TerminalArtifactMap, completed bool, hasFailedArtifacts bool, rerr error) {
+	out output.Outputer) (bp *buildplan.BuildPlan, rerr error) {
 	if pj == nil && !namespace.IsValid() {
-		return nil, false, false, rationalize.ErrNoProject
+		return nil, rationalize.ErrNoProject
 	}
 
 	commitUUID := strfmt.UUID(commitID)
 	if commitUUID != "" && !strfmt.IsUUID(commitUUID.String()) {
-		return nil, false, false, &errInvalidCommitId{errs.New("Invalid commit ID"), commitUUID.String()}
+		return nil, &errInvalidCommitId{errs.New("Invalid commit ID"), commitUUID.String()}
 	}
 
 	namespaceProvided := namespace.IsValid()
@@ -271,76 +269,64 @@ func getTerminalArtifactMap(
 	}
 
 	var err error
-	var commit *bpResp.Commit
+	var commit *bpModel.Commit
 	switch {
 	// Return the artifact map from this runtime.
 	case !namespaceProvided && !commitIdProvided:
 		localCommitID, err := localcommit.Get(pj.Path())
 		if err != nil {
-			return nil, false, false, errs.Wrap(err, "Could not get local commit")
+			return nil, errs.Wrap(err, "Could not get local commit")
 		}
 
-		bp := buildplanner.NewBuildPlannerModel(auth)
+		bp := bpModel.NewBuildPlannerModel(auth)
 		commit, err = bp.FetchCommit(localCommitID, pj.Owner(), pj.Name(), targetPtr)
 		if err != nil {
-			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
+			return nil, errs.Wrap(err, "Failed to fetch build plan")
 		}
 
 	// Return artifact map from the given commitID for the current project.
 	case !namespaceProvided && commitIdProvided:
-		bp := buildplanner.NewBuildPlannerModel(auth)
+		bp := bpModel.NewBuildPlannerModel(auth)
 		commit, err = bp.FetchCommit(commitUUID, pj.Owner(), pj.Name(), targetPtr)
 		if err != nil {
-			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
+			return nil, errs.Wrap(err, "Failed to fetch build plan")
 		}
 
 	// Return the artifact map for the latest commitID of the given project.
 	case namespaceProvided && !commitIdProvided:
 		pj, err := model.FetchProjectByName(namespace.Owner, namespace.Project, auth)
 		if err != nil {
-			return nil, false, false, locale.WrapInputError(err, "err_fetch_project", "", namespace.String())
+			return nil, locale.WrapInputError(err, "err_fetch_project", "", namespace.String())
 		}
 
 		branch, err := model.DefaultBranchForProject(pj)
 		if err != nil {
-			return nil, false, false, errs.Wrap(err, "Could not grab branch for project")
+			return nil, errs.Wrap(err, "Could not grab branch for project")
 		}
 
 		branchCommitUUID, err := model.BranchCommitID(namespace.Owner, namespace.Project, branch.Label)
 		if err != nil {
-			return nil, false, false, errs.Wrap(err, "Could not get commit ID for project")
+			return nil, errs.Wrap(err, "Could not get commit ID for project")
 		}
 		commitUUID = *branchCommitUUID
 
-		bp := buildplanner.NewBuildPlannerModel(auth)
+		bp := bpModel.NewBuildPlannerModel(auth)
 		commit, err = bp.FetchCommit(commitUUID, namespace.Owner, namespace.Project, targetPtr)
 		if err != nil {
-			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
+			return nil, errs.Wrap(err, "Failed to fetch build plan")
 		}
 
 	// Return the artifact map for the given commitID of the given project.
 	case namespaceProvided && commitIdProvided:
-		bp := buildplanner.NewBuildPlannerModel(auth)
+		bp := bpModel.NewBuildPlannerModel(auth)
 		commit, err = bp.FetchCommit(commitUUID, namespace.Owner, namespace.Project, targetPtr)
 		if err != nil {
-			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
+			return nil, errs.Wrap(err, "Failed to fetch build plan")
 		}
 
 	default:
-		return nil, false, false, errs.New("Unhandled case")
+		return nil, errs.New("Unhandled case")
 	}
 
-	bpm, err := buildplan.NewMapFromBuildPlan(commit.Build, false, false, nil, true)
-	if err != nil {
-		return nil, commit.Build.Ready(), false, errs.Wrap(err, "Could not get buildplan")
-	}
-
-	// Communicate whether there were failed artifacts
-	for _, artifact := range commit.Build.Artifacts {
-		if !buildplanner.IsSuccessArtifactStatus(artifact.Status) {
-			return bpm, commit.Build.Ready(), true, nil
-		}
-	}
-
-	return bpm, commit.Build.Ready(), false, nil
+	return commit.BuildPlan(), nil
 }

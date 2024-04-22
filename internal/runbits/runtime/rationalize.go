@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -26,7 +25,6 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 	var noMatchingPlatformErr *model.ErrNoMatchingPlatform
 	var artifactSetupErr *setup.ArtifactSetupErrors
 	var buildPlannerErr *bpResp.BuildPlannerError
-	var artifactErr *buildplan.ArtifactError
 
 	switch {
 	case errors.Is(*rerr, rationalize.ErrHeadless):
@@ -80,12 +78,6 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 	// Buildscript is missing and needs to be recreated
 	case errors.Is(*rerr, runtime.NeedsBuildscriptResetError):
 		*rerr = errs.WrapUserFacing(*rerr, locale.T("notice_needs_buildscript_reset"), errs.SetInput())
-
-	// Artifact build errors
-	case errors.As(*rerr, &artifactErr):
-		errMsg := locale.Tr("err_build_artifact_failed_msg", artifactErr.Artifact.DisplayName)
-		*rerr = errs.WrapUserFacing(*rerr, locale.Tr("err_build_artifact_failed", errMsg,
-			strings.Join(artifactErr.Artifact.Errors, "\n"), artifactErr.Artifact.LogURL))
 
 	// If updating failed due to unidentified errors, and the user is not authenticated, add a tip suggesting that they authenticate as
 	// this may be a private project.

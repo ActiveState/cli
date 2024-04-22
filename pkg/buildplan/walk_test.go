@@ -42,7 +42,7 @@ var buildWithSourceFromStep = &RawBuild{
 	Artifacts: []*Artifact{
 		{
 			// Step 2: We got an artifact, but there may be more hiding behind this one
-			NodeID:      "00000000-0000-0000-0000-000000000002",
+			ArtifactID:  "00000000-0000-0000-0000-000000000002",
 			DisplayName: "installer",
 			Type:        "ArtifactSucceeded",
 			MimeType:    "application/x-gozip-installer",
@@ -53,7 +53,7 @@ var buildWithSourceFromStep = &RawBuild{
 		},
 		{
 			// Step 6: We have another artifact, but since this is an x-artifact we also want meta info (ingredient name, version)
-			NodeID:      "00000000-0000-0000-0000-000000000004",
+			ArtifactID:  "00000000-0000-0000-0000-000000000004",
 			DisplayName: "pkgOne",
 			Type:        "ArtifactSucceeded",
 			MimeType:    "application/x.artifact",
@@ -95,7 +95,7 @@ var buildWithSourceFromGeneratedBy = &RawBuild{
 	Artifacts: []*Artifact{
 		{
 			// Step 2: We got an artifact, but there may be more hiding behind this one
-			NodeID:      "00000000-0000-0000-0000-000000000002",
+			ArtifactID:  "00000000-0000-0000-0000-000000000002",
 			DisplayName: "installer",
 			Type:        "ArtifactSucceeded",
 			MimeType:    "application/x-gozip-installer",
@@ -106,7 +106,7 @@ var buildWithSourceFromGeneratedBy = &RawBuild{
 		},
 		{
 			// Step 6: We have another artifact, but since this is an x-artifact we also want meta info (ingredient name, version)
-			NodeID:      "00000000-0000-0000-0000-000000000004",
+			ArtifactID:  "00000000-0000-0000-0000-000000000004",
 			DisplayName: "pkgOne",
 			Type:        "ArtifactSucceeded",
 			MimeType:    "application/x.artifact",
@@ -144,7 +144,7 @@ var buildWithBuildDeps = &RawBuild{
 	},
 	Artifacts: []*Artifact{
 		{
-			NodeID:      "00000000-0000-0000-0000-000000000002",
+			ArtifactID:  "00000000-0000-0000-0000-000000000002",
 			DisplayName: "installer",
 			Type:        "ArtifactSucceeded",
 			MimeType:    "application/x-gozip-installer",
@@ -153,7 +153,7 @@ var buildWithBuildDeps = &RawBuild{
 			URL:         "https://dl.activestate.com/artifact/00000000-0000-0000-0000-000000000000/projectname-win10-x64.exe",
 		},
 		{
-			NodeID:      "00000000-0000-0000-0000-000000000004",
+			ArtifactID:  "00000000-0000-0000-0000-000000000004",
 			DisplayName: "pkgOne",
 			Type:        "ArtifactSucceeded",
 			MimeType:    "application/x.artifact",
@@ -227,12 +227,12 @@ func TestRawBuild_walkNodes(t *testing.T) {
 			walk := func(w walkNodeContext) error {
 				var parentID *strfmt.UUID
 				if w.parentArtifact != nil {
-					parentID = &w.parentArtifact.NodeID
+					parentID = &w.parentArtifact.ArtifactID
 				}
 				var id strfmt.UUID
 				switch v := w.node.(type) {
 				case *Artifact:
-					id = v.NodeID
+					id = v.ArtifactID
 				case *Source:
 					id = v.NodeID
 				default:

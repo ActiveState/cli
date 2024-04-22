@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -268,22 +268,17 @@ func (s *Store) BuildPlanRaw() ([]byte, error) {
 	return data, nil
 }
 
-func (s *Store) BuildPlan() (*response.BuildResponse, error) {
+func (s *Store) BuildPlan() (*buildplan.BuildPlan, error) {
 	data, err := s.BuildPlanRaw()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get build plan file.")
 	}
 
-	var buildPlan response.BuildResponse
-	err = json.Unmarshal(data, &buildPlan)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not parse build plan file.")
-	}
-	return &buildPlan, err
+	return buildplan.Unmarshal(data)
 }
 
-func (s *Store) StoreBuildPlan(build *response.BuildResponse) error {
-	data, err := json.Marshal(build)
+func (s *Store) StoreBuildPlan(bp *buildplan.BuildPlan) error {
+	data, err := bp.Marshal()
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal buildPlan.")
 	}

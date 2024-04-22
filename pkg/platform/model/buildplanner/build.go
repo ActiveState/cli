@@ -29,32 +29,26 @@ const (
 	codeExtensionKey = "code"
 )
 
+type Commit struct {
+	*response.Commit
+	buildplan       *buildplan.BuildPlan
+	buildexpression *buildexpression.BuildExpression
+}
+
+func (c *Commit) BuildPlan() *buildplan.BuildPlan {
+	return c.buildplan
+}
+
+func (c *Commit) BuildExpression() *buildexpression.BuildExpression {
+	return c.buildexpression
+}
+
 func (c *client) Run(req gqlclient.Request, resp interface{}) error {
 	logRequestVariables(req)
 	return c.gqlClient.Run(req, resp)
 }
 
-func (b *BuildPlanner) FetchBuild(commitID strfmt.UUID, owner, project string, target *string) (
-	*buildplan.BuildPlan, *buildexpression.BuildExpression, *response.Commit, error) {
-	commit, err := b.FetchCommit(commitID, owner, project, target)
-	if err != nil {
-		return nil, nil, nil, errs.Wrap(err, "failed to fetch commit")
-	}
-
-	bp, err := buildplan.Unmarshal(commit.Build.RawMessage)
-	if err != nil {
-		return nil, nil, nil, errs.Wrap(err, "failed to unmarshal build plan")
-	}
-
-	expression, err := buildexpression.New(commit.Expression)
-	if err != nil {
-		return nil, nil, nil, errs.Wrap(err, "failed to parse build expression")
-	}
-
-	return bp, expression, commit, nil
-}
-
-func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, target *string) (*response.Commit, error) {
+func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, target *string) (*Commit, error) {
 	logging.Debug("FetchBuildResult, commitID: %s, owner: %s, project: %s", commitID, owner, project)
 	resp := &response.ProjectCommitResponse{}
 	err := b.client.Run(request.ProjectCommit(commitID.String(), owner, project, target), resp)
@@ -72,7 +66,19 @@ func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, 
 		}
 	}
 
-	return resp.Project.Commit, nil
+	commit := resp.Project.Commit
+
+	bp, err := buildplan.Unmarshal(commit.Build.RawMessage)
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to unmarshal build plan")
+	}
+
+	expression, err := buildexpression.New(commit.Expression)
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to parse build expression")
+	}
+
+	return &Commit{commit, bp, expression}, nil
 }
 
 // processBuildPlannerError will check for special error types that should be
@@ -210,7 +216,7 @@ func (b *BuildPlanner) pollBuildPlanned(commitID, owner, project string, target 
 }
 
 type ErrFailedArtifacts struct {
-	Artifacts map[strfmt.UUID]*buildplan.Artifact
+	Artifacts map[strfmt.UUID]*response.ArtifactResponse
 }
 
 func (e ErrFailedArtifacts) Error() string {
@@ -219,7 +225,7 @@ func (e ErrFailedArtifacts) Error() string {
 
 // WaitForBuild polls the build until it has passed the completed stage (ie. it's either successful or failed).
 func (b *BuildPlanner) WaitForBuild(commitID strfmt.UUID, owner, project string, target *string) error {
-	failedArtifacts := map[strfmt.UUID]*buildplan.Artifact{}
+	failedArtifacts := map[strfmt.UUID]*response.ArtifactResponse{}
 	resp := &response.ProjectCommitResponse{}
 	ticker := time.NewTicker(pollInterval)
 	for {
@@ -253,7 +259,7 @@ func (b *BuildPlanner) WaitForBuild(commitID strfmt.UUID, owner, project string,
 
 				if artifact.Status == types.ArtifactFailedPermanently ||
 					artifact.Status == types.ArtifactFailedTransiently {
-					failedArtifacts[artifact.NodeID] = artifact
+					failedArtifacts[artifact.NodeID] = &artifact
 				}
 			}
 

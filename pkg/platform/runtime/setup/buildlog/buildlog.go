@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/go-openapi/strfmt"
 	"github.com/gorilla/websocket"
@@ -60,14 +61,14 @@ type EventHandlerError struct {
 
 // BuildLog is an implementation of a build log
 type BuildLog struct {
-	ch    chan artifact.ArtifactDownload
+	ch    chan *buildplan.Artifact
 	errCh chan error
 	conn  *websocket.Conn
 }
 
 // New creates a new BuildLog instance that allows us to wait for incoming build log information
 // artifactMap comprises all artifacts (from the runtime closure) that are in the recipe, alreadyBuilt is set of artifact IDs that have already been built in the past
-func New(ctx context.Context, artifactMap artifact.Map, eventHandler events.Handler, recipeID strfmt.UUID, logFilePath string) (*BuildLog, error) {
+func New(ctx context.Context, artifactMap buildplan.ArtifactIDMap, eventHandler events.Handler, recipeID strfmt.UUID, logFilePath string) (*BuildLog, error) {
 	conn, err := buildlogstream.Connect(ctx)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not connect to build-log streamer build updates")
@@ -83,11 +84,11 @@ func New(ctx context.Context, artifactMap artifact.Map, eventHandler events.Hand
 }
 
 // NewWithCustomConnections creates a new BuildLog instance with all physical connections managed by the caller
-func NewWithCustomConnections(artifactMap artifact.Map,
+func NewWithCustomConnections(artifactMap buildplan.ArtifactIDMap,
 	conn BuildLogConnector, eventHandler events.Handler,
 	recipeID strfmt.UUID, logFilePath string) (*BuildLog, error) {
 
-	ch := make(chan artifact.ArtifactDownload)
+	ch := make(chan *buildplan.Artifact)
 	errCh := make(chan error)
 
 	if err := handleEvent(eventHandler, events.BuildStarted{logFilePath}); err != nil {
@@ -126,7 +127,7 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 			defer logMutex.Unlock()
 			name := artifactID.String()
 			if a, ok := artifactMap[artifactID]; ok {
-				name = a.Name + " (" + artifactID.String() + ")"
+				name = a.Name() + " (" + artifactID.String() + ")"
 			}
 			if name != "" {
 				name = name + ": "
@@ -146,7 +147,7 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 				if _, done := artifactsDone[id]; !done {
 					name := id.String()
 					if a, ok := artifactMap[id]; ok {
-						name = a.Name + " (" + id.String() + ")"
+						name = a.Name() + " (" + id.String() + ")"
 					}
 					result = append(result, name)
 				}
@@ -211,6 +212,12 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 					break
 				}
 
+				_, ok := artifactMap[m.ArtifactID]
+				if !ok {
+					logging.Debug("Ignoring ArtifactStarted %s as we are not monitoring this artifact", m.ArtifactID)
+					break
+				}
+
 				if observed(msg.MessageTypeValue(), m.ArtifactID.String()) {
 					break
 				}
@@ -241,6 +248,12 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 					break
 				}
 
+				ad, ok := artifactMap[m.ArtifactID]
+				if !ok {
+					logging.Debug("Ignoring ArtifactSucceeded %s as we are not monitoring this artifact", m.ArtifactID)
+					break
+				}
+
 				if observed(msg.MessageTypeValue(), m.ArtifactID.String()) {
 					break
 				}
@@ -256,7 +269,9 @@ Artifact Build Succeeded.
 					errCh <- errs.Wrap(err, "Could not write to build log file")
 				}
 
-				ch <- artifact.ArtifactDownload{ArtifactID: m.ArtifactID, DownloadURI: m.ArtifactURI, Checksum: m.ArtifactChecksum}
+				ad.SetDownload(m.ArtifactURI, m.ArtifactChecksum)
+
+				ch <- ad
 
 				if err := handleEvent(eventHandler, events.ArtifactBuildSuccess{m.ArtifactID, m.LogURI}); err != nil {
 					errCh <- errs.Wrap(err, "Could not handle ArtifactBuildSuccess event")
@@ -274,11 +289,15 @@ Artifact Build Succeeded.
 			case ArtifactFailed:
 				m := msg.messager.(ArtifactFailedMessage)
 
-				if observed(msg.MessageTypeValue(), m.ArtifactID.String()) {
+				ad, ok := artifactMap[m.ArtifactID]
+				if !ok {
+					logging.Debug("Ignoring ArtifactFailed %s as we are not monitoring this artifact", m.ArtifactID)
 					break
 				}
 
-				artifactName, _ := resolveArtifactName(m.ArtifactID, artifactMap)
+				if observed(msg.MessageTypeValue(), m.ArtifactID.String()) {
+					break
+				}
 
 				artifactsDone[m.ArtifactID] = struct{}{}
 
@@ -290,7 +309,7 @@ Artifact Build Failed.
 					errCh <- errs.Wrap(err, "Could not write to build log file")
 				}
 
-				artifactErr = locale.WrapError(artifactErr, "err_artifact_failed", "Failed to build \"{{.V0}}\", error reported: {{.V1}}.", artifactName, m.ErrorMessage)
+				artifactErr = locale.WrapError(artifactErr, "err_artifact_failed", "Failed to build \"{{.V0}}\", error reported: {{.V1}}.", ad.Name(), m.ErrorMessage)
 
 				if err := handleEvent(eventHandler, events.ArtifactBuildFailure{m.ArtifactID, m.LogURI, m.ErrorMessage}); err != nil {
 					errCh <- errs.Wrap(err, "Could not handle ArtifactBuildFailure event")
@@ -298,6 +317,11 @@ Artifact Build Failed.
 				}
 			case ArtifactProgress:
 				m := msg.messager.(ArtifactProgressMessage)
+
+				_, ok := artifactMap[m.ArtifactID]
+				if !ok {
+					break
+				}
 
 				if _, ok := artifactsDone[m.ArtifactID]; ok {
 					// ignore progress reports for artifacts that have finished
@@ -366,17 +390,8 @@ func (bl *BuildLog) Close() error {
 }
 
 // BuiltArtifactsChannel returns the channel to listen for downloadable artifacts on
-func (bl *BuildLog) BuiltArtifactsChannel() <-chan artifact.ArtifactDownload {
+func (bl *BuildLog) BuiltArtifactsChannel() <-chan *buildplan.Artifact {
 	return bl.ch
-}
-
-func resolveArtifactName(artifactID artifact.ArtifactID, artifactMap artifact.Map) (name string, ok bool) {
-	artf, ok := artifactMap[artifactID]
-	if !ok {
-		return locale.Tl("unknown_artifact_name", "unknown"), false
-	}
-
-	return artf.NameWithVersion(), true
 }
 
 func handleEvent(handler events.Handler, ev events.Eventer) error {

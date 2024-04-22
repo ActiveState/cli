@@ -6,7 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/pkg/buildplan"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"golang.org/x/net/context"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -165,7 +167,7 @@ func (r *Runtime) Setup(eventHandler events.Handler) *setup.Setup {
 	return setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out, r.svcm)
 }
 
-func (r *Runtime) Update(setup *setup.Setup, commit *bpResp.Commit) (rerr error) {
+func (r *Runtime) Update(setup *setup.Setup, commit *bpModel.Commit) (rerr error) {
 	if r.disabled {
 		logging.Debug("Skipping update as it is disabled")
 		return nil // nothing to do
@@ -382,7 +384,7 @@ func IsRuntimeDir(dir string) bool {
 	return store.New(dir).HasMarker()
 }
 
-func (r *Runtime) BuildPlan() (*bpResp.BuildResponse, error) {
+func (r *Runtime) BuildPlan() (*buildplan.BuildPlan, error) {
 	runtimeStore := r.store
 	if runtimeStore == nil {
 		runtimeStore = store.New(r.target.Dir())
@@ -392,30 +394,4 @@ func (r *Runtime) BuildPlan() (*bpResp.BuildResponse, error) {
 		return nil, errs.Wrap(err, "Unable to fetch build plan")
 	}
 	return plan, nil
-}
-
-func (r *Runtime) ResolvedArtifacts() ([]*artifact.Artifact, error) {
-	if r.resolvedArtifacts == nil {
-		runtimeStore := r.store
-		if runtimeStore == nil {
-			runtimeStore = store.New(r.target.Dir())
-		}
-
-		plan, err := runtimeStore.BuildPlan()
-		if err != nil {
-			return nil, errs.Wrap(err, "Unable to fetch build plan")
-		}
-
-		r.resolvedArtifacts = make([]*artifact.Artifact, len(plan.Sources))
-		for i, source := range plan.Sources {
-			r.resolvedArtifacts[i] = &artifact.Artifact{
-				ArtifactID: source.NodeID,
-				Name:       source.Name,
-				Namespace:  source.Namespace,
-				Version:    &source.Version,
-			}
-		}
-	}
-
-	return r.resolvedArtifacts, nil
 }

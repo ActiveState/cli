@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -15,13 +16,12 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
@@ -107,16 +107,17 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	ns := ptr.To(model.NewNamespacePkgOrBundle(language.Name, nstype))
 
 	// Fetch resolved artifacts list for showing full version numbers, if possible.
-	var artifacts []*artifact.Artifact
+	var artifacts buildplan.Artifacts
 	if l.project != nil && params.Project == "" {
 		rt, err := rtrunbit.SolveAndUpdate(l.auth, l.out, l.analytics, l.project, nil, target.TriggerPackage, l.svcModel, l.cfg, rtrunbit.OptMinimalUI)
 		if err != nil {
 			return locale.WrapError(err, "err_package_list_runtime", "Could not initialize runtime")
 		}
-		artifacts, err = rt.ResolvedArtifacts()
+		bp, err := rt.BuildPlan()
 		if err != nil && !errs.Matches(err, store.ErrNoBuildPlanFile) {
 			return locale.WrapError(err, "err_package_list_artifacts", "Unable to resolve package versions")
 		}
+		artifacts = bp.Artifacts(buildplan.FilterStateArtifacts())
 	}
 
 	requirements := model.FilterCheckpointNamespace(checkpoint, model.NamespacePackage, model.NamespaceBundle)
@@ -145,12 +146,16 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 		}
 
 		resolvedVersion := ""
-		for _, a := range artifacts {
-			if a.Namespace == ns.String() && a.Name == req.Requirement {
-				resolvedVersion = *a.Version
-				break
+		(func() {
+			for _, a := range artifacts {
+				for _, i := range a.Ingredients {
+					if i.Namespace == ns.String() && i.Name == req.Requirement {
+						resolvedVersion = i.Version
+						return // break outer loop
+					}
+				}
 			}
-		}
+		})()
 
 		plainVersion := version
 		if resolvedVersion != "" && resolvedVersion != version {

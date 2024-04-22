@@ -25,18 +25,16 @@ import (
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	runbit "github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/localcommit"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	vulnModel "github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -201,9 +199,9 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		return locale.WrapError(err, "err_resolve_requirements", "Could not resolve one or more requirements")
 	}
 
-	var stageCommitReqs []buildplanner.StageCommitRequirement
+	var stageCommitReqs []bpModel.StageCommitRequirement
 	for _, requirement := range requirements {
-		stageCommitReqs = append(stageCommitReqs, buildplanner.StageCommitRequirement{
+		stageCommitReqs = append(stageCommitReqs, bpModel.StageCommitRequirement{
 			Name:      requirement.Name,
 			Version:   requirement.versionRequirements,
 			Revision:  ptr.To(requirement.Revision),
@@ -212,7 +210,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		})
 	}
 
-	params := buildplanner.StageCommitParams{
+	params := bpModel.StageCommitParams{
 		Owner:        r.Project.Owner(),
 		Project:      r.Project.Name(),
 		ParentCommit: string(parentCommitID),
@@ -221,7 +219,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		TimeStamp:    ts,
 	}
 
-	bp := buildplanner.NewBuildPlannerModel(r.Auth)
+	bp := bpModel.NewBuildPlannerModel(r.Auth)
 	commitID, err := bp.StageCommit(params)
 	if err != nil {
 		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")
@@ -232,19 +230,19 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
 		// Solve runtime
-		rt, commit, changedArtifacts, err := r.solve(commitID, requirements[0].Namespace)
+		solved, err := r.solve(commitID, requirements[0].Namespace)
 		if err != nil {
 			return errs.Wrap(err, "Could not solve runtime")
 		}
 
 		// Report CVEs
-		if err := r.cveReport(*changedArtifacts, requirements...); err != nil {
+		if err := r.cveReport(*solved.changeset, requirements...); err != nil {
 			return errs.Wrap(err, "Could not report CVEs")
 		}
 
 		// Start runtime update UI
 		out.Notice("")
-		if !rt.HasCache() {
+		if !solved.rt.HasCache() {
 			out.Notice(output.Title(locale.T("install_runtime")))
 			out.Notice(locale.T("install_runtime_info"))
 		} else {
@@ -253,7 +251,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 
 		// refresh or install runtime
-		err = runbit.UpdateByReference(rt, commit, r.Auth, r.Project, r.Output)
+		err = runbit.UpdateByReference(solved.rt, solved.commit, r.Auth, r.Project, r.Output)
 		if err != nil {
 			if !runbits.IsBuildError(err) {
 				// If the error is not a build error we want to retain the changes
@@ -473,7 +471,7 @@ func (r *RequirementOperation) resolveRequirement(requirement *Requirement) erro
 		versionString += ".x"
 	}
 
-	requirement.versionRequirements, err = buildplanner.VersionStringToRequirements(versionString)
+	requirement.versionRequirements, err = bpModel.VersionStringToRequirements(versionString)
 	if err != nil {
 		return errs.Wrap(err, "Could not process version string into requirements")
 	}
@@ -481,8 +479,14 @@ func (r *RequirementOperation) resolveRequirement(requirement *Requirement) erro
 	return nil
 }
 
+type solveResult struct {
+	rt        *runtime.Runtime
+	commit    *bpModel.Commit
+	changeset *buildplan.ArtifactChangeset
+}
+
 func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) (
-	_ *runtime.Runtime, _ *response.Commit, _ *artifact.ArtifactChangeset, rerr error,
+	_ *solveResult, rerr error,
 ) {
 	// Initialize runtime
 	var trigger target.Trigger
@@ -508,13 +512,13 @@ func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) 
 	rtTarget := target.NewProjectTarget(r.Project, &commitID, trigger)
 	rt, err := runtime.New(rtTarget, r.Analytics, r.SvcModel, r.Auth, r.Config, r.Output)
 	if err != nil {
-		return nil, nil, nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+		return nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
 	}
 
 	setup := rt.Setup(&events.VoidHandler{})
 	commit, err := setup.Solve()
 	if err != nil {
-		return nil, nil, nil, errs.Wrap(err, "Solve failed")
+		return nil, errs.Wrap(err, "Solve failed")
 	}
 
 	// Get old buildplan
@@ -522,28 +526,25 @@ func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) 
 	// but also there's no guarantee the old one is sequential to the current.
 	oldCommit, err := model.GetCommit(commitID, r.Auth)
 	if err != nil {
-		return nil, nil, nil, errs.Wrap(err, "Could not get commit")
+		return nil, errs.Wrap(err, "Could not get commit")
 	}
 
-	var oldBuildPlan *response.BuildResponse
+	var oldBuildPlan *buildplan.BuildPlan
 	if oldCommit.ParentCommitID != "" {
-		bp := buildplanner.NewBuildPlannerModel(r.Auth)
-		oldCommit, err := bp.FetchCommit(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
+		bpm := bpModel.NewBuildPlannerModel(r.Auth)
+		commit, err := bpm.FetchCommit(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
 		if err != nil {
-			return nil, nil, nil, errs.Wrap(err, "Failed to fetch build result")
+			return nil, errs.Wrap(err, "Failed to fetch build result")
 		}
-		oldBuildPlan = oldCommit.Build
+		oldBuildPlan = commit.BuildPlan()
 	}
 
-	changedArtifacts, err := buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, commit.Build, false, false, r.Config, r.Auth)
-	if err != nil {
-		return nil, nil, nil, errs.Wrap(err, "Could not get changed artifacts")
-	}
+	changedArtifacts := commit.BuildPlan().DiffArtifacts(oldBuildPlan, true)
 
-	return rt, commit, &changedArtifacts, nil
+	return &solveResult{rt, commit, &changedArtifacts}, nil
 }
 
-func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChangeset, requirements ...*Requirement) error {
+func (r *RequirementOperation) cveReport(artifactChangeset buildplan.ArtifactChangeset, requirements ...*Requirement) error {
 	if !r.Auth.Authenticated() {
 		return nil
 	}
@@ -558,22 +559,27 @@ func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChan
 		}
 
 		for _, artifact := range artifactChangeset.Added {
-			ingredients = append(ingredients, &request.Ingredient{
-				Namespace: artifact.Namespace,
-				Name:      artifact.Name,
-				Version:   *artifact.Version,
-			})
+			for _, ing := range artifact.Ingredients {
+				ingredients = append(ingredients, &request.Ingredient{
+					Namespace: ing.Namespace,
+					Name:      ing.Name,
+					Version:   ing.Version,
+				})
+			}
 		}
 
-		for _, artifact := range artifactChangeset.Updated {
-			if !artifact.IngredientChange {
+		for _, change := range artifactChangeset.Updated {
+			if !change.VersionsChanged() {
 				continue // For CVE reporting we only care about ingredient changes
 			}
-			ingredients = append(ingredients, &request.Ingredient{
-				Namespace: artifact.To.Namespace,
-				Name:      artifact.To.Name,
-				Version:   *artifact.To.Version,
-			})
+
+			for _, ing := range change.To.Ingredients {
+				ingredients = append(ingredients, &request.Ingredient{
+					Namespace: ing.Namespace,
+					Name:      ing.Name,
+					Version:   ing.Version,
+				})
+			}
 		}
 	}
 
@@ -622,7 +628,7 @@ func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 	}
 
 	if r.Config.GetBool(constants.OptinBuildscriptsConfig) {
-		bp := buildplanner.NewBuildPlannerModel(r.Auth)
+		bp := bpModel.NewBuildPlannerModel(r.Auth)
 		expr, atTime, err := bp.GetBuildExpressionAndTime(commitID.String())
 		if err != nil {
 			return errs.Wrap(err, "Could not get remote build expr and time")

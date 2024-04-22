@@ -296,3 +296,13 @@ func TestContains(t *testing.T) {
 		})
 	}
 }
+
+func TestUniqueByProperty(t *testing.T) {
+	assert.Equal(t, []int{1, 2, 3, 4}, UniqueByProperty([]int{1, 2, 3, 3, 4, 4, 2, 4}, func(v int) any { return v }))
+
+	type s struct{ name string }
+	assert.Equal(t,
+		[]s{{"a"}, {"b"}, {"c"}},
+		UniqueByProperty([]s{{"a"}, {"a"}, {"b"}, {"c"}}, func(v s) any { return v.name }),
+	)
+}

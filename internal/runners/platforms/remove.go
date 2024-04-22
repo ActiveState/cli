@@ -35,7 +35,7 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 		return rationalize.ErrNoProject
 	}
 
-	params, err := prepareParams(ps.Params, r.prime.Auth())
+	params, err := prepareParams(ps.Params)
 	if err != nil {
 		return errs.Wrap(err, "Could not prepare parameters.")
 	}

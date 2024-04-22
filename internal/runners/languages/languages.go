@@ -5,9 +5,11 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -80,7 +82,7 @@ func (l *Languages) Run() error {
 	if err != nil {
 		return locale.WrapError(err, "err_languages_runtime", "Could not initialize runtime")
 	}
-	artifacts, err := rt.ResolvedArtifacts()
+	bp, err := rt.BuildPlan()
 	if err != nil && !errs.Matches(err, store.ErrNoBuildPlanFile) {
 		return locale.WrapError(err, "err_language_resolved_artifacts", "Unable to resolve language version(s)")
 	}
@@ -96,12 +98,13 @@ func (l *Languages) Run() error {
 		}
 
 		resolvedVersion := ""
-		for _, a := range artifacts {
-			if a.Namespace == ns.String() && a.Name == lang.Name {
-				// e.g. python@3.10, but resolved artifact version is 3.10.0
-				resolvedVersion = *a.Version
-				break
-			}
+		ingredients := bp.Ingredients(func(i *buildplan.Ingredient) bool {
+			return i.Name == lang.Name && i.Namespace == ns.String()
+		})
+		if len(ingredients) == 1 {
+			resolvedVersion = ingredients[0].Version
+		} else {
+			logging.Warning("Expected 1 matching language, got %d. Searched for %s/%s", len(ingredients), ns.String(), lang.Name)
 		}
 
 		plainVersion := version

@@ -68,3 +68,30 @@ func Contains[T comparable](data []T, v T) bool {
 	}
 	return false
 }
+
+func Unique[T comparable](data []T) []T {
+	return UniqueByProperty(data, func(d T) any { return d })
+}
+
+func UniqueByProperty[T comparable](data []T, uniq func(T) any) []T {
+	found := make(map[any]bool)
+	out := []T{}
+	for _, d := range data {
+		v := uniq(d)
+		if !found[v] {
+			found[v] = true
+			out = append(out, d)
+		}
+	}
+	return out
+}
+
+func Filter[T any](data []T, f func(T) bool) []T {
+	out := []T{}
+	for _, d := range data {
+		if f(d) {
+			out = append(out, d)
+		}
+	}
+	return out
+}

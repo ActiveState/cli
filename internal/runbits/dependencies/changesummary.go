@@ -2,14 +2,14 @@ package dependencies
 
 import (
 	"fmt"
-	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
+	"github.com/ActiveState/cli/internal/sliceutils"
+	"github.com/ActiveState/cli/pkg/buildplan"
 )
 
 // showUpdatedPackages specifies whether or not to include updated dependencies in the direct
@@ -22,61 +22,41 @@ const showUpdatedPackages = true
 // installed for that package.
 // `artifacts` is an ArtifactMap containing artifacts in the changeset, and `filter` contains any
 // runtime requirements/artifacts already installed.
-func OutputChangeSummary(out output.Outputer, changeset artifact.ArtifactChangeset, artifacts artifact.Map, filter artifact.Map) {
-	// Determine which package was installed.
-	var addedId *artifact.ArtifactID
-	for _, candidate := range changeset.Added {
-		if !isDependency(candidate.ArtifactID, changeset, artifacts) {
-			if addedId != nil {
-				return // more than two independent packages were added
-			}
-			foundId := candidate.ArtifactID
-			addedId = &foundId // cannot address candidateId as it changes over the loop
+func OutputChangeSummary(out output.Outputer, changeset *buildplan.ArtifactChangeset, alreadyInstalled buildplan.Artifacts) {
+	addedString := []string{}
+	addedLocale := []string{}
+	added := buildplan.Ingredients{}
+	dependencies := buildplan.Ingredients{}
+	directDependencies := buildplan.Ingredients{}
+	for _, a := range changeset.Added {
+		added = append(added, a.Ingredients...)
+		for _, i := range a.Ingredients {
+			addedString = append(addedLocale, fmt.Sprintf("%s@%s", i.Name, i.Version))
+			addedLocale = append(addedLocale, fmt.Sprintf("[ACTIONABLE]%s[/RESET]", addedString))
+			dependencies = append(dependencies, i.Dependencies(true)...)
+			directDependencies = append(dependencies, i.Dependencies(false)...)
 		}
 	}
-	if addedId == nil {
-		return // no single, independent package was added
-	}
-	added := artifacts[*addedId]
-	logging.Debug("Determined that runtime update was triggered by adding package '%s/%s'", added.Namespace, added.Name)
 
-	// Determine the package's direct and indirect dependencies.
-	dependencies := buildplan.DependencyMapFor(*addedId, artifacts, filter, showUpdatedPackages)
-	directDependencies := make([]artifact.ArtifactID, 0, len(dependencies))
-	uniqueDependencies := make(map[artifact.ArtifactID]bool)
-	for artifactId, indirectDependencies := range dependencies {
-		directDependencies = append(directDependencies, artifactId)
-		uniqueDependencies[artifactId] = true
-		for _, depId := range indirectDependencies {
-			uniqueDependencies[depId] = true
-		}
-	}
-	sort.SliceStable(directDependencies, func(i, j int) bool {
-		return artifacts[directDependencies[i]].Name < artifacts[directDependencies[j]].Name
-	})
-	hasAdditionalIndirectDependencies := len(directDependencies) < len(uniqueDependencies)
+	dependencies = sliceutils.UniqueByProperty(dependencies, func(i *buildplan.Ingredient) any { return i.IngredientID })
+	directDependencies = sliceutils.UniqueByProperty(directDependencies, func(i *buildplan.Ingredient) any { return i.IngredientID })
+	numIndirect := len(dependencies) - len(directDependencies)
 
-	logging.Debug("%s has %d direct dependencies and %d total, unique dependencies", added.Name, len(directDependencies), len(uniqueDependencies))
+	logging.Debug("package %s has %d direct dependencies and %d total, unique dependencies",
+		strings.Join(addedString, ", "), len(directDependencies), numIndirect)
 	if len(directDependencies) == 0 {
 		return
 	}
 
 	// Process the existing runtime requirements into something we can easily compare against.
-	oldRequirements := make(map[string]string)
-	for _, source := range filter {
-		oldRequirements[fmt.Sprintf("%s/%s", source.Namespace, source.Name)] = *source.Version
-	}
+	oldRequirements := alreadyInstalled.Ingredients().ToIDMap()
 
 	localeKey := "additional_dependencies"
-	if hasAdditionalIndirectDependencies {
+	if numIndirect > 0 {
 		localeKey = "additional_total_dependencies"
 	}
-	version := ""
-	if added.Version != nil {
-		version = *added.Version
-	}
 	out.Notice(locale.Tr(localeKey,
-		added.Name, version, strconv.Itoa(len(directDependencies)), strconv.Itoa(len(uniqueDependencies))))
+		strings.Join(addedLocale, ", "), strconv.Itoa(len(dependencies)), strconv.Itoa(numIndirect)))
 
 	// A direct dependency list item is of the form:
 	//   ├─ name@version (X dependencies)
@@ -84,64 +64,28 @@ func OutputChangeSummary(out output.Outputer, changeset artifact.ArtifactChanges
 	//   └─ name@oldVersion → name@newVersion (Updated)
 	// depending on whether or not it has subdependencies, and whether or not showUpdatedPackages is
 	// `true`.
-	for i, artifactId := range directDependencies {
+	for i, ingredient := range directDependencies {
 		prefix := "├─"
 		if i == len(directDependencies)-1 {
 			prefix = "└─"
 		}
-		dep := artifacts[artifactId]
 
-		version := ""
-		if dep.Version != nil {
-			version = *dep.Version
-		}
-
+		ingredientDeps := ingredient.Dependencies(true)
 		subdependencies := ""
-		if numSubs := len(dependencies[dep.ArtifactID]); numSubs > 0 && hasAdditionalIndirectDependencies {
+		if numSubs := len(ingredientDeps); numSubs > 0 {
 			subdependencies = fmt.Sprintf(" ([ACTIONABLE]%s[/RESET] dependencies)", // intentional leading space
 				strconv.Itoa(numSubs))
 		}
 
 		item := fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET]%s", // intentional omission of space before last %s
-			dep.Name, version, subdependencies)
-		if oldVersion, exists := oldRequirements[fmt.Sprintf("%s/%s", dep.Namespace, dep.Name)]; exists && version != "" && oldVersion != version {
-			item = fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET] → %s (%s)", dep.Name, oldVersion, item, locale.Tl("updated", "updated"))
+			ingredient.Name, ingredient.Version, subdependencies)
+		oldVersion, exists := oldRequirements[ingredient.IngredientID]
+		if exists && ingredient.Version != "" && oldVersion.Version != ingredient.Version {
+			item = fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET] → %s (%s)", oldVersion.Name, oldVersion.Version, item, locale.Tl("updated", "updated"))
 		}
 
 		out.Notice(fmt.Sprintf("  [DISABLED]%s[/RESET] %s", prefix, item))
 	}
 
 	out.Notice("") // blank line
-}
-
-// isDependency iterates over all artifacts and their dependencies in the given changeset, and
-// returns whether or not the given artifact is a dependency of any of those artifacts or
-// dependencies.
-func isDependency(a artifact.ArtifactID, changeset artifact.ArtifactChangeset, artifacts artifact.Map) bool {
-	for _, artifact := range changeset.Added {
-		if artifact.ArtifactID == a {
-			continue
-		}
-
-		for _, depId := range buildplan.RecursiveDependenciesFor(artifact.ArtifactID, artifacts) {
-			if a == depId {
-				return true
-			}
-		}
-	}
-
-	for _, update := range changeset.Updated {
-		for _, depId := range buildplan.RecursiveDependenciesFor(update.To.ArtifactID, artifacts) {
-			if a == depId {
-				return true
-			}
-		}
-		for _, depId := range buildplan.RecursiveDependenciesFor(update.From.ArtifactID, artifacts) {
-			if a == depId {
-				return true
-			}
-		}
-	}
-
-	return false
 }

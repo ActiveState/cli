@@ -5,13 +5,16 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/go-openapi/strfmt"
 )
 
 type BuildPlan struct {
-	ingredients []*Ingredient
-	raw         *RawBuild
+	platforms    []strfmt.UUID
+	requirements []*Ingredient
+	ingredients  []*Ingredient
+	raw          *RawBuild
 }
 
 func Unmarshal(data []byte) (*BuildPlan, error) {
@@ -24,6 +27,8 @@ func Unmarshal(data []byte) (*BuildPlan, error) {
 
 	b.raw = &rawBuild
 
+	b.Cleanup()
+
 	if err := b.Hydrate(); err != nil {
 		return nil, errs.Wrap(err, "error hydrating build plan")
 	}
@@ -31,11 +36,39 @@ func Unmarshal(data []byte) (*BuildPlan, error) {
 	return b, nil
 }
 
+func (b *BuildPlan) Marshal() ([]byte, error) {
+	return json.Marshal(b.raw)
+}
+
+// Cleanup empty targets
+// The type aliasing in the query populates the response with emtpy targets that we should remove
+func (b *BuildPlan) Cleanup() {
+	b.raw.Steps = sliceutils.Filter(b.raw.Steps, func(s *Step) bool {
+		return s.StepID != ""
+	})
+
+	b.raw.Sources = sliceutils.Filter(b.raw.Sources, func(s *Source) bool {
+		return s.NodeID != ""
+	})
+
+	b.raw.Artifacts = sliceutils.Filter(b.raw.Artifacts, func(a *Artifact) bool {
+		return a.ArtifactID != ""
+	})
+}
+
 // Hydrate will add additional information to the unmarshalled structures, based on the raw data that was unmarshalled.
 // For example, rather than having to walk the buildplan to find associations between artifacts and ingredients, this
 // will add this context straight on the relevant artifacts.
 func (b *BuildPlan) Hydrate() error {
 	runtimeDeps := []strfmt.UUID{}
+
+	// Build map of requirement IDs so we can quickly look up the associated ingredient
+	var reqIDs map[strfmt.UUID]struct{}
+	reqs := b.raw.ResolvedRequirements
+	for _, req := range reqs {
+		reqIDs[req.Source] = struct{}{}
+	}
+
 	for _, t := range b.raw.Terminals {
 		var platformID *strfmt.UUID
 
@@ -53,11 +86,15 @@ func (b *BuildPlan) Hydrate() error {
 			switch v := w.node.(type) {
 			case *Artifact:
 				// Add platform info to artifact structs
-				v.Platform = platformID
-				v.terminal = t.Tag
+				v.Platforms = append(v.Platforms, *platformID)
+				v.terminals = append(v.terminals, t.Tag)
 				v.IsBuildtimeDependency = w.isBuildDependency
-				v.parentArtifact = w.parentArtifact
+				v.parent = w.parentArtifact
+				w.parentArtifact.children = append(w.parentArtifact.children, v)
 				runtimeDeps = append(runtimeDeps, v.RuntimeDependencies...)
+				if platformID != nil {
+					b.platforms = append(b.platforms, *platformID)
+				}
 				return nil
 			case *Source:
 				if w.parentArtifact == nil {
@@ -71,12 +108,17 @@ func (b *BuildPlan) Hydrate() error {
 				ingredient, ok := ingredientLookup[v.NodeID]
 				if !ok {
 					ingredient = &Ingredient{
-						Source:    v,
-						Platforms: []strfmt.UUID{},
-						Artifacts: []*Artifact{},
+						IngredientSource: &v.IngredientSource,
+						Platforms:        []strfmt.UUID{},
+						Artifacts:        []*Artifact{},
 					}
 					b.ingredients = append(b.ingredients, ingredient)
 					ingredientLookup[v.NodeID] = ingredient
+
+					// Detect direct requirements
+					if _, ok := reqIDs[v.NodeID]; ok {
+						b.requirements = append(b.requirements, ingredient)
+					}
 				}
 
 				// Add artifact and platform info to ingredient structs
@@ -93,7 +135,7 @@ func (b *BuildPlan) Hydrate() error {
 				parentArtifact := w.parentArtifact
 				for parentArtifact != nil {
 					parentArtifact.Ingredients = append(w.parentArtifact.Ingredients, ingredient)
-					parentArtifact = parentArtifact.parentArtifact
+					parentArtifact = parentArtifact.parent
 				}
 				return nil
 			default:
@@ -109,7 +151,7 @@ func (b *BuildPlan) Hydrate() error {
 	// If this fails either the API is bugged or the hydrate logic is bugged
 	for _, a := range b.Artifacts() {
 		if len(a.Ingredients) == 0 {
-			return errs.New("artifact '%s (%s)' does not have an ingredient", a.NodeID, a.DisplayName)
+			return errs.New("artifact '%s (%s)' does not have an ingredient", a.ArtifactID, a.DisplayName)
 		}
 	}
 
@@ -125,45 +167,67 @@ func (b *BuildPlan) Hydrate() error {
 		}
 	}
 
+	// Deduplicate
+	b.platforms = sliceutils.Unique(b.platforms)
+
 	return nil
 }
 
-type filterArtifact func(a *Artifact) bool
+func (b *BuildPlan) Platforms() []strfmt.UUID {
+	return b.platforms
+}
 
-func FilterPlatformArtifacts(platformID strfmt.UUID) filterArtifact {
+type FilterArtifact func(a *Artifact) bool
+
+func FilterPlatformArtifacts(platformID strfmt.UUID) FilterArtifact {
 	return func(a *Artifact) bool {
-		return a.Platform != nil && *a.Platform == platformID
+		if a.Platforms == nil {
+			return false
+		}
+		return sliceutils.Contains(a.Platforms, platformID)
 	}
 }
 
-func FilterBuildtimeArtifacts() filterArtifact {
+func FilterBuildtimeArtifacts() FilterArtifact {
 	return func(a *Artifact) bool {
 		return a.IsBuildtimeDependency
 	}
 }
 
-func FilterRuntimeArtifacts() filterArtifact {
+func FilterRuntimeArtifacts() FilterArtifact {
 	return func(a *Artifact) bool {
 		return a.IsRuntimeDependency
 	}
 }
 
-func FilterStateArtifacts() filterArtifact {
+const NamespaceInternal = "internal"
+
+func FilterStateArtifacts() FilterArtifact {
 	return func(a *Artifact) bool {
+		for _, i := range a.Ingredients {
+			if i.Namespace == NamespaceInternal {
+				return false
+			}
+		}
+		if strings.Contains(a.URL, "as-builds/noop") {
+			return false
+		}
 		return a.MimeType == types.XArtifactMimeType ||
 			a.MimeType == types.XActiveStateArtifactMimeType ||
 			a.MimeType == types.XCamelInstallerMimeType
 	}
 }
 
-func FilterSuccessfulArtifacts() filterArtifact {
+func FilterSuccessfulArtifacts() FilterArtifact {
 	return func(a *Artifact) bool {
-		return a.Status == types.ArtifactSucceeded || a.Status == types.ArtifactBlocked ||
-			a.Status == types.ArtifactStarted || a.Status == types.ArtifactReady
+		return a.Status == types.ArtifactSucceeded ||
+			a.Status == types.ArtifactBlocked ||
+			a.Status == types.ArtifactStarted ||
+			a.Status == types.ArtifactReady
 	}
 }
 
-func (b *BuildPlan) Artifacts(filters ...filterArtifact) Artifacts {
+func (b *BuildPlan) Artifacts(filters ...FilterArtifact) Artifacts {
 	if len(filters) == 0 {
 		return b.raw.Artifacts
 	}
@@ -195,21 +259,29 @@ func (b *BuildPlan) Ingredients(filters ...filterIngredient) Ingredients {
 	return ingredients
 }
 
-func (b *BuildPlan) DiffArtifacts(oldBp *BuildPlan) ArtifactChangeset {
+func (b *BuildPlan) DiffArtifacts(oldBp *BuildPlan, requestedOnly bool) ArtifactChangeset {
 	// Basic outline of what needs to happen here:
 	//   - add ArtifactID to the `Added` field if artifactID only appears in the the `new` buildplan
 	//   - add ArtifactID to the `Removed` field if artifactID only appears in the the `old` buildplan
 	//   - add ArtifactID to the `Updated` field if `ResolvedRequirements.feature` appears in both buildplans, but the resolved version has changed.
 
-	new := b.Artifacts().ToNameMap()
-	old := oldBp.Artifacts().ToNameMap()
+	var new ArtifactNameMap
+	var old ArtifactNameMap
+
+	if requestedOnly {
+		new = b.RequestedArtifacts().ToNameMap()
+		old = oldBp.RequestedArtifacts().ToNameMap()
+	} else {
+		new = b.Artifacts().ToNameMap()
+		old = oldBp.Artifacts().ToNameMap()
+	}
 
 	var updated []ArtifactUpdate
 	var added []*Artifact
 	for name, artf := range new {
 		if artfOld, notNew := old[name]; notNew {
 			// The artifact name exists in both the old and new recipe, maybe it was updated though
-			if artfOld.NodeID == artf.NodeID {
+			if artfOld.ArtifactID == artf.ArtifactID {
 				continue
 			}
 			updated = append(updated, ArtifactUpdate{
@@ -263,4 +335,28 @@ func (b *BuildPlan) RecipeID() (strfmt.UUID, error) {
 		result = strfmt.UUID(id.ID)
 	}
 	return result, nil
+}
+
+func (b *BuildPlan) IsBuildReady() bool {
+	return b.raw.Status == Completed
+}
+
+func (b *BuildPlan) IsBuildInProgress() bool {
+	return b.raw.Status == Started || b.raw.Status == Planned
+}
+
+// RequestedIngredients returns the resolved requirements of the buildplan as ingredients
+func (b *BuildPlan) RequestedIngredients() []*Ingredient {
+	return b.requirements
+}
+
+// RequestedArtifacts returns the resolved requirements of the buildplan as artifacts
+func (b *BuildPlan) RequestedArtifacts() Artifacts {
+	result := []*Artifact{}
+	for _, i := range b.requirements {
+		for _, a := range i.Artifacts {
+			result = append(result, a)
+		}
+	}
+	return result
 }

@@ -22,15 +22,15 @@ const (
 const PlatformTerminalPrefix = "platform:"
 
 type RawBuild struct {
-	Type                 string                 `json:"__typename"`
-	BuildPlanID          strfmt.UUID            `json:"buildPlanID"`
-	Status               string                 `json:"status"`
-	Terminals            []*NamedTarget         `json:"terminals"`
-	Artifacts            []*Artifact            `json:"artifacts"`
-	Steps                []*Step                `json:"steps"`
-	Sources              []*Source              `json:"sources"`
-	BuildLogIDs          []*BuildLogID          `json:"buildLogIds"`
-	ResolvedRequirements []*ResolvedRequirement `json:"resolvedRequirements"`
+	Type                 string                    `json:"__typename"`
+	BuildPlanID          strfmt.UUID               `json:"buildPlanID"`
+	Status               string                    `json:"status"`
+	Terminals            []*NamedTarget            `json:"terminals"`
+	Artifacts            []*Artifact               `json:"artifacts"`
+	Steps                []*Step                   `json:"steps"`
+	Sources              []*Source                 `json:"sources"`
+	BuildLogIDs          []*BuildLogID             `json:"buildLogIds"`
+	ResolvedRequirements []*RawResolvedRequirement `json:"resolvedRequirements"`
 }
 
 // BuildLogID is the ID used to initiate a connection with the BuildLogStreamer.
@@ -57,13 +57,21 @@ type Step struct {
 
 // Source represents the source of an artifact.
 type Source struct {
-	NodeID    strfmt.UUID `json:"nodeId"`
-	Name      string      `json:"name"`
-	Namespace string      `json:"namespace"`
-	Version   string      `json:"version"`
+	NodeID strfmt.UUID `json:"nodeId"`
+	IngredientSource
 }
 
-type ResolvedRequirement struct {
+type IngredientSource struct {
+	IngredientID        strfmt.UUID `json:"ingredientId"`
+	IngredientVersionID strfmt.UUID `json:"ingredientVersionId"`
+	Revision            int         `json:"revision"`
+	Name                string      `json:"name"`
+	Namespace           string      `json:"namespace"`
+	Version             string      `json:"version"`
+	Licenses            []string    `json:"licenses"`
+}
+
+type RawResolvedRequirement struct {
 	Requirement *types.Requirement `json:"requirement"`
 	Source      strfmt.UUID        `json:"resolvedSource"`
 }

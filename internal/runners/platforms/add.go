@@ -41,7 +41,7 @@ func NewAdd(prime primeable) *Add {
 func (a *Add) Run(ps AddRunParams) error {
 	logging.Debug("Execute platforms add")
 
-	params, err := prepareParams(ps.Params, a.prime.Auth())
+	params, err := prepareParams(ps.Params)
 	if err != nil {
 		return err
 	}

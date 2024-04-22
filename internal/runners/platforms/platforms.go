@@ -11,7 +11,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -73,14 +72,14 @@ type Params struct {
 	version  string
 }
 
-func prepareParams(ps Params, auth *authentication.Auth) (Params, error) {
+func prepareParams(ps Params) (Params, error) {
 	ps.name = ps.Platform.Name()
 	if ps.name == "" {
 		ps.name = sysinfo.OS().String()
 	}
 	ps.version = ps.Platform.Version()
 	if ps.version == "" {
-		return prepareLatestVersion(ps, auth)
+		return prepareLatestVersion(ps)
 	}
 
 	if ps.BitWidth == 0 {
@@ -90,13 +89,13 @@ func prepareParams(ps Params, auth *authentication.Auth) (Params, error) {
 	return ps, nil
 }
 
-func prepareLatestVersion(params Params, auth *authentication.Auth) (Params, error) {
+func prepareLatestVersion(params Params) (Params, error) {
 	platformUUID, err := model.PlatformNameToPlatformID(params.Platform.Name())
 	if err != nil {
 		return params, locale.WrapInputError(err, "err_resolve_platform_id", "Could not resolve platform ID from name: {{.V0}}", params.Platform.Name())
 	}
 
-	platform, err := model.FetchPlatformByUID(strfmt.UUID(platformUUID), auth)
+	platform, err := model.FetchPlatformByUID(strfmt.UUID(platformUUID))
 	if err != nil {
 		return params, locale.WrapError(err, "err_fetch_platform", "Could not get platform details")
 	}

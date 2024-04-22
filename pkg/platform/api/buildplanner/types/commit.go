@@ -49,7 +49,7 @@ const (
 
 const (
 	MergeCommitStrategyRecursive                    MergeStrategy = "Recursive"
-	MergeCommitStrategyRecursiveOverwriteOnConflict               = "RecursiveOverwriteOnConflict"
-	MergeCommitStrategyRecursiveKeepOnConflict                    = "RecursiveKeepOnConflict"
-	MergeCommitStrategyFastForward                                = "FastForward"
+	MergeCommitStrategyRecursiveOverwriteOnConflict MergeStrategy = "RecursiveOverwriteOnConflict"
+	MergeCommitStrategyRecursiveKeepOnConflict      MergeStrategy = "RecursiveKeepOnConflict"
+	MergeCommitStrategyFastForward                  MergeStrategy = "FastForward"
 )
