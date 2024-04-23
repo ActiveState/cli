@@ -10,11 +10,17 @@ import (
 )
 
 type requirementVulnerabilities struct {
-	Count map[string]int `json:"count,omitempty"`
+	Count         map[string]int `json:"count,omitempty"`
+	authenticated bool
 }
 
 func (v *requirementVulnerabilities) String() string {
-	if v == nil {
+	switch {
+	case v == nil:
+		return ""
+	case !v.authenticated:
+		return locale.Tl("manifest_vulnerability_no_auth", "[DISABLED]Authenticate to view[/RESET]")
+	case v.Count == nil:
 		return locale.Tl("manifest_vulnerability_none", "[DISABLED]None detected[/RESET]")
 	}
 

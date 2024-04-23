@@ -121,8 +121,15 @@ func (m *Manifest) fetchArtifacts() ([]*artifact.Artifact, error) {
 }
 
 func (m *Manifest) fetchVulnerabilities(reqs []bpModel.Requirement) (vulnerabilities, error) {
+	vulns := make(vulnerabilities)
+
 	if !m.auth.Authenticated() {
-		return nil, nil
+		for _, req := range reqs {
+			vulns.addVulnerability(req.Name, req.Namespace, &requirementVulnerabilities{
+				authenticated: false,
+			})
+		}
+		return vulns, nil
 	}
 
 	var ingredients []*request.Ingredient
@@ -144,10 +151,10 @@ func (m *Manifest) fetchVulnerabilities(reqs []bpModel.Requirement) (vulnerabili
 		return nil, errs.Wrap(err, "Failed to fetch ingredient vulnerabilities")
 	}
 
-	vulns := make(vulnerabilities)
 	for _, vuln := range ingredientVulnerabilities {
 		vulns.addVulnerability(vuln.Name, vuln.PrimaryNamespace, &requirementVulnerabilities{
-			Count: vuln.Vulnerabilities.Count(),
+			Count:         vuln.Vulnerabilities.Count(),
+			authenticated: true,
 		})
 	}
 
