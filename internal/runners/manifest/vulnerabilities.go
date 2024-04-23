@@ -15,12 +15,11 @@ type requirementVulnerabilities struct {
 }
 
 func (v *requirementVulnerabilities) String() string {
-	switch {
-	case v == nil:
-		return ""
-	case !v.authenticated:
+	if v != nil && !v.authenticated {
 		return locale.Tl("manifest_vulnerability_no_auth", "[DISABLED]Authenticate to view[/RESET]")
-	case v.Count == nil:
+	}
+
+	if v == nil || v.Count == nil {
 		return locale.Tl("manifest_vulnerability_none", "[DISABLED]None detected[/RESET]")
 	}
 
