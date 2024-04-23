@@ -178,16 +178,16 @@ func (v *view) processContent() string {
 
 			vunlSummary := []string{}
 			if critical > 0 {
-				vunlSummary = append(vunlSummary, colorize.StyleRed.Render(locale.Tl("search_critical", "{{.V0}} Critical", strconv.Itoa(critical))))
+				vunlSummary = append(vunlSummary, locale.Tr("vulnerability_critical", strconv.Itoa(critical)))
 			}
 			if high > 0 {
-				vunlSummary = append(vunlSummary, colorize.StyleOrange.Render(locale.Tl("search_high", "{{.V0}} High", strconv.Itoa(high))))
+				vunlSummary = append(vunlSummary, locale.Tr("vulnerability_high", strconv.Itoa(high)))
 			}
 			if medium > 0 {
-				vunlSummary = append(vunlSummary, colorize.StyleYellow.Render(locale.Tl("search_medium", "{{.V0}} Medium", strconv.Itoa(medium))))
+				vunlSummary = append(vunlSummary, locale.Tr("vulnerability_medium", strconv.Itoa(medium)))
 			}
 			if low > 0 {
-				vunlSummary = append(vunlSummary, colorize.StyleMagenta.Render(locale.Tl("search_low", "{{.V0}} Low", strconv.Itoa(low))))
+				vunlSummary = append(vunlSummary, locale.Tr("vulnerability_low", strconv.Itoa(low)))
 			}
 
 			if len(vunlSummary) > 0 {

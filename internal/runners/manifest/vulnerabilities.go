@@ -34,7 +34,7 @@ func (v *requirementVulnerabilities) String() string {
 
 		report = append(
 			report,
-			locale.Tr(fmt.Sprintf("manifest_vulnerability_%s", severity), strconv.Itoa(count)),
+			locale.Tr(fmt.Sprintf("vulnerability_%s", severity), strconv.Itoa(count)),
 		)
 	}
 
