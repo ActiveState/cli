@@ -89,7 +89,6 @@ func isCustomNamespace(ns string) bool {
 		platformModel.NamespacePackage,
 		platformModel.NamespaceBundle,
 		platformModel.NamespaceLanguage,
-		platformModel.NamespacePlatform,
 	}
 
 	for _, n := range supportedNamespaces {
