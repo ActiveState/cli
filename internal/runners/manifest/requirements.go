@@ -67,7 +67,12 @@ func (o requirements) MarshalOutput(_ output.Format) interface{} {
 func (o requirements) MarshalStructured(f output.Format) interface{} {
 	for _, req := range o.Requirements {
 		req.ResolvedVersion.MarshalStructured(f)
+
+		if !req.Vulnerabilities.authenticated {
+			req.Vulnerabilities = nil
+		}
 	}
+
 	return o
 }
 

@@ -9,8 +9,8 @@ import (
 )
 
 type resolvedVersion struct {
-	Requested string `json:"requested"`
-	Resolved  string `json:"resolved,omitempty"`
+	Requested string `json:"requested,omitempty"`
+	Resolved  string `json:"resolved"`
 }
 
 func (v *resolvedVersion) String() string {
@@ -24,6 +24,11 @@ func (v *resolvedVersion) MarshalStructured(_ output.Format) interface{} {
 	if v.Resolved == "" {
 		v.Resolved = v.Requested
 	}
+
+	if v.Requested == "auto" {
+		v.Requested = ""
+	}
+
 	return v
 }
 
