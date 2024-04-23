@@ -4,7 +4,7 @@ import "github.com/ActiveState/cli/internal/rtutils/ptr"
 
 const TargetAll = "__all__"
 
-func ProjectCommit(organization, project, commitID string, target *string) *projectCommit {
+func ProjectCommit(commitID, organization, project string, target *string) *projectCommit {
 	bp := &projectCommit{map[string]interface{}{
 		"organization": organization,
 		"project":      project,
