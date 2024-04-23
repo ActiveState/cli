@@ -1,4 +1,4 @@
-package buildplan
+package raw
 
 import (
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
@@ -21,7 +21,7 @@ const (
 
 const PlatformTerminalPrefix = "platform:"
 
-type RawBuild struct {
+type Build struct {
 	Type                 string                    `json:"__typename"`
 	BuildPlanID          strfmt.UUID               `json:"buildPlanID"`
 	Status               string                    `json:"status"`
@@ -31,6 +31,21 @@ type RawBuild struct {
 	Sources              []*Source                 `json:"sources"`
 	BuildLogIDs          []*BuildLogID             `json:"buildLogIds"`
 	ResolvedRequirements []*RawResolvedRequirement `json:"resolvedRequirements"`
+}
+
+// Artifact represents a downloadable artifact.
+// This artifact may or may not be installable by the State Tool.
+type Artifact struct {
+	Type                string        `json:"__typename"`
+	NodeID              strfmt.UUID   `json:"nodeId"`
+	DisplayName         string        `json:"displayName"`
+	MimeType            string        `json:"mimeType"`
+	GeneratedBy         strfmt.UUID   `json:"generatedBy"`
+	RuntimeDependencies []strfmt.UUID `json:"runtimeDependencies"`
+	Status              string        `json:"status"`
+	URL                 string        `json:"url"`
+	LogURL              string        `json:"logURL"`
+	Checksum            string        `json:"checksum"`
 }
 
 // BuildLogID is the ID used to initiate a connection with the BuildLogStreamer.

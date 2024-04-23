@@ -5,22 +5,27 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/sliceutils"
+	"github.com/ActiveState/cli/pkg/buildplan/raw"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/go-openapi/strfmt"
 )
 
 type BuildPlan struct {
 	platforms    []strfmt.UUID
+	artifacts    []*Artifact
 	requirements []*Ingredient
 	ingredients  []*Ingredient
-	raw          *RawBuild
+	raw          *raw.Build
 }
 
 func Unmarshal(data []byte) (*BuildPlan, error) {
+	logging.Debug("Unmarshalling buildplan")
+
 	b := &BuildPlan{}
 
-	var rawBuild RawBuild
+	var rawBuild raw.Build
 	if err := json.Unmarshal(data, &rawBuild); err != nil {
 		return nil, errs.Wrap(err, "error unmarshalling build plan")
 	}
@@ -43,134 +48,19 @@ func (b *BuildPlan) Marshal() ([]byte, error) {
 // Cleanup empty targets
 // The type aliasing in the query populates the response with emtpy targets that we should remove
 func (b *BuildPlan) Cleanup() {
-	b.raw.Steps = sliceutils.Filter(b.raw.Steps, func(s *Step) bool {
+	logging.Debug("Cleaning up build plan")
+
+	b.raw.Steps = sliceutils.Filter(b.raw.Steps, func(s *raw.Step) bool {
 		return s.StepID != ""
 	})
 
-	b.raw.Sources = sliceutils.Filter(b.raw.Sources, func(s *Source) bool {
+	b.raw.Sources = sliceutils.Filter(b.raw.Sources, func(s *raw.Source) bool {
 		return s.NodeID != ""
 	})
 
-	b.raw.Artifacts = sliceutils.Filter(b.raw.Artifacts, func(a *Artifact) bool {
-		return a.ArtifactID != ""
+	b.raw.Artifacts = sliceutils.Filter(b.raw.Artifacts, func(a *raw.Artifact) bool {
+		return a.NodeID != ""
 	})
-}
-
-// Hydrate will add additional information to the unmarshalled structures, based on the raw data that was unmarshalled.
-// For example, rather than having to walk the buildplan to find associations between artifacts and ingredients, this
-// will add this context straight on the relevant artifacts.
-func (b *BuildPlan) Hydrate() error {
-	runtimeDeps := []strfmt.UUID{}
-
-	// Build map of requirement IDs so we can quickly look up the associated ingredient
-	var reqIDs map[strfmt.UUID]struct{}
-	reqs := b.raw.ResolvedRequirements
-	for _, req := range reqs {
-		reqIDs[req.Source] = struct{}{}
-	}
-
-	for _, t := range b.raw.Terminals {
-		var platformID *strfmt.UUID
-
-		if strings.HasPrefix(t.Tag, PlatformTerminalPrefix) {
-			if err := platformID.UnmarshalText([]byte(strings.TrimPrefix(t.Tag, PlatformTerminalPrefix))); err != nil {
-				return errs.Wrap(err, "error unmarshalling platform uuid")
-			}
-		}
-
-		ingredientLookup := make(map[strfmt.UUID]*Ingredient)
-
-		// Walk over each node, which will give us context about said node that we can then use to hydrate the
-		// relevant artifacts and ingredients
-		err := b.raw.walkNodes(t.NodeIDs, func(w walkNodeContext) error {
-			switch v := w.node.(type) {
-			case *Artifact:
-				// Add platform info to artifact structs
-				v.Platforms = append(v.Platforms, *platformID)
-				v.terminals = append(v.terminals, t.Tag)
-				v.IsBuildtimeDependency = w.isBuildDependency
-				v.parent = w.parentArtifact
-				w.parentArtifact.children = append(w.parentArtifact.children, v)
-				runtimeDeps = append(runtimeDeps, v.RuntimeDependencies...)
-				if platformID != nil {
-					b.platforms = append(b.platforms, *platformID)
-				}
-				return nil
-			case *Source:
-				if w.parentArtifact == nil {
-					return errs.New("source must be a child of an artifact")
-				}
-
-				// Ingredients aren't explicitly represented in buildplans. Technically all sources are ingredients
-				// but this may not always be true in the future. For our purposes we will initialize our own ingredients
-				// based on the source information, but we do not want to make the assumption in our logic that all
-				// sources are ingredients.
-				ingredient, ok := ingredientLookup[v.NodeID]
-				if !ok {
-					ingredient = &Ingredient{
-						IngredientSource: &v.IngredientSource,
-						Platforms:        []strfmt.UUID{},
-						Artifacts:        []*Artifact{},
-					}
-					b.ingredients = append(b.ingredients, ingredient)
-					ingredientLookup[v.NodeID] = ingredient
-
-					// Detect direct requirements
-					if _, ok := reqIDs[v.NodeID]; ok {
-						b.requirements = append(b.requirements, ingredient)
-					}
-				}
-
-				// Add artifact and platform info to ingredient structs
-				ingredient.Artifacts = append(ingredient.Artifacts, w.parentArtifact)
-				if platformID != nil {
-					ingredient.Platforms = append(ingredient.Platforms, *platformID)
-				}
-
-				if w.isBuildDependency {
-					ingredient.IsBuildtimeDependency = true
-				}
-
-				// Associate the ingredient with the parent artifacts
-				parentArtifact := w.parentArtifact
-				for parentArtifact != nil {
-					parentArtifact.Ingredients = append(w.parentArtifact.Ingredients, ingredient)
-					parentArtifact = parentArtifact.parent
-				}
-				return nil
-			default:
-				return errs.New("unexpected node type '%T'", v)
-			}
-		})
-		if err != nil {
-			return errs.Wrap(err, "error hydrating nodes")
-		}
-	}
-
-	// Ensure all artifacts have an associated ingredient
-	// If this fails either the API is bugged or the hydrate logic is bugged
-	for _, a := range b.Artifacts() {
-		if len(a.Ingredients) == 0 {
-			return errs.New("artifact '%s (%s)' does not have an ingredient", a.ArtifactID, a.DisplayName)
-		}
-	}
-
-	// Mark runtime dependencies
-	arMap := b.Artifacts().ToIDMap()
-	for _, id := range runtimeDeps {
-		if _, ok := arMap[id]; !ok {
-			return errs.New("runtime dependency '%s' does not exist in artifact map", id)
-		}
-		arMap[id].IsRuntimeDependency = true
-		for _, i := range arMap[id].Ingredients {
-			i.IsRuntimeDependency = true
-		}
-	}
-
-	// Deduplicate
-	b.platforms = sliceutils.Unique(b.platforms)
-
-	return nil
 }
 
 func (b *BuildPlan) Platforms() []strfmt.UUID {
@@ -229,10 +119,10 @@ func FilterSuccessfulArtifacts() FilterArtifact {
 
 func (b *BuildPlan) Artifacts(filters ...FilterArtifact) Artifacts {
 	if len(filters) == 0 {
-		return b.raw.Artifacts
+		return b.artifacts
 	}
 	artifacts := []*Artifact{}
-	for _, a := range b.raw.Artifacts {
+	for _, a := range b.artifacts {
 		for _, filter := range filters {
 			if filter(a) {
 				artifacts = append(artifacts, a)
@@ -338,11 +228,11 @@ func (b *BuildPlan) RecipeID() (strfmt.UUID, error) {
 }
 
 func (b *BuildPlan) IsBuildReady() bool {
-	return b.raw.Status == Completed
+	return b.raw.Status == raw.Completed
 }
 
 func (b *BuildPlan) IsBuildInProgress() bool {
-	return b.raw.Status == Started || b.raw.Status == Planned
+	return b.raw.Status == raw.Started || b.raw.Status == raw.Planned
 }
 
 // RequestedIngredients returns the resolved requirements of the buildplan as ingredients

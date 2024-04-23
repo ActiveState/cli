@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"sort"
 
+	"github.com/ActiveState/cli/pkg/buildplan/raw"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/go-openapi/strfmt"
 )
@@ -11,16 +12,15 @@ import (
 // Artifact represents a downloadable artifact.
 // This artifact may or may not be installable by the State Tool.
 type Artifact struct {
-	Type                string        `json:"__typename"`
-	ArtifactID          strfmt.UUID   `json:"nodeId"`
-	DisplayName         string        `json:"displayName"`
-	MimeType            string        `json:"mimeType"`
-	GeneratedBy         strfmt.UUID   `json:"generatedBy"`
-	RuntimeDependencies []strfmt.UUID `json:"runtimeDependencies"`
-	Status              string        `json:"status"`
-	URL                 string        `json:"url"`
-	LogURL              string        `json:"logURL"`
-	Checksum            string        `json:"checksum"`
+	raw *raw.Artifact // Don't expose as this may lead to external packages using low level buildplan logic
+
+	ArtifactID  strfmt.UUID
+	DisplayName string
+	MimeType    string
+	URL         string
+	LogURL      string
+	Checksum    string
+	Status      string
 
 	IsRuntimeDependency   bool
 	IsBuildtimeDependency bool

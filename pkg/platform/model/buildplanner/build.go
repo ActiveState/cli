@@ -59,7 +59,7 @@ func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, 
 	// The BuildPlanner will return a build plan with a status of
 	// "planning" if the build plan is not ready yet. We need to
 	// poll the BuildPlanner until the build is ready.
-	if resp.Project.Commit.Build.Status == buildplan.Planning {
+	if resp.Project.Commit.Build.Status == raw.Planning {
 		resp.Project.Commit.Build, err = b.pollBuildPlanned(commitID.String(), owner, project, target)
 		if err != nil {
 			return nil, errs.Wrap(err, "failed to poll build plan")
@@ -206,7 +206,7 @@ func (b *BuildPlanner) pollBuildPlanned(commitID, owner, project string, target 
 
 			build := resp.Project.Commit.Build
 
-			if build.Status != buildplan.Planning {
+			if build.Status != raw.Planning {
 				return build, nil
 			}
 		case <-time.After(pollTimeout):
@@ -243,7 +243,7 @@ func (b *BuildPlanner) WaitForBuild(commitID strfmt.UUID, owner, project string,
 			build := resp.Project.Commit.Build
 
 			// If the build status is planning it may not have any artifacts yet.
-			if build.Status == buildplan.Planning {
+			if build.Status == raw.Planning {
 				continue
 			}
 
@@ -268,7 +268,7 @@ func (b *BuildPlanner) WaitForBuild(commitID strfmt.UUID, owner, project string,
 			}
 
 			// If the build status is completed then we are done.
-			if build.Status == buildplan.Completed {
+			if build.Status == raw.Completed {
 				if len(failedArtifacts) != 0 {
 					return ErrFailedArtifacts{failedArtifacts}
 				}

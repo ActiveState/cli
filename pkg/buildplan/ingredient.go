@@ -1,9 +1,12 @@
 package buildplan
 
-import "github.com/go-openapi/strfmt"
+import (
+	"github.com/ActiveState/cli/pkg/buildplan/raw"
+	"github.com/go-openapi/strfmt"
+)
 
 type Ingredient struct {
-	*IngredientSource
+	*raw.IngredientSource
 	IsBuildtimeDependency bool
 	IsRuntimeDependency   bool
 	Platforms             []strfmt.UUID

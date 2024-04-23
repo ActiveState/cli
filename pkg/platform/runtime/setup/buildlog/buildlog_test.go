@@ -205,7 +205,7 @@ func TestBuildLog(t *testing.T) {
 			go func() {
 				defer func() { done <- struct{}{} }()
 				for d := range bl.BuiltArtifactsChannel() {
-					downloads = append(downloads, d.ArtifactID)
+					downloads = append(downloads, d.NodeID)
 				}
 			}()
 
