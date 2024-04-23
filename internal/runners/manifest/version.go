@@ -2,6 +2,7 @@ package manifest
 
 import (
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	platformModel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
@@ -12,14 +13,21 @@ type resolvedVersion struct {
 	Resolved  string `json:"resolved,omitempty"`
 }
 
-func (v resolvedVersion) String() string {
+func (v *resolvedVersion) String() string {
 	if v.Resolved != "" {
 		return locale.Tl("manifest_version_resolved", "[CYAN]{{.V0}}[/RESET] → [CYAN]{{.V1}}[/RESET]", v.Requested, v.Resolved)
 	}
 	return locale.Tl("manifest_version", "[CYAN]{{.V0}}[/RESET]", v.Requested)
 }
 
-func resolveVersion(req model.Requirement, artifacts []*artifact.Artifact) resolvedVersion {
+func (v *resolvedVersion) MarshalStructured(_ output.Format) interface{} {
+	if v.Resolved == "" {
+		v.Resolved = v.Requested
+	}
+	return v
+}
+
+func resolveVersion(req model.Requirement, artifacts []*artifact.Artifact) *resolvedVersion {
 	var requested string
 	var resolved string
 
@@ -35,7 +43,7 @@ func resolveVersion(req model.Requirement, artifacts []*artifact.Artifact) resol
 		}
 	}
 
-	return resolvedVersion{
+	return &resolvedVersion{
 		Requested: requested,
 		Resolved:  resolved,
 	}

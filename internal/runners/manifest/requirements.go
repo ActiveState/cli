@@ -11,7 +11,7 @@ import (
 type requirement struct {
 	Name            string                      `json:"name"`
 	Namespace       string                      `json:"namespace,omitempty"`
-	Version         resolvedVersion             `json:"version"`
+	ResolvedVersion *resolvedVersion            `json:"version"`
 	Vulnerabilities *requirementVulnerabilities `json:"vulnerabilities,omitempty"`
 }
 
@@ -25,7 +25,7 @@ func newRequirements(reqs []model.Requirement, artifacts []*artifact.Artifact, v
 		result = append(result, &requirement{
 			Name:            req.Name,
 			Namespace:       processNamespace(req.Namespace),
-			Version:         resolveVersion(req, artifacts),
+			ResolvedVersion: resolveVersion(req, artifacts),
 			Vulnerabilities: vulns.getVulnerability(req.Name, req.Namespace),
 		})
 	}
@@ -46,7 +46,7 @@ func (o requirements) MarshalOutput(_ output.Format) interface{} {
 	for _, req := range o.Requirements {
 		requirementOutput := &requirementOutput{
 			Name:            locale.Tl("manifest_name", "[ACTIONABLE]{{.V0}}[/RESET]", req.Name),
-			Version:         req.Version.String(),
+			Version:         req.ResolvedVersion.String(),
 			Vulnerabilities: req.Vulnerabilities.String(),
 		}
 
@@ -64,7 +64,10 @@ func (o requirements) MarshalOutput(_ output.Format) interface{} {
 	}
 }
 
-func (o requirements) MarshalStructured(_ output.Format) interface{} {
+func (o requirements) MarshalStructured(f output.Format) interface{} {
+	for _, req := range o.Requirements {
+		req.ResolvedVersion.MarshalStructured(f)
+	}
 	return o
 }
 
