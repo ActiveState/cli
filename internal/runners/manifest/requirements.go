@@ -42,9 +42,9 @@ func (o requirements) MarshalOutput(_ output.Format) interface{} {
 		Namespace string `locale:"manifest_namespace,Namespace" opts:"omitEmpty,separateLine"`
 	}
 
-	var requirementsOutput []requirementOutput
+	var requirementsOutput []*requirementOutput
 	for _, req := range o.Requirements {
-		requirementOutput := requirementOutput{
+		requirementOutput := &requirementOutput{
 			Name:            locale.Tl("manifest_name", "[ACTIONABLE]{{.V0}}[/RESET]", req.Name),
 			Version:         req.Version.String(),
 			Vulnerabilities: req.Vulnerabilities.String(),
@@ -57,7 +57,11 @@ func (o requirements) MarshalOutput(_ output.Format) interface{} {
 		requirementsOutput = append(requirementsOutput, requirementOutput)
 	}
 
-	return requirementsOutput
+	return struct {
+		Requirements []*requirementOutput `locale:"," opts:"hideDash"`
+	}{
+		Requirements: requirementsOutput,
+	}
 }
 
 func (o requirements) MarshalStructured(_ output.Format) interface{} {

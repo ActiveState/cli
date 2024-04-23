@@ -192,7 +192,15 @@ func sprintStruct(value interface{}) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			return sprintTable(true, slice)
+			return sprintTable(true, false, slice)
+		}
+
+		if funk.Contains(field.opts, string(HideDash)) {
+			slice, err := asSlice(field.value)
+			if err != nil {
+				return "", err
+			}
+			return sprintTable(false, true, slice)
 		}
 
 		stringValue, err := sprint(field.value)
@@ -222,7 +230,7 @@ func sprintSlice(value interface{}) (string, error) {
 	}
 
 	if len(slice) > 0 && isStruct(slice[0]) {
-		return sprintTable(false, slice)
+		return sprintTable(false, false, slice)
 	}
 
 	result := []string{}
@@ -270,7 +278,7 @@ func sprintMap(value interface{}) (string, error) {
 }
 
 // sprintTable will marshal and return the given slice of structs as a string, formatted as a table
-func sprintTable(vertical bool, slice []interface{}) (string, error) {
+func sprintTable(vertical, hideDash bool, slice []interface{}) (string, error) {
 	if len(slice) == 0 {
 		return "", nil
 	}
@@ -281,7 +289,6 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 
 	headers := []string{}
 	rows := [][]string{}
-	var hideDash bool
 	for _, v := range slice {
 		if !isStruct(v) {
 			return "", errors.New("Tried to sprintTable with slice that doesn't contain all structs")
@@ -310,10 +317,6 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 
 			if firstIteration && !funk.Contains(field.opts, string(SeparateLineOpt)) {
 				headers = append(headers, localizedField(field.l10n))
-			}
-
-			if firstIteration && funk.Contains(field.opts, string(HideDash)) {
-				hideDash = true
 			}
 
 			if funk.Contains(field.opts, string(EmptyNil)) && stringValue == nilText {

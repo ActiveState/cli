@@ -54,8 +54,6 @@ func (t *Table) Render() string {
 		out += "[NOTICE]" + renderRow(t.headers, colWidths) + "[/RESET]" + linebreak
 		if !t.HideDash {
 			out += "[DISABLED]" + strings.Repeat(dash, total) + "[/RESET]" + linebreak
-		} else {
-			out += "[DISABLED]" + strings.Repeat(" ", total) + "[/RESET]" + linebreak
 		}
 	}
 	for _, row := range t.rows {
