@@ -281,7 +281,7 @@ func getBuildPlan(
 		bp := bpModel.NewBuildPlannerModel(auth)
 		commit, err = bp.FetchCommit(localCommitID, pj.Owner(), pj.Name(), targetPtr)
 		if err != nil {
-			return nil, errs.Wrap(err, "Failed to fetch build plan")
+			return nil, errs.Wrap(err, "Failed to fetch commit")
 		}
 
 	// Return artifact map from the given commitID for the current project.
@@ -289,7 +289,7 @@ func getBuildPlan(
 		bp := bpModel.NewBuildPlannerModel(auth)
 		commit, err = bp.FetchCommit(commitUUID, pj.Owner(), pj.Name(), targetPtr)
 		if err != nil {
-			return nil, errs.Wrap(err, "Failed to fetch build plan")
+			return nil, errs.Wrap(err, "Failed to fetch commit")
 		}
 
 	// Return the artifact map for the latest commitID of the given project.
@@ -313,7 +313,7 @@ func getBuildPlan(
 		bp := bpModel.NewBuildPlannerModel(auth)
 		commit, err = bp.FetchCommit(commitUUID, namespace.Owner, namespace.Project, targetPtr)
 		if err != nil {
-			return nil, errs.Wrap(err, "Failed to fetch build plan")
+			return nil, errs.Wrap(err, "Failed to fetch commit")
 		}
 
 	// Return the artifact map for the given commitID of the given project.
@@ -321,7 +321,7 @@ func getBuildPlan(
 		bp := bpModel.NewBuildPlannerModel(auth)
 		commit, err = bp.FetchCommit(commitUUID, namespace.Owner, namespace.Project, targetPtr)
 		if err != nil {
-			return nil, errs.Wrap(err, "Failed to fetch build plan")
+			return nil, errs.Wrap(err, "Failed to fetch commit")
 		}
 
 	default:

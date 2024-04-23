@@ -206,7 +206,11 @@ func (r *Runtime) SolveAndUpdate(eventHandler events.Handler) error {
 		return errs.Wrap(err, "Could not solve")
 	}
 
-	return r.Update(setup, commit)
+	if err := r.Update(setup, commit); err != nil {
+		return errs.Wrap(err, "Could not update")
+	}
+
+	return nil
 }
 
 // HasCache tells us whether this runtime has any cached files. Note this does NOT tell you whether the cache is valid.

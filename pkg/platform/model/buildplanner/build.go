@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/buildplan/raw"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
@@ -53,7 +54,7 @@ func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, 
 	resp := &response.ProjectCommitResponse{}
 	err := b.client.Run(request.ProjectCommit(commitID.String(), owner, project, target), resp)
 	if err != nil {
-		return nil, processBuildPlannerError(err, "failed to fetch build plan")
+		return nil, processBuildPlannerError(err, "failed to fetch commit")
 	}
 
 	// The BuildPlanner will return a build plan with a status of
@@ -197,7 +198,7 @@ func (b *BuildPlanner) pollBuildPlanned(commitID, owner, project string, target 
 		case <-ticker.C:
 			err := b.client.Run(request.ProjectCommit(commitID, owner, project, target), resp)
 			if err != nil {
-				return nil, processBuildPlannerError(err, "failed to fetch build plan")
+				return nil, processBuildPlannerError(err, "failed to fetch commit during poll")
 			}
 
 			if resp == nil {
@@ -233,7 +234,7 @@ func (b *BuildPlanner) WaitForBuild(commitID strfmt.UUID, owner, project string,
 		case <-ticker.C:
 			err := b.client.Run(request.ProjectCommit(commitID.String(), owner, project, target), resp)
 			if err != nil {
-				return processBuildPlannerError(err, "failed to fetch build plan")
+				return processBuildPlannerError(err, "failed to fetch commit while waiting for completed build")
 			}
 
 			if resp == nil {
