@@ -52,6 +52,8 @@ func NewManifest(prime primeable) *Manifest {
 }
 
 func (m *Manifest) Run() (rerr error) {
+	defer rationalizeError(&rerr)
+
 	if m.project == nil {
 		return rationalize.ErrNoProject
 	}
