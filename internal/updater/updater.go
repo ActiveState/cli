@@ -142,7 +142,11 @@ func (u *UpdateInstaller) DownloadAndUnpack() (string, error) {
 		return "", errs.Wrap(err, "Could not download and unpack update")
 	}
 
-	u.tmpDir = filepath.Join(tmpDir, constants.ToplevelInstallArchiveDir)
+	payloadDir := tmpDir
+	if legacyDir := filepath.Join(tmpDir, constants.LegacyToplevelInstallArchiveDir); fileutils.DirExists(legacyDir) {
+		payloadDir = legacyDir
+	}
+	u.tmpDir = payloadDir
 	return u.tmpDir, nil
 }
 
