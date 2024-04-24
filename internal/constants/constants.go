@@ -492,8 +492,9 @@ const InstallerName = "State Installer"
 // StateExecutorCmd is the name of the state executor binary
 const StateExecutorCmd = "state-exec"
 
-// ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
-const ToplevelInstallArchiveDir = "state-install"
+// LegacyToplevelInstallArchiveDir is the top-level directory for files in an installation archive
+// This constant will be removed in DX-2081.
+const LegacyToplevelInstallArchiveDir = "state-install"
 
 // FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
 const FirstMultiFileStateToolVersion = "0.29.0"
