@@ -215,6 +215,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newCommitCommand(prime),
 		newPublish(prime),
 		newEvalCommand(prime),
+		newManifestCommmand(prime),
 		artifactsCmd,
 	)
 

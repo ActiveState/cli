@@ -1594,3 +1594,16 @@ err_initial_no_requirement:
   other: |
     Could not find compatible requirement for initial commit. Please ensure that you are trying to install a valid package.
     To check for available packages run '[ACTIONABLE]state search <package_name>[/RESET]'.
+manifest_deprecation_warning:
+  other: |
+    [WARNING]Warning:[/RESET] This command is deprecated, please use '[ACTIONABLE]state manfiest[/RESET]' instead.
+manifest_runtime_needs_update:
+  other: "[WARNING]WARNING:[/RESET] Your runtime is out of date, in order to ensure an accurate manifest please run [ACTIONABLE]state refresh[/RESET].\n"
+vulnerability_critical:
+  other: "[RED]{{.V0}} Critical[/RESET]"
+vulnerability_high:
+  other: "[ORANGE]{{.V0}} High[/RESET]"
+vulnerability_medium:
+  other: "[YELLOW]{{.V0}} Medium[/RESET]"
+vulnerability_low:
+  other: "[GREEN]{{.V0}} Low[/RESET]"

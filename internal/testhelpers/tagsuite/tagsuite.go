@@ -51,6 +51,7 @@ const (
 	Invite          = "invite"
 	JSON            = "json"
 	Languages       = "languages"
+	Manifest        = "manifest"
 	Messaging       = "messaging"
 	Migrations      = "migrations"
 	Organizations   = "organizations"

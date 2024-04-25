@@ -15,8 +15,8 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -70,6 +70,8 @@ type requirementPlainOutput struct {
 // Run executes the list behavior.
 func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteList")
+
+	l.out.Notice(locale.T("manifest_deprecation_warning"))
 
 	if l.project != nil && params.Project == "" {
 		l.out.Notice(locale.Tr("operating_message", l.project.NamespaceString(), l.project.Dir()))
