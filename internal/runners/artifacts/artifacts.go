@@ -149,9 +149,6 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 			if artifact.MimeType == bpModel.XActiveStateBuilderMimeType {
 				continue
 			}
-			if artifact.URL == "" {
-				continue
-			}
 			name := artifact.Name
 			if artifact.Version != nil && *artifact.Version != "" {
 				name = fmt.Sprintf("%s@%s", name, *artifact.Version)
@@ -192,9 +189,6 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 }
 
 func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
-	if !out.BuildComplete {
-		b.out.Error(locale.T("warn_build_not_complete"))
-	}
 	if out.HasFailedArtifacts {
 		b.out.Error(locale.T("warn_has_failed_artifacts"))
 	}
@@ -202,6 +196,10 @@ func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
 	for _, platform := range out.Platforms {
 		b.out.Print(fmt.Sprintf("• [NOTICE]%s[/RESET]", platform.Name))
 		for _, artifact := range platform.Artifacts {
+			if artifact.URL == "" {
+				b.out.Print(fmt.Sprintf("  • %s ([WARNING]%s ...[/RESET])", artifact.Name, locale.T("artifact_status_building")))
+				continue
+			}
 			id := strings.ToUpper(artifact.ID)
 			if !fullID {
 				id = id[0:8]
@@ -213,6 +211,10 @@ func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
 			b.out.Print(fmt.Sprintf("  • %s", locale.Tl("artifacts_packages", "[NOTICE]Packages[/RESET]")))
 		}
 		for _, artifact := range platform.Packages {
+			if artifact.URL == "" {
+				b.out.Print(fmt.Sprintf("  • %s ([WARNING]%s ...[/RESET])", artifact.Name, locale.T("artifact_status_building")))
+				continue
+			}
 			id := strings.ToUpper(artifact.ID)
 			if !fullID {
 				id = id[0:8]
@@ -223,6 +225,11 @@ func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
 		if len(platform.Artifacts) == 0 && len(platform.Packages) == 0 {
 			b.out.Print(fmt.Sprintf("  • %s", locale.Tl("no_artifacts", "No artifacts")))
 		}
+	}
+
+	if !out.BuildComplete {
+		b.out.Notice("") // blank line
+		b.out.Notice(locale.T("warn_build_not_complete"))
 	}
 
 	b.out.Print("\nTo download artifacts run '[ACTIONABLE]state artifacts dl <ID>[/RESET]'.")
