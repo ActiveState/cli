@@ -9,7 +9,7 @@ import (
 )
 
 type resolvedVersion struct {
-	Requested string `json:"requested,omitempty"`
+	Requested string `json:"requested"`
 	Resolved  string `json:"resolved"`
 }
 
