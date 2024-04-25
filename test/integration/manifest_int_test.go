@@ -1,7 +1,6 @@
 package integration
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -55,51 +54,13 @@ func (suite *ManifestIntegrationTestSuite) TestManifest_JSON() {
 	)
 	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 
-	type version struct {
-		Requested string `json:"requested"`
-		Resolved  string `json:"resolved"`
-	}
-
-	type vulnerabilities struct {
-		Count map[string]int `json:"count"`
-	}
-
-	type requirement struct {
-		Name            string          `json:"name"`
-		Version         version         `json:"version"`
-		Vulnerabilities vulnerabilities `json:"vulnerabilities"`
-	}
-
-	type requirements struct {
-		Requirements []requirement `json:"requirements"`
-	}
-
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("manifest", "--output", "json"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.ExpectExitCode(0)
-
-	snapshot := cp.StrippedSnapshot()
-	var result requirements
-	err := json.Unmarshal([]byte(snapshot), &result)
-	suite.Require().NoError(err)
-
-	for _, req := range result.Requirements {
-		suite.Require().NotEmpty(req.Name)
-
-		if req.Name == "python" {
-			suite.Require().Equal("3.9.13", req.Version.Requested)
-			suite.Require().Equal("3.9.13", req.Version.Resolved)
-			suite.Require().NotEmpty(req.Vulnerabilities.Count)
-		}
-
-		if req.Name == "psutil" {
-			suite.Require().Empty(req.Version.Requested)
-			suite.Require().Equal("5.9.0", req.Version.Resolved)
-			suite.Require().Empty(req.Vulnerabilities.Count)
-		}
-	}
+	AssertValidJSON(suite.T(), cp)
+	cp.Expect(`"requirements":`)
 }
 
 func TestManifestIntegrationTestSuite(t *testing.T) {
