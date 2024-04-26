@@ -144,7 +144,7 @@ func (r *Runtime) validateBuildScript() error {
 
 	script, err := buildscript.ScriptFromProject(r.target)
 	if err != nil {
-		if errs.Matches(err, buildscript.ErrBuildscriptNotExist) {
+		if errors.Is(err, buildscript.ErrBuildscriptNotExist) {
 			return errs.Pack(err, NeedsBuildscriptResetError)
 		}
 		return errs.Wrap(err, "Could not get buildscript from project")

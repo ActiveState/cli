@@ -1,6 +1,8 @@
 package languages
 
 import (
+	"errors"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
@@ -85,7 +87,7 @@ func (l *Languages) Run() error {
 		return locale.WrapError(err, "err_languages_runtime", "Could not initialize runtime")
 	}
 	bp, err := rt.BuildPlan()
-	if err != nil && !errs.Matches(err, store.ErrNoBuildPlanFile) {
+	if err != nil && !errors.Is(err, store.ErrNoBuildPlanFile) {
 		return locale.WrapError(err, "err_language_resolved_artifacts", "Unable to resolve language version(s)")
 	}
 	ns := model.NewNamespaceLanguage()

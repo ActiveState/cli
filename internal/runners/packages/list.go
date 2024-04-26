@@ -116,7 +116,7 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 			return locale.WrapError(err, "err_package_list_runtime", "Could not initialize runtime")
 		}
 		bp, err := rt.BuildPlan()
-		if err != nil && !errs.Matches(err, store.ErrNoBuildPlanFile) {
+		if err != nil && !errors.Is(err, store.ErrNoBuildPlanFile) {
 			return locale.WrapError(err, "err_package_list_artifacts", "Unable to resolve package versions")
 		}
 		artifacts = bp.Artifacts(buildplan.FilterStateArtifacts())

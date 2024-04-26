@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"gopkg.in/yaml.v3"
@@ -187,6 +189,16 @@ var errorType = reflect.TypeOf((*error)(nil)).Elem()
 func Matches(err error, target interface{}) bool {
 	if target == nil {
 		panic("errors: target cannot be nil")
+	}
+
+	// Guard against miss-use of this function
+	if _, ok := target.(*WrapperError); ok {
+		if condition.BuiltOnDevMachine() {
+			panic("target cannot be a WrapperError, you probably want errors.Is")
+		} else {
+			// Log as critical because this means it slipped by internal testing
+			multilog.Critical("target cannot be a WrapperError, you probably want errors.Is, error received: %v", err)
+		}
 	}
 
 	val := reflect.ValueOf(target)
