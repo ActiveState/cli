@@ -197,7 +197,7 @@ func (b *BuildPlan) hydrateWithIngredients(artifact *Artifact, platformID *strfm
 // If there are duplicates we're likely to see failures down the chain if live, though that's by no means guaranteed.
 // Surfacing it here will make it easier to reason about the failure.
 func (b *BuildPlan) sanityCheck() {
-	if !condition.BuiltOnDevMachine() {
+	if !condition.BuiltOnDevMachine() && !condition.InActiveStateCI() {
 		return
 	}
 	seen := make(map[strfmt.UUID]struct{})
