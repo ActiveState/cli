@@ -25,6 +25,7 @@ import (
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
+	"github.com/google/uuid"
 )
 
 type primeable interface {
@@ -152,10 +153,20 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 				continue
 			}
 			name := artifact.Name()
+
+			// Detect and drop artifact names which start with a uuid, as this isn't user friendly
+			nameBits := strings.Split(name, " ")
+			if len(nameBits) > 1 {
+				if _, err := uuid.Parse(nameBits[0]); err == nil {
+					name = strings.Join(nameBits[1:], " ")
+				}
+			}
+
 			version := artifact.Version()
 			if version != "" {
 				name = fmt.Sprintf("%s@%s", name, version)
 			}
+
 			build := &structuredArtifact{
 				ID:   string(artifact.ArtifactID),
 				Name: name,
