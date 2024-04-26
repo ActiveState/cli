@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildplan/raw"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/go-openapi/strfmt"
@@ -90,7 +91,7 @@ func (a Artifacts) Ingredients() Ingredients {
 	for _, a := range a {
 		result = append(result, a.Ingredients...)
 	}
-	return result
+	return sliceutils.Unique(result)
 }
 
 func (a Artifacts) ToIDMap() ArtifactIDMap {

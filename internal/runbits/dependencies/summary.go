@@ -29,13 +29,13 @@ func OutputSummary(out output.Outputer, directDependencies buildplan.Artifacts) 
 
 	for i, ingredient := range ingredients {
 		prefix := "├─"
-		if i == len(directDependencies)-1 {
+		if i == len(ingredients)-1 {
 			prefix = "└─"
 		}
 
 		subdependencies := ""
 		if numSubs := len(ingredient.Dependencies(true)); numSubs > 0 {
-			subdependencies = fmt.Sprintf("([ACTIONABLE]%s[/RESET] dependencies)", strconv.Itoa(numSubs))
+			subdependencies = locale.Tl("summary_subdeps", "([ACTIONABLE]{{.V0}}[/RESET] sub-dependencies)", strconv.Itoa(numSubs))
 		}
 
 		item := fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET] %s", ingredient.Name, ingredient.Version, subdependencies)
