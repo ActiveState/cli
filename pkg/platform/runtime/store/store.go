@@ -269,6 +269,10 @@ func (s *Store) BuildPlanRaw() ([]byte, error) {
 }
 
 func (s *Store) BuildPlan() (*buildplan.BuildPlan, error) {
+	if !s.VersionMarkerIsValid() {
+		return nil, locale.NewInputError("err_runtime_needs_refresh")
+	}
+
 	data, err := s.BuildPlanRaw()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get build plan file.")

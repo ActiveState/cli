@@ -1607,3 +1607,5 @@ vulnerability_medium:
   other: "[YELLOW]{{.V0}} Medium[/RESET]"
 vulnerability_low:
   other: "[GREEN]{{.V0}} Low[/RESET]"
+err_runtime_needs_refresh:
+  other: Your runtime needs to be updated, please run '[ACTIONABLE]state refresh[/RESET]' and then try again.

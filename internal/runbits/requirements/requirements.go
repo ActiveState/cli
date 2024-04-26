@@ -631,7 +631,7 @@ func (r *RequirementOperation) shouldSkipCVEs(requirements ...*Requirement) bool
 	}
 
 	for _, req := range requirements {
-		if req.Operation != bpModel.OperationRemoved {
+		if req.Operation != types.OperationRemoved {
 			return false
 		}
 	}
@@ -759,7 +759,7 @@ func (r *RequirementOperation) outputResult(requirement *Requirement) {
 			requirement.Operation.String(),
 		}))
 
-	if requirement.originalRequirementName != requirement.Name && requirement.Operation != bpModel.OperationRemoved {
+	if requirement.originalRequirementName != requirement.Name && requirement.Operation != types.OperationRemoved {
 		r.Output.Notice(locale.Tl("package_version_differs",
 			"Note: the actual package name ({{.V0}}) is different from the requested package name ({{.V1}})",
 			requirement.Name, requirement.originalRequirementName))

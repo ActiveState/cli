@@ -220,6 +220,9 @@ func (b *BuildPlan) sanityCheck() {
 		}
 		seen[r.IngredientID] = struct{}{}
 	}
+	if len(b.requirements) != len(b.raw.ResolvedRequirements) {
+		panic(fmt.Sprintf("Expected to have %d requirements, got %d", len(b.raw.ResolvedRequirements), len(b.requirements)))
+	}
 }
 
 func createArtifact(rawArtifact *raw.Artifact) *Artifact {
