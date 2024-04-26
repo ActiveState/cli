@@ -123,7 +123,7 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 	bp, err := getBuildPlan(
 		b.project, params.Namespace, params.CommitID, params.Target, b.auth, b.out)
 	if err != nil {
-		return errs.Wrap(err, "Could not get terminal artifact map")
+		return errs.Wrap(err, "Could not get buildplan")
 	}
 
 	platformMap, err := model.FetchPlatformsMap()

@@ -2,7 +2,6 @@ package buildplan
 
 import (
 	"encoding/json"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
@@ -14,9 +13,9 @@ import (
 
 type BuildPlan struct {
 	platforms    []strfmt.UUID
-	artifacts    []*Artifact
-	requirements []*Ingredient
-	ingredients  []*Ingredient
+	artifacts    Artifacts
+	requirements Ingredients
+	ingredients  Ingredients
 	raw          *raw.Build
 }
 
@@ -36,6 +35,11 @@ func Unmarshal(data []byte) (*BuildPlan, error) {
 
 	if err := b.Hydrate(); err != nil {
 		return nil, errs.Wrap(err, "error hydrating build plan")
+	}
+
+	if len(b.artifacts) == 0 || len(b.ingredients) == 0 || len(b.platforms) == 0 {
+		return nil, errs.New("Buildplan unmarshalling failed as it got zero artifacts (%d), ingredients (%d) and or platforms (%d).",
+			len(b.artifacts), len(b.ingredients), len(b.platforms))
 	}
 
 	return b, nil
@@ -67,86 +71,14 @@ func (b *BuildPlan) Platforms() []strfmt.UUID {
 	return b.platforms
 }
 
-type FilterArtifact func(a *Artifact) bool
-
-func FilterPlatformArtifacts(platformID strfmt.UUID) FilterArtifact {
-	return func(a *Artifact) bool {
-		if a.Platforms == nil {
-			return false
-		}
-		return sliceutils.Contains(a.Platforms, platformID)
-	}
-}
-
-func FilterBuildtimeArtifacts() FilterArtifact {
-	return func(a *Artifact) bool {
-		return a.IsBuildtimeDependency
-	}
-}
-
-func FilterRuntimeArtifacts() FilterArtifact {
-	return func(a *Artifact) bool {
-		return a.IsRuntimeDependency
-	}
-}
-
-const NamespaceInternal = "internal"
-
-func FilterStateArtifacts() FilterArtifact {
-	return func(a *Artifact) bool {
-		for _, i := range a.Ingredients {
-			if i.Namespace == NamespaceInternal {
-				return false
-			}
-		}
-		if strings.Contains(a.URL, "as-builds/noop") {
-			return false
-		}
-		return a.MimeType == types.XArtifactMimeType ||
-			a.MimeType == types.XActiveStateArtifactMimeType ||
-			a.MimeType == types.XCamelInstallerMimeType
-	}
-}
-
-func FilterSuccessfulArtifacts() FilterArtifact {
-	return func(a *Artifact) bool {
-		return a.Status == types.ArtifactSucceeded ||
-			a.Status == types.ArtifactBlocked ||
-			a.Status == types.ArtifactStarted ||
-			a.Status == types.ArtifactReady
-	}
-}
-
 func (b *BuildPlan) Artifacts(filters ...FilterArtifact) Artifacts {
-	if len(filters) == 0 {
-		return b.artifacts
-	}
-	artifacts := []*Artifact{}
-	for _, a := range b.artifacts {
-		for _, filter := range filters {
-			if filter(a) {
-				artifacts = append(artifacts, a)
-			}
-		}
-	}
-	return artifacts
+	return b.artifacts.Filter(filters...)
 }
 
 type filterIngredient func(i *Ingredient) bool
 
 func (b *BuildPlan) Ingredients(filters ...filterIngredient) Ingredients {
-	if len(filters) == 0 {
-		return b.ingredients
-	}
-	ingredients := []*Ingredient{}
-	for _, i := range b.ingredients {
-		for _, filter := range filters {
-			if filter(i) {
-				ingredients = append(ingredients, i)
-			}
-		}
-	}
-	return ingredients
+	return b.ingredients.Filter(filters...)
 }
 
 func (b *BuildPlan) DiffArtifacts(oldBp *BuildPlan, requestedOnly bool) ArtifactChangeset {

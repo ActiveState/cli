@@ -2,6 +2,7 @@ package sliceutils
 
 import (
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/go-openapi/strfmt"
 	"golang.org/x/text/unicode/norm"
 )
 
@@ -94,4 +95,12 @@ func Filter[T any](data []T, f func(T) bool) []T {
 		}
 	}
 	return out
+}
+
+func ToLookupMap[T string | int | strfmt.UUID](data []T) map[T]struct{} {
+	result := make(map[T]struct{})
+	for _, d := range data {
+		result[d] = struct{}{}
+	}
+	return result
 }

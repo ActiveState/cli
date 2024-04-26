@@ -13,10 +13,12 @@ const (
 	Completed = "COMPLETED"
 )
 
+type StepInputTag string
+
 const (
 	// Tag types
-	TagSource     = "src"
-	TagDependency = "deps"
+	TagSource     StepInputTag = "src"
+	TagDependency StepInputTag = "deps"
 )
 
 const PlatformTerminalPrefix = "platform:"
@@ -31,6 +33,8 @@ type Build struct {
 	Sources              []*Source                 `json:"sources"`
 	BuildLogIDs          []*BuildLogID             `json:"buildLogIds"`
 	ResolvedRequirements []*RawResolvedRequirement `json:"resolvedRequirements"`
+
+	lookup map[strfmt.UUID]interface{}
 }
 
 // Artifact represents a downloadable artifact.

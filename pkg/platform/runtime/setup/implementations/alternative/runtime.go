@@ -24,6 +24,10 @@ func NewSetup(store *store.Store) *Setup {
 }
 
 func (s *Setup) DeleteOutdatedArtifacts(changeset *buildplan.ArtifactChangeset, storedArtifacted, alreadyInstalled store.StoredArtifactMap) error {
+	if changeset == nil {
+		return nil
+	}
+
 	del := map[artifact.ArtifactID]struct{}{}
 	for _, upd := range changeset.Updated {
 		del[upd.From.ArtifactID] = struct{}{}

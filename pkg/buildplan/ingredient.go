@@ -19,6 +19,26 @@ type IngredientIDMap map[strfmt.UUID]*Ingredient
 
 type IngredientNameMap map[string]*Ingredient
 
+func (i Ingredients) Filter(filters ...filterIngredient) Ingredients {
+	if len(filters) == 0 {
+		return i
+	}
+	ingredients := []*Ingredient{}
+	for _, ig := range i {
+		include := true
+		for _, filter := range filters {
+			if !filter(ig) {
+				include = false
+				break
+			}
+		}
+		if include {
+			ingredients = append(ingredients, ig)
+		}
+	}
+	return ingredients
+}
+
 func (i Ingredients) ToIDMap() IngredientIDMap {
 	result := make(map[strfmt.UUID]*Ingredient, len(i))
 	for _, ig := range i {

@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"sort"
 
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/buildplan/raw"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/go-openapi/strfmt"
@@ -28,27 +29,23 @@ type Artifact struct {
 	Platforms   []strfmt.UUID
 	Ingredients []*Ingredient // While most artifacts only have a single ingredient, some artifacts such as installers can have multiple.
 
-	// We don't want to expose this, because the concept of a parent and child artifacts is unique to low level buildplan logic
-	parent   *Artifact
 	children []*Artifact
-
-	// We don't want to expose this, because terminals are a low level concept
-	terminals []string
 }
 
 // Name returns the name of the ingredient for this artifact, if it only has exactly one ingredient associated.
 // Otherwise it returns the DisplayName, which is less reliable and consistent.
 func (a *Artifact) Name() string {
-	if len(a.Ingredients) == 0 {
+	if len(a.Ingredients) == 1 {
 		return a.Ingredients[0].Name
 	}
+	logging.Debug("Using displayname because artifact has %d ingredients", len(a.Ingredients))
 	return a.DisplayName
 }
 
 // Version returns the name of the ingredient for this artifact, if it only has exactly one ingredient associated.
 // Otherwise it returns an empty version.
 func (a *Artifact) Version() string {
-	if len(a.Ingredients) == 0 {
+	if len(a.Ingredients) == 1 {
 		return a.Ingredients[0].Version
 	}
 	return ""
@@ -68,6 +65,26 @@ type ArtifactIDMap map[strfmt.UUID]*Artifact
 
 type ArtifactNameMap map[string]*Artifact
 
+func (a Artifacts) Filter(filters ...FilterArtifact) Artifacts {
+	if len(filters) == 0 {
+		return a
+	}
+	artifacts := []*Artifact{}
+	for _, ar := range a {
+		include := true
+		for _, filter := range filters {
+			if !filter(ar) {
+				include = false
+				break
+			}
+		}
+		if include {
+			artifacts = append(artifacts, ar)
+		}
+	}
+	return artifacts
+}
+
 func (a Artifacts) Ingredients() Ingredients {
 	result := Ingredients{}
 	for _, a := range a {
@@ -86,8 +103,8 @@ func (a Artifacts) ToIDMap() ArtifactIDMap {
 
 func (a Artifacts) ToIDSlice() []strfmt.UUID {
 	result := make([]strfmt.UUID, len(a))
-	for _, a := range a {
-		result = append(result, a.ArtifactID)
+	for n, a := range a {
+		result[n] = a.ArtifactID
 	}
 	return result
 }

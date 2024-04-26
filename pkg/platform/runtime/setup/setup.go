@@ -239,7 +239,7 @@ func (s *Setup) Update(commit *bpModel.Commit) (rerr error) {
 			return &RuntimeInUseError{locale.NewInputError("runtime_setup_in_use_err", "", strings.Join(list, "\n")), procs}
 		}
 	} else {
-		multilog.Error("Unable to determine if runtime is in use: %v", err)
+		multilog.Error("Unable to determine if runtime is in use: %v", errs.JoinMessage(err))
 	}
 
 	// Update all the runtime artifacts
@@ -296,17 +296,9 @@ func (s *Setup) solveUpdateRecover(r interface{}) {
 	if r == nil {
 		return
 	}
-	buildplan, err := s.store.BuildPlanRaw()
-	if err != nil {
-		logging.Error("Could not get raw buildplan: %s", err)
-	}
-	env, err := s.store.EnvDef()
-	if err != nil {
-		logging.Error("Could not get envdef: %s", err)
-	}
+
 	// We do a standard error log first here, as rollbar reports will pick up the most recent log lines.
 	// We can't put the buildplan in the multilog message as it'd be way too big a message for rollbar.
-	logging.Error("Panic during runtime update: %s, build plan:\n%s\n\nEnvDef:\n%#v", r, buildplan, env)
 	multilog.Critical("Panic during runtime update: %s", r)
 	panic(r) // We're just logging the panic while we have context, we're not meant to handle it here
 }
@@ -531,10 +523,10 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 		logging.Debug("Could not load existing build plan. Maybe it is a new installation: %v", err)
 	}
 
-	oldBuildPlanArtifacts := oldBuildPlan.Artifacts(artifactFilters...)
-
+	var oldBuildPlanArtifacts buildplan.Artifacts
 	var changedArtifacts *buildplan.ArtifactChangeset
 	if oldBuildPlan != nil {
+		oldBuildPlanArtifacts = oldBuildPlan.Artifacts(artifactFilters...)
 		changedArtifacts = ptr.To(bp.DiffArtifacts(oldBuildPlan, true))
 	}
 
@@ -562,10 +554,11 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 		bp.IsBuildReady(), artifactNamesList, installedList, downloadList,
 	)
 
-	var artifactsToInstall buildplan.Artifacts = sliceutils.Filter(relevantBuildArtifacts, func(a *buildplan.Artifact) bool {
+	filterNeedsInstall := func(a *buildplan.Artifact) bool {
 		_, alreadyInstalled := alreadyInstalled[a.ArtifactID]
 		return !alreadyInstalled
-	})
+	}
+	artifactsToInstall := relevantBuildArtifacts.Filter(filterNeedsInstall, buildplan.FilterRuntimeArtifacts())
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Failed to compute artifacts to build")
 	}
