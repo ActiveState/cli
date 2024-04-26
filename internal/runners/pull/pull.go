@@ -180,7 +180,10 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		})
 	}
 
-	_, err = runtime.SolveAndUpdate(p.auth, p.out, p.analytics, p.project, resultingCommit, target.TriggerPull, p.svcModel, p.cfg, runtime.OptOrderChanged)
+	_, err = runtime.SolveAndUpdate(
+		runtime.NewRequest(p.auth, p.analytics, p.project, resultingCommit, target.TriggerPull, p.svcModel, p.cfg, runtime.OptOrderChanged),
+		p.out,
+	)
 	if err != nil {
 		return locale.WrapError(err, "err_pull_refresh", "Could not refresh runtime after pull")
 	}

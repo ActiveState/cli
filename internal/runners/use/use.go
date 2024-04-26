@@ -83,12 +83,14 @@ func (u *Use) Run(params *Params) error {
 		return locale.NewInputError("err_use_commit_id_mismatch")
 	}
 
-	rti, err := runtime.SolveAndUpdate(u.auth, u.out, u.analytics, proj, nil, target.TriggerUse, u.svcModel, u.config, runtime.OptMinimalUI)
+	request := runtime.NewRequest(u.auth, u.analytics, proj, nil, target.TriggerUse, u.svcModel, u.config, runtime.OptMinimalUI)
+	request.SetAsyncRuntime(false)
+	rti, err := runtime.SolveAndUpdate(request, u.out)
 	if err != nil {
 		return locale.WrapError(err, "err_use_runtime_new", "Cannot use this project.")
 	}
 
-	if err := globaldefault.SetupDefaultActivation(u.subshell, u.config, rti, proj); err != nil {
+	if err := globaldefault.SetupDefaultActivation(u.subshell, u.config, rti.Runtime, proj); err != nil {
 		return locale.WrapError(err, "err_use_default", "Could not setup your project for use.")
 	}
 

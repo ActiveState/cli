@@ -229,20 +229,33 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 	pg = nil
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
+		ns := requirements[0].Namespace
+		var trigger target.Trigger
+		switch ns.Type() {
+		case model.NamespaceLanguage:
+			trigger = target.TriggerLanguage
+		case model.NamespacePlatform:
+			trigger = target.TriggerPlatform
+		default:
+			trigger = target.TriggerPackage
+		}
+
 		// Solve runtime
-		rt, buildResult, commit, changedArtifacts, err := r.solve(commitID, requirements[0].Namespace)
+		request := runbit.NewRequest(r.Auth, r.Analytics, r.Project, &commitID, trigger, r.SvcModel, r.Config, runbit.OptNone)
+		request.SetNamespace(ns)
+		solveResponse, err := runbit.Solve(request, r.Output)
 		if err != nil {
 			return errs.Wrap(err, "Could not solve runtime")
 		}
 
 		// Report CVEs
-		if err := r.cveReport(*changedArtifacts, requirements...); err != nil {
+		if err := r.cveReport(solveResponse.Changeset, requirements...); err != nil {
 			return errs.Wrap(err, "Could not report CVEs")
 		}
 
 		// Start runtime update UI
 		out.Notice("")
-		if !rt.HasCache() {
+		if !solveResponse.HasCache() {
 			out.Notice(output.Title(locale.T("install_runtime")))
 			out.Notice(locale.T("install_runtime_info"))
 		} else {
@@ -251,7 +264,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 
 		// refresh or install runtime
-		err = runbit.UpdateByReference(rt, buildResult, commit, r.Auth, r.Project, r.Output)
+		err = runbit.UpdateByReference(solveResponse.Runtime, solveResponse.BuildResult, solveResponse.Commit, r.Auth, r.Project, r.Output)
 		if err != nil {
 			if !runbits.IsBuildError(err) {
 				// If the error is not a build error we want to retain the changes

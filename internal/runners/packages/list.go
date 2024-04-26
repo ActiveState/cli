@@ -15,8 +15,8 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -109,7 +109,10 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	// Fetch resolved artifacts list for showing full version numbers, if possible.
 	var artifacts []*artifact.Artifact
 	if l.project != nil && params.Project == "" {
-		rt, err := rtrunbit.SolveAndUpdate(l.auth, l.out, l.analytics, l.project, nil, target.TriggerPackage, l.svcModel, l.cfg, rtrunbit.OptMinimalUI)
+		rt, err := rtrunbit.SolveAndUpdate(
+			rtrunbit.NewRequest(l.auth, l.analytics, l.project, nil, target.TriggerPackage, l.svcModel, l.cfg, rtrunbit.OptMinimalUI),
+			l.out,
+		)
 		if err != nil {
 			return locale.WrapError(err, "err_package_list_runtime", "Could not initialize runtime")
 		}

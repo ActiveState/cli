@@ -120,7 +120,10 @@ func (s *Switch) Run(params SwitchParams) error {
 		return errs.Wrap(err, "Unable to set local commit")
 	}
 
-	_, err = runtime.SolveAndUpdate(s.auth, s.out, s.analytics, s.project, ptr.To(identifier.CommitID()), target.TriggerSwitch, s.svcModel, s.cfg, runtime.OptNone)
+	_, err = runtime.SolveAndUpdate(
+		runtime.NewRequest(s.auth, s.analytics, s.project, ptr.To(identifier.CommitID()), target.TriggerSwitch, s.svcModel, s.cfg, runtime.OptNone),
+		s.out,
+	)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

@@ -42,7 +42,9 @@ func (e *Env) Run() error {
 		e.project.Dir()),
 	)
 
-	rt, err := runtime.SolveAndUpdate(e.auth, e.out, e.analytics, e.project, nil, target.TriggerActivate, e.svcModel, e.cfg, runtime.OptMinimalUI)
+	request := runtime.NewRequest(e.auth, e.analytics, e.project, nil, target.TriggerActivate, e.svcModel, e.cfg, runtime.OptMinimalUI)
+	request.SetAsyncRuntime(false)
+	rt, err := runtime.SolveAndUpdate(request, e.out)
 	if err != nil {
 		return locale.WrapError(err, "err_export_new_runtime", "Could not initialize runtime")
 	}
