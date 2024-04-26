@@ -116,9 +116,11 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 		if err != nil {
 			return locale.WrapError(err, "err_package_list_runtime", "Could not initialize runtime")
 		}
-		artifacts, err = rt.ResolvedArtifacts()
-		if err != nil && !errs.Matches(err, store.ErrNoBuildPlanFile) {
-			return locale.WrapError(err, "err_package_list_artifacts", "Unable to resolve package versions")
+		if !rt.Async {
+			artifacts, err = rt.ResolvedArtifacts()
+			if err != nil && !errs.Matches(err, store.ErrNoBuildPlanFile) {
+				return locale.WrapError(err, "err_package_list_artifacts", "Unable to resolve package versions")
+			}
 		}
 	}
 

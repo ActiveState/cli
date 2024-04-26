@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
@@ -83,9 +84,12 @@ func (l *Languages) Run() error {
 	if err != nil {
 		return locale.WrapError(err, "err_languages_runtime", "Could not initialize runtime")
 	}
-	artifacts, err := rt.ResolvedArtifacts()
-	if err != nil && !errs.Matches(err, store.ErrNoBuildPlanFile) {
-		return locale.WrapError(err, "err_language_resolved_artifacts", "Unable to resolve language version(s)")
+	var artifacts []*artifact.Artifact
+	if !rt.Async {
+		artifacts, err = rt.ResolvedArtifacts()
+		if err != nil && !errs.Matches(err, store.ErrNoBuildPlanFile) {
+			return locale.WrapError(err, "err_language_resolved_artifacts", "Unable to resolve language version(s)")
+		}
 	}
 	ns := model.NewNamespaceLanguage()
 
