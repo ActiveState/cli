@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/condition"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"gopkg.in/yaml.v3"
@@ -193,11 +192,8 @@ func Matches(err error, target interface{}) bool {
 
 	// Guard against miss-use of this function
 	if _, ok := target.(*WrapperError); ok {
-		if condition.BuiltOnDevMachine() {
+		if condition.BuiltOnDevMachine() || condition.InActiveStateCI() {
 			panic("target cannot be a WrapperError, you probably want errors.Is")
-		} else {
-			// Log as critical because this means it slipped by internal testing
-			multilog.Critical("target cannot be a WrapperError, you probably want errors.Is, error received: %v", err)
 		}
 	}
 
