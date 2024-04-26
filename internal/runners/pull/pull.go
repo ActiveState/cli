@@ -163,6 +163,13 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 			return errs.Wrap(err, "Unable to set local commit")
 		}
 
+		if p.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+			err := p.mergeBuildScript(*remoteCommit, *localCommit)
+			if err != nil {
+				return errs.Wrap(err, "Could not merge local build script with remote changes")
+			}
+		}
+
 		p.out.Print(&pullOutput{
 			locale.Tr("pull_updated", remoteProject.String(), resultingCommit.String()),
 			true,
@@ -183,13 +190,6 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 }
 
 func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *project.Namespaced, branchName string, strategy types.MergeStrategy) (strfmt.UUID, error) {
-	if p.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		err := p.mergeBuildScript(remoteCommit, localCommit)
-		if err != nil {
-			return "", errs.Wrap(err, "Could not merge local build script with remote changes")
-		}
-	}
-
 	p.out.Notice(output.Title(locale.Tl("pull_diverged", "Merging history")))
 	p.out.Notice(locale.Tr(
 		"pull_diverged_message",
@@ -213,11 +213,12 @@ func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *pr
 	if err != nil {
 		return "", locale.WrapError(err, "err_pull_getcommit", "Could not inspect resulting commit.")
 	}
-	changes, _ := commit.FormatChanges(cmit)
-	p.out.Notice(locale.Tl(
-		"pull_diverged_changes",
-		"The following changes will be merged:\n{{.V0}}\n", strings.Join(changes, "\n")),
-	)
+	if changes, _ := commit.FormatChanges(cmit); len(changes) > 0 {
+		p.out.Notice(locale.Tl(
+			"pull_diverged_changes",
+			"The following changes will be merged:\n{{.V0}}\n", strings.Join(changes, "\n")),
+		)
+	}
 
 	return resultCommit, nil
 }

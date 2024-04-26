@@ -2,6 +2,7 @@ package integration
 
 import (
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -113,6 +114,9 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 }
 
 func (suite *RuntimeIntegrationTestSuite) TestInUse() {
+	if runtime.GOOS == "darwin" {
+		return // gopsutil errors on later versions of macOS (DX-2723)
+	}
 	suite.OnlyRunForTags(tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()

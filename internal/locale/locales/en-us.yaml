@@ -695,7 +695,7 @@ raw_version_updated:
 raw_updated:
   other: "Package updated: [NOTICE]{{.V0}}[/RESET]"
 raw_removed:
-  other: "Package removed: [NOTICE]{{.V0}}[/NOTICE]"
+  other: "Package removed: [NOTICE]{{.V0}}[/RESET]"
 notice_commit_build_script:
   other: |
     Your local build script has changes that should be committed. Please run '[ACTIONABLE]state commit[/RESET]' to do so.
@@ -1501,7 +1501,7 @@ err_init_project_exists:
 err_country_blocked:
   other: This service is not available in your region.
 err_commit_id_invalid:
-  other: "Expected commit ID to be UUID formatted, but got: {{.V0}}"
+  other: "Your activestate.yaml contains an invalid commit ID: '{{.V0}}'. Please run '[ACTIONABLE]state reset[/RESET]' to fix it."
 err_shortcutdir_writable:
   other: Could not continue as we don't have permission to create [ACTIONABLE]{{.V0}}[/RESET].
 move_prompt:
@@ -1555,8 +1555,10 @@ builds_dl_downloading:
   other: Downloading {{.V0}}
 warn_has_failed_artifacts:
   other: "Warning: This project has failed builds, and some artifacts will be missing as a result.\n"
+artifact_status_building:
+  other: Building
 warn_build_not_complete:
-  other: "Warning: This project has not finished building all artifacts, this is only reporting on artifacts that have finished building.\n"
+  other: "[WARNING]Some artifacts are still being built. Try running this command again in a few minutes.[/RESET]"
 err_build_artifacts_failed:
   other: |
     The following artifacts failed to build, please refer to their logs for more information:
@@ -1592,3 +1594,16 @@ err_initial_no_requirement:
   other: |
     Could not find compatible requirement for initial commit. Please ensure that you are trying to install a valid package.
     To check for available packages run '[ACTIONABLE]state search <package_name>[/RESET]'.
+manifest_deprecation_warning:
+  other: |
+    [WARNING]Warning:[/RESET] This command is deprecated, please use '[ACTIONABLE]state manfiest[/RESET]' instead.
+manifest_runtime_needs_update:
+  other: "[WARNING]WARNING:[/RESET] Your runtime is out of date, in order to ensure an accurate manifest please run [ACTIONABLE]state refresh[/RESET].\n"
+vulnerability_critical:
+  other: "[RED]{{.V0}} Critical[/RESET]"
+vulnerability_high:
+  other: "[ORANGE]{{.V0}} High[/RESET]"
+vulnerability_medium:
+  other: "[YELLOW]{{.V0}} Medium[/RESET]"
+vulnerability_low:
+  other: "[GREEN]{{.V0}} Low[/RESET]"

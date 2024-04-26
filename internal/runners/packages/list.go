@@ -71,6 +71,8 @@ type requirementPlainOutput struct {
 func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteList")
 
+	l.out.Notice(locale.T("manifest_deprecation_warning"))
+
 	if l.project != nil && params.Project == "" {
 		l.out.Notice(locale.Tr("operating_message", l.project.NamespaceString(), l.project.Dir()))
 	}

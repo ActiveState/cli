@@ -37,6 +37,8 @@ const (
 	ShiftColsPrefix PlainOpts = "shiftCols="
 	// OmitEmpty omits empty values from output
 	OmitEmpty PlainOpts = "omitEmpty"
+	// HideDash hides the dash in table output
+	HideDash PlainOpts = "hideDash"
 )
 
 // Plain is our plain outputer, it uses reflect to marshal the data.
@@ -190,7 +192,15 @@ func sprintStruct(value interface{}) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			return sprintTable(true, slice)
+			return sprintTable(true, false, slice)
+		}
+
+		if funk.Contains(field.opts, string(HideDash)) {
+			slice, err := asSlice(field.value)
+			if err != nil {
+				return "", err
+			}
+			return sprintTable(false, true, slice)
 		}
 
 		stringValue, err := sprint(field.value)
@@ -220,7 +230,7 @@ func sprintSlice(value interface{}) (string, error) {
 	}
 
 	if len(slice) > 0 && isStruct(slice[0]) {
-		return sprintTable(false, slice)
+		return sprintTable(false, false, slice)
 	}
 
 	result := []string{}
@@ -268,7 +278,7 @@ func sprintMap(value interface{}) (string, error) {
 }
 
 // sprintTable will marshal and return the given slice of structs as a string, formatted as a table
-func sprintTable(vertical bool, slice []interface{}) (string, error) {
+func sprintTable(vertical, hideDash bool, slice []interface{}) (string, error) {
 	if len(slice) == 0 {
 		return "", nil
 	}
@@ -332,7 +342,12 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 		}
 	}
 
-	return table.New(headers).AddRow(rows...).Render(), nil
+	table := table.New(headers)
+	if hideDash {
+		table.HideDash = true
+	}
+
+	return table.AddRow(rows...).Render(), nil
 }
 
 type verticalRow struct {

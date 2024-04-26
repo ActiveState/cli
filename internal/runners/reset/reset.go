@@ -23,8 +23,8 @@ import (
 const local = "LOCAL"
 
 type Params struct {
-	Force  bool
-	Target string
+	Force    bool
+	CommitID string
 }
 
 type Reset struct {
@@ -67,13 +67,13 @@ func (r *Reset) Run(params *Params) error {
 
 	var commitID strfmt.UUID
 	switch {
-	case params.Target == "":
+	case params.CommitID == "":
 		latestCommit, err := model.BranchCommitID(r.project.Owner(), r.project.Name(), r.project.BranchName())
 		if err != nil {
 			return locale.WrapError(err, "err_reset_latest_commit", "Could not get latest commit ID")
 		}
 		localCommitID, err := localcommit.Get(r.project.Dir())
-		if err != nil {
+		if err != nil && !errs.Matches(err, &localcommit.ErrInvalidCommitID{}) {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
 		if *latestCommit == localCommitID {
@@ -81,22 +81,18 @@ func (r *Reset) Run(params *Params) error {
 		}
 		commitID = *latestCommit
 
-	case params.Target == local:
+	case params.CommitID == local:
 		localCommitID, err := localcommit.Get(r.project.Dir())
 		if err != nil {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
 		commitID = localCommitID
 
-	case !strfmt.IsUUID(params.Target):
-		branch, err := model.BranchForProjectNameByName(r.project.Owner(), r.project.Name(), params.Target)
-		if err != nil {
-			return errs.Wrap(err, "Could not get branch")
-		}
-		commitID = strfmt.UUID(*branch.CommitID)
+	case !strfmt.IsUUID(params.CommitID):
+		return locale.NewInputError("err_reset_invalid_commitid", "Invalid commit ID")
 
 	default:
-		commitID = strfmt.UUID(params.Target)
+		commitID = strfmt.UUID(params.CommitID)
 
 		history, err := model.CommitHistoryFromID(commitID, r.auth)
 		if err != nil || len(history) == 0 {
@@ -105,7 +101,7 @@ func (r *Reset) Run(params *Params) error {
 	}
 
 	localCommitID, err := localcommit.Get(r.project.Dir())
-	if err != nil {
+	if err != nil && !errs.Matches(err, &localcommit.ErrInvalidCommitID{}) {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 	r.out.Notice(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", commitID.String()))

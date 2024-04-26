@@ -14,6 +14,8 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
+	"github.com/ActiveState/cli/pkg/localcommit"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -110,6 +112,13 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	suite.Assert().Contains(string(bytes), "<<<<<<<", "No merge conflict markers are in build script")
 	suite.Assert().Contains(string(bytes), "=======", "No merge conflict markers are in build script")
 	suite.Assert().Contains(string(bytes), ">>>>>>>", "No merge conflict markers are in build script")
+
+	// Verify the local commit was updated to the merge commit.
+	// Note: even though the buildscript merge failed, a merge commit was still created. After resolving
+	// buildscript conflicts, `state commit` should have something new to commit.
+	commit, err := localcommit.Get(ts.Dirs.Work)
+	suite.Require().NoError(err)
+	suite.Assert().NotEqual(commit.String(), "447b8363-024c-4143-bf4e-c96989314fdf", "localcommit not updated to merged commit")
 }
 
 func (suite *PullIntegrationTestSuite) assertMergeStrategyNotification(ts *e2e.Session, strategy string) {

@@ -126,29 +126,53 @@ func (r *Runtime) validateCache() error {
 		return nil
 	}
 
-	// Check if local build script has changes that should be committed.
-	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		script, err := buildscript.ScriptFromProject(r.target)
-		if err != nil {
-			if errs.Matches(err, buildscript.ErrBuildscriptNotExist) {
-				return errs.Pack(err, NeedsBuildscriptResetError)
-			}
-			return errs.Wrap(err, "Could not get buildscript from project")
-		}
+	err := r.validateBuildScript()
+	if err != nil {
+		return errs.Wrap(err, "Error validating build script")
+	}
 
-		cachedScript, err := r.store.BuildScript()
-		if err != nil {
-			if errors.Is(err, store.ErrNoBuildScriptFile) {
-				logging.Warning("No buildscript file exists in store, unable to check if buildscript is dirty. This can happen if you cleared your cache.")
-			} else {
-				return errs.Wrap(err, "Could not retrieve buildscript from store")
-			}
-		}
+	return nil
+}
 
-		if cachedScript != nil {
-			if script != nil && !script.Equals(cachedScript) {
-				return NeedsCommitError
-			}
+// validateBuildScript asserts the local build script does not have changes that should be committed.
+func (r *Runtime) validateBuildScript() error {
+	logging.Debug("Checking to see if local build script has changes that should be committed")
+	if !r.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		logging.Debug("Not opted into buildscripts")
+		return nil
+	}
+
+	script, err := buildscript.ScriptFromProject(r.target)
+	if err != nil {
+		if errs.Matches(err, buildscript.ErrBuildscriptNotExist) {
+			return errs.Pack(err, NeedsBuildscriptResetError)
+		}
+		return errs.Wrap(err, "Could not get buildscript from project")
+	}
+
+	cachedCommitID, err := r.store.CommitID()
+	if err != nil {
+		logging.Debug("No commit ID to read; refresh needed")
+		return nil
+	}
+
+	if cachedCommitID != r.target.CommitUUID().String() {
+		logging.Debug("Runtime commit ID does not match project commit ID; refresh needed")
+		return nil
+	}
+
+	cachedScript, err := r.store.BuildScript()
+	if err != nil {
+		if errors.Is(err, store.ErrNoBuildScriptFile) {
+			logging.Warning("No buildscript file exists in store, unable to check if buildscript is dirty. This can happen if you cleared your cache.")
+		} else {
+			return errs.Wrap(err, "Could not retrieve buildscript from store")
+		}
+	}
+
+	if cachedScript != nil {
+		if script != nil && !script.Equals(cachedScript) {
+			return NeedsCommitError
 		}
 	}
 

@@ -664,7 +664,7 @@ func (p *Project) parseURL() (projectURL, error) {
 
 func validateUUID(uuidStr string) error {
 	if ok := strfmt.Default.Validates("uuid", uuidStr); !ok {
-		return locale.NewError("invalid_uuid_val", "Invalid commit ID {{.V0}} in activestate.yaml. Please remove it and run `[ACTIONABLE]state pull[/RESET]` to reset it", uuidStr)
+		return locale.NewError("err_commit_id_invalid", "", uuidStr)
 	}
 
 	var uuid strfmt.UUID
@@ -1417,7 +1417,7 @@ func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 		},
 	)
 	if err != nil {
-		multilog.Error("Could not set project mapping in config, error: %v", err)
+		multilog.Error("Could not set project mapping in config, error: %v", errs.JoinMessage(err))
 	}
 }
 
