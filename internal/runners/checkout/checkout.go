@@ -105,20 +105,27 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		}()
 	}
 
-	u.out.Notice(output.Title(locale.T("installing_runtime_title")))
-
 	request := runtime.NewRequest(u.auth, u.analytics, proj, nil, target.TriggerCheckout, u.svcModel, u.config, runtime.OptMinimalUI)
-	rti, err := runtime.SolveAndUpdate(request, u.out)
+	if !request.Async() {
+		u.out.Notice(output.Title(locale.T("installing_runtime_title")))
+	}
+
+	rti, async, err := runtime.SolveAndUpdate(request, u.out)
 	if err != nil {
 		return locale.WrapError(err, "err_checkout_runtime_new", "Could not checkout this project.")
 	}
 
 	var execDir string
-	if !rti.Async {
+	var checkoutStatement string
+	if !async {
 		execDir = setup.ExecDir(rti.Target().Dir())
+		checkoutStatement = locale.Tr("checkout_project_statement", proj.NamespaceString(), proj.Dir(), execDir)
+	} else {
+		checkoutStatement = locale.Tr("checkout_project_statement_async", proj.NamespaceString(), proj.Dir())
 	}
+
 	u.out.Print(output.Prepare(
-		checkoutStatement(proj, execDir),
+		checkoutStatement,
 		&struct {
 			Namespace   string `json:"namespace"`
 			Path        string `json:"path"`
@@ -130,11 +137,4 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		}))
 
 	return nil
-}
-
-func checkoutStatement(proj *project.Project, execDir string) string {
-	if execDir == "" {
-		return locale.Tr("checkout_project_statement_async", proj.NamespaceString(), proj.Dir())
-	}
-	return locale.Tr("checkout_project_statement", proj.NamespaceString(), proj.Dir(), execDir)
 }

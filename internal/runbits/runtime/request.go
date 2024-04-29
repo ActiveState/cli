@@ -48,6 +48,10 @@ func NewRequest(auth *authentication.Auth,
 	}
 }
 
+func (r *Request) Async() bool {
+	return r.asyncRuntime
+}
+
 func (r *Request) SetAsyncRuntime(override bool) {
 	r.asyncRuntime = override
 }

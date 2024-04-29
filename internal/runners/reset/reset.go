@@ -129,7 +129,7 @@ func (r *Reset) Run(params *Params) error {
 		}
 	}
 
-	_, err = runtime.SolveAndUpdate(
+	_, _, err = runtime.SolveAndUpdate(
 		runtime.NewRequest(r.auth, r.analytics, r.project, &commitID, target.TriggerReset, r.svcModel, r.cfg, runtime.OptOrderChanged),
 		r.out,
 	)

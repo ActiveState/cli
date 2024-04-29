@@ -156,7 +156,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
-	_, err = runtime.SolveAndUpdate(
+	_, _, err = runtime.SolveAndUpdate(
 		runtime.NewRequest(i.auth, i.analytics, i.proj, &commitID, target.TriggerImport, i.svcModel, i.cfg, runtime.OptOrderChanged),
 		i.out,
 	)

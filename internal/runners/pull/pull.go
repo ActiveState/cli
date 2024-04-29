@@ -180,7 +180,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		})
 	}
 
-	_, err = runtime.SolveAndUpdate(
+	_, _, err = runtime.SolveAndUpdate(
 		runtime.NewRequest(p.auth, p.analytics, p.project, resultingCommit, target.TriggerPull, p.svcModel, p.cfg, runtime.OptOrderChanged),
 		p.out,
 	)

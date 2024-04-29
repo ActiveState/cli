@@ -38,45 +38,35 @@ type Configurable interface {
 	GetBool(key string) bool
 }
 
-type RuntimeResponse struct {
-	*runtime.Runtime
-	Async bool
-}
-
 // SolveAndUpdate should be called after runtime mutations.
-func SolveAndUpdate(request *Request, out output.Outputer) (_ *RuntimeResponse, rerr error) {
+func SolveAndUpdate(request *Request, out output.Outputer) (_ *runtime.Runtime, _ bool, rerr error) {
 	defer rationalizeError(request.Auth, request.Project, &rerr)
 
-	response := &RuntimeResponse{
-		Async: request.asyncRuntime,
-	}
 	if request.Project == nil {
-		return nil, rationalize.ErrNoProject
+		return nil, false, rationalize.ErrNoProject
 	}
 
 	if request.Project.IsHeadless() {
-		return nil, rationalize.ErrHeadless
+		return nil, false, rationalize.ErrHeadless
 	}
 
 	if request.asyncRuntime {
-		logging.Debug("Skipping runtime update due to async runtime")
-		return response, nil
+		return nil, true, nil
 	}
 
-	var err error
 	target := target.NewProjectTarget(request.Project, request.CustomCommitID, request.Trigger)
-	response.Runtime, err = runtime.New(target, request.Analytics, request.SvcModel, request.Auth, request.Config, out)
+	rt, err := runtime.New(target, request.Analytics, request.SvcModel, request.Auth, request.Config, out)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+		return nil, false, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
 	}
 
-	if !bitflags.Has(request.Opts, OptOrderChanged) && !bitflags.Has(request.Opts, OptMinimalUI) && !response.NeedsUpdate() {
+	if !bitflags.Has(request.Opts, OptOrderChanged) && !bitflags.Has(request.Opts, OptMinimalUI) && !rt.NeedsUpdate() {
 		out.Notice(locale.Tl("pkg_already_uptodate", "Requested dependencies are already configured and installed."))
-		return response, nil
+		return rt, false, nil
 	}
 
-	if response.NeedsUpdate() && !bitflags.Has(request.Opts, OptMinimalUI) {
-		if !response.HasCache() {
+	if rt.NeedsUpdate() && !bitflags.Has(request.Opts, OptMinimalUI) {
+		if !rt.HasCache() {
 			out.Notice(output.Title(locale.T("install_runtime")))
 			out.Notice(locale.T("install_runtime_info"))
 		} else {
@@ -85,17 +75,17 @@ func SolveAndUpdate(request *Request, out output.Outputer) (_ *RuntimeResponse, 
 		}
 	}
 
-	if response.NeedsUpdate() {
+	if rt.NeedsUpdate() {
 		pg := NewRuntimeProgressIndicator(out)
 		defer rtutils.Closer(pg.Close, &rerr)
 
-		err := response.SolveAndUpdate(pg)
+		err := rt.SolveAndUpdate(pg)
 		if err != nil {
-			return nil, locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
+			return nil, false, locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
 		}
 	}
 
-	return response, nil
+	return rt, false, nil
 }
 
 type SolveResponse struct {
@@ -103,17 +93,12 @@ type SolveResponse struct {
 	BuildResult *model.BuildResult
 	Commit      *bpModel.Commit
 	Changeset   artifact.ArtifactChangeset
-	Async       bool
 }
 
-func Solve(request *Request, out output.Outputer) (_ *SolveResponse, rerr error) {
-	response := &SolveResponse{
-		Async: request.asyncRuntime,
-	}
-
+func Solve(request *Request, out output.Outputer) (_ *SolveResponse, _ bool, rerr error) {
 	if request.asyncRuntime {
 		logging.Debug("Skipping runtime solve due to async runtime")
-		return response, nil
+		return nil, true, nil
 	}
 
 	spinner := output.StartSpinner(out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
@@ -126,18 +111,17 @@ func Solve(request *Request, out output.Outputer) (_ *SolveResponse, rerr error)
 		}
 	}()
 
-	var err error
 	rtTarget := target.NewProjectTarget(request.Project, request.CustomCommitID, request.Trigger)
-	response.Runtime, err = runtime.New(rtTarget, request.Analytics, request.SvcModel, request.Auth, request.Config, out)
+	rt, err := runtime.New(rtTarget, request.Analytics, request.SvcModel, request.Auth, request.Config, out)
 	if err != nil {
 
-		return response, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+		return nil, false, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
 	}
 
-	setup := response.Runtime.Setup(&events.VoidHandler{})
-	response.BuildResult, response.Commit, err = setup.Solve()
+	setup := rt.Setup(&events.VoidHandler{})
+	buildResult, commit, err := setup.Solve()
 	if err != nil {
-		return response, errs.Wrap(err, "Solve failed")
+		return nil, false, errs.Wrap(err, "Solve failed")
 	}
 
 	// Get old buildplan
@@ -145,7 +129,7 @@ func Solve(request *Request, out output.Outputer) (_ *SolveResponse, rerr error)
 	// but also there's no guarantee the old one is sequential to the current.
 	oldCommit, err := model.GetCommit(*request.CustomCommitID, request.Auth)
 	if err != nil {
-		return response, errs.Wrap(err, "Could not get commit")
+		return nil, false, errs.Wrap(err, "Could not get commit")
 	}
 
 	var oldBuildPlan *bpModel.Build
@@ -153,17 +137,22 @@ func Solve(request *Request, out output.Outputer) (_ *SolveResponse, rerr error)
 		bp := model.NewBuildPlannerModel(request.Auth)
 		oldBuildResult, _, err := bp.FetchBuildResult(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
 		if err != nil {
-			return response, errs.Wrap(err, "Failed to fetch build result")
+			return nil, false, errs.Wrap(err, "Failed to fetch build result")
 		}
 		oldBuildPlan = oldBuildResult.Build
 	}
 
-	response.Changeset, err = buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, response.BuildResult.Build, false, false, request.Config, request.Auth)
+	changeset, err := buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false, false, request.Config, request.Auth)
 	if err != nil {
-		return response, errs.Wrap(err, "Could not get changed artifacts")
+		return nil, false, errs.Wrap(err, "Could not get changed artifacts")
 	}
 
-	return response, nil
+	return &SolveResponse{
+		Runtime:     rt,
+		BuildResult: buildResult,
+		Commit:      commit,
+		Changeset:   changeset,
+	}, false, nil
 }
 
 // UpdateByReference will update the given runtime if necessary. This is functionally the same as SolveAndUpdateByReference

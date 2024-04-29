@@ -86,7 +86,7 @@ func (u *Shell) Run(params *Params) error {
 
 	request := runtime.NewRequest(u.auth, u.analytics, proj, nil, target.TriggerShell, u.svcModel, u.config, runtime.OptMinimalUI)
 	request.SetAsyncRuntime(false)
-	rti, err := runtime.SolveAndUpdate(request, u.out)
+	rti, _, err := runtime.SolveAndUpdate(request, u.out)
 	if err != nil {
 		return locale.WrapInputError(err, "err_shell_runtime_new", "Could not start a shell/prompt for this project.")
 	}
@@ -103,7 +103,7 @@ func (u *Shell) Run(params *Params) error {
 		setup.ExecDir(rti.Target().Dir()),
 	))
 
-	venv := virtualenvironment.New(rti.Runtime)
+	venv := virtualenvironment.New(rti)
 	err = activation.ActivateAndWait(proj, venv, u.out, u.subshell, u.config, u.analytics, params.ChangeDirectory)
 	if err != nil {
 		return locale.WrapError(err, "err_shell_wait", "Could not start runtime shell/prompt.")

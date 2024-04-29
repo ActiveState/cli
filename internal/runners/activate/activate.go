@@ -177,11 +177,10 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 
 	request := runtime.NewRequest(r.auth, r.analytics, proj, nil, target.TriggerActivate, r.svcModel, r.config, runtime.OptMinimalUI)
 	request.SetAsyncRuntime(false)
-	resp, err := runtime.SolveAndUpdate(request, r.out)
+	rt, _, err := runtime.SolveAndUpdate(request, r.out)
 	if err != nil {
 		return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
 	}
-	rt := resp.Runtime
 
 	venv := virtualenvironment.New(rt)
 

@@ -67,12 +67,12 @@ func (s *ScriptRun) NeedsActivation() bool {
 func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
 	request := rtrunbit.NewRequest(s.auth, s.analytics, s.project, nil, target.TriggerScript, s.svcModel, s.cfg, rtrunbit.OptMinimalUI)
 	request.SetAsyncRuntime(false)
-	rt, err := rtrunbit.SolveAndUpdate(request, s.out)
+	rt, _, err := rtrunbit.SolveAndUpdate(request, s.out)
 	if err != nil {
 		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 	}
 
-	venv := virtualenvironment.New(rt.Runtime)
+	venv := virtualenvironment.New(rt)
 
 	projDir := filepath.Dir(s.project.Source().Path())
 	env, err := venv.GetEnv(true, true, projDir, s.project.Namespace().String())
