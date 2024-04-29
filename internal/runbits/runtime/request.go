@@ -48,7 +48,7 @@ func NewRequest(auth *authentication.Auth,
 	}
 }
 
-func (r *Request) Async() bool {
+func (r *Request) AsyncRuntime() bool {
 	return r.asyncRuntime
 }
 

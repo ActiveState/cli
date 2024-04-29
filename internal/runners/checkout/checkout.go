@@ -106,7 +106,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 	}
 
 	request := runtime.NewRequest(u.auth, u.analytics, proj, nil, target.TriggerCheckout, u.svcModel, u.config, runtime.OptMinimalUI)
-	if !request.Async() {
+	if !request.AsyncRuntime() {
 		u.out.Notice(output.Title(locale.T("installing_runtime_title")))
 	}
 
