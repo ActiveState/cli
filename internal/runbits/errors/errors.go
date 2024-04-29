@@ -179,7 +179,7 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 	cmdName := cmd.Name()
 	childCmd, findErr := cmd.Find(os.Args[1:])
 	if findErr != nil {
-		logging.Error("Could not find child command: %v", errs.JoinMessage(findErr))
+		logging.Error("Could not find child command: %v", findErr)
 	}
 
 	var flagNames []string

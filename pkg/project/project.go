@@ -434,7 +434,7 @@ func (s *Secret) ValueOrNil() (*string, error) {
 		if errors.Is(err, ErrSecretNotFound) {
 			return nil, nil
 		}
-		multilog.Error("Could not expand secret %s, error: %v", s.Name(), errs.JoinMessage(err))
+		multilog.Error("Could not expand secret %s, error: %v", s.Name(), err)
 		return nil, errs.Wrap(err, "secret for %s expansion failed", s.secret.Name)
 	}
 	return &value, nil

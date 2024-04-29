@@ -96,7 +96,7 @@ func (u *Update) Run(params *Params) error {
 
 	// invalidate the installer version lock if `state update` is requested
 	if err := u.cfg.Set(updater.CfgKeyInstallVersion, ""); err != nil {
-		multilog.Error("Failed to invalidate installer version lock on `state update` invocation: %v", errs.JoinMessage(err))
+		multilog.Error("Failed to invalidate installer version lock on `state update` invocation: %v", err)
 	}
 
 	message := ""

@@ -209,7 +209,7 @@ func newLet(path []string, m map[string]interface{}) (*Let, error) {
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
 		if err != nil {
-			multilog.Error("Could not pop context: %v", errs.JoinMessage(err))
+			multilog.Error("Could not pop context: %v", err)
 		}
 	}()
 
@@ -258,7 +258,7 @@ func isAp(path []string, value map[string]interface{}) bool {
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
 		if err != nil {
-			multilog.Error("Could not pop context: %v", errs.JoinMessage(err))
+			multilog.Error("Could not pop context: %v", err)
 		}
 	}()
 
@@ -275,7 +275,7 @@ func newValue(path []string, valueInterface interface{}) (*Value, error) {
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
 		if err != nil {
-			multilog.Error("Could not pop context: %v", errs.JoinMessage(err))
+			multilog.Error("Could not pop context: %v", err)
 		}
 	}()
 
@@ -353,7 +353,7 @@ func newAp(path []string, m map[string]interface{}) (*Ap, error) {
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
 		if err != nil {
-			multilog.Error("Could not pop context: %v", errs.JoinMessage(err))
+			multilog.Error("Could not pop context: %v", err)
 		}
 	}()
 
@@ -411,7 +411,7 @@ func newAssignments(path []string, m map[string]interface{}) ([]*Var, error) {
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
 		if err != nil {
-			multilog.Error("Could not pop context: %v", errs.JoinMessage(err))
+			multilog.Error("Could not pop context: %v", err)
 		}
 	}()
 
@@ -435,7 +435,7 @@ func newIn(path []string, inValue interface{}) (*In, error) {
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
 		if err != nil {
-			multilog.Error("Could not pop context: %v", errs.JoinMessage(err))
+			multilog.Error("Could not pop context: %v", err)
 		}
 	}()
 

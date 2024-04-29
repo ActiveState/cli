@@ -186,7 +186,7 @@ func isFreshInstall() bool {
 	exe := osutils.Executable()
 	stat, err := os.Stat(exe)
 	if err != nil {
-		multilog.Error("Could not stat file: %s, error: %v", exe, errs.JoinMessage(err))
+		multilog.Error("Could not stat file: %s, error: %v", exe, err)
 		return true
 	}
 	diff := time.Since(stat.ModTime())

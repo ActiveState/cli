@@ -7,7 +7,6 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output/colorstyle"
 	"github.com/ActiveState/cli/internal/profile"
@@ -151,7 +150,7 @@ func ColorizedOrStrip(value string, stripColors bool) string {
 	var out bytes.Buffer
 	_, err := Colorize(value, &out, stripColors)
 	if err != nil {
-		multilog.Error("Could not colorize: %s", errs.JoinMessage(err))
+		multilog.Error("Could not colorize: %s", err.Error())
 		return StripColorCodes(value)
 	}
 	return out.String()

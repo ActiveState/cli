@@ -377,12 +377,12 @@ func (s *Script) Equals(other *Script) bool {
 	// Compare buildexpression JSON.
 	myJson, err := json.Marshal(s.Expr)
 	if err != nil {
-		multilog.Error("Unable to marshal this buildscript to JSON: %v", errs.JoinMessage(err))
+		multilog.Error("Unable to marshal this buildscript to JSON: %v", err)
 		return false
 	}
 	otherJson, err := json.Marshal(other.Expr)
 	if err != nil {
-		multilog.Error("Unable to marshal other buildscript to JSON: %v", errs.JoinMessage(err))
+		multilog.Error("Unable to marshal other buildscript to JSON: %v", err)
 		return false
 	}
 	return string(myJson) == string(otherJson)

@@ -8,7 +8,6 @@ import (
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -63,7 +62,7 @@ const (
 func setStateProtocol() error {
 	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
-		multilog.Error("Could not check for windows administrator privileges: %v", errs.JoinMessage(err))
+		multilog.Error("Could not check for windows administrator privileges: %v", err)
 	}
 
 	createFunc := osutils.CreateCurrentUserKey

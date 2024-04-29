@@ -97,7 +97,7 @@ func (s *Set) sendEvent(key string, value string, option configMediator.Option) 
 	if option.Type == configMediator.Bool {
 		v, err := strconv.ParseBool(value)
 		if err != nil {
-			logging.Error("Could not parse bool value: %s", errs.JoinMessage(err))
+			logging.Error("Could not parse bool value: %s", err)
 			return
 		}
 

@@ -79,10 +79,10 @@ func stopSvc(installPath string) error {
 			if err != nil {
 				if runtime.GOOS == "darwin" && strings.Contains(err.Error(), "bad call to lsof") {
 					// There's nothing we can do about this, so just debug log it.
-					logging.Debug("Could not get executable path for state-svc process, error: %v", errs.JoinMessage(err))
+					logging.Debug("Could not get executable path for state-svc process, error: %v", err)
 					continue
 				}
-				multilog.Error("Could not get executable path for state-svc process, error: %v", errs.JoinMessage(err))
+				multilog.Error("Could not get executable path for state-svc process, error: %v", err)
 				continue
 			}
 
@@ -116,7 +116,7 @@ func stopSvcProcess(proc *process.Process, name string) error {
 	select {
 	case err := <-signalErrs:
 		if err != nil {
-			multilog.Error("Could not send SIGTERM to %s  process, error: %v", name, errs.JoinMessage(err))
+			multilog.Error("Could not send SIGTERM to %s  process, error: %v", name, err)
 			return killProcess(proc, name)
 		}
 
@@ -150,7 +150,7 @@ func killProcess(proc *process.Process, name string) error {
 			}
 		}
 	} else {
-		logging.Error("Could not get child process: %v", errs.JoinMessage(err))
+		logging.Error("Could not get child process: %v", err)
 	}
 
 	err = proc.Kill()

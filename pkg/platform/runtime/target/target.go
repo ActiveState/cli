@@ -120,7 +120,7 @@ func (p *ProjectTarget) ProjectDir() string {
 func ProjectDirToTargetDir(projectDir, cacheDir string) string {
 	resolvedDir, err := fileutils.ResolveUniquePath(projectDir)
 	if err != nil {
-		multilog.Error("Could not resolve unique path for projectDir: %s, error: %s", projectDir, errs.JoinMessage(err))
+		multilog.Error("Could not resolve unique path for projectDir: %s, error: %s", projectDir, err.Error())
 		resolvedDir = projectDir
 	}
 	logging.Debug("In newStore: resolved project dir is: %s", resolvedDir)
@@ -139,7 +139,7 @@ type CustomTarget struct {
 func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir string, trigger Trigger) *CustomTarget {
 	cleanDir, err := fileutils.ResolveUniquePath(dir)
 	if err != nil {
-		multilog.Error("Could not resolve unique path for dir: %s, error: %s", dir, errs.JoinMessage(err))
+		multilog.Error("Could not resolve unique path for dir: %s, error: %s", dir, err.Error())
 	} else {
 		dir = cleanDir
 	}
@@ -191,7 +191,7 @@ type OfflineTarget struct {
 func NewOfflineTarget(namespace *project.Namespaced, dir string, artifactsDir string) *OfflineTarget {
 	cleanDir, err := fileutils.ResolveUniquePath(dir)
 	if err != nil {
-		multilog.Error("Could not resolve unique path for dir: %s, error: %s", dir, errs.JoinMessage(err))
+		multilog.Error("Could not resolve unique path for dir: %s, error: %s", dir, err.Error())
 	} else {
 		dir = cleanDir
 	}

@@ -225,14 +225,14 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 		err := os.Remove(pjfile.Path())
 		if err != nil {
-			multilog.Error("Failed to remove activestate.yaml after `state init` error: %v", errs.JoinMessage(err))
+			multilog.Error("Failed to remove activestate.yaml after `state init` error: %v", err)
 			return
 		}
 		if cwd, err := osutils.Getwd(); err == nil {
 			if createdDir := filepath.Dir(pjfile.Path()); createdDir != cwd {
 				err2 := os.RemoveAll(createdDir)
 				if err2 != nil {
-					multilog.Error("Failed to remove created directory after `state init` error: %v", errs.JoinMessage(err2))
+					multilog.Error("Failed to remove created directory after `state init` error: %v", err2)
 				}
 			}
 		}

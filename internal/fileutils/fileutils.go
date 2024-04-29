@@ -532,7 +532,7 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 				// On Windows, the following renaming step can otherwise fail if subToPath is read-only (file removal is allowed)
 				err = os.Remove(subToPath)
 				if err != nil {
-					multilog.Error("Failed to remove file scheduled to be overwritten: %s (file mode: %#o): %v", subToPath, toInfo.Mode(), errs.JoinMessage(err))
+					multilog.Error("Failed to remove file scheduled to be overwritten: %s (file mode: %#o): %v", subToPath, toInfo.Mode(), err)
 				}
 			}
 		}
@@ -870,7 +870,7 @@ func TempDirFromBaseDirUnsafe(baseDir string) string {
 func MoveAllFilesCrossDisk(src, dst string) error {
 	err := MoveAllFiles(src, dst)
 	if err != nil {
-		multilog.Error("Move all files failed with error: %s. Falling back to copy files", errs.JoinMessage(err))
+		multilog.Error("Move all files failed with error: %s. Falling back to copy files", err)
 	}
 
 	return copyFiles(src, dst, true)

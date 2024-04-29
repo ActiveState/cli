@@ -89,7 +89,7 @@ func (i *Installer) Install() (rerr error) {
 
 	err = legacytray.DetectAndRemove(i.path, i.cfg)
 	if err != nil {
-		multilog.Error("Unable to detect and/or remove legacy tray. Will try again next update. Error: %v", errs.JoinMessage(err))
+		multilog.Error("Unable to detect and/or remove legacy tray. Will try again next update. Error: %v", err)
 	}
 
 	// Create target dir
@@ -141,7 +141,7 @@ func (i *Installer) Install() (rerr error) {
 	// Run state _prepare after updates to facilitate anything the new version of the state tool might need to set up
 	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
 	if stdout, stderr, err := osutils.ExecSimple(stateExec, []string{"_prepare"}, []string{}); err != nil {
-		multilog.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", errs.JoinMessage(err), stdout, stderr)
+		multilog.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
 	}
 
 	logging.Debug("Installation was successful")
@@ -266,7 +266,7 @@ func installationIsOnPATH(installRoot string) bool {
 	}
 	onPATH, err := fileutils.PathContainsParent(exeOnPATH, installRoot)
 	if err != nil {
-		multilog.Error("Unable to determine if state tool on PATH is in path to install to: %v", errs.JoinMessage(err))
+		multilog.Error("Unable to determine if state tool on PATH is in path to install to: %v", err)
 	}
 	return onPATH
 }

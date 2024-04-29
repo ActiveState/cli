@@ -6,7 +6,6 @@ import (
 	"io"
 
 	"github.com/ActiveState/cli/internal/colorize"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -55,7 +54,7 @@ func (f *JSON) Fprint(writer io.Writer, value interface{}) {
 		var err error
 		b, err = json.Marshal(value)
 		if err != nil {
-			multilog.Error("Could not marshal value, error: %v", errs.JoinMessage(err))
+			multilog.Error("Could not marshal value, error: %v", err)
 			f.Error(locale.T("err_could_not_marshal_print"))
 			return
 		}
@@ -64,7 +63,7 @@ func (f *JSON) Fprint(writer io.Writer, value interface{}) {
 
 	_, err := writer.Write(b)
 	if err != nil {
-		multilog.Error("Could not write json output, error: %v", errs.JoinMessage(err))
+		multilog.Error("Could not write json output, error: %v", err)
 	}
 }
 
@@ -91,14 +90,14 @@ func (f *JSON) Error(value interface{}) {
 		b, err = json.Marshal(toStructuredError(value))
 	}
 	if err != nil {
-		multilog.Error("Could not marshal value, error: %v", errs.JoinMessage(err))
+		multilog.Error("Could not marshal value, error: %v", err)
 		b = []byte(locale.T("err_could_not_marshal_print"))
 	}
 	b = []byte(colorize.StripColorCodes(string(b)))
 
 	_, err = f.cfg.OutWriter.Write(b)
 	if err != nil {
-		multilog.Error("Could not write json output, error: %v", errs.JoinMessage(err))
+		multilog.Error("Could not write json output, error: %v", err)
 	}
 }
 

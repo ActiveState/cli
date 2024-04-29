@@ -91,14 +91,14 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 			}
 			err := os.Remove(proj.Path())
 			if err != nil {
-				multilog.Error("Failed to remove activestate.yaml after `state checkout` error: %v", errs.JoinMessage(err))
+				multilog.Error("Failed to remove activestate.yaml after `state checkout` error: %v", err)
 				return
 			}
 			if cwd, err := osutils.Getwd(); err == nil {
 				if createdDir := filepath.Dir(proj.Path()); createdDir != cwd {
 					err2 := os.RemoveAll(createdDir)
 					if err2 != nil {
-						multilog.Error("Failed to remove created directory after `state checkout` error: %v", errs.JoinMessage(err2))
+						multilog.Error("Failed to remove created directory after `state checkout` error: %v", err2)
 					}
 				}
 			}

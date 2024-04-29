@@ -236,7 +236,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		if updated, err := autoUpdate(svcmodel, args, cfg, an, out); err == nil && updated {
 			return nil // command will be run by updated exe
 		} else if err != nil {
-			multilog.Error("Failed to autoupdate: %v", errs.JoinMessage(err))
+			multilog.Error("Failed to autoupdate: %v", err)
 		}
 
 		if childCmd.Name() != "update" && pj != nil && pj.IsLocked() {

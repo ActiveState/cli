@@ -7,7 +7,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -67,7 +66,7 @@ func (s *WsMock) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				s.Close()
 				return
 			}
-			multilog.Error("Reading Message failed: %v", errs.JoinMessage(err))
+			multilog.Error("Reading Message failed: %v", err)
 			return
 		}
 

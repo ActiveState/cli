@@ -124,7 +124,7 @@ func New(cfg sscommon.Configurable) SubShell {
 	if err != nil {
 		// We cannot error here, but this error will resurface when activating a runtime, so we can
 		// notify the user at that point.
-		logging.Error("Failed to set subshell environment: %v", errs.JoinMessage(err))
+		logging.Error("Failed to set subshell environment: %v", err)
 	}
 
 	return subs
@@ -158,7 +158,7 @@ func ConfigureAvailableShells(shell SubShell, cfg sscommon.Configurable, env map
 		}
 		err := s.WriteUserEnv(cfg, env, identifier, userScope)
 		if err != nil {
-			logging.Error("Could not update PATH for shell %s: %v", s.Shell(), errs.JoinMessage(err))
+			logging.Error("Could not update PATH for shell %s: %v", s.Shell(), err)
 		}
 	}
 

@@ -8,7 +8,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -103,7 +102,7 @@ func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName
 	})
 	osVersion, err := sysinfo.OSVersion()
 	if err != nil {
-		multilog.Error("Could not detect OSVersion: %v", errs.JoinMessage(err))
+		multilog.Error("Could not detect OSVersion: %v", err)
 	}
 	c.RegisterParam("OS", map[string]interface{}{
 		"Name":         sysinfo.OS().String(),

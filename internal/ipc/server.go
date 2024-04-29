@@ -165,7 +165,7 @@ func accept(wg *sync.WaitGroup, l net.Listener, reqHandlers []RequestHandler) er
 
 		if err := handleMatching(conn, reqHandlers); err != nil {
 			logging.Debug(err.Error())
-			logging.Error("Unexpected IPC request handling error: %v", errs.JoinMessage(err))
+			logging.Error("Unexpected IPC request handling error: %v", err)
 			return
 		}
 	}()

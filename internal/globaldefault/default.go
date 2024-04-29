@@ -4,7 +4,6 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
@@ -35,7 +34,7 @@ func Prepare(cfg DefaultConfigurer, shell subshell.SubShell) error {
 
 	isWindowsAdmin, err := osutils.IsAdmin()
 	if err != nil {
-		multilog.Error("Failed to determine if we are running as administrator: %v", errs.JoinMessage(err))
+		multilog.Error("Failed to determine if we are running as administrator: %v", err)
 	}
 	if isWindowsAdmin {
 		logging.Debug("Skip preparation step as it is not supported for Windows Administrators.")
