@@ -489,6 +489,10 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 	// Compute and handle the change summary
 	allArtifacts := bp.Artifacts(artifactFilters...)
 
+	if len(allArtifacts) == 0 {
+		return nil, nil, errs.New("did not find any artifacts that match our filters, full artifacts list: %#v", bp.Artifacts().ToNameMap())
+	}
+
 	// If we are installing build dependencies, then the requested artifacts
 	// will include the buildtime closure. Otherwise, we only need the runtime
 	// closure.
