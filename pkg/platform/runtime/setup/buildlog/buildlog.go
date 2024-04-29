@@ -54,6 +54,12 @@ type BuildError struct {
 	*locale.LocalizedError
 }
 
+type ArtifactBuildError struct {
+	*errs.WrapperError
+	Artifact *buildplan.Artifact
+	Message  *ArtifactFailedMessage
+}
+
 // EventHandlerError designates an error in the event handler for reporting progress.
 type EventHandlerError struct {
 	*errs.WrapperError
@@ -194,7 +200,7 @@ func NewWithCustomConnections(artifactMap buildplan.ArtifactIDMap,
 				if err := writeLogFile("", m.ErrorMessage); err != nil {
 					errCh <- errs.Wrap(err, "Could not write to build log file")
 				}
-				if err := handleEvent(eventHandler, events.BuildFailure{}); err != nil {
+				if err := handleEvent(eventHandler, events.BuildFailure{m.ErrorMessage}); err != nil {
 					errCh <- errs.Wrap(err, "Could not handle BuildFailure event")
 				}
 				errCh <- &BuildError{locale.WrapError(artifactErr, "err_logstream_build_failed", "Build failed with error message: {{.V0}}.", m.ErrorMessage)}
@@ -269,6 +275,11 @@ Artifact Build Succeeded.
 					errCh <- errs.Wrap(err, "Could not write to build log file")
 				}
 
+				if m.ArtifactURI == "" {
+					errCh <- errs.Wrap(err, "Received artifact succeeded event without artifact URL: %+v", m)
+					return
+				}
+
 				ad.SetDownload(m.ArtifactURI, m.ArtifactChecksum)
 
 				ch <- ad
@@ -315,6 +326,13 @@ Artifact Build Failed.
 					errCh <- errs.Wrap(err, "Could not handle ArtifactBuildFailure event")
 					return
 				}
+
+				errCh <- &ArtifactBuildError{
+					errs.New("artifact build failed"),
+					ad,
+					&m,
+				}
+
 			case ArtifactProgress:
 				m := msg.messager.(ArtifactProgressMessage)
 
@@ -370,9 +388,13 @@ Artifact Build Failed.
 
 // Wait waits for the build log to close because the build is done and all downloadable artifacts are here
 func (bl *BuildLog) Wait() error {
+	var rerr error
 	var errors []error
 	for err := range bl.errCh {
-		errors = append(errors, err)
+		if rerr == nil {
+			rerr = errs.New("failed build")
+		}
+		rerr = errs.Pack(rerr, err)
 	}
 	if len(errors) > 0 {
 		return errors[0]

@@ -21,6 +21,7 @@ type Artifact struct {
 	MimeType    string
 	URL         string
 	LogURL      string
+	Errors      []string
 	Checksum    string
 	Status      string
 

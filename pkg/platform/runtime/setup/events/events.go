@@ -85,6 +85,7 @@ func (BuildSuccess) IsEvent() Event {
 }
 
 type BuildFailure struct {
+	Message string
 }
 
 func (BuildFailure) IsEvent() Event {

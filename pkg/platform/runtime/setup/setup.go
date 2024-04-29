@@ -72,6 +72,12 @@ type ArtifactDownloadError struct {
 	*errs.WrapperError
 }
 
+// ArtifactCachedBuildFailed designates an error due to a build for an artifact that failed and has been cached
+type ArtifactCachedBuildFailed struct {
+	*errs.WrapperError
+	Artifact *buildplan.Artifact
+}
+
 // ArtifactInstallError designates an error installing a downloaded artifact.
 type ArtifactInstallError struct {
 	*errs.WrapperError
@@ -92,6 +98,10 @@ func (a *ArtifactSetupErrors) Error() string {
 		errors = append(errors, errs.JoinMessage(err))
 	}
 	return "Not all artifacts could be installed, errors:\n" + strings.Join(errors, "\n")
+}
+
+func (a *ArtifactSetupErrors) Unwrap() []error {
+	return a.errs
 }
 
 // Errors returns the individual error messages collected from all failing artifact installations
@@ -490,6 +500,22 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 	// Compute and handle the change summary
 	allArtifacts := bp.Artifacts(artifactFilters...)
 
+	// Detect failed artifacts early
+	for _, a := range allArtifacts {
+		var aErr error
+		if a.Status == types.ArtifactFailedPermanently || a.Status == types.ArtifactFailedTransiently {
+			errV := &ArtifactCachedBuildFailed{errs.New("artifact failed, status: %s", a.Status), a}
+			if aErr == nil {
+				aErr = errV
+			} else {
+				aErr = errs.Pack(aErr, errV)
+			}
+		}
+		if aErr != nil {
+			return nil, nil, aErr
+		}
+	}
+
 	if len(allArtifacts) == 0 {
 		v, err := json.Marshal(bp.Artifacts())
 		if err != nil {
@@ -657,6 +683,7 @@ func (s *Setup) installArtifactsFromBuild(isReady bool, engine types.BuildEngine
 
 	var err error
 	if isReady {
+		logging.Debug("Installing via build result")
 		if err := s.handleEvent(events.BuildSkipped{}); err != nil {
 			return errs.Wrap(err, "Could not handle BuildSkipped event")
 		}
@@ -665,6 +692,7 @@ func (s *Setup) installArtifactsFromBuild(isReady bool, engine types.BuildEngine
 			err = errs.Wrap(err, "Installing via build result failed")
 		}
 	} else {
+		logging.Debug("Installing via buildlog streamer")
 		err = s.installFromBuildLog(engine, recipeID, artifacts, installFunc, logFilePath)
 		if err != nil {
 			err = errs.Wrap(err, "Installing via buildlog streamer failed")
@@ -808,6 +836,10 @@ func (s *Setup) downloadArtifact(a *buildplan.Artifact, targetFile string) (rerr
 			return
 		}
 	}()
+
+	if a.URL == "" {
+		return errs.New("Artifact URL is empty: %+v", a)
+	}
 
 	artifactURL, err := url.Parse(a.URL)
 	if err != nil {

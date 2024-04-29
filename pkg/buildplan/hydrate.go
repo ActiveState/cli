@@ -233,6 +233,7 @@ func createArtifact(rawArtifact *raw.Artifact) *Artifact {
 		MimeType:    rawArtifact.MimeType,
 		URL:         rawArtifact.URL,
 		LogURL:      rawArtifact.LogURL,
+		Errors:      rawArtifact.Errors,
 		Checksum:    rawArtifact.Checksum,
 		Status:      rawArtifact.Status,
 		children:    []*Artifact{},

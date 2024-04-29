@@ -49,6 +49,7 @@ type Artifact struct {
 	Status              string        `json:"status"`
 	URL                 string        `json:"url"`
 	LogURL              string        `json:"logURL"`
+	Errors              []string      `json:"errors"`
 	Checksum            string        `json:"checksum"`
 }
 

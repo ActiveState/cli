@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -23,8 +24,10 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 		return
 	}
 	var noMatchingPlatformErr *model.ErrNoMatchingPlatform
-	var artifactSetupErr *setup.ArtifactSetupErrors
+	var artifactDownloadErr *setup.ArtifactDownloadError
 	var buildPlannerErr *bpResp.BuildPlannerError
+	var artifactCachedBuildErr *setup.ArtifactCachedBuildFailed
+	var artifactBuildErr *buildlog.ArtifactBuildError
 
 	switch {
 	case errors.Is(*rerr, rationalize.ErrHeadless):
@@ -52,18 +55,12 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 
 	// If there was an artifact download error, say so, rather than reporting a generic "could not
 	// update runtime" error.
-	case errors.As(*rerr, &artifactSetupErr):
-		for _, err := range artifactSetupErr.Errors() {
-			if !errs.Matches(err, &setup.ArtifactDownloadError{}) {
-				continue
-			}
-			*rerr = errs.WrapUserFacing(*rerr,
-				locale.Tl("err_runtime_setup_download", "Your runtime could not be installed or updated because one or more artifacts failed to download."),
-				errs.SetInput(),
-				errs.SetTips(locale.Tr("err_user_network_solution", constants.ForumsURL)),
-			)
-			break // it only takes one download failure to report the runtime failure as due to download error
-		}
+	case errors.As(*rerr, &artifactDownloadErr):
+		*rerr = errs.WrapUserFacing(*rerr,
+			locale.Tl("err_runtime_setup_download", "Your runtime could not be installed or updated because one or more artifacts failed to download."),
+			errs.SetInput(),
+			errs.SetTips(locale.Tr("err_user_network_solution", constants.ForumsURL)),
+		)
 
 	// We communicate buildplanner errors verbatim as the intend is that these are curated by the buildplanner
 	case errors.As(*rerr, &buildPlannerErr):
@@ -78,6 +75,26 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 	// Buildscript is missing and needs to be recreated
 	case errors.Is(*rerr, runtime.NeedsBuildscriptResetError):
 		*rerr = errs.WrapUserFacing(*rerr, locale.T("notice_needs_buildscript_reset"), errs.SetInput())
+
+	// Artifact cached build errors
+	case errors.As(*rerr, &artifactCachedBuildErr):
+		errMsg := locale.Tr("err_build_artifact_failed_msg", artifactCachedBuildErr.Artifact.Name())
+		*rerr = errs.WrapUserFacing(*rerr,
+			locale.Tr("err_build_artifact_failed",
+				errMsg, strings.Join(artifactCachedBuildErr.Artifact.Errors, "\n"), artifactCachedBuildErr.Artifact.LogURL,
+			),
+			errs.SetInput(),
+		)
+
+	// Artifact build errors
+	case errors.As(*rerr, &artifactBuildErr):
+		errMsg := locale.Tr("err_build_artifact_failed_msg", artifactBuildErr.Artifact.Name())
+		*rerr = errs.WrapUserFacing(*rerr,
+			locale.Tr("err_build_artifact_failed",
+				errMsg, artifactBuildErr.Message.ErrorMessage, artifactBuildErr.Message.LogURI,
+			),
+			errs.SetInput(),
+		)
 
 	// If updating failed due to unidentified errors, and the user is not authenticated, add a tip suggesting that they authenticate as
 	// this may be a private project.
