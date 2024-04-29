@@ -493,22 +493,13 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 		return nil, nil, errs.New("did not find any artifacts that match our platform (%s), full artifacts list: %+v", platformID, bp.Artifacts())
 	}
 
-	// If we are installing build dependencies, then the requested artifacts
-	// will include the buildtime closure. Otherwise, we only need the runtime
-	// closure.
-	relevantBuildArtifacts := allArtifacts
-	if !includeBuildtimeClosure {
-		artifactFilters = append(artifactFilters, buildplan.FilterRuntimeArtifacts())
-		relevantBuildArtifacts = bp.Artifacts(artifactFilters...)
-	}
-
 	resolver, err := selectArtifactResolver(bp)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Failed to select artifact resolver")
 	}
 
 	// build results don't have namespace info and will happily report internal only artifacts
-	downloadablePrebuiltArtifacts := sliceutils.Filter(relevantBuildArtifacts, func(a *buildplan.Artifact) bool {
+	downloadablePrebuiltArtifacts := sliceutils.Filter(allArtifacts, func(a *buildplan.Artifact) bool {
 		return a.Status == types.ArtifactSucceeded && a.URL != ""
 	})
 
@@ -539,7 +530,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 		return nil, nil, locale.WrapError(err, "err_stored_artifacts")
 	}
 
-	alreadyInstalled := reusableArtifacts(relevantBuildArtifacts, storedArtifacts)
+	alreadyInstalled := reusableArtifacts(allArtifacts, storedArtifacts)
 
 	artifactNamesList := []string{}
 	for _, a := range allArtifacts {
@@ -562,7 +553,11 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 		_, alreadyInstalled := alreadyInstalled[a.ArtifactID]
 		return !alreadyInstalled
 	}
-	artifactsToInstall := relevantBuildArtifacts.Filter(filterNeedsInstall, buildplan.FilterRuntimeArtifacts())
+	filters := []buildplan.FilterArtifact{filterNeedsInstall}
+	if !includeBuildtimeClosure {
+		filters = append(filters, buildplan.FilterRuntimeArtifacts())
+	}
+	artifactsToInstall := allArtifacts.Filter(filters...)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Failed to compute artifacts to build")
 	}
@@ -584,12 +579,17 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 		return nil, nil, errs.Wrap(err, "Could not get recipe ID from build plan")
 	}
 
+	artifactNameMap := map[strfmt.UUID]string{}
+	for _, a := range allArtifacts {
+		artifactNameMap[a.ArtifactID] = a.Name()
+	}
+
 	if err := s.eventHandler.Handle(events.Start{
 		RecipeID:         recipeID,
 		RequiresBuild:    bp.IsBuildInProgress(),
-		Artifacts:        relevantBuildArtifacts.ToIDMap(),
+		Artifacts:        artifactNameMap,
 		LogFilePath:      logFilePath,
-		ArtifactsToBuild: relevantBuildArtifacts.ToIDSlice(),
+		ArtifactsToBuild: allArtifacts.ToIDSlice(),
 		// Yes these have the same value; this is intentional.
 		// Separating these out just allows us to be more explicit and intentional in our event handling logic.
 		ArtifactsToDownload: artifactsToInstall.ToIDSlice(),
@@ -621,7 +621,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 		multilog.Error("Could not save artifact cache updates: %v", err)
 	}
 
-	artifactIDs := relevantBuildArtifacts.ToIDSlice()
+	artifactIDs := allArtifacts.ToIDSlice()
 	logging.Debug("Returning artifacts: %v", artifactIDs)
 	return artifactIDs, uninstallArtifacts, nil
 }

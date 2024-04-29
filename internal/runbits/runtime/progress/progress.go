@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/go-openapi/strfmt"
 	"github.com/vbauerster/mpb/v7"
 	"golang.org/x/net/context"
@@ -61,7 +60,7 @@ type ProgressDigester struct {
 	artifactBars map[artifactStepID]*bar
 
 	// Artifact name lookup map
-	artifacts buildplan.ArtifactIDMap
+	artifacts map[strfmt.UUID]string
 
 	// Recipe that we're performing progress for
 	recipeID strfmt.UUID
@@ -99,7 +98,7 @@ func NewProgressIndicator(w io.Writer, out output.Outputer) *ProgressDigester {
 			mpb.WithRefreshRate(refreshRate),
 		),
 
-		artifacts:    buildplan.ArtifactIDMap{},
+		artifacts:    map[strfmt.UUID]string{},
 		artifactBars: map[artifactStepID]*bar{},
 
 		cancelMpb:    cancel,

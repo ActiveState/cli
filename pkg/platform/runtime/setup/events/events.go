@@ -1,7 +1,6 @@
 package events
 
 import (
-	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/go-openapi/strfmt"
 )
@@ -37,7 +36,7 @@ type Start struct {
 	RecipeID strfmt.UUID
 
 	RequiresBuild bool
-	Artifacts     buildplan.ArtifactIDMap
+	Artifacts     map[strfmt.UUID]string
 	LogFilePath   string
 
 	ArtifactsToBuild    []artifact.ArtifactID

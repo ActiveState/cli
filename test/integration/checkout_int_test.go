@@ -271,10 +271,6 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCaseInsensitive() {
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutBuildtimeClosure() {
 	suite.OnlyRunForTags(tagsuite.Checkout)
 
-	if runtime.GOOS != "linux" {
-		suite.T().Skip("Skipping buildtime closure test on non-linux platform")
-	}
-
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -284,9 +280,9 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutBuildtimeClosure() {
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	// Expect the number of build deps to be 27 which is more than the number of runtime deps.
-	// Also expect libxcrypt which should not be in the runtime closure.
+	// Also expect ncurses which should not be in the runtime closure.
 	cp.Expect("27")
-	cp.Expect("libxcrypt")
+	cp.Expect("ncurses")
 	cp.ExpectExitCode(0)
 }
 
