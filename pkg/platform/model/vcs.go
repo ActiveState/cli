@@ -344,6 +344,15 @@ func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64, auth *authent
 	return res.Payload, nil
 }
 
+func HasCommonParent(commit1, commit2 strfmt.UUID, auth *authentication.Auth) (bool, error) {
+	commonParent, err := CommonParent(&commit1, &commit2, auth)
+	if err != nil {
+		return false, errs.Wrap(err, "Could not get common parent")
+	}
+
+	return commonParent != nil, nil
+}
+
 // CommonParent returns the first commit id which both provided commit id
 // histories have in common.
 func CommonParent(commit1, commit2 *strfmt.UUID, auth *authentication.Auth) (*strfmt.UUID, error) {

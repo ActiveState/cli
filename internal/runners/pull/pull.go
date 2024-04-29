@@ -117,6 +117,15 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 	resultingCommit := remoteCommit // resultingCommit is the commit we want to update the local project file with
 
 	if localCommit != nil {
+		hasCommonParent, err := model.HasCommonParent(*localCommit, *remoteCommit, p.auth)
+		if err != nil {
+			return errs.Wrap(err, "Unable to determine common parent")
+		}
+
+		if !hasCommonParent {
+			return locale.NewInputError("err_pull_no_common_parent", "", localCommit.String(), remoteCommit.String())
+		}
+
 		// Attempt to fast-forward merge. This will succeed if the commits are
 		// compatible, meaning that we can simply update the local commit ID to
 		// the remoteCommit ID. The commitID returned from MergeCommit with this
