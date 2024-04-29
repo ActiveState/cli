@@ -295,7 +295,7 @@ func (suite *CheckoutIntegrationTestSuite) TestFail() {
 		e2e.OptArgs("checkout", "ActiveState-CLI/fail"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Something Went Wrong")
+	cp.Expect("failed to build")
 	cp.ExpectNotExitCode(0)
 	suite.Assert().NoDirExists(filepath.Join(ts.Dirs.Work, "fail"), "state checkout fail did not remove created directory")
 	ts.IgnoreLogErrors()
@@ -304,7 +304,7 @@ func (suite *CheckoutIntegrationTestSuite) TestFail() {
 		e2e.OptArgs("checkout", "ActiveState-CLI/fail", "."),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Something Went Wrong")
+	cp.Expect("failed to build")
 	cp.ExpectNotExitCode(0)
 	suite.Assert().NoFileExists(filepath.Join(ts.Dirs.Work, constants.ConfigFileName), "state checkout fail did not remove created activestate.yaml")
 
@@ -312,7 +312,7 @@ func (suite *CheckoutIntegrationTestSuite) TestFail() {
 		e2e.OptArgs("checkout", "ActiveState-CLI/fail", "--force"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Something Went Wrong")
+	cp.Expect("failed to build")
 	cp.ExpectNotExitCode(0)
 	suite.Assert().DirExists(filepath.Join(ts.Dirs.Work, "fail"), "state checkout fail did not leave created directory there despite --force flag override")
 }
