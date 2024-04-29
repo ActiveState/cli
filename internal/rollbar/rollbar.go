@@ -9,6 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/logging"
@@ -168,6 +169,13 @@ func logToRollbar(critical bool, message string, args ...interface{}) {
 				arg = arg[0:idx]
 			}
 			flags = append(flags, arg)
+		}
+	}
+
+	// Unpack error objects.
+	for i, arg := range args {
+		if err, ok := arg.(error); ok {
+			args[i] = errs.JoinMessage(err)
 		}
 	}
 
