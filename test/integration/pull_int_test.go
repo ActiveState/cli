@@ -138,7 +138,8 @@ func (suite *PullIntegrationTestSuite) TestPullNoCommonParent() {
 	cp := ts.Spawn("pull")
 	cp.Expect("Operating on project")
 	cp.Expect("ActiveState-CLI/Python3")
-	cp.Expect("no common parent")
+	cp.Expect("no common")
+	cp.Expect("To review your project history")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 }

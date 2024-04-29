@@ -43,6 +43,12 @@ type Pull struct {
 	svcModel  *model.SvcModel
 }
 
+type errNoCommonParent struct {
+	error
+	localCommitID  strfmt.UUID
+	remoteCommitID strfmt.UUID
+}
+
 type PullParams struct {
 	Force bool
 }
@@ -123,7 +129,11 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		}
 
 		if !hasCommonParent {
-			return locale.NewInputError("err_pull_no_common_parent", "", localCommit.String(), remoteCommit.String())
+			return &errNoCommonParent{
+				errs.New("no common parent"),
+				*localCommit,
+				*remoteCommit,
+			}
 		}
 
 		// Attempt to fast-forward merge. This will succeed if the commits are
