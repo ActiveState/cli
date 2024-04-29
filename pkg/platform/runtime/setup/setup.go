@@ -490,7 +490,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 	allArtifacts := bp.Artifacts(artifactFilters...)
 
 	if len(allArtifacts) == 0 {
-		return nil, nil, errs.New("did not find any artifacts that match our filters, full artifacts list: %#v", bp.Artifacts().ToNameMap())
+		return nil, nil, errs.New("did not find any artifacts that match our platform (%s), full artifacts list: %+v", platformID, bp.Artifacts())
 	}
 
 	// If we are installing build dependencies, then the requested artifacts
