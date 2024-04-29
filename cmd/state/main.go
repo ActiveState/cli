@@ -138,7 +138,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 	ipcClient := svcctl.NewDefaultIPCClient()
 	argText := strings.Join(args, " ")
-	svcPort, err := svcctl.EnsureExecStartedAndLocateHTTP(ipcClient, svcExec, argText)
+	svcPort, err := svcctl.EnsureExecStartedAndLocateHTTP(ipcClient, svcExec, argText, out)
 	if err != nil {
 		return locale.WrapError(err, "start_svc_failed", "Failed to start state-svc at state tool invocation")
 	}
