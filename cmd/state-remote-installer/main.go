@@ -58,7 +58,7 @@ func main() {
 		}
 
 		if err := cfg.Close(); err != nil {
-			logging.Error("Failed to close config: %w", err)
+			logging.Error("Failed to close config: %w", errs.JoinMessage(err))
 		}
 
 		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, an.Wait, logging.Close); err != nil {

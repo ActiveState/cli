@@ -163,7 +163,7 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 		err := cmd.Usage()
 		if err != nil {
 			// Cobra doesn't return this error for us, so we have to ensure it's logged
-			multilog.Error("Error while running usage: %v", err)
+			multilog.Error("Error while running usage: %v", errs.JoinMessage(err))
 		}
 		return err
 	})
@@ -827,7 +827,7 @@ func setupSensibleErrors(err error, args []string) error {
 		var max, received int
 		n, err := fmt.Sscanf(errMsg, "accepts at most %d arg(s), received %d", &max, &received)
 		if err != nil || n != 2 {
-			multilog.Error("Unable to parse cobra error message: %v", err)
+			multilog.Error("Unable to parse cobra error message: %v", errs.JoinMessage(err))
 			return locale.NewInputError("err_cmd_unexpected_arguments", "Unexpected argument(s) given")
 		}
 		if max == 0 && received > 0 {

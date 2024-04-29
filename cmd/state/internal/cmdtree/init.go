@@ -2,6 +2,7 @@ package cmdtree
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/primer"
@@ -49,7 +50,7 @@ func newInitCommand(prime *primer.Values) *captain.Command {
 				if err != nil {
 					// If the namespace was invalid but an argument was passed, we
 					// assume it's a project name and not an owner.
-					logging.Error("Could not parse namespace: %v", err)
+					logging.Error("Could not parse namespace: %v", errs.JoinMessage(err))
 					params.ProjectName = params.Namespace
 				} else {
 					params.ParsedNS = ns

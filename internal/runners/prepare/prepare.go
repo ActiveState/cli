@@ -175,7 +175,7 @@ func InstalledPreparedFiles() ([]string, error) {
 
 	path, err := autostart.AutostartPath(svcApp.Path(), svcAutostart.Options)
 	if err != nil {
-		multilog.Error("Failed to determine shortcut path for removal: %v", err)
+		multilog.Error("Failed to determine shortcut path for removal: %v", errs.JoinMessage(err))
 	} else if path != "" {
 		files = append(files, path)
 	}

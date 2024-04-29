@@ -50,7 +50,7 @@ func (u *Uninstall) Run(params *Params) error {
 	if runtime.GOOS == "windows" && !params.UserScope {
 		isAdmin, err := osutils.IsAdmin()
 		if err != nil {
-			multilog.Error("Could not check for windows administrator privileges: %v", err)
+			multilog.Error("Could not check for windows administrator privileges: %v", errs.JoinMessage(err))
 		}
 		if !isAdmin {
 			return locale.NewError(
@@ -114,12 +114,12 @@ func (u *Uninstall) Run(params *Params) error {
 func sourceAnalyticsInformation(store *store.Store) (string, string) {
 	namespace, err := store.Namespace()
 	if err != nil {
-		logging.Error("Could not read namespace from marker file: %v", err)
+		logging.Error("Could not read namespace from marker file: %v", errs.JoinMessage(err))
 	}
 
 	commitID, err := store.CommitID()
 	if err != nil {
-		logging.Error("Could not read commit ID from marker file: %v", err)
+		logging.Error("Could not read commit ID from marker file: %v", errs.JoinMessage(err))
 	}
 
 	return namespace, commitID

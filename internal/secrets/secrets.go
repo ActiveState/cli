@@ -39,7 +39,7 @@ func Save(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *m
 
 	_, err = secretsClient.Secrets.Secrets.SaveAllUserSecrets(params, auth.ClientAuth())
 	if err != nil {
-		multilog.Error("error saving user secret: %v", err)
+		multilog.Error("error saving user secret: %v", errs.JoinMessage(err))
 		return locale.WrapError(err, "secrets_err_save", "", err.Error())
 	}
 
@@ -73,7 +73,7 @@ func ShareWithOrgUsers(secretsClient *secretsapi.Client, org *mono_models.Organi
 
 			ciphertext, err := pubKey.EncryptAndEncode([]byte(secretValue))
 			if err != nil {
-				multilog.Error("Encryptying secret `%s` for user `%s`: %s", secretName, member.User.Username, err.Error())
+				multilog.Error("Encryptying secret `%s` for user `%s`: %s", secretName, member.User.Username, errs.JoinMessage(err))
 				// this is a local issue with the user's keys, so we try and move on
 				continue
 			}

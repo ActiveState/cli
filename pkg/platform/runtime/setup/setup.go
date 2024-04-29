@@ -173,7 +173,7 @@ type artifactUninstaller func() error
 func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth, an analytics.Dispatcher, cfg Configurable, out output.Outputer, svcm *model.SvcModel) *Setup {
 	cache, err := artifactcache.New()
 	if err != nil {
-		multilog.Error("Could not create artifact cache: %v", err)
+		multilog.Error("Could not create artifact cache: %v", errs.JoinMessage(err))
 	}
 	return &Setup{auth, target, eventHandler, store.New(target.Dir()), an, cache, cfg, out, svcm}
 }
@@ -239,7 +239,7 @@ func (s *Setup) Update(buildResult *apimodel.BuildResult, commit *bpModel.Commit
 			return &RuntimeInUseError{locale.NewInputError("runtime_setup_in_use_err", "", strings.Join(list, "\n")), procs}
 		}
 	} else {
-		multilog.Error("Unable to determine if runtime is in use: %v", err)
+		multilog.Error("Unable to determine if runtime is in use: %v", errs.JoinMessage(err))
 	}
 
 	// Update all the runtime artifacts
@@ -288,11 +288,11 @@ func (s *Setup) solveUpdateRecover(r interface{}) {
 	}
 	buildplan, err := s.store.BuildPlanRaw()
 	if err != nil {
-		logging.Error("Could not get raw buildplan: %s", err)
+		logging.Error("Could not get raw buildplan: %s", errs.JoinMessage(err))
 	}
 	env, err := s.store.EnvDef()
 	if err != nil {
-		logging.Error("Could not get envdef: %s", err)
+		logging.Error("Could not get envdef: %s", errs.JoinMessage(err))
 	}
 	// We do a standard error log first here, as rollbar reports will pick up the most recent log lines.
 	// We can't put the buildplan in the multilog message as it'd be way too big a message for rollbar.
@@ -673,7 +673,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(buildResult *apimodel.Buil
 	}
 	err = s.artifactCache.Save()
 	if err != nil {
-		multilog.Error("Could not save artifact cache updates: %v", err)
+		multilog.Error("Could not save artifact cache updates: %v", errs.JoinMessage(err))
 	}
 
 	artifacts := buildResult.OrderedArtifacts()
@@ -956,7 +956,7 @@ func (s *Setup) obtainArtifact(a artifact.ArtifactDownload, extension string) (s
 
 	err = s.artifactCache.Store(a.ArtifactID, archivePath)
 	if err != nil {
-		multilog.Error("Could not store artifact in cache: %v", err)
+		multilog.Error("Could not store artifact in cache: %v", errs.JoinMessage(err))
 	}
 
 	return archivePath, nil

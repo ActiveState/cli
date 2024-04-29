@@ -80,7 +80,7 @@ func (l *Lock) Run(params *LockParams) error {
 
 	// invalidate the installer version lock if `state update lock` is requested
 	if err := l.cfg.Set(updater.CfgKeyInstallVersion, ""); err != nil {
-		multilog.Error("Failed to invalidate installer version lock on `state update lock` invocation: %v", err)
+		multilog.Error("Failed to invalidate installer version lock on `state update lock` invocation: %v", errs.JoinMessage(err))
 	}
 
 	defaultChannel, lockVersion := params.Channel.Name(), params.Channel.Version()

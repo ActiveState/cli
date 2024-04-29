@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"unsafe"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/multilog"
 )
 
@@ -52,11 +53,11 @@ func (d *Spinner) moveCaretBackInCommandPrompt(n int) {
 
 		r2, _, err2 := procSetConsoleCursorPosition.Call(uintptr(handle), uintptr(*((*uint32)(unsafe.Pointer(&cursor)))))
 		if r2 == 0 && !d.reportedError {
-			multilog.Error("Error calling SetConsoleCursorPosition: %v", err2)
+			multilog.Error("Error calling SetConsoleCursorPosition: %v", errs.JoinMessage(err2))
 			d.reportedError = true
 		}
 	} else if !d.reportedError {
-		multilog.Error("Error calling GetConsoleScreenBufferInfo: %v", err)
+		multilog.Error("Error calling GetConsoleScreenBufferInfo: %v", errs.JoinMessage(err))
 		d.reportedError = true
 	}
 }

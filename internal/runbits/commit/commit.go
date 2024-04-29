@@ -78,13 +78,13 @@ func newCommitOutput(commit *mono_models.Commit, orgs []gmodel.Organization, isL
 
 	dt, err := time.Parse(time.RFC3339, commit.Added.String())
 	if err != nil {
-		multilog.Error("Could not parse commit time: %v", err)
+		multilog.Error("Could not parse commit time: %v", errs.JoinMessage(err))
 	}
 	commitOutput.Date = dt.Format(time.RFC822)
 
 	dt, err = time.Parse(time.RFC3339, commit.AtTime.String())
 	if err != nil {
-		multilog.Error("Could not parse revision time: %v", err)
+		multilog.Error("Could not parse revision time: %v", errs.JoinMessage(err))
 	}
 	commitOutput.Revision = dt.Format(time.RFC822)
 

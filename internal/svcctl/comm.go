@@ -96,7 +96,7 @@ func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter
 
 			pidNum, err := strconv.Atoi(hb.ProcessID)
 			if err != nil {
-				multilog.Error("Heartbeat: Could not convert pid string (%s) to int in heartbeat handler: %s", hb.ProcessID, err)
+				multilog.Error("Heartbeat: Could not convert pid string (%s) to int in heartbeat handler: %s", hb.ProcessID, errs.JoinMessage(err))
 			}
 
 			metaFilePath := filepath.Join(filepath.Dir(hb.ExecPath), execmeta.MetaFileName)

@@ -243,7 +243,7 @@ func (u *UpdateInstaller) InstallBlocking(installTargetPath string, args ...stri
 	if strings.HasPrefix(filepath.Base(updateDir), "state-update") {
 		err = os.RemoveAll(updateDir)
 		if err != nil {
-			multilog.Error("Unable to remove update directory '%s': %v", updateDir, err)
+			multilog.Error("Unable to remove update directory '%s': %v", updateDir, errs.JoinMessage(err))
 		}
 	} else {
 		// Do not report to rollbar, but log the error for our integration tests to catch.

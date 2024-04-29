@@ -7,6 +7,7 @@ import (
 	"syscall"
 	"unsafe"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -28,7 +29,7 @@ func GetTerminalColumns() int {
 		uintptr(syscall.TIOCGWINSZ),
 		uintptr(unsafe.Pointer(&ws)))
 	if err != 0 {
-		logging.Error("Error getting terminal size: %v", err)
+		logging.Error("Error getting terminal size: %v", errs.JoinMessage(err))
 		return termSizeFallback
 	}
 

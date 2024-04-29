@@ -68,7 +68,7 @@ func (s *Setup) DeleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, st
 
 			deleteOk, err := dirCanBeDeleted(dir, alreadyInstalled)
 			if err != nil {
-				multilog.Error("Could not determine if directory %s could be deleted: %v", dir, err)
+				multilog.Error("Could not determine if directory %s could be deleted: %v", dir, errs.JoinMessage(err))
 				continue
 			}
 			if !deleteOk {

@@ -204,7 +204,7 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 				return locale.NewInputError("err_auth_forbidden", "You are not allowed to login now. Please try again later.")
 			}
 			if !condition.IsNetworkingError(err) {
-				multilog.Error("Authentication API returned %v", err)
+				multilog.Error("Authentication API returned %v", errs.JoinMessage(err))
 			}
 			return errs.AddTips(locale.WrapError(err, "err_api_auth", "Authentication failed: {{.V0}}", err.Error()), tips...)
 		}

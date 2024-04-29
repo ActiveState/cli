@@ -50,11 +50,11 @@ func init() {
 				locale = "en-US"
 				setErr := cfg.Set("Locale", locale)
 				if setErr != nil {
-					multilog.Error("Could not set locale entry in config, error: %v", setErr)
+					multilog.Error("Could not set locale entry in config, error: %v", errs.JoinMessage(setErr))
 				}
 			}
 		} else {
-			multilog.Error("Could not load  config to check locale, error: %v", err)
+			multilog.Error("Could not load  config to check locale, error: %v", errs.JoinMessage(err))
 			locale = "en-US"
 		}
 	}
@@ -75,7 +75,7 @@ func init() {
 	})
 
 	if err := Set(locale); err != nil {
-		multilog.Error("Could not set locale: %v", err)
+		multilog.Error("Could not set locale: %v", errs.JoinMessage(err))
 	}
 }
 
@@ -154,7 +154,7 @@ func Tl(translationID, locale string, values ...string) string {
 		// prepare template
 		tmpl, err := template.New("locale error").Parse(translation)
 		if err != nil {
-			multilog.Error("Invalid translation template: %v", err)
+			multilog.Error("Invalid translation template: %v", errs.JoinMessage(err))
 			return translation
 		}
 
@@ -162,7 +162,7 @@ func Tl(translationID, locale string, values ...string) string {
 		var out bytes.Buffer
 		err = tmpl.Execute(&out, input)
 		if err != nil {
-			multilog.Error("Could not execute translation template: %v", err)
+			multilog.Error("Could not execute translation template: %v", errs.JoinMessage(err))
 			return translation
 		}
 		translation = out.String()

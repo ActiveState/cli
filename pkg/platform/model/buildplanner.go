@@ -58,7 +58,7 @@ func logRequestVariables(req gqlclient.Request) {
 	vars, err := req.Vars()
 	if err != nil {
 		// Don't fail request because of this errors
-		logging.Error("Failed to get request vars: %s", err)
+		logging.Error("Failed to get request vars: %s", errs.JoinMessage(err))
 		return
 	}
 
@@ -69,7 +69,7 @@ func logRequestVariables(req gqlclient.Request) {
 
 		beData, err := json.MarshalIndent(v, "", "  ")
 		if err != nil {
-			logging.Error("Failed to marshal build expression: %s", err)
+			logging.Error("Failed to marshal build expression: %s", errs.JoinMessage(err))
 			return
 		}
 		logging.Debug("Build Expression: %s", string(beData))

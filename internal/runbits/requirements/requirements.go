@@ -387,7 +387,7 @@ func (r *RequirementOperation) validatePackage(requirement *Requirement) error {
 	requirement.originalRequirementName = requirement.Name
 	normalized, err := model.FetchNormalizedName(*requirement.Namespace, requirement.Name, r.Auth)
 	if err != nil {
-		multilog.Error("Failed to normalize '%s': %v", requirement.Name, err)
+		multilog.Error("Failed to normalize '%s': %v", requirement.Name, errs.JoinMessage(err))
 	}
 
 	packages, err := model.SearchIngredientsStrict(requirement.Namespace.String(), normalized, false, false, nil, r.Auth) // ideally case-sensitive would be true (PB-4371)
@@ -398,7 +398,7 @@ func (r *RequirementOperation) validatePackage(requirement *Requirement) error {
 	if len(packages) == 0 {
 		suggestions, err := getSuggestions(*requirement.Namespace, requirement.Name, r.Auth)
 		if err != nil {
-			multilog.Error("Failed to retrieve suggestions: %v", err)
+			multilog.Error("Failed to retrieve suggestions: %v", errs.JoinMessage(err))
 		}
 
 		if len(suggestions) == 0 {

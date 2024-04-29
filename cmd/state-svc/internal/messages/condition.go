@@ -5,6 +5,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/blang/semver"
@@ -57,7 +58,7 @@ func conditionFuncMap() template.FuncMap {
 		"regexMatch": func(str, pattern string) bool {
 			rx, err := regexp.Compile(pattern)
 			if err != nil {
-				multilog.Error("Messages: Could not compile regex pattern: %s", err)
+				multilog.Error("Messages: Could not compile regex pattern: %s", errs.JoinMessage(err))
 				return false
 			}
 			return rx.MatchString(str)

@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
@@ -31,7 +32,7 @@ func newProjectWithOrg(name, org string, checkouts []string) projectWithOrg {
 			projectTarget := target.NewProjectTarget(proj, nil, "")
 			execDir = setup.ExecDir(projectTarget.Dir())
 		} else {
-			multilog.Error("Unable to get project %s from checkout: %v", checkout, err)
+			multilog.Error("Unable to get project %s from checkout: %v", checkout, errs.JoinMessage(err))
 		}
 		p.Executables = append(p.Executables, execDir)
 	}

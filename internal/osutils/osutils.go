@@ -47,7 +47,7 @@ func BashifyPath(absolutePath string) (string, error) {
 		winPath = strings.Replace(winPath, ` `, `\ `, -1) // escape space
 		return winPath, nil
 	}
-	multilog.Error("Failed to bashify path using installed bash executable, falling back to slash replacement: %v", err)
+	multilog.Error("Failed to bashify path using installed bash executable, falling back to slash replacement: %v", errs.JoinMessage(err))
 
 	vol := filepath.VolumeName(absolutePath)
 	absolutePath = absolutePath[len(vol):]

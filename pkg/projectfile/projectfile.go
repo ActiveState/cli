@@ -1283,7 +1283,7 @@ func GetProjectFileMapping(config ConfigGetter) map[string][]*Project {
 		for _, path := range paths {
 			prj, err := FromExactPath(path)
 			if err != nil {
-				multilog.Error("Could not read project file at %s: %v", path, err)
+				multilog.Error("Could not read project file at %s: %v", path, errs.JoinMessage(err))
 				continue
 			}
 			pFiles = append(pFiles, prj)
@@ -1341,11 +1341,11 @@ func addDeprecatedProjectMappings(cfg ConfigGetter) {
 		},
 	)
 	if err != nil {
-		multilog.Error("Could not update project mapping in config, error: %v", err)
+		multilog.Error("Could not update project mapping in config, error: %v", errs.JoinMessage(err))
 	}
 	for _, unset := range unsets {
 		if err := cfg.Set(unset, nil); err != nil {
-			multilog.Error("Could not clear config entry for key %s, error: %v", unset, err)
+			multilog.Error("Could not clear config entry for key %s, error: %v", unset, errs.JoinMessage(err))
 		}
 	}
 

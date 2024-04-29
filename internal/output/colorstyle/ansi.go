@@ -6,6 +6,7 @@ package colorstyle
 import (
 	"io"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -42,6 +43,6 @@ func (w *Styler) SetStyle(s Style, bright bool) {
 	}
 	_, err := w.writer.Write([]byte(resolvedStyle + "m"))
 	if err != nil {
-		logging.Error("Error writing to writer: %v", err)
+		logging.Error("Error writing to writer: %v", errs.JoinMessage(err))
 	}
 }

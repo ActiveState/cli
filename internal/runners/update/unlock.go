@@ -2,6 +2,7 @@ package update
 
 import (
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
@@ -54,7 +55,7 @@ func (u *Unlock) Run(params *UnlockParams) error {
 	// Invalidate the installer version lock.
 	err := u.cfg.Set(updater.CfgKeyInstallVersion, "")
 	if err != nil {
-		multilog.Error("Failed to invalidate installer version lock on `state update lock` invocation: %v", err)
+		multilog.Error("Failed to invalidate installer version lock on `state update lock` invocation: %v", errs.JoinMessage(err))
 	}
 
 	err = u.cfg.Set(constants.AutoUpdateConfigKey, "true")

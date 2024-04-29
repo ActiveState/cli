@@ -117,7 +117,7 @@ func (t TrackingType) String() string {
 func NamespaceMatch(query string, namespace NamespaceMatchable) bool {
 	match, err := regexp.Match(string(namespace), []byte(query))
 	if err != nil {
-		multilog.Error("Could not match regex for %v, query: %s, error: %v", namespace, query, err)
+		multilog.Error("Could not match regex for %v, query: %s, error: %v", namespace, query, errs.JoinMessage(err))
 	}
 	return match
 }

@@ -184,7 +184,7 @@ func (v *SubShell) IsActive() bool {
 func (v *SubShell) IsAvailable() bool {
 	rcFile, err := v.RcFile()
 	if err != nil {
-		logging.Error("Could not determine rcFile: %s", err)
+		logging.Error("Could not determine rcFile: %s", errs.JoinMessage(err))
 		return false
 	}
 	return fileutils.FileExists(rcFile)
