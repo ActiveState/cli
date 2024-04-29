@@ -53,7 +53,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 		suite.Require().NoError(err, errs.JoinMessage(err))
 
 		t := time.Now()
-		svcPort, err = svcctl.EnsureExecStartedAndLocateHTTP(ipcClient, svcExec, "from test")
+		svcPort, err = svcctl.EnsureExecStartedAndLocateHTTP(ipcClient, svcExec, "from test", nil)
 		suite.Require().NoError(err, ts.DebugMessage(fmt.Sprintf("Error: %s\nLog Tail:\n%s", errs.JoinMessage(err), logging.ReadTail())))
 		duration := time.Since(t)
 

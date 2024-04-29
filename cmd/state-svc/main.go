@@ -275,7 +275,7 @@ func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authenticatio
 }
 
 func runStart(out output.Outputer, argText string) error {
-	if _, err := svcctl.EnsureStartedAndLocateHTTP(argText); err != nil {
+	if _, err := svcctl.EnsureStartedAndLocateHTTP(argText, out); err != nil {
 		if errors.Is(err, ipc.ErrInUse) {
 			out.Print("A State Service instance is already running in the background.")
 			return nil
