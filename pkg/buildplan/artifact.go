@@ -28,7 +28,7 @@ type Artifact struct {
 	IsBuildtimeDependency bool
 
 	Platforms   []strfmt.UUID
-	Ingredients []*Ingredient // While most artifacts only have a single ingredient, some artifacts such as installers can have multiple.
+	Ingredients []*Ingredient `json:"-"` // While most artifacts only have a single ingredient, some artifacts such as installers can have multiple.
 
 	children []*Artifact
 }
