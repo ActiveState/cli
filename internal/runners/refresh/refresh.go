@@ -65,7 +65,7 @@ func (r *Refresh) Run(params *Params) error {
 	}
 
 	request := runtime.NewRequest(r.auth, r.analytics, proj, nil, target.TriggerRefresh, r.svcModel, r.config, runtime.OptMinimalUI)
-	request.SetAsyncRuntime(false)
+	request.OverrideAsyncRuntime(false)
 	rti, _, err := runtime.SolveAndUpdate(request, r.out)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime_new", "Could not update runtime for this project.")

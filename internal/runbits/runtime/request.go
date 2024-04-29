@@ -52,7 +52,7 @@ func (r *Request) AsyncRuntime() bool {
 	return r.asyncRuntime
 }
 
-func (r *Request) SetAsyncRuntime(override bool) {
+func (r *Request) OverrideAsyncRuntime(override bool) {
 	r.asyncRuntime = override
 }
 

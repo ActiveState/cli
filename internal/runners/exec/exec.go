@@ -120,7 +120,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	s.out.Notice(locale.Tr("operating_message", projectNamespace, projectDir))
 
 	request := rtrunbit.NewRequest(s.auth, s.analytics, proj, nil, trigger, s.svcModel, s.cfg, rtrunbit.OptMinimalUI)
-	request.SetAsyncRuntime(false)
+	request.OverrideAsyncRuntime(false)
 	rt, _, err := rtrunbit.SolveAndUpdate(request, s.out)
 	if err != nil {
 		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
