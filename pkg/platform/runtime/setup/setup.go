@@ -2,6 +2,7 @@ package setup
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -490,7 +491,11 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 	allArtifacts := bp.Artifacts(artifactFilters...)
 
 	if len(allArtifacts) == 0 {
-		return nil, nil, errs.New("did not find any artifacts that match our platform (%s), full artifacts list: %+v", platformID, bp.Artifacts())
+		v, err := json.Marshal(bp.Artifacts())
+		if err != nil {
+			return nil, nil, err
+		}
+		return nil, nil, errs.New("did not find any artifacts that match our platform (%s), full artifacts list: %s", platformID, v)
 	}
 
 	resolver, err := selectArtifactResolver(bp)
