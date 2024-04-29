@@ -3,7 +3,6 @@ package runtime
 import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -12,16 +11,15 @@ import (
 )
 
 type Request struct {
-	Auth           *authentication.Auth
-	Out            output.Outputer
-	Analytics      analytics.Dispatcher
-	Project        *project.Project
-	Namespace      *model.Namespace
-	CustomCommitID *strfmt.UUID
-	Trigger        target.Trigger
-	SvcModel       *model.SvcModel
-	Config         Configurable
-	Opts           Opts
+	auth           *authentication.Auth
+	analytics      analytics.Dispatcher
+	project        *project.Project
+	namespace      *model.Namespace
+	customCommitID *strfmt.UUID
+	trigger        target.Trigger
+	svcModel       *model.SvcModel
+	config         Configurable
+	opts           Opts
 	asyncRuntime   bool
 }
 
@@ -36,14 +34,14 @@ func NewRequest(auth *authentication.Auth,
 ) *Request {
 
 	return &Request{
-		Auth:           auth,
-		Analytics:      an,
-		Project:        proj,
-		CustomCommitID: customCommitID,
-		Trigger:        trigger,
-		SvcModel:       svcm,
-		Config:         cfg,
-		Opts:           opts,
+		auth:           auth,
+		analytics:      an,
+		project:        proj,
+		customCommitID: customCommitID,
+		trigger:        trigger,
+		svcModel:       svcm,
+		config:         cfg,
+		opts:           opts,
 		asyncRuntime:   cfg.GetBool(constants.AsyncRuntimeConfig),
 	}
 }
@@ -57,5 +55,5 @@ func (r *Request) OverrideAsyncRuntime(override bool) {
 }
 
 func (r *Request) SetNamespace(ns *model.Namespace) {
-	r.Namespace = ns
+	r.namespace = ns
 }

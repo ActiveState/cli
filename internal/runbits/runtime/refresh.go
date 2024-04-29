@@ -40,13 +40,13 @@ type Configurable interface {
 
 // SolveAndUpdate should be called after runtime mutations.
 func SolveAndUpdate(request *Request, out output.Outputer) (_ *runtime.Runtime, _ bool, rerr error) {
-	defer rationalizeError(request.Auth, request.Project, &rerr)
+	defer rationalizeError(request.auth, request.project, &rerr)
 
-	if request.Project == nil {
+	if request.project == nil {
 		return nil, false, rationalize.ErrNoProject
 	}
 
-	if request.Project.IsHeadless() {
+	if request.project.IsHeadless() {
 		return nil, false, rationalize.ErrHeadless
 	}
 
@@ -54,18 +54,18 @@ func SolveAndUpdate(request *Request, out output.Outputer) (_ *runtime.Runtime, 
 		return nil, true, nil
 	}
 
-	target := target.NewProjectTarget(request.Project, request.CustomCommitID, request.Trigger)
-	rt, err := runtime.New(target, request.Analytics, request.SvcModel, request.Auth, request.Config, out)
+	target := target.NewProjectTarget(request.project, request.customCommitID, request.trigger)
+	rt, err := runtime.New(target, request.analytics, request.svcModel, request.auth, request.config, out)
 	if err != nil {
 		return nil, false, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
 	}
 
-	if !bitflags.Has(request.Opts, OptOrderChanged) && !bitflags.Has(request.Opts, OptMinimalUI) && !rt.NeedsUpdate() {
+	if !bitflags.Has(request.opts, OptOrderChanged) && !bitflags.Has(request.opts, OptMinimalUI) && !rt.NeedsUpdate() {
 		out.Notice(locale.Tl("pkg_already_uptodate", "Requested dependencies are already configured and installed."))
 		return rt, false, nil
 	}
 
-	if rt.NeedsUpdate() && !bitflags.Has(request.Opts, OptMinimalUI) {
+	if rt.NeedsUpdate() && !bitflags.Has(request.opts, OptMinimalUI) {
 		if !rt.HasCache() {
 			out.Notice(output.Title(locale.T("install_runtime")))
 			out.Notice(locale.T("install_runtime_info"))
@@ -111,8 +111,8 @@ func Solve(request *Request, out output.Outputer) (_ *SolveResponse, _ bool, rer
 		}
 	}()
 
-	rtTarget := target.NewProjectTarget(request.Project, request.CustomCommitID, request.Trigger)
-	rt, err := runtime.New(rtTarget, request.Analytics, request.SvcModel, request.Auth, request.Config, out)
+	rtTarget := target.NewProjectTarget(request.project, request.customCommitID, request.trigger)
+	rt, err := runtime.New(rtTarget, request.analytics, request.svcModel, request.auth, request.config, out)
 	if err != nil {
 
 		return nil, false, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
@@ -127,14 +127,14 @@ func Solve(request *Request, out output.Outputer) (_ *SolveResponse, _ bool, rer
 	// Get old buildplan
 	// We can't use the local store here; because it might not exist (ie. integrationt test, user cleaned cache, ..),
 	// but also there's no guarantee the old one is sequential to the current.
-	oldCommit, err := model.GetCommit(*request.CustomCommitID, request.Auth)
+	oldCommit, err := model.GetCommit(*request.customCommitID, request.auth)
 	if err != nil {
 		return nil, false, errs.Wrap(err, "Could not get commit")
 	}
 
 	var oldBuildPlan *bpModel.Build
 	if oldCommit.ParentCommitID != "" {
-		bp := model.NewBuildPlannerModel(request.Auth)
+		bp := model.NewBuildPlannerModel(request.auth)
 		oldBuildResult, _, err := bp.FetchBuildResult(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
 		if err != nil {
 			return nil, false, errs.Wrap(err, "Failed to fetch build result")
@@ -142,7 +142,7 @@ func Solve(request *Request, out output.Outputer) (_ *SolveResponse, _ bool, rer
 		oldBuildPlan = oldBuildResult.Build
 	}
 
-	changeset, err := buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false, false, request.Config, request.Auth)
+	changeset, err := buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false, false, request.config, request.auth)
 	if err != nil {
 		return nil, false, errs.Wrap(err, "Could not get changed artifacts")
 	}
