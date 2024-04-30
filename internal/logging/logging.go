@@ -244,10 +244,9 @@ func writeMessageDepth(depth int, level string, msg string, args ...interface{})
 		switch arg := arg.(type) {
 		case func() interface{}:
 			args[i] = arg
+		case error:
+			args[i] = errs.JoinMessage(arg)
 		default:
-			if err, ok := arg.(error); ok {
-				args[i] = errs.JoinMessage(err)
-			}
 		}
 	}
 
