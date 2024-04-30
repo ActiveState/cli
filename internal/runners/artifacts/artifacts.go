@@ -3,6 +3,7 @@ package artifacts
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -158,7 +159,7 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 			nameBits := strings.Split(name, " ")
 			if len(nameBits) > 1 {
 				if _, err := uuid.Parse(nameBits[0]); err == nil {
-					name = strings.Join(nameBits[1:], " ")
+					name = fmt.Sprintf("%s (%s)", strings.Join(nameBits[1:], " "), filepath.Base(artifact.URL))
 				}
 			}
 
