@@ -1473,6 +1473,7 @@ checkout_project_statement:
 checkout_project_statement_async:
   other: |
     Checked out project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
+    Run '[ACTIONABLE]state refresh[/RESET]' to source the runtime.
 refresh_project_statement:
   other: |
     Runtime updated for project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
