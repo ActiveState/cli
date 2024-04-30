@@ -36,6 +36,7 @@ func (d *DotProgressDigester) Handle(event events.Eventer) error {
 func (d *DotProgressDigester) Close() error {
 	if d.spinner == nil {
 		logging.Warning("DotProgressDigester.Close called with no active spinner")
+		return nil
 	}
 	if d.success {
 		d.spinner.Stop(locale.T("progress_completed"))
