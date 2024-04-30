@@ -64,9 +64,7 @@ func (r *Refresh) Run(params *Params) error {
 		return rationalize.ErrNoProject
 	}
 
-	request := runtime.NewRequest(r.auth, r.analytics, proj, nil, target.TriggerRefresh, r.svcModel, r.config, runtime.OptMinimalUI)
-	request.OverrideAsyncRuntime(false)
-	rti, _, err := runtime.SolveAndUpdate(request, r.out)
+	rti, err := runtime.SolveAndUpdate(r.auth, r.out, r.analytics, proj, nil, target.TriggerRefresh, r.svcModel, r.config, runtime.OptMinimalUI, false)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime_new", "Could not update runtime for this project.")
 	}

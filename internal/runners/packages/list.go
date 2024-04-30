@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -109,10 +110,8 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	// Fetch resolved artifacts list for showing full version numbers, if possible.
 	var artifacts []*artifact.Artifact
 	if l.project != nil && params.Project == "" {
-		rt, async, err := rtrunbit.SolveAndUpdate(
-			rtrunbit.NewRequest(l.auth, l.analytics, l.project, nil, target.TriggerPackage, l.svcModel, l.cfg, rtrunbit.OptMinimalUI),
-			l.out,
-		)
+		async := l.cfg.GetBool(constants.AsyncRuntimeConfig)
+		rt, err := rtrunbit.SolveAndUpdate(l.auth, l.out, l.analytics, l.project, nil, target.TriggerPackage, l.svcModel, l.cfg, rtrunbit.OptMinimalUI, async)
 		if err != nil {
 			return locale.WrapError(err, "err_package_list_runtime", "Could not initialize runtime")
 		}

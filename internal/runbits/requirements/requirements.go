@@ -238,9 +238,8 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 
 		// Solve runtime
-		request := runbit.NewRequest(r.Auth, r.Analytics, r.Project, &commitID, trigger, r.SvcModel, r.Config, runbit.OptNone)
-		request.SetNamespace(ns)
-		solveResponse, async, err := runbit.Solve(request, r.Output)
+		async := r.Config.GetBool(constants.AsyncRuntimeConfig)
+		solveResponse, err := runbit.Solve(r.Auth, r.Output, r.Analytics, r.Project, &commitID, trigger, r.SvcModel, r.Config, runbit.OptNone, async)
 		if err != nil {
 			return errs.Wrap(err, "Could not solve runtime")
 		}

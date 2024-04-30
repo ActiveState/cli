@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -18,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
 	"github.com/imacks/bitflags-go"
 )
 
@@ -39,33 +41,44 @@ type Configurable interface {
 }
 
 // SolveAndUpdate should be called after runtime mutations.
-func SolveAndUpdate(request *Request, out output.Outputer) (_ *runtime.Runtime, _ bool, rerr error) {
-	defer rationalizeError(request.auth, request.project, &rerr)
+func SolveAndUpdate(
+	auth *authentication.Auth,
+	out output.Outputer,
+	an analytics.Dispatcher,
+	proj *project.Project,
+	customCommitID *strfmt.UUID,
+	trigger target.Trigger,
+	svcm *model.SvcModel,
+	cfg Configurable,
+	opts Opts,
+	async bool,
+) (_ *runtime.Runtime, rerr error) {
+	defer rationalizeError(auth, proj, &rerr)
 
-	if request.project == nil {
-		return nil, false, rationalize.ErrNoProject
+	if proj == nil {
+		return nil, rationalize.ErrNoProject
 	}
 
-	if request.project.IsHeadless() {
-		return nil, false, rationalize.ErrHeadless
+	if proj.IsHeadless() {
+		return nil, rationalize.ErrHeadless
 	}
 
-	if request.asyncRuntime {
-		return nil, true, nil
+	if async {
+		return nil, nil
 	}
 
-	target := target.NewProjectTarget(request.project, request.customCommitID, request.trigger)
-	rt, err := runtime.New(target, request.analytics, request.svcModel, request.auth, request.config, out)
+	target := target.NewProjectTarget(proj, customCommitID, trigger)
+	rt, err := runtime.New(target, an, svcm, auth, cfg, out)
 	if err != nil {
-		return nil, false, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+		return nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
 	}
 
-	if !bitflags.Has(request.opts, OptOrderChanged) && !bitflags.Has(request.opts, OptMinimalUI) && !rt.NeedsUpdate() {
+	if !bitflags.Has(opts, OptOrderChanged) && !bitflags.Has(opts, OptMinimalUI) && !rt.NeedsUpdate() {
 		out.Notice(locale.Tl("pkg_already_uptodate", "Requested dependencies are already configured and installed."))
-		return rt, false, nil
+		return rt, nil
 	}
 
-	if rt.NeedsUpdate() && !bitflags.Has(request.opts, OptMinimalUI) {
+	if rt.NeedsUpdate() && !bitflags.Has(opts, OptMinimalUI) {
 		if !rt.HasCache() {
 			out.Notice(output.Title(locale.T("install_runtime")))
 			out.Notice(locale.T("install_runtime_info"))
@@ -81,11 +94,11 @@ func SolveAndUpdate(request *Request, out output.Outputer) (_ *runtime.Runtime, 
 
 		err := rt.SolveAndUpdate(pg)
 		if err != nil {
-			return nil, false, locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
+			return nil, locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
 		}
 	}
 
-	return rt, false, nil
+	return rt, nil
 }
 
 type SolveResponse struct {
@@ -95,10 +108,21 @@ type SolveResponse struct {
 	Changeset   artifact.ArtifactChangeset
 }
 
-func Solve(request *Request, out output.Outputer) (_ *SolveResponse, _ bool, rerr error) {
-	if request.asyncRuntime {
+func Solve(
+	auth *authentication.Auth,
+	out output.Outputer,
+	an analytics.Dispatcher,
+	proj *project.Project,
+	customCommitID *strfmt.UUID,
+	trigger target.Trigger,
+	svcm *model.SvcModel,
+	cfg Configurable,
+	opts Opts,
+	async bool,
+) (_ *SolveResponse, rerr error) {
+	if async {
 		logging.Debug("Skipping runtime solve due to async runtime")
-		return nil, true, nil
+		return nil, nil
 	}
 
 	spinner := output.StartSpinner(out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
@@ -111,40 +135,40 @@ func Solve(request *Request, out output.Outputer) (_ *SolveResponse, _ bool, rer
 		}
 	}()
 
-	rtTarget := target.NewProjectTarget(request.project, request.customCommitID, request.trigger)
-	rt, err := runtime.New(rtTarget, request.analytics, request.svcModel, request.auth, request.config, out)
+	rtTarget := target.NewProjectTarget(proj, customCommitID, trigger)
+	rt, err := runtime.New(rtTarget, an, svcm, auth, cfg, out)
 	if err != nil {
 
-		return nil, false, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+		return nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
 	}
 
 	setup := rt.Setup(&events.VoidHandler{})
 	buildResult, commit, err := setup.Solve()
 	if err != nil {
-		return nil, false, errs.Wrap(err, "Solve failed")
+		return nil, errs.Wrap(err, "Solve failed")
 	}
 
 	// Get old buildplan
 	// We can't use the local store here; because it might not exist (ie. integrationt test, user cleaned cache, ..),
 	// but also there's no guarantee the old one is sequential to the current.
-	oldCommit, err := model.GetCommit(*request.customCommitID, request.auth)
+	oldCommit, err := model.GetCommit(*customCommitID, auth)
 	if err != nil {
-		return nil, false, errs.Wrap(err, "Could not get commit")
+		return nil, errs.Wrap(err, "Could not get commit")
 	}
 
 	var oldBuildPlan *bpModel.Build
 	if oldCommit.ParentCommitID != "" {
-		bp := model.NewBuildPlannerModel(request.auth)
+		bp := model.NewBuildPlannerModel(auth)
 		oldBuildResult, _, err := bp.FetchBuildResult(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
 		if err != nil {
-			return nil, false, errs.Wrap(err, "Failed to fetch build result")
+			return nil, errs.Wrap(err, "Failed to fetch build result")
 		}
 		oldBuildPlan = oldBuildResult.Build
 	}
 
-	changeset, err := buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false, false, request.config, request.auth)
+	changeset, err := buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false, false, cfg, auth)
 	if err != nil {
-		return nil, false, errs.Wrap(err, "Could not get changed artifacts")
+		return nil, errs.Wrap(err, "Could not get changed artifacts")
 	}
 
 	return &SolveResponse{
@@ -152,7 +176,7 @@ func Solve(request *Request, out output.Outputer) (_ *SolveResponse, _ bool, rer
 		BuildResult: buildResult,
 		Commit:      commit,
 		Changeset:   changeset,
-	}, false, nil
+	}, nil
 }
 
 // UpdateByReference will update the given runtime if necessary. This is functionally the same as SolveAndUpdateByReference

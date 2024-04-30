@@ -65,9 +65,7 @@ func (s *ScriptRun) NeedsActivation() bool {
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
 func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
-	request := rtrunbit.NewRequest(s.auth, s.analytics, s.project, nil, target.TriggerScript, s.svcModel, s.cfg, rtrunbit.OptMinimalUI)
-	request.OverrideAsyncRuntime(false)
-	rt, _, err := rtrunbit.SolveAndUpdate(request, s.out)
+	rt, err := rtrunbit.SolveAndUpdate(s.auth, s.out, s.analytics, s.project, nil, target.TriggerScript, s.svcModel, s.cfg, rtrunbit.OptMinimalUI, false)
 	if err != nil {
 		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 	}

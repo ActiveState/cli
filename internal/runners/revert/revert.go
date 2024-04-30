@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -155,10 +156,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Unable to set local commit")
 	}
 
-	_, _, err = runtime.SolveAndUpdate(
-		runtime.NewRequest(r.auth, r.analytics, r.project, &revertCommit, target.TriggerRevert, r.svcModel, r.cfg, runtime.OptOrderChanged),
-		r.out,
-	)
+	_, err = runtime.SolveAndUpdate(r.auth, r.out, r.analytics, r.project, &revertCommit, target.TriggerRevert, r.svcModel, r.cfg, runtime.OptOrderChanged, r.cfg.GetBool(constants.AsyncRuntimeConfig))
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

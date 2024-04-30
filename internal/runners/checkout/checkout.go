@@ -6,6 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -105,12 +106,12 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		}()
 	}
 
-	request := runtime.NewRequest(u.auth, u.analytics, proj, nil, target.TriggerCheckout, u.svcModel, u.config, runtime.OptMinimalUI)
-	if !request.AsyncRuntime() {
+	async := u.config.GetBool(constants.AsyncRuntimeConfig)
+	if !async {
 		u.out.Notice(output.Title(locale.T("installing_runtime_title")))
 	}
 
-	rti, async, err := runtime.SolveAndUpdate(request, u.out)
+	rti, err := runtime.SolveAndUpdate(u.auth, u.out, u.analytics, proj, nil, target.TriggerCheckout, u.svcModel, u.config, runtime.OptMinimalUI, async)
 	if err != nil {
 		return locale.WrapError(err, "err_checkout_runtime_new", "Could not checkout this project.")
 	}

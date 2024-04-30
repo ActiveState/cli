@@ -84,9 +84,7 @@ func (u *Shell) Run(params *Params) error {
 		return locale.NewInputError("err_shell_commit_id_mismatch")
 	}
 
-	request := runtime.NewRequest(u.auth, u.analytics, proj, nil, target.TriggerShell, u.svcModel, u.config, runtime.OptMinimalUI)
-	request.OverrideAsyncRuntime(false)
-	rti, _, err := runtime.SolveAndUpdate(request, u.out)
+	rti, err := runtime.SolveAndUpdate(u.auth, u.out, u.analytics, proj, nil, target.TriggerShell, u.svcModel, u.config, runtime.OptMinimalUI, false)
 	if err != nil {
 		return locale.WrapInputError(err, "err_shell_runtime_new", "Could not start a shell/prompt for this project.")
 	}

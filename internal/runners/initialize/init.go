@@ -274,10 +274,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
-	_, _, err = runtime.SolveAndUpdate(
-		runtime.NewRequest(r.auth, r.analytics, proj, nil, target.TriggerInit, r.svcModel, r.config, runtime.OptMinimalUI),
-		r.out,
-	)
+	_, err = runtime.SolveAndUpdate(r.auth, r.out, r.analytics, proj, &commitID, target.TriggerInit, r.svcModel, r.config, runtime.OptOrderChanged, r.config.GetBool(constants.AsyncRuntimeConfig))
 	if err != nil {
 		logging.Debug("Deleting remotely created project due to runtime setup error")
 		err2 := model.DeleteProject(namespace.Owner, namespace.Project, r.auth)

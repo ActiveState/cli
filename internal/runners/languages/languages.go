@@ -3,6 +3,7 @@ package languages
 import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -77,10 +78,8 @@ func (l *Languages) Run() error {
 	}
 
 	// Fetch resolved artifacts list for showing full version numbers.
-	rt, async, err := runtime.SolveAndUpdate(
-		runtime.NewRequest(l.auth, l.analytics, l.project, nil, target.TriggerLanguage, l.svcModel, l.cfg, runtime.OptMinimalUI),
-		l.out,
-	)
+	async := l.cfg.GetBool(constants.AsyncRuntimeConfig)
+	rt, err := runtime.SolveAndUpdate(l.auth, l.out, l.analytics, l.project, nil, target.TriggerLanguage, l.svcModel, l.cfg, runtime.OptMinimalUI, async)
 	if err != nil {
 		return locale.WrapError(err, "err_languages_runtime", "Could not initialize runtime")
 	}
