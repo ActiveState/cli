@@ -64,6 +64,7 @@ func SolveAndUpdate(
 	}
 
 	if async {
+		logging.Debug("Skipping runtime solve due to async runtime")
 		return nil, nil
 	}
 
