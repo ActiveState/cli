@@ -118,10 +118,11 @@ func (b *BuildPlan) hydrateWithRuntimeClosure(nodeIDs []strfmt.UUID, platformID 
 				artifactLookup[v.NodeID] = artifact
 				if parent != nil {
 					parentArtifact, ok := artifactLookup[parent.NodeID]
-					if !ok {
-						return errs.New("parent artifact does not exist in lookup table: %s", parent.NodeID)
+					// for runtime closure it is possible that we don't have the parent artifact, because the parent
+					// might not be a state tool artifact (eg. an installer) and thus it is not part of the runtime closure.
+					if ok {
+						parentArtifact.children = append(parentArtifact.children, ArtifactRelation{artifact, RuntimeRelation})
 					}
-					parentArtifact.children = append(parentArtifact.children, ArtifactRelation{artifact, RuntimeRelation})
 				}
 			}
 
