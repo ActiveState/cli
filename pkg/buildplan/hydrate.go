@@ -212,24 +212,37 @@ func (b *BuildPlan) sanityCheck() {
 	seen := make(map[strfmt.UUID]struct{})
 	for _, a := range b.artifacts {
 		if _, ok := seen[a.ArtifactID]; ok {
-			panic(fmt.Sprintf("Artifact %s occurs multiple times", a.ArtifactID))
+			panic(fmt.Sprintf("Artifact %s (%s) occurs multiple times", a.DisplayName, a.ArtifactID))
 		}
 		seen[a.ArtifactID] = struct{}{}
 	}
 	for _, i := range b.ingredients {
 		if _, ok := seen[i.IngredientID]; ok {
-			panic(fmt.Sprintf("Ingredient %s occurs multiple times", i.IngredientID))
+			panic(fmt.Sprintf("Ingredient %s (%s) occurs multiple times", i.Name, i.IngredientID))
 		}
 		seen[i.IngredientID] = struct{}{}
 	}
 	seen = make(map[strfmt.UUID]struct{})
 	for _, r := range b.requirements {
 		if _, ok := seen[r.IngredientID]; ok {
-			panic(fmt.Sprintf("Requirement %s occurs multiple times", r.IngredientID))
+			panic(fmt.Sprintf("Requirement %s (%s) occurs multiple times", r.Name, r.IngredientID))
 		}
 		seen[r.IngredientID] = struct{}{}
 	}
 	if len(b.requirements) != len(b.raw.ResolvedRequirements) {
+		missing := []string{}
+		for _, r := range b.raw.ResolvedRequirements {
+			hit := false
+			for _, rq := range b.requirements {
+				if rq.Name == r.Requirement.Name && rq.Namespace == r.Requirement.Namespace {
+					hit = true
+					break
+				}
+			}
+			if !hit {
+				missing = append(missing, r.Requirement.Name)
+			}
+		}
 		panic(fmt.Sprintf("Expected to have %d requirements, got %d", len(b.raw.ResolvedRequirements), len(b.requirements)))
 	}
 }
