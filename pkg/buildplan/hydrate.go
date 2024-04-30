@@ -83,6 +83,14 @@ func (b *BuildPlan) hydrateWithBuildClosure(nodeIDs []strfmt.UUID, platformID *s
 			artifact.Platforms = sliceutils.Unique(append(artifact.Platforms, *platformID))
 			artifact.IsBuildtimeDependency = true
 
+			if parent != nil {
+				parentArtifact, ok := artifactLookup[parent.NodeID]
+				if !ok {
+					return errs.New("parent artifact does not exist in lookup table: %s", parent.NodeID)
+				}
+				parentArtifact.children = append(parentArtifact.children, ArtifactRelation{artifact, BuildtimeRelation})
+			}
+
 			return nil
 		case *raw.Source:
 			return nil // We can encounter source nodes in the build steps because GeneratedBy can refer to a source rather than a step
@@ -113,7 +121,7 @@ func (b *BuildPlan) hydrateWithRuntimeClosure(nodeIDs []strfmt.UUID, platformID 
 					if !ok {
 						return errs.New("parent artifact does not exist in lookup table: %s", parent.NodeID)
 					}
-					parentArtifact.children = append(parentArtifact.children, artifact)
+					parentArtifact.children = append(parentArtifact.children, ArtifactRelation{artifact, RuntimeRelation})
 				}
 			}
 
@@ -236,6 +244,6 @@ func createArtifact(rawArtifact *raw.Artifact) *Artifact {
 		Errors:      rawArtifact.Errors,
 		Checksum:    rawArtifact.Checksum,
 		Status:      rawArtifact.Status,
-		children:    []*Artifact{},
+		children:    []ArtifactRelation{},
 	}
 }

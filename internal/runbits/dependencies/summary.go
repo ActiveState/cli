@@ -34,7 +34,7 @@ func OutputSummary(out output.Outputer, directDependencies buildplan.Artifacts) 
 		}
 
 		subdependencies := ""
-		if numSubs := len(ingredient.Dependencies(true)); numSubs > 0 {
+		if numSubs := len(ingredient.RuntimeDependencies(true)); numSubs > 0 {
 			subdependencies = locale.Tl("summary_subdeps", "([ACTIONABLE]{{.V0}}[/RESET] sub-dependencies)", strconv.Itoa(numSubs))
 		}
 

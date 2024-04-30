@@ -55,14 +55,17 @@ func (i Ingredients) ToNameMap() IngredientNameMap {
 	return result
 }
 
-func (i *Ingredient) Dependencies(recursive bool) Ingredients {
+func (i *Ingredient) RuntimeDependencies(recursive bool) Ingredients {
 	dependencies := Ingredients{}
 	for _, a := range i.Artifacts {
 		for _, ac := range a.children {
-			dependencies = append(dependencies, ac.Ingredients...)
+			if ac.Relation != RuntimeRelation {
+				continue
+			}
+			dependencies = append(dependencies, ac.Artifact.Ingredients...)
 			if recursive {
-				for _, ic := range ac.Ingredients {
-					dependencies = append(dependencies, ic.Dependencies(recursive)...)
+				for _, ic := range ac.Artifact.Ingredients {
+					dependencies = append(dependencies, ic.RuntimeDependencies(recursive)...)
 				}
 			}
 		}

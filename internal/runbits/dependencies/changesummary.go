@@ -33,8 +33,8 @@ func OutputChangeSummary(out output.Outputer, changeset *buildplan.ArtifactChang
 		for _, i := range a.Ingredients {
 			addedString = append(addedLocale, fmt.Sprintf("%s@%s", i.Name, i.Version))
 			addedLocale = append(addedLocale, fmt.Sprintf("[ACTIONABLE]%s[/RESET]", addedString))
-			dependencies = append(dependencies, i.Dependencies(true)...)
-			directDependencies = append(dependencies, i.Dependencies(false)...)
+			dependencies = append(dependencies, i.RuntimeDependencies(true)...)
+			directDependencies = append(dependencies, i.RuntimeDependencies(false)...)
 		}
 	}
 
@@ -70,7 +70,7 @@ func OutputChangeSummary(out output.Outputer, changeset *buildplan.ArtifactChang
 			prefix = "└─"
 		}
 
-		ingredientDeps := ingredient.Dependencies(true)
+		ingredientDeps := ingredient.RuntimeDependencies(true)
 		subdependencies := ""
 		if numSubs := len(ingredientDeps); numSubs > 0 {
 			subdependencies = fmt.Sprintf(" ([ACTIONABLE]%s[/RESET] dependencies)", // intentional leading space

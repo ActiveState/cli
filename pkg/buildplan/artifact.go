@@ -31,7 +31,19 @@ type Artifact struct {
 	Platforms   []strfmt.UUID
 	Ingredients []*Ingredient `json:"-"` // While most artifacts only have a single ingredient, some artifacts such as installers can have multiple.
 
-	children []*Artifact
+	children []ArtifactRelation
+}
+
+type Relation int
+
+const (
+	RuntimeRelation Relation = iota
+	BuildtimeRelation
+)
+
+type ArtifactRelation struct {
+	Artifact *Artifact
+	Relation Relation
 }
 
 // Name returns the name of the ingredient for this artifact, if it only has exactly one ingredient associated.
@@ -149,11 +161,15 @@ func (a ArtifactUpdate) VersionsChanged() bool {
 	return !reflect.DeepEqual(fromVersions, toVersions)
 }
 
-func (a *Artifact) Dependencies(recursive bool) Artifacts {
-	dependencies := a.children
-	if recursive {
-		for _, ac := range a.children {
-			dependencies = append(dependencies, ac.Dependencies(recursive)...)
+func (a *Artifact) RuntimeDependencies(recursive bool) Artifacts {
+	dependencies := Artifacts{}
+	for _, ac := range a.children {
+		if ac.Relation != RuntimeRelation {
+			continue
+		}
+		dependencies = append(dependencies, ac.Artifact)
+		if recursive {
+			dependencies = append(dependencies, ac.Artifact.RuntimeDependencies(recursive)...)
 		}
 	}
 	return dependencies
