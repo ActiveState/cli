@@ -17,11 +17,12 @@ var _ ErrorLocalizer = &LocalizedError{}
 // LocalizedError is an error that has the concept of user facing (localized) errors as well as whether an error is due
 // to user input or not
 type LocalizedError struct {
-	wrapped   error
-	tips      []string
-	localized string
-	stack     *stacktrace.Stacktrace
-	inputErr  bool
+	wrapped     error
+	tips        []string
+	localized   string
+	stack       *stacktrace.Stacktrace
+	inputErr    bool
+	externalErr bool
 }
 
 // Error is the error message
@@ -114,6 +115,7 @@ func WrapInputError(err error, id string, args ...string) *LocalizedError {
 	l := &LocalizedError{}
 	translation := Tl(id, locale, args...)
 	l.inputErr = true
+	l.externalErr = true
 	l.wrapped = err
 	l.localized = translation
 	l.stack = stacktrace.GetWithSkip([]string{rtutils.CurrentFile()})
