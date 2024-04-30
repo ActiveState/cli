@@ -130,12 +130,8 @@ func (d *Download) downloadArtifact(artifact *buildplan.Artifact, targetDir stri
 	// Most platform artifact URLs are just "artifact.tar.gz", so use "<name>-<version>.<ext>" format.
 	// Some URLs are more complex like "<name>-<hash>.<ext>", so just leave them alone.
 	basename := path.Base(artifactURL.Path)
-	var ext string
-	if pos := strings.Index(basename, "."); pos != -1 {
-		ext = basename[pos:] // cannot use filepath.Ext() because it doesn't return ".tar.gz"
-	}
 	if basename == "artifact.tar.gz" {
-		basename = fmt.Sprintf("%s-%s.%s", artifact.Name(), artifact.Version(), ext)
+		basename = fmt.Sprintf("%s-%s.tar.gz", artifact.Name(), artifact.Version())
 	}
 
 	downloadPath := filepath.Join(targetDir, basename)
