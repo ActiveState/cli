@@ -123,12 +123,12 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 	resultingCommit := remoteCommit // resultingCommit is the commit we want to update the local project file with
 
 	if localCommit != nil {
-		hasCommonParent, err := model.HasCommonParent(*localCommit, *remoteCommit, p.auth)
+		commonParent, err := model.CommonParent(localCommit, remoteCommit, p.auth)
 		if err != nil {
 			return errs.Wrap(err, "Unable to determine common parent")
 		}
 
-		if !hasCommonParent {
+		if commonParent == nil {
 			return &errNoCommonParent{
 				errs.New("no common parent"),
 				*localCommit,
