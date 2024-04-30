@@ -239,10 +239,13 @@ func writeMessageDepth(depth int, level string, msg string, args ...interface{})
 	// We go over the args, and replace any function pointer with the signature
 	// func() interface{} with the return value of executing it now.
 	// This allows lazy evaluation of arguments which are return values
+	// Also, unpack error objects.
 	for i, arg := range args {
 		switch arg := arg.(type) {
 		case func() interface{}:
 			args[i] = arg
+		case error:
+			args[i] = errs.JoinMessage(arg)
 		default:
 		}
 	}

@@ -226,7 +226,7 @@ func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
 		}
 		for _, artifact := range platform.Packages {
 			if artifact.URL == "" {
-				b.out.Print(fmt.Sprintf("  • %s ([WARNING]%s ...[/RESET])", artifact.Name, locale.T("artifact_status_building")))
+				b.out.Print(fmt.Sprintf("    • %s ([WARNING]%s ...[/RESET])", artifact.Name, locale.T("artifact_status_building")))
 				continue
 			}
 			id := strings.ToUpper(artifact.ID)

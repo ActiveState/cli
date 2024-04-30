@@ -44,6 +44,12 @@ type Pull struct {
 	svcModel  *model.SvcModel
 }
 
+type errNoCommonParent struct {
+	error
+	localCommitID  strfmt.UUID
+	remoteCommitID strfmt.UUID
+}
+
 type PullParams struct {
 	Force bool
 }
@@ -118,6 +124,19 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 	resultingCommit := remoteCommit // resultingCommit is the commit we want to update the local project file with
 
 	if localCommit != nil {
+		commonParent, err := model.CommonParent(localCommit, remoteCommit, p.auth)
+		if err != nil {
+			return errs.Wrap(err, "Unable to determine common parent")
+		}
+
+		if commonParent == nil {
+			return &errNoCommonParent{
+				errs.New("no common parent"),
+				*localCommit,
+				*remoteCommit,
+			}
+		}
+
 		// Attempt to fast-forward merge. This will succeed if the commits are
 		// compatible, meaning that we can simply update the local commit ID to
 		// the remoteCommit ID. The commitID returned from MergeCommit with this

@@ -1539,7 +1539,7 @@ uploadingredient_success:
     Revision: [ACTIONABLE]{{.V3}}[/RESET]
     Timestamp: [ACTIONABLE]{{.V4}}[/RESET]
 
-    You can install this package by running `[ACTIONABLE]state install {{.V1}}/{{.V0}} --ts now`[/RESET].
+    You can install this package by running `[ACTIONABLE]state install {{.V1}}:{{.V0}} --ts now`[/RESET].
 err_runtime_cache_invalid:
   other: Your runtime needs to be updated, please run '[ACTIONABLE]state refresh[/RESET]'.
 err_target_not_found:
@@ -1609,3 +1609,7 @@ vulnerability_low:
   other: "[GREEN]{{.V0}} Low[/RESET]"
 err_runtime_needs_refresh:
   other: Your runtime needs to be updated, please run '[ACTIONABLE]state refresh[/RESET]' and then try again.
+err_pull_no_common_parent:
+  other: |
+    The local commit ID [NOTICE]{{.V0}}[/RESET] and latest remote commit ID [NOTICE]{{.V1}}[/RESET] have no common parent. 
+    To review your project history run '[ACTIONABLE]state history[/RESET]'.
