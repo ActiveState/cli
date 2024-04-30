@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/sliceutils"
+	"github.com/ActiveState/cli/pkg/buildplan/raw"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/go-openapi/strfmt"
 )
@@ -51,9 +52,7 @@ func FilterStateArtifacts() FilterArtifact {
 		if strings.Contains(a.URL, "as-builds/noop") {
 			return false
 		}
-		return a.MimeType == types.XArtifactMimeType ||
-			a.MimeType == types.XActiveStateArtifactMimeType ||
-			a.MimeType == types.XCamelInstallerMimeType
+		return raw.IsStateToolMimeType(a.MimeType)
 	}
 }
 

@@ -1,6 +1,9 @@
 package raw
 
-import "github.com/go-openapi/strfmt"
+import (
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
+	"github.com/go-openapi/strfmt"
+)
 
 var buildWithSourceFromStep = &Build{
 	Terminals: []*NamedTarget{
@@ -122,26 +125,11 @@ var buildWithRuntimeDeps = &Build{
 			NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000002"},
 		},
 	},
-	Steps: []*Step{
-		{
-			StepID:  "00000000-0000-0000-0000-000000000003",
-			Outputs: []string{"00000000-0000-0000-0000-000000000002"},
-			Inputs: []*NamedTarget{
-				{Tag: "deps", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000006"}},
-			},
-		},
-		{
-			StepID:  "00000000-0000-0000-0000-000000000008",
-			Outputs: []string{"00000000-0000-0000-0000-000000000007"},
-			Inputs: []*NamedTarget{
-				{Tag: "deps", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000009"}},
-			},
-		},
-	},
 	Artifacts: []*Artifact{
 		{
 			NodeID:      "00000000-0000-0000-0000-000000000002",
 			DisplayName: "installer",
+			MimeType:    types.XActiveStateArtifactMimeType,
 			RuntimeDependencies: []strfmt.UUID{
 				"00000000-0000-0000-0000-000000000007",
 			},
@@ -150,6 +138,48 @@ var buildWithRuntimeDeps = &Build{
 		{
 			NodeID:      "00000000-0000-0000-0000-000000000007",
 			DisplayName: "pkgOne",
+			MimeType:    types.XActiveStateArtifactMimeType,
+			GeneratedBy: "00000000-0000-0000-0000-000000000008",
+		},
+	},
+	Sources: []*Source{
+		{
+			NodeID: "00000000-0000-0000-0000-000000000006",
+		},
+		{
+			NodeID: "00000000-0000-0000-0000-000000000009",
+		},
+	},
+}
+
+var buildWithRuntimeDepsViaSrc = &Build{
+	Terminals: []*NamedTarget{
+		{
+			Tag:     "platform:00000000-0000-0000-0000-000000000001",
+			NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000002"},
+		},
+	},
+	Steps: []*Step{
+		{
+			StepID:  "00000000-0000-0000-0000-000000000003",
+			Outputs: []string{"00000000-0000-0000-0000-000000000002"},
+			Inputs: []*NamedTarget{
+				{Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000007"}},
+			},
+		},
+	},
+	Artifacts: []*Artifact{
+		{
+			NodeID:              "00000000-0000-0000-0000-000000000002",
+			DisplayName:         "installer",
+			MimeType:            "application/unrecognized",
+			RuntimeDependencies: []strfmt.UUID{},
+			GeneratedBy:         "00000000-0000-0000-0000-000000000003",
+		},
+		{
+			NodeID:      "00000000-0000-0000-0000-000000000007",
+			DisplayName: "pkgOne",
+			MimeType:    types.XActiveStateArtifactMimeType,
 			GeneratedBy: "00000000-0000-0000-0000-000000000008",
 		},
 	},

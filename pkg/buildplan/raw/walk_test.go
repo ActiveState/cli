@@ -136,6 +136,15 @@ func TestRawBuild_walkNodesViaRuntimeDeps(t *testing.T) {
 			},
 			false,
 		},
+		{
+			"Runtime deps via src step",
+			buildWithRuntimeDepsViaSrc.Terminals[0].NodeIDs,
+			buildWithRuntimeDepsViaSrc,
+			[]walkCall{
+				{"00000000-0000-0000-0000-000000000007", "Artifact", "00000000-0000-0000-0000-000000000002"},
+			},
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
