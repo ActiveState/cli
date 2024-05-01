@@ -270,25 +270,21 @@ func (suite *ShellIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {
 }
 
 func (suite *ShellIntegrationTestSuite) TestRuby() {
-	if runtime.GOOS == "darwin" {
-		return // Ruby support for macOS is not yet enabled on the Platform
-	}
 	suite.OnlyRunForTags(tagsuite.Shell)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Ruby-3.2.2")
+	cp := ts.Spawn("checkout", "ActiveState-CLI-Testing/Ruby", ".")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("shell", "Ruby-3.2.2"),
+		e2e.OptArgs("shell"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput()
 	cp.SendLine("ruby -v")
-	cp.Expect("3.2.2")
 	cp.Expect("ActiveState")
 }
 

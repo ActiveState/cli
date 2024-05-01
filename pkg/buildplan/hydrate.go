@@ -229,21 +229,28 @@ func (b *BuildPlan) sanityCheck() {
 		}
 		seen[r.IngredientID] = struct{}{}
 	}
-	if len(b.requirements) != len(b.raw.ResolvedRequirements) {
+
+	// Work around apparent API bug where the same ingredient source can appear multiple times as a resolved requirement
+	// each with a unique node ID but otherwise identical values.
+	resolvedReq := sliceutils.UniqueByProperty(b.raw.ResolvedRequirements, func(r *raw.RawResolvedRequirement) any { return r.Requirement.Name + r.Requirement.Namespace })
+
+	if len(b.requirements) != len(resolvedReq) {
 		missing := []string{}
-		for _, r := range b.raw.ResolvedRequirements {
-			hit := false
-			for _, rq := range b.requirements {
-				if rq.Name == r.Requirement.Name && rq.Namespace == r.Requirement.Namespace {
-					hit = true
-					break
+		if len(resolvedReq) > len(b.requirements) {
+			for _, r := range resolvedReq {
+				hit := false
+				for _, rq := range b.requirements {
+					if rq.Name == r.Requirement.Name && rq.Namespace == r.Requirement.Namespace {
+						hit = true
+						break
+					}
+				}
+				if !hit {
+					missing = append(missing, r.Requirement.Name)
 				}
 			}
-			if !hit {
-				missing = append(missing, r.Requirement.Name)
-			}
 		}
-		panic(fmt.Sprintf("Expected to have %d requirements, got %d", len(b.raw.ResolvedRequirements), len(b.requirements)))
+		panic(fmt.Sprintf("Expected to have %d requirements, got %d, missing: %v", len(resolvedReq), len(b.requirements), missing))
 	}
 }
 

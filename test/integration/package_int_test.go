@@ -460,7 +460,7 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	cp := ts.Spawn("search", "Text-CSV", "--exact-term", "--language", "Perl", "-o", "json")
 	cp.Expect(`"Name":"Text-CSV"`)
 	cp.ExpectExitCode(0)
-	//AssertValidJSON(suite.T(), cp) // currently too large to fit terminal window to validate
+	// AssertValidJSON(suite.T(), cp) // currently too large to fit terminal window to validate
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/Packages-Perl", "."),
@@ -628,14 +628,11 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestRuby() {
-	if runtime.GOOS == "darwin" {
-		return // Ruby support for macOS is not yet enabled on the Platform
-	}
 	suite.OnlyRunForTags(tagsuite.Package)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Ruby-3.2.2", ".")
+	cp := ts.Spawn("checkout", "ActiveState-CLI-Testing/Ruby", ".")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
