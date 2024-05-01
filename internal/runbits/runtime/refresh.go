@@ -40,6 +40,8 @@ type Configurable interface {
 	GetBool(key string) bool
 }
 
+var overrideTriggers = map[target.Trigger]bool{}
+
 // SolveAndUpdate should be called after runtime mutations.
 func SolveAndUpdate(
 	auth *authentication.Auth,
@@ -63,7 +65,7 @@ func SolveAndUpdate(
 		return nil, rationalize.ErrHeadless
 	}
 
-	if async {
+	if cfg.GetBool(constants.AsyncRuntimeConfig) {
 		logging.Debug("Skipping runtime solve due to async runtime")
 		return nil, nil
 	}
@@ -119,13 +121,7 @@ func Solve(
 	svcm *model.SvcModel,
 	cfg Configurable,
 	opts Opts,
-	async bool,
 ) (_ *SolveResponse, rerr error) {
-	if async {
-		logging.Debug("Skipping runtime solve due to async runtime")
-		return nil, nil
-	}
-
 	spinner := output.StartSpinner(out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
 
 	defer func() {

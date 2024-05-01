@@ -10,7 +10,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -110,7 +109,7 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	// Fetch resolved artifacts list for showing full version numbers, if possible.
 	var artifacts []*artifact.Artifact
 	if l.project != nil && params.Project == "" {
-		rt, err := rtrunbit.Solve(l.auth, l.out, l.analytics, l.project, nil, target.TriggerPackage, l.svcModel, l.cfg, rtrunbit.OptMinimalUI, l.cfg.GetBool(constants.AsyncRuntimeConfig))
+		rt, err := rtrunbit.Solve(l.auth, l.out, l.analytics, l.project, nil, target.TriggerPackage, l.svcModel, l.cfg, rtrunbit.OptMinimalUI)
 		if err != nil {
 			return locale.WrapError(err, "err_package_list_runtime", "Could not initialize runtime")
 		}
@@ -119,7 +118,6 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 		if err != nil && !errs.Matches(err, store.ErrNoBuildPlanFile) {
 			return locale.WrapError(err, "err_package_list_artifacts", "Unable to resolve package versions")
 		}
-
 	}
 
 	requirements := model.FilterCheckpointNamespace(checkpoint, model.NamespacePackage, model.NamespaceBundle)

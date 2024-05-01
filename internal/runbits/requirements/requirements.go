@@ -238,8 +238,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 
 		// Solve runtime
-		async := r.Config.GetBool(constants.AsyncRuntimeConfig)
-		solveResponse, err := runbit.Solve(r.Auth, r.Output, r.Analytics, r.Project, &commitID, trigger, r.SvcModel, r.Config, runbit.OptNone, async)
+		solveResponse, err := runbit.Solve(r.Auth, r.Output, r.Analytics, r.Project, &commitID, trigger, r.SvcModel, r.Config, runbit.OptNone)
 		if err != nil {
 			return errs.Wrap(err, "Could not solve runtime")
 		}
@@ -250,7 +249,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 
 		// Start runtime update UI
-		if !async {
+		if !r.Config.GetBool(constants.AsyncRuntimeConfig) {
 			out.Notice("")
 			if !solveResponse.HasCache() {
 				out.Notice(output.Title(locale.T("install_runtime")))
