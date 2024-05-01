@@ -40,7 +40,15 @@ type Configurable interface {
 	GetBool(key string) bool
 }
 
-var overrideTriggers = map[target.Trigger]bool{}
+var overrideTriggers = map[target.Trigger]bool{
+	target.TriggerRefresh:  true,
+	target.TriggerExec:     true,
+	target.TriggerActivate: true,
+	target.TriggerShell:    true,
+	target.TriggerScript:   true,
+	target.TriggerDeploy:   true,
+	target.TriggerUse:      true,
+}
 
 // SolveAndUpdate should be called after runtime mutations.
 func SolveAndUpdate(
@@ -53,7 +61,6 @@ func SolveAndUpdate(
 	svcm *model.SvcModel,
 	cfg Configurable,
 	opts Opts,
-	async bool,
 ) (_ *runtime.Runtime, rerr error) {
 	defer rationalizeError(auth, proj, &rerr)
 
@@ -65,7 +72,7 @@ func SolveAndUpdate(
 		return nil, rationalize.ErrHeadless
 	}
 
-	if cfg.GetBool(constants.AsyncRuntimeConfig) {
+	if cfg.GetBool(constants.AsyncRuntimeConfig) && !overrideTriggers[trigger] {
 		logging.Debug("Skipping runtime solve due to async runtime")
 		return nil, nil
 	}

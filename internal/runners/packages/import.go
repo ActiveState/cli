@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -157,7 +156,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
-	_, err = runtime.SolveAndUpdate(i.auth, i.out, i.analytics, i.proj, &commitID, target.TriggerImport, i.svcModel, i.cfg, runtime.OptOrderChanged, i.cfg.GetBool(constants.AsyncRuntimeConfig))
+	_, err = runtime.SolveAndUpdate(i.auth, i.out, i.analytics, i.proj, &commitID, target.TriggerImport, i.svcModel, i.cfg, runtime.OptOrderChanged)
 	return err
 }
 

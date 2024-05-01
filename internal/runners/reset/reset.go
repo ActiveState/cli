@@ -129,7 +129,7 @@ func (r *Reset) Run(params *Params) error {
 		}
 	}
 
-	_, err = runtime.SolveAndUpdate(r.auth, r.out, r.analytics, r.project, &commitID, target.TriggerReset, r.svcModel, r.cfg, runtime.OptOrderChanged, r.cfg.GetBool(constants.AsyncRuntimeConfig))
+	_, err = runtime.SolveAndUpdate(r.auth, r.out, r.analytics, r.project, &commitID, target.TriggerReset, r.svcModel, r.cfg, runtime.OptOrderChanged)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
