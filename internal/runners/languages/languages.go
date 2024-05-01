@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
@@ -78,18 +77,14 @@ func (l *Languages) Run() error {
 	}
 
 	// Fetch resolved artifacts list for showing full version numbers.
-	async := l.cfg.GetBool(constants.AsyncRuntimeConfig)
-	rt, err := runtime.SolveAndUpdate(l.auth, l.out, l.analytics, l.project, nil, target.TriggerLanguage, l.svcModel, l.cfg, runtime.OptMinimalUI, async)
+	rt, err := runtime.Solve(l.auth, l.out, l.analytics, l.project, nil, target.TriggerLanguage, l.svcModel, l.cfg, runtime.OptMinimalUI, l.cfg.GetBool(constants.AsyncRuntimeConfig))
 	if err != nil {
 		return locale.WrapError(err, "err_languages_runtime", "Could not initialize runtime")
 	}
 
-	var artifacts []*artifact.Artifact
-	if !async {
-		artifacts, err = rt.ResolvedArtifacts()
-		if err != nil && !errs.Matches(err, store.ErrNoBuildPlanFile) {
-			return locale.WrapError(err, "err_language_resolved_artifacts", "Unable to resolve language version(s)")
-		}
+	artifacts, err := rt.ResolvedArtifacts()
+	if err != nil && !errs.Matches(err, store.ErrNoBuildPlanFile) {
+		return locale.WrapError(err, "err_language_resolved_artifacts", "Unable to resolve language version(s)")
 	}
 	ns := model.NewNamespaceLanguage()
 
