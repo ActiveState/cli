@@ -9,14 +9,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	hsInventory "github.com/ActiveState/cli/pkg/platform/api/hasura_inventory"
 	hsInventoryModel "github.com/ActiveState/cli/pkg/platform/api/hasura_inventory/model"
@@ -400,13 +399,10 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID,
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to get system libc")
 		}
-		logging.Debug("Detected system libc: %v", libc)
 		localLibc, err := strconv.ParseFloat(libc.Version(), 32)
 		if err != nil {
 			return nil, errs.Wrap(err, "Libc version is not a number: %s", libc.Version())
 		}
-		logging.Debug("libcMap: %v", libcMap)
-		logging.Debug("Unsorted pids: %v", pids)
 		sort.SliceStable(pids, func(i, j int) bool {
 			libcI, existsI := libcMap[pids[i]]
 			libcJ, existsJ := libcMap[pids[j]]
@@ -433,7 +429,6 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID,
 			}
 			return less
 		})
-		logging.Debug("Sorted pids: %v", pids)
 	}
 
 	return pids, nil
