@@ -5,8 +5,10 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/multilog"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 type versionConstraints struct {
@@ -33,6 +35,31 @@ func GqlReqVersionConstraintsString(requirement *gqlModel.Requirement) string {
 
 	constraints := make([]*versionConstraints, len(requirement.VersionConstraints))
 	for i, constraint := range requirement.VersionConstraints {
+		constraints[i] = &versionConstraints{constraint.Comparator, constraint.Version}
+	}
+	return versionConstraintsToString(constraints)
+}
+
+func BuildPlannerVersionConstraintsToString(requirements []bpModel.VersionRequirement) string {
+	if requirements == nil {
+		return ""
+	}
+
+	var constraints []*versionConstraints
+	for _, constraint := range requirements {
+		constraints = append(constraints, &versionConstraints{constraint[bpModel.VersionRequirementComparatorKey], constraint[bpModel.VersionRequirementVersionKey]})
+	}
+
+	return versionConstraintsToString(constraints)
+}
+
+func MonoConstraintsToString(monoConstraints mono_models.Constraints) string {
+	if monoConstraints == nil {
+		return ""
+	}
+
+	constraints := make([]*versionConstraints, len(monoConstraints))
+	for i, constraint := range monoConstraints {
 		constraints[i] = &versionConstraints{constraint.Comparator, constraint.Version}
 	}
 	return versionConstraintsToString(constraints)

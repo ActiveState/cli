@@ -46,7 +46,7 @@ func newPublish(prime *primer.Values) *captain.Command {
 				Name: "namespace",
 				Description: locale.Tl(
 					"author_upload_namespace_description",
-					"The namespace of the ingredient. Defaults to org/<orgname>. Must start with 'org/<orgname>'.",
+					"The namespace of the ingredient. Must start with 'private/<orgname>'.",
 				),
 				Value: &params.Namespace,
 			},
@@ -117,7 +117,6 @@ func newPublish(prime *primer.Values) *captain.Command {
 				Name:        locale.Tl("filepath", "filepath"),
 				Description: locale.Tl("author_upload_filepath_description", "A tar.gz or zip archive containing the source files of the ingredient."),
 				Value:       &params.Filepath,
-				Required:    true,
 			},
 		},
 		func(_ *captain.Command, _ []string) error {

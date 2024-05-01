@@ -12,10 +12,10 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/stretchr/testify/suite"
 )
 
 type ProjectTestSuite struct {
@@ -37,7 +37,8 @@ func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().NoError(err, "Should change dir without issue.")
 	projectFile, err := projectfile.Get()
 	suite.Require().NoError(err, errs.JoinMessage(err))
-	projectFile.Persist()
+	err = projectFile.Persist()
+	suite.Require().NoError(err, "Should persist projectfile without issue.")
 	suite.projectFile = projectFile
 	suite.Require().Nil(err, "Should retrieve projectfile without issue.")
 	suite.project, err = project.Get()

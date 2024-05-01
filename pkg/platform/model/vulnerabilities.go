@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/thoas/go-funk"
 )
 
 type VulnerabilityIngredient struct {
@@ -139,20 +140,21 @@ type VulnerableIngredientsByLevels struct {
 	Low          VulnerableIngredientsByLevel
 }
 
-func CombineVulnerabilities(ingredients []*VulnerabilityIngredient, primaryIngredient string) VulnerableIngredientsByLevels {
+func CombineVulnerabilities(ingredients []*VulnerabilityIngredient, primaryIngredients ...string) VulnerableIngredientsByLevels {
 	v := VulnerableIngredientsByLevels{
 		Critical: VulnerableIngredientsByLevel{Ingredients: map[IngredientName]VulnerableIngredientByLevel{}},
 		High:     VulnerableIngredientsByLevel{Ingredients: map[IngredientName]VulnerableIngredientByLevel{}},
 		Medium:   VulnerableIngredientsByLevel{Ingredients: map[IngredientName]VulnerableIngredientByLevel{}},
 		Low:      VulnerableIngredientsByLevel{Ingredients: map[IngredientName]VulnerableIngredientByLevel{}},
 	}
+
 	for _, i := range ingredients {
 		iname := IngredientName(i.Name)
 
 		if len(i.Vulnerabilities.Critical) > 0 {
 			v.Count = v.Count + len(i.Vulnerabilities.Critical)
 			v.Critical.Count = v.Critical.Count + len(i.Vulnerabilities.Critical)
-			if i.Name == primaryIngredient {
+			if funk.Contains(primaryIngredients, i.Name) {
 				v.CountPrimary = v.CountPrimary + len(i.Vulnerabilities.Critical)
 				v.Critical.CountPrimary = v.Critical.CountPrimary + len(i.Vulnerabilities.Critical)
 			}
@@ -166,7 +168,7 @@ func CombineVulnerabilities(ingredients []*VulnerabilityIngredient, primaryIngre
 		if len(i.Vulnerabilities.High) > 0 {
 			v.Count = v.Count + len(i.Vulnerabilities.High)
 			v.High.Count = v.High.Count + len(i.Vulnerabilities.High)
-			if i.Name == primaryIngredient {
+			if funk.Contains(primaryIngredients, i.Name) {
 				v.CountPrimary = v.CountPrimary + len(i.Vulnerabilities.High)
 				v.High.CountPrimary = v.High.CountPrimary + len(i.Vulnerabilities.High)
 			}
@@ -180,7 +182,7 @@ func CombineVulnerabilities(ingredients []*VulnerabilityIngredient, primaryIngre
 		if len(i.Vulnerabilities.Medium) > 0 {
 			v.Count = v.Count + len(i.Vulnerabilities.Medium)
 			v.Medium.Count = v.Medium.Count + len(i.Vulnerabilities.Medium)
-			if i.Name == primaryIngredient {
+			if funk.Contains(primaryIngredients, i.Name) {
 				v.CountPrimary = v.CountPrimary + len(i.Vulnerabilities.Medium)
 				v.Medium.CountPrimary = v.Medium.CountPrimary + len(i.Vulnerabilities.Medium)
 			}
@@ -194,7 +196,7 @@ func CombineVulnerabilities(ingredients []*VulnerabilityIngredient, primaryIngre
 		if len(i.Vulnerabilities.Low) > 0 {
 			v.Count = v.Count + len(i.Vulnerabilities.Low)
 			v.Low.Count = v.Low.Count + len(i.Vulnerabilities.Low)
-			if i.Name == primaryIngredient {
+			if funk.Contains(primaryIngredients, i.Name) {
 				v.CountPrimary = v.CountPrimary + len(i.Vulnerabilities.Low)
 				v.Low.CountPrimary = v.Low.CountPrimary + len(i.Vulnerabilities.Low)
 			}
@@ -205,5 +207,6 @@ func CombineVulnerabilities(ingredients []*VulnerabilityIngredient, primaryIngre
 			}
 		}
 	}
+
 	return v
 }

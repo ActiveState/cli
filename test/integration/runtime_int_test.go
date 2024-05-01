@@ -2,17 +2,18 @@ package integration
 
 import (
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/termtest"
-	"github.com/stretchr/testify/suite"
 )
 
 // Disabled due to DX-1514
@@ -109,14 +110,18 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 	cp = ts.SpawnCmd(pythonExe, "-c", `print(__import__('sys').version)`)
 	cp.Expect("3.8.8") // current runtime still works
 	cp.ExpectExitCode(0)
+	ts.IgnoreLogErrors() // Should see an error related to the interrupted setup
 }
 
 func (suite *RuntimeIntegrationTestSuite) TestInUse() {
+	if runtime.GOOS == "darwin" {
+		return // gopsutil errors on later versions of macOS (DX-2723)
+	}
 	suite.OnlyRunForTags(tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl-5.32", ".")
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl-5.36", ".")
 	cp.Expect("Skipping runtime setup")
 	cp.ExpectExitCode(0)
 

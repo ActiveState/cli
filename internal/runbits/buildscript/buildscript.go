@@ -91,7 +91,9 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 		}
 		commitID = &stagedCommitID
 
-		localcommit.Set(proj.Dir(), commitID.String())
+		if err := localcommit.Set(proj.Dir(), commitID.String()); err != nil {
+			return false, errs.Wrap(err, "Could not set local commit ID")
+		}
 
 		script, err = getEquivalentBuildScript(proj, commitID, auth) // timestamps might be different
 		if err != nil {

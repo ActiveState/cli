@@ -21,11 +21,12 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
 )
 
 var (
-	pingRetryIterations = 32
+	pingRetryIterations = 45
 	commonTimeout       = func() time.Duration {
 		var acc int
 		// alg to set max timeout matches ping backoff alg
@@ -34,6 +35,7 @@ var (
 		}
 		return time.Millisecond * time.Duration(acc)
 	}()
+	timeBeforeNotice = 5 * time.Second
 )
 
 type IPCommunicator interface {
@@ -61,7 +63,7 @@ func NewDefaultIPCClient() *ipc.Client {
 	return ipc.NewClient(NewIPCSockPathFromGlobals())
 }
 
-func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec, argText string) (addr string, err error) {
+func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec, argText string, out output.Outputer) (addr string, err error) {
 	defer profile.Measure("svcctl:EnsureExecStartedAndLocateHTTP", time.Now())
 
 	addr, err = LocateHTTP(ipComm)
@@ -75,7 +77,7 @@ func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec, argText string)
 		ctx, cancel := context.WithTimeout(context.Background(), commonTimeout)
 		defer cancel()
 
-		if err := startAndWait(ctx, ipComm, exec, argText); err != nil {
+		if err := startAndWait(ctx, ipComm, exec, argText, out); err != nil {
 			return "", errs.Wrap(err, "Cannot start service at %q", exec)
 		}
 
@@ -88,12 +90,12 @@ func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec, argText string)
 	return addr, nil
 }
 
-func EnsureStartedAndLocateHTTP(argText string) (addr string, err error) {
+func EnsureStartedAndLocateHTTP(argText string, out output.Outputer) (addr string, err error) {
 	svcExec, err := installation.ServiceExec()
 	if err != nil {
 		return "", locale.WrapError(err, "err_service_exec")
 	}
-	return EnsureExecStartedAndLocateHTTP(NewDefaultIPCClient(), svcExec, argText)
+	return EnsureExecStartedAndLocateHTTP(NewDefaultIPCClient(), svcExec, argText, out)
 }
 
 func LocateHTTP(ipComm IPCommunicator) (addr string, err error) {
@@ -142,7 +144,7 @@ func StopServer(ipComm IPCommunicator) error {
 	return nil
 }
 
-func startAndWait(ctx context.Context, ipComm IPCommunicator, exec, argText string) error {
+func startAndWait(ctx context.Context, ipComm IPCommunicator, exec, argText string, out output.Outputer) error {
 	defer profile.Measure("svcmanager:Start", time.Now())
 
 	if !fileutils.FileExists(exec) {
@@ -154,14 +156,17 @@ func startAndWait(ctx context.Context, ipComm IPCommunicator, exec, argText stri
 		args = args[:len(args)-1]
 	}
 
-	debugInfo := newDebugData(ipComm, startSvc, argText)
+	debugInfo, err := newDebugData(ipComm, startSvc, argText)
+	if err != nil {
+		return locale.WrapError(err, "svcctl_cannot_create_debug_info", errs.JoinMessage(err))
+	}
 
 	if _, err := osutils.ExecuteAndForget(exec, args); err != nil {
 		return locale.WrapError(err, "svcctl_cannot_exec_and_forget", "Cannot execute service in background: {{.V0}}", err.Error())
 	}
 
 	logging.Debug("Waiting for service")
-	if err := waitUp(ctx, ipComm, debugInfo); err != nil {
+	if err := waitUp(ctx, ipComm, out, debugInfo); err != nil {
 		return locale.WrapError(err, "svcctl_wait_startup_failed", "Waiting for service startup confirmation failed")
 	}
 
@@ -172,11 +177,12 @@ var (
 	waitTimeoutL10nKey = "svcctl_wait_timeout"
 )
 
-func waitUp(ctx context.Context, ipComm IPCommunicator, debugInfo *debugData) error {
+func waitUp(ctx context.Context, ipComm IPCommunicator, out output.Outputer, debugInfo *debugData) error {
 	debugInfo.startWait()
 	defer debugInfo.stopWait()
 
 	start := time.Now()
+	printedWaitingNotice := false
 	for try := 1; try <= pingRetryIterations; try++ {
 		select {
 		case <-ctx.Done():
@@ -200,6 +206,10 @@ func waitUp(ctx context.Context, ipComm IPCommunicator, debugInfo *debugData) er
 				err := locale.WrapError(err, "svcctl_ping_failed", "Ping encountered unexpected failure: {{.V0}}", err.Error())
 				return errs.Pack(err, debugInfo)
 			}
+			if time.Since(start) >= timeBeforeNotice && !printedWaitingNotice && out != nil {
+				out.Notice(locale.Tl("notice_waiting_state_svc", "Waiting for the State Tool service to start..."))
+				printedWaitingNotice = true
+			}
 			elapsed := time.Since(tryStart)
 			time.Sleep(timeout - elapsed)
 			continue
@@ -212,7 +222,10 @@ func waitUp(ctx context.Context, ipComm IPCommunicator, debugInfo *debugData) er
 }
 
 func stopAndWait(ctx context.Context, ipComm IPCommunicator) error {
-	debugInfo := newDebugData(ipComm, stopSvc, "")
+	debugInfo, err := newDebugData(ipComm, stopSvc, "")
+	if err != nil {
+		return locale.WrapError(err, "svcctl_cannot_create_debug_info", err.Error())
+	}
 
 	if err := ipComm.StopServer(ctx); err != nil {
 		return locale.WrapError(err, "svcctl_stop_req_failed", "Service stop request failed")

@@ -22,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -110,7 +111,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 			}
 		}
 		if proj == nil {
-			return locale.NewInputError("err_no_project")
+			return rationalize.ErrNoProject
 		}
 		projectDir = filepath.Dir(proj.Source().Path())
 		projectNamespace = proj.NamespaceString()
@@ -181,8 +182,8 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	lang := language.Bash
 	scriptArgs := fmt.Sprintf(`%q "$@"`, exeTarget)
 	if strings.Contains(s.subshell.Binary(), "cmd") {
-		lang = language.Batch
-		scriptArgs = fmt.Sprintf("@ECHO OFF\n%q %%*", exeTarget)
+		lang = language.PowerShell
+		scriptArgs = fmt.Sprintf("& %q @args\nexit $LASTEXITCODE", exeTarget)
 	}
 
 	sf, err := scriptfile.New(lang, "state-exec", scriptArgs)

@@ -25,18 +25,18 @@ func OS() OsInfo {
 // the program using this package is "manifested" (see above link), Windows will
 // not report higher than 6.2 (Windows 8 / Windows Server 2012).
 var versions = map[int]map[int]string{
-	5: map[int]string{
+	5: {
 		0: "Windows 2000",
 		1: "Windows XP",
 		2: "Windows XP / Windows Server 2003",
 	},
-	6: map[int]string{
+	6: {
 		0: "Windows Vista / Windows Server 2008",
 		1: "Windows 7 / Windows Server 2008 R2",
 		2: "Windows 8 / Windows Server 2012",
 		3: "Windows 8.1 / Windows Server 2012 R2",
 	},
-	10: map[int]string{
+	10: {
 		0: "Windows 10 / Windows Server",
 	},
 }
@@ -214,7 +214,7 @@ func Libc() (*LibcInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Unable to determine libc version: %s", err)
 	}
-	regex := regexp.MustCompile("(\\d+)\\D(\\d+)")
+	regex := regexp.MustCompile(`(\d+)\D(\d+)`)
 	parts := regex.FindStringSubmatch(string(versionInfo))
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("Unable to parse versionInfo string '%s'", versionInfo)
@@ -247,6 +247,9 @@ func Compilers() ([]*CompilerInfo, error) {
 					continue
 				}
 				path, _, err := key.GetStringValue(name)
+				if err != nil {
+					continue
+				}
 				cl := filepath.Join(path, "VC", "bin", "cl.exe")
 				if _, err = os.Stat(cl); err == nil {
 					compilerMap[cl] = Msvc

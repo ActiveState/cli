@@ -3,7 +3,6 @@ package projectfile
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"os/user"
@@ -12,7 +11,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/ActiveState/cli/internal/assets"
@@ -42,8 +40,8 @@ import (
 )
 
 var (
-	urlProjectRegexStr = fmt.Sprintf(`https:\/\/[\w\.]+\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*([^&]*)(?:\&branch=)*(.*)`)
-	urlCommitRegexStr  = fmt.Sprintf(`https:\/\/[\w\.]+\/commit\/(.*)`)
+	urlProjectRegexStr = `https:\/\/[\w\.]+\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*([^&]*)(?:\&branch=)*(.*)`
+	urlCommitRegexStr  = `https:\/\/[\w\.]+\/commit\/(.*)`
 
 	// ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
 	ProjectURLRe = regexp.MustCompile(urlProjectRegexStr)
@@ -82,8 +80,6 @@ type projectURL struct {
 	LegacyCommitID string
 	BranchName     string
 }
-
-var projectMapMutex = &sync.Mutex{}
 
 const LocalProjectsConfigKey = "projects"
 
@@ -417,7 +413,7 @@ var persistentProject *Project
 // Parse the given filepath, which should be the full path to an activestate.yaml file
 func Parse(configFilepath string) (_ *Project, rerr error) {
 	projectDir := filepath.Dir(configFilepath)
-	files, err := ioutil.ReadDir(projectDir)
+	files, err := os.ReadDir(projectDir)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_project_readdir", "Could not read project directory: {{.V0}}.", projectDir)
 	}
@@ -481,7 +477,7 @@ func Parse(configFilepath string) (_ *Project, rerr error) {
 		// the same version migrations
 		project.ConfigVersion = updatedConfigVersion
 		if err := NewYamlField("config_version", ConfigVersion).Save(project.Path()); err != nil {
-			return nil, errs.Wrap(err, "Could not save config_version")
+			return nil, errs.Pack(errMigrate, errs.Wrap(err, "Could not save config_version"))
 		}
 
 		if errMigrate != nil {
@@ -526,9 +522,9 @@ func parse(configFilepath string) (*Project, error) {
 		return nil, &ErrorNoProject{locale.NewInputError("err_no_projectfile")}
 	}
 
-	dat, err := ioutil.ReadFile(configFilepath)
+	dat, err := os.ReadFile(configFilepath)
 	if err != nil {
-		return nil, errs.Wrap(err, "ioutil.ReadFile %s failure", configFilepath)
+		return nil, errs.Wrap(err, "os.ReadFile %s failure", configFilepath)
 	}
 
 	return parseData(dat, configFilepath)
@@ -668,7 +664,7 @@ func (p *Project) parseURL() (projectURL, error) {
 
 func validateUUID(uuidStr string) error {
 	if ok := strfmt.Default.Validates("uuid", uuidStr); !ok {
-		return locale.NewError("invalid_uuid_val", "Invalid commit ID {{.V0}} in activestate.yaml. Please remove it and run `[ACTIONABLE]state pull[/RESET]` to reset it", uuidStr)
+		return locale.NewError("err_commit_id_invalid", "", uuidStr)
 	}
 
 	var uuid strfmt.UUID
@@ -923,7 +919,7 @@ func FromPath(path string) (*Project, error) {
 		return nil, &ErrorNoProject{locale.WrapInputError(err, "err_project_not_found", "", path)}
 	}
 
-	_, err = ioutil.ReadFile(projectFilePath)
+	_, err = os.ReadFile(projectFilePath)
 	if err != nil {
 		logging.Warning("Cannot load config file: %v", err)
 		return nil, &ErrorNoProject{locale.WrapInputError(err, "err_no_projectfile")}
@@ -945,7 +941,7 @@ func FromExactPath(path string) (*Project, error) {
 		return nil, &ErrorNoProject{locale.NewInputError("err_no_projectfile")}
 	}
 
-	_, err := ioutil.ReadFile(projectFilePath)
+	_, err := os.ReadFile(projectFilePath)
 	if err != nil {
 		logging.Warning("Cannot load config file: %v", err)
 		return nil, &ErrorNoProject{locale.WrapInputError(err, "err_no_projectfile")}
@@ -1129,9 +1125,9 @@ func ParseVersionInfo(projectFilePath string) (*VersionInfo, error) {
 		return nil, nil
 	}
 
-	dat, err := ioutil.ReadFile(projectFilePath)
+	dat, err := os.ReadFile(projectFilePath)
 	if err != nil {
-		return nil, errs.Wrap(err, "ioutil.ReadFile %s failed", projectFilePath)
+		return nil, errs.Wrap(err, "os.ReadFile %s failed", projectFilePath)
 	}
 
 	versionStruct := VersionInfo{}
@@ -1171,25 +1167,25 @@ func AddLockInfo(projectFilePath, branch, version string) error {
 	if lockRegex.Match(data) {
 		versionUpdate := []byte(fmt.Sprintf("lock: %s@%s", branch, version))
 		replaced := lockRegex.ReplaceAll(data, versionUpdate)
-		return ioutil.WriteFile(projectFilePath, replaced, 0644)
+		return os.WriteFile(projectFilePath, replaced, 0644)
 	}
 
 	projectRegex := regexp.MustCompile(fmt.Sprintf("(?m:(^project:\\s*%s))", ProjectURLRe))
 	lockString := fmt.Sprintf("%s@%s", branch, version)
 	lockUpdate := []byte(fmt.Sprintf("${1}\nlock: %s", lockString))
 
-	data, err = ioutil.ReadFile(projectFilePath)
+	data, err = os.ReadFile(projectFilePath)
 	if err != nil {
 		return err
 	}
 
 	updated := projectRegex.ReplaceAll(data, lockUpdate)
 
-	return ioutil.WriteFile(projectFilePath, updated, 0644)
+	return os.WriteFile(projectFilePath, updated, 0644)
 }
 
 func RemoveLockInfo(projectFilePath string) error {
-	data, err := ioutil.ReadFile(projectFilePath)
+	data, err := os.ReadFile(projectFilePath)
 	if err != nil {
 		return locale.WrapError(err, "err_read_projectfile", "", projectFilePath)
 	}
@@ -1197,7 +1193,7 @@ func RemoveLockInfo(projectFilePath string) error {
 	lockRegex := regexp.MustCompile(`(?m)^lock:.*`)
 	clean := lockRegex.ReplaceAll(data, []byte(""))
 
-	err = ioutil.WriteFile(projectFilePath, clean, 0644)
+	err = os.WriteFile(projectFilePath, clean, 0644)
 	if err != nil {
 		return locale.WrapError(err, "err_write_unlocked_projectfile", "Could not remove lock from projectfile")
 	}
@@ -1206,7 +1202,7 @@ func RemoveLockInfo(projectFilePath string) error {
 }
 
 func cleanVersionInfo(projectFilePath string) ([]byte, error) {
-	data, err := ioutil.ReadFile(projectFilePath)
+	data, err := os.ReadFile(projectFilePath)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_read_projectfile", "", projectFilePath)
 	}
@@ -1217,7 +1213,7 @@ func cleanVersionInfo(projectFilePath string) ([]byte, error) {
 	versionRegex := regexp.MustCompile(`(?m:^version:\s*\d+.\d+.\d+-[A-Za-z0-9]+\n)`)
 	clean = versionRegex.ReplaceAll(clean, []byte(""))
 
-	err = ioutil.WriteFile(projectFilePath, clean, 0644)
+	err = os.WriteFile(projectFilePath, clean, 0644)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_write_clean_projectfile", "Could not write cleaned projectfile information")
 	}
@@ -1362,7 +1358,7 @@ func GetProjectPaths(cfg ConfigGetter, namespace string) []string {
 	// match case-insensitively
 	var paths []string
 	for key, value := range projects {
-		if strings.ToLower(key) == strings.ToLower(namespace) {
+		if strings.EqualFold(key, namespace) {
 			paths = append(paths, value...)
 		}
 	}
@@ -1421,7 +1417,7 @@ func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 		},
 	)
 	if err != nil {
-		multilog.Error("Could not set project mapping in config, error: %v", err)
+		multilog.Error("Could not set project mapping in config, error: %v", errs.JoinMessage(err))
 	}
 }
 

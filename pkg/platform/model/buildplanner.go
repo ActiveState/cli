@@ -149,10 +149,10 @@ func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
 	}
 }
 
-func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project string) (*BuildResult, *model.Commit, error) {
+func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project string, target *string) (*BuildResult, *model.Commit, error) {
 	logging.Debug("FetchBuildResult, commitID: %s, owner: %s, project: %s", commitID, owner, project)
 	resp := bpModel.NewBuildPlanResponse(owner, project)
-	err := bp.client.Run(request.BuildPlan(commitID.String(), owner, project), resp)
+	err := bp.client.Run(request.BuildPlan(commitID.String(), owner, project, target), resp)
 	if err != nil {
 		return nil, nil, processBuildPlannerError(err, "failed to fetch build plan")
 	}
@@ -166,7 +166,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	// "planning" if the build plan is not ready yet. We need to
 	// poll the BuildPlanner until the build is ready.
 	if build.Status == bpModel.Planning {
-		build, err = bp.pollBuildPlan(commitID.String(), owner, project)
+		build, err = bp.pollBuildPlan(commitID.String(), owner, project, target)
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "failed to poll build plan")
 		}
@@ -214,19 +214,18 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 			return nil, nil, errs.Wrap(err, "Build plan contains multiple recipe IDs")
 		}
 		res.RecipeID = strfmt.UUID(id.ID)
-		break
 	}
 
 	return &res, commit, nil
 }
 
-func (bp *BuildPlanner) pollBuildPlan(commitID, owner, project string) (*bpModel.Build, error) {
+func (bp *BuildPlanner) pollBuildPlan(commitID, owner, project string, target *string) (*bpModel.Build, error) {
 	resp := model.NewBuildPlanResponse(owner, project)
 	ticker := time.NewTicker(pollInterval)
 	for {
 		select {
 		case <-ticker.C:
-			err := bp.client.Run(request.BuildPlan(commitID, owner, project), resp)
+			err := bp.client.Run(request.BuildPlan(commitID, owner, project, target), resp)
 			if err != nil {
 				return nil, processBuildPlannerError(err, "failed to fetch build plan")
 			}
@@ -279,17 +278,21 @@ func removeEmptyTargets(bp *bpModel.Build) {
 	bp.Artifacts = artifacts
 }
 
+type StageCommitRequirement struct {
+	Name      string
+	Version   []bpModel.VersionRequirement
+	Namespace Namespace
+	Revision  *int
+	Operation bpModel.Operation
+}
+
 type StageCommitParams struct {
 	Owner        string
 	Project      string
 	ParentCommit string
 	Description  string
-	// Commits can have either an operation (e.g. installing a package)...
-	RequirementName      string
-	RequirementVersion   []bpModel.VersionRequirement
-	RequirementNamespace Namespace
-	RequirementRevision  *int
-	Operation            bpModel.Operation
+	// Commits can have either requirements (e.g. installing a package)...
+	Requirements []StageCommitRequirement
 	// ... or commits can have an expression (e.g. from pull). When pulling an expression, we do not
 	// compute its changes into a series of above operations. Instead, we just pass the new
 	// expression directly.
@@ -307,28 +310,35 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 			return "", errs.Wrap(err, "Failed to get build expression")
 		}
 
-		if params.RequirementNamespace.Type() == NamespacePlatform {
-			err = expression.UpdatePlatform(params.Operation, strfmt.UUID(params.RequirementName))
-			if err != nil {
-				return "", errs.Wrap(err, "Failed to update build expression with platform")
-			}
-		} else {
-			requirement := bpModel.Requirement{
-				Namespace:          params.RequirementNamespace.String(),
-				Name:               params.RequirementName,
-				VersionRequirement: params.RequirementVersion,
-				Revision:           params.RequirementRevision,
-			}
+		var containsPackageOperation bool
+		for _, req := range params.Requirements {
+			if req.Namespace.Type() == NamespacePlatform {
+				err = expression.UpdatePlatform(req.Operation, strfmt.UUID(req.Name))
+				if err != nil {
+					return "", errs.Wrap(err, "Failed to update build expression with platform")
+				}
+			} else {
+				requirement := bpModel.Requirement{
+					Namespace:          req.Namespace.String(),
+					Name:               req.Name,
+					VersionRequirement: req.Version,
+					Revision:           req.Revision,
+				}
 
-			err = expression.UpdateRequirement(params.Operation, requirement)
-			if err != nil {
-				return "", errs.Wrap(err, "Failed to update build expression with requirement")
+				err = expression.UpdateRequirement(req.Operation, requirement)
+				if err != nil {
+					return "", errs.Wrap(err, "Failed to update build expression with requirement")
+				}
+				containsPackageOperation = true
 			}
+		}
 
+		if containsPackageOperation {
 			if err := expression.SetDefaultTimestamp(); err != nil {
 				return "", errs.Wrap(err, "Failed to set default timestamp")
 			}
 		}
+
 	}
 
 	// With the updated build expression call the stage commit mutation
@@ -439,18 +449,22 @@ func (bp *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID,
 		}
 
 		// Add the platform.
-		expr.UpdatePlatform(model.OperationAdded, params.PlatformID)
+		if err := expr.UpdatePlatform(model.OperationAdded, params.PlatformID); err != nil {
+			return "", errs.Wrap(err, "Unable to add platform")
+		}
 
 		// Create a requirement for the given language and version.
 		versionRequirements, err := VersionStringToRequirements(params.Version)
 		if err != nil {
 			return "", errs.Wrap(err, "Unable to read version")
 		}
-		expr.UpdateRequirement(model.OperationAdded, bpModel.Requirement{
+		if err := expr.UpdateRequirement(model.OperationAdded, bpModel.Requirement{
 			Name:               params.Language,
 			Namespace:          "language", // TODO: make this a constant DX-1738
 			VersionRequirement: versionRequirements,
-		})
+		}); err != nil {
+			return "", errs.Wrap(err, "Unable to add language requirement")
+		}
 	}
 
 	// Create the project.
@@ -580,7 +594,7 @@ func processBuildPlannerError(bpErr error, fallbackMessage string) error {
 			return &bpModel.BuildPlannerError{Err: locale.NewInputError("err_buildplanner_deprecated", "Encountered deprecation error: {{.V0}}", graphqlErr.Message)}
 		}
 	}
-	return &bpModel.BuildPlannerError{Err: errs.Wrap(bpErr, fallbackMessage)}
+	return &bpModel.BuildPlannerError{Err: locale.NewInputError("err_buildplanner", "{{.V0}}: Encountered unexpected error: {{.V1}}", fallbackMessage, bpErr.Error())}
 }
 
 var versionRe = regexp.MustCompile(`^\d+(\.\d+)*$`)
@@ -590,7 +604,7 @@ func isExactVersion(version string) bool {
 }
 
 func isWildcardVersion(version string) bool {
-	return strings.Index(version, ".x") >= 0 || strings.Index(version, ".X") >= 0
+	return strings.Contains(version, ".x") || strings.Contains(version, ".X")
 }
 
 func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, error) {

@@ -2,13 +2,13 @@ package main
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -22,6 +22,8 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/updater"
@@ -30,12 +32,13 @@ import (
 type Installer struct {
 	out         output.Outputer
 	cfg         *config.Instance
+	an          analytics.Dispatcher
 	payloadPath string
 	*Params
 }
 
-func NewInstaller(cfg *config.Instance, out output.Outputer, payloadPath string, params *Params) (*Installer, error) {
-	i := &Installer{cfg: cfg, out: out, payloadPath: payloadPath, Params: params}
+func NewInstaller(cfg *config.Instance, out output.Outputer, an analytics.Dispatcher, payloadPath string, params *Params) (*Installer, error) {
+	i := &Installer{cfg: cfg, out: out, an: an, payloadPath: payloadPath, Params: params}
 	if err := i.sanitizeInput(); err != nil {
 		return nil, errs.Wrap(err, "Could not sanitize input")
 	}
@@ -46,6 +49,21 @@ func NewInstaller(cfg *config.Instance, out output.Outputer, payloadPath string,
 }
 
 func (i *Installer) Install() (rerr error) {
+	isAdmin, err := osutils.IsAdmin()
+	if err != nil {
+		return errs.Wrap(err, "Could not determine if running as Windows administrator")
+	}
+	if isAdmin && !i.Params.force && !i.Params.isUpdate && !i.Params.nonInteractive {
+		prompter := prompt.New(true, i.an)
+		confirm, err := prompter.Confirm("", locale.T("installer_prompt_is_admin"), ptr.To(false))
+		if err != nil {
+			return errs.Wrap(err, "Unable to confirm")
+		}
+		if !confirm {
+			return locale.NewInputError("installer_aborted", "Installation aborted by the user")
+		}
+	}
+
 	// Store update tag
 	if i.updateTag != "" {
 		if err := i.cfg.Set(updater.CfgUpdateTag, i.updateTag); err != nil {
@@ -59,7 +77,7 @@ func (i *Installer) Install() (rerr error) {
 	}
 
 	// Detect if existing installation needs to be cleaned
-	err := detectCorruptedInstallDir(i.path)
+	err = detectCorruptedInstallDir(i.path)
 	if errors.Is(err, errCorruptedInstall) {
 		err = i.sanitizeInstallPath()
 		if err != nil {
@@ -97,10 +115,6 @@ func (i *Installer) Install() (rerr error) {
 
 	// Set up the environment
 	binDir := filepath.Join(i.path, installation.BinDirName)
-	isAdmin, err := osutils.IsAdmin()
-	if err != nil {
-		return errs.Wrap(err, "Could not determine if running as Windows administrator")
-	}
 
 	// Install the state service as an app if necessary
 	if err := i.installSvcApp(binDir); err != nil {
@@ -194,7 +208,7 @@ func detectCorruptedInstallDir(path string) error {
 	}
 
 	// Detect if the install dir has files in it
-	files, err := ioutil.ReadDir(path)
+	files, err := os.ReadDir(path)
 	if err != nil {
 		return errs.Wrap(err, "Could not read directory: %s", path)
 	}

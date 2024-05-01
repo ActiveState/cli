@@ -19,8 +19,8 @@ runtime = solve(
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/perl"),
-		Req(name = "language/perl/DateTime")
+		Req(name = "perl", namespace = "language"),
+		Req(name = "DateTime", namespace = "language/perl")
 	]
 )
 
@@ -37,8 +37,8 @@ runtime = solve(
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/perl"),
-		Req(name = "language/perl/JSON")
+		Req(name = "perl", namespace = "language"),
+		Req(name = "JSON", namespace = "language/perl")
 	]
 )
 
@@ -69,9 +69,9 @@ runtime = solve(
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/perl"),
-		Req(name = "language/perl/JSON"),
-		Req(name = "language/perl/DateTime")
+		Req(name = "perl", namespace = "language"),
+		Req(name = "JSON", namespace = "language/perl"),
+		Req(name = "DateTime", namespace = "language/perl")
 	]
 )
 
@@ -88,9 +88,8 @@ runtime = solve(
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/perl"),
-		Req(name = "language/perl/JSON"),
-		Req(name = "language/perl/DateTime")
+		Req(name = "perl", namespace = "language"),
+		Req(name = "DateTime", namespace = "language/perl")
 	]
 )
 
@@ -107,8 +106,9 @@ runtime = solve(
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/perl"),
-		Req(name = "language/perl/DateTime")
+		Req(name = "perl", namespace = "language"),
+		Req(name = "JSON", namespace = "language/perl"),
+		Req(name = "DateTime", namespace = "language/perl")
 	]
 )
 
@@ -139,8 +139,8 @@ runtime = solve(
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/perl"),
-		Req(name = "language/perl/DateTime")
+		Req(name = "perl", namespace = "language"),
+		Req(name = "DateTime", namespace = "language/perl")
 	]
 )
 
@@ -157,7 +157,7 @@ runtime = solve(
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/perl"),
+		Req(name = "perl", namespace = "language"),
 	]
 )
 
@@ -173,8 +173,8 @@ runtime = solve(
 		"12345"
 	],
 	requirements = [
-		Req(name = "language/perl"),
-		Req(name = "language/perl/JSON")
+		Req(name = "perl", namespace = "language"),
+		Req(name = "JSON", namespace = "language/perl")
 	]
 )
 

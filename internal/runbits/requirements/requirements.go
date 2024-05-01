@@ -49,11 +49,6 @@ func init() {
 	configMediator.RegisterOption(constants.SecurityPromptLevelConfig, configMediator.String, vulnModel.SeverityCritical)
 }
 
-const (
-	promptDefault      = true
-	promptDefaultLevel = vulnModel.SeverityCritical
-)
-
 type PackageVersion struct {
 	captain.NameVersionValue
 }
@@ -106,20 +101,41 @@ type ErrNoMatches struct {
 	Alternatives *string
 }
 
+var errNoRequirements = errs.New("No requirements were provided")
+
+var errInitialNoRequirement = errs.New("Could not find compatible requirement for initial commit")
+
 var versionRe = regexp.MustCompile(`^\d(\.\d+)*$`)
+
+// Requirement represents a package, language or platform requirement
+// For now, be aware that you should never provide BOTH ns AND nsType, one or the other should always be nil, but never both.
+// The refactor should clean this up.
+type Requirement struct {
+	Name          string
+	Version       string
+	Revision      int
+	BitWidth      int // Only needed for platform requirements
+	Namespace     *model.Namespace
+	NamespaceType *model.NamespaceType
+	Operation     bpModel.Operation
+
+	// The following fields are set during execution
+	langName                string
+	langVersion             string
+	validatePkg             bool
+	appendVersionWildcard   bool
+	originalRequirementName string
+	versionRequirements     []bpModel.VersionRequirement
+}
 
 // ExecuteRequirementOperation executes the operation on the requirement
 // This has become quite unwieldy, and is ripe for a refactor - https://activestatef.atlassian.net/browse/DX-1897
-// For now, be aware that you should never provide BOTH ns AND nsType, one or the other should always be nil, but never both.
-// The refactor should clean this up.
-func (r *RequirementOperation) ExecuteRequirementOperation(
-	requirementName, requirementVersion string, requirementRevision *int,
-	requirementBitWidth int, // this is only needed for platform install/uninstall
-	operation bpModel.Operation, ns *model.Namespace, nsType *model.NamespaceType, ts *time.Time) (rerr error) {
+func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requirements ...*Requirement) (rerr error) {
 	defer r.rationalizeError(&rerr)
 
-	var langVersion string
-	langName := "undetermined"
+	if len(requirements) == 0 {
+		return errNoRequirements
+	}
 
 	out := r.Output
 	var pg *output.Spinner
@@ -130,7 +146,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		}
 	}()
 
-	var err error
 	if r.Project == nil {
 		return rationalize.ErrNoProject
 	}
@@ -139,109 +154,12 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	}
 	out.Notice(locale.Tr("operating_message", r.Project.NamespaceString(), r.Project.Dir()))
 
-	if nsType != nil {
-		switch *nsType {
-		case model.NamespacePackage, model.NamespaceBundle:
-			commitID, err := localcommit.Get(r.Project.Dir())
-			if err != nil {
-				return errs.Wrap(err, "Unable to get local commit")
-			}
-
-			language, err := model.LanguageByCommit(commitID, r.Auth)
-			if err == nil {
-				langName = language.Name
-				ns = ptr.To(model.NewNamespacePkgOrBundle(langName, *nsType))
-			} else {
-				logging.Debug("Could not get language from project: %v", err)
-			}
-		case model.NamespaceLanguage:
-			ns = ptr.To(model.NewNamespaceLanguage())
-		case model.NamespacePlatform:
-			ns = ptr.To(model.NewNamespacePlatform())
-		}
+	if err := r.resolveNamespaces(ts, requirements...); err != nil {
+		return errs.Wrap(err, "Could not resolve namespaces")
 	}
 
-	var validatePkg = operation == bpModel.OperationAdded && ns != nil && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
-	if (ns == nil || !ns.IsValid()) && nsType != nil && (*nsType == model.NamespacePackage || *nsType == model.NamespaceBundle) {
-		pg = output.StartSpinner(out, locale.Tr("progress_pkg_nolang", requirementName), constants.TerminalAnimationInterval)
-
-		supported, err := model.FetchSupportedLanguages(model.HostPlatform)
-		if err != nil {
-			return errs.Wrap(err, "Failed to retrieve the list of supported languages")
-		}
-
-		var nsv model.Namespace
-		var supportedLang *medmodel.SupportedLanguage
-		requirementName, nsv, supportedLang, err = resolvePkgAndNamespace(r.Prompt, requirementName, *nsType, supported, ts, r.Auth)
-		if err != nil {
-			return errs.Wrap(err, "Could not resolve pkg and namespace")
-		}
-		ns = &nsv
-		langVersion = supportedLang.DefaultVersion
-		langName = supportedLang.Name
-
-		validatePkg = false
-
-		pg.Stop(locale.T("progress_found"))
-		pg = nil
-	}
-
-	if ns == nil {
-		return locale.NewError("err_package_invalid_namespace_detected", "No valid namespace could be detected")
-	}
-
-	if strings.ToLower(requirementVersion) == latestVersion {
-		requirementVersion = ""
-	}
-
-	origRequirementName := requirementName
-	appendVersionWildcard := false
-	if validatePkg {
-		pg = output.StartSpinner(out, locale.Tr("progress_search", requirementName), constants.TerminalAnimationInterval)
-
-		normalized, err := model.FetchNormalizedName(*ns, requirementName, r.Auth)
-		if err != nil {
-			multilog.Error("Failed to normalize '%s': %v", requirementName, err)
-		}
-
-		packages, err := model.SearchIngredientsStrict(ns.String(), normalized, false, false, nil, r.Auth) // ideally case-sensitive would be true (PB-4371)
-		if err != nil {
-			return locale.WrapError(err, "package_err_cannot_obtain_search_results")
-		}
-
-		if len(packages) == 0 {
-			suggestions, err := getSuggestions(*ns, requirementName, r.Auth)
-			if err != nil {
-				multilog.Error("Failed to retrieve suggestions: %v", err)
-			}
-
-			if len(suggestions) == 0 {
-				return &ErrNoMatches{
-					locale.WrapInputError(err, "package_ingredient_alternatives_nosuggest", "", requirementName),
-					requirementName, nil}
-			}
-
-			return &ErrNoMatches{
-				locale.WrapInputError(err, "package_ingredient_alternatives", "", requirementName, strings.Join(suggestions, "\n")),
-				requirementName, ptr.To(strings.Join(suggestions, "\n"))}
-		}
-
-		requirementName = normalized
-
-		// If a bare version number was given, and if it is a partial version number (e.g. requests@2),
-		// we'll want to ultimately append a '.x' suffix.
-		if versionRe.MatchString(requirementVersion) {
-			for _, knownVersion := range packages[0].Versions {
-				if knownVersion.Version == requirementVersion {
-					break
-				} else if strings.HasPrefix(knownVersion.Version, requirementVersion) {
-					appendVersionWildcard = true
-				}
-			}
-		}
-
-		pg.Stop(locale.T("progress_found"))
-		pg = nil
+	if err := r.validatePackages(requirements...); err != nil {
+		return errs.Wrap(err, "Could not validate packages")
 	}
 
 	parentCommitID, err := localcommit.Get(r.Project.Dir())
@@ -252,54 +170,53 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 
 	pg = output.StartSpinner(out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
 
-	// Check if this is an addition or an update
-	if operation == bpModel.OperationAdded && parentCommitID != "" {
-		req, err := model.GetRequirement(parentCommitID, *ns, requirementName, r.Auth)
-		if err != nil {
-			return errs.Wrap(err, "Could not get requirement")
-		}
-		if req != nil {
-			operation = bpModel.OperationUpdated
-		}
+	if err := r.checkForUpdate(parentCommitID, requirements...); err != nil {
+		return locale.WrapError(err, "err_check_for_update", "Could not check for requirements updates")
 	}
 
-	r.Analytics.EventWithLabel(
-		anaConsts.CatPackageOp, fmt.Sprintf("%s-%s", operation, langName), requirementName,
-	)
-
 	if !hasParentCommit {
-		languageFromNs := model.LanguageFromNamespace(ns.String())
-		parentCommitID, err = model.CommitInitial(model.HostPlatform, languageFromNs, langVersion, r.Auth)
+		// Use first requirement to extract language for initial commit
+		var requirement *Requirement
+		for _, r := range requirements {
+			if r.Namespace.Type() == model.NamespacePackage || r.Namespace.Type() == model.NamespaceBundle {
+				requirement = r
+				break
+			}
+		}
+
+		if requirement == nil {
+			return errInitialNoRequirement
+		}
+
+		languageFromNs := model.LanguageFromNamespace(requirement.Namespace.String())
+		parentCommitID, err = model.CommitInitial(model.HostPlatform, languageFromNs, requirement.langVersion, r.Auth)
 		if err != nil {
 			return locale.WrapError(err, "err_install_no_project_commit", "Could not create initial commit for new project")
 		}
 	}
 
-	name, version, err := model.ResolveRequirementNameAndVersion(requirementName, requirementVersion, requirementBitWidth, *ns, r.Auth)
-	if err != nil {
-		return errs.Wrap(err, "Could not resolve requirement name and version")
+	if err := r.resolveRequirements(requirements...); err != nil {
+		return locale.WrapError(err, "err_resolve_requirements", "Could not resolve one or more requirements")
 	}
 
-	versionString := version
-	if appendVersionWildcard {
-		versionString += ".x"
-	}
-	requirements, err := model.VersionStringToRequirements(versionString)
-	if err != nil {
-		return errs.Wrap(err, "Could not process version string into requirements")
+	var stageCommitReqs []model.StageCommitRequirement
+	for _, requirement := range requirements {
+		stageCommitReqs = append(stageCommitReqs, model.StageCommitRequirement{
+			Name:      requirement.Name,
+			Version:   requirement.versionRequirements,
+			Revision:  ptr.To(requirement.Revision),
+			Namespace: *requirement.Namespace,
+			Operation: requirement.Operation,
+		})
 	}
 
 	params := model.StageCommitParams{
-		Owner:                r.Project.Owner(),
-		Project:              r.Project.Name(),
-		ParentCommit:         string(parentCommitID),
-		Description:          commitMessage(operation, name, version, *ns, requirementBitWidth),
-		RequirementName:      name,
-		RequirementVersion:   requirements,
-		RequirementNamespace: *ns,
-		RequirementRevision:  requirementRevision,
-		Operation:            operation,
-		TimeStamp:            ts,
+		Owner:        r.Project.Owner(),
+		Project:      r.Project.Name(),
+		ParentCommit: string(parentCommitID),
+		Description:  commitMessage(requirements...),
+		Requirements: stageCommitReqs,
+		TimeStamp:    ts,
 	}
 
 	bp := model.NewBuildPlannerModel(r.Auth)
@@ -313,14 +230,14 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
 		// Solve runtime
-		rt, buildResult, commit, changedArtifacts, err := r.solve(commitID, ns)
+		rt, buildResult, commit, changedArtifacts, err := r.solve(commitID, requirements[0].Namespace)
 		if err != nil {
 			return errs.Wrap(err, "Could not solve runtime")
 		}
 
-		// Report CVE's
-		if err := r.cveReport(requirementName, requirementVersion, *changedArtifacts, operation, ns); err != nil {
-			return err
+		// Report CVEs
+		if err := r.cveReport(*changedArtifacts, requirements...); err != nil {
+			return errs.Wrap(err, "Could not report CVEs")
 		}
 
 		// Start runtime update UI
@@ -356,31 +273,210 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	}
 
 	// Print the result
-	message := locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), operation), requirementName, requirementVersion)
-	if requirementVersion == "" {
-		message = locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), requirementName)
-	}
-	out.Print(output.Prepare(
-		message,
-		&struct {
-			Name      string `json:"name"`
-			Version   string `json:"version,omitempty"`
-			Type      string `json:"type"`
-			Operation string `json:"operation"`
-		}{
-			requirementName,
-			requirementVersion,
-			ns.Type().String(),
-			operation.String(),
-		}))
-
-	if origRequirementName != requirementName {
-		out.Notice(locale.Tl("package_version_differs",
-			"Note: the actual package name ({{.V0}}) is different from the requested package name ({{.V1}})",
-			requirementName, origRequirementName))
-	}
+	r.outputResults(requirements...)
 
 	out.Notice(locale.T("operation_success_local"))
+
+	return nil
+}
+
+type ResolveNamespaceError struct {
+	error
+	Name string
+}
+
+func (r *RequirementOperation) resolveNamespaces(ts *time.Time, requirements ...*Requirement) error {
+	for _, requirement := range requirements {
+		if err := r.resolveNamespace(ts, requirement); err != nil {
+			return &ResolveNamespaceError{
+				err,
+				requirement.Name,
+			}
+		}
+	}
+	return nil
+}
+
+func (r *RequirementOperation) resolveNamespace(ts *time.Time, requirement *Requirement) error {
+	requirement.langName = "undetermined"
+
+	if requirement.NamespaceType != nil {
+		switch *requirement.NamespaceType {
+		case model.NamespacePackage, model.NamespaceBundle:
+			commitID, err := localcommit.Get(r.Project.Dir())
+			if err != nil {
+				return errs.Wrap(err, "Unable to get local commit")
+			}
+
+			language, err := model.LanguageByCommit(commitID, r.Auth)
+			if err == nil {
+				requirement.langName = language.Name
+				requirement.Namespace = ptr.To(model.NewNamespacePkgOrBundle(requirement.langName, *requirement.NamespaceType))
+			} else {
+				logging.Debug("Could not get language from project: %v", err)
+			}
+		case model.NamespaceLanguage:
+			requirement.Namespace = ptr.To(model.NewNamespaceLanguage())
+		case model.NamespacePlatform:
+			requirement.Namespace = ptr.To(model.NewNamespacePlatform())
+		}
+	}
+
+	ns := requirement.Namespace
+	nsType := requirement.NamespaceType
+	requirement.validatePkg = requirement.Operation == bpModel.OperationAdded && ns != nil && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle || ns.Type() == model.NamespaceLanguage)
+	if (ns == nil || !ns.IsValid()) && nsType != nil && (*nsType == model.NamespacePackage || *nsType == model.NamespaceBundle) {
+		pg := output.StartSpinner(r.Output, locale.Tr("progress_pkg_nolang", requirement.Name), constants.TerminalAnimationInterval)
+
+		supported, err := model.FetchSupportedLanguages(model.HostPlatform)
+		if err != nil {
+			return errs.Wrap(err, "Failed to retrieve the list of supported languages")
+		}
+
+		var nsv model.Namespace
+		var supportedLang *medmodel.SupportedLanguage
+		requirement.Name, nsv, supportedLang, err = resolvePkgAndNamespace(r.Prompt, requirement.Name, *requirement.NamespaceType, supported, ts, r.Auth)
+		if err != nil {
+			return errs.Wrap(err, "Could not resolve pkg and namespace")
+		}
+		requirement.Namespace = &nsv
+		requirement.langVersion = supportedLang.DefaultVersion
+		requirement.langName = supportedLang.Name
+
+		requirement.validatePkg = false
+
+		pg.Stop(locale.T("progress_found"))
+	}
+
+	if requirement.Namespace == nil {
+		return locale.NewError("err_package_invalid_namespace_detected", "No valid namespace could be detected")
+	}
+
+	return nil
+}
+
+func (r *RequirementOperation) validatePackages(requirements ...*Requirement) error {
+	var requirementsToValidate []*Requirement
+	for _, requirement := range requirements {
+		if !requirement.validatePkg {
+			continue
+		}
+		requirementsToValidate = append(requirementsToValidate, requirement)
+	}
+
+	if len(requirementsToValidate) == 0 {
+		return nil
+	}
+
+	pg := output.StartSpinner(r.Output, locale.Tr("progress_search", strings.Join(requirementNames(requirementsToValidate...), ", ")), constants.TerminalAnimationInterval)
+	for _, requirement := range requirementsToValidate {
+		if err := r.validatePackage(requirement); err != nil {
+			return errs.Wrap(err, "Could not validate package")
+		}
+	}
+	pg.Stop(locale.T("progress_found"))
+
+	return nil
+}
+
+func (r *RequirementOperation) validatePackage(requirement *Requirement) error {
+	if strings.ToLower(requirement.Version) == latestVersion {
+		requirement.Version = ""
+	}
+
+	requirement.originalRequirementName = requirement.Name
+	normalized, err := model.FetchNormalizedName(*requirement.Namespace, requirement.Name, r.Auth)
+	if err != nil {
+		multilog.Error("Failed to normalize '%s': %v", requirement.Name, err)
+	}
+
+	packages, err := model.SearchIngredientsStrict(requirement.Namespace.String(), normalized, false, false, nil, r.Auth) // ideally case-sensitive would be true (PB-4371)
+	if err != nil {
+		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
+	}
+
+	if len(packages) == 0 {
+		suggestions, err := getSuggestions(*requirement.Namespace, requirement.Name, r.Auth)
+		if err != nil {
+			multilog.Error("Failed to retrieve suggestions: %v", err)
+		}
+
+		if len(suggestions) == 0 {
+			return &ErrNoMatches{
+				locale.WrapInputError(err, "package_ingredient_alternatives_nosuggest", "", requirement.Name),
+				requirement.Name, nil}
+		}
+
+		return &ErrNoMatches{
+			locale.WrapInputError(err, "package_ingredient_alternatives", "", requirement.Name, strings.Join(suggestions, "\n")),
+			requirement.Name, ptr.To(strings.Join(suggestions, "\n"))}
+	}
+
+	if normalized != "" && normalized != requirement.Name {
+		requirement.Name = normalized
+	}
+
+	// If a bare version number was given, and if it is a partial version number (e.g. requests@2),
+	// we'll want to ultimately append a '.x' suffix.
+	if versionRe.MatchString(requirement.Version) {
+		for _, knownVersion := range packages[0].Versions {
+			if knownVersion.Version == requirement.Version {
+				break
+			} else if strings.HasPrefix(knownVersion.Version, requirement.Version) {
+				requirement.appendVersionWildcard = true
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *RequirementOperation) checkForUpdate(parentCommitID strfmt.UUID, requirements ...*Requirement) error {
+	for _, requirement := range requirements {
+		// Check if this is an addition or an update
+		if requirement.Operation == bpModel.OperationAdded && parentCommitID != "" {
+			req, err := model.GetRequirement(parentCommitID, *requirement.Namespace, requirement.Name, r.Auth)
+			if err != nil {
+				return errs.Wrap(err, "Could not get requirement")
+			}
+			if req != nil {
+				requirement.Operation = bpModel.OperationUpdated
+			}
+		}
+
+		r.Analytics.EventWithLabel(
+			anaConsts.CatPackageOp, fmt.Sprintf("%s-%s", requirement.Operation, requirement.langName), requirement.Name,
+		)
+	}
+
+	return nil
+}
+
+func (r *RequirementOperation) resolveRequirements(requirements ...*Requirement) error {
+	for _, requirement := range requirements {
+		if err := r.resolveRequirement(requirement); err != nil {
+			return errs.Wrap(err, "Could not resolve requirement")
+		}
+	}
+	return nil
+}
+
+func (r *RequirementOperation) resolveRequirement(requirement *Requirement) error {
+	var err error
+	requirement.Name, requirement.Version, err = model.ResolveRequirementNameAndVersion(requirement.Name, requirement.Version, requirement.BitWidth, *requirement.Namespace, r.Auth)
+	if err != nil {
+		return errs.Wrap(err, "Could not resolve requirement name and version")
+	}
+
+	versionString := requirement.Version
+	if requirement.appendVersionWildcard {
+		versionString += ".x"
+	}
+
+	requirement.versionRequirements, err = model.VersionStringToRequirements(versionString)
+	if err != nil {
+		return errs.Wrap(err, "Could not process version string into requirements")
+	}
 
 	return nil
 }
@@ -432,7 +528,7 @@ func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) 
 	var oldBuildPlan *bpModel.Build
 	if oldCommit.ParentCommitID != "" {
 		bp := model.NewBuildPlannerModel(r.Auth)
-		oldBuildResult, _, err := bp.FetchBuildResult(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name())
+		oldBuildResult, _, err := bp.FetchBuildResult(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
 		if err != nil {
 			return nil, nil, nil, nil, errs.Wrap(err, "Failed to fetch build result")
 		}
@@ -447,34 +543,39 @@ func (r *RequirementOperation) solve(commitID strfmt.UUID, ns *model.Namespace) 
 	return rt, buildResult, commit, &changedArtifacts, nil
 }
 
-func (r *RequirementOperation) cveReport(requirementName, requirementVersion string, artifactChangeset artifact.ArtifactChangeset, operation bpModel.Operation, ns *model.Namespace) error {
-	if !r.Auth.Authenticated() || operation == bpModel.OperationRemoved {
+func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChangeset, requirements ...*Requirement) error {
+	if r.shouldSkipCVEs(requirements...) {
+		logging.Debug("Skipping CVE reporting")
 		return nil
 	}
 
-	reqNameAndVersion := requirementName
-	if requirementVersion != "" {
-		reqNameAndVersion = fmt.Sprintf("%s@%s", requirementName, requirementVersion)
-	}
-	pg := output.StartSpinner(r.Output, locale.Tr("progress_cve_search", reqNameAndVersion), constants.TerminalAnimationInterval)
+	names := requirementNames(requirements...)
+	pg := output.StartSpinner(r.Output, locale.Tr("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
 
-	ingredients := []*request.Ingredient{}
-	for _, artifact := range artifactChangeset.Added {
-		ingredients = append(ingredients, &request.Ingredient{
-			Namespace: artifact.Namespace,
-			Name:      artifact.Name,
-			Version:   *artifact.Version,
-		})
-	}
-	for _, artifact := range artifactChangeset.Updated {
-		if !artifact.IngredientChange {
-			continue // For CVE reporting we only care about ingredient changes
+	var ingredients []*request.Ingredient
+	for _, requirement := range requirements {
+		if requirement.Operation == bpModel.OperationRemoved {
+			continue
 		}
-		ingredients = append(ingredients, &request.Ingredient{
-			Namespace: artifact.To.Namespace,
-			Name:      artifact.To.Name,
-			Version:   *artifact.To.Version,
-		})
+
+		for _, artifact := range artifactChangeset.Added {
+			ingredients = append(ingredients, &request.Ingredient{
+				Namespace: artifact.Namespace,
+				Name:      artifact.Name,
+				Version:   *artifact.Version,
+			})
+		}
+
+		for _, artifact := range artifactChangeset.Updated {
+			if !artifact.IngredientChange {
+				continue // For CVE reporting we only care about ingredient changes
+			}
+			ingredients = append(ingredients, &request.Ingredient{
+				Namespace: artifact.To.Namespace,
+				Name:      artifact.To.Name,
+				Version:   *artifact.To.Version,
+			})
+		}
 	}
 
 	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(r.Auth, ingredients)
@@ -484,16 +585,16 @@ func (r *RequirementOperation) cveReport(requirementName, requirementVersion str
 
 	// No vulnerabilities, nothing further to do here
 	if len(ingredientVulnerabilities) == 0 {
+		logging.Debug("No vulnerabilities found for ingredients")
 		pg.Stop(locale.T("progress_safe"))
 		pg = nil
 		return nil
 	}
 
-	vulnerabilities := model.CombineVulnerabilities(ingredientVulnerabilities, requirementName)
-
 	pg.Stop(locale.T("progress_unsafe"))
 	pg = nil
 
+	vulnerabilities := model.CombineVulnerabilities(ingredientVulnerabilities, names...)
 	r.summarizeCVEs(r.Output, vulnerabilities)
 
 	if r.shouldPromptForSecurity(vulnerabilities) {
@@ -514,6 +615,20 @@ func (r *RequirementOperation) cveReport(requirementName, requirementVersion str
 	}
 
 	return nil
+}
+
+func (r *RequirementOperation) shouldSkipCVEs(requirements ...*Requirement) bool {
+	if !r.Auth.Authenticated() {
+		return true
+	}
+
+	for _, req := range requirements {
+		if req.Operation != bpModel.OperationRemoved {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
@@ -609,6 +724,40 @@ func (r *RequirementOperation) promptForSecurity() (bool, error) {
 	return confirm, nil
 }
 
+func (r *RequirementOperation) outputResults(requirements ...*Requirement) {
+	for _, requirement := range requirements {
+		r.outputResult(requirement)
+	}
+}
+
+func (r *RequirementOperation) outputResult(requirement *Requirement) {
+	// Print the result
+	message := locale.Tr(fmt.Sprintf("%s_version_%s", requirement.Namespace.Type(), requirement.Operation), requirement.Name, requirement.Version)
+	if requirement.Version == "" {
+		message = locale.Tr(fmt.Sprintf("%s_%s", requirement.Namespace.Type(), requirement.Operation), requirement.Name)
+	}
+
+	r.Output.Print(output.Prepare(
+		message,
+		&struct {
+			Name      string `json:"name"`
+			Version   string `json:"version,omitempty"`
+			Type      string `json:"type"`
+			Operation string `json:"operation"`
+		}{
+			requirement.Name,
+			requirement.Version,
+			requirement.Namespace.Type().String(),
+			requirement.Operation.String(),
+		}))
+
+	if requirement.originalRequirementName != requirement.Name && requirement.Operation != bpModel.OperationRemoved {
+		r.Output.Notice(locale.Tl("package_version_differs",
+			"Note: the actual package name ({{.V0}}) is different from the requested package name ({{.V1}})",
+			requirement.Name, requirement.originalRequirementName))
+	}
+}
+
 func supportedLanguageByName(supported []medmodel.SupportedLanguage, langName string) medmodel.SupportedLanguage {
 	return funk.Find(supported, func(l medmodel.SupportedLanguage) bool { return l.Name == langName }).(medmodel.SupportedLanguage)
 }
@@ -684,16 +833,26 @@ func getSuggestions(ns model.Namespace, name string, auth *authentication.Auth) 
 	return suggestions, nil
 }
 
-func commitMessage(op bpModel.Operation, name, version string, namespace model.Namespace, word int) string {
-	switch namespace.Type() {
-	case model.NamespaceLanguage:
-		return languageCommitMessage(op, name, version)
-	case model.NamespacePlatform:
-		return platformCommitMessage(op, name, version, word)
-	case model.NamespacePackage, model.NamespaceBundle:
-		return packageCommitMessage(op, name, version)
+func commitMessage(requirements ...*Requirement) string {
+	switch len(requirements) {
+	case 0:
+		return ""
+	case 1:
+		return requirementCommitMessage(requirements[0])
+	default:
+		return commitMessageMultiple(requirements...)
 	}
+}
 
+func requirementCommitMessage(req *Requirement) string {
+	switch req.Namespace.Type() {
+	case model.NamespaceLanguage:
+		return languageCommitMessage(req.Operation, req.Name, req.Version)
+	case model.NamespacePlatform:
+		return platformCommitMessage(req.Operation, req.Name, req.Version, req.BitWidth)
+	case model.NamespacePackage, model.NamespaceBundle:
+		return packageCommitMessage(req.Operation, req.Name, req.Version)
+	}
 	return ""
 }
 
@@ -740,4 +899,21 @@ func packageCommitMessage(op bpModel.Operation, name, version string) string {
 		version = locale.Tl("package_version_auto", "auto")
 	}
 	return locale.Tr(msgL10nKey, name, version)
+}
+
+func commitMessageMultiple(requirements ...*Requirement) string {
+	var commitDetails []string
+	for _, req := range requirements {
+		commitDetails = append(commitDetails, requirementCommitMessage(req))
+	}
+
+	return locale.Tl("commit_message_multiple", "Committing changes to multiple requirements: {{.V0}}", strings.Join(commitDetails, ", "))
+}
+
+func requirementNames(requirements ...*Requirement) []string {
+	var names []string
+	for _, requirement := range requirements {
+		names = append(names, requirement.Name)
+	}
+	return names
 }

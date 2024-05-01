@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	buildscriptRunbits "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/commit"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
@@ -40,6 +41,12 @@ type Pull struct {
 	analytics analytics.Dispatcher
 	cfg       *config.Instance
 	svcModel  *model.SvcModel
+}
+
+type errNoCommonParent struct {
+	error
+	localCommitID  strfmt.UUID
+	remoteCommitID strfmt.UUID
 }
 
 type PullParams struct {
@@ -85,7 +92,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 	defer rationalizeError(&rerr)
 
 	if p.project == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 	p.out.Notice(locale.Tr("operating_message", p.project.NamespaceString(), p.project.Dir()))
 
@@ -116,6 +123,19 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 	resultingCommit := remoteCommit // resultingCommit is the commit we want to update the local project file with
 
 	if localCommit != nil {
+		commonParent, err := model.CommonParent(localCommit, remoteCommit, p.auth)
+		if err != nil {
+			return errs.Wrap(err, "Unable to determine common parent")
+		}
+
+		if commonParent == nil {
+			return &errNoCommonParent{
+				errs.New("no common parent"),
+				*localCommit,
+				*remoteCommit,
+			}
+		}
+
 		// Attempt to fast-forward merge. This will succeed if the commits are
 		// compatible, meaning that we can simply update the local commit ID to
 		// the remoteCommit ID. The commitID returned from MergeCommit with this
@@ -161,6 +181,13 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 			return errs.Wrap(err, "Unable to set local commit")
 		}
 
+		if p.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+			err := p.mergeBuildScript(*remoteCommit, *localCommit)
+			if err != nil {
+				return errs.Wrap(err, "Could not merge local build script with remote changes")
+			}
+		}
+
 		p.out.Print(&pullOutput{
 			locale.Tr("pull_updated", remoteProject.String(), resultingCommit.String()),
 			true,
@@ -204,11 +231,12 @@ func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *pr
 	if err != nil {
 		return "", locale.WrapError(err, "err_pull_getcommit", "Could not inspect resulting commit.")
 	}
-	changes, _ := commit.FormatChanges(cmit)
-	p.out.Notice(locale.Tl(
-		"pull_diverged_changes",
-		"The following changes will be merged:\n{{.V0}}\n", strings.Join(changes, "\n")),
-	)
+	if changes, _ := commit.FormatChanges(cmit); len(changes) > 0 {
+		p.out.Notice(locale.Tl(
+			"pull_diverged_changes",
+			"The following changes will be merged:\n{{.V0}}\n", strings.Join(changes, "\n")),
+		)
+	}
 
 	if p.cfg.GetBool(constants.OptinBuildscriptsConfig) {
 		resultCommit, err = p.mergeBuildScript(remoteCommit, localCommit)

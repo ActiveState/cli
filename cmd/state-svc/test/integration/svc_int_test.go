@@ -2,7 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -20,9 +19,9 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/shirou/gopsutil/v3/process"
-	"github.com/stretchr/testify/suite"
 )
 
 type SvcIntegrationTestSuite struct {
@@ -53,15 +52,15 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 	cp.Expect("Checking")
 
 	// Verify the server is running on its reported port.
-	cp.ExpectRe("Port:\\s+:\\d+\\s")
-	portRe := regexp.MustCompile("Port:\\s+:(\\d+)")
+	cp.ExpectRe(`Port:\s+:\d+\s`)
+	portRe := regexp.MustCompile(`Port:\s+:(\d+)`)
 	port := portRe.FindStringSubmatch(cp.Output())[1]
 	_, err := net.Listen("tcp", "localhost:"+port)
 	suite.Error(err)
 
 	// Verify it created and wrote to its reported log file.
-	cp.ExpectRe("Log:\\s+.+?\\.log")
-	logRe := regexp.MustCompile("Log:\\s+(.+?\\.log)")
+	cp.ExpectRe(`Log:\s+(.+?\.log)`)
+	logRe := regexp.MustCompile(`Log:\s+(.+?\.log)`)
 	logFile := logRe.FindStringSubmatch(cp.Output())[1]
 	suite.True(fileutils.FileExists(logFile), "log file '"+logFile+"' does not exist")
 	suite.True(len(fileutils.ReadFileUnsafe(logFile)) > 0, "log file is empty")
@@ -99,7 +98,8 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("foreground"))
 	cp.Expect("Starting")
 	time.Sleep(1 * time.Second) // wait for the service to start up
-	cp.Cmd().Process.Signal(syscall.SIGINT)
+	err := cp.Cmd().Process.Signal(syscall.SIGINT)
+	suite.NoError(err)
 	cp.Expect("caught a signal: interrupt")
 	cp.ExpectNotExitCode(0)
 
@@ -114,7 +114,8 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("foreground"))
 	cp.Expect("Starting")
 	time.Sleep(1 * time.Second) // wait for the service to start up
-	cp.Cmd().Process.Signal(syscall.SIGTERM)
+	err = cp.Cmd().Process.Signal(syscall.SIGTERM)
+	suite.NoError(err)
 	suite.NotContains(cp.Output(), "caught a signal")
 	cp.ExpectExitCode(0) // should exit gracefully
 
@@ -257,7 +258,7 @@ func (suite *SvcIntegrationTestSuite) TestLogRotation() {
 	time.Sleep(initialWait) // wait for state-svc to perform initial log rotation
 
 	// Verify the log rotation pruned the dummy log files.
-	files, err := ioutil.ReadDir(logDir)
+	files, err := os.ReadDir(logDir)
 	suite.Require().NoError(err)
 	remainingFooFiles := 0
 	for _, file := range files {
@@ -281,7 +282,7 @@ func (suite *SvcIntegrationTestSuite) TestLogRotation() {
 	time.Sleep(logRotateInterval - initialWait) // wait for another log rotation
 
 	// Verify that another log rotation pruned the dummy log files.
-	files, err = ioutil.ReadDir(logDir)
+	files, err = os.ReadDir(logDir)
 	suite.Require().NoError(err)
 	remainingFooFiles = 0
 	for _, file := range files {

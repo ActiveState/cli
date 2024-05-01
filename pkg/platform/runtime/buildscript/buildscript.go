@@ -8,6 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 
@@ -183,7 +186,7 @@ func transformRequirements(reqs *buildexpression.Var) *buildexpression.Var {
 //
 // into something like
 //
-//	Req(name = "<namespace>/<name>", version = <op>(value = "<version>"))
+//	Req(name = "<name>", namespace = "<namespace>", version = <op>(value = "<version>"))
 func transformRequirement(req *buildexpression.Value) *buildexpression.Value {
 	newReq := &buildexpression.Value{
 		Ap: &buildexpression.Ap{
@@ -192,35 +195,19 @@ func transformRequirement(req *buildexpression.Value) *buildexpression.Value {
 		},
 	}
 
-	// Extract namespace, name, and version from requirement object.
-	name := ""
-	var version *buildexpression.Ap
 	for _, arg := range *req.Object {
-		switch arg.Name {
-		case buildexpression.RequirementNameKey:
-			name += *arg.Value.Str
+		name := arg.Name
+		value := arg.Value
 
-		case buildexpression.RequirementNamespaceKey:
-			name = fmt.Sprintf("%s/%s", *arg.Value.Str, name)
-
-		case buildexpression.RequirementVersionRequirementsKey:
-			version = transformVersion(arg)
+		// Transform the version value from the requirement object.
+		if name == buildexpression.RequirementVersionRequirementsKey {
+			name = buildexpression.RequirementVersionKey
+			value = &buildexpression.Value{Ap: transformVersion(arg)}
 		}
-	}
 
-	// Add the arguments to the function transformation.
-	newReq.Ap.Arguments = append(newReq.Ap.Arguments, &buildexpression.Value{
-		Assignment: &buildexpression.Var{
-			Name:  buildexpression.RequirementNameKey,
-			Value: &buildexpression.Value{Str: ptr.To(name)},
-		},
-	})
-	if version != nil {
+		// Add the argument to the function transformation.
 		newReq.Ap.Arguments = append(newReq.Ap.Arguments, &buildexpression.Value{
-			Assignment: &buildexpression.Var{
-				Name:  buildexpression.RequirementVersionKey,
-				Value: &buildexpression.Value{Ap: version},
-			},
+			Assignment: &buildexpression.Var{Name: name, Value: value},
 		})
 	}
 
@@ -247,7 +234,7 @@ func transformVersion(requirements *buildexpression.Var) *buildexpression.Ap {
 					Assignment: &buildexpression.Var{Name: "value", Value: &buildexpression.Value{Str: o.Value.Str}},
 				}}
 			case buildexpression.RequirementComparatorKey:
-				ap.Name = strings.Title(*o.Value.Str)
+				ap.Name = cases.Title(language.English).String(*o.Value.Str)
 			}
 		}
 		aps = append(aps, ap)
@@ -333,7 +320,7 @@ func valueString(v *buildexpression.Value) string {
 		return *v.Ident
 	}
 
-	return fmt.Sprintf("[\n]") // participle does not create v.List if it's empty
+	return "[\n]" // participle does not create v.List if it's empty
 }
 
 // inlineFunctions contains buildscript function names whose arguments should all be written on a

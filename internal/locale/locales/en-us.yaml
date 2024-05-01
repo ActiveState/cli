@@ -656,6 +656,10 @@ bundle_added:
   other: "[SUCCESS]✔ {{.V0}} Bundle successfully installed![/RESET]"
 bundle_version_added:
   other: "[SUCCESS]✔ {{.V0}} Bundle @ version {{.V1}} successfully installed![/RESET]"
+language_updated:
+  other: "Language updated: [NOTICE]{{.V0}}[/RESET]"
+language_version_updated:
+  other: "Language updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
 err_package_updated:
   other: Failed to update package
 err_bundle_updated:
@@ -691,7 +695,7 @@ raw_version_updated:
 raw_updated:
   other: "Package updated: [NOTICE]{{.V0}}[/RESET]"
 raw_removed:
-  other: "Package removed: [NOTICE]{{.V0}}[/NOTICE]"
+  other: "Package removed: [NOTICE]{{.V0}}[/RESET]"
 notice_commit_build_script:
   other: |
     Your local build script has changes that should be committed. Please run '[ACTIONABLE]state commit[/RESET]' to do so.
@@ -864,10 +868,6 @@ arg_languages_install_description:
   other: The language to update in the form of <language>@<version>
 err_language_format:
   other: The language and version provided is not formatting correctly, must be in the form of <language>@<version>
-err_update_not_found:
-  other: "Could not find the requested language: [NOTICE]{{.V0}}[/RESET]. Please ensure the language name is correct and supported by the ActiveState platform"
-err_language_version_not_found:
-  other: The requested version [NOTICE]{{.V0}}[/RESET] for the language [NOTICE]{{.V1}}[/RESET] is not available
 err_language_mismatch:
   other: Cannot change languages, only changes to the current project's language is allowed
 err_no_recipes:
@@ -1134,8 +1134,13 @@ err_user_network_solution:
   other: |
     Please ensure your device has access to internet during installation. Make sure software like a VPN, Firewall or Anti-Virus are not blocking your connectivity.
     If your issue persists consider reporting it on our forums at {{.V0}}.
+err_user_network_timeout:
+  other: "Request failed due to timeout. {{.V0}}"
 err_user_libc_solution:
   other: If you specified a glibc version, please check it is configured → [ACTIONABLE]{{.V0}}[/RESET].
+warn_revert_head:
+  other: |
+    [NOTICE]DEPRECATION WARNING[/RESET]: 'state revert HEAD' has been deprecated in favor of '[ACTIONABLE]state revert REMOTE[/RESET]'. Please use '[ACTIONABLE]state revert REMOTE[/RESET]' instead.
 err_revert_get_commit:
   other: "Could not fetch commit details for commit with ID: {{.V0}}"
 err_revert_commit:
@@ -1258,7 +1263,7 @@ package_ingredient_alternatives_nolang:
 progress_search:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalog"
 progress_cve_search:
-  other: " • Searching for vulnerabilities (CVEs) on [ACTIONABLE]{{.V0}}[/RESET] and its dependencies"
+  other: " • Searching for new vulnerabilities (CVEs) on [ACTIONABLE]{{.V0}}[/RESET] and any dependencies"
 setup_runtime:
   other: "Setting Up Runtime"
 progress_solve:
@@ -1319,6 +1324,9 @@ secrets_unstable_warning:
     The secrets feature is currently unstable and not ready for production use. If you want to opt-in to unstable features, run the following command:
 
     [ACTIONABLE]state config set optin.unstable true[/RESET]
+installer_prompt_is_admin:
+  other: |
+    You are installing the State Tool as an administrator. The State Tool was designed to be installed without administrator privileges, and you may run into issues if you continue. Are you sure you want to do this?
 err_update_corrupt_install:
   other: |
     Unfortunately your current installation appears to have been corrupted. Please reinstall the State Tool by first
@@ -1493,7 +1501,7 @@ err_init_project_exists:
 err_country_blocked:
   other: This service is not available in your region.
 err_commit_id_invalid:
-  other: "Expected commit ID to be UUID formatted, but got: {{.V0}}"
+  other: "Your activestate.yaml contains an invalid commit ID: '{{.V0}}'. Please run '[ACTIONABLE]state reset[/RESET]' to fix it."
 err_shortcutdir_writable:
   other: Could not continue as we don't have permission to create [ACTIONABLE]{{.V0}}[/RESET].
 move_prompt:
@@ -1531,7 +1539,7 @@ uploadingredient_success:
     Revision: [ACTIONABLE]{{.V3}}[/RESET]
     Timestamp: [ACTIONABLE]{{.V4}}[/RESET]
 
-    You can install this package by running `[ACTIONABLE]state install {{.V1}}/{{.V0}} --ts now`[/RESET].
+    You can install this package by running `[ACTIONABLE]state install {{.V1}}:{{.V0}} --ts now`[/RESET].
 err_runtime_cache_invalid:
   other: Your runtime needs to be updated, please run '[ACTIONABLE]state refresh[/RESET]'.
 err_target_not_found:
@@ -1547,6 +1555,10 @@ builds_dl_downloading:
   other: Downloading {{.V0}}
 warn_has_failed_artifacts:
   other: "Warning: This project has failed builds, and some artifacts will be missing as a result.\n"
+artifact_status_building:
+  other: Building
+warn_build_not_complete:
+  other: "[WARNING]Some artifacts are still being built. Try running this command again in a few minutes.[/RESET]"
 err_build_artifacts_failed:
   other: |
     The following artifacts failed to build, please refer to their logs for more information:
@@ -1575,3 +1587,27 @@ err_headless:
   other: Cannot operate on a headless project. Please visit {{.V0}} to convert your project and try again.
 notice_needs_buildscript_reset:
   other: Your project is missing its buildscript file, please run '[ACTIONABLE]state reset LOCAL[/RESET]' to recreate it.
+
+svcctl_cannot_create_debug_info:
+  other: "Cannot create debug info: {{.V0}}"
+err_initial_no_requirement:
+  other: |
+    Could not find compatible requirement for initial commit. Please ensure that you are trying to install a valid package.
+    To check for available packages run '[ACTIONABLE]state search <package_name>[/RESET]'.
+manifest_deprecation_warning:
+  other: |
+    [WARNING]Warning:[/RESET] This command is deprecated, please use '[ACTIONABLE]state manfiest[/RESET]' instead.
+manifest_runtime_needs_update:
+  other: "[WARNING]WARNING:[/RESET] Your runtime is out of date, in order to ensure an accurate manifest please run [ACTIONABLE]state refresh[/RESET].\n"
+vulnerability_critical:
+  other: "[RED]{{.V0}} Critical[/RESET]"
+vulnerability_high:
+  other: "[ORANGE]{{.V0}} High[/RESET]"
+vulnerability_medium:
+  other: "[YELLOW]{{.V0}} Medium[/RESET]"
+vulnerability_low:
+  other: "[GREEN]{{.V0}} Low[/RESET]"
+err_pull_no_common_parent:
+  other: |
+    The local commit ID [NOTICE]{{.V0}}[/RESET] and latest remote commit ID [NOTICE]{{.V1}}[/RESET] have no common parent. 
+    To review your project history run '[ACTIONABLE]state history[/RESET]'.

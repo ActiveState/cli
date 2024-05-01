@@ -32,9 +32,10 @@ import (
 )
 
 type Params struct {
-	channel string
-	force   bool
-	version string
+	channel        string
+	force          bool
+	version        string
+	nonInteractive bool
 }
 
 func newParams() *Params {
@@ -146,6 +147,12 @@ func main() {
 				Description: "Force the installation, overwriting any version of the State Tool already installed",
 				Value:       &params.force,
 			},
+			{
+				Name:      "non-interactive",
+				Shorthand: "n",
+				Hidden:    true,
+				Value:     &params.nonInteractive,
+			},
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
@@ -209,6 +216,9 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	}
 	out.Print(locale.Tl("remote_install_status_done", "[SUCCESS]✔ Done[/RESET]"))
 
+	if params.nonInteractive {
+		args = append(args, "-n") // forward to installer
+	}
 	env := []string{
 		constants.InstallerNoSubshell + "=true",
 	}

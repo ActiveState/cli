@@ -31,10 +31,13 @@ func fakeContents(before, contents, after string) string {
 	return strings.Join(blocks, fileutils.LineEnd)
 }
 
-func fakeFileWithContents(before, contents, after string) string {
+func fakeFileWithContents(t *testing.T, before, contents, after string) string {
 	f := fileutils.TempFileUnsafe("", "")
 	defer f.Close()
-	f.WriteString(fakeContents(before, contents, after))
+	_, err := f.WriteString(fakeContents(before, contents, after))
+	if err != nil {
+		t.Fatal(err)
+	}
 	return f.Name()
 }
 
@@ -69,7 +72,7 @@ end`,
 			"Write RC to empty file",
 			args{
 				"fishrc_append.fish",
-				fakeFileWithContents("", "", ""),
+				fakeFileWithContents(t, "", "", ""),
 				map[string]string{
 					"PATH": "foo",
 				},
@@ -81,7 +84,7 @@ end`,
 			"Write RC update",
 			args{
 				"fishrc_append.fish",
-				fakeFileWithContents("before", "SOMETHING ELSE", "after"),
+				fakeFileWithContents(t, "before", "SOMETHING ELSE", "after"),
 				map[string]string{
 					"PATH": "foo",
 				},

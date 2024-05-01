@@ -2,15 +2,15 @@ package integration
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/stretchr/testify/suite"
 )
 
 type ImportIntegrationTestSuite struct {
@@ -37,7 +37,7 @@ func (suite *ImportIntegrationTestSuite) TestImport_detached() {
 	urllib3`
 	importPath := filepath.Join(ts.Dirs.Work, "requirements.txt")
 
-	err := ioutil.WriteFile(importPath, []byte(strings.TrimSpace(contents)), 0644)
+	err := os.WriteFile(importPath, []byte(strings.TrimSpace(contents)), 0644)
 	suite.Require().NoError(err)
 
 	cp = ts.Spawn("import", importPath)

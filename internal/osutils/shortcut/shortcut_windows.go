@@ -40,7 +40,7 @@ func New(dir, name, target string, args ...string) *Shortcut {
 
 func (s *Shortcut) Enable() error {
 	// ALWAYS errors with "Incorrect function", which can apparently be safely ignored..
-	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED|ole.COINIT_SPEED_OVER_MEMORY)
+	_ = ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED|ole.COINIT_SPEED_OVER_MEMORY)
 
 	oleShellObject, err := oleutil.CreateObject("WScript.Shell")
 	if err != nil {
@@ -66,9 +66,10 @@ func (s *Shortcut) Enable() error {
 	logging.Debug("Creating Shortcut: %s", filename)
 	cs, err := oleutil.CallMethod(wshell, "CreateShortcut", filename)
 	if err != nil {
+		logging.Debug("OLE Error details: %s", err.Error())
 		oleErr := &ole.OleError{}
 		if errors.As(err, &oleErr) {
-			logging.Debug("OLE Error details: %s\n%s\n%s\n%s\n%s", oleErr.Code(), oleErr.Description(), oleErr.Error(), oleErr.String(), oleErr.SubError())
+			logging.Debug("OLE Error details: \nCode:%d\nDescription:%s\nError:%s\nString:%s\nSuberror:%s", oleErr.Code(), oleErr.Description(), oleErr.Error(), oleErr.String(), oleErr.SubError().Error())
 			return errs.Wrap(err, "oleutil CreateShortcut returned error: %s", oleErr.String())
 		}
 		return errs.Wrap(err, "Could not call CreateShortcut on shell object")

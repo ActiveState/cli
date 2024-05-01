@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -51,14 +50,12 @@ const (
 
 var ErrorFileNotFound = errs.New("File could not be found")
 
-type includeFunc func(path string, contents []byte) (include bool)
-
 // ReplaceAll replaces all instances of search text with replacement text in a
 // file, which may be a binary file.
 func ReplaceAll(filename, find, replace string) error {
 	// Read the file's bytes and create find and replace byte arrays for search
 	// and replace.
-	fileBytes, err := ioutil.ReadFile(filename)
+	fileBytes, err := os.ReadFile(filename)
 	if err != nil {
 		return err
 	}
@@ -118,7 +115,7 @@ func replaceInFile(buf []byte, oldpath, newpath string) (bool, []byte, error) {
 			replaceBytes = paddedReplaceBytes
 		}
 	} else {
-		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s`, quoteEscapeFind))
+		replaceRegex = regexp.MustCompile(quoteEscapeFind)
 		// logging.Debug("Assuming file '%s' is a text file", filename)
 	}
 
@@ -174,7 +171,7 @@ func DirExists(path string) bool {
 // Sha256Hash will sha256 hash the given file
 func Sha256Hash(path string) (string, error) {
 	hasher := sha256.New()
-	b, err := ioutil.ReadFile(path)
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return "", errs.Wrap(err, fmt.Sprintf("Cannot read file: %s", path))
 	}
@@ -194,7 +191,7 @@ func HashDirectory(path string) (string, error) {
 			return nil
 		}
 
-		b, err := ioutil.ReadFile(path)
+		b, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}
@@ -282,9 +279,9 @@ func CopyAsset(assetName, dest string) error {
 		return errs.Wrap(err, "Asset %s failed", assetName)
 	}
 
-	err = ioutil.WriteFile(dest, asset, 0o644)
+	err = os.WriteFile(dest, asset, 0o644)
 	if err != nil {
-		return errs.Wrap(err, "ioutil.WriteFile %s failed", dest)
+		return errs.Wrap(err, "os.WriteFile %s failed", dest)
 	}
 
 	return nil
@@ -300,9 +297,9 @@ func CopyMultipleFiles(files map[string]string) error {
 	return nil
 }
 
-// ReadFileUnsafe is an unsafe version of ioutil.ReadFile, DO NOT USE THIS OUTSIDE OF TESTS
+// ReadFileUnsafe is an unsafe version of os.ReadFile, DO NOT USE THIS OUTSIDE OF TESTS
 func ReadFileUnsafe(src string) []byte {
-	b, err := ioutil.ReadFile(src)
+	b, err := os.ReadFile(src)
 	if err != nil {
 		panic(fmt.Sprintf("Cannot read file: %s, error: %s", src, err.Error()))
 	}
@@ -311,15 +308,15 @@ func ReadFileUnsafe(src string) []byte {
 
 // ReadFile reads the content of a file
 func ReadFile(filePath string) ([]byte, error) {
-	b, err := ioutil.ReadFile(filePath)
+	b, err := os.ReadFile(filePath)
 	if err != nil {
-		return nil, errs.Wrap(err, "ioutil.ReadFile %s failed", filePath)
+		return nil, errs.Wrap(err, "os.ReadFile %s failed", filePath)
 	}
 	return b, nil
 }
 
 // WriteFile writes data to a file, if it exists it is overwritten, if it doesn't exist it is created and data is written
-func WriteFile(filePath string, data []byte) error {
+func WriteFile(filePath string, data []byte) (rerr error) {
 	err := MkdirUnlessExists(filepath.Dir(filePath))
 	if err != nil {
 		return err
@@ -332,14 +329,19 @@ func WriteFile(filePath string, data []byte) error {
 		if err := os.Chmod(filePath, FileMode); err != nil {
 			return errs.Wrap(err, "os.Chmod %s failed", filePath)
 		}
-		defer os.Chmod(filePath, stat.Mode().Perm())
+		defer func() {
+			err = os.Chmod(filePath, stat.Mode().Perm())
+			if err != nil {
+				rerr = errs.Pack(rerr, errs.Wrap(err, "os.Chmod %s failed", filePath))
+			}
+		}()
 	}
 
 	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, FileMode)
 	if err != nil {
 		if !fileExists {
 			target := filepath.Dir(filePath)
-			err = fmt.Errorf("access to target %q is denied", target)
+			err = errs.Pack(err, fmt.Errorf("access to target %q is denied", target))
 		}
 		return errs.Wrap(err, "os.OpenFile %s failed", filePath)
 	}
@@ -685,9 +687,9 @@ func WriteTempFile(pattern string, data []byte) (string, error) {
 
 // WriteTempFileToDir writes data to a temp file in the given dir
 func WriteTempFileToDir(dir, pattern string, data []byte, perm os.FileMode) (string, error) {
-	f, err := ioutil.TempFile(dir, pattern)
+	f, err := os.CreateTemp(dir, pattern)
 	if err != nil {
-		return "", errs.Wrap(err, "ioutil.TempFile %s (%s) failed", dir, pattern)
+		return "", errs.Wrap(err, "os.CreateTemp %s (%s) failed", dir, pattern)
 	}
 
 	if _, err = f.Write(data); err != nil {
@@ -767,9 +769,9 @@ func copyFiles(src, dest string, remove bool) error {
 		return locale.NewError("err_os_not_a_directory", "", dest)
 	}
 
-	entries, err := ioutil.ReadDir(src)
+	entries, err := os.ReadDir(src)
 	if err != nil {
-		return errs.Wrap(err, "ioutil.ReadDir %s failed", src)
+		return errs.Wrap(err, "os.ReadDir %s failed", src)
 	}
 
 	for _, entry := range entries {
@@ -832,7 +834,7 @@ func CopySymlink(src, dest string) error {
 // TempFileUnsafe returns a tempfile handler or panics if it cannot be created
 // This is for use in tests, do not use it outside tests!
 func TempFileUnsafe(dir, pattern string) *os.File {
-	f, err := ioutil.TempFile(dir, pattern)
+	f, err := os.CreateTemp(dir, pattern)
 	if err != nil {
 		panic(fmt.Sprintf("Could not create tempFile: %v", err))
 	}
@@ -848,7 +850,7 @@ func TempFilePathUnsafe(dir, pattern string) string {
 // TempDirUnsafe returns a temp path or panics if it cannot be created
 // This is for use in tests, do not use it outside tests!
 func TempDirUnsafe() string {
-	f, err := ioutil.TempDir("", "")
+	f, err := os.MkdirTemp("", "")
 	if err != nil {
 		panic(fmt.Sprintf("Could not create tempDir: %v", err))
 	}
@@ -856,7 +858,7 @@ func TempDirUnsafe() string {
 }
 
 func TempDirFromBaseDirUnsafe(baseDir string) string {
-	f, err := ioutil.TempDir(baseDir, "")
+	f, err := os.MkdirTemp(baseDir, "")
 	if err != nil {
 		panic(fmt.Sprintf("Could not create tempDir: %v", err))
 	}
@@ -1032,25 +1034,28 @@ func SymlinkTarget(symlink string) (string, error) {
 
 // ListDirSimple recursively lists filepaths under the given sourcePath
 // This does not follow symlinks
-func ListDirSimple(sourcePath string, includeDirs bool) []string {
+func ListDirSimple(sourcePath string, includeDirs bool) ([]string, error) {
 	result := []string{}
-	filepath.WalkDir(sourcePath, func(path string, f fs.DirEntry, err error) error {
+	err := filepath.WalkDir(sourcePath, func(path string, f fs.DirEntry, err error) error {
 		if err != nil {
 			return errs.Wrap(err, "Could not walk path: %s", path)
 		}
-		if includeDirs == false && f.IsDir() {
+		if !includeDirs && f.IsDir() {
 			return nil
 		}
 		result = append(result, path)
 		return nil
 	})
-	return result
+	if err != nil {
+		return result, errs.Wrap(err, "Could not walk dir: %s", sourcePath)
+	}
+	return result, nil
 }
 
 // ListFilesUnsafe lists filepaths under the given sourcePath non-recursively
 func ListFilesUnsafe(sourcePath string) []string {
 	result := []string{}
-	files, err := ioutil.ReadDir(sourcePath)
+	files, err := os.ReadDir(sourcePath)
 	if err != nil {
 		panic(fmt.Sprintf("Could not read dir: %s, error: %s", sourcePath, errs.JoinMessage(err)))
 	}
@@ -1087,7 +1092,7 @@ func ListDir(sourcePath string, includeDirs bool) ([]DirEntry, error) {
 		if err != nil {
 			return errs.Wrap(err, "Could not walk path: %s", path)
 		}
-		if includeDirs == false && f.IsDir() {
+		if !includeDirs && f.IsDir() {
 			return nil
 		}
 		result = append(result, DirEntry{f, path, sourcePath + string(filepath.Separator)})

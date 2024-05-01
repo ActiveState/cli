@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
@@ -28,6 +29,7 @@ type DownloadParams struct {
 	OutputDir string
 	Namespace *project.Namespaced
 	CommitID  string
+	Target    string
 }
 
 type Download struct {
@@ -79,8 +81,13 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 		d.out.Notice(locale.Tr("operating_message", d.project.NamespaceString(), d.project.Dir()))
 	}
 
-	terminalArtfMap, _, err := getTerminalArtifactMap(
-		d.project, params.Namespace, params.CommitID, d.auth, d.analytics, d.svcModel, d.out, d.config)
+	target := request.TargetAll
+	if params.Target != "" {
+		target = params.Target
+	}
+
+	terminalArtfMap, _, _, err := getTerminalArtifactMap(
+		d.project, params.Namespace, params.CommitID, target, d.auth, d.out)
 	if err != nil {
 		return errs.Wrap(err, "Could not get build plan map")
 	}

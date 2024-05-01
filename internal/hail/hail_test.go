@@ -2,7 +2,7 @@ package hail
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"os"
 	"runtime"
 	"testing"
@@ -16,7 +16,7 @@ func TestSend(t *testing.T) {
 	err := Send("/", []byte{})
 	assert.Error(t, err)
 
-	tempFile, err := ioutil.TempFile("", t.Name())
+	tempFile, err := os.CreateTemp("", t.Name())
 	require.NoError(t, err)
 
 	file := tempFile.Name()
@@ -29,7 +29,7 @@ func TestSend(t *testing.T) {
 	err = Send(file, want)
 	require.NoError(t, err)
 
-	got, err := ioutil.ReadAll(tempFile)
+	got, err := io.ReadAll(tempFile)
 	require.NoError(t, err)
 	assert.Equal(t, got, want)
 }
@@ -47,7 +47,7 @@ func TestOpen(t *testing.T) {
 	_, err := Open(ctx, file)
 	assert.Error(t, err)
 
-	tempFile, err := ioutil.TempFile("", t.Name())
+	tempFile, err := os.CreateTemp("", t.Name())
 	require.NoError(t, err)
 
 	file = tempFile.Name()
@@ -92,7 +92,7 @@ func TestOpen_ReceivesClosed(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	tempFile, err := ioutil.TempFile("", t.Name())
+	tempFile, err := os.CreateTemp("", t.Name())
 	require.NoError(t, err)
 
 	file := tempFile.Name()

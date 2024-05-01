@@ -6,8 +6,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/stretchr/testify/suite"
 )
 
 type InstallIntegrationTestSuite struct {
@@ -32,7 +32,7 @@ func (suite *InstallIntegrationTestSuite) TestInstall_InvalidCommit() {
 
 	ts.PrepareProject("ActiveState-CLI/small-python", "malformed-commit-id")
 	cp := ts.SpawnWithOpts(e2e.OptArgs("install", "trender"))
-	cp.Expect("Invalid commit ID")
+	cp.Expect("invalid commit ID")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 }

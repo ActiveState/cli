@@ -7,6 +7,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
@@ -104,12 +105,14 @@ func marshalReq(args []*Value) ([]byte, error) {
 		}
 
 		switch {
-		// Marshal the name argument (e.g. name = "<namespace>/<name>") into
-		// {"name": "<name>", "namespace": "<namespace>"}
+		// Marshal the name argument (e.g. name = "<name>") into {"name": "<name>"}
 		case assignment.Key == buildexpression.RequirementNameKey && assignment.Value.Str != nil:
-			name, namespace := separateNamespace(*assignment.Value.Str)
-			requirement[buildexpression.RequirementNameKey] = name
-			requirement[buildexpression.RequirementNamespaceKey] = namespace
+			requirement[buildexpression.RequirementNameKey] = strings.Trim(*assignment.Value.Str, `"`)
+
+		// Marshal the namespace argument (e.g. namespace = "<namespace>") into
+		// {"namespace": "<namespace>"}
+		case assignment.Key == buildexpression.RequirementNamespaceKey && assignment.Value.Str != nil:
+			requirement[buildexpression.RequirementNamespaceKey] = strings.Trim(*assignment.Value.Str, `"`)
 
 		// Marshal the version argument (e.g. version = <op>(value = "<version>")) into
 		// {"version_requirements": [{"comparator": "<op>", "version": "<version>"}]}
@@ -152,21 +155,10 @@ func marshalReq(args []*Value) ([]byte, error) {
 			requirement[buildexpression.RequirementVersionRequirementsKey] = &Value{List: &requirements}
 
 		default:
-			return nil, errs.New("Invalid or unknown argument: %v", assignment)
+			logging.Debug("Adding unknown argument: %v", assignment)
+			requirement[assignment.Key] = assignment.Value
 		}
 	}
 
 	return json.Marshal(requirement)
-}
-
-func separateNamespace(combined string) (string, string) {
-	var name, namespace string
-	s := strings.Trim(combined, `"`)
-	lastSlashIndex := strings.LastIndex(s, "/")
-	if lastSlashIndex != -1 {
-		namespace = s[:lastSlashIndex]
-		name = s[lastSlashIndex+1:]
-	}
-
-	return name, namespace
 }

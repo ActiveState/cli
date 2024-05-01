@@ -27,7 +27,6 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/sysinfo"
-	ga "github.com/ActiveState/go-ogle-analytics"
 )
 
 type Reporter interface {
@@ -37,7 +36,6 @@ type Reporter interface {
 
 // Client instances send analytics events to GA and S3 endpoints without delay. It is only supposed to be used inside the `state-svc`.  All other processes should use the DefaultClient.
 type Client struct {
-	gaClient         *ga.Client
 	customDimensions *dimensions.Values
 	cfg              *config.Instance
 	eventWaitGroup   *sync.WaitGroup

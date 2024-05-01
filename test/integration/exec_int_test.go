@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -120,7 +120,7 @@ echo "Number of arguments: $#"
 	}
 
 	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("exec", "--", fmt.Sprintf("%s", testScript), args[0], args[1], args[2]),
+		e2e.OptArgs("exec", "--", testScript, args[0], args[1], args[2]),
 	)
 	cp.Expect(args[0])
 	cp.Expect(args[1])
@@ -157,7 +157,7 @@ echo "Hello $name!"
 	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("exec", "--", fmt.Sprintf("%s", testScript)),
+		e2e.OptArgs("exec", "--", testScript),
 	)
 	cp.SendLine("ActiveState")
 	cp.Expect("Hello ActiveState!")
@@ -195,6 +195,28 @@ func (suite *ExecIntegrationTestSuite) TestExecWithPath() {
 	cp.Expect("python3 --path doesNotExist -- extra")
 	cp.ExpectExitCode(0)
 
+}
+
+func (suite *ExecIntegrationTestSuite) TestExecPerlArgs() {
+	suite.OnlyRunForTags(tagsuite.Exec)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl-5.32", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	suite.NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "testargs.pl"), []byte(`
+printf "Argument: '%s'.\n", $ARGV[0];
+`)))
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("exec", "perl", "testargs.pl", "<3"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Argument: '<3'", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0)
 }
 
 func TestExecIntegrationTestSuite(t *testing.T) {

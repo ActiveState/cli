@@ -2,7 +2,7 @@ package integration
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -13,9 +13,9 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/stretchr/testify/suite"
 )
 
 type InitIntegrationTestSuite struct {
@@ -89,8 +89,9 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, lang string, ex
 			"Language": expectedConfigLanguage,
 			"LangExe":  language.MakeByName(expectedConfigLanguage).Executable().Filename(),
 		}, nil)
+	suite.Require().NoError(err)
 
-	content, err := ioutil.ReadFile(configFilepath)
+	content, err := os.ReadFile(configFilepath)
 	suite.Require().NoError(err)
 	suite.Contains(string(content), yaml)
 }
@@ -155,11 +156,7 @@ func (suite *InitIntegrationTestSuite) TestInit_AlreadyExists() {
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_Resolved() {
-	suite.OnlyRunForTags(tagsuite.Init)
-	if runtime.GOOS == "darwin" {
-		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
-		return
-	}
+	suite.OnlyRunForTags(tagsuite.Init, tagsuite.Languages)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
@@ -180,7 +177,7 @@ func (suite *InitIntegrationTestSuite) TestInit_Resolved() {
 	// Run `state languages` to verify a full language version was resolved.
 	cp = ts.Spawn("languages")
 	cp.Expect("python")
-	cp.Expect("Auto → 3.10.") // note: the patch version is variable, so just expect that it exists
+	cp.Expect(">=3.10,<3.11 → 3.10.") // note: the patch version is variable, so just expect that it exists
 	cp.ExpectExitCode(0)
 }
 

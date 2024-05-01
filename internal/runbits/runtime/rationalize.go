@@ -91,10 +91,15 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 	// this may be a private project.
 	// Note since we cannot assert the actual error type we do not wrap this as user-facing, as we do not know what we're
 	// dealing with so the localized underlying errors are more appropriate.
-	case !auth.Authenticated(): // MUST BE LAST
-		*rerr = errs.AddTips(*rerr,
-			locale.T("tip_private_project_auth"),
-		)
+	default:
+		// Add authentication tip if we could not assert the error type
+		// This must only happen after all error assertions have failed, because if we can assert the error we can give
+		// an appropriate message, rather than a vague tip that suggests MAYBE this is a private project.
+		if !auth.Authenticated() {
+			*rerr = errs.AddTips(*rerr,
+				locale.T("tip_private_project_auth"),
+			)
+		}
 
 	}
 }

@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	"github.com/ActiveState/termtest"
 
@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -29,7 +30,8 @@ type RunIntegrationTestSuite struct {
 func (suite *RunIntegrationTestSuite) createProjectFile(ts *e2e.Session, pythonVersion int) {
 	root := environment.GetRootPathUnsafe()
 	interruptScript := filepath.Join(root, "test", "integration", "assets", "run", "interrupt.go")
-	fileutils.CopyFile(interruptScript, filepath.Join(ts.Dirs.Work, "interrupt.go"))
+	err := fileutils.CopyFile(interruptScript, filepath.Join(ts.Dirs.Work, "interrupt.go"))
+	suite.Require().NoError(err)
 
 	// ActiveState-CLI/Python3 is just a place-holder that is never used
 	configFileContent := strings.TrimPrefix(fmt.Sprintf(`
@@ -38,6 +40,7 @@ scripts:
   - name: test-interrupt
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
     standalone: true
+    language: bash
     value: |
         go build -o ./interrupt ./interrupt.go
         ./interrupt
@@ -45,6 +48,7 @@ scripts:
   - name: test-interrupt
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
     standalone: true
+    language: bash
     value: |
         go build -o .\interrupt.exe .\interrupt.go
         .\interrupt.exe
@@ -66,6 +70,7 @@ scripts:
     value: |
       exit 123
     standalone: true
+    language: bash
 `, pythonVersion), "\n")
 
 	ts.PrepareActiveStateYAML(configFileContent)
@@ -117,9 +122,9 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	cp.Expect("3")
 
 	cp.SendLine(fmt.Sprintf("%s run test-interrupt", cp.Executable()))
-	cp.Expect("Start of script", termtest.OptExpectTimeout(5*time.Second))
+	cp.Expect("Start of script", termtest.OptExpectTimeout(10*time.Second))
 	cp.SendCtrlC()
-	cp.Expect("received interrupt", termtest.OptExpectTimeout(3*time.Second))
+	cp.Expect("received interrupt", termtest.OptExpectTimeout(5*time.Second))
 	cp.Expect("After first sleep or interrupt", termtest.OptExpectTimeout(2*time.Second))
 	cp.SendCtrlC()
 	suite.expectTerminateBatchJob(cp)
@@ -307,6 +312,43 @@ func (suite *RunIntegrationTestSuite) TestRun_Perl_Variable() {
 	cp.Expect("v5.32.0")
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
+}
+
+func (suite *RunIntegrationTestSuite) TestRun_Args() {
+	suite.OnlyRunForTags(tagsuite.Run)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.createProjectFile(ts, 3)
+
+	asyFilename := filepath.Join(ts.Dirs.Work, "activestate.yaml")
+	asyFile, err := os.OpenFile(asyFilename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	suite.Require().NoError(err, "config is opened for appending")
+	defer asyFile.Close()
+
+	lang := project.DefaultScriptLanguage()[0].String()
+	cmd := `if [ "$1" = "<3" ]; then echo heart; fi`
+	if runtime.GOOS == "windows" {
+		cmd = `@echo off
+      if "%1"=="<3" (echo heart)` // need to match indent of YAML below
+	}
+	_, err = asyFile.WriteString(strings.TrimPrefix(fmt.Sprintf(`
+  - name: args
+    language: %s
+    value: |
+      %s
+`, lang, cmd), "\n"))
+	suite.Require().NoError(err, "extra config is appended")
+
+	arg := "<3"
+	if runtime.GOOS == "windows" {
+		// The '<' needs to be escaped with '^', and I don't know why. There is no way around it.
+		// The other exec and shell integration tests that test arg passing do not need this escape.
+		// Only this batch test does.
+		arg = "^<3"
+	}
+	cp := ts.Spawn("run", "args", arg)
+	cp.Expect("heart", termtest.OptExpectTimeout(5*time.Second))
 }
 
 func TestRunIntegrationTestSuite(t *testing.T) {

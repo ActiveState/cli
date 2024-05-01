@@ -53,7 +53,8 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 
 	params := packages.InstallRunParams{}
 
-	return captain.NewCommand(
+	var packagesRaw string
+	cmd := captain.NewCommand(
 		"install",
 		locale.Tl("package_install_title", "Installing Package"),
 		locale.T("package_install_cmd_description"),
@@ -75,14 +76,25 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        locale.T("package_arg_nameversion"),
 				Description: locale.T("package_arg_nameversion_wildcard_description"),
-				Value:       &params.Package,
+				Value:       &packagesRaw,
 				Required:    true,
 			},
 		},
-		func(_ *captain.Command, _ []string) error {
+		func(_ *captain.Command, args []string) error {
+			for _, p := range args {
+				if err := params.Packages.Set(p); err != nil {
+					return locale.WrapInputError(err, "err_install_packages_args", "Invalid package install arguments")
+				}
+			}
 			return runner.Run(params, model.NamespacePackage)
 		},
-	).SetGroup(PackagesGroup).SetSupportsStructuredOutput()
+	)
+
+	cmd.SetGroup(PackagesGroup)
+	cmd.SetSupportsStructuredOutput()
+	cmd.SetHasVariableArguments()
+
+	return cmd
 }
 
 func newUninstallCommand(prime *primer.Values) *captain.Command {
@@ -90,7 +102,8 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 
 	params := packages.UninstallRunParams{}
 
-	return captain.NewCommand(
+	var packagesRaw string
+	cmd := captain.NewCommand(
 		"uninstall",
 		locale.Tl("package_uninstall_title", "Uninstalling Package"),
 		locale.T("package_uninstall_cmd_description"),
@@ -100,14 +113,25 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        locale.T("package_arg_name"),
 				Description: locale.T("package_arg_name_description"),
-				Value:       &params.Package,
+				Value:       &packagesRaw,
 				Required:    true,
 			},
 		},
-		func(_ *captain.Command, _ []string) error {
+		func(_ *captain.Command, args []string) error {
+			for _, p := range args {
+				if err := params.Packages.Set(p); err != nil {
+					return locale.WrapInputError(err, "err_uninstall_packages_args", "Invalid package uninstall arguments")
+				}
+			}
 			return runner.Run(params, model.NamespacePackage)
 		},
-	).SetGroup(PackagesGroup).SetSupportsStructuredOutput()
+	)
+
+	cmd.SetGroup(PackagesGroup)
+	cmd.SetSupportsStructuredOutput()
+	cmd.SetHasVariableArguments()
+
+	return cmd
 }
 
 func newImportCommand(prime *primer.Values, globals *globalOptions) *captain.Command {

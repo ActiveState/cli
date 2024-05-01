@@ -1,3 +1,4 @@
+//go:build !windows && !plan9 && !solaris && !appengine && !wasm
 // +build !windows,!plan9,!solaris,!appengine,!wasm
 
 package termsize
@@ -5,6 +6,12 @@ package termsize
 import (
 	"syscall"
 	"unsafe"
+
+	"github.com/ActiveState/cli/internal/logging"
+)
+
+const (
+	termSizeFallback = 80
 )
 
 type winsize struct {
@@ -16,14 +23,18 @@ type winsize struct {
 func GetTerminalColumns() int {
 	ws := winsize{}
 
-	syscall.Syscall(syscall.SYS_IOCTL,
+	_, _, err := syscall.Syscall(syscall.SYS_IOCTL,
 		uintptr(0),
 		uintptr(syscall.TIOCGWINSZ),
 		uintptr(unsafe.Pointer(&ws)))
+	if err != 0 {
+		logging.Error("Error getting terminal size: %v", err)
+		return termSizeFallback
+	}
 
 	result := int(ws.col)
 	if result == 0 {
-		result = 80
+		result = termSizeFallback
 	}
 	return result
 }
