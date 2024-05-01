@@ -27,7 +27,6 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -43,16 +42,15 @@ type Configurable interface {
 }
 
 type Runtime struct {
-	disabled          bool
-	target            setup.Targeter
-	store             *store.Store
-	analytics         analytics.Dispatcher
-	svcm              *model.SvcModel
-	auth              *authentication.Auth
-	completed         bool
-	cfg               Configurable
-	out               output.Outputer
-	resolvedArtifacts []*artifact.Artifact
+	disabled  bool
+	target    setup.Targeter
+	store     *store.Store
+	analytics analytics.Dispatcher
+	svcm      *model.SvcModel
+	auth      *authentication.Auth
+	completed bool
+	cfg       Configurable
+	out       output.Outputer
 }
 
 // NeedsCommitError is an error returned when the local runtime's build script has changes that need

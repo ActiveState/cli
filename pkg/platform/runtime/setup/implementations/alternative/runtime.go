@@ -10,8 +10,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
+	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 )
 
@@ -28,7 +28,7 @@ func (s *Setup) DeleteOutdatedArtifacts(changeset *buildplan.ArtifactChangeset, 
 		return nil
 	}
 
-	del := map[artifact.ArtifactID]struct{}{}
+	del := map[strfmt.UUID]struct{}{}
 	for _, upd := range changeset.Updated {
 		del[upd.From.ArtifactID] = struct{}{}
 	}
@@ -94,7 +94,7 @@ func (s *Setup) DeleteOutdatedArtifacts(changeset *buildplan.ArtifactChangeset, 
 
 // dirCanBeDeleted checks if the given directory is empty - ignoring files and sub-directories that
 // are not in the cache.
-func dirCanBeDeleted(dir string, cache map[artifact.ArtifactID]store.StoredArtifact) (bool, error) {
+func dirCanBeDeleted(dir string, cache map[strfmt.UUID]store.StoredArtifact) (bool, error) {
 	if artifactsContainDir(dir, cache) {
 		return false, nil
 	}
@@ -122,7 +122,7 @@ func sortedStringSliceContains(slice []string, x string) bool {
 	return i != len(slice) && slice[i] == x
 }
 
-func artifactsContainDir(dir string, artifactCache map[artifact.ArtifactID]store.StoredArtifact) bool {
+func artifactsContainDir(dir string, artifactCache map[strfmt.UUID]store.StoredArtifact) bool {
 	for _, v := range artifactCache {
 		if funk.Contains(v.Dirs, dir) {
 			return true
@@ -131,7 +131,7 @@ func artifactsContainDir(dir string, artifactCache map[artifact.ArtifactID]store
 	return false
 }
 
-func artifactsContainFile(file string, artifactCache map[artifact.ArtifactID]store.StoredArtifact) bool {
+func artifactsContainFile(file string, artifactCache map[strfmt.UUID]store.StoredArtifact) bool {
 	for _, v := range artifactCache {
 		if sortedStringSliceContains(v.Files, file) {
 			return true
@@ -140,6 +140,6 @@ func artifactsContainFile(file string, artifactCache map[artifact.ArtifactID]sto
 	return false
 }
 
-func (s *Setup) ResolveArtifactName(a artifact.ArtifactID) string {
+func (s *Setup) ResolveArtifactName(a strfmt.UUID) string {
 	return locale.T("alternative_unknown_pkg_name")
 }

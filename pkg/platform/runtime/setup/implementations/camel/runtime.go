@@ -8,8 +8,8 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
+	"github.com/go-openapi/strfmt"
 )
 
 type Setup struct {
@@ -41,6 +41,6 @@ func (s *Setup) DeleteOutdatedArtifacts(_ *buildplan.ArtifactChangeset, _, alrea
 	return nil
 }
 
-func (s *Setup) ResolveArtifactName(_ artifact.ArtifactID) string {
+func (s *Setup) ResolveArtifactName(_ strfmt.UUID) string {
 	return locale.Tl("camel_bundle_name", "bundle")
 }

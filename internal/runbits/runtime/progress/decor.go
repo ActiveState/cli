@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/termutils"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/go-openapi/strfmt"
 	"github.com/vbauerster/mpb/v7"
 	"github.com/vbauerster/mpb/v7/decor"
@@ -67,7 +66,7 @@ func (p *ProgressDigester) addArtifactBar(id strfmt.UUID, step step, total int64
 }
 
 // updateArtifactBar sets the current progress of an artifact bar
-func (p *ProgressDigester) updateArtifactBar(id artifact.ArtifactID, step step, inc int) error {
+func (p *ProgressDigester) updateArtifactBar(id strfmt.UUID, step step, inc int) error {
 	aStep := artifactStep{id, step}
 	if _, ok := p.artifactBars[aStep.ID()]; !ok {
 		return errs.New("%s Artifact bar doesn't exists", step.verb)
@@ -86,7 +85,7 @@ func (p *ProgressDigester) updateArtifactBar(id artifact.ArtifactID, step step, 
 }
 
 // dropArtifactBar removes an artifact bar from the progress display
-func (p *ProgressDigester) dropArtifactBar(id artifact.ArtifactID, step step) error {
+func (p *ProgressDigester) dropArtifactBar(id strfmt.UUID, step step) error {
 	name := locale.Tl("artifact_unknown_name", "Unnamed Artifact")
 	if aname, ok := p.artifacts[id]; ok {
 		name = aname

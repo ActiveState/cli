@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
 // verboseLogging is true if the user provided an environment variable for it
@@ -41,11 +40,11 @@ type BuildLogConnector interface {
 type Events interface {
 	BuildStarting(total int)
 	BuildFinished()
-	ArtifactBuildStarting(artifactID artifact.ArtifactID)
-	ArtifactBuildCached(artifactID artifact.ArtifactID, logURI string)
-	ArtifactBuildCompleted(artifactID artifact.ArtifactID, logURI string)
-	ArtifactBuildFailed(artifactID artifact.ArtifactID, logURI string, errorMessage string)
-	ArtifactBuildProgress(artifact artifact.ArtifactID, timestamp string, message string, facility, pipeName, source string)
+	ArtifactBuildStarting(artifactID strfmt.UUID)
+	ArtifactBuildCached(artifactID strfmt.UUID, logURI string)
+	ArtifactBuildCompleted(artifactID strfmt.UUID, logURI string)
+	ArtifactBuildFailed(artifactID strfmt.UUID, logURI string, errorMessage string)
+	ArtifactBuildProgress(artifact strfmt.UUID, timestamp string, message string, facility, pipeName, source string)
 	Heartbeat(time.Time)
 }
 
@@ -118,7 +117,7 @@ func NewWithCustomConnections(artifactMap buildplan.ArtifactIDMap,
 			return ok
 		}
 
-		artifactsDone := make(map[artifact.ArtifactID]struct{})
+		artifactsDone := make(map[strfmt.UUID]struct{})
 
 		// Set up log file
 		logMutex := &sync.Mutex{}
@@ -128,7 +127,7 @@ func NewWithCustomConnections(artifactMap buildplan.ArtifactIDMap,
 			return
 		}
 		defer logfile.Close()
-		writeLogFile := func(artifactID artifact.ArtifactID, msg string) error {
+		writeLogFile := func(artifactID strfmt.UUID, msg string) error {
 			logMutex.Lock()
 			defer logMutex.Unlock()
 			name := artifactID.String()

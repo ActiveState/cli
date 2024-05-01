@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/go-openapi/strfmt"
 )
 
 // MessageEnum enumerates the build events that can be expected on the buildlog websocket connection
@@ -78,9 +78,9 @@ type BuildFailedMessage struct {
 // ArtifactMessage holds status information for an individual artifact
 type ArtifactMessage struct {
 	BaseMessage
-	RecipeID   string              `json:"recipe_id"`
-	ArtifactID artifact.ArtifactID `json:"artifact_id"`
-	Timestamp  time.Time           `json:"timestamp"`
+	RecipeID   string      `json:"recipe_id"`
+	ArtifactID strfmt.UUID `json:"artifact_id"`
+	Timestamp  time.Time   `json:"timestamp"`
 	// CacheHit indicates if an artifact has been originally built for a different recipe
 	CacheHit bool `json:"cache_hit"`
 }
@@ -104,7 +104,7 @@ type ArtifactFailedMessage struct {
 // ArtifactProgressMessage forwards detailed logging information send for an artifact
 type ArtifactProgressMessage struct {
 	BaseMessage
-	ArtifactID artifact.ArtifactID  `json:"artifact_id"`
+	ArtifactID strfmt.UUID          `json:"artifact_id"`
 	Timestamp  string               `json:"timestamp"`
 	Source     string               `json:"source"`
 	PipeName   string               `json:"pipe_name"`
