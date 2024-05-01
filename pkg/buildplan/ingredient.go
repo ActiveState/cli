@@ -7,10 +7,12 @@ import (
 
 type Ingredient struct {
 	*raw.IngredientSource
+	
 	IsBuildtimeDependency bool
 	IsRuntimeDependency   bool
-	Platforms             []strfmt.UUID
 	Artifacts             []*Artifact
+
+	platforms []strfmt.UUID
 }
 
 type Ingredients []*Ingredient

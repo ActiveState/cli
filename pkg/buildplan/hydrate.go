@@ -1,7 +1,6 @@
 package buildplan
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/condition"
@@ -13,10 +12,10 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// Hydrate will add additional information to the unmarshalled structures, based on the raw data that was unmarshalled.
+// hydrate will add additional information to the unmarshalled structures, based on the raw data that was unmarshalled.
 // For example, rather than having to walk the buildplan to find associations between artifacts and ingredients, this
 // will add this context straight on the relevant artifacts.
-func (b *BuildPlan) Hydrate() error {
+func (b *BuildPlan) hydrate() error {
 	logging.Debug("Hydrating build plan")
 
 	// Build map of requirement IDs so we can quickly look up the associated ingredient
@@ -55,15 +54,9 @@ func (b *BuildPlan) Hydrate() error {
 		}
 	}
 
-	// Ensure all artifacts have an associated ingredient
-	// If this fails either the API is bugged or the hydrate logic is bugged
-	for _, a := range b.Artifacts() {
-		if len(a.Ingredients) == 0 {
-			return errs.New("artifact '%s (%s)' does not have an ingredient", a.ArtifactID, a.DisplayName)
-		}
+	if err := b.sanityCheck(); err != nil {
+		return errs.Wrap(err, "sanity check failed")
 	}
-
-	b.sanityCheck()
 
 	return nil
 }
@@ -80,8 +73,8 @@ func (b *BuildPlan) hydrateWithBuildClosure(nodeIDs []strfmt.UUID, platformID *s
 				artifactLookup[v.NodeID] = artifact
 			}
 
-			artifact.Platforms = sliceutils.Unique(append(artifact.Platforms, *platformID))
-			artifact.IsBuildtimeDependency = true
+			artifact.platforms = sliceutils.Unique(append(artifact.platforms, *platformID))
+			artifact.isBuildtimeDependency = true
 
 			if parent != nil {
 				parentArtifact, ok := artifactLookup[parent.NodeID]
@@ -126,8 +119,8 @@ func (b *BuildPlan) hydrateWithRuntimeClosure(nodeIDs []strfmt.UUID, platformID 
 				}
 			}
 
-			artifact.Platforms = sliceutils.Unique(append(artifact.Platforms, *platformID))
-			artifact.IsRuntimeDependency = true
+			artifact.platforms = sliceutils.Unique(append(artifact.platforms, *platformID))
+			artifact.isRuntimeDependency = true
 
 			return nil
 		default:
@@ -158,12 +151,11 @@ func (b *BuildPlan) hydrateWithIngredients(artifact *Artifact, platformID *strfm
 				if !ok {
 					ingredient = &Ingredient{
 						IngredientSource: &v.IngredientSource,
-						Platforms:        []strfmt.UUID{},
+						platforms:        []strfmt.UUID{},
 						Artifacts:        []*Artifact{},
 					}
 					b.ingredients = append(b.ingredients, ingredient)
 					ingredientLookup[v.IngredientID] = ingredient
-
 				}
 
 				// Detect direct requirements
@@ -178,13 +170,13 @@ func (b *BuildPlan) hydrateWithIngredients(artifact *Artifact, platformID *strfm
 					ingredient.Artifacts = append(ingredient.Artifacts, artifact)
 				}
 				if platformID != nil {
-					ingredient.Platforms = append(ingredient.Platforms, *platformID)
+					ingredient.platforms = append(ingredient.platforms, *platformID)
 				}
 
-				if artifact.IsBuildtimeDependency {
+				if artifact.isBuildtimeDependency {
 					ingredient.IsBuildtimeDependency = true
 				}
-				if artifact.IsRuntimeDependency {
+				if artifact.isRuntimeDependency {
 					ingredient.IsRuntimeDependency = true
 				}
 
@@ -205,27 +197,40 @@ func (b *BuildPlan) hydrateWithIngredients(artifact *Artifact, platformID *strfm
 // sanityCheck will for convenience sake validate that we have no duplicates here while on a dev machine.
 // If there are duplicates we're likely to see failures down the chain if live, though that's by no means guaranteed.
 // Surfacing it here will make it easier to reason about the failure.
-func (b *BuildPlan) sanityCheck() {
-	if !condition.BuiltOnDevMachine() && !condition.InActiveStateCI() {
-		return
+func (b *BuildPlan) sanityCheck() error {
+	// Should move this into sanityCheck
+	// Ensure all artifacts have an associated ingredient
+	// If this fails either the API is bugged or the hydrate logic is bugged
+	for _, a := range b.Artifacts() {
+		if len(a.Ingredients) == 0 {
+			return errs.New("artifact '%s (%s)' does not have an ingredient", a.ArtifactID, a.DisplayName)
+		}
 	}
+
+	// The remainder of sanity checks aren't checking for error conditions so much as they are checking for smoking guns
+	// If these fail then it's likely the API has changed in a backward incompatible way, or we broke something.
+	// In any case it does not necessarily mean runtime sourcing is broken.
+	if !condition.BuiltOnDevMachine() && !condition.InActiveStateCI() {
+		return nil
+	}
+
 	seen := make(map[strfmt.UUID]struct{})
 	for _, a := range b.artifacts {
 		if _, ok := seen[a.ArtifactID]; ok {
-			panic(fmt.Sprintf("Artifact %s (%s) occurs multiple times", a.DisplayName, a.ArtifactID))
+			return errs.New("Artifact %s (%s) occurs multiple times", a.DisplayName, a.ArtifactID)
 		}
 		seen[a.ArtifactID] = struct{}{}
 	}
 	for _, i := range b.ingredients {
 		if _, ok := seen[i.IngredientID]; ok {
-			panic(fmt.Sprintf("Ingredient %s (%s) occurs multiple times", i.Name, i.IngredientID))
+			return errs.New("Ingredient %s (%s) occurs multiple times", i.Name, i.IngredientID)
 		}
 		seen[i.IngredientID] = struct{}{}
 	}
 	seen = make(map[strfmt.UUID]struct{})
 	for _, r := range b.requirements {
 		if _, ok := seen[r.IngredientID]; ok {
-			panic(fmt.Sprintf("Requirement %s (%s) occurs multiple times", r.Name, r.IngredientID))
+			return errs.New("Requirement %s (%s) occurs multiple times", r.Name, r.IngredientID)
 		}
 		seen[r.IngredientID] = struct{}{}
 	}
@@ -234,6 +239,7 @@ func (b *BuildPlan) sanityCheck() {
 	// each with a unique node ID but otherwise identical values.
 	resolvedReq := sliceutils.UniqueByProperty(b.raw.ResolvedRequirements, func(r *raw.RawResolvedRequirement) any { return r.Requirement.Name + r.Requirement.Namespace })
 
+	// Verify that we have resolved all requirements
 	if len(b.requirements) != len(resolvedReq) {
 		missing := []string{}
 		if len(resolvedReq) > len(b.requirements) {
@@ -250,8 +256,10 @@ func (b *BuildPlan) sanityCheck() {
 				}
 			}
 		}
-		panic(fmt.Sprintf("Expected to have %d requirements, got %d, missing: %v", len(resolvedReq), len(b.requirements), missing))
+		return errs.New("Expected to have %d requirements, got %d, missing: %v", len(resolvedReq), len(b.requirements), missing)
 	}
+
+	return nil
 }
 
 func createArtifact(rawArtifact *raw.Artifact) *Artifact {

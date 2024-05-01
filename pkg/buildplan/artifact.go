@@ -25,13 +25,13 @@ type Artifact struct {
 	Checksum    string
 	Status      string
 
-	IsRuntimeDependency   bool
-	IsBuildtimeDependency bool
-
-	Platforms   []strfmt.UUID
 	Ingredients []*Ingredient `json:"-"` // While most artifacts only have a single ingredient, some artifacts such as installers can have multiple.
 
-	children []ArtifactRelation
+	isRuntimeDependency   bool
+	isBuildtimeDependency bool
+
+	platforms []strfmt.UUID
+	children  []ArtifactRelation
 }
 
 type Relation int

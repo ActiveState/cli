@@ -13,22 +13,22 @@ type FilterArtifact func(a *Artifact) bool
 
 func FilterPlatformArtifacts(platformID strfmt.UUID) FilterArtifact {
 	return func(a *Artifact) bool {
-		if a.Platforms == nil {
+		if a.platforms == nil {
 			return false
 		}
-		return sliceutils.Contains(a.Platforms, platformID)
+		return sliceutils.Contains(a.platforms, platformID)
 	}
 }
 
 func FilterBuildtimeArtifacts() FilterArtifact {
 	return func(a *Artifact) bool {
-		return a.IsBuildtimeDependency
+		return a.isBuildtimeDependency
 	}
 }
 
 func FilterRuntimeArtifacts() FilterArtifact {
 	return func(a *Artifact) bool {
-		return a.IsRuntimeDependency
+		return a.isRuntimeDependency
 	}
 }
 

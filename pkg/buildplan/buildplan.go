@@ -31,9 +31,9 @@ func Unmarshal(data []byte) (*BuildPlan, error) {
 
 	b.raw = &rawBuild
 
-	b.Cleanup()
+	b.cleanup()
 
-	if err := b.Hydrate(); err != nil {
+	if err := b.hydrate(); err != nil {
 		return nil, errs.Wrap(err, "error hydrating build plan")
 	}
 
@@ -49,9 +49,9 @@ func (b *BuildPlan) Marshal() ([]byte, error) {
 	return json.Marshal(b.raw)
 }
 
-// Cleanup empty targets
+// cleanup empty targets
 // The type aliasing in the query populates the response with emtpy targets that we should remove
-func (b *BuildPlan) Cleanup() {
+func (b *BuildPlan) cleanup() {
 	logging.Debug("Cleaning up build plan")
 
 	b.raw.Steps = sliceutils.Filter(b.raw.Steps, func(s *raw.Step) bool {
