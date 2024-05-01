@@ -40,7 +40,7 @@ type Configurable interface {
 	GetBool(key string) bool
 }
 
-var overrideTriggers = map[target.Trigger]bool{
+var overrideAsyncTriggers = map[target.Trigger]bool{
 	target.TriggerRefresh:  true,
 	target.TriggerExec:     true,
 	target.TriggerActivate: true,
@@ -72,7 +72,7 @@ func SolveAndUpdate(
 		return nil, rationalize.ErrHeadless
 	}
 
-	if cfg.GetBool(constants.AsyncRuntimeConfig) && !overrideTriggers[trigger] {
+	if cfg.GetBool(constants.AsyncRuntimeConfig) && !overrideAsyncTriggers[trigger] {
 		logging.Debug("Skipping runtime solve due to async runtime")
 		return nil, nil
 	}
