@@ -1607,3 +1607,7 @@ vulnerability_medium:
   other: "[YELLOW]{{.V0}} Medium[/RESET]"
 vulnerability_low:
   other: "[GREEN]{{.V0}} Low[/RESET]"
+err_pull_no_common_parent:
+  other: |
+    The local commit ID [NOTICE]{{.V0}}[/RESET] and latest remote commit ID [NOTICE]{{.V1}}[/RESET] have no common parent. 
+    To review your project history run '[ACTIONABLE]state history[/RESET]'.

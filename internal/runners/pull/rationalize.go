@@ -14,6 +14,7 @@ func rationalizeError(err *error) {
 	}
 
 	var mergeCommitErr *model.MergedCommitError
+	var noCommonParentErr *errNoCommonParent
 
 	switch {
 	case errors.As(*err, &mergeCommitErr):
@@ -44,5 +45,13 @@ func rationalizeError(err *error) {
 				),
 			)
 		}
+	case errors.As(*err, &noCommonParentErr):
+		*err = errs.WrapUserFacing(*err,
+			locale.Tr("err_pull_no_common_parent",
+				noCommonParentErr.localCommitID.String(),
+				noCommonParentErr.remoteCommitID.String(),
+			),
+			errs.SetInput(),
+		)
 	}
 }
