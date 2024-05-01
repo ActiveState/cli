@@ -182,10 +182,11 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		}
 
 		if p.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-			err := p.mergeBuildScript(*remoteCommit, *localCommit)
+			resultCommit, err := p.mergeBuildScript(*remoteCommit, *localCommit)
 			if err != nil {
 				return errs.Wrap(err, "Could not merge local build script with remote changes")
 			}
+			resultingCommit = &resultCommit
 		}
 
 		p.out.Print(&pullOutput{
