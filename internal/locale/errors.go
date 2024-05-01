@@ -54,6 +54,10 @@ func (e *LocalizedError) ErrorTips() []string {
 	return e.tips
 }
 
+func (e *LocalizedError) ExternalError() bool {
+	return e.externalErr
+}
+
 func (e *LocalizedError) AddTips(tips ...string) {
 	e.tips = append(e.tips, tips...)
 }

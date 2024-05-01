@@ -196,7 +196,7 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 	// Log error if this isn't a user input error
 	var action string
 	errorMsg := err.Error()
-	if !locale.IsInputError(err) {
+	if !locale.IsInputError(err) && !locale.IsExternalError(err) {
 		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.JoinMessage(err), stack)
 		action = anaConst.ActCommandError
 	} else {
