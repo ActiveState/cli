@@ -175,7 +175,7 @@ jobs:
         name: Check Format
         id: check_format
         shell: bash
-        if: !contains(fromJSON('["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref) && !startsWith(github.event.pull_request.head.ref, 'version/')
+        if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\"]'), github.ref) && !startsWith(github.event.pull_request.head.ref, 'version/')"
         run: parallelize results Check-Format
 
       - # === Unit Tests ===
