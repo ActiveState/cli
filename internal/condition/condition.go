@@ -62,11 +62,14 @@ func IsNetworkingError(err error) bool {
 	if subErr := errors.Unwrap(err); subErr != nil {
 		return IsNetworkingError(subErr)
 	}
-	subErrs := err.(interface{ Unwrap() []error }).Unwrap()
-	if len(subErrs) > 0 {
-		for _, subErr := range subErrs {
-			if IsNetworkingError(subErr) {
-				return true
+	unwrapped, ok := err.(interface{ Unwrap() []error })
+	if ok {
+		subErrs := unwrapped.Unwrap()
+		if len(subErrs) > 0 {
+			for _, subErr := range subErrs {
+				if IsNetworkingError(subErr) {
+					return true
+				}
 			}
 		}
 	}
