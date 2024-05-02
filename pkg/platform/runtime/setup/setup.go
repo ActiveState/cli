@@ -303,8 +303,6 @@ func (s *Setup) solveUpdateRecover(r interface{}) {
 		return
 	}
 
-	// We do a standard error log first here, as rollbar reports will pick up the most recent log lines.
-	// We can't put the buildplan in the multilog message as it'd be way too big a message for rollbar.
 	multilog.Critical("Panic during runtime update: %s", r)
 	panic(r) // We're just logging the panic while we have context, we're not meant to handle it here
 }
