@@ -150,9 +150,6 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 			if artifact.MimeType == types.XActiveStateBuilderMimeType {
 				continue
 			}
-			if artifact.URL == "" {
-				continue
-			}
 			name := artifact.Name()
 
 			// Detect and drop artifact names which start with a uuid, as this isn't user friendly
