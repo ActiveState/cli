@@ -42,7 +42,7 @@ func (b *BuildPlan) hydrate() error {
 			return errs.Wrap(err, "hydrating with build closure failed")
 		}
 		if err := b.hydrateWithRuntimeClosure(t.NodeIDs, platformID, artifactLookup); err != nil {
-			return errs.Wrap(err, "hydrating with build closure failed")
+			return errs.Wrap(err, "hydrating with runtime closure failed")
 		}
 
 		// We have all the artifacts we're interested in now, but we still want to relate them to a source; ie. an ingredient.
