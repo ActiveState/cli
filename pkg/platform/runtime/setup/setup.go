@@ -588,8 +588,11 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 	}
 
 	// Output a dependency summary if applicable.
-	if s.target.Trigger() == target.TriggerCheckout || s.target.Trigger() == target.TriggerInit {
+	if s.target.Trigger() == target.TriggerCheckout {
 		dependencies.OutputSummary(s.out, bp.RequestedArtifacts())
+	} else if s.target.Trigger() == target.TriggerInit {
+		artifacts := bp.Artifacts().Filter(buildplan.FilterStateArtifacts(), buildplan.FilterRuntimeArtifacts())
+		dependencies.OutputSummary(s.out, artifacts)
 	} else if len(oldBuildPlanArtifacts) > 0 && changedArtifacts != nil {
 		dependencies.OutputChangeSummary(s.out, changedArtifacts, oldBuildPlanArtifacts)
 	}
