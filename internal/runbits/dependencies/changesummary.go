@@ -32,8 +32,9 @@ func OutputChangeSummary(out output.Outputer, changeset *buildplan.ArtifactChang
 	for _, a := range changeset.Added {
 		added = append(added, a.Ingredients...)
 		for _, i := range a.Ingredients {
-			addedString = append(addedLocale, fmt.Sprintf("%s@%s", i.Name, i.Version))
-			addedLocale = append(addedLocale, fmt.Sprintf("[ACTIONABLE]%s[/RESET]", addedString))
+			v := fmt.Sprintf("%s@%s", i.Name, i.Version)
+			addedString = append(addedLocale, v)
+			addedLocale = append(addedLocale, fmt.Sprintf("[ACTIONABLE]%s[/RESET]", v))
 			dependencies = append(dependencies, i.RuntimeDependencies(true)...)
 			directDependencies = append(dependencies, i.RuntimeDependencies(false)...)
 		}
@@ -60,8 +61,7 @@ func OutputChangeSummary(out output.Outputer, changeset *buildplan.ArtifactChang
 	if numIndirect > 0 {
 		localeKey = "additional_total_dependencies"
 	}
-	out.Notice(locale.Tr(localeKey,
-		strings.Join(addedLocale, ", "), strconv.Itoa(len(directDependencies)), strconv.Itoa(numIndirect)))
+	out.Notice(locale.Tr(localeKey, strings.Join(addedLocale, ", "), strconv.Itoa(len(directDependencies)), strconv.Itoa(numIndirect)))
 
 	// A direct dependency list item is of the form:
 	//   ├─ name@version (X dependencies)
