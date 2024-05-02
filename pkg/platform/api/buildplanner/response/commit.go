@@ -17,7 +17,7 @@ type ProjectCommitResponse struct {
 // PostProcess must satisfy gqlclient.PostProcessor interface
 func (c *ProjectCommitResponse) PostProcess() error {
 	if c.Project == nil {
-		return errs.New("BuildPlanByProject.Build: Project is nil")
+		return errs.New("Project is nil")
 	}
 
 	if IsErrorResponse(c.Project.Type) {
@@ -25,11 +25,11 @@ func (c *ProjectCommitResponse) PostProcess() error {
 	}
 
 	if c.Project.Commit == nil {
-		return errs.New("BuildPlanByProject.Build: Commit is nil")
+		return errs.New("Commit is nil")
 	}
 
 	if c.Project == nil {
-		return errs.New("BuildPlanByProject.Build: Project is nil")
+		return errs.New("Project is nil")
 	}
 
 	if IsErrorResponse(c.Project.Type) {
@@ -37,7 +37,7 @@ func (c *ProjectCommitResponse) PostProcess() error {
 	}
 
 	if c.Project.Commit == nil {
-		return errs.New("BuildPlanByProject.Build: Commit is nil")
+		return errs.New("Commit is nil")
 	}
 
 	if IsErrorResponse(c.Project.Commit.Type) {
@@ -45,7 +45,7 @@ func (c *ProjectCommitResponse) PostProcess() error {
 	}
 
 	if c.Project.Commit.Build == nil {
-		return errs.New("BuildPlanByProject.Build: Commit does not contain build")
+		return errs.New("Commit does not contain build")
 	}
 
 	if IsErrorResponse(c.Project.Commit.Build.Type) {
