@@ -42,7 +42,7 @@ func OutputChangeSummary(out output.Outputer, changeset *buildplan.ArtifactChang
 	directDependencies = sliceutils.UniqueByProperty(directDependencies, func(i *buildplan.Ingredient) any { return i.IngredientID })
 	numIndirect := len(dependencies) - len(directDependencies)
 
-	logging.Debug("packages %s have %d direct dependencies and %d total, unique dependencies",
+	logging.Debug("packages %s have %d direct dependencies and %d indirect, unique dependencies",
 		strings.Join(addedString, ", "), len(directDependencies), numIndirect)
 	if len(directDependencies) == 0 {
 		return
@@ -56,7 +56,7 @@ func OutputChangeSummary(out output.Outputer, changeset *buildplan.ArtifactChang
 		localeKey = "additional_total_dependencies"
 	}
 	out.Notice(locale.Tr(localeKey,
-		strings.Join(addedLocale, ", "), strconv.Itoa(len(dependencies)), strconv.Itoa(numIndirect)))
+		strings.Join(addedLocale, ", "), strconv.Itoa(len(directDependencies)), strconv.Itoa(numIndirect)))
 
 	// A direct dependency list item is of the form:
 	//   ├─ name@version (X dependencies)
