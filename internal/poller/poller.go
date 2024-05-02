@@ -52,7 +52,7 @@ func (p *Poller) start(interval time.Duration) {
 func (p *Poller) refresh() {
 	info, err := p.pollFunc()
 	if err != nil {
-		if !locale.IsInputError(err) {
+		if !locale.IsInputError(err) && !errs.IsExternalError(err) {
 			if !p.errorReported {
 				multilog.Error("Could not poll: %s", errs.JoinMessage(err))
 			} else {
