@@ -17,7 +17,7 @@ func OutputSummary(out output.Outputer, directDependencies buildplan.Artifacts) 
 		return
 	}
 
-	ingredients := directDependencies.Ingredients()
+	ingredients := directDependencies.Filter(buildplan.FilterStateArtifacts()).Ingredients()
 
 	sort.SliceStable(ingredients, func(i, j int) bool {
 		return ingredients[i].Name < ingredients[j].Name
