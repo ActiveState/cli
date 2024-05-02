@@ -7,7 +7,7 @@ import (
 
 type Ingredient struct {
 	*raw.IngredientSource
-	
+
 	IsBuildtimeDependency bool
 	IsRuntimeDependency   bool
 	Artifacts             []*Artifact
@@ -58,6 +58,16 @@ func (i Ingredients) ToNameMap() IngredientNameMap {
 }
 
 func (i *Ingredient) RuntimeDependencies(recursive bool) Ingredients {
+	return i.runtimeDependencies(recursive, make(map[strfmt.UUID]struct{}))
+}
+
+func (i *Ingredient) runtimeDependencies(recursive bool, seen map[strfmt.UUID]struct{}) Ingredients {
+	// Guard against recursion, because multiple artifacts can refer to the same ingredient
+	if _, ok := seen[i.IngredientID]; ok {
+		return Ingredients{}
+	}
+	seen[i.IngredientID] = struct{}{}
+
 	dependencies := Ingredients{}
 	for _, a := range i.Artifacts {
 		for _, ac := range a.children {
@@ -67,7 +77,7 @@ func (i *Ingredient) RuntimeDependencies(recursive bool) Ingredients {
 			dependencies = append(dependencies, ac.Artifact.Ingredients...)
 			if recursive {
 				for _, ic := range ac.Artifact.Ingredients {
-					dependencies = append(dependencies, ic.RuntimeDependencies(recursive)...)
+					dependencies = append(dependencies, ic.runtimeDependencies(recursive, seen)...)
 				}
 			}
 		}
