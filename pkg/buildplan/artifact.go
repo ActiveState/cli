@@ -161,7 +161,27 @@ func (a ArtifactUpdate) VersionsChanged() bool {
 	return !reflect.DeepEqual(fromVersions, toVersions)
 }
 
+func (as Artifacts) RuntimeDependencies(recursive bool) Artifacts {
+	seen := make(map[strfmt.UUID]struct{})
+	dependencies := Artifacts{}
+	for _, a := range as {
+		dependencies = append(dependencies, a.runtimeDependencies(recursive, seen)...)
+	}
+	return dependencies
+}
+
 func (a *Artifact) RuntimeDependencies(recursive bool) Artifacts {
+	return a.runtimeDependencies(recursive, make(map[strfmt.UUID]struct{}))
+}
+
+func (a *Artifact) runtimeDependencies(recursive bool, seen map[strfmt.UUID]struct{}) Artifacts {
+	// Guard against recursion, this shouldn't really be possible but we don't know how the buildplan might evolve
+	// so better safe than sorry.
+	if _, ok := seen[a.ArtifactID]; ok {
+		return Artifacts{}
+	}
+	seen[a.ArtifactID] = struct{}{}
+
 	dependencies := Artifacts{}
 	for _, ac := range a.children {
 		if ac.Relation != RuntimeRelation {
