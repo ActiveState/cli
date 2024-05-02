@@ -108,7 +108,7 @@ func (l *Languages) Run() error {
 		if len(ingredients) == 1 {
 			resolvedVersion = ingredients[0].Version
 		} else {
-			logging.Warning("Expected 1 matching language, got %d. Searched for %s/%s", len(ingredients), ns.String(), lang.Name)
+			logging.Warning("Expected 1 matching language, got %d. Searched for %s:%s", len(ingredients), ns.String(), lang.Name)
 		}
 
 		plainVersion := version
