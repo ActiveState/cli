@@ -268,9 +268,13 @@ func (s *Store) BuildPlanRaw() ([]byte, error) {
 	return data, nil
 }
 
+type ErrVersionMarker struct {
+	*locale.LocalizedError
+}
+
 func (s *Store) BuildPlan() (*buildplan.BuildPlan, error) {
 	if !s.VersionMarkerIsValid() {
-		return nil, locale.NewInputError("err_runtime_needs_refresh")
+		return nil, &ErrVersionMarker{locale.NewInputError("err_runtime_needs_refresh")}
 	}
 
 	data, err := s.BuildPlanRaw()

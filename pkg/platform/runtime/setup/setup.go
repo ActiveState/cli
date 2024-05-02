@@ -3,6 +3,7 @@ package setup
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -538,8 +539,8 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 	}
 
 	oldBuildPlan, err := s.store.BuildPlan()
-	if err != nil {
-		logging.Debug("Could not load existing build plan. Maybe it is a new installation: %v", err)
+	if err != nil && !errors.As(err, ptr.To(&store.ErrVersionMarker{})) {
+		return nil, nil, errs.Wrap(err, "could not load existing build plan")
 	}
 
 	var oldBuildPlanArtifacts buildplan.Artifacts
