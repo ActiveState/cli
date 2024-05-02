@@ -42,7 +42,7 @@ func OutputChangeSummary(out output.Outputer, changeset *buildplan.ArtifactChang
 	directDependencies = sliceutils.UniqueByProperty(directDependencies, func(i *buildplan.Ingredient) any { return i.IngredientID })
 	numIndirect := len(dependencies) - len(directDependencies)
 
-	logging.Debug("package %s has %d direct dependencies and %d total, unique dependencies",
+	logging.Debug("packages %s have %d direct dependencies and %d total, unique dependencies",
 		strings.Join(addedString, ", "), len(directDependencies), numIndirect)
 	if len(directDependencies) == 0 {
 		return
