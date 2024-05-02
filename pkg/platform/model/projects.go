@@ -238,18 +238,18 @@ func CreateCopy(sourceOwner, sourceName, targetOwner, targetName string, makePri
 	if makePrivate {
 		if err := MakeProjectPrivate(targetOwner, targetName, auth); err != nil {
 			logging.Debug("Cannot make forked project private; deleting public fork.")
-			authClient, err := auth.Client()
-			if err != nil {
-				return nil, errs.Wrap(err, "Could not get auth client")
-			}
-			deleteParams := projects.NewDeleteProjectParams()
-			deleteParams.SetOrganizationName(targetOwner)
-			deleteParams.SetProjectName(targetName)
-			if _, err := authClient.Projects.DeleteProject(deleteParams, auth.ClientAuth()); err != nil {
-				return nil, locale.WrapError(
-					err, "err_fork_private_but_project_created",
-					"Your project was created but could not be made private, please head over to {{.V0}} to manually update your privacy settings.",
-					api.GetPlatformURL(fmt.Sprintf("%s/%s", targetOwner, targetName)).String())
+			if authClient, err2 := auth.Client(); err2 == nil {
+				deleteParams := projects.NewDeleteProjectParams()
+				deleteParams.SetOrganizationName(targetOwner)
+				deleteParams.SetProjectName(targetName)
+				if _, err3 := authClient.Projects.DeleteProject(deleteParams, auth.ClientAuth()); err3 != nil {
+					err = errs.Pack(err, locale.WrapError(
+						err3, "err_fork_private_but_project_created",
+						"Your project was created but could not be made private, please head over to {{.V0}} to manually update your privacy settings.",
+						api.GetPlatformURL(fmt.Sprintf("%s/%s", targetOwner, targetName)).String()))
+				}
+			} else {
+				err = errs.Pack(err, errs.Wrap(err2, "Could not get auth client"))
 			}
 			return nil, locale.WrapError(err, "err_fork_private", "Your fork could not be made private.")
 		}
