@@ -24,7 +24,7 @@ type CheckoutIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutPython() {
 	suite.OnlyRunForTags(tagsuite.Checkout)
 
 	ts := e2e.New(suite.T(), false)
@@ -69,6 +69,30 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 		cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 		cp.ExpectExitCode(0)
 	})
+}
+
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutPerl() {
+	suite.OnlyRunForTags(tagsuite.Checkout, tagsuite.Critical)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// Checkout and verify.
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", "ActiveState-CLI/Perl-Alternative", "."),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Checking out project: ")
+	cp.Expect("Setting up the following dependencies:")
+	cp.Expect("All dependencies have been installed and verified", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Checked out project")
+
+	// Verify runtime was installed correctly and works.
+	targetDir := target.ProjectDirToTargetDir(ts.Dirs.Work, ts.Dirs.Cache)
+	perlExe := filepath.Join(setup.ExecDir(targetDir), "perl"+osutils.ExeExtension)
+	cp = ts.SpawnCmd(perlExe, "--version")
+	cp.Expect("This is perl")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
