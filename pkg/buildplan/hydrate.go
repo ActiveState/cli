@@ -198,7 +198,6 @@ func (b *BuildPlan) hydrateWithIngredients(artifact *Artifact, platformID *strfm
 // If there are duplicates we're likely to see failures down the chain if live, though that's by no means guaranteed.
 // Surfacing it here will make it easier to reason about the failure.
 func (b *BuildPlan) sanityCheck() error {
-	// Should move this into sanityCheck
 	// Ensure all artifacts have an associated ingredient
 	// If this fails either the API is bugged or the hydrate logic is bugged
 	for _, a := range b.Artifacts() {
