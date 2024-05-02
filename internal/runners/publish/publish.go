@@ -113,11 +113,11 @@ func (r *Runner) Run(params *Params) error {
 
 		b, err := fileutils.ReadFile(params.MetaFilepath)
 		if err != nil {
-			return locale.WrapInputError(err, "err_uploadingredient_file_read", "Could not read file: {{.V0}}", params.MetaFilepath)
+			return locale.WrapExternalError(err, "err_uploadingredient_file_read", "Could not read file: {{.V0}}", params.MetaFilepath)
 		}
 
 		if err := yaml.Unmarshal(b, &reqVars); err != nil {
-			return locale.WrapInputError(err, "err_uploadingredient_file_read", "Failed to unmarshal meta file, error received: {{.V0}}", err.Error())
+			return locale.WrapExternalError(err, "err_uploadingredient_file_read", "Failed to unmarshal meta file, error received: {{.V0}}", err.Error())
 		}
 	}
 

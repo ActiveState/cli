@@ -157,7 +157,7 @@ func binaryPathCmd(env []string, name string) (string, error) {
 
 	split := strings.Split(string(out), "\r\n")
 	if len(split) == 0 {
-		return "", locale.NewInputError("err_sscommon_binary_path", name)
+		return "", locale.NewExternalError("err_sscommon_binary_path", name)
 	}
 
 	return split[0], nil

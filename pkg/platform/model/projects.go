@@ -40,10 +40,10 @@ func LegacyFetchProjectByName(orgName string, projectName string) (*mono_models.
 	}
 	if !auth.Authenticated() {
 		return nil, errs.AddTips(
-			locale.NewInputError("err_api_project_not_found", "", orgName, projectName),
+			locale.NewExternalError("err_api_project_not_found", "", orgName, projectName),
 			locale.T("tip_private_project_auth"))
 	}
-	return nil, errs.Pack(err, locale.NewInputError("err_api_project_not_found", "", orgName, projectName))
+	return nil, errs.Pack(err, locale.NewExternalError("err_api_project_not_found", "", orgName, projectName))
 }
 
 // FetchProjectByName fetches a project for an organization.
@@ -78,10 +78,10 @@ func FetchOrganizationProjects(orgName string, auth *authentication.Auth) ([]*mo
 	if err != nil {
 		switch statusCode := api.ErrorCode(err); statusCode {
 		case 401:
-			return nil, locale.WrapInputError(err, "err_api_not_authenticated")
+			return nil, locale.WrapExternalError(err, "err_api_not_authenticated")
 		case 404:
 			// NOT a project not found error; we didn't ask for a specific project.
-			return nil, locale.WrapInputError(err, "err_api_org_not_found")
+			return nil, locale.WrapExternalError(err, "err_api_org_not_found")
 		default:
 			return nil, locale.WrapError(err, "err_api_unknown", "Unexpected API error")
 		}
@@ -96,7 +96,7 @@ func LanguageByCommit(commitID strfmt.UUID, auth *authentication.Auth) (Language
 	}
 
 	if len(languages) == 0 {
-		return Language{}, locale.NewInputError("err_no_languages")
+		return Language{}, locale.NewExternalError("err_no_languages")
 	}
 
 	return languages[0], nil
@@ -211,7 +211,7 @@ func CreateCopy(sourceOwner, sourceName, targetOwner, targetName string, makePri
 	// Retrieve the source project that we'll be forking
 	sourceProject, err := LegacyFetchProjectByName(sourceOwner, sourceName)
 	if err != nil {
-		return nil, locale.WrapInputError(err, "err_fork_fetchProject", "Could not find the source project: {{.V0}}/{{.V1}}", sourceOwner, sourceName)
+		return nil, locale.WrapExternalError(err, "err_fork_fetchProject", "Could not find the source project: {{.V0}}/{{.V1}}", sourceOwner, sourceName)
 	}
 
 	// Create the target project
@@ -277,7 +277,7 @@ func MakeProjectPrivate(owner, name string, auth *authentication.Auth) error {
 	if err != nil {
 		msg := api.ErrorMessageFromPayload(err)
 		if errs.Matches(err, &projects.EditProjectBadRequest{}) {
-			return locale.WrapInputError(err, msg) // user does not have permission
+			return locale.WrapExternalError(err, msg) // user does not have permission
 		}
 		return locale.WrapError(err, msg)
 	}

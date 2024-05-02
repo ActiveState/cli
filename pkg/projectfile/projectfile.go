@@ -540,7 +540,7 @@ func parseData(dat []byte, configFilepath string) (*Project, error) {
 	project.path = configFilepath
 
 	if err2 != nil {
-		return nil, &ErrorParseProject{locale.NewInputError(
+		return nil, &ErrorParseProject{locale.NewExternalError(
 			"err_project_parsed",
 			"Project file `{{.V1}}` could not be parsed, the parser produced the following error: {{.V0}}", err2.Error(), configFilepath),
 		}
@@ -559,7 +559,7 @@ func detectDeprecations(dat []byte, configFilepath string) error {
 		dep := strings.TrimSpace(strings.TrimSuffix(string(dat[depIdxs[0]:depIdxs[1]]), ":"))
 		deplist = append(deplist, locale.Tr("pjfile_deprecation_entry", dep, strconv.Itoa(depIdxs[0])))
 	}
-	return &ErrorParseProject{locale.NewInputError(
+	return &ErrorParseProject{locale.NewExternalError(
 		"pjfile_deprecation_msg",
 		"", configFilepath, strings.Join(deplist, "\n"), constants.DocumentationURL+"config/#deprecation"),
 	}

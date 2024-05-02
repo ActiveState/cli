@@ -364,32 +364,32 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 	case NotFoundErrorType:
 		return &CommitError{
 			commit.Type, commit.Message,
-			locale.NewInputError("err_buildplanner_commit_not_found", "Could not find commit, received message: {{.V0}}", commit.Message),
+			locale.NewExternalError("err_buildplanner_commit_not_found", "Could not find commit, received message: {{.V0}}", commit.Message),
 		}
 	case ParseErrorType:
 		return &CommitError{
 			commit.Type, commit.Message,
-			locale.NewInputError("err_buildplanner_parse_error", "The platform failed to parse the build expression, received message: {{.V0}}. Path: {{.V1}}", commit.Message, commit.ParseError.Path),
+			locale.NewExternalError("err_buildplanner_parse_error", "The platform failed to parse the build expression, received message: {{.V0}}. Path: {{.V1}}", commit.Message, commit.ParseError.Path),
 		}
 	case ValidationErrorType:
 		return &CommitError{
 			commit.Type, commit.Message,
-			locale.NewInputError("err_buildplanner_validation_error", "The platform encountered a validation error, received message: {{.V0}}", commit.Message),
+			locale.NewExternalError("err_buildplanner_validation_error", "The platform encountered a validation error, received message: {{.V0}}", commit.Message),
 		}
 	case ForbiddenErrorType:
 		return &CommitError{
 			commit.Type, commit.Message,
-			locale.NewInputError("err_buildplanner_forbidden", "Operation forbidden: {{.V0}}, received message: {{.V1}}", commit.Operation, commit.Message),
+			locale.NewExternalError("err_buildplanner_forbidden", "Operation forbidden: {{.V0}}, received message: {{.V1}}", commit.Operation, commit.Message),
 		}
 	case HeadOnBranchMovedErrorType:
 		return errs.Wrap(&CommitError{
 			commit.Type, commit.Error.Message,
-			locale.NewInputError("err_buildplanner_head_on_branch_moved"),
+			locale.NewExternalError("err_buildplanner_head_on_branch_moved"),
 		}, "received message: "+commit.Error.Message)
 	case NoChangeSinceLastCommitErrorType:
 		return errs.Wrap(&CommitError{
 			commit.Type, commit.Error.Message,
-			locale.NewInputError("err_buildplanner_no_change_since_last_commit", "No new changes to commit."),
+			locale.NewExternalError("err_buildplanner_no_change_since_last_commit", "No new changes to commit."),
 		}, commit.Error.Message)
 	default:
 		return errs.New(fallbackMessage)
@@ -404,7 +404,7 @@ func ProcessBuildError(build *Build, fallbackMessage string) error {
 		return errs.New(fallbackMessage)
 	}
 
-	return locale.NewInputError("err_buildplanner_build", "Encountered error processing build response")
+	return locale.NewExternalError("err_buildplanner_build", "Encountered error processing build response")
 }
 
 func processPlanningError(message string, subErrors []*BuildExprLocation) error {
@@ -440,7 +440,7 @@ func processPlanningError(message string, subErrors []*BuildExprLocation) error 
 func ProcessProjectError(project *Project, fallbackMessage string) error {
 	if project.Type == NotFoundErrorType {
 		return errs.AddTips(
-			locale.NewInputError("err_buildplanner_project_not_found", "Unable to find project, received message: {{.V0}}", project.Message),
+			locale.NewExternalError("err_buildplanner_project_not_found", "Unable to find project, received message: {{.V0}}", project.Message),
 			locale.T("tip_private_project_auth"),
 		)
 	}

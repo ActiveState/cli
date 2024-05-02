@@ -141,9 +141,9 @@ func FetchOrganizationsByIDs(ids []strfmt.UUID, auth *authentication.Auth) ([]mo
 func processOrgErrorResponse(err error) error {
 	switch statusCode := api.ErrorCode(err); statusCode {
 	case 401:
-		return locale.NewInputError("err_api_not_authenticated")
+		return locale.NewExternalError("err_api_not_authenticated")
 	case 404:
-		return locale.NewInputError("err_api_org_not_found")
+		return locale.NewExternalError("err_api_org_not_found")
 	default:
 		return err
 	}
@@ -152,11 +152,11 @@ func processOrgErrorResponse(err error) error {
 func processInviteErrorResponse(err error) error {
 	switch statusCode := api.ErrorCode(err); statusCode {
 	case 400:
-		return locale.WrapInputError(err, "err_api_invite_400", "Invalid request, did you enter a valid email address?")
+		return locale.WrapExternalError(err, "err_api_invite_400", "Invalid request, did you enter a valid email address?")
 	case 401:
-		return locale.NewInputError("err_api_not_authenticated")
+		return locale.NewExternalError("err_api_not_authenticated")
 	case 404:
-		return locale.NewInputError("err_api_org_not_found")
+		return locale.NewExternalError("err_api_org_not_found")
 	default:
 		return locale.WrapError(err, api.ErrorMessageFromPayload(err))
 	}

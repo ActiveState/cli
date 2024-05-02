@@ -591,10 +591,10 @@ func processBuildPlannerError(bpErr error, fallbackMessage string) error {
 	if errors.As(bpErr, graphqlErr) {
 		code, ok := graphqlErr.Extensions[codeExtensionKey].(string)
 		if ok && code == clientDeprecationErrorKey {
-			return &bpModel.BuildPlannerError{Err: locale.NewInputError("err_buildplanner_deprecated", "Encountered deprecation error: {{.V0}}", graphqlErr.Message)}
+			return &bpModel.BuildPlannerError{Err: locale.NewExternalError("err_buildplanner_deprecated", "Encountered deprecation error: {{.V0}}", graphqlErr.Message)}
 		}
 	}
-	return &bpModel.BuildPlannerError{Err: locale.NewInputError("err_buildplanner", "{{.V0}}: Encountered unexpected error: {{.V1}}", fallbackMessage, bpErr.Error())}
+	return &bpModel.BuildPlannerError{Err: locale.NewExternalError("err_buildplanner", "{{.V0}}: Encountered unexpected error: {{.V1}}", fallbackMessage, bpErr.Error())}
 }
 
 var versionRe = regexp.MustCompile(`^\d+(\.\d+)*$`)
@@ -671,7 +671,7 @@ func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID, cfg Con
 	}
 
 	if len(platformIDs) == 0 {
-		return "", locale.NewInputError("err_recipe_no_platform")
+		return "", locale.NewExternalError("err_recipe_no_platform")
 	} else if len(platformIDs) > 1 {
 		logging.Debug("Received multiple platform IDs. Picking the first one: %s", platformIDs[0])
 	}
