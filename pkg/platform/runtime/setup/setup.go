@@ -278,11 +278,6 @@ func (s *Setup) Update(commit *bpModel.Commit) (rerr error) {
 	}
 
 	if s.target.ProjectDir() != "" && s.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		expression, err := buildexpression.New(commit.Expression)
-		if err != nil {
-			return errs.Wrap(err, "failed to parse build expression")
-		}
-
 		if err := buildscript.Update(s.target, &commit.AtTime, expression); err != nil {
 			return errs.Wrap(err, "Could not update build script")
 		}
