@@ -1073,6 +1073,8 @@ artifact_succeeded:
   other: "Completed: [NOTICE]{{.V0}} ({{.V1}}/{{.V2}})[/RESET]"
 artifact_failed:
   other: "Failed: [NOTICE]{{.V0}}[/RESET]. Error returned: [ERROR]{{.V1}}[/RESET]"
+artifact_unknown_name:
+  other: Unnamed Artifact
 err_package_update_commit_id:
   other: "Could not update your project runtime's commit ID. Please run '[ACTIONABLE]state pull[/RESET]' manually."
 prepare_protocol_warning:

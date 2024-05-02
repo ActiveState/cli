@@ -51,7 +51,7 @@ func (p *ProgressDigester) addTotalBar(name string, total int64, options ...mpb.
 
 // addArtifactBar adds a bar counting the progress in a specific artifact setup step
 func (p *ProgressDigester) addArtifactBar(id strfmt.UUID, step step, total int64, countsBytes bool) error {
-	name := locale.Tl("artifact_unknown_name", "Unnamed Artifact")
+	name := locale.T("artifact_unknown_name")
 	if aname, ok := p.artifacts[id]; ok {
 		name = aname
 	}
@@ -73,7 +73,7 @@ func (p *ProgressDigester) updateArtifactBar(id strfmt.UUID, step step, inc int)
 	}
 	p.artifactBars[aStep.ID()].IncrBy(inc)
 
-	name := locale.Tl("artifact_unknown_name", "Unnamed Artifact")
+	name := locale.T("artifact_unknown_name")
 	if aname, ok := p.artifacts[id]; ok {
 		name = aname
 	}
@@ -86,7 +86,7 @@ func (p *ProgressDigester) updateArtifactBar(id strfmt.UUID, step step, inc int)
 
 // dropArtifactBar removes an artifact bar from the progress display
 func (p *ProgressDigester) dropArtifactBar(id strfmt.UUID, step step) error {
-	name := locale.Tl("artifact_unknown_name", "Unnamed Artifact")
+	name := locale.T("artifact_unknown_name")
 	if aname, ok := p.artifacts[id]; ok {
 		name = aname
 	}
