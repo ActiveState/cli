@@ -119,7 +119,6 @@ func WrapInputError(err error, id string, args ...string) *LocalizedError {
 	l := &LocalizedError{}
 	translation := Tl(id, locale, args...)
 	l.inputErr = true
-	l.externalErr = true
 	l.wrapped = err
 	l.localized = translation
 	l.stack = stacktrace.GetWithSkip([]string{rtutils.CurrentFile()})
@@ -201,4 +200,27 @@ func UnpackError(err error) []error {
 	}
 
 	return errors
+}
+
+func NewExternalError(id string, args ...string) *LocalizedError {
+	return WrapExternalError(nil, id, args...)
+}
+
+func WrapExternalError(wrapTarget error, id string, args ...string) *LocalizedError {
+	locale := id
+	if len(args) > 0 {
+		locale, args = args[0], args[1:]
+	}
+	if locale == "" {
+		locale = id
+	}
+
+	l := &LocalizedError{}
+	translation := Tl(id, locale, args...)
+	l.externalErr = true
+	l.wrapped = wrapTarget
+	l.localized = translation
+	l.stack = stacktrace.GetWithSkip([]string{rtutils.CurrentFile()})
+
+	return l
 }
