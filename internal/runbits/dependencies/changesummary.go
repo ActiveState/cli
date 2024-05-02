@@ -2,6 +2,7 @@ package dependencies
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -41,6 +42,10 @@ func OutputChangeSummary(out output.Outputer, changeset *buildplan.ArtifactChang
 	dependencies = sliceutils.UniqueByProperty(dependencies, func(i *buildplan.Ingredient) any { return i.IngredientID })
 	directDependencies = sliceutils.UniqueByProperty(directDependencies, func(i *buildplan.Ingredient) any { return i.IngredientID })
 	numIndirect := len(dependencies) - len(directDependencies)
+
+	sort.SliceStable(directDependencies, func(i, j int) bool {
+		return directDependencies[i].Name < directDependencies[j].Name
+	})
 
 	logging.Debug("packages %s have %d direct dependencies and %d indirect, unique dependencies",
 		strings.Join(addedString, ", "), len(directDependencies), numIndirect)
