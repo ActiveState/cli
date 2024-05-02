@@ -44,10 +44,11 @@ const NamespaceInternal = "internal"
 
 func FilterStateArtifacts() FilterArtifact {
 	return func(a *Artifact) bool {
-		for _, i := range a.Ingredients {
-			if i.Namespace == NamespaceInternal {
-				return false
-			}
+		internalIngredients := sliceutils.Filter(a.Ingredients, func(i *Ingredient) bool {
+			return i.Namespace == NamespaceInternal
+		})
+		if len(a.Ingredients) == len(internalIngredients) {
+			return false
 		}
 		if strings.Contains(a.URL, "as-builds/noop") {
 			return false
