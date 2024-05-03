@@ -13,6 +13,7 @@ import (
 	runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
 	"github.com/thoas/go-funk"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
@@ -243,8 +244,32 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 			return errs.Wrap(err, "Could not solve runtime")
 		}
 
+		// Get old buildplan
+		// We can't use the local store here; because it might not exist (ie. integrationt test, user cleaned cache, ..),
+		// but also there's no guarantee the old one is sequential to the current.
+		oldCommit, err := model.GetCommit(commitID, r.Auth)
+		if err != nil {
+			return errs.Wrap(err, "Could not get commit")
+		}
+
+		var oldBuildPlan *bpModel.Build
+		rtTarget := target.NewProjectTarget(r.Project, &commitID, trigger)
+		if oldCommit.ParentCommitID != "" {
+			bp := model.NewBuildPlannerModel(r.Auth)
+			oldBuildResult, _, err := bp.FetchBuildResult(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
+			if err != nil {
+				return errs.Wrap(err, "Failed to fetch build result")
+			}
+			oldBuildPlan = oldBuildResult.Build
+		}
+
+		changeset, err := buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, solveResponse.BuildResult.Build, false, false, r.Config, r.Auth)
+		if err != nil {
+			return errs.Wrap(err, "Could not get changed artifacts")
+		}
+
 		// Report CVEs
-		if err := r.cveReport(solveResponse.Changeset, requirements...); err != nil {
+		if err := r.cveReport(changeset, requirements...); err != nil {
 			return errs.Wrap(err, "Could not report CVEs")
 		}
 
