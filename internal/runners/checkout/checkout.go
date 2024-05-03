@@ -6,6 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -105,20 +106,31 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		}()
 	}
 
-	u.out.Notice(output.Title(locale.T("installing_runtime_title")))
+	async := u.config.GetBool(constants.AsyncRuntimeConfig)
+	if !async {
+		u.out.Notice(output.Title(locale.T("installing_runtime_title")))
+	}
 
 	rti, err := runtime.SolveAndUpdate(u.auth, u.out, u.analytics, proj, nil, target.TriggerCheckout, u.svcModel, u.config, runtime.OptMinimalUI)
 	if err != nil {
 		return locale.WrapError(err, "err_checkout_runtime_new", "Could not checkout this project.")
 	}
 
-	execDir := setup.ExecDir(rti.Target().Dir())
+	var execDir string
+	var checkoutStatement string
+	if !async {
+		execDir = setup.ExecDir(rti.Target().Dir())
+		checkoutStatement = locale.Tr("checkout_project_statement", proj.NamespaceString(), proj.Dir(), execDir)
+	} else {
+		checkoutStatement = locale.Tr("checkout_project_statement_async", proj.NamespaceString(), proj.Dir())
+	}
+
 	u.out.Print(output.Prepare(
-		locale.Tr("checkout_project_statement", proj.NamespaceString(), proj.Dir(), execDir),
+		checkoutStatement,
 		&struct {
 			Namespace   string `json:"namespace"`
 			Path        string `json:"path"`
-			Executables string `json:"executables"`
+			Executables string `json:"executables,omitempty"`
 		}{
 			proj.NamespaceString(),
 			proj.Dir(),

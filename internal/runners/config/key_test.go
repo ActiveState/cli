@@ -40,6 +40,12 @@ func TestKey_Set(t *testing.T) {
 			args{"valid.key"},
 			false,
 		},
+		{
+			"valid with underscore",
+			Key(""),
+			args{"valid.key.with_underscore"},
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -441,6 +441,9 @@ const DefaultBranchName = "main"
 // UnstableConfig is the config key used to determine whether the user has opted in to unstable commands
 const UnstableConfig = "optin.unstable"
 
+// AsyncRuntimeConfig is the config key used to determine whether the user has opted in to async runtimes
+const AsyncRuntimeConfig = "optin.unstable.async_runtime"
+
 // OptinBuildscriptsConfig is the config key used to determine whether the user has opted in to buildscripts
 const OptinBuildscriptsConfig = "optin.buildscripts"
 

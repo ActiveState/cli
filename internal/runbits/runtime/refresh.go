@@ -2,19 +2,29 @@ package runtime
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 	"github.com/imacks/bitflags-go"
 )
+
+func init() {
+	configMediator.RegisterOption(constants.AsyncRuntimeConfig, configMediator.Bool, false)
+}
 
 type Opts int
 
@@ -27,6 +37,16 @@ const (
 type Configurable interface {
 	GetString(key string) string
 	GetBool(key string) bool
+}
+
+var overrideAsyncTriggers = map[target.Trigger]bool{
+	target.TriggerRefresh:  true,
+	target.TriggerExec:     true,
+	target.TriggerActivate: true,
+	target.TriggerShell:    true,
+	target.TriggerScript:   true,
+	target.TriggerDeploy:   true,
+	target.TriggerUse:      true,
 }
 
 // SolveAndUpdate should be called after runtime mutations.
@@ -49,6 +69,11 @@ func SolveAndUpdate(
 
 	if proj.IsHeadless() {
 		return nil, rationalize.ErrHeadless
+	}
+
+	if cfg.GetBool(constants.AsyncRuntimeConfig) && !overrideAsyncTriggers[trigger] {
+		logging.Debug("Skipping runtime solve due to async runtime")
+		return nil, nil
 	}
 
 	target := target.NewProjectTarget(proj, customCommitID, trigger)
@@ -83,6 +108,72 @@ func SolveAndUpdate(
 	}
 
 	return rt, nil
+}
+
+type SolveResponse struct {
+	*runtime.Runtime
+	Commit    *bpModel.Commit
+	Changeset buildplan.ArtifactChangeset
+}
+
+func Solve(
+	auth *authentication.Auth,
+	out output.Outputer,
+	an analytics.Dispatcher,
+	proj *project.Project,
+	customCommitID *strfmt.UUID,
+	trigger target.Trigger,
+	svcm *model.SvcModel,
+	cfg Configurable,
+) (_ *SolveResponse, rerr error) {
+	spinner := output.StartSpinner(out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+
+	defer func() {
+		if rerr != nil {
+			spinner.Stop(locale.T("progress_fail"))
+		} else {
+			spinner.Stop(locale.T("progress_success"))
+		}
+	}()
+
+	rtTarget := target.NewProjectTarget(proj, customCommitID, trigger)
+	rt, err := runtime.New(rtTarget, an, svcm, auth, cfg, out)
+	if err != nil {
+
+		return nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+	}
+
+	setup := rt.Setup(&events.VoidHandler{})
+	commit, err := setup.Solve()
+	if err != nil {
+		return nil, errs.Wrap(err, "Solve failed")
+	}
+
+	// Get old buildplan
+	// We can't use the local store here; because it might not exist (ie. integrationt test, user cleaned cache, ..),
+	// but also there's no guarantee the old one is sequential to the current.
+	oldCommit, err := model.GetCommit(*customCommitID, auth)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get commit")
+	}
+
+	var oldBuildPlan *buildplan.BuildPlan
+	if oldCommit.ParentCommitID != "" {
+		bpm := bpModel.NewBuildPlannerModel(auth)
+		commit, err := bpm.FetchCommit(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
+		if err != nil {
+			return nil, errs.Wrap(err, "Failed to fetch build result")
+		}
+		oldBuildPlan = commit.BuildPlan()
+	}
+
+	changedArtifacts := commit.BuildPlan().DiffArtifacts(oldBuildPlan, true)
+
+	return &SolveResponse{
+		Runtime:   rt,
+		Commit:    commit,
+		Changeset: changedArtifacts,
+	}, nil
 }
 
 // UpdateByReference will update the given runtime if necessary. This is functionally the same as SolveAndUpdateByReference
