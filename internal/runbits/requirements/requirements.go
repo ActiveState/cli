@@ -111,7 +111,7 @@ var versionRe = regexp.MustCompile(`^\d(\.\d+)*$`)
 type Requirement struct {
 	Name          string
 	Version       string
-	Revision      int
+	Revision      *int
 	BitWidth      int // Only needed for platform requirements
 	Namespace     *model.Namespace
 	NamespaceType *model.NamespaceType
@@ -202,7 +202,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		stageCommitReqs = append(stageCommitReqs, model.StageCommitRequirement{
 			Name:      requirement.Name,
 			Version:   requirement.versionRequirements,
-			Revision:  ptr.To(requirement.Revision),
+			Revision:  requirement.Revision,
 			Namespace: *requirement.Namespace,
 			Operation: requirement.Operation,
 		})
