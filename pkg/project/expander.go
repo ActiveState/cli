@@ -31,7 +31,7 @@ func NewExpansion(p *Project) *Expansion {
 // ApplyWithMaxDepth limits the depth of an expansion to avoid infinite expansion of a value.
 func (ctx *Expansion) ApplyWithMaxDepth(s string, depth int) (string, error) {
 	if depth > constants.ExpanderMaxDepth {
-		return "", locale.NewInputError("err_expand_recursion", "Infinite recursion trying to expand variable '{{.V0}}'", s)
+		return "", locale.NewExternalError("err_expand_recursion", "Infinite recursion trying to expand variable '{{.V0}}'", s)
 	}
 
 	regex := regexp.MustCompile(`\${?(\w+)\.?([\w-]+)?\.?([\w\.-]+)?(\(\))?}?`)

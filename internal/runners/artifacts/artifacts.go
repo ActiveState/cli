@@ -315,7 +315,7 @@ func getBuildPlan(
 	case namespaceProvided && !commitIdProvided:
 		pj, err := model.FetchProjectByName(namespace.Owner, namespace.Project, auth)
 		if err != nil {
-			return nil, locale.WrapInputError(err, "err_fetch_project", "", namespace.String())
+			return nil, locale.WrapExternalError(err, "err_fetch_project", "", namespace.String())
 		}
 
 		branch, err := model.DefaultBranchForProject(pj)

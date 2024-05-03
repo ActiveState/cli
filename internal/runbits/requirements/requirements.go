@@ -434,12 +434,12 @@ func (r *RequirementOperation) validatePackage(requirement *Requirement) error {
 
 		if len(suggestions) == 0 {
 			return &ErrNoMatches{
-				locale.WrapInputError(err, "package_ingredient_alternatives_nosuggest", "", requirement.Name),
+				locale.WrapExternalError(err, "package_ingredient_alternatives_nosuggest", "", requirement.Name),
 				requirement.Name, nil}
 		}
 
 		return &ErrNoMatches{
-			locale.WrapInputError(err, "package_ingredient_alternatives", "", requirement.Name, strings.Join(suggestions, "\n")),
+			locale.WrapExternalError(err, "package_ingredient_alternatives", "", requirement.Name, strings.Join(suggestions, "\n")),
 			requirement.Name, ptr.To(strings.Join(suggestions, "\n"))}
 	}
 
@@ -762,7 +762,7 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 	}
 
 	if len(choices) == 0 {
-		return "", ns, nil, locale.WrapInputError(err, "package_ingredient_alternatives_nolang", "", packageName)
+		return "", ns, nil, locale.WrapExternalError(err, "package_ingredient_alternatives_nolang", "", packageName)
 	}
 
 	// If we only have one ingredient match we're done; return it.

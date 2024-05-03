@@ -119,7 +119,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 
 	lang, err := model.CheckpointToLanguage(reqs, i.auth)
 	if err != nil {
-		return locale.WrapInputError(err, "err_import_language", "Your project does not have a language associated with it, please add a language first.")
+		return locale.WrapExternalError(err, "err_import_language", "Your project does not have a language associated with it, please add a language first.")
 	}
 
 	changeset, err := fetchImportChangeset(reqsimport.Init(), params.FileName, lang.Name)
@@ -164,7 +164,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model.Changeset, error) {
 	data, err := os.ReadFile(file)
 	if err != nil {
-		return nil, locale.WrapInputError(err, "err_reading_changeset_file", "Cannot read import file: {{.V0}}", err.Error())
+		return nil, locale.WrapExternalError(err, "err_reading_changeset_file", "Cannot read import file: {{.V0}}", err.Error())
 	}
 
 	changeset, err := cp.Changeset(data, lang)

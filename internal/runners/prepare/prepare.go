@@ -124,7 +124,7 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 	err := r.prepareOS()
 	if err != nil {
 		if installation.IsStateExeDoesNotExistError(err) && runtime.GOOS == "windows" {
-			return locale.WrapInputError(err, "err_install_state_exe_does_not_exist", "", constants.ForumsURL)
+			return locale.WrapExternalError(err, "err_install_state_exe_does_not_exist", "", constants.ForumsURL)
 		}
 		return errs.Wrap(err, "Could not prepare OS")
 	}

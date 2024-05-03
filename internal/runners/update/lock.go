@@ -96,7 +96,7 @@ func (l *Lock) Run(params *LockParams) error {
 		version = l.project.Version()
 	}
 
-	exactVersion, err := fetchExactVersion(l.an, l.svc, channel, version)
+	exactVersion, err := fetchExactVersion(l.svc, channel, version)
 	if err != nil {
 		return errs.Wrap(err, "fetchUpdater failed, version: %s, channel: %s", version, channel)
 	}
@@ -143,10 +143,10 @@ func confirmLock(prom prompt.Prompter) error {
 	return nil
 }
 
-func fetchExactVersion(an analytics.Dispatcher, svc *model.SvcModel, channel, version string) (string, error) {
+func fetchExactVersion(svc *model.SvcModel, channel, version string) (string, error) {
 	upd, err := svc.CheckUpdate(context.Background(), channel, version)
 	if err != nil {
-		return "", locale.WrapInputError(err, "err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
+		return "", locale.WrapExternalError(err, "err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
 	}
 
 	return upd.Version, nil

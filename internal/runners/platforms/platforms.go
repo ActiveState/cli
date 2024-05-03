@@ -92,7 +92,7 @@ func prepareParams(ps Params) (Params, error) {
 func prepareLatestVersion(params Params) (Params, error) {
 	platformUUID, err := model.PlatformNameToPlatformID(params.Platform.Name())
 	if err != nil {
-		return params, locale.WrapInputError(err, "err_resolve_platform_id", "Could not resolve platform ID from name: {{.V0}}", params.Platform.Name())
+		return params, locale.WrapExternalError(err, "err_resolve_platform_id", "Could not resolve platform ID from name: {{.V0}}", params.Platform.Name())
 	}
 
 	platform, err := model.FetchPlatformByUID(strfmt.UUID(platformUUID))

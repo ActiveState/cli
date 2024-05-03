@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
@@ -160,7 +161,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	path, err = filepath.Abs(params.Path)
 	if err != nil {
-		return locale.WrapInputError(err, "err_init_abs_path", "Could not determine absolute path to [NOTICE]{{.V0}}[/RESET]. Error: {{.V1}}", path, err.Error())
+		return locale.WrapExternalError(err, "err_init_abs_path", "Could not determine absolute path to [NOTICE]{{.V0}}[/RESET]. Error: {{.V1}}", path, err.Error())
 	}
 
 	var languageName, languageVersion string
@@ -191,10 +192,10 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	version, err := deriveVersion(lang, languageVersion, r.auth)
 	if err != nil {
-		if inferred || !locale.IsInputError(err) {
+		if inferred || errors.IsReportableError(err) {
 			return locale.WrapError(err, "err_init_lang", "", languageName, languageVersion)
 		} else {
-			return locale.WrapInputError(err, "err_init_lang", "", languageName, languageVersion)
+			return locale.WrapExternalError(err, "err_init_lang", "", languageName, languageVersion)
 		}
 	}
 

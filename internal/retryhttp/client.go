@@ -114,17 +114,17 @@ func normalizeResponse(res *http.Response, err error) (*http.Response, error) {
 	if res != nil {
 		switch res.StatusCode {
 		case 408:
-			return res, locale.WrapInputError(&UserNetworkError{408}, "err_user_network_server_timeout", "Request failed due to timeout during communication with server. {{.V0}}", locale.Tr("err_user_network_solution", constants.ForumsURL))
+			return res, locale.WrapExternalError(&UserNetworkError{408}, "err_user_network_server_timeout", "Request failed due to timeout during communication with server. {{.V0}}", locale.Tr("err_user_network_solution", constants.ForumsURL))
 		case 425:
-			return res, locale.WrapInputError(&UserNetworkError{425}, "err_user_network_tooearly", "Request failed due to retrying connection too fast. {{.V0}}", locale.Tr("err_user_network_solution", constants.ForumsURL))
+			return res, locale.WrapExternalError(&UserNetworkError{425}, "err_user_network_tooearly", "Request failed due to retrying connection too fast. {{.V0}}", locale.Tr("err_user_network_solution", constants.ForumsURL))
 		case 429:
-			return res, locale.WrapInputError(&UserNetworkError{429}, "err_user_network_toomany", "Request failed due to too many requests. {{.V0}}", locale.Tr("err_user_network_solution", constants.ForumsURL))
+			return res, locale.WrapExternalError(&UserNetworkError{429}, "err_user_network_toomany", "Request failed due to too many requests. {{.V0}}", locale.Tr("err_user_network_solution", constants.ForumsURL))
 		}
 	}
 
 	var dnsError *net.DNSError
 	if errors.As(err, &dnsError) {
-		return res, locale.WrapInputError(&UserNetworkError{}, "err_user_network_dns", "Request failed due to DNS error: {{.V0}}. {{.V1}}", err.Error(), locale.Tr("err_user_network_solution", constants.ForumsURL))
+		return res, locale.WrapExternalError(&UserNetworkError{}, "err_user_network_dns", "Request failed due to DNS error: {{.V0}}. {{.V1}}", err.Error(), locale.Tr("err_user_network_solution", constants.ForumsURL))
 	}
 
 	// Due to Go's handling of these types of errors and due to Windows localizing the errors in question we have to rely on the `wsarecv:` keyword to capture a series
@@ -140,7 +140,7 @@ func normalizeResponse(res *http.Response, err error) (*http.Response, error) {
 
 func normalizeRetryResponse(res *http.Response, err error, numTries int) (*http.Response, error) {
 	if err2, ok := err.(net.Error); ok && err2.Timeout() {
-		return res, locale.WrapInputError(&UserNetworkError{-1}, "err_user_network_timeout", "", locale.Tr("err_user_network_solution", constants.ForumsURL))
+		return res, locale.WrapExternalError(&UserNetworkError{-1}, "err_user_network_timeout", "", locale.Tr("err_user_network_solution", constants.ForumsURL))
 	}
 	return res, err
 }
