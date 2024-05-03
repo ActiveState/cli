@@ -14,8 +14,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
@@ -115,7 +113,6 @@ type SolveResponse struct {
 	*runtime.Runtime
 	BuildResult *model.BuildResult
 	Commit      *bpModel.Commit
-	Changeset   artifact.ArtifactChangeset
 }
 
 func Solve(
@@ -152,34 +149,10 @@ func Solve(
 		return nil, errs.Wrap(err, "Solve failed")
 	}
 
-	// Get old buildplan
-	// We can't use the local store here; because it might not exist (ie. integrationt test, user cleaned cache, ..),
-	// but also there's no guarantee the old one is sequential to the current.
-	oldCommit, err := model.GetCommit(*customCommitID, auth)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get commit")
-	}
-
-	var oldBuildPlan *bpModel.Build
-	if oldCommit.ParentCommitID != "" {
-		bp := model.NewBuildPlannerModel(auth)
-		oldBuildResult, _, err := bp.FetchBuildResult(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
-		if err != nil {
-			return nil, errs.Wrap(err, "Failed to fetch build result")
-		}
-		oldBuildPlan = oldBuildResult.Build
-	}
-
-	changeset, err := buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false, false, cfg, auth)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get changed artifacts")
-	}
-
 	return &SolveResponse{
 		Runtime:     rt,
 		BuildResult: buildResult,
 		Commit:      commit,
-		Changeset:   changeset,
 	}, nil
 }
 
