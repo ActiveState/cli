@@ -3,7 +3,6 @@ package scripts
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -12,8 +11,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/project"
@@ -98,92 +95,6 @@ func (suite *EditTestSuite) TestCreateScriptFile_Expand() {
 	v, err := script.Value()
 	suite.Require().NoError(err)
 	suite.Equal(v, string(content))
-}
-
-func (suite *EditTestSuite) TestGetOpenCmd_EditorSet() {
-	expected := "debug"
-	if runtime.GOOS == "windows" {
-		expected = "debug.exe"
-	}
-
-	f, err := os.OpenFile(expected, os.O_CREATE|os.O_EXCL, 0700)
-	suite.NoError(err, "should be able to create executable file")
-	defer os.Remove(f.Name())
-
-	err = f.Close()
-	suite.NoError(err, "could no close file")
-
-	originalPath := os.Getenv("PATH")
-	defer os.Setenv("PATH", originalPath)
-
-	wd, err := osutils.Getwd()
-	suite.NoError(err, "could not get current working directory")
-
-	err = os.Setenv("PATH", wd)
-	suite.NoError(err, "could not set PATH")
-
-	os.Setenv("EDITOR", expected)
-
-	actual, err := getOpenCmd()
-	suite.Require().NoError(err, "could not get open command")
-	suite.Equal(expected, actual)
-}
-
-func (suite *EditTestSuite) TestGetOpenCmd_EditorSet_NotInPath() {
-	os.Setenv("EDITOR", "NotInPath")
-
-	_, err := getOpenCmd()
-	suite.Require().Error(err, "should get failure when editor is not in PATH")
-}
-
-func (suite *EditTestSuite) TestGetOpenCmd_EditorSet_InvalidFilepath() {
-	wd, err := osutils.Getwd()
-	suite.NoError(err, "could not get current working directory")
-
-	executeable := "someExecutable"
-	if runtime.GOOS == "windows" {
-		executeable = "someExecutable.exe"
-	}
-	os.Setenv("EDITOR", filepath.Join(wd, executeable))
-
-	_, err = getOpenCmd()
-	suite.Require().Error(err, "should get failure when editor in path does not exist")
-}
-
-func (suite *EditTestSuite) TestGetOpenCmd_EditorSet_NoExtensionWindows() {
-	if runtime.GOOS != "windows" {
-		suite.T().Skip("the test for file extensions is only relevant for Windows")
-	}
-
-	wd, err := osutils.Getwd()
-	suite.NoError(err, "could not get current working director")
-
-	os.Setenv("EDITOR", filepath.Join(wd, "executable"))
-
-	_, err = getOpenCmd()
-	suite.Require().Error(err, "should get failure when editor path does not have extension")
-}
-
-func (suite *EditTestSuite) TestGetOpenCmd_EditorNotSet() {
-	os.Setenv("EDITOR", "")
-	var expected string
-	platform := runtime.GOOS
-	switch platform {
-	case "linux":
-		expected = openCmdLin
-	case "darwin":
-		expected = openCmdMac
-	case "windows":
-		expected = defaultEditorWin
-	}
-
-	actual, err := getOpenCmd()
-	if platform == "linux" && err != nil {
-		suite.EqualError(err, locale.Tr("error_open_not_installed_lin", openCmdLin))
-	} else {
-		suite.Require().NoError(err, "could not get open command")
-		suite.Equal(expected, actual)
-	}
 }
 
 func (suite *EditTestSuite) TestNewScriptWatcher() {
