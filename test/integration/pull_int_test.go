@@ -71,7 +71,7 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	cp.Expect("Merged")
 	cp.ExpectExitCode(0)
 
-	suite.assertMergeStrategyNotification(ts, string(bpModel.MergeCommitStrategyRecursiveOverwriteOnConflict))
+	suite.assertMergeStrategyNotification(ts, string(bpModel.MergeCommitStrategyRecursiveKeepOnConflict))
 }
 
 func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
@@ -101,6 +101,8 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	suite.Require().NoError(err) // just verify it's a valid build script
 
 	cp = ts.Spawn("pull")
+	cp.Expect("The following changes will be merged")
+	cp.Expect("requests (2.30.0 → Auto)")
 	cp.Expect("Unable to automatically merge build scripts")
 	cp.ExpectNotExitCode(0)
 	ts.IgnoreLogErrors()
