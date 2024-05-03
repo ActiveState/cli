@@ -187,7 +187,7 @@ func removeEmptyDir(dir string) error {
 		if err != nil {
 			return errs.Wrap(err, "Could not parse file list template")
 		}
-		return &dirNotEmptyError{locale.NewInputError("uninstall_warn_not_empty", "", content)}
+		return &dirNotEmptyError{locale.NewExternalError("uninstall_warn_not_empty", "", content)}
 	}
 
 	return nil

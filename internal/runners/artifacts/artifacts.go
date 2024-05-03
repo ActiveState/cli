@@ -303,7 +303,7 @@ func getTerminalArtifactMap(
 	case namespaceProvided && !commitIdProvided:
 		pj, err := model.FetchProjectByName(namespace.Owner, namespace.Project, auth)
 		if err != nil {
-			return nil, false, false, locale.WrapInputError(err, "err_fetch_project", "", namespace.String())
+			return nil, false, false, locale.WrapExternalError(err, "err_fetch_project", "", namespace.String())
 		}
 
 		branch, err := model.DefaultBranchForProject(pj)

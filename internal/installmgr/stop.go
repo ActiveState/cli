@@ -142,7 +142,7 @@ func killProcess(proc *process.Process, name string) error {
 			err = c.Kill()
 			if err != nil {
 				if osutils.IsAccessDeniedError(err) {
-					return locale.WrapInputError(err, "err_insufficient_permissions")
+					return locale.WrapExternalError(err, "err_insufficient_permissions")
 				} else if errors.Is(err, os.ErrProcessDone) {
 					return nil
 				}
@@ -156,7 +156,7 @@ func killProcess(proc *process.Process, name string) error {
 	err = proc.Kill()
 	if err != nil {
 		if osutils.IsAccessDeniedError(err) {
-			return locale.WrapInputError(err, "err_insufficient_permissions")
+			return locale.WrapExternalError(err, "err_insufficient_permissions")
 		} else if errors.Is(err, os.ErrProcessDone) {
 			return nil
 		}

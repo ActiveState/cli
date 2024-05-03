@@ -293,7 +293,7 @@ func symlinkWithTarget(overwrite bool, symlinkPath string, exePaths []string, ou
 	out.Notice(output.Title(locale.Tr("deploy_symlink", symlinkPath)))
 
 	if err := fileutils.MkdirUnlessExists(symlinkPath); err != nil {
-		return locale.WrapInputError(
+		return locale.WrapExternalError(
 			err, "err_deploy_mkdir",
 			"Could not create directory at {{.V0}}, make sure you have permissions to write to {{.V1}}.", symlinkPath, filepath.Dir(symlinkPath))
 	}
@@ -324,7 +324,7 @@ func symlinkWithTarget(overwrite bool, symlinkPath string, exePaths []string, ou
 
 			// to overwrite the existing file, we have to remove it first, or the link command will fail
 			if err := os.Remove(symlink); err != nil {
-				return locale.WrapInputError(
+				return locale.WrapExternalError(
 					err, "err_deploy_overwrite",
 					"Could not overwrite {{.V0}}, make sure you have permissions to write to this file.", symlink)
 			}
