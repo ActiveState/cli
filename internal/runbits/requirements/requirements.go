@@ -239,20 +239,41 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 
 		// Solve runtime
-		solveResponse, err := runbit.Solve(r.Auth, r.Output, r.Analytics, r.Project, &commitID, trigger, r.SvcModel, r.Config)
+		rt, rtCommit, err := runbit.Solve(r.Auth, r.Output, r.Analytics, r.Project, &commitID, trigger, r.SvcModel, r.Config)
 		if err != nil {
 			return errs.Wrap(err, "Could not solve runtime")
 		}
 
+		// Get old buildplan
+		// We can't use the local store here; because it might not exist (ie. integrationt test, user cleaned cache, ..),
+		// but also there's no guarantee the old one is sequential to the current.
+		oldCommit, err := model.GetCommit(commitID, r.Auth)
+		if err != nil {
+			return errs.Wrap(err, "Could not get commit")
+		}
+
+		var oldBuildPlan *buildplan.BuildPlan
+		rtTarget := target.NewProjectTarget(r.Project, &commitID, trigger)
+		if oldCommit.ParentCommitID != "" {
+			bpm := bpModel.NewBuildPlannerModel(r.Auth)
+			commit, err := bpm.FetchCommit(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
+			if err != nil {
+				return errs.Wrap(err, "Failed to fetch build result")
+			}
+			oldBuildPlan = commit.BuildPlan()
+		}
+
+		changedArtifacts := rtCommit.BuildPlan().DiffArtifacts(oldBuildPlan, true)
+
 		// Report CVEs
-		if err := r.cveReport(solveResponse.Changeset, requirements...); err != nil {
+		if err := r.cveReport(changedArtifacts, requirements...); err != nil {
 			return errs.Wrap(err, "Could not report CVEs")
 		}
 
 		// Start runtime update UI
 		if !r.Config.GetBool(constants.AsyncRuntimeConfig) {
 			out.Notice("")
-			if !solveResponse.HasCache() {
+			if !rt.HasCache() {
 				out.Notice(output.Title(locale.T("install_runtime")))
 				out.Notice(locale.T("install_runtime_info"))
 			} else {
@@ -261,7 +282,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 			}
 
 			// refresh or install runtime
-			err = runbit.UpdateByReference(solveResponse.Runtime, solveResponse.Commit, r.Auth, r.Project, r.Output)
+			err = runbit.UpdateByReference(rt, rtCommit, r.Auth, r.Project, r.Output)
 			if err != nil {
 				if !runbits.IsBuildError(err) {
 					// If the error is not a build error we want to retain the changes

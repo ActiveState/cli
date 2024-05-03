@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -110,12 +109,6 @@ func SolveAndUpdate(
 	return rt, nil
 }
 
-type SolveResponse struct {
-	*runtime.Runtime
-	Commit    *bpModel.Commit
-	Changeset buildplan.ArtifactChangeset
-}
-
 func Solve(
 	auth *authentication.Auth,
 	out output.Outputer,
@@ -125,7 +118,7 @@ func Solve(
 	trigger target.Trigger,
 	svcm *model.SvcModel,
 	cfg Configurable,
-) (_ *SolveResponse, rerr error) {
+) (_ *runtime.Runtime, _ *bpModel.Commit, rerr error) {
 	spinner := output.StartSpinner(out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
 
 	defer func() {
@@ -140,40 +133,16 @@ func Solve(
 	rt, err := runtime.New(rtTarget, an, svcm, auth, cfg, out)
 	if err != nil {
 
-		return nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+		return nil, nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
 	}
 
 	setup := rt.Setup(&events.VoidHandler{})
 	commit, err := setup.Solve()
 	if err != nil {
-		return nil, errs.Wrap(err, "Solve failed")
+		return nil, nil, errs.Wrap(err, "Solve failed")
 	}
 
-	// Get old buildplan
-	// We can't use the local store here; because it might not exist (ie. integrationt test, user cleaned cache, ..),
-	// but also there's no guarantee the old one is sequential to the current.
-	oldCommit, err := model.GetCommit(*customCommitID, auth)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get commit")
-	}
-
-	var oldBuildPlan *buildplan.BuildPlan
-	if oldCommit.ParentCommitID != "" {
-		bpm := bpModel.NewBuildPlannerModel(auth)
-		commit, err := bpm.FetchCommit(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
-		if err != nil {
-			return nil, errs.Wrap(err, "Failed to fetch build result")
-		}
-		oldBuildPlan = commit.BuildPlan()
-	}
-
-	changedArtifacts := commit.BuildPlan().DiffArtifacts(oldBuildPlan, true)
-
-	return &SolveResponse{
-		Runtime:   rt,
-		Commit:    commit,
-		Changeset: changedArtifacts,
-	}, nil
+	return rt, commit, nil
 }
 
 // UpdateByReference will update the given runtime if necessary. This is functionally the same as SolveAndUpdateByReference
