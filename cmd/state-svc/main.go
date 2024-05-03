@@ -79,6 +79,8 @@ func main() {
 		errMsg := errs.JoinMessage(runErr)
 		if locale.IsInputError(runErr) {
 			logging.Debug("state-svc errored out due to input: %s", errMsg)
+		} else if errs.IsExternalError(runErr) {
+			logging.Debug("state-svc errored out due to external error: %s", errMsg)
 		} else {
 			multilog.Critical("state-svc errored out: %s", errMsg)
 		}

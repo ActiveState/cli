@@ -165,6 +165,8 @@ func main() {
 		errors.ReportError(err, cmd, an)
 		if locale.IsInputError(err) {
 			logging.Error("Installer input error: " + errs.JoinMessage(err))
+		} else if errs.IsExternalError(err) {
+			logging.Error("Installer external error: " + errs.JoinMessage(err))
 		} else {
 			multilog.Critical("Installer error: " + errs.JoinMessage(err))
 		}

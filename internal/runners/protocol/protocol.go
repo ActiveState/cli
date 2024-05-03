@@ -45,7 +45,7 @@ func (p *Protocol) Run(params Params) error {
 			query = "?" + parsed.RawQuery
 		}
 		if err := open.Run("https://platform.activestate.com" + parsed.Path + query); err != nil {
-			return locale.WrapInputError(err, "err_protocol_open", "Could not open URL: {{.V0}}", params.URL)
+			return locale.WrapExternalError(err, "err_protocol_open", "Could not open URL: {{.V0}}", params.URL)
 		}
 		return nil
 	}

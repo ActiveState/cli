@@ -492,7 +492,7 @@ func FetchPlatformByDetails(name, version string, word int, auth *authentication
 
 	details := fmt.Sprintf("%s %d %s", name, word, version)
 
-	return nil, locale.NewInputError("err_unsupported_platform", "", details)
+	return nil, locale.NewExternalError("err_unsupported_platform", "", details)
 }
 
 func FetchLanguageForCommit(commitID strfmt.UUID, auth *authentication.Auth) (*Language, error) {

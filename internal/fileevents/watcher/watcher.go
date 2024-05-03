@@ -76,7 +76,7 @@ func (w *Watcher) Add(filepath string) error {
 		return locale.NewInputError("err_fileevent_filenotexist", "Path does not exist: {{.V0}}.", filepath)
 	}
 	if err := w.fswatcher.Add(filepath); err != nil {
-		return locale.WrapInputError(err, "err_fileevent_invalidpath", "Could not add filepath to filesystem watcher: {{.V0}}", filepath)
+		return locale.WrapExternalError(err, "err_fileevent_invalidpath", "Could not add filepath to filesystem watcher: {{.V0}}", filepath)
 	}
 	return nil
 }

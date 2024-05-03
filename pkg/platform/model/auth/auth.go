@@ -39,7 +39,7 @@ func CheckDeviceAuthorization(deviceCode strfmt.UUID) (jwt *mms.JWT, apiKey *mms
 				logging.Debug("Authorization still pending")
 				return nil, nil, nil
 			case oauth.AuthDeviceGetBadRequestBodyErrorExpiredToken:
-				return nil, nil, locale.WrapInputError(err, "auth_device_timeout")
+				return nil, nil, locale.WrapExternalError(err, "auth_device_timeout")
 			}
 		}
 

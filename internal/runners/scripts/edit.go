@@ -227,7 +227,7 @@ func getOpenCmd() (string, error) {
 	case "linux":
 		_, err := exec.LookPath(openCmdLin)
 		if err != nil {
-			return "", locale.NewInputError(
+			return "", locale.NewExternalError(
 				"error_open_not_installed_lin",
 				"Please install '{{.V0}}' to edit scripts.",
 				openCmdLin)
@@ -267,7 +267,7 @@ func verifyPathEditor(editor string) (string, error) {
 
 	_, err := os.Stat(editor)
 	if err != nil {
-		return "", locale.WrapInputError(err, "error_edit_stat_editor", "Failed to find editor '{{.V0}}' on file system.", editor)
+		return "", locale.WrapExternalError(err, "error_edit_stat_editor", "Failed to find editor '{{.V0}}' on file system.", editor)
 	}
 
 	return editor, nil

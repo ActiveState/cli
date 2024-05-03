@@ -41,7 +41,7 @@ func (f *Fetcher) Fetch(update *UpdateInstaller, targetDir string) error {
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		if err2, ok := err.(net.Error); ok && err2.Timeout() {
-			return locale.WrapInputError(err, "err_user_network_timeout", "", locale.Tr("err_user_network_solution", constants.ForumsURL))
+			return locale.WrapExternalError(err, "err_user_network_timeout", "", locale.Tr("err_user_network_solution", constants.ForumsURL))
 		}
 		msg := "Could not read response body"
 		f.analyticsEvent(update.AvailableUpdate.Version, msg)
