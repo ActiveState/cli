@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/go-openapi/strfmt"
@@ -189,7 +190,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	version, err := deriveVersion(lang, languageVersion, r.auth)
 	if err != nil {
-		if inferred || (!locale.IsInputError(err) && !errs.IsExternalError(err)) {
+		if inferred || errors.IsReportableError(err) {
 			return locale.WrapError(err, "err_init_lang", "", languageName, languageVersion)
 		} else {
 			return locale.WrapExternalError(err, "err_init_lang", "", languageName, languageVersion)
