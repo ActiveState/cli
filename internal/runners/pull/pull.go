@@ -136,7 +136,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		resultCommit, mergeErr := bp.MergeCommit(params)
 		if mergeErr != nil {
 			logging.Debug("Merge with fast-forward failed with error: %s, trying recursive overwrite", mergeErr.Error())
-			strategy = bpModel.MergeCommitStrategyRecursiveOverwriteOnConflict
+			strategy = bpModel.MergeCommitStrategyRecursiveKeepOnConflict
 			c, err := p.performMerge(*remoteCommit, *localCommit, remoteProject, p.project.BranchName(), strategy)
 			if err != nil {
 				p.notifyMergeStrategy(anaConst.LabelVcsConflictMergeStrategyFailed, *localCommit, remoteProject)
