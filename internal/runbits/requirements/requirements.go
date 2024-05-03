@@ -239,7 +239,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 
 		// Solve runtime
-		rt, rtCommit, err := runbit.Solve(r.Auth, r.Output, r.Analytics, r.Project, &commitID, trigger, r.SvcModel, r.Config)
+		rt, rtCommit, err := runbit.Solve(r.Auth, r.Output, r.Analytics, r.Project, &commitID, trigger, r.SvcModel, r.Config, runbit.OptNone)
 		if err != nil {
 			return errs.Wrap(err, "Could not solve runtime")
 		}

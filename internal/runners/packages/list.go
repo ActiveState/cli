@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/pkg/buildplan"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -17,13 +18,10 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/store"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -77,32 +75,32 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 		l.out.Notice(locale.Tr("operating_message", l.project.NamespaceString(), l.project.Dir()))
 	}
 
-	var commit *strfmt.UUID
+	var commitID *strfmt.UUID
 	var err error
 	switch {
 	case params.Commit != "":
-		commit, err = targetFromCommit(params.Commit, l.project)
+		commitID, err = targetFromCommit(params.Commit, l.project)
 		if err != nil {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
 	case params.Project != "":
-		commit, err = targetFromProject(params.Project)
+		commitID, err = targetFromProject(params.Project)
 		if err != nil {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
 	default:
-		commit, err = targetFromProjectFile(l.project)
+		commitID, err = targetFromProjectFile(l.project)
 		if err != nil {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
 	}
 
-	checkpoint, err := fetchCheckpoint(commit, l.auth)
+	checkpoint, err := fetchCheckpoint(commitID, l.auth)
 	if err != nil {
 		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_fetch_checkpoint", nstype))
 	}
 
-	language, err := model.LanguageByCommit(*commit, l.auth)
+	language, err := model.LanguageByCommit(*commitID, l.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_package_list_language", "Unable to get language from project")
 	}
@@ -111,17 +109,12 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	// Fetch resolved artifacts list for showing full version numbers, if possible.
 	var artifacts buildplan.Artifacts
 	if l.project != nil && params.Project == "" {
-		rt, _, err := rtrunbit.Solve(l.auth, l.out, l.analytics, l.project, nil, target.TriggerPackage, l.svcModel, l.cfg)
+		bpm := bpModel.NewBuildPlannerModel(l.auth)
+		commit, err := bpm.FetchCommit(*commitID, l.project.Owner(), l.project.Name(), nil)
 		if err != nil {
-			logging.Warning("Runtime sourcing failed: %s", errs.JoinMessage(err))
-			l.out.Notice(locale.T("err_package_list_runtime"))
-		} else {
-			bp, err := rt.BuildPlan()
-			if err != nil && !errors.Is(err, store.ErrNoBuildPlanFile) {
-				return locale.WrapError(err, "err_package_list_artifacts", "Unable to resolve package versions")
-			}
-			artifacts = bp.Artifacts(buildplan.FilterStateArtifacts())
+			return errs.Wrap(err, "could not fetch commit")
 		}
+		artifacts = commit.BuildPlan().Artifacts(buildplan.FilterStateArtifacts())
 	}
 
 	requirements := model.FilterCheckpointNamespace(checkpoint, model.NamespacePackage, model.NamespaceBundle)

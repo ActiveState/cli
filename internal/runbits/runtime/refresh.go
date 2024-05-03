@@ -30,6 +30,7 @@ type Opts int
 const (
 	OptNone         Opts = 1 << iota
 	OptMinimalUI         // Only print progress output, don't decorate the UI in any other way
+	OptNoUI              // Don't print progress output, don't decorate the UI in any other way
 	OptOrderChanged      // Indicate that the order has changed, and the runtime should be refreshed regardless of internal dirty checking mechanics
 )
 
@@ -118,10 +119,17 @@ func Solve(
 	trigger target.Trigger,
 	svcm *model.SvcModel,
 	cfg Configurable,
+	opts Opts,
 ) (_ *runtime.Runtime, _ *bpModel.Commit, rerr error) {
-	spinner := output.StartSpinner(out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+	var spinner *output.Spinner
+	if !bitflags.Has(opts, OptMinimalUI) {
+		spinner = output.StartSpinner(out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+	}
 
 	defer func() {
+		if spinner == nil {
+			return
+		}
 		if rerr != nil {
 			spinner.Stop(locale.T("progress_fail"))
 		} else {
@@ -132,7 +140,6 @@ func Solve(
 	rtTarget := target.NewProjectTarget(proj, customCommitID, trigger)
 	rt, err := runtime.New(rtTarget, an, svcm, auth, cfg, out)
 	if err != nil {
-
 		return nil, nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
 	}
 

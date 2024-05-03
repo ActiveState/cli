@@ -1,8 +1,6 @@
 package languages
 
 import (
-	"errors"
-
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
@@ -10,13 +8,11 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/store"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -82,14 +78,12 @@ func (l *Languages) Run() error {
 	}
 
 	// Fetch resolved artifacts list for showing full version numbers.
-	rt, _, err := runtime.Solve(l.auth, l.out, l.analytics, l.project, nil, target.TriggerLanguage, l.svcModel, l.cfg)
+	bpm := bpModel.NewBuildPlannerModel(l.auth)
+	commit, err := bpm.FetchCommit(commitID, l.project.Owner(), l.project.Name(), nil)
 	if err != nil {
-		return locale.WrapError(err, "err_languages_runtime", "Could not initialize runtime")
+		return errs.Wrap(err, "could not fetch commit")
 	}
-	bp, err := rt.BuildPlan()
-	if err != nil && !errors.Is(err, store.ErrNoBuildPlanFile) {
-		return locale.WrapError(err, "err_language_resolved_artifacts", "Unable to resolve language version(s)")
-	}
+	bp := commit.BuildPlan()
 	ns := model.NewNamespaceLanguage()
 
 	langsPlainOutput := []languagePlainOutput{}
@@ -102,13 +96,15 @@ func (l *Languages) Run() error {
 		}
 
 		resolvedVersion := ""
-		ingredients := bp.Ingredients(func(i *buildplan.Ingredient) bool {
-			return i.Name == lang.Name && i.Namespace == ns.String()
-		})
-		if len(ingredients) == 1 {
-			resolvedVersion = ingredients[0].Version
-		} else {
-			logging.Warning("Expected 1 matching language, got %d. Searched for %s:%s", len(ingredients), ns.String(), lang.Name)
+		if bp != nil {
+			ingredients := bp.Ingredients(func(i *buildplan.Ingredient) bool {
+				return i.Name == lang.Name && i.Namespace == ns.String()
+			})
+			if len(ingredients) == 1 {
+				resolvedVersion = ingredients[0].Version
+			} else {
+				logging.Warning("Expected 1 matching language, got %d. Searched for %s:%s", len(ingredients), ns.String(), lang.Name)
+			}
 		}
 
 		plainVersion := version
