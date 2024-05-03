@@ -46,9 +46,7 @@ func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) (rerr
 			req.NamespaceType = &nsType
 		}
 
-		if params.Revision.Int != nil {
-			req.Revision = *params.Revision.Int
-		}
+		req.Revision = params.Revision.Int
 
 		reqs = append(reqs, req)
 	}
