@@ -305,10 +305,9 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutBuildtimeClosure() {
 	)
 	// Expect the number of build deps to be 27 which is more than the number of runtime deps.
 	// Also expect ncurses which should not be in the runtime closure.
-	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
-	cp.Expect("27")
-	cp.Expect("ncurses")
-	cp.ExpectExitCode(0)
+	cp.Expect("ncurses", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("27/27", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestFail() {
