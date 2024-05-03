@@ -113,13 +113,15 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	if l.project != nil && params.Project == "" {
 		rt, _, err := rtrunbit.Solve(l.auth, l.out, l.analytics, l.project, nil, target.TriggerPackage, l.svcModel, l.cfg)
 		if err != nil {
-			return locale.WrapError(err, "err_package_list_runtime", "Could not initialize runtime")
+			logging.Warning("Runtime sourcing failed: %s", errs.JoinMessage(err))
+			l.out.Notice(locale.T("err_package_list_runtime"))
+		} else {
+			bp, err := rt.BuildPlan()
+			if err != nil && !errors.Is(err, store.ErrNoBuildPlanFile) {
+				return locale.WrapError(err, "err_package_list_artifacts", "Unable to resolve package versions")
+			}
+			artifacts = bp.Artifacts(buildplan.FilterStateArtifacts())
 		}
-		bp, err := rt.BuildPlan()
-		if err != nil && !errors.Is(err, store.ErrNoBuildPlanFile) {
-			return locale.WrapError(err, "err_package_list_artifacts", "Unable to resolve package versions")
-		}
-		artifacts = bp.Artifacts(buildplan.FilterStateArtifacts())
 	}
 
 	requirements := model.FilterCheckpointNamespace(checkpoint, model.NamespacePackage, model.NamespaceBundle)
