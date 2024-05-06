@@ -48,7 +48,7 @@ func OutputChangeSummary(out output.Outputer, changeset *buildplan.ArtifactChang
 		return directDependencies[i].Name < directDependencies[j].Name
 	})
 
-	logging.Debug("packages %s have %d direct dependencies and %d indirect, unique dependencies",
+	logging.Debug("packages %s have %d direct dependencies and %d indirect dependencies",
 		strings.Join(addedString, ", "), len(directDependencies), numIndirect)
 	if len(directDependencies) == 0 {
 		return
