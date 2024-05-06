@@ -120,7 +120,7 @@ type StructuredError struct {
 	Tips    []string `json:"tips,omitempty"`
 }
 
-func (s StructuredError) EError() string {
+func (s StructuredError) Error() string {
 	return s.Message
 }
 
