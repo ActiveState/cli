@@ -701,7 +701,7 @@ func (c *Command) cobraExecHandler(cobraCmd *cobra.Command, args []string) (rerr
 		}
 
 		if err := c.execute(c, args); err != nil {
-			return errs.Wrap(err, "execute failed")
+			return locale.WrapError(err, "unexpected_error", "Command failed due to unexpected error. For your convenience, this is the error chain:\n{{.V0}}", errs.JoinMessage(err))
 		}
 
 		for _, handler := range c.TopParent().onExecStop {
