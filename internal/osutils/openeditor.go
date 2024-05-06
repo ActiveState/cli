@@ -64,7 +64,7 @@ func verifyEditor(editor string) error {
 
 	_, err := exec.LookPath(editor)
 	if err != nil {
-		return errs.Wrap(err, "Failed to find a suite-able editor.")
+		return errs.Wrap(err, "Failed to find a suitable editor.")
 	}
 
 	return nil
