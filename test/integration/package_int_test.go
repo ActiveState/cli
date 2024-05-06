@@ -759,7 +759,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Indirect() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "org/cli-integration-tests/language/python:django_dep", "--ts=now"),
+		e2e.OptArgs("install", "private/ActiveState-CLI-Testing/language/python:django_dep", "--ts=now"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.ExpectRe(`Warning: Dependency has \d indirect known vulnerabilities`, e2e.RuntimeSourcingTimeoutOpt)

@@ -263,7 +263,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 			oldBuildPlan = commit.BuildPlan()
 		}
 
-		changedArtifacts := rtCommit.BuildPlan().DiffArtifacts(oldBuildPlan, true)
+		changedArtifacts := rtCommit.BuildPlan().DiffArtifacts(oldBuildPlan, false)
 
 		// Report CVEs
 		if err := r.cveReport(changedArtifacts, requirements...); err != nil {
