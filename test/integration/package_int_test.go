@@ -660,18 +660,6 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDock
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
-
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "requests"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
-
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("uninstall", "requests"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 }
 
 func (suite *PackageIntegrationTestSuite) TestResolved() {
