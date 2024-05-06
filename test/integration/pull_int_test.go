@@ -130,6 +130,22 @@ func (suite *PullIntegrationTestSuite) assertMergeStrategyNotification(ts *e2e.S
 	suite.Assert().Equal(strategy, conflictEvents[0].Label)
 }
 
+func (suite *PullIntegrationTestSuite) TestPullNoCommonParent() {
+	suite.OnlyRunForTags(tagsuite.Pull)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI/Python3", "19c5a165-167d-48f1-b5e0-826c2fed6ab7")
+
+	cp := ts.Spawn("pull")
+	cp.Expect("Operating on project")
+	cp.Expect("ActiveState-CLI/Python3")
+	cp.Expect("no common")
+	cp.Expect("To review your project history")
+	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
+}
+
 func TestPullIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(PullIntegrationTestSuite))
 }

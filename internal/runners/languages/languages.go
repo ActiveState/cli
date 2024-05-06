@@ -78,10 +78,11 @@ func (l *Languages) Run() error {
 	}
 
 	// Fetch resolved artifacts list for showing full version numbers.
-	rt, err := runtime.SolveAndUpdate(l.auth, l.out, l.analytics, l.project, nil, target.TriggerLanguage, l.svcModel, l.cfg, runtime.OptMinimalUI)
+	rt, err := runtime.Solve(l.auth, l.out, l.analytics, l.project, nil, target.TriggerLanguage, l.svcModel, l.cfg, runtime.OptMinimalUI)
 	if err != nil {
 		return locale.WrapError(err, "err_languages_runtime", "Could not initialize runtime")
 	}
+
 	artifacts, err := rt.ResolvedArtifacts()
 	if err != nil && !errs.Matches(err, store.ErrNoBuildPlanFile) {
 		return locale.WrapError(err, "err_language_resolved_artifacts", "Unable to resolve language version(s)")

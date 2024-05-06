@@ -212,7 +212,7 @@ func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
 		}
 		for _, artifact := range platform.Packages {
 			if artifact.URL == "" {
-				b.out.Print(fmt.Sprintf("  • %s ([WARNING]%s ...[/RESET])", artifact.Name, locale.T("artifact_status_building")))
+				b.out.Print(fmt.Sprintf("    • %s ([WARNING]%s ...[/RESET])", artifact.Name, locale.T("artifact_status_building")))
 				continue
 			}
 			id := strings.ToUpper(artifact.ID)
@@ -303,7 +303,7 @@ func getTerminalArtifactMap(
 	case namespaceProvided && !commitIdProvided:
 		pj, err := model.FetchProjectByName(namespace.Owner, namespace.Project, auth)
 		if err != nil {
-			return nil, false, false, locale.WrapInputError(err, "err_fetch_project", "", namespace.String())
+			return nil, false, false, locale.WrapExternalError(err, "err_fetch_project", "", namespace.String())
 		}
 
 		branch, err := model.DefaultBranchForProject(pj)

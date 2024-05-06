@@ -106,7 +106,7 @@ func (client *Client) AuthenticatedUserID() (strfmt.UUID, error) {
 	resOk, err := client.Authentication.GetWhoami(nil, client.auth.ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 401 {
-			return "", locale.NewInputError("err_api_not_authenticated")
+			return "", locale.NewExternalError("err_api_not_authenticated")
 		}
 		return "", errs.Wrap(err, "Whoami failed")
 	}
@@ -126,7 +126,7 @@ func FetchAll(client *Client, org *mono_models.Organization) ([]*secretsModels.U
 	if err != nil {
 		switch statusCode := api.ErrorCode(err); statusCode {
 		case 401:
-			return nil, locale.NewInputError("err_api_not_authenticated")
+			return nil, locale.NewExternalError("err_api_not_authenticated")
 		default:
 			return nil, errs.Wrap(err, "GetAllUserSecrets failed")
 		}
@@ -142,7 +142,7 @@ func FetchDefinitions(client *Client, projectID strfmt.UUID) ([]*secretsModels.S
 	if err != nil {
 		switch statusCode := api.ErrorCode(err); statusCode {
 		case 401:
-			return nil, locale.NewInputError("err_api_not_authenticated")
+			return nil, locale.NewExternalError("err_api_not_authenticated")
 		default:
 			return nil, errs.Wrap(err, "GetDefinitions failed")
 		}

@@ -2,7 +2,11 @@ package runtime
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
@@ -10,11 +14,16 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 	"github.com/imacks/bitflags-go"
 )
+
+func init() {
+	configMediator.RegisterOption(constants.AsyncRuntimeConfig, configMediator.Bool, false)
+}
 
 type Opts int
 
@@ -27,6 +36,16 @@ const (
 type Configurable interface {
 	GetString(key string) string
 	GetBool(key string) bool
+}
+
+var overrideAsyncTriggers = map[target.Trigger]bool{
+	target.TriggerRefresh:  true,
+	target.TriggerExec:     true,
+	target.TriggerActivate: true,
+	target.TriggerShell:    true,
+	target.TriggerScript:   true,
+	target.TriggerDeploy:   true,
+	target.TriggerUse:      true,
 }
 
 // SolveAndUpdate should be called after runtime mutations.
@@ -49,6 +68,11 @@ func SolveAndUpdate(
 
 	if proj.IsHeadless() {
 		return nil, rationalize.ErrHeadless
+	}
+
+	if cfg.GetBool(constants.AsyncRuntimeConfig) && !overrideAsyncTriggers[trigger] {
+		logging.Debug("Skipping runtime solve due to async runtime")
+		return nil, nil
 	}
 
 	target := target.NewProjectTarget(proj, customCommitID, trigger)
@@ -83,6 +107,53 @@ func SolveAndUpdate(
 	}
 
 	return rt, nil
+}
+
+type SolveResponse struct {
+	*runtime.Runtime
+	BuildResult *model.BuildResult
+	Commit      *bpModel.Commit
+}
+
+func Solve(
+	auth *authentication.Auth,
+	out output.Outputer,
+	an analytics.Dispatcher,
+	proj *project.Project,
+	customCommitID *strfmt.UUID,
+	trigger target.Trigger,
+	svcm *model.SvcModel,
+	cfg Configurable,
+	opts Opts,
+) (_ *SolveResponse, rerr error) {
+	spinner := output.StartSpinner(out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+
+	defer func() {
+		if rerr != nil {
+			spinner.Stop(locale.T("progress_fail"))
+		} else {
+			spinner.Stop(locale.T("progress_success"))
+		}
+	}()
+
+	rtTarget := target.NewProjectTarget(proj, customCommitID, trigger)
+	rt, err := runtime.New(rtTarget, an, svcm, auth, cfg, out)
+	if err != nil {
+
+		return nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+	}
+
+	setup := rt.Setup(&events.VoidHandler{})
+	buildResult, commit, err := setup.Solve()
+	if err != nil {
+		return nil, errs.Wrap(err, "Solve failed")
+	}
+
+	return &SolveResponse{
+		Runtime:     rt,
+		BuildResult: buildResult,
+		Commit:      commit,
+	}, nil
 }
 
 // UpdateByReference will update the given runtime if necessary. This is functionally the same as SolveAndUpdateByReference

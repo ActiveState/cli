@@ -65,7 +65,7 @@ func (u *Uninstall) Run(params *Params) error {
 		var err error
 		cwd, err = osutils.Getwd()
 		if err != nil {
-			return locale.WrapInputError(
+			return locale.WrapExternalError(
 				err,
 				"err_deploy_uninstall_cannot_get_cwd",
 				"Cannot determine current working directory. Please supply '[ACTIONABLE]--path[/RESET]' argument")

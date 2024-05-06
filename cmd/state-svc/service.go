@@ -62,7 +62,7 @@ func (s *service) Start() error {
 	err = s.ipcSrv.Start()
 	if err != nil {
 		if errors.Is(err, ipc.ErrInUse) {
-			return locale.WrapInputError(err, "err_service_ipc_in_use", "An existing server instance appears to be in use")
+			return locale.WrapExternalError(err, "err_service_ipc_in_use", "An existing server instance appears to be in use")
 		}
 		return errs.Wrap(err, "Failed to start server")
 	}

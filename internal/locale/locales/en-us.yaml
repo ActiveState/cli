@@ -1470,6 +1470,10 @@ checkout_project_statement:
   other: |
     Checked out project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
+checkout_project_statement_async:
+  other: |
+    Checked out project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
+    Run '[ACTIONABLE]state refresh[/RESET]' to source the runtime.
 refresh_project_statement:
   other: |
     Runtime updated for project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
@@ -1607,3 +1611,7 @@ vulnerability_medium:
   other: "[YELLOW]{{.V0}} Medium[/RESET]"
 vulnerability_low:
   other: "[GREEN]{{.V0}} Low[/RESET]"
+err_pull_no_common_parent:
+  other: |
+    The local commit ID [NOTICE]{{.V0}}[/RESET] and latest remote commit ID [NOTICE]{{.V1}}[/RESET] have no common parent. 
+    To review your project history run '[ACTIONABLE]state history[/RESET]'.

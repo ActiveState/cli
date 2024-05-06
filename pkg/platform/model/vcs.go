@@ -491,7 +491,7 @@ func updateBranch(branchID strfmt.UUID, changeset *mono_models.BranchEditable, a
 	_, err = authClient.VersionControl.UpdateBranch(params, auth.ClientAuth())
 	if err != nil {
 		if _, ok := err.(*version_control.UpdateBranchForbidden); ok {
-			return &ErrUpdateBranchAuth{locale.NewInputError("err_branch_update_auth", "Branch update failed with authentication error")}
+			return &ErrUpdateBranchAuth{locale.NewExternalError("err_branch_update_auth", "Branch update failed with authentication error")}
 		}
 		return locale.NewError("err_update_branch", "", api.ErrorMessageFromPayload(err))
 	}

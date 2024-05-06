@@ -2,7 +2,9 @@ package model
 
 import (
 	"fmt"
+	"regexp"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -22,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 )
 
 func init() {
@@ -328,6 +331,7 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID,
 
 	var pids []strfmt.UUID
 	var fallback []strfmt.UUID
+	libcMap := make(map[strfmt.UUID]float64)
 	for _, platformID := range platformIDs {
 		for _, rtPf := range runtimePlatforms {
 			if rtPf.PlatformID == nil || platformID != *rtPf.PlatformID {
@@ -343,9 +347,22 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID,
 				continue
 			}
 
-			if libcVersion != "" && rtPf.LibcVersion != nil &&
-				rtPf.LibcVersion.Version != nil && libcVersion != *rtPf.LibcVersion.Version {
-				continue
+			if rtPf.LibcVersion != nil && rtPf.LibcVersion.Version != nil {
+				if libcVersion != "" && libcVersion != *rtPf.LibcVersion.Version {
+					continue
+				}
+				// Convert the libc version to a major-minor float and map it to the platform ID for
+				// subsequent comparisons.
+				regex := regexp.MustCompile(`^\d+\D\d+`)
+				versionString := regex.FindString(*rtPf.LibcVersion.Version)
+				if versionString == "" {
+					return nil, errs.New("Unable to parse libc string '%s'", *rtPf.LibcVersion.Version)
+				}
+				version, err := strconv.ParseFloat(versionString, 32)
+				if err != nil {
+					return nil, errs.Wrap(err, "libc version is not a number: %s", versionString)
+				}
+				libcMap[platformID] = version
 			}
 
 			platformArch := platformArchToHostArch(
@@ -364,14 +381,57 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID,
 		}
 	}
 
-	if len(pids) > 0 {
-		return pids, nil
-	}
-	if len(fallback) > 0 {
-		return fallback, nil
+	if len(pids) == 0 && len(fallback) == 0 {
+		return nil, &ErrNoMatchingPlatform{hostPlatform, hostArch, libcVersion}
+	} else if len(pids) == 0 {
+		pids = fallback
 	}
 
-	return nil, &ErrNoMatchingPlatform{hostPlatform, hostArch, libcVersion}
+	if runtime.GOOS == "linux" {
+		// Sort platforms by closest matching libc version.
+		// Note: for macOS, the Platform gives a libc version based on libSystem, while sysinfo.Libc()
+		// returns the clang version, which is something different altogether. At this time, the pid
+		// list to return contains only one Platform, so sorting is not an issue and unnecessary.
+		// When it does become necessary, DX-2780 will address this.
+		// Note: the Platform does not specify libc on Windows, so this sorting is not applicable on
+		// Windows.
+		libc, err := sysinfo.Libc()
+		if err != nil {
+			return nil, errs.Wrap(err, "Unable to get system libc")
+		}
+		localLibc, err := strconv.ParseFloat(libc.Version(), 32)
+		if err != nil {
+			return nil, errs.Wrap(err, "Libc version is not a number: %s", libc.Version())
+		}
+		sort.SliceStable(pids, func(i, j int) bool {
+			libcI, existsI := libcMap[pids[i]]
+			libcJ, existsJ := libcMap[pids[j]]
+			less := false
+			switch {
+			case !existsI || !existsJ:
+				break
+			case localLibc >= libcI && localLibc >= libcJ:
+				// If both platform libc versions are less than to the local libc version, prefer the
+				// greater of the two.
+				less = libcI > libcJ
+			case localLibc < libcI && localLibc < libcJ:
+				// If both platform libc versions are greater than the local libc version, prefer the lesser
+				// of the two.
+				less = libcI < libcJ
+			case localLibc >= libcI && localLibc < libcJ:
+				// If only one of the platform libc versions is greater than local libc version, prefer the
+				// other one.
+				less = true
+			case localLibc < libcI && localLibc >= libcJ:
+				// If only one of the platform libc versions is greater than local libc version, prefer the
+				// other one.
+				less = false
+			}
+			return less
+		})
+	}
+
+	return pids, nil
 }
 
 func fetchLibcVersion(cfg Configurable) (string, error) {
@@ -432,7 +492,7 @@ func FetchPlatformByDetails(name, version string, word int, auth *authentication
 
 	details := fmt.Sprintf("%s %d %s", name, word, version)
 
-	return nil, locale.NewInputError("err_unsupported_platform", "", details)
+	return nil, locale.NewExternalError("err_unsupported_platform", "", details)
 }
 
 func FetchLanguageForCommit(commitID strfmt.UUID, auth *authentication.Auth) (*Language, error) {

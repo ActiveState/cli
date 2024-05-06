@@ -89,7 +89,7 @@ func (f *Plain) Config() *Config {
 
 // write is a little helper that just takes care of marshalling the value and sending it to the requested writer
 func (f *Plain) write(writer io.Writer, value interface{}) {
-	v, err := sprint(value)
+	v, err := sprint(value, nil)
 	if err != nil {
 		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Could not sprint value: %v, error: %v, stack: %s", value, err, stacktrace.Get().String())
 		f.writeNow(f.cfg.ErrWriter, fmt.Sprintf("[ERROR]%s[/RESET]", locale.Tr("err_sprint", err.Error())))
@@ -120,7 +120,7 @@ func wordWrapWithWidth(text string, width int) string {
 const nilText = "<nil>"
 
 // sprint will marshal and return the given value as a string
-func sprint(value interface{}) (string, error) {
+func sprint(value interface{}, opts []string) (string, error) {
 	if value == nil {
 		return nilText, nil
 	}
@@ -140,7 +140,7 @@ func sprint(value interface{}) (string, error) {
 		if valueRfl.IsNil() {
 			return nilText, nil
 		}
-		return sprint(valueRfl.Elem().Interface())
+		return sprint(valueRfl.Elem().Interface(), opts)
 
 	case reflect.Struct:
 		return sprintStruct(value)
@@ -149,13 +149,13 @@ func sprint(value interface{}) (string, error) {
 		if valueRfl.IsNil() {
 			return nilText, nil
 		}
-		return sprintSlice(value)
+		return sprintSlice(value, opts)
 
 	case reflect.Map:
 		if valueRfl.IsNil() {
 			return nilText, nil
 		}
-		return sprintMap(value)
+		return sprintMap(value, opts)
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
@@ -203,7 +203,7 @@ func sprintStruct(value interface{}) (string, error) {
 			return sprintTable(false, true, slice)
 		}
 
-		stringValue, err := sprint(field.value)
+		stringValue, err := sprint(field.value, field.opts)
 		if err != nil {
 			return "", err
 		}
@@ -223,25 +223,25 @@ func sprintStruct(value interface{}) (string, error) {
 }
 
 // sprintSlice will marshal and return the given slice as a string
-func sprintSlice(value interface{}) (string, error) {
+func sprintSlice(value interface{}, opts []string) (string, error) {
 	slice, err := parseSlice(value)
 	if err != nil {
 		return "", err
 	}
 
 	if len(slice) > 0 && isStruct(slice[0]) {
-		return sprintTable(false, false, slice)
+		return sprintTable(false, funk.Contains(opts, string(HideDash)), slice)
 	}
 
 	result := []string{}
 	for _, v := range slice {
-		stringValue, err := sprint(v)
+		stringValue, err := sprint(v, opts)
 		if err != nil {
 			return "", err
 		}
 
 		// prepend if stringValue does not represent a slice
-		if !isSlice(v) {
+		if !isSlice(v) && !funk.Contains(opts, string(HideDash)) {
 			stringValue = " - " + stringValue
 		}
 
@@ -252,7 +252,7 @@ func sprintSlice(value interface{}) (string, error) {
 }
 
 // sprintMap will marshal and return the given map as a string
-func sprintMap(value interface{}) (string, error) {
+func sprintMap(value interface{}, opts []string) (string, error) {
 	mp, err := parseMap(value)
 	if err != nil {
 		return "", err
@@ -260,7 +260,7 @@ func sprintMap(value interface{}) (string, error) {
 
 	result := []string{}
 	for k, v := range mp {
-		stringValue, err := sprint(v)
+		stringValue, err := sprint(v, opts)
 		if err != nil {
 			return "", err
 		}
@@ -306,7 +306,7 @@ func sprintTable(vertical, hideDash bool, slice []interface{}) (string, error) {
 				continue
 			}
 
-			stringValue, err := sprint(field.value)
+			stringValue, err := sprint(field.value, field.opts)
 			if err != nil {
 				return "", err
 			}
@@ -373,7 +373,7 @@ func sprintVerticalTable(slice []interface{}) (string, error) {
 				continue
 			}
 
-			stringValue, err := sprint(field.value)
+			stringValue, err := sprint(field.value, field.opts)
 			if err != nil {
 				return "", err
 			}
