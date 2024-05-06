@@ -293,12 +293,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	}
 
 	// Write the merged build expression as a local build script.
-	err = buildscript.Update(p.project, atTime, mergedExpr)
-	if err != nil {
-		return errs.Wrap(err, "Could not update build script with merged changes")
-	}
-
-	return nil
+	return buildscript.Update(p.project, atTime, mergedExpr)
 }
 
 func resolveRemoteProject(prj *project.Project) (*project.Namespaced, error) {
