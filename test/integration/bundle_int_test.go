@@ -3,7 +3,6 @@ package integration
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -79,17 +78,15 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("bundles", "install", "Testing", "--output", "json"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect(`"name":"Testing"`, e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect(`"name":"Testing"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("bundles", "uninstall", "Testing", "-o", "editor"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect(`"name":"Testing"`, e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect(`"name":"Testing"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 }
