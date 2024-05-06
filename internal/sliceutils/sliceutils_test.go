@@ -306,3 +306,20 @@ func TestUniqueByProperty(t *testing.T) {
 		UniqueByProperty([]s{{"a"}, {"a"}, {"b"}, {"c"}}, func(v s) any { return v.name }),
 	)
 }
+
+func TestToLookupMapByKey(t *testing.T) {
+	type customType struct {
+		Key   string
+		Value string
+	}
+	v1 := &customType{"Key1", "Val1"}
+	v2 := &customType{"Key2", "Val2"}
+	v3 := &customType{"Key3", "Val3"}
+	lookupSlice := []*customType{v1, v2, v3}
+	lookupMap := ToLookupMapByKey(lookupSlice, func(v *customType) string { return v.Key })
+	assert.Equal(t, map[string]*customType{
+		"Key1": v1,
+		"Key2": v2,
+		"Key3": v3,
+	}, lookupMap)
+}

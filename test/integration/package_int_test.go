@@ -632,18 +632,23 @@ func (suite *PackageIntegrationTestSuite) TestRuby() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI-Testing/Ruby", ".")
-	cp.Expect("Checked out project")
-	cp.ExpectExitCode(0)
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", "ActiveState-CLI-Testing/Ruby", "."),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
-	cp = ts.Spawn("install", "rake")
-	cp.ExpectExitCode(0)
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("install", "rake"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("exec", "rake", "--", "--version"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectRe(`rake, version \d+\.\d+\.\d+`, e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectRe(`rake, version \d+\.\d+\.\d+`)
 	cp.ExpectExitCode(0)
 }
 

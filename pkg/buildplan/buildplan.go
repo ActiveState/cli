@@ -14,7 +14,7 @@ import (
 type BuildPlan struct {
 	platforms    []strfmt.UUID
 	artifacts    Artifacts
-	requirements Ingredients
+	requirements Requirements
 	ingredients  Ingredients
 	raw          *raw.Build
 }
@@ -168,17 +168,33 @@ func (b *BuildPlan) IsBuildInProgress() bool {
 }
 
 // RequestedIngredients returns the resolved requirements of the buildplan as ingredients
-func (b *BuildPlan) RequestedIngredients() []*Ingredient {
-	return b.requirements
+func (b *BuildPlan) RequestedIngredients() Ingredients {
+	ingredients := Ingredients{}
+	seen := make(map[strfmt.UUID]struct{})
+	for _, r := range b.requirements {
+		if _, ok := seen[r.Ingredient.IngredientID]; ok {
+			continue
+		}
+		seen[r.Ingredient.IngredientID] = struct{}{}
+		ingredients = append(ingredients, r.Ingredient)
+	}
+	return ingredients
 }
 
 // RequestedArtifacts returns the resolved requirements of the buildplan as artifacts
 func (b *BuildPlan) RequestedArtifacts() Artifacts {
 	result := []*Artifact{}
-	for _, i := range b.requirements {
+	for _, i := range b.RequestedIngredients() {
 		for _, a := range i.Artifacts {
 			result = append(result, a)
 		}
 	}
 	return result
+}
+
+// Requirements returns what the project has defined as the top level requirements (ie. the "order").
+// This is usually the same as the "ingredients" but it can be different if the project has multiple requirements that
+// are satisfied by the same ingredient. eg. rake is satisfied by ruby.
+func (b *BuildPlan) Requirements() Requirements {
+	return b.requirements
 }

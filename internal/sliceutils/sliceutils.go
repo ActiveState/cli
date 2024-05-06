@@ -104,3 +104,11 @@ func ToLookupMap[T string | int | strfmt.UUID](data []T) map[T]struct{} {
 	}
 	return result
 }
+
+func ToLookupMapByKey[T any, K string | int | strfmt.UUID](data []T, keyCb func(T) K) map[K]T {
+	result := make(map[K]T)
+	for _, d := range data {
+		result[keyCb(d)] = d
+	}
+	return result
+}

@@ -18,13 +18,6 @@ import (
 func (b *BuildPlan) hydrate() error {
 	logging.Debug("Hydrating build plan")
 
-	// Build map of requirement IDs so we can quickly look up the associated ingredient
-	reqIDs := map[strfmt.UUID]struct{}{}
-	reqs := b.raw.ResolvedRequirements
-	for _, req := range reqs {
-		reqIDs[req.Source] = struct{}{}
-	}
-
 	artifactLookup := make(map[strfmt.UUID]*Artifact)
 	ingredientLookup := make(map[strfmt.UUID]*Ingredient)
 
@@ -48,10 +41,28 @@ func (b *BuildPlan) hydrate() error {
 		// We have all the artifacts we're interested in now, but we still want to relate them to a source; ie. an ingredient.
 		// This will also hydrate our requirements, because they are based on the source ID.
 		for _, artifact := range b.artifacts {
-			if err := b.hydrateWithIngredients(artifact, platformID, reqIDs, ingredientLookup); err != nil {
+			if err := b.hydrateWithIngredients(artifact, platformID, ingredientLookup); err != nil {
 				return errs.Wrap(err, "hydrating with ingredients failed")
 			}
 		}
+	}
+
+	// Hydrate requirements
+	// Build map of requirement IDs so we can quickly look up the associated ingredient
+	sourceLookup := sliceutils.ToLookupMapByKey(b.raw.Sources, func(s *raw.Source) strfmt.UUID { return s.NodeID })
+	for _, req := range b.raw.ResolvedRequirements {
+		source, ok := sourceLookup[req.Source]
+		if !ok {
+			return errs.New("missing source for source ID: %s", req.Source)
+		}
+		ingredient, ok := ingredientLookup[source.IngredientID]
+		if !ok {
+			return errs.New("missing ingredient for source ID: %s", req.Source)
+		}
+		b.requirements = append(b.requirements, &Requirement{
+			Requirement: req.Requirement,
+			Ingredient:  ingredient,
+		})
 	}
 
 	if err := b.sanityCheck(); err != nil {
@@ -134,7 +145,7 @@ func (b *BuildPlan) hydrateWithRuntimeClosure(nodeIDs []strfmt.UUID, platformID 
 	return nil
 }
 
-func (b *BuildPlan) hydrateWithIngredients(artifact *Artifact, platformID *strfmt.UUID, reqIDs map[strfmt.UUID]struct{}, ingredientLookup map[strfmt.UUID]*Ingredient) error {
+func (b *BuildPlan) hydrateWithIngredients(artifact *Artifact, platformID *strfmt.UUID, ingredientLookup map[strfmt.UUID]*Ingredient) error {
 	err := b.raw.WalkViaSteps([]strfmt.UUID{artifact.ArtifactID}, raw.TagSource,
 		func(node interface{}, parent *raw.Artifact) error {
 			switch v := node.(type) {
@@ -156,11 +167,6 @@ func (b *BuildPlan) hydrateWithIngredients(artifact *Artifact, platformID *strfm
 					}
 					b.ingredients = append(b.ingredients, ingredient)
 					ingredientLookup[v.IngredientID] = ingredient
-				}
-
-				// Detect direct requirements
-				if _, ok := reqIDs[v.NodeID]; ok && !sliceutils.Contains(b.requirements, ingredient) {
-					b.requirements = append(b.requirements, ingredient)
 				}
 
 				// With multiple terminals it's possible we encounter the same combination multiple times.
@@ -225,37 +231,6 @@ func (b *BuildPlan) sanityCheck() error {
 			return errs.New("Ingredient %s (%s) occurs multiple times", i.Name, i.IngredientID)
 		}
 		seen[i.IngredientID] = struct{}{}
-	}
-	seen = make(map[strfmt.UUID]struct{})
-	for _, r := range b.requirements {
-		if _, ok := seen[r.IngredientID]; ok {
-			return errs.New("Requirement %s (%s) occurs multiple times", r.Name, r.IngredientID)
-		}
-		seen[r.IngredientID] = struct{}{}
-	}
-
-	// Work around apparent API bug where the same ingredient source can appear multiple times as a resolved requirement
-	// each with a unique node ID but otherwise identical values.
-	resolvedReq := sliceutils.UniqueByProperty(b.raw.ResolvedRequirements, func(r *raw.RawResolvedRequirement) any { return r.Requirement.Name + r.Requirement.Namespace })
-
-	// Verify that we have resolved all requirements
-	if len(b.requirements) != len(resolvedReq) {
-		missing := []string{}
-		if len(resolvedReq) > len(b.requirements) {
-			for _, r := range resolvedReq {
-				hit := false
-				for _, rq := range b.requirements {
-					if rq.Name == r.Requirement.Name && rq.Namespace == r.Requirement.Namespace {
-						hit = true
-						break
-					}
-				}
-				if !hit {
-					missing = append(missing, r.Requirement.Name)
-				}
-			}
-		}
-		return errs.New("Expected to have %d requirements, got %d, missing: %v", len(resolvedReq), len(b.requirements), missing)
 	}
 
 	return nil
