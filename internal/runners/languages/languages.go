@@ -77,7 +77,7 @@ func (l *Languages) Run() error {
 		return locale.WrapError(err, "err_fetching_languages", "Cannot obtain languages")
 	}
 
-	// Fetch resolved artifacts list for showing full version numbers.
+	// Fetch commit and buildplan, which will give us access to ingredients, and ingredients can be languages..
 	bpm := bpModel.NewBuildPlannerModel(l.auth)
 	commit, err := bpm.FetchCommit(commitID, l.project.Owner(), l.project.Name(), nil)
 	if err != nil {
