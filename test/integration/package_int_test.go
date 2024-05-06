@@ -470,7 +470,7 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "Text-CSV", "--output", "editor"),
+		e2e.OptArgs("install", "Text-CSV", "-o", "json"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect(`{"name":"Text-CSV"`, e2e.RuntimeSourcingTimeoutOpt)
