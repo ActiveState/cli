@@ -255,8 +255,8 @@ func (suite *ShellIntegrationTestSuite) TestJSON() {
 	defer ts.Close()
 
 	cp := ts.Spawn("shell", "--output", "json")
-	cp.Expect(`"error":"This command does not support the 'json' output format`)
-	cp.ExpectExitCode(0)
+	cp.Expect(`"error":"This command does not support the 'json' output format`, termtest.OptExpectTimeout(5*time.Second))
+	cp.ExpectExitCode(1)
 	AssertValidJSON(suite.T(), cp)
 }
 
