@@ -294,6 +294,10 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCaseInsensitive() {
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutBuildtimeClosure() {
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("Skipping on windows since the build time is different there, and testing it on mac/linux is sufficient")
+		return
+	}
 	suite.OnlyRunForTags(tagsuite.Checkout)
 
 	ts := e2e.New(suite.T(), false)
