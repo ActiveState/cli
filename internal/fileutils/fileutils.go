@@ -1130,6 +1130,19 @@ func FileContains(path string, searchText []byte) (bool, error) {
 	return bytes.Contains(b, searchText), nil
 }
 
+func DirContains(path string, searchFile string) (bool, error) {
+	files, err := ListDir(path, false)
+	if err != nil {
+		return false, errs.Wrap(err, "Could not list dir")
+	}
+	for _, file := range files {
+		if file.Name() == searchFile {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func ModTime(path string) (time.Time, error) {
 	stat, err := os.Stat(path)
 	if err != nil {
