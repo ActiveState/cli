@@ -269,10 +269,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_info() {
 
 func (suite *PackageIntegrationTestSuite) TestPackage_detached_operation() {
 	suite.OnlyRunForTags(tagsuite.Package)
-	if runtime.GOOS == "darwin" {
-		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
-		return
-	}
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -471,9 +467,8 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("install", "Text-CSV", "-o", "json"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect(`{"name":"Text-CSV"`, e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect(`{"name":"Text-CSV"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
@@ -484,9 +479,8 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("uninstall", "Text-CSV", "-o", "json"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect(`{"name":"Text-CSV"`, e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect(`{"name":"Text-CSV"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 }
