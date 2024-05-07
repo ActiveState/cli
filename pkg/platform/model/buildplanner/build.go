@@ -11,13 +11,14 @@ import (
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/buildplan/raw"
+	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/graphql"
 	"github.com/go-openapi/strfmt"
 )
@@ -32,20 +33,19 @@ const (
 
 type Commit struct {
 	*response.Commit
-	buildplan       *buildplan.BuildPlan
-	buildexpression *buildexpression.BuildExpression
+	buildplan   *buildplan.BuildPlan
+	buildscript *buildscript.BuildScript
 }
 
 func (c *Commit) BuildPlan() *buildplan.BuildPlan {
 	return c.buildplan
 }
 
-func (c *Commit) BuildExpression() *buildexpression.BuildExpression {
-	return c.buildexpression
+func (c *Commit) BuildScript() *buildscript.BuildScript {
+	return c.buildscript
 }
 
 func (c *client) Run(req gqlclient.Request, resp interface{}) error {
-	logRequestVariables(req)
 	return c.gqlClient.Run(req, resp)
 }
 
@@ -74,12 +74,12 @@ func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, 
 		return nil, errs.Wrap(err, "failed to unmarshal build plan")
 	}
 
-	expression, err := buildexpression.New(commit.Expression)
+	script, err := buildscript.UnmarshalBuildExpression(commit.Expression, ptr.To(time.Time(commit.AtTime)))
 	if err != nil {
-		return nil, errs.Wrap(err, "failed to parse build expression")
+		return nil, errs.Wrap(err, "failed to parse build script")
 	}
 
-	return &Commit{commit, bp, expression}, nil
+	return &Commit{commit, bp, script}, nil
 }
 
 // processBuildPlannerError will check for special error types that should be

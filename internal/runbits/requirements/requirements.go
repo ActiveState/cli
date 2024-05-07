@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/buildplan"
@@ -34,7 +35,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -214,7 +214,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		ParentCommit: string(parentCommitID),
 		Description:  commitMessage(requirements...),
 		Requirements: stageCommitReqs,
-		TimeStamp:    ts,
 	}
 
 	bp := bpModel.NewBuildPlannerModel(r.Auth)
@@ -612,12 +611,12 @@ func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 
 	if r.Config.GetBool(constants.OptinBuildscriptsConfig) {
 		bp := bpModel.NewBuildPlannerModel(r.Auth)
-		expr, atTime, err := bp.GetBuildExpressionAndTime(commitID.String())
+		script, err := bp.GetBuildScript(commitID.String())
 		if err != nil {
 			return errs.Wrap(err, "Could not get remote build expr and time")
 		}
 
-		err = buildscript.Update(r.Project, atTime, expr)
+		err = buildscript_runbit.Update(r.Project, script)
 		if err != nil {
 			return locale.WrapError(err, "err_update_build_script")
 		}

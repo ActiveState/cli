@@ -1,33 +1,17 @@
-package buildscript
+package raw
 
 import (
-	"bytes"
-	"encoding/json"
-	"os"
 	"testing"
+	"time"
 
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
 
-// toBuildExpression converts given script constructed by Participle into a buildexpression.
-// This function should not be used to convert an arbitrary script to buildexpression.
-// New*() populates the Expr field with the equivalent build expression.
-// This function exists solely for testing that functionality.
-func toBuildExpression(script *Script) (*buildexpression.BuildExpression, error) {
-	bytes, err := json.Marshal(script)
-	if err != nil {
-		return nil, err
-	}
-	return buildexpression.New(bytes)
-}
-
-func TestBasic(t *testing.T) {
-	script, err := New([]byte(
+func TestRawRepresentation(t *testing.T) {
+	raw, err := Unmarshal([]byte(
 		`at_time = "2000-01-01T00:00:00.000Z"
 runtime = solve(
 	at_time = at_time,
@@ -42,13 +26,11 @@ main = runtime
 `))
 	require.NoError(t, err)
 
-	atTime, err := strfmt.ParseDateTime("2000-01-01T00:00:00.000Z")
+	atTimeStrfmt, err := strfmt.ParseDateTime("2000-01-01T00:00:00.000Z")
 	require.NoError(t, err)
+	atTime := time.Time(atTimeStrfmt)
 
-	expr, err := toBuildExpression(script)
-	require.NoError(t, err)
-
-	assert.Equal(t, &Script{
+	assert.Equal(t, &Raw{
 		[]*Assignment{
 			{"at_time", &Value{Str: ptr.To(`"2000-01-01T00:00:00.000Z"`)}},
 			{"runtime", &Value{
@@ -98,12 +80,11 @@ main = runtime
 			{"main", &Value{Ident: ptr.To("runtime")}},
 		},
 		&atTime,
-		expr,
-	}, script)
+	}, raw)
 }
 
 func TestComplex(t *testing.T) {
-	script, err := New([]byte(
+	raw, err := Unmarshal([]byte(
 		`at_time = "2000-01-01T00:00:00.000Z"
 linux_runtime = solve(
 		at_time = at_time,
@@ -128,13 +109,11 @@ main = merge(
 `))
 	require.NoError(t, err)
 
-	atTime, err := strfmt.ParseDateTime("2000-01-01T00:00:00.000Z")
+	atTimeStrfmt, err := strfmt.ParseDateTime("2000-01-01T00:00:00.000Z")
 	require.NoError(t, err)
+	atTime := time.Time(atTimeStrfmt)
 
-	expr, err := toBuildExpression(script)
-	require.NoError(t, err)
-
-	assert.Equal(t, &Script{
+	assert.Equal(t, &Raw{
 		[]*Assignment{
 			{"at_time", &Value{Str: ptr.To(`"2000-01-01T00:00:00.000Z"`)}},
 			{"linux_runtime", &Value{
@@ -194,11 +173,10 @@ main = merge(
 				}}}},
 		},
 		&atTime,
-		expr,
-	}, script)
+	}, raw)
 }
 
-const example = `at_time = "2023-04-27T17:30:05.999Z"
+const buildscriptWithComplexVersions = `at_time = "2023-04-27T17:30:05.999Z"
 runtime = solve(
 	at_time = at_time,
 	platforms = ["96b7e6f2-bebf-564c-bc1c-f04482398f38", "96b7e6f2-bebf-564c-bc1c-f04482398f38"],
@@ -212,17 +190,15 @@ runtime = solve(
 
 main = runtime`
 
-func TestExample(t *testing.T) {
-	script, err := New([]byte(example))
+func TestComplexVersions(t *testing.T) {
+	raw, err := Unmarshal([]byte(buildscriptWithComplexVersions))
 	require.NoError(t, err)
 
-	atTime, err := strfmt.ParseDateTime("2023-04-27T17:30:05.999Z")
+	atTimeStrfmt, err := strfmt.ParseDateTime("2023-04-27T17:30:05.999Z")
 	require.NoError(t, err)
+	atTime := time.Time(atTimeStrfmt)
 
-	expr, err := toBuildExpression(script)
-	require.NoError(t, err)
-
-	assert.Equal(t, &Script{
+	assert.Equal(t, &Raw{
 		[]*Assignment{
 			{"at_time", &Value{Str: ptr.To(`"2023-04-27T17:30:05.999Z"`)}},
 			{"runtime", &Value{
@@ -308,182 +284,5 @@ func TestExample(t *testing.T) {
 			{"main", &Value{Ident: ptr.To("runtime")}},
 		},
 		&atTime,
-		expr,
-	}, script)
-}
-
-func TestString(t *testing.T) {
-	script, err := New([]byte(
-		`at_time = "2000-01-01T00:00:00.000Z"
-runtime = solve(
-		at_time = at_time,
-		platforms=["12345", "67890"],
-		requirements=[Req(name = "python", namespace = "language", version = Eq(value = "3.10.10"))]
-)
-
-main = runtime
-`))
-	require.NoError(t, err)
-
-	assert.Equal(t,
-		`at_time = "2000-01-01T00:00:00.000Z"
-runtime = solve(
-	at_time = at_time,
-	platforms = [
-		"12345",
-		"67890"
-	],
-	requirements = [
-		Req(name = "python", namespace = "language", version = Eq(value = "3.10.10"))
-	]
-)
-
-main = runtime`, script.String())
-}
-
-func TestRoundTrip(t *testing.T) {
-	tmpfile, err := os.CreateTemp("", "buildscript-")
-	require.NoError(t, err)
-	defer os.Remove(tmpfile.Name())
-
-	script, err := New([]byte(example))
-	require.NoError(t, err)
-
-	_, err = tmpfile.Write([]byte(script.String()))
-	require.NoError(t, err)
-	err = tmpfile.Close()
-	require.NoError(t, err)
-
-	roundTripScript, err := ScriptFromFile(tmpfile.Name())
-	require.NoError(t, err)
-
-	assert.Equal(t, script, roundTripScript)
-}
-
-func TestJson(t *testing.T) {
-	script, err := New([]byte(
-		`at_time = "2000-01-01T00:00:00.000Z"
-runtime = solve(
-		at_time = at_time,
-		requirements=[
-			Req(name = "python", namespace = "language")
-		],
-		platforms=["12345", "67890"]
-)
-
-main = runtime
-`))
-	require.NoError(t, err)
-
-	inputJson := &bytes.Buffer{}
-	err = json.Compact(inputJson, []byte(`{
-    "let": {
-      "runtime": {
-        "solve": {
-          "at_time": "$at_time",
-          "requirements": [
-            {
-              "name": "python",
-              "namespace": "language"
-            }
-          ],
-          "platforms": ["12345", "67890"]
-        }
-      },
-      "in": "$runtime"
-    }
-  }`))
-	require.NoError(t, err)
-	// Cannot compare marshaled JSON directly with inputJson due to key sort order, so unmarshal and
-	// remarshal before making the comparison. json.Marshal() produces the same key sort order.
-	marshaledInput := make(map[string]interface{})
-	err = json.Unmarshal(inputJson.Bytes(), &marshaledInput)
-	require.NoError(t, err)
-	expectedJson, err := json.Marshal(marshaledInput)
-	require.NoError(t, err)
-
-	actualJson, err := json.Marshal(script.Expr)
-	require.NoError(t, err)
-	assert.Equal(t, string(expectedJson), string(actualJson))
-}
-
-func TestBuildExpression(t *testing.T) {
-	expr, err := buildexpression.New([]byte(`{
-  "let": {
-    "runtime": {
-      "solve_legacy": {
-        "at_time": "2023-04-27T17:30:05.999Z",
-        "build_flags": [],
-        "camel_flags": [],
-        "platforms": [
-          "96b7e6f2-bebf-564c-bc1c-f04482398f38"
-        ],
-        "requirements": [
-          {
-            "name": "jinja2-time",
-            "namespace": "language/python"
-          },
-          {
-            "name": "jupyter-contrib-nbextensions",
-            "namespace": "language/python"
-          },
-          {
-            "name": "python",
-            "namespace": "language",
-            "version_requirements": [
-              {
-                "comparator": "eq",
-                "version": "3.10.10"
-              }
-            ]
-          },
-          {
-            "name": "copier",
-            "namespace": "language/python"
-          },
-          {
-            "name": "jupyterlab",
-            "namespace": "language/python"
-          }
-        ],
-        "solver_version": null
-      }
-    },
-    "in": "$runtime"
-  }
-}`))
-	require.NoError(t, err)
-
-	// Verify conversions between buildscripts and buildexpressions is accurate.
-	script, err := NewFromBuildExpression(nil, expr)
-	require.NoError(t, err)
-	require.NotNil(t, script)
-	newExpr := script.Expr
-	exprBytes, err := json.Marshal(expr)
-	require.NoError(t, err)
-	newExprBytes, err := json.Marshal(newExpr)
-	require.NoError(t, err)
-	assert.Equal(t, string(exprBytes), string(newExprBytes))
-
-	// Verify comparisons between buildscripts is accurate.
-	newScript, err := NewFromBuildExpression(nil, newExpr)
-	require.NoError(t, err)
-	assert.True(t, script.Equals(newScript))
-
-	// Verify null JSON value is handled correctly.
-	var null *string
-	nullHandled := false
-	for _, assignment := range newExpr.Let.Assignments {
-		if assignment.Name == "runtime" {
-			args := assignment.Value.Ap.Arguments
-			require.NotNil(t, args)
-			for _, arg := range args {
-				if arg.Assignment != nil && arg.Assignment.Name == "solver_version" {
-					assert.Equal(t, null, arg.Assignment.Value.Str)
-					nullHandled = true
-				}
-			}
-		}
-	}
-	assert.True(t, nullHandled, "JSON null not encountered")
+	}, raw)
 }

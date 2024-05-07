@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
@@ -20,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -128,16 +128,16 @@ func (i *Import) Run(params *ImportRunParams) error {
 	}
 
 	bp := buildplanner.NewBuildPlannerModel(i.auth)
-	be, err := bp.GetBuildExpression(latestCommit.String())
+	bs, err := bp.GetBuildScript(latestCommit.String())
 	if err != nil {
 		return locale.WrapError(err, "err_cannot_get_build_expression", "Could not get build expression")
 	}
 
-	if err := applyChangeset(changeset, be); err != nil {
+	if err := applyChangeset(changeset, bs); err != nil {
 		return locale.WrapError(err, "err_cannot_apply_changeset", "Could not apply changeset")
 	}
 
-	if err := be.SetDefaultTimestamp(); err != nil {
+	if err := bs.SetDefaultAtTime(); err != nil {
 		return locale.WrapError(err, "err_cannot_set_timestamp", "Could not set timestamp")
 	}
 
@@ -147,7 +147,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		Project:      i.proj.Name(),
 		ParentCommit: latestCommit.String(),
 		Description:  msg,
-		Expression:   be,
+		Script:       bs,
 	})
 	if err != nil {
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
@@ -175,7 +175,7 @@ func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model
 	return changeset, err
 }
 
-func applyChangeset(changeset model.Changeset, be *buildexpression.BuildExpression) error {
+func applyChangeset(changeset model.Changeset, bs *buildscript.BuildScript) error {
 	for _, change := range changeset {
 		var expressionOperation types.Operation
 		switch change.Operation {
@@ -199,7 +199,7 @@ func applyChangeset(changeset model.Changeset, be *buildexpression.BuildExpressi
 			})
 		}
 
-		if err := be.UpdateRequirement(expressionOperation, req); err != nil {
+		if err := bs.UpdateRequirement(expressionOperation, req); err != nil {
 			return errs.Wrap(err, "Could not update build expression")
 		}
 	}

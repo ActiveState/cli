@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNew(t *testing.T) {
@@ -76,10 +77,10 @@ func TestNew(t *testing.T) {
 			wd, err := environment.GetRootPath()
 			assert.NoError(t, err)
 
-			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "runtime", "buildexpression", "testdata", tt.args.filename))
+			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "buildscript", "internal", "buildexpression", "testdata", tt.args.filename))
 			assert.NoError(t, err)
 
-			_, err = New(data)
+			_, err = Unmarshal(data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -88,7 +89,7 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func TestBuildExpression_Requirements(t *testing.T) {
+func TestRequirements(t *testing.T) {
 	type args struct {
 		filename string
 	}
@@ -181,10 +182,10 @@ func TestBuildExpression_Requirements(t *testing.T) {
 			wd, err := environment.GetRootPath()
 			assert.NoError(t, err)
 
-			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "runtime", "buildexpression", "testdata", tt.args.filename))
+			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "buildscript", "internal", "buildexpression", "testdata", tt.args.filename))
 			assert.NoError(t, err)
 
-			bx, err := New(data)
+			bx, err := Unmarshal(data)
 			assert.NoError(t, err)
 
 			got, err := bx.Requirements()
@@ -196,7 +197,7 @@ func TestBuildExpression_Requirements(t *testing.T) {
 	}
 }
 
-func TestBuildExpression_Update(t *testing.T) {
+func TestUpdate(t *testing.T) {
 	type args struct {
 		requirement types.Requirement
 		operation   types.Operation
@@ -440,10 +441,10 @@ func TestBuildExpression_Update(t *testing.T) {
 			wd, err := environment.GetRootPath()
 			assert.NoError(t, err)
 
-			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "runtime", "buildexpression", "testdata", tt.args.filename))
+			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "buildscript", "internal", "buildexpression", "testdata", tt.args.filename))
 			assert.NoError(t, err)
 
-			bx, err := New(data)
+			bx, err := Unmarshal(data)
 			assert.NoError(t, err)
 
 			err = bx.UpdateRequirement(tt.args.operation, tt.args.requirement)
@@ -472,4 +473,61 @@ func TestBuildExpression_Update(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNullValue(t *testing.T) {
+	be, err := Unmarshal([]byte(`
+{
+  "let": {
+    "in": "$runtime",
+    "runtime": {
+      "solve": {
+        "at_time": "$at_time",
+        "platforms": [],
+        "requirements": [],
+        "solver_version": null
+      }
+    }
+  }
+}
+`))
+	require.NoError(t, err)
+
+	var null *string
+	nullHandled := false
+	for _, assignment := range be.Let.Assignments {
+		if assignment.Name == "runtime" {
+			args := assignment.Value.Ap.Arguments
+			require.NotNil(t, args)
+			for _, arg := range args {
+				if arg.Assignment != nil && arg.Assignment.Name == "solver_version" {
+					assert.Equal(t, null, arg.Assignment.Value.Str)
+					nullHandled = true
+				}
+			}
+		}
+	}
+	assert.True(t, nullHandled, "JSON null not encountered")
+}
+
+func TestCopy(t *testing.T) {
+	be, err := Unmarshal([]byte(`
+{
+  "let": {
+    "in": "$runtime",
+    "runtime": {
+      "solve": {
+        "at_time": "$at_time",
+        "platforms": [],
+        "requirements": [],
+        "solver_version": null
+      }
+    }
+  }
+}
+`))
+	require.NoError(t, err)
+	be2, err := be.Copy()
+	require.NoError(t, err)
+	require.Equal(t, be, be2)
 }

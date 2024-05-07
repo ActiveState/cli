@@ -7,8 +7,8 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -22,7 +22,7 @@ func NewMigrator(auth *authentication.Auth, cfg *config.Instance) projectfile.Mi
 			case 0:
 				if cfg.GetBool(constants.OptinBuildscriptsConfig) {
 					logging.Debug("Creating buildscript")
-					if err := buildscript.Initialize(filepath.Dir(project.Path()), auth); err != nil {
+					if err := buildscript_runbit.Initialize(filepath.Dir(project.Path()), auth); err != nil {
 						return v, errs.Wrap(err, "Failed to initialize buildscript")
 					}
 				}

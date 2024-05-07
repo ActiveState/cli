@@ -6,15 +6,15 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/pkg/buildscript"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
 
 func rationalizeError(auth *authentication.Auth, err *error) {
 	var commitError *bpResp.CommitError
-	var requirementNotFoundErr *buildexpression.RequirementNotFoundError
+	var requirementNotFoundErr *buildscript.RequirementNotFoundError
 
 	switch {
 	case err == nil:
