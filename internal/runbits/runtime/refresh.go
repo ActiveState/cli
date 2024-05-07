@@ -10,9 +10,9 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -30,6 +30,7 @@ type Opts int
 const (
 	OptNone         Opts = 1 << iota
 	OptMinimalUI         // Only print progress output, don't decorate the UI in any other way
+	OptNoUI              // Don't print progress output, don't decorate the UI in any other way
 	OptOrderChanged      // Indicate that the order has changed, and the runtime should be refreshed regardless of internal dirty checking mechanics
 )
 
@@ -109,12 +110,6 @@ func SolveAndUpdate(
 	return rt, nil
 }
 
-type SolveResponse struct {
-	*runtime.Runtime
-	BuildResult *model.BuildResult
-	Commit      *bpModel.Commit
-}
-
 func Solve(
 	auth *authentication.Auth,
 	out output.Outputer,
@@ -125,10 +120,16 @@ func Solve(
 	svcm *model.SvcModel,
 	cfg Configurable,
 	opts Opts,
-) (_ *SolveResponse, rerr error) {
-	spinner := output.StartSpinner(out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+) (_ *runtime.Runtime, _ *bpModel.Commit, rerr error) {
+	var spinner *output.Spinner
+	if !bitflags.Has(opts, OptMinimalUI) {
+		spinner = output.StartSpinner(out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+	}
 
 	defer func() {
+		if spinner == nil {
+			return
+		}
 		if rerr != nil {
 			spinner.Stop(locale.T("progress_fail"))
 		} else {
@@ -139,28 +140,22 @@ func Solve(
 	rtTarget := target.NewProjectTarget(proj, customCommitID, trigger)
 	rt, err := runtime.New(rtTarget, an, svcm, auth, cfg, out)
 	if err != nil {
-
-		return nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+		return nil, nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
 	}
 
 	setup := rt.Setup(&events.VoidHandler{})
-	buildResult, commit, err := setup.Solve()
+	commit, err := setup.Solve()
 	if err != nil {
-		return nil, errs.Wrap(err, "Solve failed")
+		return nil, nil, errs.Wrap(err, "Solve failed")
 	}
 
-	return &SolveResponse{
-		Runtime:     rt,
-		BuildResult: buildResult,
-		Commit:      commit,
-	}, nil
+	return rt, commit, nil
 }
 
 // UpdateByReference will update the given runtime if necessary. This is functionally the same as SolveAndUpdateByReference
 // except that it does not do its own solve.
 func UpdateByReference(
 	rt *runtime.Runtime,
-	buildResult *model.BuildResult,
 	commit *bpModel.Commit,
 	auth *authentication.Auth,
 	proj *project.Project,
@@ -172,7 +167,7 @@ func UpdateByReference(
 		pg := NewRuntimeProgressIndicator(out)
 		defer rtutils.Closer(pg.Close, &rerr)
 
-		err := rt.Setup(pg).Update(buildResult, commit)
+		err := rt.Setup(pg).Update(commit)
 		if err != nil {
 			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
 		}

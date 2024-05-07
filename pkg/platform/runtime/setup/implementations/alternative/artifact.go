@@ -9,17 +9,17 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/unarchiver"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
+	"github.com/go-openapi/strfmt"
 )
 
 type ArtifactSetup struct {
-	artifactID artifact.ArtifactID
+	artifactID strfmt.UUID
 	store      *store.Store
 }
 
-func NewArtifactSetup(artifactID artifact.ArtifactID, store *store.Store) *ArtifactSetup {
+func NewArtifactSetup(artifactID strfmt.UUID, store *store.Store) *ArtifactSetup {
 	return &ArtifactSetup{artifactID, store}
 }
 

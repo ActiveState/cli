@@ -180,8 +180,7 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 			}
 			cmd.outputTitleIfAny()
 		} else if cmd.out.Type().IsStructured() && !cmd.structuredOutput {
-			cmd.out.Error(locale.NewInputError("err_no_structured_output", "", string(cmd.out.Type())))
-			return nil
+			return locale.NewInputError("err_no_structured_output", "", string(cmd.out.Type()))
 		}
 		return err
 	})
@@ -655,8 +654,7 @@ func (c *Command) cobraExecHandler(cobraCmd *cobra.Command, args []string) (rerr
 		c.out.Notice(locale.Tr("unstable_command_warning"))
 		return nil
 	} else if c.out.Type().IsStructured() && !c.structuredOutput {
-		c.out.Error(locale.NewInputError("err_no_structured_output", "", string(c.out.Type())))
-		return nil
+		return locale.NewInputError("err_no_structured_output", "", string(c.out.Type()))
 	}
 
 	// Run OnUse functions for non-persistent flags

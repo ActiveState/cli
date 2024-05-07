@@ -14,10 +14,11 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/go-openapi/strfmt"
@@ -147,7 +148,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		}
 	}
 
-	bp := model.NewBuildPlannerModel(r.auth)
+	bp := buildplanner.NewBuildPlannerModel(r.auth)
 	var branch *mono_models.Branch // the branch to write to as.yaml if it changed
 
 	// Create remote project
@@ -178,7 +179,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		if err != nil {
 			return errs.Wrap(err, "Could not get buildexpression")
 		}
-		commitID, err = bp.CreateProject(&model.CreateProjectParams{
+		commitID, err = bp.CreateProject(&buildplanner.CreateProjectParams{
 			Owner:       targetNamespace.Owner,
 			Project:     targetNamespace.Project,
 			Private:     r.project.Private(),
@@ -230,12 +231,12 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		}
 
 		// Perform the (fast-forward) push.
-		_, err = bp.MergeCommit(&model.MergeCommitParams{
+		_, err = bp.MergeCommit(&buildplanner.MergeCommitParams{
 			Owner:     targetNamespace.Owner,
 			Project:   targetNamespace.Project,
 			TargetRef: branch.Label, // using branch name will fast-forward
 			OtherRef:  commitID.String(),
-			Strategy:  bpModel.MergeCommitStrategyFastForward,
+			Strategy:  types.MergeCommitStrategyFastForward,
 		})
 		if err != nil {
 			return errs.Wrap(err, "Could not push")

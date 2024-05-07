@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
@@ -19,6 +19,7 @@ import (
 	vcsClient "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -585,7 +586,7 @@ func CommitInitial(hostPlatform string, langName, langVersion string, auth *auth
 }
 
 func versionStringToConstraints(version string) ([]*mono_models.Constraint, error) {
-	requirements, err := VersionStringToRequirements(version)
+	requirements, err := bpModel.VersionStringToRequirements(version)
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to process version string into requirements")
 	}
@@ -593,8 +594,8 @@ func versionStringToConstraints(version string) ([]*mono_models.Constraint, erro
 	constraints := make([]*mono_models.Constraint, len(requirements))
 	for i, constraint := range requirements {
 		constraints[i] = &mono_models.Constraint{
-			Comparator: constraint[bpModel.VersionRequirementComparatorKey],
-			Version:    constraint[bpModel.VersionRequirementVersionKey],
+			Comparator: constraint[types.VersionRequirementComparatorKey],
+			Version:    constraint[types.VersionRequirementVersionKey],
 		}
 	}
 	return constraints, nil

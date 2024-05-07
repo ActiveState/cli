@@ -13,9 +13,10 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -52,7 +53,7 @@ func New(p primeable) *Commit {
 var ErrNoChanges = errors.New("buildscript has no changes")
 
 func rationalizeError(err *error) {
-	var buildPlannerErr *bpModel.BuildPlannerError
+	var buildPlannerErr *bpResp.BuildPlannerError
 
 	switch {
 	case err == nil:
@@ -100,7 +101,7 @@ func (c *Commit) Run() (rerr error) {
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit ID")
 	}
-	bp := model.NewBuildPlannerModel(c.auth)
+	bp := buildplanner.NewBuildPlannerModel(c.auth)
 	exprProject, atTime, err := bp.GetBuildExpressionAndTime(localCommitID.String())
 	if err != nil {
 		return errs.Wrap(err, "Could not get remote build expr and time for provided commit")
@@ -121,7 +122,7 @@ func (c *Commit) Run() (rerr error) {
 		exprAtTime = &atTimeTime
 	}
 
-	stagedCommitID, err := bp.StageCommit(model.StageCommitParams{
+	stagedCommitID, err := bp.StageCommit(buildplanner.StageCommitParams{
 		Owner:        c.proj.Owner(),
 		Project:      c.proj.Name(),
 		ParentCommit: localCommitID.String(),

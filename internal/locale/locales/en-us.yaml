@@ -771,6 +771,8 @@ err_could_not_marshal_print:
   other: "Could not marshal the value being printed, please check the error log for more information."
 err_no_structured_output:
   other: "This command does not support the '{{.V0}}' output format. Please try again without that output flag."
+err_unsupported_structured_output:
+  other: "Failed to structure output in the requested format. Please consider reporting this on our forums: {{.V0}}."
 err_main_outputer:
   other: "Could not create output writer, please contact developers if this problem persists. Error: {{.V0}}"
 field_name:
@@ -1073,6 +1075,8 @@ artifact_succeeded:
   other: "Completed: [NOTICE]{{.V0}} ({{.V1}}/{{.V2}})[/RESET]"
 artifact_failed:
   other: "Failed: [NOTICE]{{.V0}}[/RESET]. Error returned: [ERROR]{{.V1}}[/RESET]"
+artifact_unknown_name:
+  other: Unnamed Artifact
 err_package_update_commit_id:
   other: "Could not update your project runtime's commit ID. Please run '[ACTIONABLE]state pull[/RESET]' manually."
 prepare_protocol_warning:
@@ -1269,9 +1273,9 @@ setup_runtime:
 progress_solve:
   other: "Resolving Dependencies"
 additional_dependencies:
-  other: Installing [ACTIONABLE]{{.V0}}@{{.V1}}[/RESET] includes [ACTIONABLE]{{.V2}}[/RESET] direct dependencies.
+  other: Installing {{.V0}} includes [ACTIONABLE]{{.V1}}[/RESET] direct dependencies.
 additional_total_dependencies:
-  other: Installing [ACTIONABLE]{{.V0}}@{{.V1}}[/RESET] includes [ACTIONABLE]{{.V2}}[/RESET] direct dependencies, and a total of [ACTIONABLE]{{.V3}}[/RESET] direct and indirect dependencies.
+  other: Installing {{.V0}} includes [ACTIONABLE]{{.V1}}[/RESET] direct dependencies, and [ACTIONABLE]{{.V2}}[/RESET] indirect dependencies.
 progress_success:
   other: " [SUCCESS]✔ Done[/RESET]"
 progress_found:
@@ -1609,7 +1613,12 @@ vulnerability_medium:
   other: "[YELLOW]{{.V0}} Medium[/RESET]"
 vulnerability_low:
   other: "[GREEN]{{.V0}} Low[/RESET]"
+err_runtime_needs_refresh:
+  other: Your runtime needs to be updated, please run '[ACTIONABLE]state refresh[/RESET]' and then try again.
 err_pull_no_common_parent:
   other: |
     The local commit ID [NOTICE]{{.V0}}[/RESET] and latest remote commit ID [NOTICE]{{.V1}}[/RESET] have no common parent. 
     To review your project history run '[ACTIONABLE]state history[/RESET]'.
+warn_package_list_runtime:
+  other: |
+    [WARNING]WARNING:[/RESET] Could not initialize runtime. Resolved version information will not be available. Run '[ACTIONABLE]state refresh[/RESET]' for more information.

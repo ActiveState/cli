@@ -15,14 +15,14 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rollbar"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/go-openapi/strfmt"
 )
 
 type cachedArtifact struct {
-	Id             artifact.ArtifactID `json:"id"`
-	ArchivePath    string              `json:"archivePath"`
-	Size           int64               `json:"size"`
-	LastAccessTime int64               `json:"lastAccessTime"`
+	Id             strfmt.UUID `json:"id"`
+	ArchivePath    string      `json:"archivePath"`
+	Size           int64       `json:"size"`
+	LastAccessTime int64       `json:"lastAccessTime"`
 }
 
 // ArtifactCache is a cache of downloaded artifacts from the ActiveState Platform.
@@ -32,7 +32,7 @@ type ArtifactCache struct {
 	infoJson         string
 	maxSize          int64 // bytes
 	currentSize      int64 // bytes
-	artifacts        map[artifact.ArtifactID]*cachedArtifact
+	artifacts        map[strfmt.UUID]*cachedArtifact
 	mutex            sync.Mutex
 	timeSpentCopying time.Duration
 	sizeCopied       int64 // bytes
@@ -75,7 +75,7 @@ func newWithDirAndSize(dir string, maxSize int64) (*ArtifactCache, error) {
 	}
 
 	var currentSize int64 = 0
-	artifactMap := map[artifact.ArtifactID]*cachedArtifact{}
+	artifactMap := map[strfmt.UUID]*cachedArtifact{}
 	for _, artifact := range artifacts {
 		currentSize += artifact.Size
 		artifactMap[artifact.Id] = &cachedArtifact{artifact.Id, artifact.ArchivePath, artifact.Size, artifact.LastAccessTime}
@@ -88,7 +88,7 @@ func newWithDirAndSize(dir string, maxSize int64) (*ArtifactCache, error) {
 // Get returns the path to the cached artifact with the given id along with true if it exists.
 // Otherwise returns an empty string and false.
 // Updates the access timestamp if possible so that this artifact is not removed anytime soon.
-func (cache *ArtifactCache) Get(a artifact.ArtifactID) (string, bool) {
+func (cache *ArtifactCache) Get(a strfmt.UUID) (string, bool) {
 	cache.mutex.Lock()
 	defer cache.mutex.Unlock()
 
@@ -102,7 +102,7 @@ func (cache *ArtifactCache) Get(a artifact.ArtifactID) (string, bool) {
 
 // Stores the given artifact in the cache.
 // If the cache is too small, removes the least-recently accessed artifacts to make room.
-func (cache *ArtifactCache) Store(a artifact.ArtifactID, archivePath string) error {
+func (cache *ArtifactCache) Store(a strfmt.UUID, archivePath string) error {
 	cache.mutex.Lock()
 	defer cache.mutex.Unlock()
 
@@ -200,7 +200,7 @@ func (cache *ArtifactCache) Save() error {
 		multilog.Log(logging.Debug, rollbar.Error)("Spent %.1f seconds copying %.1fMB of artifacts to cache", cache.timeSpentCopying.Seconds(), float64(cache.sizeCopied)/float64(MB))
 	}
 	cache.timeSpentCopying = 0 // reset
-	cache.sizeCopied = 0       //reset
+	cache.sizeCopied = 0       // reset
 
 	return nil
 }

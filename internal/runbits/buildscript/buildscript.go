@@ -14,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
@@ -26,7 +26,7 @@ import (
 // This is used either to compare the local build script with a remote equivalent, or to update
 // the local build script with a remote equivalent.
 func getEquivalentBuildScript(proj *project.Project, customCommit *strfmt.UUID, auth *authentication.Auth) (*buildscript.Script, error) {
-	bp := model.NewBuildPlannerModel(auth)
+	bp := buildplanner.NewBuildPlannerModel(auth)
 	commitID, err := localcommit.Get(proj.Dir())
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get local commit ID")
@@ -78,8 +78,8 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 			atTime = &scriptAtTime
 		}
 
-		bp := model.NewBuildPlannerModel(auth)
-		stagedCommitID, err := bp.StageCommit(model.StageCommitParams{
+		bp := buildplanner.NewBuildPlannerModel(auth)
+		stagedCommitID, err := bp.StageCommit(buildplanner.StageCommitParams{
 			Owner:        proj.Owner(),
 			Project:      proj.Name(),
 			ParentCommit: localCommitID.String(),

@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/environment"
-	model "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/stretchr/testify/require"
@@ -39,11 +39,11 @@ func LoadRecipe(t *testing.T, name string) *inventory_models.Recipe {
 	return &recipe
 }
 
-func LoadBuildPlan(t *testing.T, name string) *model.BuildPlan {
+func LoadBuildPlan(t *testing.T, name string) *response.ProjectCommitResponse {
 	d, err := os.ReadFile(filepath.Join(dataPath(t), "buildplans", fmt.Sprintf("%s.json", name)))
 	require.NoError(t, err)
 
-	var bp model.BuildPlan
+	var bp response.ProjectCommitResponse
 	err = json.Unmarshal(d, &bp)
 	require.NoError(t, err)
 

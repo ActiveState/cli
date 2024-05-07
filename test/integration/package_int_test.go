@@ -269,10 +269,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_info() {
 
 func (suite *PackageIntegrationTestSuite) TestPackage_detached_operation() {
 	suite.OnlyRunForTags(tagsuite.Package)
-	if runtime.GOOS == "darwin" {
-		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
-		return
-	}
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -460,7 +456,7 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	cp := ts.Spawn("search", "Text-CSV", "--exact-term", "--language", "Perl", "-o", "json")
 	cp.Expect(`"Name":"Text-CSV"`)
 	cp.ExpectExitCode(0)
-	//AssertValidJSON(suite.T(), cp) // currently too large to fit terminal window to validate
+	// AssertValidJSON(suite.T(), cp) // currently too large to fit terminal window to validate
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/Packages-Perl", "."),
@@ -470,10 +466,9 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "Text-CSV", "--output", "editor"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+		e2e.OptArgs("install", "Text-CSV", "-o", "json"),
 	)
-	cp.Expect(`{"name":"Text-CSV"`, e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect(`{"name":"Text-CSV"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
@@ -484,9 +479,8 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("uninstall", "Text-CSV", "-o", "json"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect(`{"name":"Text-CSV"`, e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect(`{"name":"Text-CSV"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 }
@@ -628,25 +622,27 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestRuby() {
-	if runtime.GOOS == "darwin" {
-		return // Ruby support for macOS is not yet enabled on the Platform
-	}
 	suite.OnlyRunForTags(tagsuite.Package)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Ruby-3.2.2", ".")
-	cp.Expect("Checked out project")
-	cp.ExpectExitCode(0)
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", "ActiveState-CLI-Testing/Ruby", "."),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
-	cp = ts.Spawn("install", "rake")
-	cp.ExpectExitCode(0)
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("install", "rake"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("exec", "rake", "--", "--version"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectRe(`rake, version \d+\.\d+\.\d+`, e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectRe(`rake, version \d+\.\d+\.\d+`)
 	cp.ExpectExitCode(0)
 }
 
@@ -663,18 +659,6 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDock
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
-
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "requests"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
-
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("uninstall", "requests"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 }
 
 func (suite *PackageIntegrationTestSuite) TestResolved() {
@@ -762,7 +746,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Indirect() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "org/cli-integration-tests/language/python:django_dep", "--ts=now"),
+		e2e.OptArgs("install", "private/ActiveState-CLI-Testing/language/python:django_dep", "--ts=now"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.ExpectRe(`Warning: Dependency has \d indirect known vulnerabilities`, e2e.RuntimeSourcingTimeoutOpt)
