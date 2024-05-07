@@ -467,7 +467,7 @@ authors:
 		})
 	}
 
-	ts.IgnoreLogErrors()
+	ts.IgnoreLogErrors() // ignore intentional failures like omitted filename, cannot edit description, etc.
 }
 
 func TestPublishIntegrationTestSuite(t *testing.T) {
