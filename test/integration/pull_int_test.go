@@ -14,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/localcommit"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -36,7 +36,7 @@ func (suite *PullIntegrationTestSuite) TestPull() {
 	cp.Expect("activestate.yaml has been updated")
 	cp.ExpectExitCode(0)
 
-	suite.assertMergeStrategyNotification(ts, string(bpModel.MergeCommitStrategyFastForward))
+	suite.assertMergeStrategyNotification(ts, string(types.MergeCommitStrategyFastForward))
 
 	cp = ts.Spawn("pull")
 	cp.Expect("already up to date")
@@ -71,7 +71,7 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	cp.Expect("Merged")
 	cp.ExpectExitCode(0)
 
-	suite.assertMergeStrategyNotification(ts, string(bpModel.MergeCommitStrategyRecursiveOverwriteOnConflict))
+	suite.assertMergeStrategyNotification(ts, string(types.MergeCommitStrategyRecursiveKeepOnConflict))
 }
 
 func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
@@ -101,6 +101,8 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	suite.Require().NoError(err) // just verify it's a valid build script
 
 	cp = ts.Spawn("pull")
+	cp.Expect("The following changes will be merged")
+	cp.Expect("requests (2.30.0 → Auto)")
 	cp.Expect("Unable to automatically merge build scripts")
 	cp.ExpectNotExitCode(0)
 	ts.IgnoreLogErrors()

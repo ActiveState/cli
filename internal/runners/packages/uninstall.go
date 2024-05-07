@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -38,7 +38,7 @@ func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) (
 	for _, p := range params.Packages {
 		req := &requirements.Requirement{
 			Name:      p.Name,
-			Operation: bpModel.OperationRemoved,
+			Operation: types.OperationRemoved,
 		}
 
 		if p.Namespace != "" {

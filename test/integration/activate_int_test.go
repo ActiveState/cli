@@ -374,8 +374,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_SpaceInCacheDir() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
-	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Perl)
+func (suite *ActivateIntegrationTestSuite) TestActivatePerlCamel() {
+	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Perl, tagsuite.Critical)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Perl not supported on macOS")
 	}

@@ -10,14 +10,14 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
+	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestUpdateEnviron(t *testing.T) {
-	artifactIDs := []artifact.ArtifactID{"1", "2", "3", "4"}
+	artifactIDs := []strfmt.UUID{"1", "2", "3", "4"}
 	artifacts := StoredArtifactMap{}
 	for i, artID := range artifactIDs[0:3] {
 		artifacts[artID] = StoredArtifact{EnvDef: &envdef.EnvironmentDefinition{Env: []envdef.EnvironmentVariable{

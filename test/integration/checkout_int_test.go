@@ -24,7 +24,7 @@ type CheckoutIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutPython() {
 	suite.OnlyRunForTags(tagsuite.Checkout)
 
 	ts := e2e.New(suite.T(), false)
@@ -39,6 +39,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 	cp.Expect("Setting up the following dependencies:")
 	cp.Expect("All dependencies have been installed and verified", e2e.RuntimeSourcingTimeoutOpt)
 	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
 	suite.Require().True(fileutils.DirExists(ts.Dirs.Work), "state checkout should have created "+ts.Dirs.Work)
 	suite.Require().True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, constants.ConfigFileName)), "ActiveState-CLI/Python3 was not checked out properly")
 
@@ -69,6 +70,30 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 		cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 		cp.ExpectExitCode(0)
 	})
+}
+
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutPerl() {
+	suite.OnlyRunForTags(tagsuite.Checkout, tagsuite.Critical)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// Checkout and verify.
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", "ActiveState-CLI/Perl-Alternative", "."),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Checking out project: ")
+	cp.Expect("Setting up the following dependencies:")
+	cp.Expect("All dependencies have been installed and verified", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Checked out project")
+
+	// Verify runtime was installed correctly and works.
+	targetDir := target.ProjectDirToTargetDir(ts.Dirs.Work, ts.Dirs.Cache)
+	perlExe := filepath.Join(setup.ExecDir(targetDir), "perl"+osutils.ExeExtension)
+	cp = ts.SpawnCmd(perlExe, "--version")
+	cp.Expect("This is perl")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
@@ -269,11 +294,11 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCaseInsensitive() {
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutBuildtimeClosure() {
-	suite.OnlyRunForTags(tagsuite.Checkout)
-
-	if runtime.GOOS != "linux" {
-		suite.T().Skip("Skipping buildtime closure test on non-linux platform")
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("Skipping on windows since the build time is different there, and testing it on mac/linux is sufficient")
+		return
 	}
+	suite.OnlyRunForTags(tagsuite.Checkout)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -284,10 +309,10 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutBuildtimeClosure() {
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	// Expect the number of build deps to be 27 which is more than the number of runtime deps.
-	// Also expect libxcrypt which should not be in the runtime closure.
-	cp.Expect("27")
-	cp.Expect("libxcrypt")
-	cp.ExpectExitCode(0)
+	// Also expect ncurses which should not be in the runtime closure.
+	cp.Expect("ncurses", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("27/27", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestFail() {
@@ -299,7 +324,7 @@ func (suite *CheckoutIntegrationTestSuite) TestFail() {
 		e2e.OptArgs("checkout", "ActiveState-CLI/fail"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Something Went Wrong")
+	cp.Expect("failed to build")
 	cp.ExpectNotExitCode(0)
 	suite.Assert().NoDirExists(filepath.Join(ts.Dirs.Work, "fail"), "state checkout fail did not remove created directory")
 	ts.IgnoreLogErrors()
@@ -308,7 +333,7 @@ func (suite *CheckoutIntegrationTestSuite) TestFail() {
 		e2e.OptArgs("checkout", "ActiveState-CLI/fail", "."),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Something Went Wrong")
+	cp.Expect("failed to build")
 	cp.ExpectNotExitCode(0)
 	suite.Assert().NoFileExists(filepath.Join(ts.Dirs.Work, constants.ConfigFileName), "state checkout fail did not remove created activestate.yaml")
 
@@ -316,7 +341,7 @@ func (suite *CheckoutIntegrationTestSuite) TestFail() {
 		e2e.OptArgs("checkout", "ActiveState-CLI/fail", "--force"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Something Went Wrong")
+	cp.Expect("failed to build")
 	cp.ExpectNotExitCode(0)
 	suite.Assert().DirExists(filepath.Join(ts.Dirs.Work, "fail"), "state checkout fail did not leave created directory there despite --force flag override")
 }

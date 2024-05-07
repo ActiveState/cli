@@ -27,7 +27,7 @@ func Publish(vars PublishVariables, filepath string) (*PublishInput, error) {
 		f, err = os.Open(filepath)
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
-				return nil, locale.WrapInputError(err, "err_upload_file_not_found", "Could not find file at {{.V0}}", filepath)
+				return nil, locale.WrapExternalError(err, "err_upload_file_not_found", "Could not find file at {{.V0}}", filepath)
 			}
 			return nil, errs.Wrap(err, "Could not open file %s", filepath)
 		}

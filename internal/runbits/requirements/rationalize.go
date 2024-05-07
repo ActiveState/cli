@@ -6,14 +6,14 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 func (r *RequirementOperation) rationalizeError(err *error) {
 	var tooManyMatchesErr *model.ErrTooManyMatches
 	var noMatchesErr *ErrNoMatches
-	var buildPlannerErr *bpModel.BuildPlannerError
+	var buildPlannerErr *bpResp.BuildPlannerError
 	var resolveNamespaceErr *ResolveNamespaceError
 
 	switch {

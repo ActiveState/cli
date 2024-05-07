@@ -45,8 +45,11 @@ type Checkout struct {
 }
 
 type errCommitDoesNotBelong struct {
-	error
 	CommitID strfmt.UUID
+}
+
+func (e errCommitDoesNotBelong) Error() string {
+	return "commitID does not belong to the given branch"
 }
 
 func New(repo git.Repository, prime primeable) *Checkout {

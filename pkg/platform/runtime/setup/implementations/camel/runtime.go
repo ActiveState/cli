@@ -7,8 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	model "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/go-openapi/strfmt"
 )
@@ -22,7 +21,7 @@ func NewSetup(s *store.Store) *Setup {
 }
 
 // DeleteOutdatedArtifacts deletes the entire installation directory, unless alreadyInstalled is not zero, which can happen when the executors directory needs to be re-generated.
-func (s *Setup) DeleteOutdatedArtifacts(_ artifact.ArtifactChangeset, _, alreadyInstalled store.StoredArtifactMap) error {
+func (s *Setup) DeleteOutdatedArtifacts(_ *buildplan.ArtifactChangeset, _, alreadyInstalled store.StoredArtifactMap) error {
 	if len(alreadyInstalled) != 0 {
 		return nil
 	}
@@ -42,10 +41,6 @@ func (s *Setup) DeleteOutdatedArtifacts(_ artifact.ArtifactChangeset, _, already
 	return nil
 }
 
-func (s *Setup) ResolveArtifactName(_ artifact.ArtifactID) string {
+func (s *Setup) ResolveArtifactName(_ strfmt.UUID) string {
 	return locale.Tl("camel_bundle_name", "bundle")
-}
-
-func (s *Setup) DownloadsFromBuild(build model.Build, artifacts map[strfmt.UUID]artifact.Artifact) ([]artifact.ArtifactDownload, error) {
-	return artifact.NewDownloadsFromCamelBuildPlan(build, artifacts)
 }

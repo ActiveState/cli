@@ -3,9 +3,9 @@ package manifest
 import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	platformModel "github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
 type resolvedVersion struct {
@@ -32,7 +32,7 @@ func (v *resolvedVersion) MarshalStructured(_ output.Format) interface{} {
 	return v
 }
 
-func resolveVersion(req model.Requirement, artifacts []*artifact.Artifact) *resolvedVersion {
+func resolveVersion(req types.Requirement, bpReqs buildplan.Ingredients) *resolvedVersion {
 	var requested string
 	var resolved string
 
@@ -40,9 +40,9 @@ func resolveVersion(req model.Requirement, artifacts []*artifact.Artifact) *reso
 		requested = platformModel.BuildPlannerVersionConstraintsToString(req.VersionRequirement)
 	} else {
 		requested = locale.Tl("manifest_version_auto", "auto")
-		for _, a := range artifacts {
-			if a.Namespace == req.Namespace && a.Name == req.Name {
-				resolved = *a.Version
+		for _, bpr := range bpReqs {
+			if bpr.Namespace == req.Namespace && bpr.Name == req.Name {
+				resolved = bpr.Version
 				break
 			}
 		}

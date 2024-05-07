@@ -96,7 +96,7 @@ func (r *Reset) Run(params *Params) error {
 
 		history, err := model.CommitHistoryFromID(commitID, r.auth)
 		if err != nil || len(history) == 0 {
-			return locale.WrapInputError(err, "err_reset_commitid", "The given commit ID does not exist")
+			return locale.WrapExternalError(err, "err_reset_commitid", "The given commit ID does not exist")
 		}
 	}
 

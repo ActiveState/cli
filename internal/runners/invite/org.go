@@ -46,7 +46,7 @@ func (o *Org) CanInvite(numInvites int) error {
 
 	requestedMemberCount := o.MemberCount + int64(numInvites)
 	if limits.UsersLimit > 0 && requestedMemberCount > limits.UsersLimit { // UsersLimit=0 means unlimited
-		return locale.NewInputError("err_invite_limit",
+		return locale.NewExternalError("err_invite_limit",
 			"Only {{.V0}} users can be added to the organization '{{.V1}}'. To add more users please upgrade your organization.",
 			strconv.FormatInt(limits.UsersLimit-o.MemberCount, 10), o.String())
 	}

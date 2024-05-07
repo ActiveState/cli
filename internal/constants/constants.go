@@ -133,9 +133,6 @@ const OverwriteDefaultInstallationPathEnvVarName = "ACTIVESTATE_TEST_INSTALL_PAT
 // OverwriteDefaultSystemPathEnvVarName is the environment variable name to overwrite the system app installation directory updates FOR TESTING PURPOSES ONLY
 const OverwriteDefaultSystemPathEnvVarName = "ACTIVESTATE_TEST_SYSTEM_PATH"
 
-// OverrideOSNameEnvVarName is used to override the OS name used when initializing projects
-const OverrideOSNameEnvVarName = "ACTIVESTATE_OVERRIDE_OS_NAME"
-
 // TestAutoUpdateEnvVarName is used to test auto updates, when set to true will always attempt to auto update
 const TestAutoUpdateEnvVarName = "ACTIVESTATE_TEST_AUTO_UPDATE"
 
@@ -443,6 +440,9 @@ const DefaultBranchName = "main"
 
 // UnstableConfig is the config key used to determine whether the user has opted in to unstable commands
 const UnstableConfig = "optin.unstable"
+
+// AsyncRuntimeConfig is the config key used to determine whether the user has opted in to async runtimes
+const AsyncRuntimeConfig = "optin.unstable.async_runtime"
 
 // OptinBuildscriptsConfig is the config key used to determine whether the user has opted in to buildscripts
 const OptinBuildscriptsConfig = "optin.buildscripts"

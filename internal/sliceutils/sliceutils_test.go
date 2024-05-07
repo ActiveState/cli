@@ -296,3 +296,30 @@ func TestContains(t *testing.T) {
 		})
 	}
 }
+
+func TestUniqueByProperty(t *testing.T) {
+	assert.Equal(t, []int{1, 2, 3, 4}, UniqueByProperty([]int{1, 2, 3, 3, 4, 4, 2, 4}, func(v int) any { return v }))
+
+	type s struct{ name string }
+	assert.Equal(t,
+		[]s{{"a"}, {"b"}, {"c"}},
+		UniqueByProperty([]s{{"a"}, {"a"}, {"b"}, {"c"}}, func(v s) any { return v.name }),
+	)
+}
+
+func TestToLookupMapByKey(t *testing.T) {
+	type customType struct {
+		Key   string
+		Value string
+	}
+	v1 := &customType{"Key1", "Val1"}
+	v2 := &customType{"Key2", "Val2"}
+	v3 := &customType{"Key3", "Val3"}
+	lookupSlice := []*customType{v1, v2, v3}
+	lookupMap := ToLookupMapByKey(lookupSlice, func(v *customType) string { return v.Key })
+	assert.Equal(t, map[string]*customType{
+		"Key1": v1,
+		"Key2": v2,
+		"Key3": v3,
+	}, lookupMap)
+}

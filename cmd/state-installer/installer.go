@@ -108,7 +108,7 @@ func (i *Installer) Install() (rerr error) {
 			// If we got to this point, we could not copy and rename over existing files.
 			// This is a permission issue. (We have an installer test for copying and renaming over a file
 			// in use, which does not raise an error.)
-			return locale.WrapInputError(err, "err_update_access_denied", "", errs.JoinMessage(err))
+			return locale.WrapExternalError(err, "err_update_access_denied", "", errs.JoinMessage(err))
 		}
 		return errs.Wrap(err, "Failed to copy installation files to dir %s. Error received: %s", i.path, errs.JoinMessage(err))
 	}

@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package deploy
@@ -35,7 +36,7 @@ func link(fpath, symlink string) error {
 	logging.Debug("Creating symlink, destination: %s symlink: %s", fpath, symlink)
 	err := os.Symlink(fpath, symlink)
 	if err != nil {
-		return locale.WrapInputError(
+		return locale.WrapExternalError(
 			err, "err_deploy_symlink",
 			"Cannot create symlink at {{.V0}}, ensure you have permission to write to {{.V1}}.", symlink, filepath.Dir(symlink))
 	}

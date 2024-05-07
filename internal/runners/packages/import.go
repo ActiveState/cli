@@ -15,10 +15,11 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
@@ -118,7 +119,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 
 	lang, err := model.CheckpointToLanguage(reqs, i.auth)
 	if err != nil {
-		return locale.WrapInputError(err, "err_import_language", "Your project does not have a language associated with it, please add a language first.")
+		return locale.WrapExternalError(err, "err_import_language", "Your project does not have a language associated with it, please add a language first.")
 	}
 
 	changeset, err := fetchImportChangeset(reqsimport.Init(), params.FileName, lang.Name)
@@ -126,7 +127,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return errs.Wrap(err, "Could not import changeset")
 	}
 
-	bp := model.NewBuildPlannerModel(i.auth)
+	bp := buildplanner.NewBuildPlannerModel(i.auth)
 	be, err := bp.GetBuildExpression(latestCommit.String())
 	if err != nil {
 		return locale.WrapError(err, "err_cannot_get_build_expression", "Could not get build expression")
@@ -141,7 +142,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 	}
 
 	msg := locale.T("commit_reqstext_message")
-	commitID, err := bp.StageCommit(model.StageCommitParams{
+	commitID, err := bp.StageCommit(buildplanner.StageCommitParams{
 		Owner:        i.proj.Owner(),
 		Project:      i.proj.Name(),
 		ParentCommit: latestCommit.String(),
@@ -163,7 +164,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model.Changeset, error) {
 	data, err := os.ReadFile(file)
 	if err != nil {
-		return nil, locale.WrapInputError(err, "err_reading_changeset_file", "Cannot read import file: {{.V0}}", err.Error())
+		return nil, locale.WrapExternalError(err, "err_reading_changeset_file", "Cannot read import file: {{.V0}}", err.Error())
 	}
 
 	changeset, err := cp.Changeset(data, lang)
@@ -176,25 +177,25 @@ func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model
 
 func applyChangeset(changeset model.Changeset, be *buildexpression.BuildExpression) error {
 	for _, change := range changeset {
-		var expressionOperation bpModel.Operation
+		var expressionOperation types.Operation
 		switch change.Operation {
 		case string(model.OperationAdded):
-			expressionOperation = bpModel.OperationAdded
+			expressionOperation = types.OperationAdded
 		case string(model.OperationRemoved):
-			expressionOperation = bpModel.OperationRemoved
+			expressionOperation = types.OperationRemoved
 		case string(model.OperationUpdated):
-			expressionOperation = bpModel.OperationUpdated
+			expressionOperation = types.OperationUpdated
 		}
 
-		req := bpModel.Requirement{
+		req := types.Requirement{
 			Name:      change.Requirement,
 			Namespace: change.Namespace,
 		}
 
 		for _, constraint := range change.VersionConstraints {
-			req.VersionRequirement = append(req.VersionRequirement, bpModel.VersionRequirement{
-				bpModel.VersionRequirementComparatorKey: constraint.Comparator,
-				bpModel.VersionRequirementVersionKey:    constraint.Version,
+			req.VersionRequirement = append(req.VersionRequirement, types.VersionRequirement{
+				types.VersionRequirementComparatorKey: constraint.Comparator,
+				types.VersionRequirementVersionKey:    constraint.Version,
 			})
 		}
 

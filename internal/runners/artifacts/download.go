@@ -3,6 +3,7 @@ package artifacts
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/url"
 	"os"
 	"path"
@@ -16,10 +17,10 @@ import (
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	rtProgress "github.com/ActiveState/cli/pkg/platform/runtime/setup/events/progress"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -86,19 +87,17 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 		target = params.Target
 	}
 
-	terminalArtfMap, _, _, err := getTerminalArtifactMap(
+	bp, err := getBuildPlan(
 		d.project, params.Namespace, params.CommitID, target, d.auth, d.out)
 	if err != nil {
 		return errs.Wrap(err, "Could not get build plan map")
 	}
 
-	var artifact *artifact.Artifact
-	for _, artifacts := range terminalArtfMap {
-		for _, a := range artifacts {
-			if strings.HasPrefix(strings.ToLower(string(a.ArtifactID)), strings.ToLower(params.BuildID)) {
-				artifact = &a
-				break
-			}
+	var artifact *buildplan.Artifact
+	for _, a := range bp.Artifacts() {
+		if strings.HasPrefix(strings.ToLower(string(a.ArtifactID)), strings.ToLower(params.BuildID)) {
+			artifact = a
+			break
 		}
 	}
 
@@ -121,7 +120,7 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 	return nil
 }
 
-func (d *Download) downloadArtifact(artifact *artifact.Artifact, targetDir string) (rerr error) {
+func (d *Download) downloadArtifact(artifact *buildplan.Artifact, targetDir string) (rerr error) {
 	artifactURL, err := url.Parse(artifact.URL)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse artifact URL %s.", artifact.URL)
@@ -131,12 +130,8 @@ func (d *Download) downloadArtifact(artifact *artifact.Artifact, targetDir strin
 	// Most platform artifact URLs are just "artifact.tar.gz", so use "<name>-<version>.<ext>" format.
 	// Some URLs are more complex like "<name>-<hash>.<ext>", so just leave them alone.
 	basename := path.Base(artifactURL.Path)
-	var ext string
-	if pos := strings.Index(basename, "."); pos != -1 {
-		ext = basename[pos:] // cannot use filepath.Ext() because it doesn't return ".tar.gz"
-	}
 	if basename == "artifact.tar.gz" {
-		basename = strings.Replace(artifact.NameWithVersion(), "@", "-", -1) + ext
+		basename = fmt.Sprintf("%s-%s.tar.gz", artifact.Name(), artifact.Version())
 	}
 
 	downloadPath := filepath.Join(targetDir, basename)
@@ -145,7 +140,7 @@ func (d *Download) downloadArtifact(artifact *artifact.Artifact, targetDir strin
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	pg := newDownloadProgress(ctx, d.out, artifact.Name, targetDir)
+	pg := newDownloadProgress(ctx, d.out, artifact.Name(), targetDir)
 	defer cancel()
 
 	b, err := httputil.GetWithProgress(artifactURL.String(), &rtProgress.Report{
@@ -169,7 +164,7 @@ func (d *Download) downloadArtifact(artifact *artifact.Artifact, targetDir strin
 		return errs.Wrap(err, "Writing download to target file %s failed", downloadPath)
 	}
 
-	d.out.Notice(locale.Tl("msg_download_success", "[SUCCESS]Downloaded {{.V0}} to {{.V1}}[/RESET]", artifact.Name, downloadPath))
+	d.out.Notice(locale.Tl("msg_download_success", "[SUCCESS]Downloaded {{.V0}} to {{.V1}}[/RESET]", artifact.Name(), downloadPath))
 
 	return nil
 }

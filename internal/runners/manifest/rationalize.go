@@ -20,7 +20,7 @@ func rationalizeError(rerr *error) {
 			locale.T("err_no_project"),
 			errs.SetInput(),
 		)
-	case errs.Matches(*rerr, store.ErrNoBuildPlanFile):
+	case errors.Is(*rerr, store.ErrNoBuildPlanFile):
 		*rerr = errs.WrapUserFacing(*rerr,
 			locale.Tl(
 				"err_manifest_no_build_plan_file",
