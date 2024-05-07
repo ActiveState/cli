@@ -292,11 +292,11 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 
 	// If this is a fresh installation we ensure that the target directory is empty
 	if !stateToolInstalled && fileutils.DirExists(params.path) && !params.force {
-		contains, err := fileutils.DirContains(params.path, installation.InstallDirMarker)
+		empty, err := fileutils.IsEmptyDir(params.path)
 		if err != nil {
 			return errs.Wrap(err, "Could not check if install path is empty")
 		}
-		if !contains {
+		if !empty {
 			return locale.NewError("err_install_nonempty_dir", "Installation path must be an empty directory: {{.V0}}", params.path)
 		}
 	}
