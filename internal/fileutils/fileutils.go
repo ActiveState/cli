@@ -1135,13 +1135,11 @@ func DirContains(path string, searchFile string) (bool, error) {
 	if err != nil {
 		return false, errs.Wrap(err, "Could not list dir")
 	}
-
 	for _, file := range files {
 		if file.Name() == searchFile {
 			return true, nil
 		}
 	}
-
 	return false, nil
 }
 
