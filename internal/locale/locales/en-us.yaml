@@ -1588,8 +1588,6 @@ err_headless:
 notice_needs_buildscript_reset:
   other: Your project is missing its buildscript file, please run '[ACTIONABLE]state reset LOCAL[/RESET]' to recreate it.
 
-svcctl_cannot_create_debug_info:
-  other: "Cannot create debug info: {{.V0}}"
 err_initial_no_requirement:
   other: |
     Could not find compatible requirement for initial commit. Please ensure that you are trying to install a valid package.
