@@ -297,7 +297,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 			return errs.Wrap(err, "Could not check if install path is empty")
 		}
 		if !empty {
-			return locale.NewError("err_install_nonempty_dir", "Installation path must be an empty directory: {{.V0}}", params.path)
+			return locale.NewInputError("err_install_nonempty_dir", "Installation path must be an empty directory: {{.V0}}", params.path)
 		}
 	}
 

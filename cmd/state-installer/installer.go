@@ -247,7 +247,7 @@ func installedOnPath(installRoot, channel string) (bool, string, error) {
 		filepath.Join(installRoot, stateCmd),
 	}
 	for _, candidate := range candidates {
-		if fileutils.FileExists(candidate) {
+		if fileutils.TargetExists(candidate) {
 			return true, installRoot, nil
 		}
 	}
