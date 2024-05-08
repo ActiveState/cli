@@ -93,11 +93,11 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 							"--version", "2.3.4",
 							"--description", "im-a-description",
 							"--author", "author-name <author-email@domain.tld>",
-							"--depend", "language:python@>=3",
-							"--depend", "builder:python-module-builder@>=0",
-							"--depend-test", "language:python@>=3",
-							"--depend-build", "language:python@>=3",
-							"--depend-runtime", "language:python@>=3",
+							"--depend", "language/python@>=3",
+							"--depend", "builder/python-module-builder@>=0",
+							"--depend-test", "language/python@>=3",
+							"--depend-build", "language/python@>=3",
+							"--depend-runtime", "language/python@>=3",
 						},
 						nil,
 						nil,
@@ -457,7 +457,7 @@ authors:
 					cp.Expect(version)
 					cp.ExpectExitCode(inv.expect.exitCode)
 
-					cp = ts.Spawn("search", namespace+":"+name, "--ts=now")
+					cp = ts.Spawn("search", namespace+"/"+name, "--ts=now")
 					cp.Expect(version)
 					time.Sleep(time.Second)
 					cp.Send("q")
