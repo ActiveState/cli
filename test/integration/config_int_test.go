@@ -60,5 +60,6 @@ func (suite *ConfigIntegrationTestSuite) TestJSON() {
 }
 
 func TestConfigIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(ConfigIntegrationTestSuite))
 }

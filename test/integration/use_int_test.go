@@ -294,5 +294,6 @@ func (suite *UseIntegrationTestSuite) TestJSON() {
 }
 
 func TestUseIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(UseIntegrationTestSuite))
 }

@@ -42,5 +42,6 @@ func (suite *HelloIntegrationTestSuite) TestHello() {
 }
 
 func TestHelloIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(HelloIntegrationTestSuite))
 }

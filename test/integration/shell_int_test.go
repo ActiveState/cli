@@ -517,5 +517,6 @@ events:`, lang, splat), 1)
 }
 
 func TestShellIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(ShellIntegrationTestSuite))
 }

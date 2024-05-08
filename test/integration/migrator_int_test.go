@@ -50,5 +50,6 @@ func (suite *MigratorIntegrationTestSuite) TestMigrator_Buildscripts() {
 }
 
 func TestMigratorIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(MigratorIntegrationTestSuite))
 }

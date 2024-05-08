@@ -110,5 +110,6 @@ func (suite *ExportIntegrationTestSuite) TestJSON() {
 }
 
 func TestExportIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(ExportIntegrationTestSuite))
 }

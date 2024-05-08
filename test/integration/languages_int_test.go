@@ -156,5 +156,6 @@ func (suite *LanguagesIntegrationTestSuite) TestWildcards() {
 }
 
 func TestLanguagesIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(LanguagesIntegrationTestSuite))
 }

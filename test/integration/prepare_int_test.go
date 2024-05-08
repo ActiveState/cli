@@ -174,5 +174,6 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 }
 
 func TestPrepareIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(PrepareIntegrationTestSuite))
 }

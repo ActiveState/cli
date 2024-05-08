@@ -97,5 +97,6 @@ func (suite *CveIntegrationTestSuite) TestJSON() {
 }
 
 func TestCveIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(CveIntegrationTestSuite))
 }

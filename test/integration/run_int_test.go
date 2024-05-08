@@ -352,5 +352,6 @@ func (suite *RunIntegrationTestSuite) TestRun_Args() {
 }
 
 func TestRunIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(RunIntegrationTestSuite))
 }

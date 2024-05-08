@@ -770,5 +770,6 @@ func (suite *InstallIntegrationTestSuite) TestNamespace() {
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(PackageIntegrationTestSuite))
 }

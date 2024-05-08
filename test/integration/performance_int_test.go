@@ -44,6 +44,7 @@ func (suite *PerformanceIntegrationTestSuite) TestVersionPerformance() {
 }
 
 func TestPerformanceIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(PerformanceIntegrationTestSuite))
 }
 

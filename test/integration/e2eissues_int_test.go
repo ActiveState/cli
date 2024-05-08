@@ -18,6 +18,7 @@ The intend is to collect e2e bugs here so that we can test that they are fixed o
 */
 
 func TestMultipleSends(t *testing.T) {
+	t.Parallel()
 	if runtime.GOOS != "windows" {
 		t.Skip("This test is only relevant on Windows")
 	}

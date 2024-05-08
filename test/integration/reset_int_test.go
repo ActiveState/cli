@@ -98,5 +98,6 @@ func (suite *ResetIntegrationTestSuite) TestRevertInvalidURL() {
 }
 
 func TestResetIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(ResetIntegrationTestSuite))
 }

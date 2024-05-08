@@ -690,5 +690,6 @@ func (suite *AnalyticsIntegrationTestSuite) TestCIAndInteractiveDimensions() {
 }
 
 func TestAnalyticsIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(AnalyticsIntegrationTestSuite))
 }

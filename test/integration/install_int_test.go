@@ -111,5 +111,6 @@ func (suite *InstallIntegrationTestSuite) TestInstall_Resolved() {
 }
 
 func TestInstallIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(InstallIntegrationTestSuite))
 }

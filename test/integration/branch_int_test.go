@@ -78,5 +78,6 @@ func (suite *BranchIntegrationTestSuite) TestJSON() {
 }
 
 func TestBranchIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(BranchIntegrationTestSuite))
 }

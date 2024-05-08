@@ -123,5 +123,6 @@ func (suite *SwitchIntegrationTestSuite) TestJSON() {
 }
 
 func TestSwitchIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(SwitchIntegrationTestSuite))
 }

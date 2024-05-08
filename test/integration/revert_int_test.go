@@ -188,5 +188,6 @@ func (suite *RevertIntegrationTestSuite) TestJSON() {
 }
 
 func TestRevertIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(RevertIntegrationTestSuite))
 }

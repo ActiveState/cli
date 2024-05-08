@@ -27,5 +27,6 @@ func (suite *InviteIntegrationTestSuite) TestInvite_NotAuthenticated() {
 }
 
 func TestInviteIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(InviteIntegrationTestSuite))
 }

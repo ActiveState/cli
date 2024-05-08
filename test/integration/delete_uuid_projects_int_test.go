@@ -20,5 +20,6 @@ func (suite *DeleteUUIDProjectIntegrationTestSuite) TestRun() {
 }
 
 func TestDeleteUUIDProjectIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(DeleteUUIDProjectIntegrationTestSuite))
 }

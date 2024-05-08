@@ -105,5 +105,6 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 }
 
 func TestShellsIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(ShellsIntegrationTestSuite))
 }
