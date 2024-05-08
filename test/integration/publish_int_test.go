@@ -457,7 +457,7 @@ authors:
 					cp.Expect(version)
 					cp.ExpectExitCode(inv.expect.exitCode)
 
-					cp = ts.Spawn("search", namespace+":"+name, "--ts=now")
+					cp = ts.Spawn("search", namespace+"/"+name, "--ts=now")
 					cp.Expect(version)
 					time.Sleep(time.Second)
 					cp.Send("q")
