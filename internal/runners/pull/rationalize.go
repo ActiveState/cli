@@ -5,7 +5,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 )
 
 func rationalizeError(err *error) {
@@ -13,21 +14,21 @@ func rationalizeError(err *error) {
 		return
 	}
 
-	var mergeCommitErr *model.MergedCommitError
+	var mergeCommitErr *response.MergedCommitError
 	var noCommonParentErr *errNoCommonParent
 
 	switch {
 	case errors.As(*err, &mergeCommitErr):
 		switch mergeCommitErr.Type {
 		// Custom target does not have a compatible history
-		case model.NoCommonBaseFoundType:
+		case types.NoCommonBaseFoundType:
 			*err = errs.WrapUserFacing(*err,
 				locale.Tl("err_pull_no_common_base",
 					"Could not merge, no common base found between local and remote commits",
 				),
 				errs.SetInput(),
 			)
-		case model.NotFoundErrorType, model.ForbiddenErrorType:
+		case types.NotFoundErrorType, types.ForbiddenErrorType:
 			*err = errs.WrapUserFacing(*err,
 				locale.Tl("err_pull_not_found",
 					mergeCommitErr.Error(),

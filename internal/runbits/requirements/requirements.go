@@ -9,13 +9,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/runbits"
-	runbit "github.com/ActiveState/cli/internal/runbits/runtime"
-	"github.com/ActiveState/cli/pkg/localcommit"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
-	"github.com/thoas/go-funk"
-
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -29,17 +22,24 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	runbit "github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	vulnModel "github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
 )
 
 func init() {
@@ -115,7 +115,7 @@ type Requirement struct {
 	BitWidth      int // Only needed for platform requirements
 	Namespace     *model.Namespace
 	NamespaceType *model.NamespaceType
-	Operation     bpModel.Operation
+	Operation     types.Operation
 
 	// The following fields are set during execution
 	langName                string
@@ -123,7 +123,7 @@ type Requirement struct {
 	validatePkg             bool
 	appendVersionWildcard   bool
 	originalRequirementName string
-	versionRequirements     []bpModel.VersionRequirement
+	versionRequirements     []types.VersionRequirement
 }
 
 // ExecuteRequirementOperation executes the operation on the requirement
@@ -187,7 +187,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 
 		languageFromNs := model.LanguageFromNamespace(requirement.Namespace.String())
-		parentCommitID, err = model.CommitInitial(model.HostPlatform, languageFromNs, requirement.langVersion, r.Auth)
+		parentCommitID, err = model.CommitInitial(sysinfo.OS().String(), languageFromNs, requirement.langVersion, r.Auth)
 		if err != nil {
 			return locale.WrapError(err, "err_install_no_project_commit", "Could not create initial commit for new project")
 		}
@@ -197,18 +197,18 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		return locale.WrapError(err, "err_resolve_requirements", "Could not resolve one or more requirements")
 	}
 
-	var stageCommitReqs []model.StageCommitRequirement
+	var stageCommitReqs []bpModel.StageCommitRequirement
 	for _, requirement := range requirements {
-		stageCommitReqs = append(stageCommitReqs, model.StageCommitRequirement{
+		stageCommitReqs = append(stageCommitReqs, bpModel.StageCommitRequirement{
 			Name:      requirement.Name,
 			Version:   requirement.versionRequirements,
 			Revision:  requirement.Revision,
-			Namespace: *requirement.Namespace,
+			Namespace: requirement.Namespace.String(),
 			Operation: requirement.Operation,
 		})
 	}
 
-	params := model.StageCommitParams{
+	params := bpModel.StageCommitParams{
 		Owner:        r.Project.Owner(),
 		Project:      r.Project.Name(),
 		ParentCommit: string(parentCommitID),
@@ -217,7 +217,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		TimeStamp:    ts,
 	}
 
-	bp := model.NewBuildPlannerModel(r.Auth)
+	bp := bpModel.NewBuildPlannerModel(r.Auth)
 	commitID, err := bp.StageCommit(params)
 	if err != nil {
 		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")
@@ -239,7 +239,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 
 		// Solve runtime
-		solveResponse, err := runbit.Solve(r.Auth, r.Output, r.Analytics, r.Project, &commitID, trigger, r.SvcModel, r.Config, runbit.OptNone)
+		rt, rtCommit, err := runbit.Solve(r.Auth, r.Output, r.Analytics, r.Project, &commitID, trigger, r.SvcModel, r.Config, runbit.OptNone)
 		if err != nil {
 			return errs.Wrap(err, "Could not solve runtime")
 		}
@@ -252,31 +252,28 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 			return errs.Wrap(err, "Could not get commit")
 		}
 
-		var oldBuildPlan *bpModel.Build
+		var oldBuildPlan *buildplan.BuildPlan
 		rtTarget := target.NewProjectTarget(r.Project, &commitID, trigger)
 		if oldCommit.ParentCommitID != "" {
-			bp := model.NewBuildPlannerModel(r.Auth)
-			oldBuildResult, _, err := bp.FetchBuildResult(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
+			bpm := bpModel.NewBuildPlannerModel(r.Auth)
+			commit, err := bpm.FetchCommit(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
 			if err != nil {
 				return errs.Wrap(err, "Failed to fetch build result")
 			}
-			oldBuildPlan = oldBuildResult.Build
+			oldBuildPlan = commit.BuildPlan()
 		}
 
-		changeset, err := buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, solveResponse.BuildResult.Build, false, false, r.Config, r.Auth)
-		if err != nil {
-			return errs.Wrap(err, "Could not get changed artifacts")
-		}
+		changedArtifacts := rtCommit.BuildPlan().DiffArtifacts(oldBuildPlan, false)
 
 		// Report CVEs
-		if err := r.cveReport(changeset, requirements...); err != nil {
+		if err := r.cveReport(changedArtifacts, requirements...); err != nil {
 			return errs.Wrap(err, "Could not report CVEs")
 		}
 
 		// Start runtime update UI
 		if !r.Config.GetBool(constants.AsyncRuntimeConfig) {
 			out.Notice("")
-			if !solveResponse.HasCache() {
+			if !rt.HasCache() {
 				out.Notice(output.Title(locale.T("install_runtime")))
 				out.Notice(locale.T("install_runtime_info"))
 			} else {
@@ -285,7 +282,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 			}
 
 			// refresh or install runtime
-			err = runbit.UpdateByReference(solveResponse.Runtime, solveResponse.BuildResult, solveResponse.Commit, r.Auth, r.Project, r.Output)
+			err = runbit.UpdateByReference(rt, rtCommit, r.Auth, r.Project, r.Output)
 			if err != nil {
 				if !runbits.IsBuildError(err) {
 					// If the error is not a build error we want to retain the changes
@@ -358,11 +355,11 @@ func (r *RequirementOperation) resolveNamespace(ts *time.Time, requirement *Requ
 
 	ns := requirement.Namespace
 	nsType := requirement.NamespaceType
-	requirement.validatePkg = requirement.Operation == bpModel.OperationAdded && ns != nil && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle || ns.Type() == model.NamespaceLanguage)
+	requirement.validatePkg = requirement.Operation == types.OperationAdded && ns != nil && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle || ns.Type() == model.NamespaceLanguage)
 	if (ns == nil || !ns.IsValid()) && nsType != nil && (*nsType == model.NamespacePackage || *nsType == model.NamespaceBundle) {
 		pg := output.StartSpinner(r.Output, locale.Tr("progress_pkg_nolang", requirement.Name), constants.TerminalAnimationInterval)
 
-		supported, err := model.FetchSupportedLanguages(model.HostPlatform)
+		supported, err := model.FetchSupportedLanguages(sysinfo.OS().String())
 		if err != nil {
 			return errs.Wrap(err, "Failed to retrieve the list of supported languages")
 		}
@@ -468,13 +465,13 @@ func (r *RequirementOperation) validatePackage(requirement *Requirement) error {
 func (r *RequirementOperation) checkForUpdate(parentCommitID strfmt.UUID, requirements ...*Requirement) error {
 	for _, requirement := range requirements {
 		// Check if this is an addition or an update
-		if requirement.Operation == bpModel.OperationAdded && parentCommitID != "" {
+		if requirement.Operation == types.OperationAdded && parentCommitID != "" {
 			req, err := model.GetRequirement(parentCommitID, *requirement.Namespace, requirement.Name, r.Auth)
 			if err != nil {
 				return errs.Wrap(err, "Could not get requirement")
 			}
 			if req != nil {
-				requirement.Operation = bpModel.OperationUpdated
+				requirement.Operation = types.OperationUpdated
 			}
 		}
 
@@ -507,7 +504,7 @@ func (r *RequirementOperation) resolveRequirement(requirement *Requirement) erro
 		versionString += ".x"
 	}
 
-	requirement.versionRequirements, err = model.VersionStringToRequirements(versionString)
+	requirement.versionRequirements, err = bpModel.VersionStringToRequirements(versionString)
 	if err != nil {
 		return errs.Wrap(err, "Could not process version string into requirements")
 	}
@@ -515,7 +512,7 @@ func (r *RequirementOperation) resolveRequirement(requirement *Requirement) erro
 	return nil
 }
 
-func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChangeset, requirements ...*Requirement) error {
+func (r *RequirementOperation) cveReport(artifactChangeset buildplan.ArtifactChangeset, requirements ...*Requirement) error {
 	if r.shouldSkipCVEs(requirements...) {
 		logging.Debug("Skipping CVE reporting")
 		return nil
@@ -526,27 +523,32 @@ func (r *RequirementOperation) cveReport(artifactChangeset artifact.ArtifactChan
 
 	var ingredients []*request.Ingredient
 	for _, requirement := range requirements {
-		if requirement.Operation == bpModel.OperationRemoved {
+		if requirement.Operation == types.OperationRemoved {
 			continue
 		}
 
 		for _, artifact := range artifactChangeset.Added {
-			ingredients = append(ingredients, &request.Ingredient{
-				Namespace: artifact.Namespace,
-				Name:      artifact.Name,
-				Version:   *artifact.Version,
-			})
+			for _, ing := range artifact.Ingredients {
+				ingredients = append(ingredients, &request.Ingredient{
+					Namespace: ing.Namespace,
+					Name:      ing.Name,
+					Version:   ing.Version,
+				})
+			}
 		}
 
-		for _, artifact := range artifactChangeset.Updated {
-			if !artifact.IngredientChange {
+		for _, change := range artifactChangeset.Updated {
+			if !change.VersionsChanged() {
 				continue // For CVE reporting we only care about ingredient changes
 			}
-			ingredients = append(ingredients, &request.Ingredient{
-				Namespace: artifact.To.Namespace,
-				Name:      artifact.To.Name,
-				Version:   *artifact.To.Version,
-			})
+
+			for _, ing := range change.To.Ingredients {
+				ingredients = append(ingredients, &request.Ingredient{
+					Namespace: ing.Namespace,
+					Name:      ing.Name,
+					Version:   ing.Version,
+				})
+			}
 		}
 	}
 
@@ -595,7 +597,7 @@ func (r *RequirementOperation) shouldSkipCVEs(requirements ...*Requirement) bool
 	}
 
 	for _, req := range requirements {
-		if req.Operation != bpModel.OperationRemoved {
+		if req.Operation != types.OperationRemoved {
 			return false
 		}
 	}
@@ -609,7 +611,7 @@ func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 	}
 
 	if r.Config.GetBool(constants.OptinBuildscriptsConfig) {
-		bp := model.NewBuildPlannerModel(r.Auth)
+		bp := bpModel.NewBuildPlannerModel(r.Auth)
 		expr, atTime, err := bp.GetBuildExpressionAndTime(commitID.String())
 		if err != nil {
 			return errs.Wrap(err, "Could not get remote build expr and time")
@@ -723,7 +725,7 @@ func (r *RequirementOperation) outputResult(requirement *Requirement) {
 			requirement.Operation.String(),
 		}))
 
-	if requirement.originalRequirementName != requirement.Name && requirement.Operation != bpModel.OperationRemoved {
+	if requirement.originalRequirementName != requirement.Name && requirement.Operation != types.OperationRemoved {
 		r.Output.Notice(locale.Tl("package_version_differs",
 			"Note: the actual package name ({{.V0}}) is different from the requested package name ({{.V1}})",
 			requirement.Name, requirement.originalRequirementName))
@@ -828,42 +830,42 @@ func requirementCommitMessage(req *Requirement) string {
 	return ""
 }
 
-func languageCommitMessage(op bpModel.Operation, name, version string) string {
+func languageCommitMessage(op types.Operation, name, version string) string {
 	var msgL10nKey string
 	switch op {
-	case bpModel.OperationAdded:
+	case types.OperationAdded:
 		msgL10nKey = "commit_message_added_language"
-	case bpModel.OperationUpdated:
+	case types.OperationUpdated:
 		msgL10nKey = "commit_message_updated_language"
-	case bpModel.OperationRemoved:
+	case types.OperationRemoved:
 		msgL10nKey = "commit_message_removed_language"
 	}
 
 	return locale.Tr(msgL10nKey, name, version)
 }
 
-func platformCommitMessage(op bpModel.Operation, name, version string, word int) string {
+func platformCommitMessage(op types.Operation, name, version string, word int) string {
 	var msgL10nKey string
 	switch op {
-	case bpModel.OperationAdded:
+	case types.OperationAdded:
 		msgL10nKey = "commit_message_added_platform"
-	case bpModel.OperationUpdated:
+	case types.OperationUpdated:
 		msgL10nKey = "commit_message_updated_platform"
-	case bpModel.OperationRemoved:
+	case types.OperationRemoved:
 		msgL10nKey = "commit_message_removed_platform"
 	}
 
 	return locale.Tr(msgL10nKey, name, strconv.Itoa(word), version)
 }
 
-func packageCommitMessage(op bpModel.Operation, name, version string) string {
+func packageCommitMessage(op types.Operation, name, version string) string {
 	var msgL10nKey string
 	switch op {
-	case bpModel.OperationAdded:
+	case types.OperationAdded:
 		msgL10nKey = "commit_message_added_package"
-	case bpModel.OperationUpdated:
+	case types.OperationUpdated:
 		msgL10nKey = "commit_message_updated_package"
-	case bpModel.OperationRemoved:
+	case types.OperationRemoved:
 		msgL10nKey = "commit_message_removed_package"
 	}
 

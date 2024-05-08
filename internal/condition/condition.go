@@ -1,11 +1,11 @@
 package condition
 
 import (
+	"errors"
 	"os"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/thoas/go-funk"
 )
 
@@ -53,12 +53,25 @@ func OptInUnstable(cfg Configurable) bool {
 }
 
 func IsNetworkingError(err error) bool {
-	msg := errs.JoinMessage(err)
 	switch {
-	case strings.Contains(msg, "no such host"):
+	case strings.Contains(err.Error(), "no such host"):
 		return true
-	case strings.Contains(msg, "no route to host"):
+	case strings.Contains(err.Error(), "no route to host"):
 		return true
+	}
+	if subErr := errors.Unwrap(err); subErr != nil {
+		return IsNetworkingError(subErr)
+	}
+	unwrapped, ok := err.(interface{ Unwrap() []error })
+	if ok {
+		subErrs := unwrapped.Unwrap()
+		if len(subErrs) > 0 {
+			for _, subErr := range subErrs {
+				if IsNetworkingError(subErr) {
+					return true
+				}
+			}
+		}
 	}
 	return false
 }

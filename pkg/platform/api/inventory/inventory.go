@@ -22,7 +22,11 @@ var persist inventory_operations.ClientService
 
 // Init will create a new API client using default settings
 func Init(auth *authentication.Auth) (inventory_operations.ClientService, runtime.ClientTransport) {
-	return New(api.GetServiceURL(api.ServiceInventory), auth.ClientAuth())
+	var authWriter runtime.ClientAuthInfoWriter
+	if auth != nil {
+		authWriter = auth.ClientAuth()
+	}
+	return New(api.GetServiceURL(api.ServiceInventory), authWriter)
 }
 
 // New initializes a new api client

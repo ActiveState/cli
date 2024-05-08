@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -35,7 +35,7 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 		return rationalize.ErrNoProject
 	}
 
-	params, err := prepareParams(ps.Params, r.prime.Auth())
+	params, err := prepareParams(ps.Params)
 	if err != nil {
 		return errs.Wrap(err, "Could not prepare parameters.")
 	}
@@ -45,7 +45,7 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 		&requirements.Requirement{
 			Name:          params.name,
 			Version:       params.version,
-			Operation:     bpModel.OperationRemoved,
+			Operation:     types.OperationRemoved,
 			BitWidth:      params.BitWidth,
 			NamespaceType: &model.NamespacePlatform,
 		},

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/go-openapi/strfmt"
 
@@ -251,9 +252,9 @@ func searchIngredientsNamespace(ns string, name string, includeVersions bool, ex
 	return ingredients, nil
 }
 
-func FetchPlatforms(auth *authentication.Auth) ([]*Platform, error) {
+func FetchPlatforms() ([]*Platform, error) {
 	if platformCache == nil {
-		client := inventory.Get(auth)
+		client := inventory.Get(nil)
 
 		params := inventory_operations.NewGetPlatformsParams()
 		limit := int64(99999)
@@ -284,8 +285,8 @@ func FetchPlatforms(auth *authentication.Auth) ([]*Platform, error) {
 	return platformCache, nil
 }
 
-func FetchPlatformsMap(auth *authentication.Auth) (map[strfmt.UUID]*Platform, error) {
-	platforms, err := FetchPlatforms(auth)
+func FetchPlatformsMap() (map[strfmt.UUID]*Platform, error) {
+	platforms, err := FetchPlatforms()
 	if err != nil {
 		return nil, err
 	}
@@ -307,7 +308,7 @@ func FetchPlatformsForCommit(commitID strfmt.UUID, auth *authentication.Auth) ([
 
 	var platforms []*Platform
 	for _, pID := range platformIDs {
-		platform, err := FetchPlatformByUID(pID, auth)
+		platform, err := FetchPlatformByUID(pID)
 		if err != nil {
 			return nil, err
 		}
@@ -318,8 +319,8 @@ func FetchPlatformsForCommit(commitID strfmt.UUID, auth *authentication.Auth) ([
 	return platforms, nil
 }
 
-func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID, cfg Configurable, auth *authentication.Auth) ([]strfmt.UUID, error) {
-	runtimePlatforms, err := FetchPlatforms(auth)
+func FilterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID, cfg Configurable) ([]strfmt.UUID, error) {
+	runtimePlatforms, err := FetchPlatforms()
 	if err != nil {
 		return nil, err
 	}
@@ -442,8 +443,8 @@ func fetchLibcVersion(cfg Configurable) (string, error) {
 	return cfg.GetString(constants.PreferredGlibcVersionConfig), nil
 }
 
-func FetchPlatformByUID(uid strfmt.UUID, auth *authentication.Auth) (*Platform, error) {
-	platforms, err := FetchPlatforms(auth)
+func FetchPlatformByUID(uid strfmt.UUID) (*Platform, error) {
+	platforms, err := FetchPlatforms()
 	if err != nil {
 		return nil, err
 	}
@@ -458,7 +459,7 @@ func FetchPlatformByUID(uid strfmt.UUID, auth *authentication.Auth) (*Platform, 
 }
 
 func FetchPlatformByDetails(name, version string, word int, auth *authentication.Auth) (*Platform, error) {
-	runtimePlatforms, err := FetchPlatforms(auth)
+	runtimePlatforms, err := FetchPlatforms()
 	if err != nil {
 		return nil, err
 	}
@@ -657,4 +658,19 @@ func FetchNormalizedName(namespace Namespace, name string, auth *authentication.
 		return "", errs.New("Normalized name for %s not found", name)
 	}
 	return *res.Payload.NormalizedNames[0].Normalized, nil
+}
+
+func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID, cfg Configurable) (strfmt.UUID, error) {
+	platformIDs, err := FilterPlatformIDs(hostPlatform, runtime.GOARCH, platforms, cfg)
+	if err != nil {
+		return "", errs.Wrap(err, "filterPlatformIDs failed")
+	}
+
+	if len(platformIDs) == 0 {
+		return "", locale.NewInputError("err_recipe_no_platform")
+	} else if len(platformIDs) > 1 {
+		logging.Debug("Received multiple platform IDs. Picking the first one: %s", platformIDs[0])
+	}
+
+	return platformIDs[0], nil
 }

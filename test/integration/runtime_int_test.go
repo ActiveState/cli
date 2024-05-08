@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
-	"github.com/ActiveState/termtest"
 )
 
 // Disabled due to DX-1514
@@ -137,7 +136,7 @@ func (suite *RuntimeIntegrationTestSuite) TestInUse() {
 		e2e.OptArgs("install", "DateTime"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp2.Expect("currently in use", termtest.OptExpectTimeout(15*time.Second))
+	cp2.Expect("currently in use", e2e.RuntimeSourcingTimeoutOpt)
 	cp2.Expect("perl")
 	cp2.ExpectNotExitCode(0)
 	ts.IgnoreLogErrors()

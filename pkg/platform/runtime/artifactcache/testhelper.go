@@ -1,11 +1,9 @@
 package artifactcache
 
+import "github.com/go-openapi/strfmt"
+
 // This file exists solely to export private data from ArtifactCache in order to run integration
 // tests in an outside package.
-
-import (
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-)
 
 type testArtifactCache struct {
 	cache *ArtifactCache
@@ -36,15 +34,15 @@ func (ac *testArtifactCache) CurrentSize() int64 {
 	return ac.cache.currentSize
 }
 
-func (ac *testArtifactCache) Artifacts() map[artifact.ArtifactID]*cachedArtifact {
+func (ac *testArtifactCache) Artifacts() map[strfmt.UUID]*cachedArtifact {
 	return ac.cache.artifacts
 }
 
-func (ac *testArtifactCache) Get(a artifact.ArtifactID) (string, bool) {
+func (ac *testArtifactCache) Get(a strfmt.UUID) (string, bool) {
 	return ac.cache.Get(a)
 }
 
-func (ac *testArtifactCache) Store(a artifact.ArtifactID, s string) error {
+func (ac *testArtifactCache) Store(a strfmt.UUID, s string) error {
 	return ac.cache.Store(a, s)
 }
 

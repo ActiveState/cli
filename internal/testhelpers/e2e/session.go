@@ -707,12 +707,19 @@ func (s *Session) IgnoreLogErrors() {
 var errorOrPanicRegex = regexp.MustCompile(`(?:\[ERR |\[CRT |Panic:)`)
 
 func (s *Session) detectLogErrors() {
+	var sectionStart, sectionEnd string
+	sectionStart = "\n=== "
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		sectionStart = "##[group]"
+		sectionEnd = "##[endgroup]"
+	}
 	for _, path := range s.LogFiles() {
 		if !strings.HasPrefix(filepath.Base(path), "state-") {
 			continue
 		}
 		if contents := string(fileutils.ReadFileUnsafe(path)); errorOrPanicRegex.MatchString(contents) {
-			s.T.Errorf("Found error and/or panic in log file %s\nIf this was expected, call session.IgnoreLogErrors() to avoid this check\nLog contents:\n%s", path, contents)
+			s.T.Errorf("%sFound error and/or panic in log file %s\nIf this was expected, call session.IgnoreLogErrors() to avoid this check\nLog contents:\n%s%s",
+				sectionStart, path, contents, sectionEnd)
 		}
 	}
 }

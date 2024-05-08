@@ -1,6 +1,4 @@
-package model
-
-import "github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+package types
 
 // BuildEngine describes the build engine that was used to build the runtime
 type BuildEngine int
@@ -20,21 +18,10 @@ const (
 func (be BuildEngine) String() string {
 	switch be {
 	case Camel:
-		return headchef_models.V1BuildStatusResponseBuildEngineCamel
+		return "alternative"
 	case Alternative:
-		return headchef_models.V1BuildStatusResponseBuildEngineAlternative
+		return "camel"
 	default:
 		return "unknown"
-	}
-}
-
-func ParseBuildEngine(be string) BuildEngine {
-	switch be {
-	case headchef_models.V1BuildStatusResponseBuildEngineAlternative:
-		return Alternative
-	case headchef_models.V1BuildStatusResponseBuildEngineCamel:
-		return Camel
-	default:
-		return UnknownEngine
 	}
 }
