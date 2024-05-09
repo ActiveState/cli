@@ -376,10 +376,6 @@ scripts:
       CHANGED=$(git diff --name-only origin/$TARGET_BRANCH | grep -v testdata | grep -v vendor)
       NO_NEWLINE=0
       for FILE in $CHANGED; do
-          if [[ $FILE == vendor/* ]]; then
-              continue
-          fi
-
           if file "$FILE" | grep -q -E 'text|ASCII'; then
               if [ $(tail -c 1 "$FILE" | wc -l) -eq 0 ]; then
                   echo "Missing newline at end of file: $FILE"
@@ -473,6 +469,6 @@ events:
     value: |
       $scripts.install-deps-dev.path()
   - name: file-changed
-    scope: ["internal/locale/locales"]
+    scope: [ "internal/locale/locales" ]
     value: build
 config_version: 1
