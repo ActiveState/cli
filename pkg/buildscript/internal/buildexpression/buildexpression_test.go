@@ -483,8 +483,6 @@ func TestNullValue(t *testing.T) {
     "runtime": {
       "solve": {
         "at_time": "$at_time",
-        "platforms": [],
-        "requirements": [],
         "solver_version": null
       }
     }

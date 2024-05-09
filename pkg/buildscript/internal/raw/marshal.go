@@ -27,7 +27,7 @@ func (r *Raw) Marshal() ([]byte, error) {
 		return nil, errs.Wrap(err, "Could not unmarshal build expression")
 	}
 
-	return []byte(marshalAscriptFromBE(expr, r.AtTime)), nil
+	return []byte(marshalFromBuildExpression(expr, r.AtTime)), nil
 }
 
 // MarshalBuildExpression converts our Raw structure into a build expression structure
@@ -60,10 +60,16 @@ func Unmarshal(data []byte) (*Raw, error) {
 
 // UnmarshalBuildExpression converts a build expression into our raw structure
 func UnmarshalBuildExpression(expr *buildexpression.BuildExpression, atTime *time.Time) (*Raw, error) {
-	return Unmarshal([]byte(marshalAscriptFromBE(expr, atTime)))
+	return Unmarshal([]byte(marshalFromBuildExpression(expr, atTime)))
 }
 
-func marshalAscriptFromBE(expr *buildexpression.BuildExpression, atTime *time.Time) string {
+// marshalFromBuildExpression is a bit special in that it is sort of an unmarshaller and a marshaller at the same time.
+// It takes a build expression and directly translates it into the string representation of a build script.
+// We should update this so that this instead translates the build expression directly to the in-memory representation
+// of a buildscript (ie. the Raw structure). But that is a large refactor in and of itself that'll follow later.
+// For now we can use this to convert a build expression to a buildscript with an extra hop where we have to unmarshal
+// the resulting buildscript string.
+func marshalFromBuildExpression(expr *buildexpression.BuildExpression, atTime *time.Time) string {
 	buf := strings.Builder{}
 
 	if atTime != nil {

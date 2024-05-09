@@ -175,6 +175,5 @@ func (b *BuildScript) Merge(b2 *BuildScript, strategies *mono_models.MergeStrate
 
 	bs, err := unmarshalBuildExpressionTyped(expr, atTime)
 
-	// For now, pick the later of the script AtTimes.
 	return bs, nil
 }
