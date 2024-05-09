@@ -7,7 +7,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
@@ -37,7 +36,6 @@ func (suite *ConditionIntegrationTestSuite) TestCondition() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("activate"),
-		e2e.OptAppendEnv(constants.DisableActivateEventsEnvVarName+"=false"),
 	)
 	cp.Expect(`Activation Event Ran`)
 	cp.ExpectInput()

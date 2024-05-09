@@ -349,7 +349,6 @@ func (suite *ShellIntegrationTestSuite) TestPs1() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("shell", "small-python"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Activated")
 	cp.Expect("[ActiveState-CLI/small-python]")

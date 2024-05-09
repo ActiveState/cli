@@ -571,7 +571,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeapEvents() {
 	)
 
 	cp.Expect("Creating a Virtual Environment")
-	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Activated")
 	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events

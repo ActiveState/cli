@@ -50,13 +50,11 @@ func (suite *ManifestIntegrationTestSuite) TestManifest_JSON() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState/cli#9eee7512-b2ab-4600-b78b-ab0cf2e817d8", "."),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("manifest", "--output", "json"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)

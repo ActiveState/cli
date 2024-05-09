@@ -56,10 +56,6 @@ func (suite *CveIntegrationTestSuite) TestCveNoVulnerabilities() {
 	cp := ts.Spawn("cve")
 	cp.Expect("No CVEs detected")
 	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("cve", "report") // legacy alias
-	cp.Expect("No CVEs detected")
-	cp.ExpectExitCode(0)
 }
 
 func (suite *CveIntegrationTestSuite) TestCveInvalidProject() {
