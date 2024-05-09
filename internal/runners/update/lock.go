@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -66,7 +67,7 @@ func NewLock(prime primeable) *Lock {
 
 func (l *Lock) Run(params *LockParams) error {
 	if l.project == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 
 	l.out.Notice(locale.Tl("locking_version", "Locking State Tool version for current project."))

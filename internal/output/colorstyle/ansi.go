@@ -5,6 +5,8 @@ package colorstyle
 
 import (
 	"io"
+
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 type Styler struct {
@@ -38,5 +40,8 @@ func (w *Styler) SetStyle(s Style, bright bool) {
 	if bright {
 		resolvedStyle = resolvedStyle + ";1"
 	}
-	w.writer.Write([]byte(resolvedStyle + "m"))
+	_, err := w.writer.Write([]byte(resolvedStyle + "m"))
+	if err != nil {
+		logging.Error("Error writing to writer: %v", err)
+	}
 }

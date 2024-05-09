@@ -97,7 +97,7 @@ func formatMessageByCols(message string, cols int) string {
 
 		newMessage = newMessage + message[startIdx:idx]
 		startIdx = idx
-		if len(message) > idx && newMessage[len(newMessage)-1:len(newMessage)] != "\n" {
+		if len(message) > idx && newMessage[len(newMessage)-1:] != "\n" {
 			newMessage = newMessage + "\n"
 		}
 	}

@@ -58,9 +58,12 @@ scripts:
 
 	require.NoError(t, pjFile.Init())
 
-	pjFile.Persist()
+	require.NoError(t, pjFile.Persist())
 
-	return project.Get()
+	proj, err := project.Get()
+	require.NoError(t, err)
+
+	return proj
 }
 
 func TestExpandProject(t *testing.T) {
@@ -92,7 +95,7 @@ func TestExpandProject(t *testing.T) {
 	assert.Equal(t, "spoofed path", expanded)
 
 	if runtime.GOOS == "windows" {
-		prj.Source().SetPath(fmt.Sprintf(`c:\another\spoofed path\activestate.yaml`))
+		prj.Source().SetPath(`c:\another\spoofed path\activestate.yaml`)
 		expanded, err = project.ExpandFromProjectBashifyPaths("$project.path()", prj)
 		require.NoError(t, err)
 		assert.Equal(t, `/c/another/spoofed\ path`, expanded)
@@ -139,12 +142,13 @@ func TestExpandProjectConstant(t *testing.T) {
 func TestExpandProjectSecret(t *testing.T) {
 	pj := loadProject(t)
 
-	project.RegisterExpander("secrets", func(_ string, category string, meta string, isFunction bool, ctx *project.Expansion) (string, error) {
+	err := project.RegisterExpander("secrets", func(_ string, category string, meta string, isFunction bool, ctx *project.Expansion) (string, error) {
 		if category == project.ProjectCategory {
 			return "proj-value", nil
 		}
 		return "user-proj-value", nil
 	})
+	require.NoError(t, err)
 
 	expanded, err := project.ExpandFromProject("$ $secrets.user.user-proj-secret", pj)
 	assert.NoError(t, err, "Ran without failure")
@@ -190,8 +194,9 @@ scripts:
 
 	err := yaml.Unmarshal([]byte(contents), projectFile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	projectFile.Persist()
-	prj := project.Get()
+	require.NoError(t, projectFile.Persist())
+	prj, err := project.Get()
+	require.NoError(t, err)
 
 	expanded, err := project.ExpandFromProject("- $scripts.foo-bar -", prj)
 	assert.NoError(t, err, "Ran without failure")

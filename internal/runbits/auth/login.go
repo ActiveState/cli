@@ -62,8 +62,8 @@ func AuthenticateWithInput(
 	}
 
 	if auth.Authenticated() {
-		secretsapi.InitializeClient()
-		if err := ensureUserKeypair(credentials.Password, cfg, out, prompt); err != nil {
+		secretsapi.InitializeClient(auth)
+		if err := ensureUserKeypair(credentials.Password, cfg, out, prompt, auth); err != nil {
 			return errs.Wrap(err, "ensureUserKeypair failed")
 		}
 	}

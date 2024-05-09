@@ -75,6 +75,30 @@ func newPublish(prime *primer.Values) *captain.Command {
 				Value: &params.Depends,
 			},
 			{
+				Name: "depend-runtime",
+				Description: locale.Tl(
+					"author_upload_dependruntime_description",
+					"Ingredient that this ingredient depends on during runtime, format as <namespace>/<name>[@<version>]. Can be set multiple times.",
+				),
+				Value: &params.DependsRuntime,
+			},
+			{
+				Name: "depend-build",
+				Description: locale.Tl(
+					"author_upload_dependbuild_description",
+					"Ingredient that this ingredient depends on during build, format as <namespace>/<name>[@<version>]. Can be set multiple times.",
+				),
+				Value: &params.DependsBuild,
+			},
+			{
+				Name: "depend-test",
+				Description: locale.Tl(
+					"author_upload_dependtest_description",
+					"Ingredient that this ingredient depends on during tests, format as <namespace>/<name>[@<version>]. Can be set multiple times.",
+				),
+				Value: &params.DependsTest,
+			},
+			{
 				Name: "feature",
 				Description: locale.Tl(
 					"author_upload_feature_description",
@@ -93,7 +117,6 @@ func newPublish(prime *primer.Values) *captain.Command {
 				Name:        locale.Tl("filepath", "filepath"),
 				Description: locale.Tl("author_upload_filepath_description", "A tar.gz or zip archive containing the source files of the ingredient."),
 				Value:       &params.Filepath,
-				Required:    true,
 			},
 		},
 		func(_ *captain.Command, _ []string) error {

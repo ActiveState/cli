@@ -25,6 +25,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
@@ -141,7 +142,11 @@ func (u *UpdateInstaller) DownloadAndUnpack() (string, error) {
 		return "", errs.Wrap(err, "Could not download and unpack update")
 	}
 
-	u.tmpDir = filepath.Join(tmpDir, constants.ToplevelInstallArchiveDir)
+	payloadDir := tmpDir
+	if legacyDir := filepath.Join(tmpDir, constants.LegacyToplevelInstallArchiveDir); fileutils.DirExists(legacyDir) {
+		payloadDir = legacyDir
+	}
+	u.tmpDir = payloadDir
 	return u.tmpDir, nil
 }
 
@@ -214,7 +219,7 @@ func (u *UpdateInstaller) InstallBlocking(installTargetPath string, args ...stri
 	if !lockSuccess {
 		return &ErrorInProgress{locale.NewInputError("err_update_in_progress", "", lockFile)}
 	}
-	defer fileLock.Unlock()
+	defer rtutils.Closer(fileLock.Unlock, &rerr)
 
 	var installerPath string
 	installerPath, args, err = u.prepareInstall(installTargetPath, args)

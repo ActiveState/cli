@@ -39,11 +39,15 @@ func newDebugData(ipComm IPCommunicator, kind execKind, argText string) *debugDa
 	sock := ipComm.SockPath().String()
 	sockDir := filepath.Dir(sock)
 
+	// The sockDir may or may not exist. The debug info is used for error reporting, so we
+	// don't want to fail if there is an error here.
+	sockDirList, _ := fileutils.ListDirSimple(sockDir, false)
+
 	return &debugData{
 		argText:     argText,
 		sockInfo:    newFileInfo(sock),
 		sockDirInfo: newFileInfo(sockDir),
-		sockDirList: fileutils.ListDirSimple(sockDir, false),
+		sockDirList: sockDirList,
 		execStart:   time.Now(),
 		execKind:    kind,
 	}

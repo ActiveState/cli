@@ -35,6 +35,10 @@ func (m *Messenger) OnExecStart(cmd *captain.Command, _ []string) error {
 		return nil
 	}
 
+	if cmd.Name() == "update" {
+		return nil // do not print update/deprecation warnings/messages when running `state update`
+	}
+
 	cmds := cmd.JoinedCommandNames()
 	flags := cmd.ActiveFlagNames()
 
@@ -58,6 +62,10 @@ func (m *Messenger) OnExecStop(cmd *captain.Command, _ []string) error {
 	if m.out.Type().IsStructured() {
 		// No point showing messaging on non-plain output (eg. json)
 		return nil
+	}
+
+	if cmd.Name() == "update" {
+		return nil // do not print update/deprecation warnings/messages when running `state update`
 	}
 
 	if err := m.PrintByPlacement(graph.MessagePlacementTypeAfterCmd); err != nil {

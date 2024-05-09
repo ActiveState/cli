@@ -12,8 +12,8 @@ import (
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/stretchr/testify/suite"
 )
 
 type UninstallIntegrationTestSuite struct {
@@ -50,7 +50,7 @@ func (suite *UninstallIntegrationTestSuite) install(ts *e2e.Session) string {
 	// Perform the installation.
 	cmd := "bash"
 	opts := []e2e.SpawnOptSetter{
-		e2e.OptArgs(script, appInstallDir),
+		e2e.OptArgs(script, appInstallDir, "-n"),
 		e2e.OptAppendEnv(constants.DisableRuntime + "=false"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=FOO", constants.OverrideSessionTokenEnvVarName)),

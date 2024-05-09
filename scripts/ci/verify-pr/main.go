@@ -6,7 +6,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/httputil"
@@ -17,11 +16,6 @@ import (
 	"github.com/google/go-github/v45/github"
 	"golang.org/x/net/context"
 )
-
-// cutoff tells the script not to look at PRs before this date.
-// We're assuming here that no release is under development for more than 3 months
-// This saves us having to process all PRs since we started development.
-var cutoff = time.Now().Add(-(3 * 31 * 24 * time.Hour))
 
 /*
 - Pushes to fixVersion PR should verify that it has all the intended PRs for that version

@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -32,10 +31,14 @@ func (r *Projects) RunRemote(params *Params) error {
 }
 
 func (r *Projects) newRemoteProjectsOutput(onlyLocal bool) ([]projectWithOrg, error) {
+	authClient, err := r.auth.Client()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get auth client")
+	}
 	orgParams := organizations.NewListOrganizationsParams()
 	memberOnly := true
 	orgParams.SetMemberOnly(&memberOnly)
-	orgs, err := r.auth.Client().Organizations.ListOrganizations(orgParams, authentication.ClientAuth())
+	orgs, err := authClient.Organizations.ListOrganizations(orgParams, r.auth.ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 401 {
 			return nil, locale.NewInputError("err_api_not_authenticated")
@@ -45,7 +48,7 @@ func (r *Projects) newRemoteProjectsOutput(onlyLocal bool) ([]projectWithOrg, er
 	var projects []projectWithOrg
 	localConfigProjects := projectfile.GetProjectMapping(r.config)
 	for _, org := range orgs.Payload {
-		platformOrgProjects, err := model.FetchOrganizationProjects(org.URLname)
+		platformOrgProjects, err := model.FetchOrganizationProjects(org.URLname, r.auth)
 		if err != nil {
 			return nil, err
 		}

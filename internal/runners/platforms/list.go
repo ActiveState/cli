@@ -5,7 +5,9 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
@@ -15,6 +17,7 @@ import (
 type List struct {
 	out  output.Outputer
 	proj *project.Project
+	auth *authentication.Auth
 }
 
 // NewList prepares a list execution context for use.
@@ -22,6 +25,7 @@ func NewList(prime primeable) *List {
 	return &List{
 		out:  prime.Output(),
 		proj: prime.Project(),
+		auth: prime.Auth(),
 	}
 }
 
@@ -30,7 +34,7 @@ func (l *List) Run() error {
 	logging.Debug("Execute platforms list")
 
 	if l.proj == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 
 	commitID, err := localcommit.Get(l.proj.Dir())
@@ -43,7 +47,7 @@ func (l *List) Run() error {
 		return errs.Wrap(err, "Unable to get commit ID")
 	}
 
-	modelPlatforms, err := model.FetchPlatformsForCommit(*targetCommitID)
+	modelPlatforms, err := model.FetchPlatformsForCommit(*targetCommitID, l.auth)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get platforms for commit")
 	}

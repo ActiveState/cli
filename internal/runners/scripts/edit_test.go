@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -197,7 +197,9 @@ func (suite *EditTestSuite) TestNewScriptWatcher() {
 	suite.Require().NoError(err, "unexpected error creating script watcher")
 
 	catcher := outputhelper.NewCatcher()
-	go watcher.run("hello", catcher.Outputer, suite.cfg, project.Get())
+	proj, err := project.Get()
+	suite.Require().NoError(err, "unexpected error getting project")
+	go watcher.run("hello", catcher.Outputer, suite.cfg, proj)
 
 	watcher.done <- true
 
@@ -216,10 +218,13 @@ func (suite *EditTestSuite) TestUpdateProjectFile() {
 	suite.scriptFile, err = createScriptFile(replace, false)
 	suite.Require().NoError(err, "unexpected error creating script file")
 
-	err = updateProjectFile(suite.cfg, project.Get(), suite.scriptFile, "replace")
+	proj, err := project.Get()
+	suite.Require().NoError(err, "unexpected error getting project")
+	err = updateProjectFile(suite.cfg, proj, suite.scriptFile, "replace")
 	suite.Require().NoError(err, "should be able to update script file")
 
-	updatedProject := project.Get()
+	updatedProject, err := project.Get()
+	suite.Require().NoError(err, "unexpected error getting project")
 	v1, err := replace.Value()
 	suite.Require().NoError(err)
 	v2, err := updatedProject.ScriptByName("replace").Value()

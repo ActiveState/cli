@@ -151,7 +151,7 @@ func (p *PackageValue) Set(s string) error {
 		p.Version = strings.TrimSpace(v[1])
 		s = v[0]
 	}
-	if strings.Index(s, "/") == -1 {
+	if !strings.Contains(s, "/") {
 		p.Name = strings.TrimSpace(s)
 		return nil
 	}
@@ -175,7 +175,7 @@ func (p *PackageValueNoVersion) Set(s string) error {
 		return errs.Wrap(err, "PackageValue.Set failed")
 	}
 	if p.Version != "" {
-		return fmt.Errorf("Specifying a version is not supported, package format should be '[<namespace>/]<name>'")
+		return locale.NewInputError("err_package_value_no_version", "Specifying a version is not supported, package format should be '[<namespace>/]<name>'")
 	}
 	return nil
 }
@@ -194,7 +194,7 @@ func (p *PackageValueNSRequired) Set(s string) error {
 		return errs.Wrap(err, "PackageValueNSRequired.Set failed")
 	}
 	if p.Namespace == "" {
-		return fmt.Errorf("invalid package name format: %s (expected '<namespace>/<name>[@version]')", s)
+		return locale.NewInputError("err_package_value_ns_required", "invalid package name format: {{.V0}} (expected '<namespace>/<name>[@version]')", s)
 	}
 	return nil
 }
@@ -225,6 +225,31 @@ func (p *PackagesValue) Set(s string) error {
 }
 
 func (p *PackagesValue) Type() string {
+	return "packages"
+}
+
+type PackagesValueNoVersion []PackageValueNoVersion
+
+var _ FlagMarshaler = &PackagesValueNoVersion{}
+
+func (p *PackagesValueNoVersion) String() string {
+	var result []string
+	for _, pkg := range *p {
+		result = append(result, pkg.String())
+	}
+	return strings.Join(result, ", ")
+}
+
+func (p *PackagesValueNoVersion) Set(s string) error {
+	pf := &PackageValueNoVersion{}
+	if err := pf.Set(s); err != nil {
+		return err
+	}
+	*p = append(*p, *pf)
+	return nil
+}
+
+func (p *PackagesValueNoVersion) Type() string {
 	return "packages"
 }
 

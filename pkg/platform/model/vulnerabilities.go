@@ -9,27 +9,28 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/thoas/go-funk"
 )
 
 type VulnerabilityIngredient struct {
 	Name             string
 	PrimaryNamespace string
 	Version          string
-	Vulnerabilities  *Vulnerabilites
+	Vulnerabilities  *Vulnerabilities
 }
 
-type Vulnerabilites struct {
+type Vulnerabilities struct {
 	Critical []string
 	High     []string
 	Medium   []string
 	Low      []string
 }
 
-func (v Vulnerabilites) Length() int {
+func (v Vulnerabilities) Length() int {
 	return len(v.Critical) + len(v.High) + len(v.Medium) + len(v.Low)
 }
 
-func (v *Vulnerabilites) Count() map[string]int {
+func (v *Vulnerabilities) Count() map[string]int {
 	return map[string]int{
 		model.SeverityCritical: len(v.Critical),
 		model.SeverityHigh:     len(v.High),
@@ -82,7 +83,7 @@ func FetchVulnerabilitiesForIngredients(auth *authentication.Auth, ingredients [
 				Name:             v.Name,
 				PrimaryNamespace: v.PrimaryNamespace,
 				Version:          v.Version,
-				Vulnerabilities: &Vulnerabilites{
+				Vulnerabilities: &Vulnerabilities{
 					Critical: []string{},
 					High:     []string{},
 					Medium:   []string{},
@@ -114,4 +115,98 @@ func FetchVulnerabilitiesForIngredients(auth *authentication.Auth, ingredients [
 	})
 
 	return result, nil
+}
+
+type IngredientName string
+
+type VulnerableIngredientByLevel struct {
+	IngredientName    string
+	IngredientVersion string
+	CVEIDs            []string
+}
+
+type VulnerableIngredientsByLevel struct {
+	Count        int
+	CountPrimary int
+	Ingredients  map[IngredientName]VulnerableIngredientByLevel
+}
+
+type VulnerableIngredientsByLevels struct {
+	Count        int
+	CountPrimary int
+	Critical     VulnerableIngredientsByLevel
+	High         VulnerableIngredientsByLevel
+	Medium       VulnerableIngredientsByLevel
+	Low          VulnerableIngredientsByLevel
+}
+
+func CombineVulnerabilities(ingredients []*VulnerabilityIngredient, primaryIngredients ...string) VulnerableIngredientsByLevels {
+	v := VulnerableIngredientsByLevels{
+		Critical: VulnerableIngredientsByLevel{Ingredients: map[IngredientName]VulnerableIngredientByLevel{}},
+		High:     VulnerableIngredientsByLevel{Ingredients: map[IngredientName]VulnerableIngredientByLevel{}},
+		Medium:   VulnerableIngredientsByLevel{Ingredients: map[IngredientName]VulnerableIngredientByLevel{}},
+		Low:      VulnerableIngredientsByLevel{Ingredients: map[IngredientName]VulnerableIngredientByLevel{}},
+	}
+
+	for _, i := range ingredients {
+		iname := IngredientName(i.Name)
+
+		if len(i.Vulnerabilities.Critical) > 0 {
+			v.Count = v.Count + len(i.Vulnerabilities.Critical)
+			v.Critical.Count = v.Critical.Count + len(i.Vulnerabilities.Critical)
+			if funk.Contains(primaryIngredients, i.Name) {
+				v.CountPrimary = v.CountPrimary + len(i.Vulnerabilities.Critical)
+				v.Critical.CountPrimary = v.Critical.CountPrimary + len(i.Vulnerabilities.Critical)
+			}
+			v.Critical.Ingredients[iname] = VulnerableIngredientByLevel{
+				IngredientName:    i.Name,
+				IngredientVersion: i.Version,
+				CVEIDs:            i.Vulnerabilities.Critical,
+			}
+		}
+
+		if len(i.Vulnerabilities.High) > 0 {
+			v.Count = v.Count + len(i.Vulnerabilities.High)
+			v.High.Count = v.High.Count + len(i.Vulnerabilities.High)
+			if funk.Contains(primaryIngredients, i.Name) {
+				v.CountPrimary = v.CountPrimary + len(i.Vulnerabilities.High)
+				v.High.CountPrimary = v.High.CountPrimary + len(i.Vulnerabilities.High)
+			}
+			v.High.Ingredients[iname] = VulnerableIngredientByLevel{
+				IngredientName:    i.Name,
+				IngredientVersion: i.Version,
+				CVEIDs:            i.Vulnerabilities.High,
+			}
+		}
+
+		if len(i.Vulnerabilities.Medium) > 0 {
+			v.Count = v.Count + len(i.Vulnerabilities.Medium)
+			v.Medium.Count = v.Medium.Count + len(i.Vulnerabilities.Medium)
+			if funk.Contains(primaryIngredients, i.Name) {
+				v.CountPrimary = v.CountPrimary + len(i.Vulnerabilities.Medium)
+				v.Medium.CountPrimary = v.Medium.CountPrimary + len(i.Vulnerabilities.Medium)
+			}
+			v.Medium.Ingredients[iname] = VulnerableIngredientByLevel{
+				IngredientName:    i.Name,
+				IngredientVersion: i.Version,
+				CVEIDs:            i.Vulnerabilities.Medium,
+			}
+		}
+
+		if len(i.Vulnerabilities.Low) > 0 {
+			v.Count = v.Count + len(i.Vulnerabilities.Low)
+			v.Low.Count = v.Low.Count + len(i.Vulnerabilities.Low)
+			if funk.Contains(primaryIngredients, i.Name) {
+				v.CountPrimary = v.CountPrimary + len(i.Vulnerabilities.Low)
+				v.Low.CountPrimary = v.Low.CountPrimary + len(i.Vulnerabilities.Low)
+			}
+			v.Low.Ingredients[iname] = VulnerableIngredientByLevel{
+				IngredientName:    i.Name,
+				IngredientVersion: i.Version,
+				CVEIDs:            i.Vulnerabilities.Low,
+			}
+		}
+	}
+
+	return v
 }

@@ -2,7 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -11,11 +10,11 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics/client/blackhole"
 	"github.com/ActiveState/cli/internal/scriptrun"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/kami-zh/go-capturer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -45,6 +44,9 @@ func (suite *ScriptRunSuite) TestRunStandaloneCommand() {
 	suite.OnlyRunForTags(tagsuite.Scripts)
 	t := suite.T()
 
+	auth, err := authentication.LegacyGet()
+	require.NoError(t, err)
+
 	pjfile := &projectfile.Project{}
 	var contents string
 	if runtime.GOOS != "windows" {
@@ -64,9 +66,9 @@ scripts:
     standalone: true
   `)
 	}
-	err := yaml.Unmarshal([]byte(contents), pjfile)
+	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	pjfile.Persist()
+	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -74,7 +76,7 @@ scripts:
 	cfg, err := config.New()
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
-	scriptRun := scriptrun.New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
 	err = scriptRun.Run(proj.ScriptByName("run"), []string{})
 	assert.NoError(t, err, "No error occurred")
 }
@@ -90,13 +92,16 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 		return
 	}
 
+	auth, err := authentication.LegacyGet()
+	require.NoError(t, err)
+
 	root, err := environment.GetRootPath()
 	require.NoError(t, err, "should detect root path")
 	prjPath := filepath.Join(root, "internal", "scriptrun", "test", "integration", "testdata", "printEnv", "activestate.yaml")
 
 	pjfile, err := projectfile.Parse(prjPath)
 	require.NoError(t, err, "parsing pjfile file")
-	pjfile.Persist()
+	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -113,7 +118,7 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 	defer func() { require.NoError(t, cfg.Close()) }()
 
 	out := capturer.CaptureOutput(func() {
-		scriptRun := scriptrun.New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+		scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
 		err = scriptRun.Run(proj.ScriptByName("run"), nil)
 		assert.NoError(t, err, "Error: "+errs.JoinMessage(err))
 	})
@@ -125,6 +130,9 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 func (suite *ScriptRunSuite) TestRunNoProjectInheritance() {
 	suite.OnlyRunForTags(tagsuite.Scripts)
 	t := suite.T()
+
+	auth, err := authentication.LegacyGet()
+	require.NoError(t, err)
 
 	pjfile := &projectfile.Project{}
 	var contents string
@@ -145,9 +153,9 @@ scripts:
     standalone: true
 `)
 	}
-	err := yaml.Unmarshal([]byte(contents), pjfile)
+	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	pjfile.Persist()
+	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -157,7 +165,7 @@ scripts:
 	defer func() { require.NoError(t, cfg.Close()) }()
 
 	out := outputhelper.NewCatcher()
-	scriptRun := scriptrun.New(authentication.LegacyGet(), out, subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+	scriptRun := scriptrun.New(auth, out, subshell.New(cfg), proj, cfg, blackhole.New(), nil)
 	fmt.Println(proj.ScriptByName("run"))
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.NoError(t, err, "No error occurred")
@@ -167,6 +175,9 @@ func (suite *ScriptRunSuite) TestRunMissingScript() {
 	suite.OnlyRunForTags(tagsuite.Scripts)
 	t := suite.T()
 
+	auth, err := authentication.LegacyGet()
+	require.NoError(t, err)
+
 	pjfile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
 project: "https://platform.activestate.com/ActiveState/pjfile"
@@ -174,9 +185,9 @@ scripts:
   - name: run
     value: whatever
   `)
-	err := yaml.Unmarshal([]byte(contents), pjfile)
+	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	pjfile.Persist()
+	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -185,7 +196,7 @@ scripts:
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
 
-	scriptRun := scriptrun.New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
 	err = scriptRun.Run(nil, nil)
 	assert.Error(t, err, "Error occurred")
 }
@@ -193,6 +204,9 @@ scripts:
 func (suite *ScriptRunSuite) TestRunUnknownCommand() {
 	suite.OnlyRunForTags(tagsuite.Scripts)
 	t := suite.T()
+
+	auth, err := authentication.LegacyGet()
+	require.NoError(t, err)
 
 	pjfile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
@@ -202,9 +216,9 @@ scripts:
     value: whatever
     standalone: true
   `)
-	err := yaml.Unmarshal([]byte(contents), pjfile)
+	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	pjfile.Persist()
+	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -213,7 +227,7 @@ scripts:
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
 
-	scriptRun := scriptrun.New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.Error(t, err, "Error occurred")
 }
@@ -222,10 +236,14 @@ func (suite *ScriptRunSuite) TestRunActivatedCommand() {
 	suite.OnlyRunForTags(tagsuite.Scripts)
 	t := suite.T()
 
+	auth, err := authentication.LegacyGet()
+	require.NoError(t, err)
+
 	// Prepare an empty activated environment.
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
-	os.Chdir(filepath.Join(root, "test"))
+	err = os.Chdir(filepath.Join(root, "test"))
+	assert.NoError(t, err, "Should change directory")
 
 	cfg, err := config.New()
 	require.NoError(t, err)
@@ -257,13 +275,13 @@ scripts:
 	}
 	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	pjfile.Persist()
+	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
 
 	// Run the command.
-	scriptRun := scriptrun.New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.NoError(t, err, "No error occurred")
 
@@ -275,7 +293,7 @@ func (suite *ScriptRunSuite) TestPathProvidesLang() {
 	suite.OnlyRunForTags(tagsuite.Scripts)
 	t := suite.T()
 
-	temp, err := ioutil.TempDir("", filepath.Base(t.Name()))
+	temp, err := os.MkdirTemp("", filepath.Base(t.Name()))
 	require.NoError(t, err)
 
 	tf := filepath.Join(temp, "python3")
@@ -312,7 +330,7 @@ func setupProjectWithScriptsExpectingArgs(t *testing.T, cmdName string) *project
 		os.Setenv("SHELL", "bash")
 	}
 
-	tmpfile, err := ioutil.TempFile("", "testRunCommand")
+	tmpfile, err := os.CreateTemp("", "testRunCommand")
 	require.NoError(t, err)
 	tmpfile.Close()
 	os.Remove(tmpfile.Name())
@@ -344,8 +362,11 @@ scripts:
 
 func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []string) (string, error) {
 
+	auth, err := authentication.LegacyGet()
+	require.NoError(t, err)
+
 	pjfile := setupProjectWithScriptsExpectingArgs(t, tmplCmdName)
-	pjfile.Persist()
+	require.NoError(t, pjfile.Persist())
 	defer projectfile.Reset()
 
 	proj, err := project.New(pjfile, nil)
@@ -356,7 +377,7 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 	defer func() { require.NoError(t, cfg.Close()) }()
 
 	outStr, outErr := osutil.CaptureStdout(func() {
-		scriptRun := scriptrun.New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+		scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
 		err = scriptRun.Run(proj.ScriptByName(cmdName), cmdArgs)
 	})
 	require.NoError(t, outErr, "error capturing stdout")

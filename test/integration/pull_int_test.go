@@ -11,11 +11,12 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/stretchr/testify/suite"
 )
 
 type PullIntegrationTestSuite struct {
@@ -70,11 +71,11 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	cp.Expect("Merged")
 	cp.ExpectExitCode(0)
 
-	suite.assertMergeStrategyNotification(ts, string(bpModel.MergeCommitStrategyRecursiveOverwriteOnConflict))
+	suite.assertMergeStrategyNotification(ts, string(bpModel.MergeCommitStrategyRecursiveKeepOnConflict))
 }
 
 func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
-	suite.OnlyRunForTags(tagsuite.Pull)
+	suite.OnlyRunForTags(tagsuite.Pull, tagsuite.BuildScripts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -96,20 +97,29 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.NoError(err, "Error loading project")
 
-	_, err = buildscript.ScriptFromProjectWithFallback(proj, nil)
+	_, err = buildscript.ScriptFromProject(proj)
 	suite.Require().NoError(err) // just verify it's a valid build script
 
 	cp = ts.Spawn("pull")
+	cp.Expect("The following changes will be merged")
+	cp.Expect("requests (2.30.0 → Auto)")
 	cp.Expect("Unable to automatically merge build scripts")
 	cp.ExpectNotExitCode(0)
 	ts.IgnoreLogErrors()
 
-	_, err = buildscript.ScriptFromProjectWithFallback(proj, nil)
+	_, err = buildscript.ScriptFromProject(proj)
 	suite.Assert().Error(err)
 	bytes := fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName))
 	suite.Assert().Contains(string(bytes), "<<<<<<<", "No merge conflict markers are in build script")
 	suite.Assert().Contains(string(bytes), "=======", "No merge conflict markers are in build script")
 	suite.Assert().Contains(string(bytes), ">>>>>>>", "No merge conflict markers are in build script")
+
+	// Verify the local commit was updated to the merge commit.
+	// Note: even though the buildscript merge failed, a merge commit was still created. After resolving
+	// buildscript conflicts, `state commit` should have something new to commit.
+	commit, err := localcommit.Get(ts.Dirs.Work)
+	suite.Require().NoError(err)
+	suite.Assert().NotEqual(commit.String(), "447b8363-024c-4143-bf4e-c96989314fdf", "localcommit not updated to merged commit")
 }
 
 func (suite *PullIntegrationTestSuite) assertMergeStrategyNotification(ts *e2e.Session, strategy string) {

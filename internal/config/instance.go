@@ -3,8 +3,6 @@ package config
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -14,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
+	mediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
@@ -61,11 +60,9 @@ func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) 
 	}
 
 	path := filepath.Join(i.appDataDir, C.InternalConfigFileName)
-	_, err = os.Stat(path)
-	isNew := err != nil
 
 	t := time.Now()
-	i.db, err = sql.Open("sqlite", fmt.Sprintf(`%s`, path))
+	i.db, err = sql.Open("sqlite", path)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create sqlite connection to %s", path)
 	}
@@ -77,13 +74,6 @@ func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) 
 		return nil, errs.Wrap(err, "Could not seed settings database")
 	}
 	profile.Measure("config.createTable", t)
-
-	if isNew {
-		if err := i.importLegacyConfig(); err != nil {
-			// This is unfortunate but not a case we're handling beyond effectively resetting the users config
-			multilog.Error("Failed to import legacy config: %s", errs.JoinMessage(err))
-		}
-	}
 
 	return i, nil
 }
@@ -120,8 +110,6 @@ func (i *Instance) GetThenSet(key string, valueF func(currentValue interface{}) 
 const CancelSet = "__CANCEL__"
 
 func (i *Instance) setWithCallback(key string, valueF func(currentValue interface{}) (interface{}, error)) (rerr error) {
-	logging.Debug("Setting config: %s", key)
-
 	defer func() {
 		if rerr != nil {
 			logging.Warning("setWithCallback error: %v", errs.JoinMessage(rerr))
@@ -165,10 +153,10 @@ func (i *Instance) Set(key string, value interface{}) error {
 }
 
 func (i *Instance) IsSet(key string) bool {
-	return i.Get(key) != nil
+	return i.rawGet(key) != nil
 }
 
-func (i *Instance) Get(key string) interface{} {
+func (i *Instance) rawGet(key string) interface{} {
 	row := i.db.QueryRow(`SELECT value FROM config WHERE key=?`, key)
 	if row.Err() != nil {
 		multilog.Error("config:get query failed: %s", errs.JoinMessage(row.Err()))
@@ -189,6 +177,17 @@ func (i *Instance) Get(key string) interface{} {
 	}
 
 	return result
+}
+
+func (i *Instance) Get(key string) interface{} {
+	result := i.rawGet(key)
+	if result != nil {
+		return result
+	}
+	if opt := mediator.GetOption(key); mediator.KnownOption(opt) {
+		return opt.Default
+	}
+	return nil
 }
 
 // GetString retrieves a string for a given key
@@ -212,7 +211,10 @@ func (i *Instance) AllKeys() []string {
 	defer rows.Close()
 	for rows.Next() {
 		var key string
-		rows.Scan(&key)
+		if err = rows.Scan(&key); err != nil {
+			multilog.Error("config:AllKeys scan failed: %s", errs.JoinMessage(err))
+			return nil
+		}
 		keys = append(keys, key)
 	}
 	return keys
@@ -246,43 +248,4 @@ func (i *Instance) GetStringMap(key string) map[string]interface{} {
 // ConfigPath returns the path at which our configuration is stored
 func (i *Instance) ConfigPath() string {
 	return i.appDataDir
-}
-
-func (i *Instance) importLegacyConfig() (returnErr error) {
-	defer profile.Measure("config.importLegacyConfig", time.Now())
-	fpath := filepath.Join(i.appDataDir, C.InternalConfigFileNameLegacy)
-	defer func() {
-		if returnErr != nil {
-			os.Rename(fpath, fpath+".corrupted")
-		} else {
-			os.Remove(fpath)
-		}
-	}()
-
-	_, err := os.Stat(fpath)
-	if err != nil && os.IsNotExist(err) {
-		return nil
-	}
-
-	b, err := ioutil.ReadFile(fpath)
-	if err != nil {
-		return errs.Wrap(err, "Could not read legacy config file at %s", fpath)
-	}
-
-	return i.importLegacyConfigFromBlob(b)
-}
-
-func (i *Instance) importLegacyConfigFromBlob(b []byte) (returnErr error) {
-	var data map[string]interface{}
-	if err := yaml.Unmarshal(b, &data); err != nil {
-		return errs.Wrap(err, "Could not unmarshal legacy config file")
-	}
-
-	for k, v := range data {
-		if err := i.Set(k, v); err != nil {
-			return errs.Wrap(err, "Could not import config key/val: %s: %v", k, v)
-		}
-	}
-
-	return nil
 }

@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/termtest"
-	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -13,7 +13,6 @@ import (
 
 type ForkIntegrationTestSuite struct {
 	tagsuite.Suite
-	username string
 }
 
 func (suite *ForkIntegrationTestSuite) cleanup(ts *e2e.Session) {

@@ -6,6 +6,66 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.44.0
+
+### Added
+
+* We've added the `state manifest` command, which lists all your package, bundle and language requirements in your
+  project. This command deprecates the old `state packages`, `state languages` and `state bundles` commands.
+* `state artifacts` now indicates which artifacts are still building.
+* You can now use wildcard versions when running `state install` and `state languages install`, just like you can
+  with `state init`. eg. `state install datetime@1.x`.
+* We now warn you when installing the State Tool as an administrator on Windows.
+* `state publish` now lets you specify the type of a dependency (ie. runtime, buildtime, or testing) via the new
+  `--depend-build`, `--depend-runtime` and `--depend-test` flags. The existing `--depend` flag maps to `--depend-build`.
+* We now ensure the runtime is not currently in use before making changes to it. If the runtime is the user will receive
+  an error asking them to stop using the runtime before proceeding.
+* You can now supply multiple packages to the `state install` and `state uninstall` commands.
+
+### Changed
+
+* Increased the time State Tool will wait for the state-svc to start, which is required for using the State Tool. This
+  is mainly intended for when you just started your system, when it is still under heavy load and thus processes can
+  take longer to start.
+* You will now receive an actionable error when your activestate.yaml does not contain a commit ID.
+* State revert "HEAD" has been renamed to "REMOTE", though "HEAD" is still supported with a deprecation warning. This
+  is to avoid confusion with how git uses the HEAD term, which isn't how we were using it.
+* `state run` and `state exec` now use powershell under the hood instead of cmd. This means that invoking shell
+  built-ins like `where` will no longer work as powershell has different built-ins. But if you're invoking shell
+  built-ins you probably shouldn't be using these commands anyway.
+* State tool now identifies more network errors, making for more actionable error messages.
+* We have introduced a new project file versioning mechanic. You'll start seeing a new `config_version` property in your
+  activestate.yaml. Do not edit or delete this or you may run into issues.
+* Buildscripts are no longer automatically created when opted in. Instead you need to run `state reset LOCAL` in order
+  to first create the buildscript. You only need to do this once, after it exists it will be updated as needed.
+    * This is merely a growing pain while this feature is optin only. Once buildscripts ship as stable you will not need
+      to do this.
+* CVE information provided when running `state install` is now recursive, meaning we show CVE information for the
+  requested package as well as all its dependencies.
+* `state init` now automatically assumes wildcards when a partial version is specified.
+
+### Fixed
+
+* Fixed issue where `state refresh` would tell you you have uncommitted changes when you are up to date (when opted into
+  buildscripts).
+* Fixed issue where `state uninstall` would give you superfluous output intended for `state install`.
+* Fixed issue where running `state update` would show deprecation messages for the version you are updating from.
+* Fixed issue where `state run` and `state exec` would not forward arguments correctly on Windows. This is a limitation
+  of the `cmd` shell. We now utilize powershell instead to facilitate commands.
+* Fixed issue where `state languages` would show a larger than / smaller than version notation rather than `auto`.
+* Fixed issue where `state checkout` would save the `main` branch to your activestate.yaml when you checked out a commit
+  on a sub-branch. It now correctly saves the sub-branch.
+* Fixed issue where `state search` gave an unintended "wrapped tips" error when given an invalid version number.
+* Fixed issue where text was wrapped when producing non-interactive output, making it impossible to use the output in
+  automations without first cleaning up the output.
+* Fixed issue where manually resolving conflicts when running `state pull` would not allow you to commit these changes
+  if you picked only the local changes. This only applies if opted in to buildscripts.
+* Fixed issue where conflicts on the `at_time` buildscript field would show the wrong local value.
+
+### Removed
+
+* `state export recipe` has been removed, as the platform no longer uses recipes.
+
 ## 0.43.0
 
 ### Added

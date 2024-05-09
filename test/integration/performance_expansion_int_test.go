@@ -13,9 +13,9 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v2"
 )
 
@@ -43,7 +43,6 @@ func (suite *PerformanceExpansionIntegrationTestSuite) startSvc(ts *e2e.Session)
 
 func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance() {
 	suite.OnlyRunForTags(tagsuite.Performance)
-	baseline := DefaultMaxTime
 
 	// Establish baseline
 	// Must not be called as a subtest as it breaks the running of other subtests
@@ -63,7 +62,7 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 		verbose: true,
 	})
 	variance := float64(median) + (float64(median) * DefaultVariance)
-	baseline = time.Duration(variance)
+	baseline := time.Duration(variance)
 
 	suite.Require().NotEqual(DefaultMaxTime, baseline)
 
@@ -382,7 +381,7 @@ func (suite *PerformanceExpansionIntegrationTestSuite) testScriptPerformance(opt
 		suite.prepareAlternateActiveStateYaml(name, string(contents), ts)
 	}
 
-	return performanceTest([]string{"run", opts.script.Name}, opts.expect, opts.samples, opts.max, opts.verbose, suite.Suite, ts)
+	return performanceTest([]string{"run", opts.script.Name}, opts.expect, opts.samples, opts.max, opts.verbose, &suite.Suite, ts)
 }
 
 func (suite *PerformanceExpansionIntegrationTestSuite) prepareAlternateActiveStateYaml(name, contents string, ts *e2e.Session) {

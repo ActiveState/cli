@@ -27,41 +27,6 @@ func newExportCommand(prime *primer.Values) *captain.Command {
 		}).SetGroup(UtilsGroup).SetSupportsStructuredOutput()
 }
 
-func newRecipeCommand(prime *primer.Values) *captain.Command {
-	recipe := export.NewRecipe(prime)
-
-	params := export.RecipeParams{}
-
-	return captain.NewCommand(
-		"recipe",
-		locale.Tl("export_recipe_title", "Exporting Recipe Data"),
-		locale.T("export_recipe_cmd_description"),
-		prime,
-		[]*captain.Flag{
-			{
-				Name:        "pretty",
-				Description: locale.T("export_recipe_flag_pretty"),
-				Value:       &params.Pretty,
-			},
-			{
-				Name:        "platform",
-				Shorthand:   "p",
-				Description: locale.T("export_recipe_flag_platform"),
-				Value:       &params.Platform,
-			},
-		},
-		[]*captain.Argument{
-			{
-				Name:        locale.T("export_recipe_cmd_commitid_arg"),
-				Description: locale.T("export_recipe_cmd_commitid_arg_description"),
-				Value:       &params.CommitID,
-			},
-		},
-		func(_ *captain.Command, _ []string) error {
-			return recipe.Run(&params)
-		}).SetSupportsStructuredOutput().SetUnstable(true)
-}
-
 func newJWTCommand(prime *primer.Values) *captain.Command {
 	jwt := export.NewJWT(prime)
 

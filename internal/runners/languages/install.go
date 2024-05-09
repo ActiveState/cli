@@ -5,10 +5,11 @@ import (
 
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -44,51 +45,21 @@ func (u *Update) Run(params *UpdateParams) error {
 	}
 
 	if u.prime.Project() == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 
-	err = ensureLanguageProject(lang, u.prime.Project())
+	err = ensureLanguageProject(lang, u.prime.Project(), u.prime.Auth())
 	if err != nil {
-		return err
-	}
-
-	err = ensureLanguagePlatform(lang)
-	if err != nil {
-		return err
-	}
-
-	err = ensureVersion(lang)
-	if err != nil {
-		if lang.Version == "" {
-			return locale.WrapInputError(err, "err_language_project", "Language: {{.V0}} is already installed, you can update it by running {{.V0}}@<version>", lang.Name)
-		}
 		return err
 	}
 
 	op := requirements.NewRequirementOperation(u.prime)
-	if err != nil {
-		return errs.Wrap(err, "Could not create requirement operation.")
-	}
-
-	err = op.ExecuteRequirementOperation(
-		lang.Name,
-		lang.Version,
-		nil,
-		0, // bit-width placeholder that does not apply here
-		bpModel.OperationAdded,
-		nil,
-		&model.NamespaceLanguage,
-		nil)
-	if err != nil {
-		return locale.WrapError(err, "err_language_update", "Could not update language: {{.V0}}", lang.Name)
-	}
-
-	langName := lang.Name
-	if lang.Version != "" {
-		langName = langName + "@" + lang.Version
-	}
-	u.prime.Output().Notice(locale.Tl("language_added", "Language added: {{.V0}}", langName))
-	return nil
+	return op.ExecuteRequirementOperation(nil, &requirements.Requirement{
+		Name:          lang.Name,
+		Version:       lang.Version,
+		NamespaceType: &model.NamespaceLanguage,
+		Operation:     bpModel.OperationAdded,
+	})
 }
 
 func parseLanguage(langName string) (*model.Language, error) {
@@ -112,28 +83,13 @@ func parseLanguage(langName string) (*model.Language, error) {
 	}, nil
 }
 
-func ensureLanguagePlatform(language *model.Language) error {
-	platformLanguages, err := model.FetchLanguages()
-	if err != nil {
-		return err
-	}
-
-	for _, pl := range platformLanguages {
-		if strings.ToLower(pl.Name) == strings.ToLower(language.Name) {
-			return nil
-		}
-	}
-
-	return locale.NewError("err_update_not_found", language.Name)
-}
-
-func ensureLanguageProject(language *model.Language, project *project.Project) error {
+func ensureLanguageProject(language *model.Language, project *project.Project, auth *authentication.Auth) error {
 	targetCommitID, err := model.BranchCommitID(project.Owner(), project.Name(), project.BranchName())
 	if err != nil {
 		return err
 	}
 
-	platformLanguage, err := model.FetchLanguageForCommit(*targetCommitID)
+	platformLanguage, err := model.FetchLanguageForCommit(*targetCommitID, auth)
 	if err != nil {
 		return err
 	}
@@ -142,29 +98,4 @@ func ensureLanguageProject(language *model.Language, project *project.Project) e
 		return locale.NewInputError("err_language_mismatch")
 	}
 	return nil
-}
-
-type fetchVersionsFunc func(name string) ([]string, error)
-
-func ensureVersion(language *model.Language) error {
-	return ensureVersionTestable(language, model.FetchLanguageVersions)
-}
-
-func ensureVersionTestable(language *model.Language, fetchVersions fetchVersionsFunc) error {
-	if language.Version == "" {
-		return locale.NewInputError("err_language_no_version", "No language version provided")
-	}
-
-	versions, err := fetchVersions(language.Name)
-	if err != nil {
-		return err
-	}
-
-	for _, ver := range versions {
-		if language.Version == ver {
-			return nil
-		}
-	}
-
-	return locale.NewInputError("err_language_version_not_found", "", language.Version, language.Name)
 }

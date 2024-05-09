@@ -7,13 +7,12 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/pkg/platform/api/graphql"
-	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
-	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
-
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	clientProjects "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -31,11 +30,15 @@ func (e *ErrProjectNotFound) Error() string {
 
 // LegacyFetchProjectByName is intended for legacy code which still relies on localised errors, do NOT use it for new code.
 func LegacyFetchProjectByName(orgName string, projectName string) (*mono_models.Project, error) {
-	project, err := FetchProjectByName(orgName, projectName)
+	auth, err := authentication.LegacyGet()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get auth")
+	}
+	project, err := FetchProjectByName(orgName, projectName, auth)
 	if err == nil || !errs.Matches(err, &ErrProjectNotFound{}) {
 		return project, err
 	}
-	if !authentication.LegacyGet().Authenticated() {
+	if !auth.Authenticated() {
 		return nil, errs.AddTips(
 			locale.NewInputError("err_api_project_not_found", "", orgName, projectName),
 			locale.T("tip_private_project_auth"))
@@ -44,12 +47,12 @@ func LegacyFetchProjectByName(orgName string, projectName string) (*mono_models.
 }
 
 // FetchProjectByName fetches a project for an organization.
-func FetchProjectByName(orgName string, projectName string) (*mono_models.Project, error) {
+func FetchProjectByName(orgName string, projectName string, auth *authentication.Auth) (*mono_models.Project, error) {
 	logging.Debug("fetching project (%s) in organization (%s)", projectName, orgName)
 
 	request := request.ProjectByOrgAndName(orgName, projectName)
 
-	gql := graphql.New()
+	gql := graphql.New(auth)
 	response := model.Projects{}
 	err := gql.Run(request, &response)
 	if err != nil {
@@ -64,10 +67,14 @@ func FetchProjectByName(orgName string, projectName string) (*mono_models.Projec
 }
 
 // FetchOrganizationProjects fetches the projects for an organization
-func FetchOrganizationProjects(orgName string) ([]*mono_models.Project, error) {
+func FetchOrganizationProjects(orgName string, auth *authentication.Auth) ([]*mono_models.Project, error) {
+	authClient, err := auth.Client()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get auth client")
+	}
 	projParams := clientProjects.NewListProjectsParams()
 	projParams.SetOrganizationName(orgName)
-	orgProjects, err := authentication.Client().Projects.ListProjects(projParams, authentication.ClientAuth())
+	orgProjects, err := authClient.Projects.ListProjects(projParams, auth.ClientAuth())
 	if err != nil {
 		switch statusCode := api.ErrorCode(err); statusCode {
 		case 401:
@@ -82,8 +89,8 @@ func FetchOrganizationProjects(orgName string) ([]*mono_models.Project, error) {
 	return orgProjects.Payload, nil
 }
 
-func LanguageByCommit(commitID strfmt.UUID) (Language, error) {
-	languages, err := FetchLanguagesForCommit(commitID)
+func LanguageByCommit(commitID strfmt.UUID, auth *authentication.Auth) (Language, error) {
+	languages, err := FetchLanguagesForCommit(commitID, auth)
 	if err != nil {
 		return Language{}, err
 	}
@@ -95,8 +102,8 @@ func LanguageByCommit(commitID strfmt.UUID) (Language, error) {
 	return languages[0], nil
 }
 
-func FetchTimeStampForCommit(commitID strfmt.UUID) (*time.Time, error) {
-	_, atTime, err := FetchCheckpointForCommit(commitID)
+func FetchTimeStampForCommit(commitID strfmt.UUID, auth *authentication.Auth) (*time.Time, error) {
+	_, atTime, err := FetchCheckpointForCommit(commitID, auth)
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to fetch checkpoint for commit ID")
 	}
@@ -180,11 +187,15 @@ func BranchForProjectByName(pj *mono_models.Project, name string) (*mono_models.
 }
 
 // CreateEmptyProject will create the project on the platform
-func CreateEmptyProject(owner, name string, private bool) (*mono_models.Project, error) {
+func CreateEmptyProject(owner, name string, private bool, auth *authentication.Auth) (*mono_models.Project, error) {
+	authClient, err := auth.Client()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get auth client")
+	}
 	addParams := projects.NewAddProjectParams()
 	addParams.SetOrganizationName(owner)
 	addParams.SetProject(&mono_models.Project{Name: name, Private: private})
-	pj, err := authentication.Client().Projects.AddProject(addParams, authentication.ClientAuth())
+	pj, err := authClient.Projects.AddProject(addParams, auth.ClientAuth())
 	if err != nil {
 		msg := api.ErrorMessageFromPayload(err)
 		if errs.Matches(err, &projects.AddProjectConflict{}) || errs.Matches(err, &projects.AddProjectNotFound{}) {
@@ -196,7 +207,7 @@ func CreateEmptyProject(owner, name string, private bool) (*mono_models.Project,
 	return pj.Payload, nil
 }
 
-func CreateCopy(sourceOwner, sourceName, targetOwner, targetName string, makePrivate bool) (*mono_models.Project, error) {
+func CreateCopy(sourceOwner, sourceName, targetOwner, targetName string, makePrivate bool, auth *authentication.Auth) (*mono_models.Project, error) {
 	// Retrieve the source project that we'll be forking
 	sourceProject, err := LegacyFetchProjectByName(sourceOwner, sourceName)
 	if err != nil {
@@ -204,7 +215,7 @@ func CreateCopy(sourceOwner, sourceName, targetOwner, targetName string, makePri
 	}
 
 	// Create the target project
-	targetProject, err := CreateEmptyProject(targetOwner, targetName, false)
+	targetProject, err := CreateEmptyProject(targetOwner, targetName, false, auth)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_fork_createProject", "Could not create project: {{.V0}}/{{.V1}}", targetOwner, targetName)
 	}
@@ -218,23 +229,27 @@ func CreateCopy(sourceOwner, sourceName, targetOwner, targetName string, makePri
 		if err != nil {
 			return nil, locale.WrapError(err, "err_branch_nodefault", "Project has no default branch.")
 		}
-		if err := UpdateBranchCommit(targetBranch.BranchID, *sourceBranch.CommitID); err != nil {
+		if err := UpdateBranchCommit(targetBranch.BranchID, *sourceBranch.CommitID, auth); err != nil {
 			return nil, locale.WrapError(err, "err_fork_branchupdate", "Failed to update branch.")
 		}
 	}
 
 	// Turn the target project private if this was requested (unfortunately this can't be done int the Creation step)
 	if makePrivate {
-		if err := MakeProjectPrivate(targetOwner, targetName); err != nil {
+		if err := MakeProjectPrivate(targetOwner, targetName, auth); err != nil {
 			logging.Debug("Cannot make forked project private; deleting public fork.")
-			deleteParams := projects.NewDeleteProjectParams()
-			deleteParams.SetOrganizationName(targetOwner)
-			deleteParams.SetProjectName(targetName)
-			if _, err := authentication.Client().Projects.DeleteProject(deleteParams, authentication.ClientAuth()); err != nil {
-				return nil, locale.WrapError(
-					err, "err_fork_private_but_project_created",
-					"Your project was created but could not be made private, please head over to {{.V0}} to manually update your privacy settings.",
-					api.GetPlatformURL(fmt.Sprintf("%s/%s", targetOwner, targetName)).String())
+			if authClient, err2 := auth.Client(); err2 == nil {
+				deleteParams := projects.NewDeleteProjectParams()
+				deleteParams.SetOrganizationName(targetOwner)
+				deleteParams.SetProjectName(targetName)
+				if _, err3 := authClient.Projects.DeleteProject(deleteParams, auth.ClientAuth()); err3 != nil {
+					err = errs.Pack(err, locale.WrapError(
+						err3, "err_fork_private_but_project_created",
+						"Your project was created but could not be made private, please head over to {{.V0}} to manually update your privacy settings.",
+						api.GetPlatformURL(fmt.Sprintf("%s/%s", targetOwner, targetName)).String()))
+				}
+			} else {
+				err = errs.Pack(err, errs.Wrap(err2, "Could not get auth client"))
 			}
 			return nil, locale.WrapError(err, "err_fork_private", "Your fork could not be made private.")
 		}
@@ -244,7 +259,12 @@ func CreateCopy(sourceOwner, sourceName, targetOwner, targetName string, makePri
 }
 
 // MakeProjectPrivate turns the given project private
-func MakeProjectPrivate(owner, name string) error {
+func MakeProjectPrivate(owner, name string, auth *authentication.Auth) error {
+	authClient, err := auth.Client()
+	if err != nil {
+		return errs.Wrap(err, "Could not get auth client")
+	}
+
 	editParams := projects.NewEditProjectParams()
 	yes := true
 	editParams.SetProject(&mono_models.ProjectEditable{
@@ -253,7 +273,7 @@ func MakeProjectPrivate(owner, name string) error {
 	editParams.SetOrganizationName(owner)
 	editParams.SetProjectName(name)
 
-	_, err := authentication.Client().Projects.EditProject(editParams, authentication.ClientAuth())
+	_, err = authClient.Projects.EditProject(editParams, auth.ClientAuth())
 	if err != nil {
 		msg := api.ErrorMessageFromPayload(err)
 		if errs.Matches(err, &projects.EditProjectBadRequest{}) {
@@ -276,13 +296,17 @@ func ProjectURL(owner, name, commitID string) string {
 	return url.String()
 }
 
-func AddBranch(projectID strfmt.UUID, label string) (strfmt.UUID, error) {
+func AddBranch(projectID strfmt.UUID, label string, auth *authentication.Auth) (strfmt.UUID, error) {
 	var branchID strfmt.UUID
+	authClient, err := auth.Client()
+	if err != nil {
+		return "", errs.Wrap(err, "Could not get auth client")
+	}
 	addParams := projects.NewAddBranchParams()
 	addParams.SetProjectID(projectID)
 	addParams.Body.Label = label
 
-	res, err := authentication.Client().Projects.AddBranch(addParams, authentication.ClientAuth())
+	res, err := authClient.Projects.AddBranch(addParams, auth.ClientAuth())
 	if err != nil {
 		msg := api.ErrorMessageFromPayload(err)
 		return branchID, locale.WrapError(err, msg)
@@ -291,13 +315,18 @@ func AddBranch(projectID strfmt.UUID, label string) (strfmt.UUID, error) {
 	return res.Payload.BranchID, nil
 }
 
-func EditProject(owner, name string, project *mono_models.ProjectEditable) error {
+func EditProject(owner, name string, project *mono_models.ProjectEditable, auth *authentication.Auth) error {
+	authClient, err := auth.Client()
+	if err != nil {
+		return errs.Wrap(err, "Could not get auth client")
+	}
+
 	editParams := projects.NewEditProjectParams()
 	editParams.SetOrganizationName(owner)
 	editParams.SetProjectName(name)
 	editParams.SetProject(project)
 
-	_, err := authentication.Client().Projects.EditProject(editParams, authentication.ClientAuth())
+	_, err = authClient.Projects.EditProject(editParams, auth.ClientAuth())
 	if err != nil {
 		msg := api.ErrorMessageFromPayload(err)
 		return locale.WrapError(err, msg)
@@ -307,11 +336,16 @@ func EditProject(owner, name string, project *mono_models.ProjectEditable) error
 }
 
 func DeleteProject(owner, project string, auth *authentication.Auth) error {
+	authClient, err := auth.Client()
+	if err != nil {
+		return errs.Wrap(err, "Could not get auth client")
+	}
+
 	params := projects.NewDeleteProjectParams()
 	params.SetOrganizationName(owner)
 	params.SetProjectName(project)
 
-	_, err := auth.Client().Projects.DeleteProject(params, auth.ClientAuth())
+	_, err = authClient.Projects.DeleteProject(params, auth.ClientAuth())
 	if err != nil {
 		msg := api.ErrorMessageFromPayload(err)
 		return locale.WrapError(err, msg)
@@ -321,12 +355,17 @@ func DeleteProject(owner, project string, auth *authentication.Auth) error {
 }
 
 func MoveProject(owner, project, newOwner string, auth *authentication.Auth) error {
+	authClient, err := auth.Client()
+	if err != nil {
+		return errs.Wrap(err, "Could not get auth client")
+	}
+
 	params := projects.NewMoveProjectParams()
 	params.SetOrganizationIdentifier(owner)
 	params.SetProjectName(project)
 	params.SetDestination(projects.MoveProjectBody{newOwner})
 
-	_, err := auth.Client().Projects.MoveProject(params, auth.ClientAuth())
+	_, err = authClient.Projects.MoveProject(params, auth.ClientAuth())
 	if err != nil {
 		msg := api.ErrorMessageFromPayload(err)
 		return locale.WrapError(err, msg)

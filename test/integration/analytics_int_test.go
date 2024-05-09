@@ -10,9 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/termtest"
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
@@ -22,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	helperSuite "github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 )
@@ -254,7 +254,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestExecEvents() {
 		ts.DebugMessage("Should have a runtime attempt, events:\n"+suite.summarizeEvents(runtimeEvents)))
 
 	suite.assertGtEvents(events, 0, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcStateTool,
-		fmt.Sprintf("Expected new heartbeats after state exec"))
+		"Expected new heartbeats after state exec")
 
 	cp.ExpectExitCode(0)
 }
@@ -352,7 +352,7 @@ func (suite *AnalyticsIntegrationTestSuite) summarizeEventSequence(events []repo
 }
 
 type TestingSuiteForAnalytics interface {
-	Require() *require.Assertions
+	Require() *helperSuite.Assertions
 }
 
 func parseAnalyticsEvents(suite TestingSuiteForAnalytics, ts *e2e.Session) []reporters.TestLogEntry {

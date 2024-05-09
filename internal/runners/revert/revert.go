@@ -10,8 +10,9 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/commit"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	gqlmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -59,24 +60,29 @@ func New(prime primeable) *Revert {
 	}
 }
 
+const remoteCommitID = "REMOTE"
 const headCommitID = "HEAD"
 
 func (r *Revert) Run(params *Params) (rerr error) {
 	defer rationalizeError(&rerr)
 
 	if r.project == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 
 	commitID := params.CommitID
-	if !strfmt.IsUUID(commitID) && !strings.EqualFold(commitID, headCommitID) {
-		return locale.NewInputError("err_invalid_commit_id", "Invalid commit ID")
+	if strings.EqualFold(commitID, headCommitID) {
+		r.out.Notice(locale.T("warn_revert_head"))
+		commitID = remoteCommitID
+	}
+	if !strfmt.IsUUID(commitID) && !strings.EqualFold(commitID, remoteCommitID) {
+		return locale.NewInputError("err_revert_invalid_commit_id", "Invalid commit ID")
 	}
 	latestCommit, err := localcommit.Get(r.project.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
-	if strings.EqualFold(commitID, headCommitID) {
+	if strings.EqualFold(commitID, remoteCommitID) {
 		commitID = latestCommit.String()
 	}
 
@@ -100,7 +106,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 		preposition = " to" // need leading whitespace
 	}
 
-	targetCommit, err := model.GetCommitWithinCommitHistory(latestCommit, strfmt.UUID(targetCommitID))
+	targetCommit, err := model.GetCommitWithinCommitHistory(latestCommit, strfmt.UUID(targetCommitID), r.auth)
 	if err != nil {
 		if err == model.ErrCommitNotInHistory {
 			return locale.WrapInputError(err, "err_revert_commit_not_found", "The commit [NOTICE]{{.V0}}[/RESET] was not found in the project's commit history.", commitID)
@@ -114,7 +120,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 	var orgs []gqlmodel.Organization
 	if targetCommit.Author != nil {
 		var err error
-		orgs, err = model.FetchOrganizationsByIDs([]strfmt.UUID{*targetCommit.Author})
+		orgs, err = model.FetchOrganizationsByIDs([]strfmt.UUID{*targetCommit.Author}, r.auth)
 		if err != nil {
 			return locale.WrapError(err, "err_revert_get_organizations", "Could not get organizations for current user")
 		}
@@ -122,7 +128,9 @@ func (r *Revert) Run(params *Params) (rerr error) {
 
 	if !r.out.Type().IsStructured() {
 		r.out.Print(locale.Tl("revert_info", "You are about to revert{{.V0}} the following commit:", preposition))
-		commit.PrintCommit(r.out, targetCommit, orgs)
+		if err := commit.PrintCommit(r.out, targetCommit, orgs); err != nil {
+			return locale.WrapError(err, "err_revert_print_commit", "Could not print commit")
+		}
 	}
 
 	defaultChoice := params.Force || !r.out.Config().Interactive
@@ -147,7 +155,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Unable to set local commit")
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, revertCommit, true, target.TriggerRevert, r.svcModel, r.cfg)
+	_, err = runtime.SolveAndUpdate(r.auth, r.out, r.analytics, r.project, &revertCommit, target.TriggerRevert, r.svcModel, r.cfg, runtime.OptOrderChanged)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
@@ -163,8 +171,6 @@ func (r *Revert) Run(params *Params) (rerr error) {
 	r.out.Notice(locale.T("operation_success_local"))
 	return nil
 }
-
-type revertFunc func(params revertParams, bp *model.BuildPlanner) (strfmt.UUID, error)
 
 type revertParams struct {
 	organization   string

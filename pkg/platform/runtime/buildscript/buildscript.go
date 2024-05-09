@@ -8,6 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 
@@ -103,12 +106,18 @@ func New(data []byte) (*Script, error) {
 	return script, nil
 }
 
-func NewFromCommit(atTime *strfmt.DateTime, expr *buildexpression.BuildExpression) (*Script, error) {
+func NewFromBuildExpression(atTime *strfmt.DateTime, expr *buildexpression.BuildExpression) (*Script, error) {
 	// Copy incoming build expression to keep any modifications local.
 	var err error
 	expr, err = expr.Copy()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not copy build expression")
+	}
+
+	// Update old expressions that bake in at_time as a timestamp instead of as a variable.
+	err = expr.MaybeSetDefaultTimestamp(atTime)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not set default timestamp")
 	}
 
 	return &Script{AtTime: atTime, Expr: expr}, nil
@@ -225,7 +234,7 @@ func transformVersion(requirements *buildexpression.Var) *buildexpression.Ap {
 					Assignment: &buildexpression.Var{Name: "value", Value: &buildexpression.Value{Str: o.Value.Str}},
 				}}
 			case buildexpression.RequirementComparatorKey:
-				ap.Name = strings.Title(*o.Value.Str)
+				ap.Name = cases.Title(language.English).String(*o.Value.Str)
 			}
 		}
 		aps = append(aps, ap)
@@ -311,7 +320,7 @@ func valueString(v *buildexpression.Value) string {
 		return *v.Ident
 	}
 
-	return fmt.Sprintf("[\n]") // participle does not create v.List if it's empty
+	return "[\n]" // participle does not create v.List if it's empty
 }
 
 // inlineFunctions contains buildscript function names whose arguments should all be written on a

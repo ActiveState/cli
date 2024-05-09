@@ -27,7 +27,6 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/sysinfo"
-	ga "github.com/ActiveState/go-ogle-analytics"
 )
 
 type Reporter interface {
@@ -37,7 +36,6 @@ type Reporter interface {
 
 // Client instances send analytics events to GA and S3 endpoints without delay. It is only supposed to be used inside the `state-svc`.  All other processes should use the DefaultClient.
 type Client struct {
-	gaClient         *ga.Client
 	customDimensions *dimensions.Values
 	cfg              *config.Instance
 	eventWaitGroup   *sync.WaitGroup
@@ -137,7 +135,7 @@ func New(source string, cfg *config.Instance, auth *authentication.Auth, out out
 }
 
 func (a *Client) readConfig() {
-	doNotReport := (!a.cfg.Closed() && a.cfg.IsSet(constants.ReportAnalyticsConfig) && !a.cfg.GetBool(constants.ReportAnalyticsConfig)) ||
+	doNotReport := (!a.cfg.Closed() && !a.cfg.GetBool(constants.ReportAnalyticsConfig)) ||
 		strings.ToLower(os.Getenv(constants.DisableAnalyticsEnvVarName)) == "true"
 	a.sendReports = !doNotReport
 	logging.Debug("Sending Google Analytics reports? %v", a.sendReports)

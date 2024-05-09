@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/stretchr/testify/suite"
 )
 
 type PlatformsIntegrationTestSuite struct {
@@ -44,8 +44,8 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_listSimple() {
 	ts.PrepareProject("cli-integration-tests/ExercisePlatforms", "f5a2494d-1b76-4a77-bafa-97b3562c5304")
 
 	cmds := [][]string{
-		[]string{"platforms"},
-		[]string{"platforms", "search"},
+		{"platforms"},
+		{"platforms", "search"},
 	}
 	for _, cmd := range cmds {
 		cp := ts.Spawn(cmd...)

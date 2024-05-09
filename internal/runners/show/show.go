@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/secrets"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -37,10 +38,6 @@ type Show struct {
 	out         output.Outputer
 	conditional *constraints.Conditional
 	auth        *authentication.Auth
-}
-
-type auther interface {
-	Authenticated() bool
 }
 
 type primeable interface {
@@ -171,7 +168,7 @@ func (s *Show) Run(params Params) error {
 		commitID = *branch.CommitID
 	} else {
 		if s.project == nil {
-			return locale.NewInputError("err_no_project")
+			return rationalize.ErrNoProject
 		}
 
 		if s.project.IsHeadless() {
@@ -220,12 +217,12 @@ func (s *Show) Run(params Params) error {
 		projectURL = model.ProjectURL(owner, projectName, commitID.String())
 	}
 
-	platforms, err := platformsData(owner, projectName, commitID)
+	platforms, err := platformsData(owner, projectName, commitID, s.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_show_platforms", "Could not retrieve platform information")
 	}
 
-	languages, err := languagesData(commitID)
+	languages, err := languagesData(commitID, s.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_show_langauges", "Could not retrieve language information")
 	}
@@ -322,8 +319,8 @@ func scriptsData(project *projectfile.Project, conditional *constraints.Conditio
 	return data, nil
 }
 
-func platformsData(owner, project string, branchID strfmt.UUID) ([]platformRow, error) {
-	remotePlatforms, err := model.FetchPlatformsForCommit(branchID)
+func platformsData(owner, project string, branchID strfmt.UUID, auth *authentication.Auth) ([]platformRow, error) {
+	remotePlatforms, err := model.FetchPlatformsForCommit(branchID, auth)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_show_get_platforms", "Could not get platform details for commit: {{.V0}}", branchID.String())
 	}
@@ -339,8 +336,8 @@ func platformsData(owner, project string, branchID strfmt.UUID) ([]platformRow, 
 	return platforms, nil
 }
 
-func languagesData(commitID strfmt.UUID) ([]languageRow, error) {
-	platformLanguages, err := model.FetchLanguagesForCommit(commitID)
+func languagesData(commitID strfmt.UUID, auth *authentication.Auth) ([]languageRow, error) {
+	platformLanguages, err := model.FetchLanguagesForCommit(commitID, auth)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_show_get_languages", "Could not get languages for project")
 	}
@@ -361,7 +358,7 @@ func visibilityData(owner, project string, remoteProject *mono_models.Project) s
 	return locale.T("public")
 }
 
-func commitsData(owner, project, branchName string, commitID strfmt.UUID, localProject *project.Project, auth auther) (string, error) {
+func commitsData(owner, project, branchName string, commitID strfmt.UUID, localProject *project.Project, auth *authentication.Auth) (string, error) {
 	latestCommit, err := model.BranchCommitID(owner, project, branchName)
 	if err != nil {
 		return "", locale.WrapError(err, "err_show_get_latest_commit", "Could not get latest commit ID")
@@ -371,7 +368,7 @@ func commitsData(owner, project, branchName string, commitID strfmt.UUID, localP
 		return latestCommit.String(), nil
 	}
 
-	belongs, err := model.CommitBelongsToBranch(owner, project, branchName, commitID)
+	belongs, err := model.CommitBelongsToBranch(owner, project, branchName, commitID, auth)
 	if err != nil {
 		return "", locale.WrapError(err, "err_show_get_commit_belongs", "Could not determine if commit belongs to branch")
 	}
@@ -381,7 +378,7 @@ func commitsData(owner, project, branchName string, commitID strfmt.UUID, localP
 		if latestCommit != nil {
 			latestCommitID = *latestCommit
 		}
-		behind, err := model.CommitsBehind(latestCommitID, commitID)
+		behind, err := model.CommitsBehind(latestCommitID, commitID, auth)
 		if err != nil {
 			return "", locale.WrapError(err, "err_show_commits_behind", "Could not determine number of commits behind latest")
 		}
@@ -400,12 +397,12 @@ func commitsData(owner, project, branchName string, commitID strfmt.UUID, localP
 	return latestCommit.String(), nil
 }
 
-func secretsData(owner, project string, auth auther) (*secretOutput, error) {
+func secretsData(owner, project string, auth *authentication.Auth) (*secretOutput, error) {
 	if !auth.Authenticated() {
 		return nil, nil
 	}
 
-	client := secretsapi.Get()
+	client := secretsapi.Get(auth)
 	sec, err := secrets.DefsByProject(client, owner, project)
 	if err != nil {
 		logging.Debug("Could not get secret definitions, got failure: %s", err)

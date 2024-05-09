@@ -2,14 +2,14 @@ package integration
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -39,7 +39,7 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 	suite.Require().FileExists(archivePath, "Make sure you ran 'state run generate-update'")
 	suite.T().Logf("file %s exists\n", archivePath)
 
-	tempPath, err := ioutil.TempDir("", "")
+	tempPath, err := os.MkdirTemp("", "")
 	suite.Require().NoError(err)
 
 	ts := e2e.New(suite.T(), false)
@@ -56,7 +56,7 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 
 	cp.ExpectExitCode(0)
 
-	baseDir := filepath.Join(tempPath, constants.ToplevelInstallArchiveDir)
+	baseDir := filepath.Join(tempPath, constants.LegacyToplevelInstallArchiveDir)
 	suite.FileExists(filepath.Join(baseDir, installation.BinDirName, constants.StateCmd+osutils.ExeExtension))
 	suite.FileExists(filepath.Join(baseDir, installation.BinDirName, constants.StateSvcCmd+osutils.ExeExtension))
 }

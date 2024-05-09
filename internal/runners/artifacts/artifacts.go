@@ -124,7 +124,7 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Could not get terminal artifact map")
 	}
 
-	platformMap, err := model.FetchPlatformsMap()
+	platformMap, err := model.FetchPlatformsMap(b.auth)
 	if err != nil {
 		return errs.Wrap(err, "Could not get platforms")
 	}
@@ -147,9 +147,6 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 		}
 		for _, artifact := range artifacts {
 			if artifact.MimeType == bpModel.XActiveStateBuilderMimeType {
-				continue
-			}
-			if artifact.URL == "" {
 				continue
 			}
 			name := artifact.Name
@@ -192,9 +189,6 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 }
 
 func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
-	if !out.BuildComplete {
-		b.out.Error(locale.T("warn_build_not_complete"))
-	}
 	if out.HasFailedArtifacts {
 		b.out.Error(locale.T("warn_has_failed_artifacts"))
 	}
@@ -202,6 +196,10 @@ func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
 	for _, platform := range out.Platforms {
 		b.out.Print(fmt.Sprintf("• [NOTICE]%s[/RESET]", platform.Name))
 		for _, artifact := range platform.Artifacts {
+			if artifact.URL == "" {
+				b.out.Print(fmt.Sprintf("  • %s ([WARNING]%s ...[/RESET])", artifact.Name, locale.T("artifact_status_building")))
+				continue
+			}
 			id := strings.ToUpper(artifact.ID)
 			if !fullID {
 				id = id[0:8]
@@ -213,6 +211,10 @@ func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
 			b.out.Print(fmt.Sprintf("  • %s", locale.Tl("artifacts_packages", "[NOTICE]Packages[/RESET]")))
 		}
 		for _, artifact := range platform.Packages {
+			if artifact.URL == "" {
+				b.out.Print(fmt.Sprintf("  • %s ([WARNING]%s ...[/RESET])", artifact.Name, locale.T("artifact_status_building")))
+				continue
+			}
 			id := strings.ToUpper(artifact.ID)
 			if !fullID {
 				id = id[0:8]
@@ -223,6 +225,11 @@ func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
 		if len(platform.Artifacts) == 0 && len(platform.Packages) == 0 {
 			b.out.Print(fmt.Sprintf("  • %s", locale.Tl("no_artifacts", "No artifacts")))
 		}
+	}
+
+	if !out.BuildComplete {
+		b.out.Notice("") // blank line
+		b.out.Notice(locale.T("warn_build_not_complete"))
 	}
 
 	b.out.Print("\nTo download artifacts run '[ACTIONABLE]state artifacts dl <ID>[/RESET]'.")
@@ -279,7 +286,7 @@ func getTerminalArtifactMap(
 		}
 
 		bp := model.NewBuildPlannerModel(auth)
-		buildPlan, err = bp.FetchBuildResult(localCommitID, pj.Owner(), pj.Name(), targetPtr)
+		buildPlan, _, err = bp.FetchBuildResult(localCommitID, pj.Owner(), pj.Name(), targetPtr)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
 		}
@@ -287,14 +294,14 @@ func getTerminalArtifactMap(
 	// Return artifact map from the given commitID for the current project.
 	case !namespaceProvided && commitIdProvided:
 		bp := model.NewBuildPlannerModel(auth)
-		buildPlan, err = bp.FetchBuildResult(commitID, pj.Owner(), pj.Name(), targetPtr)
+		buildPlan, _, err = bp.FetchBuildResult(commitID, pj.Owner(), pj.Name(), targetPtr)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
 		}
 
 	// Return the artifact map for the latest commitID of the given project.
 	case namespaceProvided && !commitIdProvided:
-		pj, err := model.FetchProjectByName(namespace.Owner, namespace.Project)
+		pj, err := model.FetchProjectByName(namespace.Owner, namespace.Project, auth)
 		if err != nil {
 			return nil, false, false, locale.WrapInputError(err, "err_fetch_project", "", namespace.String())
 		}
@@ -311,7 +318,7 @@ func getTerminalArtifactMap(
 		commitID = *commitUUID
 
 		bp := model.NewBuildPlannerModel(auth)
-		buildPlan, err = bp.FetchBuildResult(commitID, namespace.Owner, namespace.Project, targetPtr)
+		buildPlan, _, err = bp.FetchBuildResult(commitID, namespace.Owner, namespace.Project, targetPtr)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
 		}
@@ -319,7 +326,7 @@ func getTerminalArtifactMap(
 	// Return the artifact map for the given commitID of the given project.
 	case namespaceProvided && commitIdProvided:
 		bp := model.NewBuildPlannerModel(auth)
-		buildPlan, err = bp.FetchBuildResult(commitID, namespace.Owner, namespace.Project, targetPtr)
+		buildPlan, _, err = bp.FetchBuildResult(commitID, namespace.Owner, namespace.Project, targetPtr)
 		if err != nil {
 			return nil, false, false, errs.Wrap(err, "Failed to fetch build plan")
 		}

@@ -18,9 +18,10 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/runbits"
 	buildscriptRunbits "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/commit"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -85,7 +86,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 	defer rationalizeError(&rerr)
 
 	if p.project == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 	p.out.Notice(locale.Tr("operating_message", p.project.NamespaceString(), p.project.Dir()))
 
@@ -135,7 +136,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		resultCommit, mergeErr := bp.MergeCommit(params)
 		if mergeErr != nil {
 			logging.Debug("Merge with fast-forward failed with error: %s, trying recursive overwrite", mergeErr.Error())
-			strategy = bpModel.MergeCommitStrategyRecursiveOverwriteOnConflict
+			strategy = bpModel.MergeCommitStrategyRecursiveKeepOnConflict
 			c, err := p.performMerge(*remoteCommit, *localCommit, remoteProject, p.project.BranchName(), strategy)
 			if err != nil {
 				p.notifyMergeStrategy(anaConst.LabelVcsConflictMergeStrategyFailed, *localCommit, remoteProject)
@@ -161,6 +162,13 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 			return errs.Wrap(err, "Unable to set local commit")
 		}
 
+		if p.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+			err := p.mergeBuildScript(*remoteCommit, *localCommit)
+			if err != nil {
+				return errs.Wrap(err, "Could not merge local build script with remote changes")
+			}
+		}
+
 		p.out.Print(&pullOutput{
 			locale.Tr("pull_updated", remoteProject.String(), resultingCommit.String()),
 			true,
@@ -172,7 +180,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		})
 	}
 
-	err = runbits.RefreshRuntime(p.auth, p.out, p.analytics, p.project, *resultingCommit, true, target.TriggerPull, p.svcModel, p.cfg)
+	_, err = runtime.SolveAndUpdate(p.auth, p.out, p.analytics, p.project, resultingCommit, target.TriggerPull, p.svcModel, p.cfg, runtime.OptOrderChanged)
 	if err != nil {
 		return locale.WrapError(err, "err_pull_refresh", "Could not refresh runtime after pull")
 	}
@@ -181,13 +189,6 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 }
 
 func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *project.Namespaced, branchName string, strategy bpModel.MergeStrategy) (strfmt.UUID, error) {
-	if p.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		err := p.mergeBuildScript(remoteCommit, localCommit)
-		if err != nil {
-			return "", errs.Wrap(err, "Could not merge local build script with remote changes")
-		}
-	}
-
 	p.out.Notice(output.Title(locale.Tl("pull_diverged", "Merging history")))
 	p.out.Notice(locale.Tr(
 		"pull_diverged_message",
@@ -207,15 +208,16 @@ func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *pr
 		return "", locale.WrapError(err, "err_pull_merge_commit", "Could not create merge commit.")
 	}
 
-	cmit, err := model.GetCommit(resultCommit)
+	cmit, err := model.GetCommit(resultCommit, p.auth)
 	if err != nil {
 		return "", locale.WrapError(err, "err_pull_getcommit", "Could not inspect resulting commit.")
 	}
-	changes, _ := commit.FormatChanges(cmit)
-	p.out.Notice(locale.Tl(
-		"pull_diverged_changes",
-		"The following changes will be merged:\n{{.V0}}\n", strings.Join(changes, "\n")),
-	)
+	if changes, _ := commit.FormatChanges(cmit); len(changes) > 0 {
+		p.out.Notice(locale.Tl(
+			"pull_diverged_changes",
+			"The following changes will be merged:\n{{.V0}}\n", strings.Join(changes, "\n")),
+		)
+	}
 
 	return resultCommit, nil
 }
@@ -223,7 +225,7 @@ func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *pr
 // mergeBuildScript merges the local build script with the remote buildexpression (not script).
 func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	// Get the build script to merge.
-	scriptA, err := buildscript.ScriptFromProjectWithFallback(p.project, p.auth)
+	scriptA, err := buildscript.ScriptFromProject(p.project)
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
 	}
@@ -235,7 +237,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	if err != nil {
 		return errs.Wrap(err, "Unable to get buildexpression and time for remote commit")
 	}
-	scriptB, err := buildscript.NewFromCommit(atTimeB, exprB)
+	scriptB, err := buildscript.NewFromBuildExpression(atTimeB, exprB)
 	if err != nil {
 		return errs.Wrap(err, "Could not convert build expression to build script")
 	}
@@ -245,7 +247,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	if err != nil {
 		switch {
 		case errors.Is(err, model.ErrMergeFastForward):
-			return buildscript.Update(p.project, atTimeB, exprB, p.auth)
+			return buildscript.Update(p.project, atTimeB, exprB)
 		case !errors.Is(err, model.ErrMergeCommitInHistory):
 			return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
 		}
@@ -272,7 +274,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	}
 
 	// Write the merged build expression as a local build script.
-	return buildscript.Update(p.project, atTime, mergedExpr, p.auth)
+	return buildscript.Update(p.project, atTime, mergedExpr)
 }
 
 func resolveRemoteProject(prj *project.Project) (*project.Namespaced, error) {

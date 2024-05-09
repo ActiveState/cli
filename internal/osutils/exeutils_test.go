@@ -69,7 +69,7 @@ func TestExecuteAndPipeStd(t *testing.T) {
 	out, err := osutil.CaptureStdout(func() {
 		logging.SetLevel(logging.NOTHING)
 		defer logging.SetLevel(logging.NORMAL)
-		ExecuteAndPipeStd("printenv", []string{"FOO"}, []string{"FOO=--out--"})
+		_, _, _ = ExecuteAndPipeStd("printenv", []string{"FOO"}, []string{"FOO=--out--"})
 	})
 	require.NoError(t, err)
 	assert.Equal(t, "--out--\n", out, "captures output")

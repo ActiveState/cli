@@ -2,11 +2,11 @@ package keypairs_test
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/keypairs"
@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 type KeypairGenerateTestSuite struct {
@@ -21,17 +22,20 @@ type KeypairGenerateTestSuite struct {
 
 	secretsClient *secretsapi.Client
 	cfg           keypairs.Configurable
+	auth          *authentication.Auth
 }
 
 func (suite *KeypairGenerateTestSuite) BeforeTest(suiteName, testName string) {
-	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
-	suite.Require().NotNil(secretsClient)
-	suite.secretsClient = secretsClient
-
-	httpmock.Activate(secretsClient.BaseURI)
 	var err error
 	suite.cfg, err = config.New()
 	suite.Require().NoError(err)
+	suite.auth, err = authentication.LegacyGet()
+	suite.Require().NoError(err)
+
+	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123", suite.auth)
+	suite.Require().NotNil(secretsClient)
+	suite.secretsClient = secretsClient
+	httpmock.Activate(secretsClient.BaseURI)
 }
 
 func (suite *KeypairGenerateTestSuite) AfterTest(suiteName, testName string) {
@@ -88,7 +92,7 @@ func (suite *KeypairGenerateTestSuite) TestGenerate_WithPassphrase() {
 }
 
 func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Fails_NotEnoughBits() {
-	encKeypair, err := keypairs.GenerateAndSaveEncodedKeypair(suite.cfg, suite.secretsClient, "", keypairs.MinimumRSABitLength-1)
+	encKeypair, err := keypairs.GenerateAndSaveEncodedKeypair(suite.cfg, suite.secretsClient, "", keypairs.MinimumRSABitLength-1, suite.auth)
 	suite.Require().Nil(encKeypair)
 	suite.Require().Error(err)
 }
@@ -96,7 +100,7 @@ func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Fails_NotEnoughBits()
 func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Fails_OnSave() {
 	httpmock.RegisterWithCode("PUT", "/keypair", 400)
 
-	encKeypair, err := keypairs.GenerateAndSaveEncodedKeypair(suite.cfg, suite.secretsClient, "", keypairs.MinimumRSABitLength)
+	encKeypair, err := keypairs.GenerateAndSaveEncodedKeypair(suite.cfg, suite.secretsClient, "", keypairs.MinimumRSABitLength, suite.auth)
 	suite.Require().Nil(encKeypair)
 	suite.Require().Error(err)
 }
@@ -105,12 +109,12 @@ func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Success_NoPassphrase(
 	var bodyKeypair *secrets_models.KeypairChange
 	var bodyErr error
 	httpmock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {
-		reqBody, _ := ioutil.ReadAll(req.Body)
+		reqBody, _ := io.ReadAll(req.Body)
 		bodyErr = json.Unmarshal(reqBody, &bodyKeypair)
 		return 204, "empty"
 	})
 
-	encKeypair, err := keypairs.GenerateAndSaveEncodedKeypair(suite.cfg, suite.secretsClient, "", keypairs.MinimumRSABitLength)
+	encKeypair, err := keypairs.GenerateAndSaveEncodedKeypair(suite.cfg, suite.secretsClient, "", keypairs.MinimumRSABitLength, suite.auth)
 	suite.Require().NotNil(encKeypair)
 	suite.Require().Nil(err)
 	suite.Require().NoError(bodyErr)
@@ -131,12 +135,12 @@ func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Success_WithPassphras
 	var bodyKeypair *secrets_models.KeypairChange
 	var bodyErr error
 	httpmock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {
-		reqBody, _ := ioutil.ReadAll(req.Body)
+		reqBody, _ := io.ReadAll(req.Body)
 		bodyErr = json.Unmarshal(reqBody, &bodyKeypair)
 		return 204, "empty"
 	})
 
-	encKeypair, err := keypairs.GenerateAndSaveEncodedKeypair(suite.cfg, suite.secretsClient, "bauhaus", keypairs.MinimumRSABitLength)
+	encKeypair, err := keypairs.GenerateAndSaveEncodedKeypair(suite.cfg, suite.secretsClient, "bauhaus", keypairs.MinimumRSABitLength, suite.auth)
 	suite.Require().NotNil(encKeypair)
 	suite.Require().Nil(err)
 	suite.Require().NoError(bodyErr)
