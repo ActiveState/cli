@@ -184,11 +184,13 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 	projectName := "Python-LinuxWorks"
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "cli-integration-tests/"+projectName, "--path="+ts.Dirs.Work),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 
 	if runtime.GOOS == "linux" {
-		cp.Expect("Activated")
-		cp.ExpectInput()
+		cp.Expect("Creating a Virtual Environment")
+		cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+		cp.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
 		cp.SendLine("exit")
 		cp.ExpectExitCode(0)
 	} else {
