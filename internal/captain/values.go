@@ -121,8 +121,8 @@ func (u *UsersValue) Type() string {
 
 // PackageValue represents a flag that supports specifying a package in the following formats:
 // - <name>
-// - <namespace>:<name>
-// - <namespace>:<name>@<version>
+// - <namespace>/<name>
+// - <namespace>/<name>@<version>
 type PackageValue struct {
 	Namespace string
 	Name      string
@@ -137,7 +137,7 @@ func (p *PackageValue) String() string {
 	}
 	name := p.Name
 	if p.Namespace != "" {
-		name = fmt.Sprintf("%s:%s", p.Namespace, p.Name)
+		name = fmt.Sprintf("%s/%s", p.Namespace, p.Name)
 	}
 	if p.Version == "" {
 		return name
@@ -151,12 +151,12 @@ func (p *PackageValue) Set(s string) error {
 		p.Version = strings.TrimSpace(v[1])
 		s = v[0]
 	}
-	if !strings.Contains(s, ":") {
+	if !strings.Contains(s, "/") {
 		p.Name = strings.TrimSpace(s)
 		return nil
 	}
-	v := strings.Split(s, ":")
-	p.Namespace = strings.TrimSpace(strings.Join(v[0:len(v)-1], ":"))
+	v := strings.Split(s, "/")
+	p.Namespace = strings.TrimSpace(strings.Join(v[0:len(v)-1], "/"))
 	p.Name = strings.TrimSpace(v[len(v)-1])
 	return nil
 }

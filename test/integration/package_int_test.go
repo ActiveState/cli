@@ -745,27 +745,13 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Indirect() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "private/ActiveState-CLI-Testing/language/python:django_dep", "--ts=now"),
+		e2e.OptArgs("install", "private/ActiveState-CLI-Testing/language/python/django_dep", "--ts=now"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.ExpectRe(`Warning: Dependency has \d indirect known vulnerabilities`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.Expect("Do you want to continue")
 	cp.SendLine("n")
 	cp.ExpectExitCode(1)
-}
-
-func (suite *InstallIntegrationTestSuite) TestNamespace() {
-	suite.OnlyRunForTags(tagsuite.Install)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("install", "language/python:requests"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect("Package added: requests", e2e.RuntimeSourcingTimeoutOpt)
-	cp.ExpectExitCode(0)
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {

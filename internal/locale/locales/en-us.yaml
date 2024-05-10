@@ -1547,7 +1547,7 @@ uploadingredient_success:
     Revision: [ACTIONABLE]{{.V3}}[/RESET]
     Timestamp: [ACTIONABLE]{{.V4}}[/RESET]
 
-    You can install this package by running `[ACTIONABLE]state install {{.V1}}:{{.V0}} --ts now`[/RESET].
+    You can install this package by running `[ACTIONABLE]state install {{.V1}}/{{.V0}} --ts now`[/RESET].
 err_runtime_cache_invalid:
   other: Your runtime needs to be updated, please run '[ACTIONABLE]state refresh[/RESET]'.
 err_target_not_found:
