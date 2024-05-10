@@ -96,6 +96,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	ts.LoginAsPersistentUser()
 
 	cp = ts.SpawnWithOpts(e2e.OptArgs("push", namespace))
+	cp.SendLine("y")
 	cp.Expect("Pushing to project")
 	cp.ExpectExitCode(0)
 }

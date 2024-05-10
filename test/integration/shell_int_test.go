@@ -215,7 +215,6 @@ func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
 	defer ts.Close()
 
 	suite.SetupRCFile(ts)
-	suite.T().Setenv("ACTIVESTATE_HOME", ts.Dirs.HomeDir)
 
 	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3")
 	cp.Expect("Checked out project")
