@@ -952,6 +952,8 @@ envdef_unmarshal_error:
     This indicates a problem with the build. You can try updating your project
 err_arg_required:
   other: "The following argument is required:\n  Name: [NOTICE]{{.V0}}[/RESET]\n  Description: [NOTICE]{{.V1}}[/RESET]"
+err_init_no_language:
+  other: "A project has not been set using 'state use'. You must include the [NOTICE]language[/RESET] argument. For more help, run '[ACTIONABLE]state init --help[/RESET]'."
 platform_added:
   other: "[NOTICE]{{.V0}}@{{.V1}}[/RESET] has been added."
 platform_removed:

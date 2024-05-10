@@ -44,22 +44,15 @@ func (b *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID, 
 		}
 
 		// Create a requirement for the given language and version.
-		requirement := types.Requirement{
-			Name:      "noop-builder",
-			Namespace: "builder",
+		versionRequirements, err := VersionStringToRequirements(params.Version)
+		if err != nil {
+			return "", errs.Wrap(err, "Unable to read version")
 		}
-		if params.Language != "" {
-			versionRequirements, err := VersionStringToRequirements(params.Version)
-			if err != nil {
-				return "", errs.Wrap(err, "Unable to read version")
-			}
-			requirement = types.Requirement{
-				Name:               params.Language,
-				Namespace:          "language", // TODO: make this a constant DX-1738
-				VersionRequirement: versionRequirements,
-			}
-		}
-		if err := expr.UpdateRequirement(types.OperationAdded, requirement); err != nil {
+		if err := expr.UpdateRequirement(types.OperationAdded, types.Requirement{
+			Name:               params.Language,
+			Namespace:          "language", // TODO: make this a constant DX-1738
+			VersionRequirement: versionRequirements,
+		}); err != nil {
 			return "", errs.Wrap(err, "Unable to add language requirement")
 		}
 	}

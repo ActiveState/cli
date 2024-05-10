@@ -37,6 +37,12 @@ func rationalizeError(owner, project string, rerr *error) {
 			errs.SetInput(),
 		)
 
+	case errors.Is(*rerr, errNoLanguage):
+		*rerr = errs.WrapUserFacing(*rerr,
+			locale.T("err_init_no_language"),
+			errs.SetInput(),
+		)
+
 	case errors.Is(*rerr, errNoOwner):
 		*rerr = errs.WrapUserFacing(*rerr,
 			locale.Tr("err_init_invalid_org", owner),

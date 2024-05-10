@@ -97,28 +97,13 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, lang string, ex
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_NoLanguage() {
-	suite.OnlyRunForTags(tagsuite.Init, tagsuite.Critical)
+	suite.OnlyRunForTags(tagsuite.Init)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	ts.LoginAsPersistentUser()
 
-	// Generate a new namespace for the project to be created.
-	pname := strutils.UUID()
-	namespace := fmt.Sprintf("%s/%s", e2e.PersistentUsername, pname)
-
-	// Run `state init`, creating the project.
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("init", namespace),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect(fmt.Sprintf("Project '%s' has been successfully initialized", namespace), e2e.RuntimeSourcingTimeoutOpt)
-	cp.ExpectExitCode(0)
-	ts.NotifyProjectCreated(e2e.PersistentUsername, pname.String())
-
-	// Run `state languages` to verify the project was created, but without a language.
-	cp = ts.Spawn("languages")
-	cp.Expect("no language configured")
-	cp.ExpectExitCode(0)
+	cp := ts.Spawn("init", "test-user/test-project")
+	cp.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_InferLanguageFromUse() {
