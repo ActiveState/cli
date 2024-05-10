@@ -370,6 +370,23 @@ func (suite *CheckoutIntegrationTestSuite) TestBranch() {
 	suite.Assert().Contains(string(fileutils.ReadFileUnsafe(asy)), "branch=secondbranch", "activestate.yaml does not have correct branch")
 }
 
+func (suite *CheckoutIntegrationTestSuite) TestNoLanguage() {
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("The Window's platform is not available for ActiveState-CLI/langless")
+	}
+
+	suite.OnlyRunForTags(tagsuite.Checkout, tagsuite.Critical)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", "ActiveState-CLI/langless", "."),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0)
+}
+
 func TestCheckoutIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(CheckoutIntegrationTestSuite))
 }

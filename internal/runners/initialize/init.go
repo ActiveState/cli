@@ -74,8 +74,6 @@ type errProjectExists struct {
 
 var errNoOwner = errs.New("Could not find organization")
 
-var errNoLanguage = errs.New("No language specified")
-
 type errUnrecognizedLanguage struct {
 	error
 	Name string
@@ -176,26 +174,25 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		languageName, languageVersion, inferred = inferLanguage(r.config, r.auth)
 	}
 
-	if languageName == "" {
-		return errNoLanguage
-	}
-
 	// Require 'python', 'python@3', or 'python@2' instead of 'python3' or 'python2'.
 	if languageName == language.Python3.String() || languageName == language.Python2.String() {
 		return &errUnrecognizedLanguage{Name: languageName}
 	}
 
 	lang := language.MakeByNameAndVersion(languageName, languageVersion)
-	if !lang.Recognized() {
+	if lang != language.Unset && !lang.Recognized() {
 		return &errUnrecognizedLanguage{Name: languageName}
 	}
 
-	version, err := deriveVersion(lang, languageVersion, r.auth)
-	if err != nil {
-		if inferred || errors.IsReportableError(err) {
-			return locale.WrapError(err, "err_init_lang", "", languageName, languageVersion)
-		} else {
-			return locale.WrapExternalError(err, "err_init_lang", "", languageName, languageVersion)
+	var version string
+	if lang != language.Unset {
+		version, err = deriveVersion(lang, languageVersion, r.auth)
+		if err != nil {
+			if inferred || errors.IsReportableError(err) {
+				return locale.WrapError(err, "err_init_lang", "", languageName, languageVersion)
+			} else {
+				return locale.WrapExternalError(err, "err_init_lang", "", languageName, languageVersion)
+			}
 		}
 	}
 

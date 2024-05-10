@@ -123,6 +123,14 @@ func (l *Languages) Run() error {
 		})
 	}
 
-	l.out.Print(output.Prepare(langsPlainOutput, langsOutput))
+	if len(langs) == 0 {
+		l.out.Print(output.Prepare(
+			locale.Tl("no_languages_installed", "Your project has no language configured for it."),
+			langsOutput,
+		))
+	} else {
+		l.out.Print(output.Prepare(langsPlainOutput, langsOutput))
+	}
+
 	return nil
 }
