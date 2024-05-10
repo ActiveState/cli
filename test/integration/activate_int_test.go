@@ -544,7 +544,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 }
 
 func TestActivateIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(ActivateIntegrationTestSuite))
 }
 

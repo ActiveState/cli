@@ -276,7 +276,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 }
 
 func TestUpdateIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode.")
 	}

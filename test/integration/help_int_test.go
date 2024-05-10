@@ -14,7 +14,6 @@ type HelpIntegrationTestSuite struct {
 }
 
 func TestHelpIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(HelpIntegrationTestSuite))
 }
 

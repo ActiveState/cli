@@ -147,6 +147,5 @@ func (suite *PullIntegrationTestSuite) TestPullNoCommonParent() {
 }
 
 func TestPullIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(PullIntegrationTestSuite))
 }

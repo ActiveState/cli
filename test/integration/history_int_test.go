@@ -74,6 +74,5 @@ func (suite *HistoryIntegrationTestSuite) TestJSON() {
 }
 
 func TestHistoryIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(HistoryIntegrationTestSuite))
 }

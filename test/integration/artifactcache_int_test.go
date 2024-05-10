@@ -15,7 +15,6 @@ import (
 )
 
 func TestArtifactCache(t *testing.T) {
-	t.Parallel()
 	// Note: the length in bytes of each artifact is its index.
 	testArtifacts := []strfmt.UUID{
 		"000000000-0000-0000-0000-000000000000",

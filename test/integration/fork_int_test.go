@@ -52,6 +52,5 @@ func (suite *ForkIntegrationTestSuite) TestFork_FailNameExists() {
 }
 
 func TestForkIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(ForkIntegrationTestSuite))
 }

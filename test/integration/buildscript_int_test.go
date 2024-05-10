@@ -40,6 +40,5 @@ func (suite *BuildScriptIntegrationTestSuite) TestBuildScript_NeedsReset() {
 }
 
 func TestBuildScriptIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(BuildScriptIntegrationTestSuite))
 }

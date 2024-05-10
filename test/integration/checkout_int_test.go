@@ -369,6 +369,5 @@ func (suite *CheckoutIntegrationTestSuite) TestBranch() {
 }
 
 func TestCheckoutIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(CheckoutIntegrationTestSuite))
 }

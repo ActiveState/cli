@@ -220,6 +220,5 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrg() {
 }
 
 func TestInitIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(InitIntegrationTestSuite))
 }
