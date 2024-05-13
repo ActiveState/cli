@@ -471,6 +471,5 @@ authors:
 }
 
 func TestPublishIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(PublishIntegrationTestSuite))
 }
