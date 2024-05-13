@@ -404,8 +404,6 @@ err_order_marshal:
   other: Failed to marshal/unmarshal order
 err_no_data_found:
   other: No data found
-err_project_no_languages:
-  other: Your project does not have any languages configured
 err_add_commit:
   other: "Error occurred while trying to create a commit: {{.V0}}"
 err_update_branch:
@@ -597,7 +595,7 @@ package_list_flag_name_description:
 namespace_list_flag_project_description:
   other: The namespace packages should be listed from
 package_search_flag_ns_description:
-  other: The namespace to search within. This trumps the language flag.
+  other: The namespace to search within.
 package_flag_ts_description:
   other: The timestamp at which you want to query. Can be either 'now' or RFC3339 formatted timestamp.
 package_flag_rev_description:
@@ -706,8 +704,6 @@ command_cmd_no_such_cmd:
   other: "No such command: [NOTICE]{{.V0}}[/RESET]"
 err_fetch_languages:
   other: "Could not retrieve languages for your project. Does your project exist on the Platform?"
-err_no_languages:
-  other: "Your project does not have any language configured"
 err_incompatible_move_file_dir:
   other: |
     Could not move [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].  One is a file, the other a directory.
