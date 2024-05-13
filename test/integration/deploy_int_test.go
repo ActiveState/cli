@@ -506,6 +506,5 @@ func (suite *DeployIntegrationTestSuite) TestDeployUninstall() {
 }
 
 func TestDeployIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(DeployIntegrationTestSuite))
 }
