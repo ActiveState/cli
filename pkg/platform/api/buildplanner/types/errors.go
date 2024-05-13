@@ -20,4 +20,5 @@ const (
 	RevertConflictErrorType           = "RevertConflict"
 	CommitNotInTargetHistoryErrorType = "CommitNotInTargetHistory"
 	ComitHasNoParentErrorType         = "CommitHasNoParent"
+	TargetNotFoundErrorType           = "TargetNotFound"
 )
