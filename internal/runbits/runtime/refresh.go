@@ -121,6 +121,8 @@ func Solve(
 	cfg Configurable,
 	opts Opts,
 ) (_ *runtime.Runtime, _ *bpModel.Commit, rerr error) {
+	defer rationalizeError(auth, proj, &rerr)
+
 	var spinner *output.Spinner
 	if !bitflags.Has(opts, OptMinimalUI) {
 		spinner = output.StartSpinner(out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)

@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/buildplan"
@@ -264,6 +265,8 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 
 		changedArtifacts := rtCommit.BuildPlan().DiffArtifacts(oldBuildPlan, false)
+
+		dependencies.OutputChangeSummary(r.Output, &changedArtifacts, oldBuildPlan.Artifacts())
 
 		// Report CVEs
 		if err := r.cveReport(changedArtifacts, requirements...); err != nil {

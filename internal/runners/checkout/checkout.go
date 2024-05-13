@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/checkout"
+	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -111,9 +112,14 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		u.out.Notice(output.Title(locale.T("installing_runtime_title")))
 	}
 
-	rti, err := runtime.SolveAndUpdate(u.auth, u.out, u.analytics, proj, nil, target.TriggerCheckout, u.svcModel, u.config, runtime.OptMinimalUI)
+	rti, commit, err := runtime.Solve(u.auth, u.out, u.analytics, proj, nil, target.TriggerCheckout, u.svcModel, u.config, runtime.OptMinimalUI)
 	if err != nil {
-		return locale.WrapError(err, "err_checkout_runtime_new", "Could not checkout this project.")
+		return errs.Wrap(err, "Could not checkout project")
+	}
+	dependencies.OutputSummary(u.out, commit.BuildPlan().RequestedArtifacts())
+	err = runtime.UpdateByReference(rti, commit, u.auth, proj, u.out)
+	if err != nil {
+		return errs.Wrap(err, "Could not setup runtime")
 	}
 
 	var execDir string
