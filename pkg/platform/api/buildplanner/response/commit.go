@@ -28,10 +28,6 @@ func (c *ProjectCommitResponse) PostProcess() error {
 		return errs.New("Commit is nil")
 	}
 
-	if c.Project == nil {
-		return errs.New("Project is nil")
-	}
-
 	if IsErrorResponse(c.Project.Type) {
 		return ProcessProjectError(c.Project, "Could not get build from project response")
 	}
@@ -66,7 +62,7 @@ func ProcessBuildError(build *BuildResponse, fallbackMessage string) error {
 	return locale.NewInputError("err_buildplanner_build", "Encountered error processing build response")
 }
 
-func processPlanningError(message string, subErrors []*BuildExprLocation) error {
+func processPlanningError(message string, subErrors []*BuildExprError) error {
 	var errs []string
 	var isTransient bool
 
@@ -75,6 +71,14 @@ func processPlanningError(message string, subErrors []*BuildExprLocation) error 
 	}
 
 	for _, se := range subErrors {
+		if se.Type == types.TargetNotFoundErrorType {
+			return &TargetNotFoundError{
+				Message:         se.Message,
+				RequestedTarget: se.RequestedTarget,
+				PossibleTargets: se.PossibleTargets,
+			}
+		}
+
 		if se.Type != types.RemediableSolveErrorType && se.Type != types.GenericSolveErrorType {
 			continue
 		}
@@ -109,17 +113,24 @@ func ProcessProjectError(project *ProjectResponse, fallbackMessage string) error
 
 // PlanningError represents an error that occurred during planning.
 type PlanningError struct {
-	SubErrors []*BuildExprLocation `json:"subErrors"`
+	SubErrors []*BuildExprError `json:"subErrors"`
 }
 
-// BuildExprLocation represents a location in the build script where an error occurred.
-type BuildExprLocation struct {
+// BuildExprError represents a location in the build script where an error occurred.
+type BuildExprError struct {
 	Type             string                        `json:"__typename"`
-	Path             string                        `json:"path"`
+	BuildExprPath    string                        `json:"buildExprPath"`
 	Message          string                        `json:"message"`
 	IsTransient      bool                          `json:"isTransient"`
 	ValidationErrors []*SolverErrorValidationError `json:"validationErrors"`
+	*TargetNotFound
 	*RemediableSolveError
+}
+
+type TargetNotFound struct {
+	Type            string   `json:"__typename"`
+	RequestedTarget string   `json:"requestedTarget"`
+	PossibleTargets []string `json:"possibleTargets"`
 }
 
 // Commit contains the build and any errors.
