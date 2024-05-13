@@ -113,5 +113,6 @@ func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
 }
 
 func TestAuthIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(AuthIntegrationTestSuite))
 }

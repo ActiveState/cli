@@ -155,5 +155,6 @@ func (suite *PlatformsIntegrationTestSuite) TestJSON() {
 }
 
 func TestPlatformsIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(PlatformsIntegrationTestSuite))
 }

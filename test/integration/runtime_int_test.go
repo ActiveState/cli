@@ -147,5 +147,6 @@ func (suite *RuntimeIntegrationTestSuite) TestInUse() {
 }
 
 func TestRuntimeIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(RuntimeIntegrationTestSuite))
 }

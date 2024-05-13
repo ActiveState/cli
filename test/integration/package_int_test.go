@@ -756,5 +756,6 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Indirect() {
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(PackageIntegrationTestSuite))
 }

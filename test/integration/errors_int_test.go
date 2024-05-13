@@ -38,5 +38,6 @@ func (suite *ErrorsIntegrationTestSuite) TestMultiError() {
 }
 
 func TestErrorsIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(ErrorsIntegrationTestSuite))
 }

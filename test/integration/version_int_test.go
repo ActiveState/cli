@@ -26,5 +26,6 @@ func (suite *VersionIntegrationTestSuite) TestNotDev() {
 }
 
 func TestVersionIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(VersionIntegrationTestSuite))
 }

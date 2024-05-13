@@ -116,5 +116,6 @@ func (s *RemoteInstallIntegrationTestSuite) setupTest(ts *e2e.Session) {
 }
 
 func TestRemoteInstallIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(RemoteInstallIntegrationTestSuite))
 }

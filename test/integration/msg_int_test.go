@@ -170,5 +170,6 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic_InterruptExit() {
 }
 
 func TestMsgIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(MsgIntegrationTestSuite))
 }

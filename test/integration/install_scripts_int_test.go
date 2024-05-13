@@ -280,5 +280,6 @@ func (suite *InstallScriptsIntegrationTestSuite) assertAnalytics(ts *e2e.Session
 }
 
 func TestInstallScriptsIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(InstallScriptsIntegrationTestSuite))
 }

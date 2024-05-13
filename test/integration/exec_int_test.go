@@ -220,5 +220,6 @@ printf "Argument: '%s'.\n", $ARGV[0];
 }
 
 func TestExecIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(ExecIntegrationTestSuite))
 }

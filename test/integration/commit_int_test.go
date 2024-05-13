@@ -112,5 +112,6 @@ func (suite *CommitIntegrationTestSuite) TestCommitAtTimeChange() {
 }
 
 func TestCommitIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(CommitIntegrationTestSuite))
 }

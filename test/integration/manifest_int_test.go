@@ -62,5 +62,6 @@ func (suite *ManifestIntegrationTestSuite) TestManifest_JSON() {
 }
 
 func TestManifestIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(ManifestIntegrationTestSuite))
 }

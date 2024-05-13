@@ -37,5 +37,6 @@ languages:
 }
 
 func TestPjFileIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(PjFileIntegrationTestSuite))
 }
