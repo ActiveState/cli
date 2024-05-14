@@ -1558,7 +1558,15 @@ commit_success:
 builds_dl_downloading:
   other: Downloading {{.V0}}
 warn_has_failed_artifacts:
-  other: "Warning: This project has failed builds, and some artifacts will be missing as a result.\n"
+  other: "[ERROR]Some artifacts failed to build. Please see error messages and logs above for further details.[/RESET]"
+artifact_status_failed:
+  other: Failed
+artifact_status_failed_message:
+  other: Message
+artifact_status_failed_log:
+  other: Log
+artifact_status_skipped:
+  other: Skipped
 artifact_status_building:
   other: Building
 warn_build_not_complete:
