@@ -16,7 +16,7 @@ func StageCommit(owner, project, parentCommit, description string, atTime *time.
 		"project":      project,
 		"parentCommit": parentCommit,
 		"description":  description,
-		"expr":         expression,
+		"expr":         string(expression),
 		"atTime":       timestamp, // default to the latest timestamp
 	}}
 }

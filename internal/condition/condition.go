@@ -13,12 +13,12 @@ type Configurable interface {
 	GetBool(s string) bool
 }
 
-var inTest = strings.HasSuffix(strings.TrimSuffix(os.Args[0], ".exe"), ".test") ||
-	strings.Contains(os.Args[0], "/_test/") || funk.Contains(os.Args, "-test.v")
+var inUnitTest = !strings.Contains(strings.Join(os.Args, " "), "IntegrationTestSuite") && (strings.HasSuffix(strings.TrimSuffix(os.Args[0], ".exe"), ".test") ||
+	strings.Contains(os.Args[0], "/_test/") || funk.Contains(os.Args, "-test.v"))
 
 // InUnitTest returns true when the app is being tested
 func InUnitTest() bool {
-	return inTest
+	return inUnitTest
 }
 
 func InTest() bool {
