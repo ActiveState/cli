@@ -5,7 +5,7 @@ func CreateProject(owner, project string, private bool, expr []byte, description
 		"organization": owner,
 		"project":      project,
 		"private":      private,
-		"expr":         expr,
+		"expr":         string(expr),
 		"description":  description,
 		"atTime":       "", // default to the latest timestamp
 	}}
