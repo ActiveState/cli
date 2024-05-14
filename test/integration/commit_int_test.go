@@ -2,8 +2,6 @@ package integration
 
 import (
 	"bytes"
-	"fmt"
-	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -26,8 +24,6 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	suite.OnlyRunForTags(tagsuite.Commit, tagsuite.BuildScripts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-
-	fmt.Printf("Args: %v\n", os.Args)
 
 	ts.PrepareProjectAndBuildScript("ActiveState-CLI/Commit-Test-A", "7a1b416e-c17f-4d4a-9e27-cbad9e8f5655")
 
