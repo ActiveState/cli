@@ -542,7 +542,9 @@ func (c *Command) Find(args []string) (*Command, error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not find child command with args: %s", strings.Join(args, " "))
 	}
-	if cmd, ok := cobraMapping[foundCobra]; ok {
+	cmd, ok := cobraMapping[foundCobra]
+	// The cobra find command will return the parent command if the child command is not found.
+	if ok && cmd != c {
 		return cmd, nil
 	}
 	return nil, locale.NewError("err_captain_cmd_find", "Could not find child Command with args: {{.V0}}", strings.Join(args, " "))
