@@ -30,7 +30,6 @@ import (
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
-	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
@@ -532,10 +531,8 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 		return nil, nil, errs.Wrap(err, "could not load existing build plan")
 	}
 
-	var oldBuildPlanArtifacts buildplan.Artifacts
 	var changedArtifacts *buildplan.ArtifactChangeset
 	if oldBuildPlan != nil {
-		oldBuildPlanArtifacts = oldBuildPlan.Artifacts(artifactFilters...)
 		changedArtifacts = ptr.To(bp.DiffArtifacts(oldBuildPlan, true))
 	}
 
@@ -574,16 +571,6 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 	artifactsToInstall := allArtifacts.Filter(filters...)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Failed to compute artifacts to build")
-	}
-
-	// Output a dependency summary if applicable.
-	if s.target.Trigger() == target.TriggerCheckout {
-		dependencies.OutputSummary(s.out, bp.RequestedArtifacts())
-	} else if s.target.Trigger() == target.TriggerInit {
-		artifacts := bp.Artifacts().Filter(buildplan.FilterStateArtifacts(), buildplan.FilterRuntimeArtifacts())
-		dependencies.OutputSummary(s.out, artifacts)
-	} else if len(oldBuildPlanArtifacts) > 0 && changedArtifacts != nil {
-		dependencies.OutputChangeSummary(s.out, changedArtifacts, oldBuildPlanArtifacts)
 	}
 
 	// The log file we want to use for builds
