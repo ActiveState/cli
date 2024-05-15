@@ -59,11 +59,11 @@ require (
 	github.com/vbauerster/mpb/v7 v7.1.5
 	github.com/vektah/gqlparser/v2 v2.5.1
 	go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352
-	golang.org/x/crypto v0.21.0 // indirect
-	golang.org/x/net v0.22.0
-	golang.org/x/sys v0.18.0
-	golang.org/x/term v0.18.0
-	golang.org/x/text v0.14.0
+	golang.org/x/crypto v0.23.0 // indirect
+	golang.org/x/net v0.25.0
+	golang.org/x/sys v0.20.0
+	golang.org/x/term v0.20.0
+	golang.org/x/text v0.15.0
 	gopkg.in/AlecAivazis/survey.v1 v1.8.8
 	gopkg.in/toast.v1 v1.0.0-20180812000517-0a84660828b2
 	gopkg.in/yaml.v2 v2.4.0
