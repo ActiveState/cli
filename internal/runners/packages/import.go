@@ -137,10 +137,6 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_cannot_apply_changeset", "Could not apply changeset")
 	}
 
-	if err := bs.SetDefaultAtTime(); err != nil {
-		return locale.WrapError(err, "err_cannot_set_timestamp", "Could not set timestamp")
-	}
-
 	msg := locale.T("commit_reqstext_message")
 	commitID, err := bp.StageCommit(buildplanner.StageCommitParams{
 		Owner:        i.proj.Owner(),

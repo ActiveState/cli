@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -845,31 +844,14 @@ func (e *BuildExpression) removePlatform(platformID strfmt.UUID) error {
 	return nil
 }
 
-func (e *BuildExpression) SetDefaultAtTime() error {
+// ForceAtTimeVar will set the AtTime variable to `$at_time`, which is how we want build expressions to record their
+// timestamp going forward.
+func (e *BuildExpression) ForceAtTimeVar() error {
 	atTimeNode, err := e.getSolveAtTimeValue()
 	if err != nil {
 		return errs.Wrap(err, "Could not get %s node", AtTimeKey)
 	}
 	atTimeNode.Str = ptr.To("$" + AtTimeKey)
-	return nil
-}
-
-func (e *BuildExpression) MaybeSetDefaultAtTime(ts *time.Time) error {
-	if ts == nil {
-		return nil // nothing to compare to
-	}
-	atTimeNode, err := e.getSolveAtTimeValue()
-	if err != nil {
-		return errs.Wrap(err, "Could not get %s node", AtTimeKey)
-	}
-	if strings.HasPrefix(*atTimeNode.Str, "$") {
-		return nil
-	}
-	if atTime, err := strfmt.ParseDateTime(*atTimeNode.Str); err == nil && time.Time(atTime).Equal(*ts) {
-		return e.SetDefaultAtTime()
-	} else if err != nil {
-		return errs.Wrap(err, "Invalid timestamp: %s", *atTimeNode.Str)
-	}
 	return nil
 }
 

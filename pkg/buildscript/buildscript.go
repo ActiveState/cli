@@ -74,7 +74,10 @@ func unmarshalBuildExpressionTyped(expr *buildexpression.BuildExpression, atTime
 	}
 
 	// Update old expressions that bake in at_time as a timestamp instead of as a variable.
-	err = expr.MaybeSetDefaultAtTime(atTime)
+	// This will trump whatever value that held, which is fine because this only matters when we actually submit
+	// back the build expression, which by definition would be a write action on which we'd want to update the
+	// timestamp anyway.
+	err = expr.ForceAtTimeVar()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not set default timestamp")
 	}
@@ -117,20 +120,6 @@ func (b *BuildScript) AtTime() *time.Time {
 
 func (b *BuildScript) SetAtTime(t time.Time) {
 	b.atTime = &t
-}
-
-func (b *BuildScript) SetDefaultAtTime() error {
-	return b.buildexpression.SetDefaultAtTime()
-}
-
-// MaybeSetDefaultAtTime changes the solve node's "at_time" value to "$at_time" if and only if
-// the current value is the given timestamp.
-// Buildscripts prefer to use variables for at_time and define them outside the buildscript as
-// the expression's commit time.
-// While modern buildscripts use variables, older ones bake in the commit time. This function
-// exists primarily to update those older buildscripts for use in buildscripts.
-func (b *BuildScript) MaybeSetDefaultAtTime(ts *time.Time) error {
-	return b.buildexpression.MaybeSetDefaultAtTime(ts)
 }
 
 func (b *BuildScript) Marshal() ([]byte, error) {
