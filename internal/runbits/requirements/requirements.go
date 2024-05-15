@@ -285,7 +285,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 			}
 
 			// refresh or install runtime
-			err = runbit.UpdateByReference(rt, rtCommit, r.Auth, r.Project, r.Output)
+			err = runbit.UpdateByReference(rt, rtCommit, r.Auth, r.Project, r.Output, runbit.OptMinimalUI)
 			if err != nil {
 				if !runbits.IsBuildError(err) {
 					// If the error is not a build error we want to retain the changes

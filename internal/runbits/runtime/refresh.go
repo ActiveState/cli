@@ -29,6 +29,7 @@ type Opts int
 
 const (
 	OptNone         Opts = 1 << iota
+	OptNoIndent          // Don't indent progress output
 	OptMinimalUI         // Only print progress output, don't decorate the UI in any other way
 	OptNoUI              // Don't print progress output, don't decorate the UI in any other way
 	OptOrderChanged      // Indicate that the order has changed, and the runtime should be refreshed regardless of internal dirty checking mechanics
@@ -133,7 +134,11 @@ func Solve(
 
 	var spinner *output.Spinner
 	if !bitflags.Has(opts, OptMinimalUI) {
-		spinner = output.StartSpinner(out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+		localeName := "progress_solve_preruntime"
+		if bitflags.Has(opts, OptNoIndent) {
+			localeName = "progress_solve"
+		}
+		spinner = output.StartSpinner(out, locale.T(localeName), constants.TerminalAnimationInterval)
 	}
 
 	defer func() {
@@ -170,10 +175,21 @@ func UpdateByReference(
 	auth *authentication.Auth,
 	proj *project.Project,
 	out output.Outputer,
+	opts Opts,
 ) (rerr error) {
 	defer rationalizeError(auth, proj, &rerr)
 
 	if rt.NeedsUpdate() {
+		if !bitflags.Has(opts, OptMinimalUI) {
+			if !rt.HasCache() {
+				out.Notice(output.Title(locale.T("install_runtime")))
+				out.Notice(locale.T("install_runtime_info"))
+			} else {
+				out.Notice(output.Title(locale.T("update_runtime")))
+				out.Notice(locale.T("update_runtime_info"))
+			}
+		}
+
 		pg := NewRuntimeProgressIndicator(out)
 		defer rtutils.Closer(pg.Close, &rerr)
 

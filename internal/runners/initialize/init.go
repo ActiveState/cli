@@ -279,7 +279,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
-	rti, commit, err := runtime.Solve(r.auth, r.out, r.analytics, proj, &commitID, target.TriggerInit, r.svcModel, r.config, runtime.OptOrderChanged)
+	rti, commit, err := runtime.Solve(r.auth, r.out, r.analytics, proj, &commitID, target.TriggerInit, r.svcModel, r.config, runtime.OptNoIndent)
 	if err != nil {
 		logging.Debug("Deleting remotely created project due to runtime setup error")
 		err2 := model.DeleteProject(namespace.Owner, namespace.Project, r.auth)
@@ -291,7 +291,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	}
 	artifacts := commit.BuildPlan().Artifacts().Filter(buildplan.FilterStateArtifacts(), buildplan.FilterRuntimeArtifacts())
 	dependencies.OutputSummary(r.out, artifacts)
-	err = runtime.UpdateByReference(rti, commit, r.auth, proj, r.out)
+	err = runtime.UpdateByReference(rti, commit, r.auth, proj, r.out, runtime.OptNone)
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime after init")
 	}
