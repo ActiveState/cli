@@ -373,13 +373,9 @@ scripts:
 
       git fetch --quiet origin $TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH
 
-      CHANGED=$(git diff --name-only origin/$TARGET_BRANCH)
+      CHANGED=$(git diff --name-only origin/$TARGET_BRANCH | grep -v testdata | grep -v vendor)
       NO_NEWLINE=0
       for FILE in $CHANGED; do
-          if [[ $FILE == vendor/* ]]; then
-              continue
-          fi
-
           if file "$FILE" | grep -q -E 'text|ASCII'; then
               if [ $(tail -c 1 "$FILE" | wc -l) -eq 0 ]; then
                   echo "Missing newline at end of file: $FILE"
@@ -458,6 +454,14 @@ scripts:
       fi
       perf stat -d -r 8 -e task-clock,page-faults,cycles,instructions -- ${@} >/dev/null
       ${updated} && sudo sh -c 'echo '${paranoid}' >/proc/sys/kernel/perf_event_paranoid'
+  - name: to-buildscript
+    language: bash
+    standalone: true
+    value: go run $project.path()/scripts/to-buildscript/main.go $@
+  - name: to-buildexpression
+    language: bash
+    standalone: true
+    value: go run $project.path()/scripts/to-buildexpression/main.go $@
 
 events:
   - name: activate
@@ -465,6 +469,6 @@ events:
     value: |
       $scripts.install-deps-dev.path()
   - name: file-changed
-    scope: ["internal/locale/locales"]
+    scope: [ "internal/locale/locales" ]
     value: build
 config_version: 1

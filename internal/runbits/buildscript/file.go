@@ -1,20 +1,18 @@
-package buildscript
+package buildscript_runbit
 
 import (
 	"errors"
 	"os"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/pkg/localcommit"
-	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/go-openapi/strfmt"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/buildscript"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 )
 
 // projecter is a union between project.Project and setup.Targeter
@@ -26,12 +24,12 @@ type projecter interface {
 
 var ErrBuildscriptNotExist = errors.New("Build script does not exist")
 
-func ScriptFromProject(proj projecter) (*Script, error) {
+func ScriptFromProject(proj projecter) (*buildscript.BuildScript, error) {
 	path := filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName)
 	return ScriptFromFile(path)
 }
 
-func ScriptFromFile(path string) (*Script, error) {
+func ScriptFromFile(path string) (*buildscript.BuildScript, error) {
 	data, err := fileutils.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -39,7 +37,7 @@ func ScriptFromFile(path string) (*Script, error) {
 		}
 		return nil, errs.Wrap(err, "Could not read build script from file")
 	}
-	return New(data)
+	return buildscript.Unmarshal(data)
 }
 
 func Initialize(path string, auth *authentication.Auth) error {
@@ -57,18 +55,20 @@ func Initialize(path string, auth *authentication.Auth) error {
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the local commit ID")
 	}
+
 	buildplanner := buildplanner.NewBuildPlannerModel(auth)
-	expr, atTime, err := buildplanner.GetBuildExpressionAndTime(commitId.String())
+	script, err = buildplanner.GetBuildScript(commitId.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the remote build expression and time")
 	}
-	script, err = NewFromBuildExpression(atTime, expr)
+
+	scriptBytes, err := script.Marshal()
 	if err != nil {
-		return errs.Wrap(err, "Unable to convert build expression to build script")
+		return errs.Wrap(err, "Unable to marshal build script")
 	}
 
 	logging.Debug("Initializing build script at %s", scriptPath)
-	err = fileutils.WriteFile(scriptPath, []byte(script.String()))
+	err = fileutils.WriteFile(scriptPath, scriptBytes)
 	if err != nil {
 		return errs.Wrap(err, "Unable to write build script")
 	}
@@ -76,23 +76,27 @@ func Initialize(path string, auth *authentication.Auth) error {
 	return nil
 }
 
-func Update(proj projecter, atTime *strfmt.DateTime, newExpr *buildexpression.BuildExpression) error {
+func Update(proj projecter, newScript *buildscript.BuildScript) error {
 	script, err := ScriptFromProject(proj)
 	if err != nil {
 		return errs.Wrap(err, "Could not read build script")
 	}
 
-	newScript, err := NewFromBuildExpression(atTime, newExpr)
+	equals, err := script.Equals(newScript)
 	if err != nil {
-		return errs.Wrap(err, "Could not construct new build script to write")
+		return errs.Wrap(err, "Could not compare build script")
 	}
-
-	if script != nil && script.Equals(newScript) {
+	if script != nil && equals {
 		return nil // no changes to write
 	}
 
+	sb, err := newScript.Marshal()
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal build script")
+	}
+
 	logging.Debug("Writing build script")
-	if err := fileutils.WriteFile(filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName), []byte(newScript.String())); err != nil {
+	if err := fileutils.WriteFile(filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName), sb); err != nil {
 		return errs.Wrap(err, "Could not write build script to file")
 	}
 	return nil

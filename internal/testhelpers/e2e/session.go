@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/go-openapi/strfmt"
@@ -348,6 +349,17 @@ func (s *Session) PrepareProject(namespace, commitID string) {
 	if commitID != "" {
 		s.PrepareCommitIdFile(commitID)
 	}
+}
+
+func (s *Session) PrepareProjectAndBuildScript(namespace, commitID string) {
+	s.PrepareProject(namespace, commitID)
+	bp := buildplanner.NewBuildPlannerModel(nil)
+	script, err := bp.GetBuildScript(commitID)
+	require.NoError(s.T, err)
+	b, err := script.Marshal()
+	require.NoError(s.T, err)
+	err = fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.BuildScriptFileName), b)
+	require.NoError(s.T, err)
 }
 
 // PrepareFile writes a file to path with contents, expecting no error

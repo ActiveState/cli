@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -27,7 +28,6 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
@@ -140,9 +140,9 @@ func (r *Runtime) validateBuildScript() error {
 		return nil
 	}
 
-	script, err := buildscript.ScriptFromProject(r.target)
+	script, err := buildscript_runbit.ScriptFromProject(r.target)
 	if err != nil {
-		if errors.Is(err, buildscript.ErrBuildscriptNotExist) {
+		if errors.Is(err, buildscript_runbit.ErrBuildscriptNotExist) {
 			return errs.Pack(err, NeedsBuildscriptResetError)
 		}
 		return errs.Wrap(err, "Could not get buildscript from project")
@@ -168,8 +168,13 @@ func (r *Runtime) validateBuildScript() error {
 		}
 	}
 
+	equals, err := script.Equals(cachedScript)
+	if err != nil {
+		return errs.Wrap(err, "Could not compare buildscript")
+	}
+
 	if cachedScript != nil {
-		if script != nil && !script.Equals(cachedScript) {
+		if script != nil && !equals {
 			return NeedsCommitError
 		}
 	}
