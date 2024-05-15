@@ -67,6 +67,5 @@ func (suite *InfoIntegrationTestSuite) TestJSON() {
 }
 
 func TestInfoIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(InfoIntegrationTestSuite))
 }

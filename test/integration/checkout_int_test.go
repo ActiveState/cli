@@ -386,6 +386,5 @@ func (suite *CheckoutIntegrationTestSuite) TestNoLanguage() {
 }
 
 func TestCheckoutIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(CheckoutIntegrationTestSuite))
 }

@@ -39,6 +39,5 @@ func (suite *ProgressIntegrationTestSuite) TestProgress() {
 }
 
 func TestProgressIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(ProgressIntegrationTestSuite))
 }

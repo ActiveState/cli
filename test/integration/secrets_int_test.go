@@ -112,6 +112,5 @@ func clearSecrets(ts *e2e.Session, unset ...string) {
 }
 
 func TestSecretsIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(SecretsIntegrationTestSuite))
 }

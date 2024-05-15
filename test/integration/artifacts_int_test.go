@@ -249,6 +249,5 @@ func (suite *ArtifactsIntegrationTestSuite) extractBuildID(ts *e2e.Session, name
 }
 
 func TestArtifactsIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(ArtifactsIntegrationTestSuite))
 }

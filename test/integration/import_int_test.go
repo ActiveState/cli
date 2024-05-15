@@ -136,6 +136,5 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 }
 
 func TestImportIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(ImportIntegrationTestSuite))
 }

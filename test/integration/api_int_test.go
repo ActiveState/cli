@@ -30,6 +30,5 @@ func (suite *ApiIntegrationTestSuite) TestRequestHeaders() {
 }
 
 func TestApiIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(ApiIntegrationTestSuite))
 }

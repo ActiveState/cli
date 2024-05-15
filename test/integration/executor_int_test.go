@@ -18,7 +18,6 @@ type ExecutorIntegrationTestSuite struct {
 }
 
 func TestExecutorIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(ExecutorIntegrationTestSuite))
 }
 

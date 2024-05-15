@@ -146,6 +146,5 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 }
 
 func TestUninstallIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(UninstallIntegrationTestSuite))
 }

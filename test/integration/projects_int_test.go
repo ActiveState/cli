@@ -180,6 +180,5 @@ func (suite *ProjectsIntegrationTestSuite) TestMove() {
 }
 
 func TestProjectsIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(ProjectsIntegrationTestSuite))
 }

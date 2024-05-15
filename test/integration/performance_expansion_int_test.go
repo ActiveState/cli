@@ -404,6 +404,5 @@ func (suite *PerformanceExpansionIntegrationTestSuite) prepareAlternateActiveSta
 }
 
 func TestPerformanceYamlIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(PerformanceExpansionIntegrationTestSuite))
 }
