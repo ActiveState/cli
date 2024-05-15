@@ -1,12 +1,12 @@
 package unarchiver
 
 import (
-	"archive/zip"
 	"bytes"
 	"os"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/klauspost/compress/zip"
 )
 
 type ZipBlob struct {
