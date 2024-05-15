@@ -1,6 +1,8 @@
 package response
 
 import (
+	"strings"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
@@ -30,6 +32,16 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 			locale.NewInputError("err_buildplanner_parse_error", "The platform failed to parse the build expression, received message: {{.V0}}. Path: {{.V1}}", commit.Message, commit.ParseError.Path),
 		}
 	case types.ValidationErrorType:
+		var subErrorMessages []string
+		for _, e := range commit.SubErrors {
+			subErrorMessages = append(subErrorMessages, e.Message)
+		}
+		if len(subErrorMessages) > 0 {
+			return &CommitError{
+				commit.Type, commit.Message,
+				locale.NewInputError("err_buildplanner_validation_error_sub_messages", "The platform encountered a validation error, received message: {{.V0}}, with sub errors: {{.V1}}", commit.Message, strings.Join(subErrorMessages, ", ")),
+			}
+		}
 		return &CommitError{
 			commit.Type, commit.Message,
 			locale.NewInputError("err_buildplanner_validation_error", "The platform encountered a validation error, received message: {{.V0}}", commit.Message),
