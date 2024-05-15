@@ -57,6 +57,10 @@ func Unmarshal(data []byte) (*BuildScript, error) {
 }
 
 // UnmarshalBuildExpression will create buildscript using an existing build expression
+// Buildscripts and build expressions are almost identical, with the exception of the atTime field.
+// Build Expressions ALWAYS set at_time to `$at_time`, which refers to the timestamp on the commit.
+// Whereas buildscripts encode this timestamp as part of their definition. For this reason we have to supply the
+// timestamp as a separate argument.
 func UnmarshalBuildExpression(b []byte, atTime *time.Time) (*BuildScript, error) {
 	expr, err := buildexpression.Unmarshal(b)
 	if err != nil {
