@@ -1,4 +1,4 @@
-package merge
+package buildexpression
 
 import (
 	"encoding/json"
@@ -9,10 +9,9 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
 
-func Merge(exprA *buildexpression.BuildExpression, exprB *buildexpression.BuildExpression, strategies *mono_models.MergeStrategies) (*buildexpression.BuildExpression, error) {
+func Merge(exprA *BuildExpression, exprB *BuildExpression, strategies *mono_models.MergeStrategies) (*BuildExpression, error) {
 	if !isAutoMergePossible(exprA, exprB) {
 		return nil, errs.New("Unable to merge buildexpressions")
 	}
@@ -59,7 +58,7 @@ func Merge(exprA *buildexpression.BuildExpression, exprB *buildexpression.BuildE
 // isAutoMergePossible determines whether or not it is possible to auto-merge the given build
 // expressions.
 // This is only possible if the two build expressions differ ONLY in requirements.
-func isAutoMergePossible(exprA *buildexpression.BuildExpression, exprB *buildexpression.BuildExpression) bool {
+func isAutoMergePossible(exprA *BuildExpression, exprB *BuildExpression) bool {
 	jsonA, err := getComparableJson(exprA)
 	if err != nil {
 		multilog.Error("Unable to get buildexpression minus requirements: %v", errs.JoinMessage(err))
@@ -79,7 +78,7 @@ func isAutoMergePossible(exprA *buildexpression.BuildExpression, exprB *buildexp
 // getComparableJson returns a comparable JSON map[string]interface{} structure for the given build
 // expression. The map will not have a "requirements" field, nor will it have an "at_time" field.
 // String lists will also be sorted.
-func getComparableJson(expr *buildexpression.BuildExpression) (map[string]interface{}, error) {
+func getComparableJson(expr *BuildExpression) (map[string]interface{}, error) {
 	data, err := json.Marshal(expr)
 	if err != nil {
 		return nil, errs.New("Unable to unmarshal marshaled buildxpression")

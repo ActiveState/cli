@@ -1,14 +1,12 @@
 package buildplanner
 
 import (
-	"time"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -25,61 +23,26 @@ type StageCommitParams struct {
 	Project      string
 	ParentCommit string
 	Description  string
-	// Commits can have either requirements (e.g. installing a package)...
-	Requirements []StageCommitRequirement
-	// ... or commits can have an expression (e.g. from pull). When pulling an expression, we do not
-	// compute its changes into a series of above operations. Instead, we just pass the new
-	// expression directly.
-	Expression *buildexpression.BuildExpression
-	TimeStamp  *time.Time
+	Script       *buildscript.BuildScript
 }
 
 func (b *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {
 	logging.Debug("StageCommit, params: %+v", params)
-	expression := params.Expression
-	if expression == nil {
-		var err error
-		expression, err = b.GetBuildExpression(params.ParentCommit)
-		if err != nil {
-			return "", errs.Wrap(err, "Failed to get build expression")
-		}
+	script := params.Script
 
-		var containsPackageOperation bool
-		for _, req := range params.Requirements {
-			if req.Namespace == types.NamespacePlatform {
-				err = expression.UpdatePlatform(req.Operation, strfmt.UUID(req.Name))
-				if err != nil {
-					return "", errs.Wrap(err, "Failed to update build expression with platform")
-				}
-			} else {
-				requirement := types.Requirement{
-					Namespace:          req.Namespace,
-					Name:               req.Name,
-					VersionRequirement: req.Version,
-					Revision:           req.Revision,
-				}
+	if script == nil {
+		return "", errs.New("Script is nil")
+	}
 
-				err = expression.UpdateRequirement(req.Operation, requirement)
-				if err != nil {
-					return "", errs.Wrap(err, "Failed to update build expression with requirement")
-				}
-				containsPackageOperation = true
-			}
-		}
-
-		if containsPackageOperation {
-			if err := expression.SetDefaultTimestamp(); err != nil {
-				return "", errs.Wrap(err, "Failed to set default timestamp")
-			}
-		}
-
+	expression, err := script.MarshalBuildExpression()
+	if err != nil {
+		return "", errs.Wrap(err, "Failed to marshal build expression")
 	}
 
 	// With the updated build expression call the stage commit mutation
-	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, params.Description, params.TimeStamp, expression)
+	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, params.Description, script.AtTime(), expression)
 	resp := &response.StageCommitResult{}
-	err := b.client.Run(request, resp)
-	if err != nil {
+	if err := b.client.Run(request, resp); err != nil {
 		return "", processBuildPlannerError(err, "failed to stage commit")
 	}
 
