@@ -3,10 +3,10 @@ package buildplanner
 import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -23,23 +23,23 @@ type CreateProjectParams struct {
 	Version     string
 	Private     bool
 	Description string
-	Expr        *buildexpression.BuildExpression
+	Script      *buildscript.BuildScript
 }
 
 func (b *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID, error) {
 	logging.Debug("CreateProject, owner: %s, project: %s, language: %s, version: %s", params.Owner, params.Project, params.Language, params.Version)
 
-	expr := params.Expr
-	if expr == nil {
+	script := params.Script
+	if script == nil {
 		// Construct an initial buildexpression for the new project.
 		var err error
-		expr, err = buildexpression.NewEmpty()
+		script, err = buildscript.New()
 		if err != nil {
 			return "", errs.Wrap(err, "Unable to create initial buildexpression")
 		}
 
 		// Add the platform.
-		if err := expr.UpdatePlatform(types.OperationAdded, params.PlatformID); err != nil {
+		if err := script.UpdatePlatform(types.OperationAdded, params.PlatformID); err != nil {
 			return "", errs.Wrap(err, "Unable to add platform")
 		}
 
@@ -48,7 +48,7 @@ func (b *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID, 
 		if err != nil {
 			return "", errs.Wrap(err, "Unable to read version")
 		}
-		if err := expr.UpdateRequirement(types.OperationAdded, types.Requirement{
+		if err := script.UpdateRequirement(types.OperationAdded, types.Requirement{
 			Name:               params.Language,
 			Namespace:          "language", // TODO: make this a constant DX-1738
 			VersionRequirement: versionRequirements,
@@ -57,11 +57,15 @@ func (b *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID, 
 		}
 	}
 
-	// Create the project.
-	request := request.CreateProject(params.Owner, params.Project, params.Private, expr, params.Description)
-	resp := &response.CreateProjectResult{}
-	err := b.client.Run(request, resp)
+	expression, err := script.MarshalBuildExpression()
 	if err != nil {
+		return "", errs.Wrap(err, "Marshalling build expression failed")
+	}
+
+	// Create the project.
+	request := request.CreateProject(params.Owner, params.Project, params.Private, expression, params.Description)
+	resp := &response.CreateProjectResult{}
+	if err := b.client.Run(request, resp); err != nil {
 		return "", processBuildPlannerError(err, "Failed to create project")
 	}
 

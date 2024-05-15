@@ -23,7 +23,7 @@ func (e *BuildPlannerError) InputError() bool {
 	return true
 }
 
-// UserError returns the error message to be displayed to the user.
+// LocalizedError returns the error message to be displayed to the user.
 // This function is added so that BuildPlannerErrors will be displayed
 // to the user
 func (e *BuildPlannerError) LocalizedError() string {
@@ -112,4 +112,18 @@ type ForbiddenError struct {
 // Error contains an error message.
 type Error struct {
 	Message string `json:"message"`
+}
+
+type TargetNotFoundError struct {
+	Message         string
+	RequestedTarget string
+	PossibleTargets []string
+}
+
+func (e *TargetNotFoundError) Error() string {
+	return e.Message
+}
+
+func (e *TargetNotFoundError) InputError() bool {
+	return true
 }

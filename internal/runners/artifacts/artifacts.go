@@ -78,9 +78,12 @@ type structuredPlatform struct {
 }
 
 type structuredArtifact struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	URL  string `json:"url"`
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	URL    string `json:"url"`
+	status string
+	Errors []string `json:"errors,omitempty"`
+	LogURL string   `json:"logUrl,omitempty"`
 }
 
 func New(p primeable) *Artifacts {
@@ -166,9 +169,12 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 			}
 
 			build := &structuredArtifact{
-				ID:   string(artifact.ArtifactID),
-				Name: name,
-				URL:  artifact.URL,
+				ID:     string(artifact.ArtifactID),
+				Name:   name,
+				URL:    artifact.URL,
+				status: artifact.Status,
+				Errors: artifact.Errors,
+				LogURL: artifact.LogURL,
 			}
 			if bpModel.IsStateToolArtifact(artifact.MimeType) {
 				if !params.All {
@@ -201,14 +207,19 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 }
 
 func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
-	if out.HasFailedArtifacts {
-		b.out.Error(locale.T("warn_has_failed_artifacts"))
-	}
-
 	for _, platform := range out.Platforms {
 		b.out.Print(fmt.Sprintf("• [NOTICE]%s[/RESET]", platform.Name))
 		for _, artifact := range platform.Artifacts {
-			if artifact.URL == "" {
+			switch {
+			case len(artifact.Errors) > 0:
+				b.out.Print(fmt.Sprintf("  • %s ([ERROR]%s[/RESET])", artifact.Name, locale.T("artifact_status_failed")))
+				b.out.Print(fmt.Sprintf("    ├─ %s: [ERROR]%s[/RESET]", locale.T("artifact_status_failed_message"), strings.Join(artifact.Errors, ": ")))
+				b.out.Print(fmt.Sprintf("    └─ %s: [ACTIONABLE]%s[/RESET]", locale.T("artifact_status_failed_log"), artifact.LogURL))
+				continue
+			case artifact.status == types.ArtifactSkipped:
+				b.out.Print(fmt.Sprintf("  • %s ([NOTICE]%s[/RESET])", artifact.Name, locale.T("artifact_status_skipped")))
+				continue
+			case artifact.URL == "":
 				b.out.Print(fmt.Sprintf("  • %s ([WARNING]%s ...[/RESET])", artifact.Name, locale.T("artifact_status_building")))
 				continue
 			}
@@ -223,7 +234,16 @@ func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
 			b.out.Print(fmt.Sprintf("  • %s", locale.Tl("artifacts_packages", "[NOTICE]Packages[/RESET]")))
 		}
 		for _, artifact := range platform.Packages {
-			if artifact.URL == "" {
+			switch {
+			case len(artifact.Errors) > 0:
+				b.out.Print(fmt.Sprintf("    • %s ([ERROR]%s[/RESET])", artifact.Name, locale.T("artifact_status_failed")))
+				b.out.Print(fmt.Sprintf("      ├─ %s: [ERROR]%s[/RESET]", locale.T("artifact_status_failed_message"), strings.Join(artifact.Errors, ": ")))
+				b.out.Print(fmt.Sprintf("      └─ %s: [ACTIONABLE]%s[/RESET]", locale.T("artifact_status_failed_log"), artifact.LogURL))
+				continue
+			case artifact.status == types.ArtifactSkipped:
+				b.out.Print(fmt.Sprintf("    • %s ([NOTICE]%s[/RESET])", artifact.Name, locale.T("artifact_status_skipped")))
+				continue
+			case artifact.URL == "":
 				b.out.Print(fmt.Sprintf("    • %s ([WARNING]%s ...[/RESET])", artifact.Name, locale.T("artifact_status_building")))
 				continue
 			}
@@ -237,6 +257,11 @@ func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
 		if len(platform.Artifacts) == 0 && len(platform.Packages) == 0 {
 			b.out.Print(fmt.Sprintf("  • %s", locale.Tl("no_artifacts", "No artifacts")))
 		}
+	}
+
+	if out.HasFailedArtifacts {
+		b.out.Notice("") // blank line
+		b.out.Error(locale.T("warn_has_failed_artifacts"))
 	}
 
 	if !out.BuildComplete {

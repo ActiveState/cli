@@ -7,10 +7,10 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
 
@@ -274,7 +274,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	}
 
 	if r.config.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript.Initialize(proj.Dir(), r.auth); err != nil {
+		if err := buildscript_runbit.Initialize(proj.Dir(), r.auth); err != nil {
 			return errs.Wrap(err, "Unable to initialize buildscript")
 		}
 	}

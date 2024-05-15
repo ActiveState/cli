@@ -502,7 +502,7 @@ func FetchLanguageForCommit(commitID strfmt.UUID, auth *authentication.Auth) (*L
 		return nil, locale.WrapError(err, "err_detect_language")
 	}
 	if len(langs) == 0 {
-		return nil, locale.NewError("err_detect_language")
+		return &Language{}, nil
 	}
 	return &langs[0], nil
 }
