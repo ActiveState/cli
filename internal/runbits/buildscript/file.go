@@ -62,13 +62,13 @@ func Initialize(path string, auth *authentication.Auth) error {
 		return errs.Wrap(err, "Unable to get the remote build expression and time")
 	}
 
-	sb, err := script.Marshal()
+	scriptBytes, err := script.Marshal()
 	if err != nil {
 		return errs.Wrap(err, "Unable to marshal build script")
 	}
 
 	logging.Debug("Initializing build script at %s", scriptPath)
-	err = fileutils.WriteFile(scriptPath, sb)
+	err = fileutils.WriteFile(scriptPath, scriptBytes)
 	if err != nil {
 		return errs.Wrap(err, "Unable to write build script")
 	}

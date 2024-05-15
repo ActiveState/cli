@@ -311,9 +311,9 @@ func (s *Store) BuildScript() (*buildscript.BuildScript, error) {
 }
 
 func (s *Store) StoreBuildScript(script *buildscript.BuildScript) error {
-	sb, err := script.Marshal()
+	scriptBytes, err := script.Marshal()
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal buildscript")
 	}
-	return fileutils.WriteFile(s.buildScriptFile(), sb)
+	return fileutils.WriteFile(s.buildScriptFile(), scriptBytes)
 }
