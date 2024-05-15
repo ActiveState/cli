@@ -96,7 +96,7 @@ func LanguageByCommit(commitID strfmt.UUID, auth *authentication.Auth) (Language
 	}
 
 	if len(languages) == 0 {
-		return Language{}, locale.NewExternalError("err_no_languages")
+		return Language{}, nil
 	}
 
 	return languages[0], nil

@@ -184,6 +184,11 @@ query ($commitID: String!, $organization: String!, $project: String!, $target: S
                     parameters
                   }
                 }
+                ... on TargetNotFound {
+                  message
+                  requestedTarget
+                  possibleTargets
+                }
               }
             }
           }

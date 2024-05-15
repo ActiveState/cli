@@ -104,7 +104,10 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	if err != nil {
 		return locale.WrapError(err, "err_package_list_language", "Unable to get language from project")
 	}
-	ns := ptr.To(model.NewNamespacePkgOrBundle(language.Name, nstype))
+	var ns *model.Namespace
+	if language.Name != "" {
+		ns = ptr.To(model.NewNamespacePkgOrBundle(language.Name, nstype))
+	}
 
 	// Fetch resolved artifacts list for showing full version numbers, if possible.
 	var artifacts buildplan.Artifacts
@@ -146,7 +149,7 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 		(func() {
 			for _, a := range artifacts {
 				for _, i := range a.Ingredients {
-					if i.Namespace == ns.String() && i.Name == req.Requirement {
+					if ns != nil && i.Namespace == ns.String() && i.Name == req.Requirement {
 						resolvedVersion = i.Version
 						return // break outer loop
 					}

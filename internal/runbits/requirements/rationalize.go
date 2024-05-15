@@ -77,5 +77,11 @@ func (r *RequirementOperation) rationalizeError(err *error) {
 			errs.SetInput(),
 		)
 
+	case errors.Is(*err, errNoLanguage):
+		*err = errs.WrapUserFacing(*err,
+			locale.Tl("err_no_language", "Could not determine which language namespace to search for packages in. Please supply the language flag."),
+			errs.SetInput(),
+		)
+
 	}
 }

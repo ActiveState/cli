@@ -103,6 +103,8 @@ var errNoRequirements = errs.New("No requirements were provided")
 
 var errInitialNoRequirement = errs.New("Could not find compatible requirement for initial commit")
 
+var errNoLanguage = errs.New("No language")
+
 var versionRe = regexp.MustCompile(`^\d(\.\d+)*$`)
 
 // Requirement represents a package, language or platform requirement
@@ -319,10 +321,10 @@ type ResolveNamespaceError struct {
 func (r *RequirementOperation) resolveNamespaces(ts *time.Time, requirements ...*Requirement) error {
 	for _, requirement := range requirements {
 		if err := r.resolveNamespace(ts, requirement); err != nil {
-			return &ResolveNamespaceError{
-				err,
-				requirement.Name,
+			if err != errNoLanguage {
+				err = &ResolveNamespaceError{err, requirement.Name}
 			}
+			return errs.Wrap(err, "Unable to resolve namespace")
 		}
 	}
 	return nil
@@ -340,12 +342,14 @@ func (r *RequirementOperation) resolveNamespace(ts *time.Time, requirement *Requ
 			}
 
 			language, err := model.LanguageByCommit(commitID, r.Auth)
-			if err == nil {
-				requirement.langName = language.Name
-				requirement.Namespace = ptr.To(model.NewNamespacePkgOrBundle(requirement.langName, *requirement.NamespaceType))
-			} else {
+			if err != nil {
 				logging.Debug("Could not get language from project: %v", err)
 			}
+			if language.Name == "" {
+				return errNoLanguage
+			}
+			requirement.langName = language.Name
+			requirement.Namespace = ptr.To(model.NewNamespacePkgOrBundle(requirement.langName, *requirement.NamespaceType))
 		case model.NamespaceLanguage:
 			requirement.Namespace = ptr.To(model.NewNamespaceLanguage())
 		case model.NamespacePlatform:
