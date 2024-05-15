@@ -157,6 +157,7 @@ func (b *BuildScript) Merge(b2 *BuildScript, strategies *mono_models.MergeStrate
 		return nil, errs.Wrap(err, "Could not merge build expressions")
 	}
 
+	// When merging buildscripts we want to use the most recent timestamp
 	atTime := b.atTime
 	if b.atTime != nil && b.atTime.After(*b2.atTime) {
 		atTime = b2.atTime
