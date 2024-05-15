@@ -335,7 +335,7 @@ jobs:
           if [[ "$TEST_SUITE_TAGS" == "all" ]]; then
             TIMEOUT=90m
           fi
-          SHELL='${{ matrix.sys.shell }}' go test -timeout $TIMEOUT -v `go list ./... | grep "integration"` -json 2>&1 | gotestfmt -hide empty-packages
+          SHELL='${{ matrix.sys.shell }}' go test -timeout $TIMEOUT -parallel 4 -v `go list ./... | grep "integration"` -json 2>&1 | gotestfmt -hide empty-packages
         continue-on-error: ${{ github.event_name == 'schedule' }}
         env:
           INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
