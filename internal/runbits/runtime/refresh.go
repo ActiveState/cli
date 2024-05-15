@@ -79,11 +79,11 @@ func SolveAndUpdate(
 	target := target.NewProjectTarget(proj, customCommitID, trigger)
 	rt, err := runtime.New(target, an, svcm, auth, cfg, out)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+		return nil, locale.WrapError(err, "err_packages_update_runtime_init")
 	}
 
 	if !bitflags.Has(opts, OptOrderChanged) && !bitflags.Has(opts, OptMinimalUI) && !rt.NeedsUpdate() {
-		out.Notice(locale.Tl("pkg_already_uptodate", "Requested dependencies are already configured and installed."))
+		out.Notice(locale.T("pkg_already_uptodate"))
 		return rt, nil
 	}
 
@@ -103,7 +103,7 @@ func SolveAndUpdate(
 
 		err := rt.SolveAndUpdate(pg)
 		if err != nil {
-			return nil, locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
+			return nil, locale.WrapError(err, "err_packages_update_runtime_install")
 		}
 	}
 
@@ -122,6 +122,14 @@ func Solve(
 	opts Opts,
 ) (_ *runtime.Runtime, _ *bpModel.Commit, rerr error) {
 	defer rationalizeError(auth, proj, &rerr)
+
+	if proj == nil {
+		return nil, nil, rationalize.ErrNoProject
+	}
+
+	if proj.IsHeadless() {
+		return nil, nil, rationalize.ErrHeadless
+	}
 
 	var spinner *output.Spinner
 	if !bitflags.Has(opts, OptMinimalUI) {
@@ -142,7 +150,7 @@ func Solve(
 	rtTarget := target.NewProjectTarget(proj, customCommitID, trigger)
 	rt, err := runtime.New(rtTarget, an, svcm, auth, cfg, out)
 	if err != nil {
-		return nil, nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+		return nil, nil, locale.WrapError(err, "err_packages_update_runtime_init")
 	}
 
 	setup := rt.Setup(&events.VoidHandler{})
@@ -171,7 +179,7 @@ func UpdateByReference(
 
 		err := rt.Setup(pg).Update(commit)
 		if err != nil {
-			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
+			return locale.WrapError(err, "err_packages_update_runtime_install")
 		}
 	}
 
