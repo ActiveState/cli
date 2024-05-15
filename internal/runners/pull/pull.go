@@ -17,7 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	buildscriptRunbits "github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/commit"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
@@ -242,7 +242,7 @@ func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *pr
 // mergeBuildScript merges the local build script with the remote buildscript.
 func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	// Get the build script to merge.
-	scriptA, err := buildscriptRunbits.ScriptFromProject(p.project)
+	scriptA, err := buildscript_runbit.ScriptFromProject(p.project)
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
 	}
@@ -259,7 +259,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	if err != nil {
 		switch {
 		case errors.Is(err, model.ErrMergeFastForward):
-			return buildscriptRunbits.Update(p.project, scriptB)
+			return buildscript_runbit.Update(p.project, scriptB)
 		case !errors.Is(err, model.ErrMergeCommitInHistory):
 			return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
 		}
@@ -268,7 +268,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	// Attempt the merge.
 	mergedScript, err := scriptA.Merge(scriptB, strategies)
 	if err != nil {
-		err := buildscriptRunbits.GenerateAndWriteDiff(p.project, scriptA, scriptB)
+		err := buildscript_runbit.GenerateAndWriteDiff(p.project, scriptA, scriptB)
 		if err != nil {
 			return locale.WrapError(err, "err_diff_build_script", "Unable to generate differences between local and remote build script")
 		}
@@ -279,7 +279,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	}
 
 	// Write the merged build expression as a local build script.
-	return buildscriptRunbits.Update(p.project, mergedScript)
+	return buildscript_runbit.Update(p.project, mergedScript)
 }
 
 func resolveRemoteProject(prj *project.Project) (*project.Namespaced, error) {
