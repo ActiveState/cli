@@ -157,6 +157,14 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 
 		if len(exesOnPath) > 0 {
 			exeTarget = exesOnPath[0]
+		} else if osutils.FindExeOnPATH(exeTarget) == "" {
+			paths := append([]string{}, rtDirs...)
+			paths = append(paths, strings.Split(os.Getenv("PATH"), string(os.PathListSeparator))...)
+			return locale.NewInputError(
+				"err_exec_not_found",
+				"The executable '{{.V0}}' was not found in any of the following directories:\n\n{{.V1}}\n\nPlease double-check the executable name and try again.",
+				exeTarget,
+				strings.Join(paths, "\n"))
 		}
 	}
 
