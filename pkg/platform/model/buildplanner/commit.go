@@ -34,13 +34,13 @@ func (b *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error
 		return "", errs.New("Script is nil")
 	}
 
-	exprB, err := script.MarshalBuildExpression()
+	expression, err := script.MarshalBuildExpression()
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to marshal build expression")
 	}
 
 	// With the updated build expression call the stage commit mutation
-	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, params.Description, script.AtTime(), exprB)
+	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, params.Description, script.AtTime(), expression)
 	resp := &response.StageCommitResult{}
 	if err := b.client.Run(request, resp); err != nil {
 		return "", processBuildPlannerError(err, "failed to stage commit")

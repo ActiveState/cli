@@ -57,13 +57,13 @@ func (b *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID, 
 		}
 	}
 
-	exprB, err := script.MarshalBuildExpression()
+	expression, err := script.MarshalBuildExpression()
 	if err != nil {
 		return "", errs.Wrap(err, "Marshalling build expression failed")
 	}
 
 	// Create the project.
-	request := request.CreateProject(params.Owner, params.Project, params.Private, exprB, params.Description)
+	request := request.CreateProject(params.Owner, params.Project, params.Private, expression, params.Description)
 	resp := &response.CreateProjectResult{}
 	if err := b.client.Run(request, resp); err != nil {
 		return "", processBuildPlannerError(err, "Failed to create project")
