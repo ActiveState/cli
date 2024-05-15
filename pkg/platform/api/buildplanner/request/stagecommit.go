@@ -69,6 +69,14 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID!, $descri
       commitId
       message
     }
+    ...on ValidationError {
+      __typename
+      subErrors {
+        __typename
+        message
+        buildExprPath
+      }
+    }
   }
 }
 `
