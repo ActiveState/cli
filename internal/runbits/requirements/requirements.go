@@ -27,6 +27,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
@@ -197,15 +198,10 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		return locale.WrapError(err, "err_resolve_requirements", "Could not resolve one or more requirements")
 	}
 
-	var stageCommitReqs []bpModel.StageCommitRequirement
-	for _, requirement := range requirements {
-		stageCommitReqs = append(stageCommitReqs, bpModel.StageCommitRequirement{
-			Name:      requirement.Name,
-			Version:   requirement.versionRequirements,
-			Revision:  requirement.Revision,
-			Namespace: requirement.Namespace.String(),
-			Operation: requirement.Operation,
-		})
+	bp := bpModel.NewBuildPlannerModel(r.Auth)
+	script, err := r.prepareBuildScript(bp, parentCommitID, requirements, ts)
+	if err != nil {
+		return errs.Wrap(err, "Could not prepare build script")
 	}
 
 	params := bpModel.StageCommitParams{
@@ -213,10 +209,9 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		Project:      r.Project.Name(),
 		ParentCommit: string(parentCommitID),
 		Description:  commitMessage(requirements...),
-		Requirements: stageCommitReqs,
+		Script:       script,
 	}
 
-	bp := bpModel.NewBuildPlannerModel(r.Auth)
 	commitID, err := bp.StageCommit(params)
 	if err != nil {
 		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")
@@ -308,6 +303,51 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 	out.Notice(locale.T("operation_success_local"))
 
 	return nil
+}
+
+func (r *RequirementOperation) prepareBuildScript(bp *bpModel.BuildPlanner, parentCommit strfmt.UUID, requirements []*Requirement, ts *time.Time) (*buildscript.BuildScript, error) {
+	script, err := bp.GetBuildScript(string(parentCommit))
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to get build expression")
+	}
+
+	if ts != nil {
+		script.SetAtTime(*ts)
+	} else {
+		// If no atTime was provided then we need to ensure that the atTime in the script is updated to use
+		// the most recent, which is either the current value or the platform latest.
+		latest, err := model.FetchLatestTimeStamp(r.Auth)
+		if err != nil {
+			return nil, errs.Wrap(err, "Unable to fetch latest Platform timestamp")
+		}
+		atTime := script.AtTime()
+		if atTime == nil || latest.After(*atTime) {
+			script.SetAtTime(latest)
+		}
+	}
+
+	for _, req := range requirements {
+		if req.Namespace.String() == types.NamespacePlatform {
+			err = script.UpdatePlatform(req.Operation, strfmt.UUID(req.Name))
+			if err != nil {
+				return nil, errs.Wrap(err, "Failed to update build expression with platform")
+			}
+		} else {
+			requirement := types.Requirement{
+				Namespace:          req.Namespace.String(),
+				Name:               req.Name,
+				VersionRequirement: req.versionRequirements,
+				Revision:           req.Revision,
+			}
+
+			err = script.UpdateRequirement(req.Operation, requirement)
+			if err != nil {
+				return nil, errs.Wrap(err, "Failed to update build expression with requirement")
+			}
+		}
+	}
+
+	return script, nil
 }
 
 type ResolveNamespaceError struct {

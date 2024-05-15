@@ -23,53 +23,15 @@ type StageCommitParams struct {
 	Project      string
 	ParentCommit string
 	Description  string
-	// Commits can have either requirements (e.g. installing a package)...
-	Requirements []StageCommitRequirement
-	// ... or commits can have an expression (e.g. from pull). When pulling an expression, we do not
-	// compute its changes into a series of above operations. Instead, we just pass the new
-	// expression directly.
-	Script *buildscript.BuildScript
+	Script       *buildscript.BuildScript
 }
 
 func (b *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {
 	logging.Debug("StageCommit, params: %+v", params)
 	script := params.Script
+
 	if script == nil {
-		var err error
-		script, err = b.GetBuildScript(params.ParentCommit)
-		if err != nil {
-			return "", errs.Wrap(err, "Failed to get build expression")
-		}
-
-		var containsPackageOperation bool
-		for _, req := range params.Requirements {
-			if req.Namespace == types.NamespacePlatform {
-				err = script.UpdatePlatform(req.Operation, strfmt.UUID(req.Name))
-				if err != nil {
-					return "", errs.Wrap(err, "Failed to update build expression with platform")
-				}
-			} else {
-				requirement := types.Requirement{
-					Namespace:          req.Namespace,
-					Name:               req.Name,
-					VersionRequirement: req.Version,
-					Revision:           req.Revision,
-				}
-
-				err = script.UpdateRequirement(req.Operation, requirement)
-				if err != nil {
-					return "", errs.Wrap(err, "Failed to update build expression with requirement")
-				}
-				containsPackageOperation = true
-			}
-		}
-
-		if containsPackageOperation {
-			if err := script.SetDefaultAtTime(); err != nil {
-				return "", errs.Wrap(err, "Failed to set default timestamp")
-			}
-		}
-
+		return "", errs.New("Script is nil")
 	}
 
 	exprB, err := script.MarshalBuildExpression()
