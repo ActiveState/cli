@@ -157,6 +157,12 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 
 		if len(exesOnPath) > 0 {
 			exeTarget = exesOnPath[0]
+		} else if osutils.FindExeOnPATH(exeTarget) == "" {
+			return errs.AddTips(locale.NewInputError(
+				"err_exec_not_found",
+				"The executable '{{.V0}}' was not found in your PATH or in your project runtime.",
+				exeTarget),
+				locale.Tl("err_exec_not_found_tip", "Run '[ACTIONABLE]state export env[/RESET]' to check project runtime paths"))
 		}
 	}
 

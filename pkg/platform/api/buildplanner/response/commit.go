@@ -133,6 +133,10 @@ type TargetNotFound struct {
 	PossibleTargets []string `json:"possibleTargets"`
 }
 
+type ValidationError struct {
+	SubErrors []*BuildExprError `json:"subErrors"`
+}
+
 // Commit contains the build and any errors.
 type Commit struct {
 	Type       string          `json:"__typename"`
@@ -142,6 +146,7 @@ type Commit struct {
 	Build      *BuildResponse  `json:"build"`
 	*Error
 	*ParseError
+	*ValidationError
 	*ForbiddenError
 	*HeadOnBranchMovedError
 	*NoChangeSinceLastCommitError

@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/checkout"
+	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -106,19 +107,19 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		}()
 	}
 
-	async := u.config.GetBool(constants.AsyncRuntimeConfig)
-	if !async {
-		u.out.Notice(output.Title(locale.T("installing_runtime_title")))
-	}
-
-	rti, err := runtime.SolveAndUpdate(u.auth, u.out, u.analytics, proj, nil, target.TriggerCheckout, u.svcModel, u.config, runtime.OptMinimalUI)
+	rti, commit, err := runtime.Solve(u.auth, u.out, u.analytics, proj, nil, target.TriggerCheckout, u.svcModel, u.config, runtime.OptNoIndent)
 	if err != nil {
-		return locale.WrapError(err, "err_checkout_runtime_new", "Could not checkout this project.")
+		return errs.Wrap(err, "Could not checkout project")
+	}
+	dependencies.OutputSummary(u.out, commit.BuildPlan().RequestedArtifacts())
+	err = runtime.UpdateByReference(rti, commit, u.auth, proj, u.out, runtime.OptNone)
+	if err != nil {
+		return errs.Wrap(err, "Could not setup runtime")
 	}
 
 	var execDir string
 	var checkoutStatement string
-	if !async {
+	if !u.config.GetBool(constants.AsyncRuntimeConfig) {
 		execDir = setup.ExecDir(rti.Target().Dir())
 		checkoutStatement = locale.Tr("checkout_project_statement", proj.NamespaceString(), proj.Dir(), execDir)
 	} else {
