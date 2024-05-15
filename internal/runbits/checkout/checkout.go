@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -171,7 +171,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	}
 
 	if r.config.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript.Initialize(path, r.auth); err != nil {
+		if err := buildscript_runbit.Initialize(path, r.auth); err != nil {
 			return "", errs.Wrap(err, "Unable to initialize buildscript")
 		}
 	}

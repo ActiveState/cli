@@ -1,13 +1,11 @@
 package request
 
-import "github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
-
-func CreateProject(owner, project string, private bool, expr *buildexpression.BuildExpression, description string) *createProject {
+func CreateProject(owner, project string, private bool, expr []byte, description string) *createProject {
 	return &createProject{map[string]interface{}{
 		"organization": owner,
 		"project":      project,
 		"private":      private,
-		"expr":         expr,
+		"expr":         string(expr),
 		"description":  description,
 		"atTime":       "", // default to the latest timestamp
 	}}

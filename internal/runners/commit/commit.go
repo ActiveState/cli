@@ -2,7 +2,6 @@ package commit
 
 import (
 	"errors"
-	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
@@ -11,13 +10,13 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -65,7 +64,7 @@ func rationalizeError(err *error) {
 			"No change to the buildscript was found.",
 		), errs.SetInput())
 
-	case errs.Matches(*err, buildscript.ErrBuildscriptNotExist):
+	case errs.Matches(*err, buildscript_runbit.ErrBuildscriptNotExist):
 		*err = errs.WrapUserFacing(*err, locale.T("err_buildscript_not_exist"))
 
 	// We communicate buildplanner errors verbatim as the intend is that these are curated by the buildplanner
@@ -91,7 +90,7 @@ func (c *Commit) Run() (rerr error) {
 	}()
 
 	// Get buildscript.as representation
-	script, err := buildscript.ScriptFromProject(c.proj)
+	script, err := buildscript_runbit.ScriptFromProject(c.proj)
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
 	}
@@ -102,32 +101,26 @@ func (c *Commit) Run() (rerr error) {
 		return errs.Wrap(err, "Unable to get local commit ID")
 	}
 	bp := buildplanner.NewBuildPlannerModel(c.auth)
-	exprProject, atTime, err := bp.GetBuildExpressionAndTime(localCommitID.String())
+	remoteScript, err := bp.GetBuildScript(localCommitID.String())
 	if err != nil {
 		return errs.Wrap(err, "Could not get remote build expr and time for provided commit")
 	}
-	remoteScript, err := buildscript.NewFromBuildExpression(atTime, exprProject)
+
+	equals, err := script.Equals(remoteScript)
 	if err != nil {
-		return errs.Wrap(err, "Could not convert build expression to build script")
+		return errs.Wrap(err, "Could not compare local and remote build script")
 	}
 
 	// Check if there is anything to commit
-	if script.Equals(remoteScript) {
+	if equals {
 		return ErrNoChanges
-	}
-
-	var exprAtTime *time.Time
-	if atTime := script.AtTime; atTime != nil {
-		atTimeTime := time.Time(*atTime)
-		exprAtTime = &atTimeTime
 	}
 
 	stagedCommitID, err := bp.StageCommit(buildplanner.StageCommitParams{
 		Owner:        c.proj.Owner(),
 		Project:      c.proj.Name(),
 		ParentCommit: localCommitID.String(),
-		Expression:   script.Expr,
-		TimeStamp:    exprAtTime,
+		Script:       script,
 	})
 	if err != nil {
 		return errs.Wrap(err, "Could not update project to reflect build script changes.")
@@ -139,11 +132,11 @@ func (c *Commit) Run() (rerr error) {
 	}
 
 	// Update our local build expression to match the committed one. This allows our API a way to ensure forward compatibility.
-	newBuildExpr, newAtTime, err := bp.GetBuildExpressionAndTime(stagedCommitID.String())
+	newScript, err := bp.GetBuildScript(stagedCommitID.String())
 	if err != nil {
-		return errs.Wrap(err, "Unable to get the remote build expression and time")
+		return errs.Wrap(err, "Unable to get the remote build script")
 	}
-	if err := buildscript.Update(c.proj, newAtTime, newBuildExpr); err != nil {
+	if err := buildscript_runbit.Update(c.proj, newScript); err != nil {
 		return errs.Wrap(err, "Could not update local build script")
 	}
 

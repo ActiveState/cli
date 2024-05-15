@@ -24,9 +24,6 @@ and this project adheres to
 
 ### Changed
 
-* Commands that accept ingredient namespaces now separate the namespace with the colon character, eg. you would now type
-  `state install private/myorg:mypkg` instead of `state install private/myorg/mypkg`. This is a necessary change in
-  order for us to support language ecosystems that have slashes in their package names.
 * Increased the time State Tool will wait for the state-svc to start, which is required for using the State Tool. This
   is mainly intended for when you just started your system, when it is still under heavy load and thus processes can
   take longer to start.
