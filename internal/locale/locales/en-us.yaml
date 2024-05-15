@@ -1558,7 +1558,15 @@ commit_success:
 builds_dl_downloading:
   other: Downloading {{.V0}}
 warn_has_failed_artifacts:
-  other: "Warning: This project has failed builds, and some artifacts will be missing as a result.\n"
+  other: "[ERROR]Some artifacts failed to build. Please see error messages and logs above for further details.[/RESET]"
+artifact_status_failed:
+  other: Failed
+artifact_status_failed_message:
+  other: Message
+artifact_status_failed_log:
+  other: Log
+artifact_status_skipped:
+  other: Skipped
 artifact_status_building:
   other: Building
 warn_build_not_complete:
@@ -1575,6 +1583,10 @@ err_build_artifact_failed:
     [NOTICE]{{.V0}}[/RESET]
     [DISABLED]├─ Message:[/RESET] [ERROR]{{.V1}}[/RESET]
     [DISABLED]└─ Log:[/RESET] [ACTIONABLE]{{.V2}}[/RESET]
+err_packages_update_runtime_init:
+  other: Could not initialize runtime.
+pkg_already_uptodate:
+  other: Requested dependencies are already configured and installed.
 install_runtime:
   other: Installing Runtime
 install_runtime_info:
@@ -1583,6 +1595,8 @@ update_runtime:
   other: Updating Runtime
 update_runtime_info:
   other: "Changes to your runtime may require some dependencies to be rebuilt.\n"
+err_packages_update_runtime_install:
+  other: Could not install dependencies.
 err_buildscript_notexist:
   other: Your project does not have a buildscript.as file. Please refer to the documentation on how to create one.
 err_projectfile_version_too_high:

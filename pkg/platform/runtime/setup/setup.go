@@ -29,7 +29,7 @@ import (
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/runbits/dependencies"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
@@ -39,8 +39,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifactcache"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
@@ -264,22 +262,12 @@ func (s *Setup) Update(commit *bpModel.Commit) (rerr error) {
 		return errs.Wrap(err, "Could not save recipe file.")
 	}
 
-	expression, err := buildexpression.New(commit.Expression)
-	if err != nil {
-		return errs.Wrap(err, "failed to parse build expression")
-	}
-
-	script, err := buildscript.NewFromBuildExpression(&commit.AtTime, expression)
-	if err != nil {
-		return errs.Wrap(err, "Could not convert to buildscript")
-	}
-
-	if err := s.store.StoreBuildScript(script); err != nil {
+	if err := s.store.StoreBuildScript(commit.BuildScript()); err != nil {
 		return errs.Wrap(err, "Could not store buildscript file.")
 	}
 
 	if s.target.ProjectDir() != "" && s.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript.Update(s.target, &commit.AtTime, expression); err != nil {
+		if err := buildscript_runbit.Update(s.target, commit.BuildScript()); err != nil {
 			return errs.Wrap(err, "Could not update build script")
 		}
 	}
@@ -543,10 +531,8 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 		return nil, nil, errs.Wrap(err, "could not load existing build plan")
 	}
 
-	var oldBuildPlanArtifacts buildplan.Artifacts
 	var changedArtifacts *buildplan.ArtifactChangeset
 	if oldBuildPlan != nil {
-		oldBuildPlanArtifacts = oldBuildPlan.Artifacts(artifactFilters...)
 		changedArtifacts = ptr.To(bp.DiffArtifacts(oldBuildPlan, true))
 	}
 
@@ -585,16 +571,6 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 	artifactsToInstall := allArtifacts.Filter(filters...)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Failed to compute artifacts to build")
-	}
-
-	// Output a dependency summary if applicable.
-	if s.target.Trigger() == target.TriggerCheckout {
-		dependencies.OutputSummary(s.out, bp.RequestedArtifacts())
-	} else if s.target.Trigger() == target.TriggerInit {
-		artifacts := bp.Artifacts().Filter(buildplan.FilterStateArtifacts(), buildplan.FilterRuntimeArtifacts())
-		dependencies.OutputSummary(s.out, artifacts)
-	} else if len(oldBuildPlanArtifacts) > 0 && changedArtifacts != nil {
-		dependencies.OutputChangeSummary(s.out, changedArtifacts, oldBuildPlanArtifacts)
 	}
 
 	// The log file we want to use for builds

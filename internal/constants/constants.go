@@ -381,9 +381,6 @@ const RuntimeRecipeStore = "recipe"
 // RuntimeBuildPlanStore containts a serialization of the build plan used to create this build
 const RuntimeBuildPlanStore = "build_plan"
 
-// BuildExpressionStore holds the cached build expression for the current commit ID.
-const BuildExpressionStore = "build_expression"
-
 // BuildScriptStore holds the cached buildscript for the current project.
 const BuildScriptStore = "build_script"
 

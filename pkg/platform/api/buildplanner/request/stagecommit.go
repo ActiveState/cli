@@ -4,10 +4,9 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
 
-func StageCommit(owner, project, parentCommit, description string, atTime *time.Time, expression *buildexpression.BuildExpression) *buildPlanByStageCommit {
+func StageCommit(owner, project, parentCommit, description string, atTime *time.Time, expression []byte) *buildPlanByStageCommit {
 	var timestamp *string
 	if atTime != nil {
 		timestamp = ptr.To(atTime.Format(time.RFC3339))
@@ -17,7 +16,7 @@ func StageCommit(owner, project, parentCommit, description string, atTime *time.
 		"project":      project,
 		"parentCommit": parentCommit,
 		"description":  description,
-		"expr":         expression,
+		"expr":         string(expression),
 		"atTime":       timestamp, // default to the latest timestamp
 	}}
 }

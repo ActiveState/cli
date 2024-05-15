@@ -29,6 +29,7 @@ type Opts int
 
 const (
 	OptNone         Opts = 1 << iota
+	OptNoIndent          // Don't indent progress output
 	OptMinimalUI         // Only print progress output, don't decorate the UI in any other way
 	OptNoUI              // Don't print progress output, don't decorate the UI in any other way
 	OptOrderChanged      // Indicate that the order has changed, and the runtime should be refreshed regardless of internal dirty checking mechanics
@@ -79,11 +80,11 @@ func SolveAndUpdate(
 	target := target.NewProjectTarget(proj, customCommitID, trigger)
 	rt, err := runtime.New(target, an, svcm, auth, cfg, out)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+		return nil, locale.WrapError(err, "err_packages_update_runtime_init")
 	}
 
 	if !bitflags.Has(opts, OptOrderChanged) && !bitflags.Has(opts, OptMinimalUI) && !rt.NeedsUpdate() {
-		out.Notice(locale.Tl("pkg_already_uptodate", "Requested dependencies are already configured and installed."))
+		out.Notice(locale.T("pkg_already_uptodate"))
 		return rt, nil
 	}
 
@@ -103,7 +104,7 @@ func SolveAndUpdate(
 
 		err := rt.SolveAndUpdate(pg)
 		if err != nil {
-			return nil, locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
+			return nil, locale.WrapError(err, "err_packages_update_runtime_install")
 		}
 	}
 
@@ -121,9 +122,23 @@ func Solve(
 	cfg Configurable,
 	opts Opts,
 ) (_ *runtime.Runtime, _ *bpModel.Commit, rerr error) {
+	defer rationalizeError(auth, proj, &rerr)
+
+	if proj == nil {
+		return nil, nil, rationalize.ErrNoProject
+	}
+
+	if proj.IsHeadless() {
+		return nil, nil, rationalize.ErrHeadless
+	}
+
 	var spinner *output.Spinner
 	if !bitflags.Has(opts, OptMinimalUI) {
-		spinner = output.StartSpinner(out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+		localeName := "progress_solve_preruntime"
+		if bitflags.Has(opts, OptNoIndent) {
+			localeName = "progress_solve"
+		}
+		spinner = output.StartSpinner(out, locale.T(localeName), constants.TerminalAnimationInterval)
 	}
 
 	defer func() {
@@ -140,7 +155,7 @@ func Solve(
 	rtTarget := target.NewProjectTarget(proj, customCommitID, trigger)
 	rt, err := runtime.New(rtTarget, an, svcm, auth, cfg, out)
 	if err != nil {
-		return nil, nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+		return nil, nil, locale.WrapError(err, "err_packages_update_runtime_init")
 	}
 
 	setup := rt.Setup(&events.VoidHandler{})
@@ -160,16 +175,27 @@ func UpdateByReference(
 	auth *authentication.Auth,
 	proj *project.Project,
 	out output.Outputer,
+	opts Opts,
 ) (rerr error) {
 	defer rationalizeError(auth, proj, &rerr)
 
 	if rt.NeedsUpdate() {
+		if !bitflags.Has(opts, OptMinimalUI) {
+			if !rt.HasCache() {
+				out.Notice(output.Title(locale.T("install_runtime")))
+				out.Notice(locale.T("install_runtime_info"))
+			} else {
+				out.Notice(output.Title(locale.T("update_runtime")))
+				out.Notice(locale.T("update_runtime_info"))
+			}
+		}
+
 		pg := NewRuntimeProgressIndicator(out)
 		defer rtutils.Closer(pg.Close, &rerr)
 
 		err := rt.Setup(pg).Update(commit)
 		if err != nil {
-			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
+			return locale.WrapError(err, "err_packages_update_runtime_install")
 		}
 	}
 

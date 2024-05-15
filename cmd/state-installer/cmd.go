@@ -288,7 +288,6 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	}
 	// Older state tools did not bake in meta information, in this case we allow overwriting regardless of channel
 	targetingSameChannel := installedChannel == "" || installedChannel == constants.ChannelName
-	stateToolInstalledAndFunctional := stateToolInstalled && installationIsOnPATH(params.path) && targetingSameChannel
 
 	// If this is a fresh installation we ensure that the target directory is empty
 	if !stateToolInstalled && fileutils.DirExists(params.path) && !params.force {
@@ -310,9 +309,9 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	}
 	an.Event(anaConst.CatInstallerFunnel, route)
 
-	// Check if state tool already installed and functional
-	if stateToolInstalledAndFunctional && !params.isUpdate && !params.force {
-		logging.Debug("Cancelling out because State Tool is already installed and functional")
+	// Check if state tool already installed
+	if !params.isUpdate && !params.force && stateToolInstalled && !targetingSameChannel {
+		logging.Debug("Cancelling out because State Tool is already installed")
 		out.Print(fmt.Sprintf("State Tool Package Manager is already installed at [NOTICE]%s[/RESET]. To reinstall use the [ACTIONABLE]--force[/RESET] flag.", installPath))
 		an.Event(anaConst.CatInstallerFunnel, "already-installed")
 		params.isUpdate = true
