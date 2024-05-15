@@ -1,10 +1,10 @@
 package unarchiver
 
 import (
-	"archive/zip"
 	"fmt"
 	"path/filepath"
 
+	"github.com/klauspost/compress/zip"
 	"github.com/mholt/archiver/v3"
 )
 
