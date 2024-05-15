@@ -190,7 +190,7 @@ func (r *Revert) revertCommit(params revertParams, bp *buildplanner.BuildPlanner
 }
 
 func (r *Revert) revertToCommit(params revertParams, bp *buildplanner.BuildPlanner) (strfmt.UUID, error) {
-	buildExpression, err := bp.GetBuildExpression(params.revertCommitID)
+	bs, err := bp.GetBuildScript(params.revertCommitID)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get build expression")
 	}
@@ -200,7 +200,7 @@ func (r *Revert) revertToCommit(params revertParams, bp *buildplanner.BuildPlann
 		Project:      params.project,
 		ParentCommit: params.parentCommitID,
 		Description:  locale.Tl("revert_commit_description", "Revert to commit {{.V0}}", params.revertCommitID),
-		Expression:   buildExpression,
+		Script:       bs,
 	}
 
 	newCommitID, err := bp.StageCommit(stageCommitParams)

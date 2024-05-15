@@ -1,161 +1,19 @@
-package buildscript
+package raw
 
 import (
 	"bytes"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/ActiveState/cli/pkg/buildscript/internal/buildexpression"
+	"github.com/thoas/go-funk"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-
-	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
-
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
-	"github.com/alecthomas/participle/v2"
 )
-
-// Script's tagged fields will be initially filled in by Participle.
-// expr will be constructed later and is this script's buildexpression. We keep a copy of the build
-// expression here with any changes that have been applied before either writing it to disk or
-// submitting it to the build planner. It's easier to operate on build expressions directly than to
-// modify or manually populate the Participle-produced fields and re-generate a build expression.
-type Script struct {
-	Assignments []*Assignment `parser:"@@+"`
-	AtTime      *strfmt.DateTime
-	Expr        *buildexpression.BuildExpression
-}
-
-type Assignment struct {
-	Key   string `parser:"@Ident '='"`
-	Value *Value `parser:"@@"`
-}
-
-type Value struct {
-	FuncCall *FuncCall `parser:"@@"`
-	List     *[]*Value `parser:"| '[' (@@ (',' @@)* ','?)? ']'"`
-	Str      *string   `parser:"| @String"`
-	Number   *float64  `parser:"| (@Float | @Int)"`
-	Null     *Null     `parser:"| @@"`
-
-	Assignment *Assignment    `parser:"| @@"`                        // only in FuncCall
-	Object     *[]*Assignment `parser:"| '{' @@ (',' @@)* ','? '}'"` // only in List
-	Ident      *string        `parser:"| @Ident"`                    // only in FuncCall or Assignment
-}
-
-type Null struct {
-	Null string `parser:"'null'"`
-}
-
-type FuncCall struct {
-	Name      string   `parser:"@Ident"`
-	Arguments []*Value `parser:"'(' @@ (',' @@)* ','? ')'"`
-}
-
-type In struct {
-	FuncCall *FuncCall `parser:"@@"`
-	Name     *string   `parser:"| @Ident"`
-}
-
-var (
-	reqFuncName = "Req"
-	eqFuncName  = "Eq"
-	neFuncName  = "Ne"
-	gtFuncName  = "Gt"
-	gteFuncName = "Gte"
-	ltFuncName  = "Lt"
-	lteFuncName = "Lte"
-	andFuncName = "And"
-)
-
-func New(data []byte) (*Script, error) {
-	parser, err := participle.Build[Script]()
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not create parser for build script")
-	}
-
-	script, err := parser.ParseBytes(constants.BuildScriptFileName, data)
-	if err != nil {
-		var parseError participle.Error
-		if errors.As(err, &parseError) {
-			return nil, locale.WrapExternalError(err, "err_parse_buildscript_bytes", "Could not parse build script: {{.V0}}: {{.V1}}", parseError.Position().String(), parseError.Message())
-		}
-		return nil, locale.WrapError(err, "err_parse_buildscript_bytes", "Could not parse build script: {{.V0}}", err.Error())
-	}
-
-	// Construct the equivalent buildexpression.
-	bytes, err := json.Marshal(script)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not marshal build script to build expression")
-	}
-
-	expr, err := buildexpression.New(bytes)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_parse_buildscript_bytes", "Could not construct build expression: {{.V0}}", errs.JoinMessage(err))
-	}
-	script.Expr = expr
-
-	return script, nil
-}
-
-func NewFromBuildExpression(atTime *strfmt.DateTime, expr *buildexpression.BuildExpression) (*Script, error) {
-	// Copy incoming build expression to keep any modifications local.
-	var err error
-	expr, err = expr.Copy()
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not copy build expression")
-	}
-
-	// Update old expressions that bake in at_time as a timestamp instead of as a variable.
-	err = expr.MaybeSetDefaultTimestamp(atTime)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not set default timestamp")
-	}
-
-	return &Script{AtTime: atTime, Expr: expr}, nil
-}
 
 func indent(s string) string {
 	return fmt.Sprintf("\t%s", strings.ReplaceAll(s, "\n", "\n\t"))
-}
-
-func (s *Script) String() string {
-	buf := strings.Builder{}
-
-	if s.AtTime != nil {
-		buf.WriteString(assignmentString(&buildexpression.Var{
-			Name:  buildexpression.AtTimeKey,
-			Value: &buildexpression.Value{Str: ptr.To(s.AtTime.String())},
-		}))
-		buf.WriteString("\n")
-	}
-
-	for _, assignment := range s.Expr.Let.Assignments {
-		if assignment.Name == buildexpression.RequirementsKey {
-			assignment = transformRequirements(assignment)
-		}
-		buf.WriteString(assignmentString(assignment))
-		buf.WriteString("\n")
-	}
-
-	buf.WriteString("\n")
-	buf.WriteString("main = ")
-	switch {
-	case s.Expr.Let.In.FuncCall != nil:
-		buf.WriteString(apString(s.Expr.Let.In.FuncCall))
-	case s.Expr.Let.In.Name != nil:
-		buf.WriteString(*s.Expr.Let.In.Name)
-	}
-
-	return buf.String()
 }
 
 // transformRequirements transforms a buildexpression list of requirements in object form into a
@@ -363,27 +221,4 @@ func apString(f *buildexpression.Ap) string {
 
 	buf.WriteString(")")
 	return buf.String()
-}
-
-func (s *Script) Equals(other *Script) bool {
-	// Compare top-level at_time.
-	switch {
-	case s.AtTime != nil && other.AtTime != nil && s.AtTime.String() != other.AtTime.String():
-		return false
-	case (s.AtTime == nil) != (other.AtTime == nil):
-		return false
-	}
-
-	// Compare buildexpression JSON.
-	myJson, err := json.Marshal(s.Expr)
-	if err != nil {
-		multilog.Error("Unable to marshal this buildscript to JSON: %v", err)
-		return false
-	}
-	otherJson, err := json.Marshal(other.Expr)
-	if err != nil {
-		multilog.Error("Unable to marshal other buildscript to JSON: %v", err)
-		return false
-	}
-	return string(myJson) == string(otherJson)
 }

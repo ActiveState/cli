@@ -29,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/svcctl"
@@ -39,8 +40,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifactcache"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
@@ -264,22 +263,12 @@ func (s *Setup) Update(commit *bpModel.Commit) (rerr error) {
 		return errs.Wrap(err, "Could not save recipe file.")
 	}
 
-	expression, err := buildexpression.New(commit.Expression)
-	if err != nil {
-		return errs.Wrap(err, "failed to parse build expression")
-	}
-
-	script, err := buildscript.NewFromBuildExpression(&commit.AtTime, expression)
-	if err != nil {
-		return errs.Wrap(err, "Could not convert to buildscript")
-	}
-
-	if err := s.store.StoreBuildScript(script); err != nil {
+	if err := s.store.StoreBuildScript(commit.BuildScript()); err != nil {
 		return errs.Wrap(err, "Could not store buildscript file.")
 	}
 
 	if s.target.ProjectDir() != "" && s.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript.Update(s.target, &commit.AtTime, expression); err != nil {
+		if err := buildscript_runbit.Update(s.target, commit.BuildScript()); err != nil {
 			return errs.Wrap(err, "Could not update build script")
 		}
 	}

@@ -85,42 +85,8 @@ type In struct {
 	Name     *string
 }
 
-// New creates a BuildExpression from a JSON byte array.
-// The JSON must be a valid BuildExpression in the following format:
-//
-//	{
-//	  "let": {
-//	    "runtime": {
-//	      "solve_legacy": {
-//	        "at_time": "$at_time",
-//	        "build_flags": [],
-//	        "camel_flags": [],
-//	        "platforms": [
-//	          "96b7e6f2-bebf-564c-bc1c-f04482398f38"
-//	        ],
-//	        "requirements": [
-//	          {
-//	            "name": "requests",
-//	            "namespace": "language/python"
-//	          },
-//	          {
-//	            "name": "python",
-//	            "namespace": "language",
-//	            "version_requirements": [
-//	              {
-//	                "comparator": "eq",
-//	                "version": "3.10.10"
-//	              }
-//	            ]
-//	          },
-//	        ],
-//	        "solver_version": null
-//	      }
-//	    },
-//	  "in": "$runtime"
-//	  }
-//	}
-func New(data []byte) (*BuildExpression, error) {
+// Unmarshal creates a BuildExpression from a JSON byte array.
+func Unmarshal(data []byte) (*BuildExpression, error) {
 	rawBuildExpression := make(map[string]interface{})
 	err := json.Unmarshal(data, &rawBuildExpression)
 	if err != nil {
@@ -177,27 +143,29 @@ func New(data []byte) (*BuildExpression, error) {
 	return expr, nil
 }
 
-// NewEmpty creates a minimal, empty buildexpression.
-func NewEmpty() (*BuildExpression, error) {
+// New creates a minimal, empty buildexpression.
+func New() (*BuildExpression, error) {
 	// At this time, there is no way to ask the Platform for an empty buildexpression, so build one
 	// manually.
-	expr, err := New([]byte(`
-		{
-			"let": {
-				"runtime": {
-					"solve_legacy": {
-						"at_time": "$at_time",
-						"build_flags": [],
-						"camel_flags": [],
-						"platforms": [],
-						"requirements": [],
-						"solver_version": null
-					}
-				},
-				"in": "$runtime"
-			}
-		}
-	`))
+	expr, err := Unmarshal([]byte(`
+{
+	"let": {
+		"sources": {
+				"solve": {
+					"at_time": "$at_time",
+					"platforms": [],
+					"requirements": [],
+					"solver_version": null
+				}
+		},
+		"runtime": {
+				"state_tool_artifacts": {
+						"src": "$sources"
+				}
+		},
+		"in": "$runtime"
+	}
+}`))
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to create initial buildexpression")
 	}
@@ -500,26 +468,6 @@ func (e *BuildExpression) validateRequirements() error {
 	return nil
 }
 
-// Requirements returns the requirements in the BuildExpression.
-// It returns an error if the requirements are not found or if they are malformed.
-// It expects the JSON representation of the solve node to be formatted as follows:
-//
-//	{
-//	  "requirements": [
-//	    {
-//	      "name": "requests",
-//	      "namespace": "language/python"
-//	    },
-//	    {
-//	      "name": "python",
-//	      "namespace": "language",
-//	      "version_requirements": [{
-//	          "comparator": "eq",
-//	          "version": "3.10.10"
-//	      }]
-//	    }
-//	  ]
-//	}
 func (e *BuildExpression) Requirements() ([]types.Requirement, error) {
 	requirementsNode, err := e.getRequirementsNode()
 	if err != nil {
@@ -722,7 +670,6 @@ func (e *BuildExpression) getPlatformsNode() (*[]*Value, error) {
 	return nil, errs.New("Could not find platforms node")
 }
 
-// Update updates the BuildExpression's requirements based on the operation and requirement.
 func (e *BuildExpression) UpdateRequirement(operation types.Operation, requirement types.Requirement) error {
 	var err error
 	switch operation {
@@ -897,37 +844,14 @@ func (e *BuildExpression) removePlatform(platformID strfmt.UUID) error {
 	return nil
 }
 
-func (e *BuildExpression) SetDefaultTimestamp() error {
+// ForceAtTimeVar will set the AtTime variable to `$at_time`, which is how we want build expressions to record their
+// timestamp going forward.
+func (e *BuildExpression) ForceAtTimeVar() error {
 	atTimeNode, err := e.getSolveAtTimeValue()
 	if err != nil {
 		return errs.Wrap(err, "Could not get %s node", AtTimeKey)
 	}
 	atTimeNode.Str = ptr.To("$" + AtTimeKey)
-	return nil
-}
-
-// MaybeSetDefaultTimestamp changes the solve node's "at_time" value to "$at_time" if and only if
-// the current value is the given timestamp.
-// Buildscripts prefer to use variables for at_time and define them outside the buildexpression as
-// the expression's commit time.
-// While modern buildexpressions use variables, older ones bake in the commit time. This function
-// exists primarily to update those older buildexpressions for use in buildscripts.
-func (e *BuildExpression) MaybeSetDefaultTimestamp(ts *strfmt.DateTime) error {
-	if ts == nil {
-		return nil // nothing to compare to
-	}
-	atTimeNode, err := e.getSolveAtTimeValue()
-	if err != nil {
-		return errs.Wrap(err, "Could not get %s node", AtTimeKey)
-	}
-	if strings.HasPrefix(*atTimeNode.Str, "$") {
-		return nil
-	}
-	if atTime, err := strfmt.ParseDateTime(*atTimeNode.Str); err == nil && atTime == *ts {
-		return e.SetDefaultTimestamp()
-	} else if err != nil {
-		return errs.Wrap(err, "Invalid timestamp: %s", *atTimeNode.Str)
-	}
 	return nil
 }
 
@@ -958,7 +882,7 @@ func (e *BuildExpression) Copy() (*BuildExpression, error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to marshal build expression during copy")
 	}
-	return New(bytes)
+	return Unmarshal(bytes)
 }
 
 func (e *BuildExpression) MarshalJSON() ([]byte, error) {

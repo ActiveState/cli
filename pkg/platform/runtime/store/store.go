@@ -12,10 +12,10 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/go-openapi/strfmt"
 )
@@ -299,7 +299,7 @@ func (s *Store) StoreBuildPlan(bp *buildplan.BuildPlan) error {
 
 var ErrNoBuildScriptFile = errs.New("no buildscript file")
 
-func (s *Store) BuildScript() (*buildscript.Script, error) {
+func (s *Store) BuildScript() (*buildscript.BuildScript, error) {
 	if !fileutils.FileExists(s.buildScriptFile()) {
 		return nil, ErrNoBuildScriptFile
 	}
@@ -307,9 +307,13 @@ func (s *Store) BuildScript() (*buildscript.Script, error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not read buildscript file")
 	}
-	return buildscript.New(bytes)
+	return buildscript.Unmarshal(bytes)
 }
 
-func (s *Store) StoreBuildScript(script *buildscript.Script) error {
-	return fileutils.WriteFile(s.buildScriptFile(), []byte(script.String()))
+func (s *Store) StoreBuildScript(script *buildscript.BuildScript) error {
+	scriptBytes, err := script.Marshal()
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal buildscript")
+	}
+	return fileutils.WriteFile(s.buildScriptFile(), scriptBytes)
 }

@@ -10,12 +10,12 @@ import (
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -97,7 +97,7 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.NoError(err, "Error loading project")
 
-	_, err = buildscript.ScriptFromProject(proj)
+	_, err = buildscript_runbit.ScriptFromProject(proj)
 	suite.Require().NoError(err) // just verify it's a valid build script
 
 	cp = ts.Spawn("pull")
@@ -107,7 +107,7 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	cp.ExpectNotExitCode(0)
 	ts.IgnoreLogErrors()
 
-	_, err = buildscript.ScriptFromProject(proj)
+	_, err = buildscript_runbit.ScriptFromProject(proj)
 	suite.Assert().Error(err)
 	bytes := fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName))
 	suite.Assert().Contains(string(bytes), "<<<<<<<", "No merge conflict markers are in build script")
