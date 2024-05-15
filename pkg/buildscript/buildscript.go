@@ -18,6 +18,7 @@ import (
 type BuildScript struct {
 	// buildexpression is what we do all our modifications on. We will be planning work to move this to the raw type
 	// instead, but for now this is where most of the actual low level modification logic is done.
+	// https://activestatef.atlassian.net/jira/software/c/projects/DX/issues/DX-2825
 	buildexpression *buildexpression.BuildExpression
 	atTime          *time.Time
 }
