@@ -247,11 +247,14 @@ func (ev EnvironmentVariable) Merge(other EnvironmentVariable) (*EnvironmentVari
 	case Disallowed:
 		if len(ev.Values) != 1 || len(other.Values) != 1 || (ev.Values[0] != other.Values[0]) {
 			sep := string(ev.Separator)
-			return nil, fmt.Errorf(
-				"cannot merge environment definitions: no join strategy for variable %s with values %s and %s",
-				ev.Name,
-				strings.Join(ev.Values, sep), strings.Join(other.Values, sep),
-			)
+			// It's possible that the merged env vars will still be equal, so only error if they are not.
+			if strings.Join(ev.Values, sep) != strings.Join(other.Values, sep) {
+				return nil, fmt.Errorf(
+					"cannot merge environment definitions: no join strategy for variable %s with values %s and %s",
+					ev.Name,
+					strings.Join(ev.Values, sep), strings.Join(other.Values, sep),
+				)
+			}
 
 		}
 	default:
