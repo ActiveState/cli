@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -243,7 +244,7 @@ func (suite *UseIntegrationTestSuite) TestSetupNotice() {
 		e2e.OptArgs("checkout", "ActiveState-CLI/Python3"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Setting Up Runtime")
+	cp.Expect(locale.T("install_runtime"))
 	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
