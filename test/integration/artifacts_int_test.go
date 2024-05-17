@@ -86,7 +86,7 @@ func (suite *ArtifactsIntegrationTestSuite) TestArtifacts() {
 	})
 
 	suite.Run("json with --all flag", func() {
-		cp = ts.SpawnWithOpts(e2e.OptArgs("artifacts", "--output=json", "--all"), e2e.OptTermTest(termtest.OptRows(100)))
+		cp = ts.SpawnWithOpts(e2e.OptArgs("artifacts", "--output=json", "--all"), e2e.OptTermTest(termtest.OptRows(500)))
 		cp.ExpectExitCode(0)
 
 		output := artifacts.StructuredOutput{}
