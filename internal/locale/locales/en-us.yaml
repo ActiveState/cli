@@ -1480,6 +1480,14 @@ refresh_project_statement:
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 export_project_statement:
   other: Exporting env for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+export_runtime_statement:
+  other: Exporting runtime details for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+export_runtime_details:
+  other: |
+    Project Path: {{.V0}}
+    Runtime Path: {{.V1}}
+    Executables Path: {{.V2}}
+    Environment Variables:{{.V3}}
 err_rtprogress_outofsync:
   other: |
     Received events that appear to be out of order.
