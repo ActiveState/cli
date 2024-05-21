@@ -25,11 +25,10 @@ try {
     $Shortcut.Save()
 }
 catch  [System.UnauthorizedAccessException] {
-    Write-Host "Access denied."
+    Write-Host "Unauthorized Access: Please ensure you have the necessary permissions to create a shortcut at: $dir."
     exit 1
 }
 catch {
     Write-Host $_.Exception.Message
-    Write-Host $_.Exception.GetType().FullName
     exit 1
 }
