@@ -149,9 +149,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			cp.ExpectInput()
 			cp.SendLine("exit")
 			cp.ExpectExitCode(0)
-			if runtime.GOOS == "windows" {
-				ts.IgnoreLogErrors() // Follow-up DX-2678
-			}
 		})
 	}
 }
