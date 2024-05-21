@@ -30,5 +30,6 @@ catch  [System.UnauthorizedAccessException] {
 }
 catch {
     Write-Host $_.Exception.Message
+    Write-Host $_.Exception.GetType().FullName
     exit 1
 }
