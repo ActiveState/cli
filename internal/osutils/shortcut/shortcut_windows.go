@@ -1,18 +1,19 @@
 package shortcut
 
 import (
-	"errors"
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/go-ole/go-ole"
-	"github.com/go-ole/go-ole/oleutil"
-
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/scriptfile"
 )
 
 type WindowStyle int
@@ -25,114 +26,56 @@ const (
 )
 
 type Shortcut struct {
-	dir      string
-	name     string
-	target   string
-	args     string
-	dispatch *ole.IDispatch
+	dir          string
+	name         string
+	target       string
+	args         string
+	windowStyle  WindowStyle
+	iconLocation string
 }
 
 func New(dir, name, target string, args ...string) *Shortcut {
 	return &Shortcut{
-		dir, name, target, strings.Join(args, " "), nil,
+		dir:    dir,
+		name:   name,
+		target: target,
+		args:   strings.Join(args, " "),
 	}
 }
 
 func (s *Shortcut) Enable() error {
-	// ALWAYS errors with "Incorrect function", which can apparently be safely ignored..
-	_ = ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED|ole.COINIT_SPEED_OVER_MEMORY)
-
-	oleShellObject, err := oleutil.CreateObject("WScript.Shell")
+	scriptName := "createShortcut"
+	scriptBlock, err := assets.ReadFileBytes(fmt.Sprintf("scripts/%s.ps1", scriptName))
 	if err != nil {
-		return errs.Wrap(err, "Could not create shell object")
-	}
-	defer oleShellObject.Release()
-
-	wshell, err := oleShellObject.QueryInterface(ole.IID_IDispatch)
-	if err != nil {
-		return errs.Wrap(err, "Could not interface with shell object")
-	}
-	defer wshell.Release()
-
-	if err := fileutils.MkdirUnlessExists(s.dir); err != nil {
-		if os.IsPermission(err) {
-			return locale.NewInputError("err_shortcutdir_writable", "", s.dir)
-		} else {
-			return errs.Wrap(err, "Could not create Shortcut directory")
-		}
+		return errs.Wrap(err, "Could not read script file: %s", scriptName)
 	}
 
-	filename := filepath.Join(s.dir, s.name+".lnk")
-	logging.Debug("Creating Shortcut: %s", filename)
-	cs, err := oleutil.CallMethod(wshell, "CreateShortcut", filename)
+	sf, err := scriptfile.New(language.PowerShell, scriptName, string(scriptBlock))
 	if err != nil {
-		logging.Debug("OLE Error details: %s", err.Error())
-		oleErr := &ole.OleError{}
-		if errors.As(err, &oleErr) {
-			logging.Debug("OLE Error details: \nCode:%d\nDescription:%s\nError:%s\nString:%s\nSuberror:%s", oleErr.Code(), oleErr.Description(), oleErr.Error(), oleErr.String(), oleErr.SubError().Error())
-			return errs.Wrap(err, "oleutil CreateShortcut returned error: %s", oleErr.String())
-		}
-		return errs.Wrap(err, "Could not call CreateShortcut on shell object")
+		return errs.Wrap(err, "Could not create new scriptfile")
 	}
 
-	s.dispatch = cs.ToIDispatch()
+	args := []string{"-File", sf.Filename(), "-dir", s.dir, "-name", s.name, "-target", s.target, "-shortcutArgs", s.args}
 
-	err = s.setTarget(s.target, s.args)
+	if s.windowStyle != 0 {
+		args = append(args, "-windowStyle", fmt.Sprintf("%d", s.windowStyle))
+	}
+
+	if s.iconLocation != "" {
+		args = append(args, "-iconFile", s.iconLocation)
+	}
+
+	cmd := exec.Command("powershell.exe", args...)
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return errs.Wrap(err, "Could not set Shortcut target")
+		return locale.WrapError(err, "err_clean_start", "Could not create shortcut, received error: {{.V0}}", string(out))
 	}
 
 	return nil
 }
 
-func (s *Shortcut) setTarget(target, args string) error {
-	logging.Debug("Setting TargetPath: %s", target)
-	_, err := oleutil.PutProperty(s.dispatch, "TargetPath", target)
-	if err != nil {
-		return errs.Wrap(err, "Could not set Shortcut target")
-	}
-
-	logging.Debug("Setting Arguments: %s", args)
-	_, err = oleutil.PutProperty(s.dispatch, "Arguments", args)
-	if err != nil {
-		return errs.Wrap(err, "Could not set Shortcut arguments")
-	}
-
-	_, err = oleutil.CallMethod(s.dispatch, "Save")
-	if err != nil {
-		return errs.Wrap(err, "Could not save Shortcut")
-	}
-
-	return nil
-}
-
-func (s *Shortcut) setIcon(path string) error {
-	logging.Debug("Setting Icon: %s", path)
-	_, err := oleutil.PutProperty(s.dispatch, "IconLocation", path)
-	if err != nil {
-		return errs.Wrap(err, "Could not set IconLocation")
-	}
-
-	_, err = oleutil.CallMethod(s.dispatch, "Save")
-	if err != nil {
-		return errs.Wrap(err, "Could not save Shortcut")
-	}
-
-	return nil
-}
-
-func (s *Shortcut) SetWindowStyle(style WindowStyle) error {
-	_, err := oleutil.PutProperty(s.dispatch, "WindowStyle", int(style))
-	if err != nil {
-		return errs.Wrap(err, "Could not set shortcut to run minimized")
-	}
-
-	_, err = oleutil.CallMethod(s.dispatch, "Save")
-	if err != nil {
-		return errs.Wrap(err, "Could not save Shortcut")
-	}
-
-	return nil
+func (s *Shortcut) SetWindowStyle(style WindowStyle) {
+	s.windowStyle = style
 }
 
 func (s *Shortcut) SetIconBlob(blob []byte) error {
@@ -149,8 +92,10 @@ func (s *Shortcut) SetIconBlob(blob []byte) error {
 	if err != nil {
 		return errs.Wrap(err, "Could not create ico file: %s", filepath)
 	}
+	fmt.Println("Created ico file: ", filepath)
+	s.iconLocation = filepath
 
-	return s.setIcon(filepath)
+	return nil
 }
 
 func (s *Shortcut) Path() string {
