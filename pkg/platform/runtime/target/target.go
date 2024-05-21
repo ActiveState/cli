@@ -28,6 +28,7 @@ const (
 	TriggerDeploy             Trigger = "deploy"
 	TriggerExec               Trigger = "exec-cmd"
 	TriggerExecutor           Trigger = "exec"
+	TriggerExport             Trigger = "export"
 	TriggerResetExec          Trigger = "reset-exec"
 	TriggerSwitch             Trigger = "switch"
 	TriggerImport             Trigger = "import"

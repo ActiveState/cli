@@ -5,6 +5,7 @@ import (
 	"text/template"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -67,7 +68,7 @@ func (e *Runtime) Run(params *RuntimeParams) (rerr error) {
 
 	e.out.Notice(locale.Tr("export_runtime_statement", proj.NamespaceString(), proj.Dir()))
 
-	rt, err := runtime.SolveAndUpdate(e.auth, e.out, e.analytics, proj, nil, target.TriggerActivate, e.svcModel, e.cfg, runtime.OptMinimalUI)
+	rt, err := runtime.SolveAndUpdate(e.auth, e.out, e.analytics, proj, nil, target.TriggerExport, e.svcModel, e.cfg, runtime.OptMinimalUI)
 	if err != nil {
 		return errs.Wrap(err, "Could not get runtime to export for")
 	}
@@ -81,9 +82,11 @@ func (e *Runtime) Run(params *RuntimeParams) (rerr error) {
 		return errs.Wrap(err, "Could not get runtime environment")
 	}
 
-	tmpl, err := template.New("env").Parse(`{{- range $k, $v := .}}
-  - {{$k}}: {{$v}}
-{{- end}}`)
+	contents, err := assets.ReadFileBytes("list_map.tpl")
+	if err != nil {
+		return errs.Wrap(err, "Could not read asset")
+	}
+	tmpl, err := template.New("env").Parse(string(contents))
 	if err != nil {
 		return errs.Wrap(err, "Could not parse env template for output")
 	}
