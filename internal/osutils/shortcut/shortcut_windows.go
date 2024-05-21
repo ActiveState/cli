@@ -55,6 +55,12 @@ func (s *Shortcut) Enable() error {
 		return errs.Wrap(err, "Could not create new scriptfile")
 	}
 
+	if !fileutils.DirExists(s.dir) {
+		if err := fileutils.Mkdir(s.dir); err != nil {
+			return errs.Wrap(err, "Could not create shortcut directory: %s", s.dir)
+		}
+	}
+
 	args := []string{"-File", sf.Filename(), "-dir", s.dir, "-name", s.name, "-target", s.target, "-shortcutArgs", s.args}
 
 	if s.windowStyle != 0 {
