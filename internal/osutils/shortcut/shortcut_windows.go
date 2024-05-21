@@ -98,7 +98,6 @@ func (s *Shortcut) SetIconBlob(blob []byte) error {
 	if err != nil {
 		return errs.Wrap(err, "Could not create ico file: %s", filepath)
 	}
-	fmt.Println("Created ico file: ", filepath)
 	s.iconLocation = filepath
 
 	return nil
