@@ -55,7 +55,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_Env() {
 	suite.Assert().NotContains(cp.Output(), "ACTIVESTATE_ACTIVATED")
 }
 
-func (suite *ExportIntegrationTestSuite) TestLog() {
+func (suite *ExportIntegrationTestSuite) TestExport_Log() {
 	suite.OnlyRunForTags(tagsuite.Export)
 	ts := e2e.New(suite.T(), false)
 	defer ts.ClearCache()
@@ -70,6 +70,23 @@ func (suite *ExportIntegrationTestSuite) TestLog() {
 	cp.Expect(filepath.Join(ts.Dirs.Config, "logs"))
 	cp.ExpectRe(`state-svc-\d+`)
 	cp.Expect(".log")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *ExportIntegrationTestSuite) TestExport_Runtime() {
+	suite.OnlyRunForTags(tagsuite.Export)
+	ts := e2e.New(suite.T(), false)
+
+	ts.PrepareProject("ActiveState-CLI/Export", "5397f645-da8a-4591-b106-9d7fa99545fe")
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("export", "runtime"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Project Path: ")
+	cp.Expect("Runtime Path: ")
+	cp.Expect("Executables Path: ")
+	cp.Expect("Environment Variables:") // intentional lack of trailing space
+	cp.Expect(` - PATH: `, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 
@@ -105,6 +122,14 @@ func (suite *ExportIntegrationTestSuite) TestJSON() {
 	cp = ts.Spawn("export", "log", "-o", "json")
 	cp.Expect(`{"logFile":"`)
 	cp.Expect(`.log"}`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("export", "runtime", "-o", "json"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"))
+	cp.Expect(`{"project":"`)
+	cp.Expect(`"}}`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 }
