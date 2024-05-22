@@ -103,7 +103,7 @@ func (e *outputConsumer) wait() error {
 		e.mutex.Lock()
 		e.opts.Logger.Println("Encountered timeout")
 		return fmt.Errorf("after %s: %w", e.opts.Timeout, TimeoutError)
-	case state := <-ttExited(e.tt, true):
+	case state := <-e.tt.Exited(true): // allow for output to be read first by first case in this select{}
 		e.mutex.Lock()
 		if state.Err != nil {
 			e.opts.Logger.Println("Encountered error waiting for process to exit: %s\n", state.Err.Error())

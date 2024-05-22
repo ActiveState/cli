@@ -180,7 +180,7 @@ func (tt *TermTest) expectExitCode(exitCode int, match bool, opts ...SetExpectOp
 	select {
 	case <-time.After(timeoutV):
 		return fmt.Errorf("after %s: %w", timeoutV, TimeoutError)
-	case state := <-ttExited(tt, false):
+	case state := <-tt.Exited(false): // do not wait for unread output since it's not read by this select{}
 		if state.Err != nil && (state.ProcessState == nil || state.ProcessState.ExitCode() == 0) {
 			return fmt.Errorf("cmd wait failed: %w", state.Err)
 		}
