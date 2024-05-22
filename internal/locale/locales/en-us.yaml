@@ -1594,7 +1594,7 @@ err_initial_no_requirement:
     To check for available packages run '[ACTIONABLE]state search <package_name>[/RESET]'.
 manifest_deprecation_warning:
   other: |
-    [WARNING]Warning:[/RESET] This command is deprecated, please use '[ACTIONABLE]state manfiest[/RESET]' instead.
+    [WARNING]Warning:[/RESET] This command is deprecated, please use '[ACTIONABLE]state manifest[/RESET]' instead.
 manifest_runtime_needs_update:
   other: "[WARNING]WARNING:[/RESET] Your runtime is out of date, in order to ensure an accurate manifest please run [ACTIONABLE]state refresh[/RESET].\n"
 vulnerability_critical:
