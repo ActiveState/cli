@@ -2,7 +2,6 @@ package pull
 
 import (
 	"errors"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -80,6 +79,14 @@ func (o *pullOutput) MarshalOutput(format output.Format) interface{} {
 
 func (o *pullOutput) MarshalStructured(format output.Format) interface{} {
 	return o
+}
+
+type ErrBuildScriptMergeConflict struct {
+	ProjectDir string
+}
+
+func (e *ErrBuildScriptMergeConflict) Error() string {
+	return "build script merge conflict"
 }
 
 func (p *Pull) Run(params *PullParams) (rerr error) {
@@ -160,6 +167,12 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		if p.cfg.GetBool(constants.OptinBuildscriptsConfig) {
 			err := p.mergeBuildScript(*remoteCommit, *localCommit)
 			if err != nil {
+				if errs.Matches(err, &ErrBuildScriptMergeConflict{}) {
+					err2 := localcommit.Set(p.project.Dir(), remoteCommit.String())
+					if err2 != nil {
+						err = errs.Pack(err, errs.Wrap(err2, "Could not set local commit to remote commit after build script merge conflict"))
+					}
+				}
 				return errs.Wrap(err, "Could not merge local build script with remote changes")
 			}
 		}
@@ -260,10 +273,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 		if err != nil {
 			return locale.WrapError(err, "err_diff_build_script", "Unable to generate differences between local and remote build script")
 		}
-		return locale.NewInputError(
-			"err_build_script_merge",
-			"Unable to automatically merge build scripts. Please resolve conflicts manually in '{{.V0}}' and then run '[ACTIONABLE]state commit[/RESET]'",
-			filepath.Join(p.project.Dir(), constants.BuildScriptFileName))
+		return &ErrBuildScriptMergeConflict{p.project.Dir()}
 	}
 
 	// For now, pick the later of the script AtTimes.

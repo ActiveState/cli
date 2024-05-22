@@ -94,9 +94,6 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	cp.Expect("Package added", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
-	commit, err := localcommit.Get(ts.Dirs.Work)
-	suite.Require().NoError(err)
-
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.NoError(err, "Error loading project")
 
@@ -117,12 +114,14 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	suite.Assert().Contains(string(bytes), "=======", "No merge conflict markers are in build script")
 	suite.Assert().Contains(string(bytes), ">>>>>>>", "No merge conflict markers are in build script")
 
-	// Verify the local commit was not updated to the merge commit.
-	// Note: even though the buildscript merge failed, a merge commit was still created. After resolving
-	// buildscript conflicts, `state commit` should always have something new to commit.
-	commit2, err := localcommit.Get(ts.Dirs.Work)
+	// Verify the local commit was updated to the remote commit, not the merge commit.
+	// Note: even though the buildscript merge failed, a merge commit was still created (we just
+	// ignore it). After resolving buildscript conflicts, `state commit` should always have something
+	// new to commit.
+	remoteHeadCommit := "d908a758-6a81-40d4-b0eb-87069cd7f07d"
+	commit, err := localcommit.Get(ts.Dirs.Work)
 	suite.Require().NoError(err)
-	suite.Assert().Equal(commit.String(), commit2.String(), "localcommit should not have been updated to merged commit")
+	suite.Assert().Equal(remoteHeadCommit, commit.String(), "localcommit should have been updated to remote commit")
 }
 
 func (suite *PullIntegrationTestSuite) assertMergeStrategyNotification(ts *e2e.Session, strategy string) {
