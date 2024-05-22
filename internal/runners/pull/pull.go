@@ -157,16 +157,16 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 	}
 
 	if commitID != *resultingCommit {
-		err := localcommit.Set(p.project.Dir(), resultingCommit.String())
-		if err != nil {
-			return errs.Wrap(err, "Unable to set local commit")
-		}
-
 		if p.cfg.GetBool(constants.OptinBuildscriptsConfig) {
 			err := p.mergeBuildScript(*remoteCommit, *localCommit)
 			if err != nil {
 				return errs.Wrap(err, "Could not merge local build script with remote changes")
 			}
+		}
+
+		err := localcommit.Set(p.project.Dir(), resultingCommit.String())
+		if err != nil {
+			return errs.Wrap(err, "Unable to set local commit")
 		}
 
 		p.out.Print(&pullOutput{

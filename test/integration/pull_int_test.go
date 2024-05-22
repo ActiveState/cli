@@ -94,6 +94,9 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	cp.Expect("Package added", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
+	commit, err := localcommit.Get(ts.Dirs.Work)
+	suite.Require().NoError(err)
+
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.NoError(err, "Error loading project")
 
@@ -114,12 +117,12 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	suite.Assert().Contains(string(bytes), "=======", "No merge conflict markers are in build script")
 	suite.Assert().Contains(string(bytes), ">>>>>>>", "No merge conflict markers are in build script")
 
-	// Verify the local commit was updated to the merge commit.
+	// Verify the local commit was not updated to the merge commit.
 	// Note: even though the buildscript merge failed, a merge commit was still created. After resolving
-	// buildscript conflicts, `state commit` should have something new to commit.
-	commit, err := localcommit.Get(ts.Dirs.Work)
+	// buildscript conflicts, `state commit` should always have something new to commit.
+	commit2, err := localcommit.Get(ts.Dirs.Work)
 	suite.Require().NoError(err)
-	suite.Assert().NotEqual(commit.String(), "447b8363-024c-4143-bf4e-c96989314fdf", "localcommit not updated to merged commit")
+	suite.Assert().Equal(commit.String(), commit2.String(), "localcommit should not have been updated to merged commit")
 }
 
 func (suite *PullIntegrationTestSuite) assertMergeStrategyNotification(ts *e2e.Session, strategy string) {
