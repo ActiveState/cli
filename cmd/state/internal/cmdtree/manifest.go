@@ -24,6 +24,7 @@ func newManifestCommmand(prime *primer.Values) *captain.Command {
 
 	cmd.SetGroup(PackagesGroup)
 	cmd.SetSupportsStructuredOutput()
+	cmd.SetUnstable(true)
 
 	return cmd
 }
