@@ -755,6 +755,37 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Indirect() {
 	cp.ExpectExitCode(1)
 }
 
+func (suite *PackageIntegrationTestSuite) TestChangeSummary() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.Expect("Successfully set")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "."),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("install", "requests@2.31.0"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Resolving Dependencies")
+	cp.Expect("Done")
+	cp.Expect("Installing requests@2.31.0 includes 4 direct dependencies")
+	cp.Expect("├─ ")
+	cp.Expect("├─ ")
+	cp.Expect("├─ ")
+	cp.Expect("└─ ")
+	cp.Expect("Package added: requests", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0)
+}
+
 func TestPackageIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(PackageIntegrationTestSuite))
 }

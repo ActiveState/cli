@@ -27,7 +27,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -289,8 +288,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 		return errs.Wrap(err, "Could not initialize runtime")
 	}
-	artifacts := commit.BuildPlan().Artifacts().Filter(buildplan.FilterStateArtifacts(), buildplan.FilterRuntimeArtifacts())
-	dependencies.OutputSummary(r.out, artifacts)
+	dependencies.OutputSummary(r.out, commit.BuildPlan().RequestedArtifacts())
 	err = runtime.UpdateByReference(rti, commit, r.auth, proj, r.out, runtime.OptNone)
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime after init")
