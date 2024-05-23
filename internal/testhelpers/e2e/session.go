@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
@@ -38,7 +39,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -562,16 +562,8 @@ func (s *Session) Close() error {
 		}
 	}
 
-	serviceURL := api.GetServiceURL(api.ServiceMono)
-	host := os.Getenv(constants.APIHostEnvVarName)
-	if host == "" {
-		host = constants.DefaultAPIHost
-	}
-	serviceURL.Host = strings.Replace(serviceURL.Host, string(api.ServiceMono)+api.TestingPlatform, host, 1)
-
 	for _, proj := range s.createdProjects {
-		params := projects.NewDeleteProjectParams().WithOrganizationName(proj.Owner).WithProjectName(proj.Project)
-		_, err := mono.Init(serviceURL, nil).Projects.DeleteProject(params, auth.ClientAuth())
+		err := model.DeleteProject(proj.Owner, proj.Project, auth)
 		if err != nil {
 			s.T.Errorf("Could not delete project %s: %v", proj.Project, errs.JoinMessage(err))
 		}
