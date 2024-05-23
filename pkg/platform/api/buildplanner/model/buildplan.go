@@ -431,7 +431,6 @@ func processPlanningError(message string, subErrors []*BuildExprLocation) error 
 			}
 		}
 	}
-	fmt.Println("Returning BuildPlannerError")
 	return &BuildPlannerError{
 		ValidationErrors: errs,
 		IsTransient:      isTransient,
