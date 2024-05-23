@@ -2,7 +2,9 @@ package pull
 
 import (
 	"errors"
+	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
@@ -16,6 +18,7 @@ func rationalizeError(err *error) {
 
 	var mergeCommitErr *response.MergedCommitError
 	var noCommonParentErr *errNoCommonParent
+	var buildscriptMergeCommitErr *ErrBuildScriptMergeConflict
 
 	switch {
 	case errors.As(*err, &mergeCommitErr):
@@ -46,6 +49,7 @@ func rationalizeError(err *error) {
 				),
 			)
 		}
+
 	case errors.As(*err, &noCommonParentErr):
 		*err = errs.WrapUserFacing(*err,
 			locale.Tr("err_pull_no_common_parent",
@@ -54,5 +58,12 @@ func rationalizeError(err *error) {
 			),
 			errs.SetInput(),
 		)
+
+	case errors.As(*err, &buildscriptMergeCommitErr):
+		*err = errs.WrapUserFacing(*err,
+			locale.Tl("err_build_script_merge",
+				"Unable to automatically merge build scripts. Please resolve conflicts manually in '{{.V0}}' and then run '[ACTIONABLE]state commit[/RESET]'",
+				filepath.Join(buildscriptMergeCommitErr.ProjectDir, constants.BuildScriptFileName)),
+			errs.SetInput())
 	}
 }
