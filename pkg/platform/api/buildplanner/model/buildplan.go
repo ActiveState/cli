@@ -431,6 +431,7 @@ func processPlanningError(message string, subErrors []*BuildExprLocation) error 
 			}
 		}
 	}
+	fmt.Println("Returning BuildPlannerError")
 	return &BuildPlannerError{
 		ValidationErrors: errs,
 		IsTransient:      isTransient,
@@ -559,7 +560,7 @@ type MergeCommitResult struct {
 }
 
 type BuildTargetResult struct {
-	Project *Project `json:"Project"`
+	Build *Build `json:"buildCommitTarget"`
 	*Error
 	*NotFoundError
 }
