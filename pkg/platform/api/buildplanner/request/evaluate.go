@@ -15,56 +15,47 @@ type evaluate struct {
 
 func (b *evaluate) Query() string {
 	return `
-query ($organization: String!, $project: String!, $commitId: String!, $target: String!) {
-  project(organization: $organization, project: $project) {
-    ... on Project {
+mutation ($organization: String!, $project: String!, $commitId: String!, $target: String) {
+  buildCommitTarget(
+    input: {organization: $organization, project: $project, commitId: $commitId, target: $target}
+  ) {
+    ... on Build {
       __typename
-      commit(vcsRef: $commitId) {
-        ... on Commit {
-          __typename
-          build(target: $target) {
-            ... on Build {
-              __typename
-              status
-            }
-            ... on PlanningError {
-              __typename
-              message
-              subErrors {
-                __typename
-                ... on GenericSolveError {
-                  path
-                  message
-                  isTransient
-                  validationErrors {
-                    error
-                    jsonPath
-                  }
-                }
-                ... on RemediableSolveError {
-                  path
-                  message
-                  isTransient
-                  errorType
-                  validationErrors {
-                    error
-                    jsonPath
-                  }
-                  suggestedRemediations {
-                    remediationType
-                    command
-                    parameters
-                  }
-                }
-              }
-            }
+      status
+    }
+    ... on PlanningError {
+      __typename
+      message
+      subErrors {
+        __typename
+        ... on GenericSolveError {
+          buildExprPath
+          message
+          isTransient
+          validationErrors {
+            error
+            jsonPath
           }
         }
-        ... on NotFound {
-          type
+        ... on RemediableSolveError {
+          buildExprPath
           message
-          resource
-          mayNeedAuthentication
+          isTransient
+          errorType
+          validationErrors {
+            error
+            jsonPath
+          }
+          suggestedRemediations {
+            remediationType
+            command
+            parameters
+          }
+        }
+        ... on TargetNotFound {
+          message
+          requestedTarget
+          possibleTargets
         }
       }
     }
