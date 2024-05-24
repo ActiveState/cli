@@ -6,7 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
+	"github.com/ActiveState/cli/pkg/runtime/events"
 )
 
 func NewRuntimeProgressIndicator(out output.Outputer) events.Handler {

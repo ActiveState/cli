@@ -1,0 +1,281 @@
+[
+  {
+    "name": "inherit prepend",
+    "definitions": [
+      {
+        "env": [
+          { "values": [ "a", "c", "d" ], "env_name": "KEY", "separator": ":", "inherit": true, "join": "prepend" } 
+        ],
+        "installdir": "installdir"
+      }
+    ],
+    "base_env": {
+      "KEY": "a:b"
+    },
+    "result": {
+      "KEY": "a:c:d:a:b"
+    }
+  },
+  {
+    "name": "inherit append",
+    "definitions": [
+      {
+        "env": [
+          { "values": [ "a", "c", "d" ], "env_name": "KEY", "separator": ":", "inherit": true, "join": "append" } 
+        ],
+        "installdir": "installdir"
+      }
+    ],
+    "base_env": {
+      "KEY": "a:b"
+    },
+    "result": {
+      "KEY": "a:b:a:c:d"
+    }
+  },
+  {
+    "name": "no inheritance",
+    "definitions": [
+      {
+        "env": [
+          { "values": [ "a", "c", "d" ], "env_name": "KEY", "separator": ":", "inherit": false, "join": "append" } 
+        ],
+        "installdir": "installdir"
+      }
+    ],
+    "base_env": {
+      "KEY": "a:b"
+    },
+    "result": {
+      "KEY": "a:c:d"
+    }
+  },
+  {
+    "name": "merge prepend",
+    "definitions": [
+      {
+        "env": [
+          { "values": [ "a", "b" ], "env_name": "KEY", "separator": ":", "inherit": true, "join": "prepend" } 
+        ],
+        "installdir": "installdir"
+      },
+      {
+        "env": [
+          { "values": [ "a", "c", "d" ], "env_name": "KEY", "separator": ":", "inherit": true, "join": "prepend" } 
+        ],
+        "installdir": "installdir"
+      }
+    ],
+    "base_env": {},
+    "result": {
+      "KEY": "a:c:d:b"
+    }
+  },
+  {
+    "name": "merge append",
+    "definitions": [
+      {
+        "env": [ { "values": [ "a", "b" ], "env_name": "KEY", "separator": ":", "inherit": true, "join": "append" } ],
+        "installdir": "installdir"
+      },
+      {
+        "env": [ { "values": [ "a", "c", "d" ], "env_name": "KEY", "separator": ":", "inherit": true, "join": "append" } ],
+        "installdir": "installdir"
+      }
+    ],
+    "base_env": {},
+    "result": {
+      "KEY": "b:a:c:d"
+    }
+  },
+  {
+    "name": "prepend to runtime with append strategy",
+    "definitions": [
+      {
+        "env": [ { "values": [ "a", "b" ], "env_name": "KEY", "separator": ":", "inherit": true, "join": "append" } ],
+        "installdir": "installdir"
+      },
+      {
+        "env": [ { "values": [ "a", "c", "d" ], "env_name": "KEY", "separator": ":", "inherit": true, "join": "prepend" } ],
+        "installdir": "installdir"
+      }
+    ],
+    "base_env": {"KEY": "V"},
+    "result": {
+      "KEY": "a:c:d:b:V"
+    }
+  },
+  {
+    "name": "append to runtime with prepend strategy",
+    "definitions": [
+      {
+        "env": [ { "values": [ "a", "b" ], "env_name": "KEY", "separator": ":", "inherit": true, "join": "prepend" } ],
+        "installdir": "installdir"
+      },
+      {
+        "env": [ { "values": [ "a", "c", "d" ], "env_name": "KEY", "separator": ":", "inherit": true, "join": "append" } ],
+        "installdir": "installdir"
+      }
+    ],
+    "base_env": {"KEY": "V"},
+    "result": {
+      "KEY": "V:b:a:c:d"
+    }
+  },
+  {
+    "name": "acceptable merge of disallowed join",
+    "definitions": [
+      {
+        "env": [
+          { "values": [ "a" ], "env_name": "KEY", "separator": ":", "inherit": true, "join": "disallowed" } 
+        ],
+        "installdir": "installdir"
+      },
+      {
+        "env": [
+          { "values": [ "a" ], "env_name": "KEY", "separator": ":", "inherit": true, "join": "disallowed" }
+        ],
+        "installdir": "installdir"
+      }
+    ],
+    "base_env": {},
+    "result": {
+      "KEY": "a"
+    }
+  },
+  {
+    "name": "conflicting disallowed join (two many values 1)",
+    "definitions": [
+      {
+        "env": [
+          { "values": [ "a", "b" ], "env_name": "KEY", "separator": ":", "inherit": true, "join": "disallowed" }
+        ],
+        "installdir": "installdir"
+      },
+      {
+        "env": [
+          { "values": [ "a" ], "env_name": "KEY", "separator": ":", "inherit": true, "join": "disallowed" }
+        ],
+        "installdir": "installdir"
+      }
+    ],
+    "base_env": {},
+    "error": true
+  },
+  {
+    "name": "conflicting disallowed join (two many values 2)",
+    "definitions": [
+      {
+        "env": [
+          { "values": [ "a" ], "env_name": "KEY", "separator": ":", "inherit": true, "join": "disallowed" }
+        ],
+        "installdir": "installdir"
+      },
+      {
+        "env": [
+          { "values": [ "a", "b" ], "env_name": "KEY", "separator": ":", "inherit": true, "join": "disallowed" }
+        ],
+        "installdir": "installdir"
+      }
+    ],
+    "base_env": {},
+    "error": true
+  },
+  {
+    "name": "conflicting disallowed join (differing values)",
+    "definitions": [
+      {
+        "env": [
+          { "values": [ "a" ], "env_name": "KEY", "separator": ":", "inherit": true, "join": "disallowed" }
+        ],
+        "installdir": "installdir"
+      },
+      {
+        "env": [
+          { "values": [ "b" ], "env_name": "KEY", "separator": ":", "inherit": true, "join": "disallowed" }
+        ],
+        "installdir": "installdir"
+      }
+    ],
+    "base_env": {},
+    "error": true
+  },
+  {
+    "name": "conflicting separators",
+    "definitions": [
+      {
+        "env": [
+          { "values": [ "a" ], "env_name": "KEY", "separator": ":", "inherit": true, "join": "prepend" }
+        ],
+        "installdir": "installdir"
+      },
+      {
+        "env": [
+          { "values": [ "b" ], "env_name": "KEY", "separator": ";", "inherit": true, "join": "prepend" }
+        ],
+        "installdir": "installdir"
+      }
+    ],
+    "base_env": {},
+    "error": true
+  },
+  {
+    "name": "conflicting disallowed join (conflict with base environment)",
+    "definitions": [
+      {
+        "env": [
+          { "values": [ "a" ], "env_name": "KEY", "separator": ":", "inherit": true, "join": "disallowed" }
+        ],
+        "installdir": "installdir"
+      }
+    ],
+    "base_env": {
+      "KEY": "b"
+    },
+    "error": true
+  },
+  {
+    "name": "complex setup",
+    "definitions": [
+      {
+        "env": [
+          { "values": [ "a", "c", "d" ], "env_name": "A", "separator": ":", "inherit": true, "join": "prepend" },
+          { "values": [ "ba", "bc" ], "env_name": "B", "separator": "|", "inherit": false, "join": "prepend" },
+          { "values": [ "ca" ], "env_name": "C", "separator": "", "inherit": true, "join": "disallowed" },
+          { "values": [ "da" ], "env_name": "D", "separator": "", "inherit": false, "join": "disallowed" }
+        ],
+        "installdir": "installdir"
+      },
+      {
+        "env": [
+          { "values": [ "ba", "bc" ], "env_name": "B", "separator": "|", "inherit": false, "join": "append" },
+          { "values": [ "da" ], "env_name": "D", "separator": "", "inherit": false, "join": "disallowed" }
+        ],
+        "installdir": "installdir"
+      },
+      {
+        "env": [
+          { "values": [ "a", "b" ], "env_name": "A", "separator": ":", "inherit": true, "join": "prepend" },
+          { "values": [ "da" ], "env_name": "D", "separator": "", "inherit": false, "join": "disallowed" },
+          { "values": [ "ea" ], "env_name": "E", "separator": "", "inherit": true, "join": "disallowed" },
+          { "values": [ "bb", "bc" ], "env_name": "B", "separator": "|", "inherit": false, "join": "append" }
+        ],
+        "installdir": "installdir"
+      }
+    ],
+    "base_env": {
+      "A": "c:e",
+      "B": "bc|bg",
+      "D": "da",
+      "E": "ea",
+      "OTHER": "something"
+    },
+    "result": {
+      "A": "a:b:c:d:c:e",
+      "B": "ba|bb|bc",
+      "C": "ca",
+      "D": "da",
+      "E": "ea"
+    }
+  }
+]

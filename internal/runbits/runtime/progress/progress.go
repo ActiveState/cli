@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/sliceutils"
+	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/runtime/events"
 	"github.com/go-openapi/strfmt"
 	"github.com/vbauerster/mpb/v7"
 	"golang.org/x/net/context"
@@ -17,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 )
 
 type step struct {
@@ -59,17 +59,14 @@ type ProgressDigester struct {
 	solveSpinner *output.Spinner
 	artifactBars map[artifactStepID]*bar
 
-	// Artifact name lookup map
-	artifacts map[strfmt.UUID]string
-
 	// Recipe that we're performing progress for
 	recipeID strfmt.UUID
 
 	// Track the totals required as the bars for these are only initialized for the first artifact received, at which
 	// time we won't have the totals unless we previously recorded them.
-	buildsExpected    map[strfmt.UUID]struct{}
-	downloadsExpected map[strfmt.UUID]struct{}
-	installsExpected  map[strfmt.UUID]struct{}
+	buildsExpected    buildplan.ArtifactIDMap
+	downloadsExpected buildplan.ArtifactIDMap
+	installsExpected  buildplan.ArtifactIDMap
 
 	// Debug properties used to reduce the number of log entries generated
 	dbgEventLog []string
@@ -98,7 +95,6 @@ func NewProgressIndicator(w io.Writer, out output.Outputer) *ProgressDigester {
 			mpb.WithRefreshRate(refreshRate),
 		),
 
-		artifacts:    map[strfmt.UUID]string{},
 		artifactBars: map[artifactStepID]*bar{},
 
 		cancelMpb:    cancel,
@@ -140,11 +136,10 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		}
 
 		p.recipeID = v.RecipeID
-		p.artifacts = v.Artifacts
 
-		p.buildsExpected = sliceutils.ToLookupMap(v.ArtifactsToBuild)
-		p.downloadsExpected = sliceutils.ToLookupMap(v.ArtifactsToDownload)
-		p.installsExpected = sliceutils.ToLookupMap(v.ArtifactsToInstall)
+		p.buildsExpected = v.ArtifactsToBuild
+		p.downloadsExpected = v.ArtifactsToDownload
+		p.installsExpected = v.ArtifactsToInstall
 
 		if len(v.ArtifactsToBuild)+len(v.ArtifactsToDownload)+len(v.ArtifactsToInstall) == 0 {
 			p.out.Notice(locale.T("progress_nothing_to_do"))
@@ -349,18 +344,7 @@ func (p *ProgressDigester) Close() error {
 				}()))
 			}
 
-			multilog.Error(`
-Timed out waiting for progress bars to close. Recipe: %s
-Progress bars status:
-%s
-Still expecting:
- - Builds: %v
- - Downloads: %v
- - Installs: %v`,
-				p.recipeID.String(),
-				strings.Join(debugMsg, "\n"),
-				p.buildsExpected, p.downloadsExpected, p.installsExpected,
-			)
+			multilog.Error(`Timed out waiting for progress bars to close. %s`, strings.Join(debugMsg, "\n"))
 
 			/* https://activestatef.atlassian.net/browse/DX-1831
 			if pending > 0 {

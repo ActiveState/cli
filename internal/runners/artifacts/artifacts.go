@@ -136,7 +136,7 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Could not get platforms")
 	}
 
-	hasFailedArtifacts := len(bp.Artifacts()) != len(bp.Artifacts(buildplan.FilterSuccessfulArtifacts()))
+	hasFailedArtifacts := len(bp.Artifacts(buildplan.FilterFailedArtifacts())) > 0
 
 	out := &StructuredOutput{HasFailedArtifacts: hasFailedArtifacts, BuildComplete: bp.IsBuildReady()}
 	for _, platformUUID := range bp.Platforms() {

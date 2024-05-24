@@ -10,6 +10,8 @@ import (
 	"github.com/ActiveState/cli/pkg/buildplan"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
+	"github.com/ActiveState/cli/pkg/runtime/events"
+	"github.com/ActiveState/cli/pkg/runtime/internal/buildlog"
 	"golang.org/x/net/context"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -30,8 +32,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/project"
 )

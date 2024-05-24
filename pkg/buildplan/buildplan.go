@@ -12,11 +12,12 @@ import (
 )
 
 type BuildPlan struct {
-	platforms    []strfmt.UUID
-	artifacts    Artifacts
-	requirements Requirements
-	ingredients  Ingredients
-	raw          *raw.Build
+	legacyRecipeID strfmt.UUID // still used for buildlog streamer
+	platforms      []strfmt.UUID
+	artifacts      Artifacts
+	requirements   Requirements
+	ingredients    Ingredients
+	raw            *raw.Build
 }
 
 func Unmarshal(data []byte) (*BuildPlan, error) {
@@ -148,15 +149,8 @@ func (b *BuildPlan) Engine() types.BuildEngine {
 // initialize the build log streamer.
 // This information will only be populated if the build is an alternate build.
 // This is specified in the build planner queries.
-func (b *BuildPlan) RecipeID() (strfmt.UUID, error) {
-	var result strfmt.UUID
-	for _, id := range b.raw.BuildLogIDs {
-		if result != "" && result.String() != id.ID {
-			return result, errs.New("Build plan contains multiple recipe IDs")
-		}
-		result = strfmt.UUID(id.ID)
-	}
-	return result, nil
+func (b *BuildPlan) RecipeID() strfmt.UUID {
+	return b.legacyRecipeID
 }
 
 func (b *BuildPlan) IsBuildReady() bool {

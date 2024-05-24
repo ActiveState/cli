@@ -52,8 +52,19 @@ func (p *ProgressDigester) addTotalBar(name string, total int64, options ...mpb.
 // addArtifactBar adds a bar counting the progress in a specific artifact setup step
 func (p *ProgressDigester) addArtifactBar(id strfmt.UUID, step step, total int64, countsBytes bool) error {
 	name := locale.T("artifact_unknown_name")
-	if aname, ok := p.artifacts[id]; ok {
-		name = aname
+	switch step {
+	case StepBuild:
+		if a, ok := p.buildsExpected[id]; ok {
+			name = a.NameAndVersion()
+		}
+	case StepDownload:
+		if a, ok := p.downloadsExpected[id]; ok {
+			name = a.NameAndVersion()
+		}
+	case StepInstall:
+		if a, ok := p.installsExpected[id]; ok {
+			name = a.NameAndVersion()
+		}
 	}
 	logging.Debug("Adding %s artifact bar: %s", step.verb, name)
 
@@ -74,7 +85,7 @@ func (p *ProgressDigester) updateArtifactBar(id strfmt.UUID, step step, inc int)
 	p.artifactBars[aStep.ID()].IncrBy(inc)
 
 	name := locale.T("artifact_unknown_name")
-	if aname, ok := p.artifacts[id]; ok {
+	if aname, ok := p.artifactNames[id]; ok {
 		name = aname
 	}
 	if p.artifactBars[aStep.ID()].Current() >= p.artifactBars[aStep.ID()].total {
@@ -87,7 +98,7 @@ func (p *ProgressDigester) updateArtifactBar(id strfmt.UUID, step step, inc int)
 // dropArtifactBar removes an artifact bar from the progress display
 func (p *ProgressDigester) dropArtifactBar(id strfmt.UUID, step step) error {
 	name := locale.T("artifact_unknown_name")
-	if aname, ok := p.artifacts[id]; ok {
+	if aname, ok := p.artifactNames[id]; ok {
 		name = aname
 	}
 	logging.Debug("Dropping %s artifact bar: %s", step.verb, name)

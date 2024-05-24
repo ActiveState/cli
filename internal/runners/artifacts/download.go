@@ -21,8 +21,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	rtProgress "github.com/ActiveState/cli/pkg/platform/runtime/setup/events/progress"
 	"github.com/ActiveState/cli/pkg/project"
+	rtProgress "github.com/ActiveState/cli/pkg/runtime/events/progress"
 )
 
 type DownloadParams struct {

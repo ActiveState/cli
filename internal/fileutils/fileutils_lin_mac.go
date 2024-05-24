@@ -6,6 +6,7 @@ package fileutils
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"golang.org/x/sys/unix"
@@ -43,5 +44,60 @@ func ResolveUniquePath(path string) (string, error) {
 }
 
 func HideFile(path string) error {
+	return nil
+}
+
+// SmartLink creates a link from src to target. On Linux and Mac this is just a symbolic link.
+func SmartLink(src, dest string) error {
+	var err error
+	src, err = ResolvePath(src)
+	if err != nil {
+		return errs.Wrap(err, "Could not resolve src path")
+	}
+	dest, err = ResolvePath(dest)
+	if err != nil {
+		return errs.Wrap(err, "Could not resolve destination path")
+	}
+	return SymLink(src, dest)
+}
+
+// SmartUnlinkContents will unlink the contents of src to dest if the links exist
+func SmartUnlinkContents(src, dest string) error {
+	if !DirExists(dest) {
+		return errs.New("dest dir does not exist: %s", dest)
+	}
+
+	var err error
+	src, err = ResolvePath(src)
+	if err != nil {
+		return errs.Wrap(err, "Could not resolve src path")
+	}
+	dest, err = ResolvePath(dest)
+	if err != nil {
+		return errs.Wrap(err, "Could not resolve destination path")
+	}
+
+	entries, err := os.ReadDir(dest)
+	if err != nil {
+		return errs.Wrap(err, "Reading dir %s failed", dest)
+	}
+	for _, entry := range entries {
+		realPath, err := filepath.EvalSymlinks(filepath.Join(dest, entry.Name()))
+		if err != nil {
+			return errs.Wrap(err, "Could not evaluate symlink of %s", entry.Name())
+		}
+
+		// Ensure we only delete this file if we can ensure that it comes from our src
+		if !strings.HasPrefix(realPath, src) {
+			return errs.New("File %s has unexpected link: %s", entry.Name(), realPath)
+		}
+
+		// Delete the link
+		// No need to recurse here as we're dealing with symlinks
+		if err := os.Remove(filepath.Join(dest, entry.Name())); err != nil {
+			return errs.Wrap(err, "Could not unlink %s", entry.Name())
+		}
+	}
+
 	return nil
 }

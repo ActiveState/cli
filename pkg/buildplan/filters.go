@@ -59,9 +59,20 @@ func FilterStateArtifacts() FilterArtifact {
 
 func FilterSuccessfulArtifacts() FilterArtifact {
 	return func(a *Artifact) bool {
-		return a.Status == types.ArtifactSucceeded ||
-			a.Status == types.ArtifactBlocked ||
-			a.Status == types.ArtifactStarted ||
-			a.Status == types.ArtifactReady
+		return a.Status == types.ArtifactSucceeded
+	}
+}
+
+func FilterFailedArtifacts() FilterArtifact {
+	return func(a *Artifact) bool {
+		return a.Status == types.ArtifactBlocked ||
+			a.Status == types.ArtifactFailedTransiently ||
+			a.Status == types.ArtifactFailedPermanently
+	}
+}
+
+func FilterNeedsBuild() FilterArtifact {
+	return func(a *Artifact) bool {
+		return a.Status != types.ArtifactSucceeded
 	}
 }

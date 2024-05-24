@@ -1,6 +1,7 @@
 package events
 
 import (
+	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -10,14 +11,20 @@ The naming format of events should be in the form of <Component>[<Action>]<Outco
 */
 
 type Handler interface {
-	Handle(ev Eventer) error
+	Handle(ev Event) error
 	Close() error
 }
+
+type Event interface {
+	IsEvent()
+}
+
+type HandlerFunc func(Event) error
 
 type VoidHandler struct {
 }
 
-func (v *VoidHandler) Handle(Eventer) error {
+func (v *VoidHandler) Handle(Event) error {
 	return nil
 }
 
@@ -25,80 +32,57 @@ func (v *VoidHandler) Close() error {
 	return nil
 }
 
-type Event struct{}
-
-type Eventer interface {
-	IsEvent() Event
-}
-
 type Start struct {
 	RecipeID strfmt.UUID
 
 	RequiresBuild bool
-	Artifacts     map[strfmt.UUID]string
 	LogFilePath   string
 
-	ArtifactsToBuild    []strfmt.UUID
-	ArtifactsToDownload []strfmt.UUID
-	ArtifactsToInstall  []strfmt.UUID
+	ArtifactsToBuild    buildplan.ArtifactIDMap
+	ArtifactsToDownload buildplan.ArtifactIDMap
+	ArtifactsToInstall  buildplan.ArtifactIDMap
 }
 
-func (Start) IsEvent() Event {
-	return Event{}
-}
+func (Start) IsEvent() {}
 
 type Success struct {
 }
 
-func (Success) IsEvent() Event {
-	return Event{}
-}
+func (Success) IsEvent() {}
 
 type Failure struct {
 }
 
-func (Failure) IsEvent() Event {
-	return Event{}
-}
+func (Failure) IsEvent() {}
 
 type BuildSkipped struct {
 }
 
-func (BuildSkipped) IsEvent() Event {
-	return Event{}
-}
+func (BuildSkipped) IsEvent() {}
 
 type BuildStarted struct {
 	LogFilePath string
 }
 
-func (BuildStarted) IsEvent() Event {
-	return Event{}
-}
+func (BuildStarted) IsEvent() {}
 
 type BuildSuccess struct {
 }
 
-func (BuildSuccess) IsEvent() Event {
-	return Event{}
-}
+func (BuildSuccess) IsEvent() {}
 
 type BuildFailure struct {
 	Message string
 }
 
-func (BuildFailure) IsEvent() Event {
-	return Event{}
-}
+func (BuildFailure) IsEvent() {}
 
 type ArtifactBuildStarted struct {
 	ArtifactID strfmt.UUID
 	FromCache  bool
 }
 
-func (ArtifactBuildStarted) IsEvent() Event {
-	return Event{}
-}
+func (ArtifactBuildStarted) IsEvent() {}
 
 type ArtifactBuildProgress struct {
 	ArtifactID   strfmt.UUID
@@ -109,9 +93,7 @@ type ArtifactBuildProgress struct {
 	LogSource    string // source of this log (eg., builder/build-wrapper/...)
 }
 
-func (ArtifactBuildProgress) IsEvent() Event {
-	return Event{}
-}
+func (ArtifactBuildProgress) IsEvent() {}
 
 type ArtifactBuildFailure struct {
 	ArtifactID   strfmt.UUID
@@ -119,121 +101,120 @@ type ArtifactBuildFailure struct {
 	ErrorMessage string
 }
 
-func (ArtifactBuildFailure) IsEvent() Event {
-	return Event{}
-}
+func (ArtifactBuildFailure) IsEvent() {}
 
 type ArtifactBuildSuccess struct {
 	ArtifactID strfmt.UUID
 	LogURI     string
 }
 
-func (ArtifactBuildSuccess) IsEvent() Event {
-	return Event{}
-}
+func (ArtifactBuildSuccess) IsEvent() {}
 
 type ArtifactDownloadStarted struct {
 	ArtifactID strfmt.UUID
 	TotalSize  int
 }
 
-func (ArtifactDownloadStarted) IsEvent() Event {
-	return Event{}
-}
+func (ArtifactDownloadStarted) IsEvent() {}
 
 type ArtifactDownloadSkipped struct {
 	ArtifactID strfmt.UUID
 }
 
-func (ArtifactDownloadSkipped) IsEvent() Event {
-	return Event{}
-}
+func (ArtifactDownloadSkipped) IsEvent() {}
 
 type ArtifactDownloadProgress struct {
 	ArtifactID      strfmt.UUID
 	IncrementBySize int
 }
 
-func (ArtifactDownloadProgress) IsEvent() Event {
-	return Event{}
-}
+func (ArtifactDownloadProgress) IsEvent() {}
 
 type ArtifactDownloadFailure struct {
 	ArtifactID strfmt.UUID
 	Error      error
 }
 
-func (ArtifactDownloadFailure) IsEvent() Event {
-	return Event{}
-}
+func (ArtifactDownloadFailure) IsEvent() {}
 
 type ArtifactDownloadSuccess struct {
 	ArtifactID strfmt.UUID
 }
 
-func (ArtifactDownloadSuccess) IsEvent() Event {
-	return Event{}
-}
+func (ArtifactDownloadSuccess) IsEvent() {}
 
 type ArtifactInstallStarted struct {
 	ArtifactID strfmt.UUID
 	TotalSize  int
 }
 
-func (ArtifactInstallStarted) IsEvent() Event {
-	return Event{}
-}
+func (ArtifactInstallStarted) IsEvent() {}
 
 type ArtifactInstallProgress struct {
 	ArtifactID      strfmt.UUID
 	IncrementBySize int
 }
 
-func (ArtifactInstallSkipped) IsEvent() Event {
-	return Event{}
-}
+func (ArtifactInstallSkipped) IsEvent() {}
 
 type ArtifactInstallSkipped struct {
 	ArtifactID strfmt.UUID
 }
 
-func (ArtifactInstallProgress) IsEvent() Event {
-	return Event{}
-}
+func (ArtifactInstallProgress) IsEvent() {}
 
 type ArtifactInstallFailure struct {
 	ArtifactID strfmt.UUID
 	Error      error
 }
 
-func (ArtifactInstallFailure) IsEvent() Event {
-	return Event{}
-}
+func (ArtifactInstallFailure) IsEvent() {}
 
 type ArtifactInstallSuccess struct {
 	ArtifactID strfmt.UUID
 }
 
-func (ArtifactInstallSuccess) IsEvent() Event {
-	return Event{}
+func (ArtifactInstallSuccess) IsEvent() {}
+
+type ArtifactUnpackStarted struct {
+	ArtifactID strfmt.UUID
+	TotalSize  int
 }
+
+func (ArtifactUnpackStarted) IsEvent() {}
+
+type ArtifactUnpackProgress struct {
+	ArtifactID      strfmt.UUID
+	IncrementBySize int
+}
+
+func (ArtifactUnpackProgress) IsEvent() {}
+
+type ArtifactUnpackFailure struct {
+	ArtifactID strfmt.UUID
+	Error      error
+}
+
+func (ArtifactUnpackFailure) IsEvent() {}
+
+type ArtifactUnpackSuccess struct {
+	ArtifactID strfmt.UUID
+}
+
+func (ArtifactUnpackSuccess) IsEvent() {}
 
 type SolveStart struct{}
 
-func (SolveStart) IsEvent() Event {
-	return Event{}
-}
+func (SolveStart) IsEvent() {}
 
 type SolveError struct {
 	Error error
 }
 
-func (SolveError) IsEvent() Event {
-	return Event{}
-}
+func (SolveError) IsEvent() {}
 
 type SolveSuccess struct{}
 
-func (SolveSuccess) IsEvent() Event {
-	return Event{}
+func (SolveSuccess) IsEvent() {
+
 }

@@ -319,15 +319,10 @@ func FetchPlatformsForCommit(commitID strfmt.UUID, auth *authentication.Auth) ([
 	return platforms, nil
 }
 
-func FilterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID, cfg Configurable) ([]strfmt.UUID, error) {
+func FilterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID, preferredLibcVersion string) ([]strfmt.UUID, error) {
 	runtimePlatforms, err := FetchPlatforms()
 	if err != nil {
 		return nil, err
-	}
-
-	libcVersion, err := fetchLibcVersion(cfg)
-	if err != nil {
-		return nil, errs.Wrap(err, "failed to fetch libc version")
 	}
 
 	var pids []strfmt.UUID
@@ -349,7 +344,7 @@ func FilterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID,
 			}
 
 			if rtPf.LibcVersion != nil && rtPf.LibcVersion.Version != nil {
-				if libcVersion != "" && libcVersion != *rtPf.LibcVersion.Version {
+				if preferredLibcVersion != "" && preferredLibcVersion != *rtPf.LibcVersion.Version {
 					continue
 				}
 				// Convert the libc version to a major-minor float and map it to the platform ID for
@@ -383,7 +378,7 @@ func FilterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID,
 	}
 
 	if len(pids) == 0 && len(fallback) == 0 {
-		return nil, &ErrNoMatchingPlatform{hostPlatform, hostArch, libcVersion}
+		return nil, &ErrNoMatchingPlatform{hostPlatform, hostArch, preferredLibcVersion}
 	} else if len(pids) == 0 {
 		pids = fallback
 	}
@@ -660,8 +655,8 @@ func FetchNormalizedName(namespace Namespace, name string, auth *authentication.
 	return *res.Payload.NormalizedNames[0].Normalized, nil
 }
 
-func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID, cfg Configurable) (strfmt.UUID, error) {
-	platformIDs, err := FilterPlatformIDs(hostPlatform, runtime.GOARCH, platforms, cfg)
+func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID, preferredLibcVersion string) (strfmt.UUID, error) {
+	platformIDs, err := FilterPlatformIDs(hostPlatform, runtime.GOARCH, platforms, preferredLibcVersion)
 	if err != nil {
 		return "", errs.Wrap(err, "filterPlatformIDs failed")
 	}

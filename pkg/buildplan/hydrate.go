@@ -65,6 +65,15 @@ func (b *BuildPlan) hydrate() error {
 		})
 	}
 
+	// Detect Recipe ID
+	var result strfmt.UUID
+	for _, id := range b.raw.BuildLogIDs {
+		if result != "" && result.String() != id.ID {
+			return errs.New("Build plan contains multiple recipe IDs")
+		}
+		b.legacyRecipeID = strfmt.UUID(id.ID)
+	}
+
 	if err := b.sanityCheck(); err != nil {
 		return errs.Wrap(err, "sanity check failed")
 	}

@@ -165,16 +165,33 @@ func (as Artifacts) RuntimeDependencies(recursive bool) Artifacts {
 	seen := make(map[strfmt.UUID]struct{})
 	dependencies := Artifacts{}
 	for _, a := range as {
-		dependencies = append(dependencies, a.runtimeDependencies(recursive, seen)...)
+		dependencies = append(dependencies, a.dependencies(recursive, seen, RuntimeRelation)...)
 	}
 	return dependencies
 }
 
 func (a *Artifact) RuntimeDependencies(recursive bool) Artifacts {
-	return a.runtimeDependencies(recursive, make(map[strfmt.UUID]struct{}))
+	return a.dependencies(recursive, make(map[strfmt.UUID]struct{}), RuntimeRelation)
 }
 
-func (a *Artifact) runtimeDependencies(recursive bool, seen map[strfmt.UUID]struct{}) Artifacts {
+// Dependencies returns ALL dependencies that an artifact has, this covers runtime and build time dependencies.
+// It does not cover test dependencies as we have no use for them in the state tool.
+func (as Artifacts) Dependencies(recursive bool) Artifacts {
+	seen := make(map[strfmt.UUID]struct{})
+	dependencies := Artifacts{}
+	for _, a := range as {
+		dependencies = append(dependencies, a.dependencies(recursive, seen, RuntimeRelation, BuildtimeRelation)...)
+	}
+	return dependencies
+}
+
+// Dependencies returns ALL dependencies that an artifact has, this covers runtime and build time dependencies.
+// It does not cover test dependencies as we have no use for them in the state tool.
+func (a *Artifact) Dependencies(recursive bool) Artifacts {
+	return a.dependencies(recursive, make(map[strfmt.UUID]struct{}), RuntimeRelation, BuildtimeRelation)
+}
+
+func (a *Artifact) dependencies(recursive bool, seen map[strfmt.UUID]struct{}, relations ...Relation) Artifacts {
 	// Guard against recursion, this shouldn't really be possible but we don't know how the buildplan might evolve
 	// so better safe than sorry.
 	if _, ok := seen[a.ArtifactID]; ok {
@@ -184,12 +201,19 @@ func (a *Artifact) runtimeDependencies(recursive bool, seen map[strfmt.UUID]stru
 
 	dependencies := Artifacts{}
 	for _, ac := range a.children {
-		if ac.Relation != RuntimeRelation {
+		related := len(relations) == 0
+		for _, relation := range relations {
+			if ac.Relation == relation {
+				related = true
+			}
+		}
+		if related == false {
 			continue
 		}
+
 		dependencies = append(dependencies, ac.Artifact)
 		if recursive {
-			dependencies = append(dependencies, ac.Artifact.RuntimeDependencies(recursive)...)
+			dependencies = append(dependencies, ac.Artifact.dependencies(recursive, seen, relations...)...)
 		}
 	}
 	return dependencies

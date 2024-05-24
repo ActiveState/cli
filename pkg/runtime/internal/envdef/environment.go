@@ -24,8 +24,8 @@ type EnvironmentDefinition struct {
 	// Transforms is a list of file transformations
 	Transforms []FileTransform `json:"file_transforms"`
 
-	// InstallDir is the directory (inside the artifact tarball) that needs to be installed on the user's computer
-	InstallDir string `json:"installdir"`
+	// installDir is the directory (inside the artifact tarball) that needs to be installed on the user's computer
+	installDir string `json:"installdir"`
 }
 
 // EnvironmentVariable defines a single environment variable and its values
@@ -50,7 +50,7 @@ const (
 )
 
 // MarshalText marshals a join directive for environment variables
-func (j VariableJoin) MarshalText() ([]byte, error) {
+func (j *VariableJoin) MarshalText() ([]byte, error) {
 	var res string
 	switch j {
 	default:
@@ -121,7 +121,7 @@ func (ed *EnvironmentDefinition) WriteFile(filepath string) error {
 	return os.WriteFile(filepath, blob, 0666)
 }
 
-// WriteFile marshals an environment definition to a file
+// Marshal marshals an environment definition to a file
 func (ed *EnvironmentDefinition) Marshal() ([]byte, error) {
 	blob, err := json.MarshalIndent(ed, "", "  ")
 	if err != nil {
@@ -159,8 +159,8 @@ func (ed *EnvironmentDefinition) ReplaceString(from string, replacement string) 
 //     EnvironmentVariable.Merge() and added to the result
 //   - Environment variables that are defined in only one of the two definitions,
 //     are added to the result directly
-func (ed EnvironmentDefinition) Merge(other *EnvironmentDefinition) (*EnvironmentDefinition, error) {
-	res := ed
+func (ed *EnvironmentDefinition) Merge(other *EnvironmentDefinition) (*EnvironmentDefinition, error) {
+	res := *ed
 	if other == nil {
 		return &res, nil
 	}
@@ -208,8 +208,8 @@ func (ed EnvironmentDefinition) Merge(other *EnvironmentDefinition) (*Environmen
 
 // ReplaceString replaces the string 'from' with 'replacement' in
 // environment variable values
-func (ev EnvironmentVariable) ReplaceString(from string, replacement string) EnvironmentVariable {
-	res := ev
+func (ev *EnvironmentVariable) ReplaceString(from string, replacement string) EnvironmentVariable {
+	res := *ev
 	values := make([]string, 0, len(ev.Values))
 
 	for _, v := range ev.Values {
@@ -226,8 +226,8 @@ func (ev EnvironmentVariable) ReplaceString(from string, replacement string) Env
 // If join strategy is set to "disallowed", the variables need to have exactly
 // one value, and both merged values need to be identical, otherwise an error is
 // returned.
-func (ev EnvironmentVariable) Merge(other EnvironmentVariable) (*EnvironmentVariable, error) {
-	res := ev
+func (ev *EnvironmentVariable) Merge(other EnvironmentVariable) (*EnvironmentVariable, error) {
+	res := *ev
 
 	// separators and inherit strategy always need to match for two merged variables
 	if ev.Separator != other.Separator || ev.Inherit != other.Inherit {
@@ -246,7 +246,7 @@ func (ev EnvironmentVariable) Merge(other EnvironmentVariable) (*EnvironmentVari
 		res.Values = filterValuesUniquely(append(ev.Values, other.Values...), false)
 	case Disallowed:
 		if len(ev.Values) != 1 || len(other.Values) != 1 || (ev.Values[0] != other.Values[0]) {
-			sep := string(ev.Separator)
+			sep := ev.Separator
 			return nil, fmt.Errorf(
 				"cannot merge environment definitions: no join strategy for variable %s with values %s and %s",
 				ev.Name,
@@ -306,7 +306,7 @@ func filterValuesUniquely(values []string, keepFirst bool) []string {
 func (ev *EnvironmentVariable) ValueString() string {
 	return strings.Join(
 		filterValuesUniquely(ev.Values, ev.Join == Prepend),
-		string(ev.Separator))
+		ev.Separator)
 }
 
 // GetEnvBasedOn returns the environment variable names and values defined by
@@ -439,4 +439,12 @@ func (ed *EnvironmentDefinition) FindBinPathFor(executable string) string {
 		}
 	}
 	return ""
+}
+
+func (ed *EnvironmentDefinition) NeedsTransforms() bool {
+	return len(ed.Transforms) > 0
+}
+
+func (ed *EnvironmentDefinition) InstallDir() string {
+	return ed.installDir
 }
