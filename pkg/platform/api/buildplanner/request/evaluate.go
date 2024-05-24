@@ -29,7 +29,7 @@ mutation ($organization: String!, $project: String!, $commitId: String!, $target
       subErrors {
         __typename
         ... on GenericSolveError {
-          path
+          buildExprPath
           message
           isTransient
           validationErrors {
@@ -38,7 +38,7 @@ mutation ($organization: String!, $project: String!, $commitId: String!, $target
           }
         }
         ... on RemediableSolveError {
-          path
+          buildExprPath
           message
           isTransient
           errorType
@@ -51,6 +51,11 @@ mutation ($organization: String!, $project: String!, $commitId: String!, $target
             command
             parameters
           }
+        }
+        ... on TargetNotFound {
+          message
+          requestedTarget
+          possibleTargets
         }
       }
     }
