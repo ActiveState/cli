@@ -126,7 +126,6 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	defer ts.Close()
 
 	ts.SetupRCFile()
-	suite.T().Setenv("ACTIVESTATE_HOME", ts.Dirs.HomeDir)
 
 	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/Python3"))
 	cp.Expect("Skipping runtime setup")

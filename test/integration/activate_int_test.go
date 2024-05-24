@@ -136,7 +136,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "ActiveState-CLI/Python3#6d9280e7-75eb-401a-9e71-0d99759fbad3", "--path", ts.Dirs.Work),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput()
@@ -448,7 +447,7 @@ version: %s
 	)
 	c2.Expect("Activated")
 
-	c2.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
+	c2.ExpectInput()
 	c2.SendLine("exit")
 	c2.ExpectExitCode(0)
 }
@@ -481,7 +480,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_NamespaceWins() {
 	c2.Expect("ActiveState-CLI/Python2")
 	c2.Expect("Activated")
 
-	c2.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
+	c2.ExpectInput()
 	if runtime.GOOS == "windows" {
 		c2.SendLine("@echo %cd%")
 	} else {
@@ -561,7 +560,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
 	ts.PrepareActiveStateYAML(contents)
 
 	cp := ts.Spawn("activate")
-	cp.Expect("Cannot operate on a headless project", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Cannot operate on a headless project")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 }

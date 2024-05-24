@@ -25,7 +25,7 @@ func (suite *MigratorIntegrationTestSuite) TestMigrator() {
 	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
 
 	cp := ts.SpawnWithOpts(e2e.OptArgs("refresh"))
-	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0)
 
 	suite.Require().Contains(string(fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))),
 		fmt.Sprintf("config_version: %d", projectfile.ConfigVersion), ts.DebugMessage(""))

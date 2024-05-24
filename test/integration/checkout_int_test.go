@@ -111,7 +111,6 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
 	// Checkout and verify.
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/Python3", tmpdir),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("already a project checked out at")
 	cp.ExpectExitCode(1)
@@ -125,7 +124,6 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
 	suite.Require().NoError(os.Remove(filepath.Join(tmpdir, constants.ConfigFileName)))
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/Python3", tmpdir),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
