@@ -2,7 +2,7 @@ package inventory
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -40,9 +40,9 @@ func New(serviceURL *url.URL, auth runtime.ClientAuthInfoWriter) (inventory_oper
 }
 
 // Get returns a cached version of the default api client
-func Get() inventory_operations.ClientService {
+func Get(auth *authentication.Auth) inventory_operations.ClientService {
 	if persist == nil {
-		persist, _ = Init(authentication.LegacyGet())
+		persist, _ = Init(auth)
 	}
 	return persist
 }
@@ -80,7 +80,7 @@ type RawResponder struct{}
 
 func (r *RawResponder) ReadResponse(res runtime.ClientResponse, cons runtime.Consumer) (interface{}, error) {
 	defer res.Body().Close()
-	bytes, err := ioutil.ReadAll(res.Body())
+	bytes, err := io.ReadAll(res.Body())
 	if err != nil {
 		return nil, err
 	}

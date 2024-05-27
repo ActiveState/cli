@@ -4,10 +4,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 )
 
 const (
@@ -18,6 +18,7 @@ const (
 	Automation      = "automation"
 	Branches        = "branches"
 	Bundle          = "bundle"
+	BuildScripts    = "buildscripts"
 	Carlisle        = "carlisle"
 	Checkout        = "checkout"
 	CLIDeploy       = "cli-deploy"
@@ -50,6 +51,7 @@ const (
 	Invite          = "invite"
 	JSON            = "json"
 	Languages       = "languages"
+	Manifest        = "manifest"
 	Messaging       = "messaging"
 	Migrations      = "migrations"
 	Organizations   = "organizations"
@@ -67,6 +69,7 @@ const (
 	Python          = "python"
 	Refresh         = "refresh"
 	RemoteInstaller = "remote-installer"
+	Reset           = "reset"
 	Revert          = "revert"
 	Run             = "run"
 	Scripts         = "scripts"

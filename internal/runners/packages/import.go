@@ -1,7 +1,7 @@
 package packages
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/errs"
@@ -11,7 +11,8 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
@@ -96,7 +97,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 	logging.Debug("ExecuteImport")
 
 	if i.proj == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 
 	i.out.Notice(locale.Tr("operating_message", i.proj.NamespaceString(), i.proj.Dir()))
@@ -110,12 +111,12 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "package_err_cannot_obtain_commit")
 	}
 
-	reqs, err := fetchCheckpoint(&latestCommit)
+	reqs, err := fetchCheckpoint(&latestCommit, i.auth)
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_fetch_checkpoint")
 	}
 
-	lang, err := model.CheckpointToLanguage(reqs)
+	lang, err := model.CheckpointToLanguage(reqs, i.auth)
 	if err != nil {
 		return locale.WrapInputError(err, "err_import_language", "Your project does not have a language associated with it, please add a language first.")
 	}
@@ -155,11 +156,12 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
-	return runbits.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, commitID, true, target.TriggerImport, i.svcModel, i.cfg)
+	_, err = runtime.SolveAndUpdate(i.auth, i.out, i.analytics, i.proj, &commitID, target.TriggerImport, i.svcModel, i.cfg, runtime.OptOrderChanged)
+	return err
 }
 
 func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model.Changeset, error) {
-	data, err := ioutil.ReadFile(file)
+	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, locale.WrapInputError(err, "err_reading_changeset_file", "Cannot read import file: {{.V0}}", err.Error())
 	}

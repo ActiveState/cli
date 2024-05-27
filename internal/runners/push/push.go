@@ -57,7 +57,7 @@ type intention uint16
 
 const (
 	pushCustomNamespace  intention = 0x0001 // User is pushing to a custom remote, ignoring the namespace in the current yaml
-	pushFromNoPermission           = 0x0002 // User made modifications to someone elses project, and it now trying to push them
+	pushFromNoPermission intention = 0x0002 // User made modifications to someone elses project, and it now trying to push them
 
 	// The rest is supplemental
 	intendCreateProject = 0x0008
@@ -319,7 +319,7 @@ func (r *Push) promptNamespace() (*project.Namespaced, error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get local commit")
 	}
-	lang, _, err := fetchLanguage(commitID)
+	lang, _, err := fetchLanguage(commitID, r.auth)
 	if err == nil {
 		name = lang.String()
 	}
@@ -332,8 +332,8 @@ func (r *Push) promptNamespace() (*project.Namespaced, error) {
 	return project.NewNamespace(owner, name, ""), nil
 }
 
-func fetchLanguage(commitID strfmt.UUID) (*language.Supported, string, error) {
-	lang, err := model.FetchLanguageForCommit(commitID)
+func fetchLanguage(commitID strfmt.UUID, auth *authentication.Auth) (*language.Supported, string, error) {
+	lang, err := model.FetchLanguageForCommit(commitID, auth)
 	if err != nil {
 		return nil, "", errs.Wrap(err, "Failed to retrieve language information for headless commit")
 	}

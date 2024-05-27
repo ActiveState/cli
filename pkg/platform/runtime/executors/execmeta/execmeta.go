@@ -13,7 +13,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -92,9 +91,9 @@ func IsMetaFile(fileContents []byte) bool {
 }
 
 func readFile(filePath string) ([]byte, error) {
-	b, err := ioutil.ReadFile(filePath)
+	b, err := os.ReadFile(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("ioutil.ReadFile %s failed: %w", filePath, err)
+		return nil, fmt.Errorf("os.ReadFile %s failed: %w", filePath, err)
 	}
 	return b, nil
 }

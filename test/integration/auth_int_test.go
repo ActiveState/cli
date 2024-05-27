@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/termtest"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -105,7 +105,7 @@ func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 	cp := ts.Spawn(tagsuite.Auth, "--output", method)
 	cp.Expect(`"}`)
 	cp.ExpectExitCode(0)
-	suite.Contains(cp.Output(), fmt.Sprintf("%s", string(expected)))
+	suite.Contains(cp.Output(), string(expected))
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {

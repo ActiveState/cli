@@ -12,10 +12,10 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/stretchr/testify/suite"
 )
 
 type ProjectTestSuite struct {
@@ -35,12 +35,13 @@ func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
 	suite.testdataDir = filepath.Join(root, "pkg", "project", "testdata")
 	err = os.Chdir(suite.testdataDir)
 	suite.Require().NoError(err, "Should change dir without issue.")
-	projectFile, err := projectfile.GetSafe()
+	projectFile, err := projectfile.Get()
 	suite.Require().NoError(err, errs.JoinMessage(err))
-	projectFile.Persist()
+	err = projectFile.Persist()
+	suite.Require().NoError(err, "Should persist projectfile without issue.")
 	suite.projectFile = projectFile
 	suite.Require().Nil(err, "Should retrieve projectfile without issue.")
-	suite.project, err = project.GetSafe()
+	suite.project, err = project.Get()
 	suite.Require().Nil(err, "Should retrieve project without issue.")
 
 	cfg, err := config.New()
@@ -49,12 +50,13 @@ func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (suite *ProjectTestSuite) TestGet() {
-	config := project.Get()
+	config, err := project.Get()
+	suite.NoError(err, "Run without failure")
 	suite.NotNil(config, "Config should be set")
 }
 
 func (suite *ProjectTestSuite) TestGetSafe() {
-	val, err := project.GetSafe()
+	val, err := project.Get()
 	suite.NoError(err, "Run without failure")
 	suite.NotNil(val, "Config should be set")
 }
@@ -203,7 +205,7 @@ func (suite *ProjectTestSuite) TestConstants() {
 }
 
 func (suite *ProjectTestSuite) TestSecrets() {
-	prj, err := project.GetSafe()
+	prj, err := project.Get()
 	suite.NoError(err, "Run without failure")
 	cfg, err := config.New()
 	suite.Require().NoError(err)

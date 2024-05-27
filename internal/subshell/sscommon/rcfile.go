@@ -55,7 +55,7 @@ var (
 )
 
 func init() {
-	configMediator.RegisterOption(constants.PreservePs1ConfigKey, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
+	configMediator.RegisterOption(constants.PreservePs1ConfigKey, configMediator.Bool, false)
 }
 
 // Configurable defines an interface to store and get configuration data
@@ -232,7 +232,10 @@ func SetupShellRcFile(rcFileName, templateName string, env map[string]string, na
 	}
 	defer f.Close()
 
-	f.WriteString(out.String())
+	_, err = f.WriteString(out.String())
+	if err != nil {
+		return errs.Wrap(err, "Failed to write to output buffer.")
+	}
 
 	err = os.Chmod(rcFileName, 0755)
 	if err != nil {
@@ -347,6 +350,9 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	listSep := string(os.PathListSeparator)
 	pathList, ok := env["PATH"]
 	inPathList, err := fileutils.PathInList(listSep, pathList, currExecAbsDir)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not check if %s is in PATH", currExecAbsDir)
+	}
 	if !ok || !inPathList {
 		safeExec := currExec
 		if strings.ContainsAny(currExec, " ") {
@@ -377,7 +383,10 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	}
 	defer tmpFile.Close()
 
-	tmpFile.WriteString(o.String())
+	_, err = tmpFile.WriteString(o.String())
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to write to output buffer.")
+	}
 
 	logging.Debug("Using project RC: (%s) %s", tmpFile.Name(), o.String())
 

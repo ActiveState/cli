@@ -360,6 +360,40 @@ scripts:
     value: |
       golangci-lint run --no-config
       actionlint
+  - name: check-format
+    language: bash
+    description: "Checks if the code is formatted correctly"
+    value: |
+      set -e
+
+      TARGET_BRANCH=$GITHUB_BASE_REF
+      if [ "$GITHUB_BASE_REF" == "" ]; then
+        TARGET_BRANCH="master"
+      fi
+
+      git fetch --quiet origin $TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH
+
+      CHANGED=$(git diff --name-only origin/$TARGET_BRANCH)
+      NO_NEWLINE=0
+      for FILE in $CHANGED; do
+          if [[ $FILE == vendor/* ]]; then
+              continue
+          fi
+
+          if file "$FILE" | grep -q -E 'text|ASCII'; then
+              if [ $(tail -c 1 "$FILE" | wc -l) -eq 0 ]; then
+                  echo "Missing newline at end of file: $FILE"
+                  NO_NEWLINE=1
+              fi
+          fi
+      done
+
+      if [ "$NO_NEWLINE" -ne 0 ]; then
+          echo "Error: Some text files are missing a newline at the end."
+          exit 1
+      else
+          echo "Success: All modified text files end with a newline."
+      fi
   - name: grab-mergecommits
     language: bash
     value: |

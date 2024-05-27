@@ -25,7 +25,7 @@ import (
 )
 
 func init() {
-	configMediator.RegisterOption(constants.PreferredGlibcVersionConfig, configMediator.String, configMediator.EmptyEvent, configMediator.EmptyEvent)
+	configMediator.RegisterOption(constants.PreferredGlibcVersionConfig, configMediator.String, "")
 }
 
 type Configurable interface {
@@ -58,8 +58,8 @@ type Authors []*inventory_models.Author
 
 var platformCache []*Platform
 
-func GetIngredientByNameAndVersion(namespace string, name string, version string, ts *time.Time) (*inventory_models.FullIngredientVersion, error) {
-	client := inventory.Get()
+func GetIngredientByNameAndVersion(namespace string, name string, version string, ts *time.Time, auth *authentication.Auth) (*inventory_models.FullIngredientVersion, error) {
+	client := inventory.Get(auth)
 
 	params := inventory_operations.NewGetNamespaceIngredientVersionParams()
 	params.SetNamespace(namespace)
@@ -71,7 +71,7 @@ func GetIngredientByNameAndVersion(namespace string, name string, version string
 	}
 	params.SetHTTPClient(api.NewHTTPClient())
 
-	response, err := client.GetNamespaceIngredientVersion(params, authentication.ClientAuth())
+	response, err := client.GetNamespaceIngredientVersion(params, auth.ClientAuth())
 	if err != nil {
 		return nil, errs.Wrap(err, "GetNamespaceIngredientVersion failed")
 	}
@@ -81,14 +81,14 @@ func GetIngredientByNameAndVersion(namespace string, name string, version string
 
 // SearchIngredients will return all ingredients+ingredientVersions that fuzzily
 // match the ingredient name.
-func SearchIngredients(namespace string, name string, includeVersions bool, ts *time.Time) ([]*IngredientAndVersion, error) {
-	return searchIngredientsNamespace(namespace, name, includeVersions, false, ts)
+func SearchIngredients(namespace string, name string, includeVersions bool, ts *time.Time, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
+	return searchIngredientsNamespace(namespace, name, includeVersions, false, ts, auth)
 }
 
 // SearchIngredientsStrict will return all ingredients+ingredientVersions that
 // strictly match the ingredient name.
-func SearchIngredientsStrict(namespace string, name string, caseSensitive bool, includeVersions bool, ts *time.Time) ([]*IngredientAndVersion, error) {
-	results, err := searchIngredientsNamespace(namespace, name, includeVersions, true, ts)
+func SearchIngredientsStrict(namespace string, name string, caseSensitive bool, includeVersions bool, ts *time.Time, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
+	results, err := searchIngredientsNamespace(namespace, name, includeVersions, true, ts, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -117,8 +117,8 @@ func SearchIngredientsStrict(namespace string, name string, caseSensitive bool, 
 // SearchIngredientsLatest will return all ingredients+ingredientVersions that
 // fuzzily match the ingredient name, but only the latest version of each
 // ingredient.
-func SearchIngredientsLatest(namespace string, name string, includeVersions bool, ts *time.Time) ([]*IngredientAndVersion, error) {
-	results, err := searchIngredientsNamespace(namespace, name, includeVersions, false, ts)
+func SearchIngredientsLatest(namespace string, name string, includeVersions bool, ts *time.Time, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
+	results, err := searchIngredientsNamespace(namespace, name, includeVersions, false, ts, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -129,8 +129,8 @@ func SearchIngredientsLatest(namespace string, name string, includeVersions bool
 // SearchIngredientsLatestStrict will return all ingredients+ingredientVersions that
 // strictly match the ingredient name, but only the latest version of each
 // ingredient.
-func SearchIngredientsLatestStrict(namespace string, name string, caseSensitive bool, includeVersions bool, ts *time.Time) ([]*IngredientAndVersion, error) {
-	results, err := SearchIngredientsStrict(namespace, name, caseSensitive, includeVersions, ts)
+func SearchIngredientsLatestStrict(namespace string, name string, caseSensitive bool, includeVersions bool, ts *time.Time, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
+	results, err := SearchIngredientsStrict(namespace, name, caseSensitive, includeVersions, ts, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func processLatestIngredients(ingredients []*IngredientAndVersion) []*Ingredient
 }
 
 // FetchAuthors obtains author info for an ingredient at a particular version.
-func FetchAuthors(ingredID, ingredVersionID *strfmt.UUID) (Authors, error) {
+func FetchAuthors(ingredID, ingredVersionID *strfmt.UUID, auth *authentication.Auth) (Authors, error) {
 	if ingredID == nil {
 		return nil, errs.New("nil ingredient id provided")
 	}
@@ -164,7 +164,7 @@ func FetchAuthors(ingredID, ingredVersionID *strfmt.UUID) (Authors, error) {
 	}
 
 	lim := int64(32)
-	client := inventory.Get()
+	client := inventory.Get(auth)
 
 	params := inventory_operations.NewGetIngredientVersionAuthorsParams()
 	params.SetIngredientID(*ingredID)
@@ -172,7 +172,7 @@ func FetchAuthors(ingredID, ingredVersionID *strfmt.UUID) (Authors, error) {
 	params.SetLimit(&lim)
 	params.SetHTTPClient(api.NewHTTPClient())
 
-	results, err := client.GetIngredientVersionAuthors(params, authentication.ClientAuth())
+	results, err := client.GetIngredientVersionAuthors(params, auth.ClientAuth())
 	if err != nil {
 		return nil, errs.Wrap(err, "GetIngredientVersionAuthors failed")
 	}
@@ -185,11 +185,11 @@ type ErrTooManyMatches struct {
 	Query string
 }
 
-func searchIngredientsNamespace(ns string, name string, includeVersions bool, exactOnly bool, ts *time.Time) ([]*IngredientAndVersion, error) {
+func searchIngredientsNamespace(ns string, name string, includeVersions bool, exactOnly bool, ts *time.Time, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
 	limit := int64(100)
 	offset := int64(0)
 
-	client := inventory.Get()
+	client := inventory.Get(auth)
 
 	params := inventory_operations.NewSearchIngredientsParams()
 	params.SetQ(&name)
@@ -216,7 +216,7 @@ func searchIngredientsNamespace(ns string, name string, includeVersions bool, ex
 		}
 
 		params.SetOffset(&offset)
-		results, err := client.SearchIngredients(params, authentication.ClientAuth())
+		results, err := client.SearchIngredients(params, auth.ClientAuth())
 		if err != nil {
 			if sidErr, ok := err.(*inventory_operations.SearchIngredientsDefault); ok {
 				errv := locale.NewError(*sidErr.Payload.Message)
@@ -248,9 +248,9 @@ func searchIngredientsNamespace(ns string, name string, includeVersions bool, ex
 	return ingredients, nil
 }
 
-func FetchPlatforms() ([]*Platform, error) {
+func FetchPlatforms(auth *authentication.Auth) ([]*Platform, error) {
 	if platformCache == nil {
-		client := inventory.Get()
+		client := inventory.Get(auth)
 
 		params := inventory_operations.NewGetPlatformsParams()
 		limit := int64(99999)
@@ -281,8 +281,8 @@ func FetchPlatforms() ([]*Platform, error) {
 	return platformCache, nil
 }
 
-func FetchPlatformsMap() (map[strfmt.UUID]*Platform, error) {
-	platforms, err := FetchPlatforms()
+func FetchPlatformsMap(auth *authentication.Auth) (map[strfmt.UUID]*Platform, error) {
+	platforms, err := FetchPlatforms(auth)
 	if err != nil {
 		return nil, err
 	}
@@ -294,8 +294,8 @@ func FetchPlatformsMap() (map[strfmt.UUID]*Platform, error) {
 	return platformMap, nil
 }
 
-func FetchPlatformsForCommit(commitID strfmt.UUID) ([]*Platform, error) {
-	checkpt, _, err := FetchCheckpointForCommit(commitID)
+func FetchPlatformsForCommit(commitID strfmt.UUID, auth *authentication.Auth) ([]*Platform, error) {
+	checkpt, _, err := FetchCheckpointForCommit(commitID, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -304,7 +304,7 @@ func FetchPlatformsForCommit(commitID strfmt.UUID) ([]*Platform, error) {
 
 	var platforms []*Platform
 	for _, pID := range platformIDs {
-		platform, err := FetchPlatformByUID(pID)
+		platform, err := FetchPlatformByUID(pID, auth)
 		if err != nil {
 			return nil, err
 		}
@@ -315,8 +315,8 @@ func FetchPlatformsForCommit(commitID strfmt.UUID) ([]*Platform, error) {
 	return platforms, nil
 }
 
-func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID, cfg Configurable) ([]strfmt.UUID, error) {
-	runtimePlatforms, err := FetchPlatforms()
+func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID, cfg Configurable, auth *authentication.Auth) ([]strfmt.UUID, error) {
+	runtimePlatforms, err := FetchPlatforms(auth)
 	if err != nil {
 		return nil, err
 	}
@@ -382,8 +382,8 @@ func fetchLibcVersion(cfg Configurable) (string, error) {
 	return cfg.GetString(constants.PreferredGlibcVersionConfig), nil
 }
 
-func FetchPlatformByUID(uid strfmt.UUID) (*Platform, error) {
-	platforms, err := FetchPlatforms()
+func FetchPlatformByUID(uid strfmt.UUID, auth *authentication.Auth) (*Platform, error) {
+	platforms, err := FetchPlatforms(auth)
 	if err != nil {
 		return nil, err
 	}
@@ -397,8 +397,8 @@ func FetchPlatformByUID(uid strfmt.UUID) (*Platform, error) {
 	return nil, nil
 }
 
-func FetchPlatformByDetails(name, version string, word int) (*Platform, error) {
-	runtimePlatforms, err := FetchPlatforms()
+func FetchPlatformByDetails(name, version string, word int, auth *authentication.Auth) (*Platform, error) {
+	runtimePlatforms, err := FetchPlatforms(auth)
 	if err != nil {
 		return nil, err
 	}
@@ -435,8 +435,8 @@ func FetchPlatformByDetails(name, version string, word int) (*Platform, error) {
 	return nil, locale.NewInputError("err_unsupported_platform", "", details)
 }
 
-func FetchLanguageForCommit(commitID strfmt.UUID) (*Language, error) {
-	langs, err := FetchLanguagesForCommit(commitID)
+func FetchLanguageForCommit(commitID strfmt.UUID, auth *authentication.Auth) (*Language, error) {
+	langs, err := FetchLanguagesForCommit(commitID, auth)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_detect_language")
 	}
@@ -446,8 +446,8 @@ func FetchLanguageForCommit(commitID strfmt.UUID) (*Language, error) {
 	return &langs[0], nil
 }
 
-func FetchLanguageByDetails(name, version string) (*Language, error) {
-	languages, err := FetchLanguages()
+func FetchLanguageByDetails(name, version string, auth *authentication.Auth) (*Language, error) {
+	languages, err := FetchLanguages(auth)
 	if err != nil {
 		return nil, err
 	}
@@ -461,8 +461,8 @@ func FetchLanguageByDetails(name, version string) (*Language, error) {
 	return nil, locale.NewInputError("err_language_not_found", "", name, version)
 }
 
-func FetchLanguageVersions(name string) ([]string, error) {
-	languages, err := FetchLanguages()
+func FetchLanguageVersions(name string, auth *authentication.Auth) ([]string, error) {
+	languages, err := FetchLanguages(auth)
 	if err != nil {
 		return nil, err
 	}
@@ -477,8 +477,8 @@ func FetchLanguageVersions(name string) ([]string, error) {
 	return versions, nil
 }
 
-func FetchLanguages() ([]Language, error) {
-	client := inventory.Get()
+func FetchLanguages(auth *authentication.Auth) ([]Language, error) {
+	client := inventory.Get(auth)
 
 	params := inventory_operations.NewGetNamespaceIngredientsParams()
 	params.SetNamespace("language")
@@ -486,7 +486,7 @@ func FetchLanguages() ([]Language, error) {
 	params.SetLimit(&limit)
 	params.SetHTTPClient(api.NewHTTPClient())
 
-	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
+	res, err := client.GetNamespaceIngredients(params, auth.ClientAuth())
 	if err != nil {
 		return nil, errs.Wrap(err, "GetNamespaceIngredients failed")
 	}
@@ -502,14 +502,14 @@ func FetchLanguages() ([]Language, error) {
 	return languages, nil
 }
 
-func FetchIngredient(ingredientID *strfmt.UUID) (*inventory_models.Ingredient, error) {
-	client := inventory.Get()
+func FetchIngredient(ingredientID *strfmt.UUID, auth *authentication.Auth) (*inventory_models.Ingredient, error) {
+	client := inventory.Get(auth)
 
 	params := inventory_operations.NewGetIngredientParams()
 	params.SetIngredientID(*ingredientID)
 	params.SetHTTPClient(api.NewHTTPClient())
 
-	res, err := client.GetIngredient(params, authentication.ClientAuth())
+	res, err := client.GetIngredient(params, auth.ClientAuth())
 	if err != nil {
 		return nil, errs.Wrap(err, "GetIngredient failed")
 	}
@@ -517,8 +517,8 @@ func FetchIngredient(ingredientID *strfmt.UUID) (*inventory_models.Ingredient, e
 	return res.Payload, nil
 }
 
-func FetchIngredientVersion(ingredientID *strfmt.UUID, versionID *strfmt.UUID, allowUnstable bool, atTime *strfmt.DateTime) (*inventory_models.FullIngredientVersion, error) {
-	client := inventory.Get()
+func FetchIngredientVersion(ingredientID *strfmt.UUID, versionID *strfmt.UUID, allowUnstable bool, atTime *strfmt.DateTime, auth *authentication.Auth) (*inventory_models.FullIngredientVersion, error) {
+	client := inventory.Get(auth)
 
 	params := inventory_operations.NewGetIngredientVersionParams()
 	params.SetIngredientID(*ingredientID)
@@ -527,7 +527,7 @@ func FetchIngredientVersion(ingredientID *strfmt.UUID, versionID *strfmt.UUID, a
 	params.SetStateAt(atTime)
 	params.SetHTTPClient(api.NewHTTPClient())
 
-	res, err := client.GetIngredientVersion(params, authentication.ClientAuth())
+	res, err := client.GetIngredientVersion(params, auth.ClientAuth())
 	if err != nil {
 		return nil, errs.Wrap(err, "GetIngredientVersion failed")
 	}
@@ -535,8 +535,8 @@ func FetchIngredientVersion(ingredientID *strfmt.UUID, versionID *strfmt.UUID, a
 	return res.Payload, nil
 }
 
-func FetchIngredientVersions(ingredientID *strfmt.UUID) ([]*inventory_models.IngredientVersion, error) {
-	client := inventory.Get()
+func FetchIngredientVersions(ingredientID *strfmt.UUID, auth *authentication.Auth) ([]*inventory_models.IngredientVersion, error) {
+	client := inventory.Get(auth)
 
 	params := inventory_operations.NewGetIngredientVersionsParams()
 	params.SetIngredientID(*ingredientID)
@@ -544,7 +544,7 @@ func FetchIngredientVersions(ingredientID *strfmt.UUID) ([]*inventory_models.Ing
 	params.SetLimit(&limit)
 	params.SetHTTPClient(api.NewHTTPClient())
 
-	res, err := client.GetIngredientVersions(params, authentication.ClientAuth())
+	res, err := client.GetIngredientVersions(params, auth.ClientAuth())
 	if err != nil {
 		return nil, errs.Wrap(err, "GetIngredientVersions failed")
 	}
@@ -554,8 +554,8 @@ func FetchIngredientVersions(ingredientID *strfmt.UUID) ([]*inventory_models.Ing
 
 // FetchLatestTimeStamp fetches the latest timestamp from the inventory service.
 // This is not the same as FetchLatestRevisionTimeStamp.
-func FetchLatestTimeStamp() (time.Time, error) {
-	client := inventory.Get()
+func FetchLatestTimeStamp(auth *authentication.Auth) (time.Time, error) {
+	client := inventory.Get(auth)
 	result, err := client.GetLatestTimestamp(inventory_operations.NewGetLatestTimestampParams())
 	if err != nil {
 		return time.Now(), errs.Wrap(err, "GetLatestTimestamp failed")
@@ -583,13 +583,13 @@ func FetchLatestRevisionTimeStamp(auth *authentication.Auth) (time.Time, error) 
 	return t, nil
 }
 
-func FetchNormalizedName(namespace Namespace, name string) (string, error) {
-	client := inventory.Get()
+func FetchNormalizedName(namespace Namespace, name string, auth *authentication.Auth) (string, error) {
+	client := inventory.Get(auth)
 	params := inventory_operations.NewNormalizeNamesParams()
 	params.SetNamespace(namespace.String())
 	params.SetNames(&inventory_models.UnnormalizedNames{Names: []string{name}})
 	params.SetHTTPClient(api.NewHTTPClient())
-	res, err := client.NormalizeNames(params, authentication.ClientAuth())
+	res, err := client.NormalizeNames(params, auth.ClientAuth())
 	if err != nil {
 		return "", errs.Wrap(err, "NormalizeName failed")
 	}

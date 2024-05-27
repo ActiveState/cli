@@ -24,7 +24,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	auth "github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/graphql"
@@ -34,22 +34,25 @@ import (
 )
 
 type Params struct {
-	Name         string
-	Version      string
-	Namespace    string
-	Owner        string
-	Description  string
-	Authors      captain.UsersValue
-	Depends      captain.PackagesValue
-	Features     captain.PackagesValue
-	Filepath     string
-	MetaFilepath string
-	Edit         bool
-	Editor       bool
+	Name           string
+	Version        string
+	Namespace      string
+	Owner          string
+	Description    string
+	Authors        captain.UsersValue
+	Depends        captain.PackagesValue
+	DependsRuntime captain.PackagesValue
+	DependsBuild   captain.PackagesValue
+	DependsTest    captain.PackagesValue
+	Features       captain.PackagesValue
+	Filepath       string
+	MetaFilepath   string
+	Edit           bool
+	Editor         bool
 }
 
 type Runner struct {
-	auth    *auth.Auth
+	auth    *authentication.Auth
 	out     output.Outputer
 	prompt  prompt.Prompter
 	project *project.Project
@@ -151,7 +154,7 @@ func (r *Runner) Run(params *Params) error {
 	isRevision := false
 	if params.Version != "" {
 		// Attempt to get the version if it already exists, it not existing is not an error though
-		i, err := model.GetIngredientByNameAndVersion(reqVars.Namespace, reqVars.Name, params.Version, &latestRevisionTime)
+		i, err := model.GetIngredientByNameAndVersion(reqVars.Namespace, reqVars.Name, params.Version, &latestRevisionTime, r.auth)
 		if err != nil {
 			var notFound *inventory_operations.GetNamespaceIngredientVersionNotFound
 			if !errors.As(err, &notFound) {
@@ -165,7 +168,7 @@ func (r *Runner) Run(params *Params) error {
 
 	if ingredient == nil {
 		// Attempt to find the existing ingredient, if we didn't already get it from the version specific call above
-		ingredients, err := model.SearchIngredientsStrict(reqVars.Namespace, reqVars.Name, true, false, &latestRevisionTime)
+		ingredients, err := model.SearchIngredientsStrict(reqVars.Namespace, reqVars.Name, true, false, &latestRevisionTime, r.auth)
 		if err != nil && !errs.Matches(err, &model.ErrSearch404{}) { // 404 means either the ingredient or the namespace was not found, which is fine
 			return locale.WrapError(err, "err_uploadingredient_search", "Could not search for ingredient")
 		}
@@ -184,7 +187,7 @@ func (r *Runner) Run(params *Params) error {
 				"Could not find ingredient to edit with name: '[ACTIONABLE]{{.V0}}[/RESET]', namespace: '[ACTIONABLE]{{.V1}}[/RESET]'.",
 				reqVars.Name, reqVars.Namespace)
 		}
-		if err := prepareEditRequest(ingredient, &reqVars, isRevision); err != nil {
+		if err := prepareEditRequest(ingredient, &reqVars, isRevision, r.auth); err != nil {
 			return errs.Wrap(err, "Could not prepare edit request")
 		}
 	} else {
@@ -257,7 +260,7 @@ Do you want to publish this ingredient?
 	logging.Debug("Published ingredient revision: %d", result.Publish.Revision)
 
 	ingredientID := strfmt.UUID(result.Publish.IngredientID)
-	publishedIngredient, err := model.FetchIngredient(&ingredientID)
+	publishedIngredient, err := model.FetchIngredient(&ingredientID, r.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingredient_fetch", "Unable to fetch newly published ingredient")
 	}
@@ -268,7 +271,7 @@ Do you want to publish this ingredient?
 		return locale.WrapError(err, "err_uploadingingredient_fetch_timestamp", "Unable to fetch latest revision timestamp")
 	}
 
-	publishedVersion, err := model.FetchIngredientVersion(&ingredientID, &versionID, true, ptr.To(strfmt.DateTime(latestTime)))
+	publishedVersion, err := model.FetchIngredientVersion(&ingredientID, &versionID, true, ptr.To(strfmt.DateTime(latestTime)), r.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingingredient_fetch_version", "Unable to fetch newly published ingredient version")
 	}
@@ -326,12 +329,51 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRev
 		}
 	}
 
-	if len(params.Depends) != 0 {
+	// User input trumps inheritance from previous ingredient
+	if len(params.Depends) != 0 || len(params.DependsRuntime) != 0 || len(params.DependsBuild) != 0 || len(params.DependsTest) != 0 {
 		r.Dependencies = []request.PublishVariableDep{}
+	}
+
+	if len(params.Depends) != 0 {
 		for _, dep := range params.Depends {
 			r.Dependencies = append(
 				r.Dependencies,
-				request.PublishVariableDep{request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version}, []request.Dependency{}},
+				request.PublishVariableDep{
+					Dependency: request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version},
+				},
+			)
+		}
+	}
+
+	if len(params.DependsRuntime) != 0 {
+		for _, dep := range params.DependsRuntime {
+			r.Dependencies = append(
+				r.Dependencies,
+				request.PublishVariableDep{
+					Dependency: request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version, Type: request.DependencyTypeRuntime},
+				},
+			)
+		}
+	}
+
+	if len(params.DependsBuild) != 0 {
+		for _, dep := range params.DependsBuild {
+			r.Dependencies = append(
+				r.Dependencies,
+				request.PublishVariableDep{
+					Dependency: request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version, Type: request.DependencyTypeBuild},
+				},
+			)
+		}
+	}
+
+	if len(params.DependsTest) != 0 {
+		for _, dep := range params.DependsTest {
+			r.Dependencies = append(
+				r.Dependencies,
+				request.PublishVariableDep{
+					Dependency: request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version, Type: request.DependencyTypeTest},
+				},
 			)
 		}
 	}
@@ -352,11 +394,11 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRev
 // prepareEditRequest inherits meta data from the previous ingredient revision if it exists. This should really happen
 // on the API, but at the time of implementation we did this client side as the API side requires significant refactorings
 // to enable this behavior.
-func prepareEditRequest(ingredient *ParentIngredient, r *request.PublishVariables, isRevision bool) error {
+func prepareEditRequest(ingredient *ParentIngredient, r *request.PublishVariables, isRevision bool, auth *authentication.Auth) error {
 	r.Version = ingredient.Version
 
 	if !isRevision {
-		authors, err := model.FetchAuthors(&ingredient.IngredientID, &ingredient.IngredientVersionID)
+		authors, err := model.FetchAuthors(&ingredient.IngredientID, &ingredient.IngredientVersionID, auth)
 		if err != nil {
 			return locale.WrapError(err, "err_uploadingredient_fetch_authors", "Could not fetch authors for ingredient")
 		}

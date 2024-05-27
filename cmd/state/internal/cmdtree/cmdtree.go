@@ -39,7 +39,6 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	exportCmd := newExportCommand(prime)
 	exportCmd.AddChildren(
-		newRecipeCommand(prime),
 		newJWTCommand(prime),
 		newPrivateKeyCommand(prime),
 		newAPIKeyCommand(prime),
@@ -114,7 +113,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newBundlesSearchCommand(prime),
 	)
 
-	secretsClient := secretsapi.InitializeClient()
+	secretsClient := secretsapi.InitializeClient(prime.Auth())
 	secretsCmd := newSecretsCommand(secretsClient, prime)
 	secretsCmd.AddChildren(
 		newSecretsGetCommand(prime),
@@ -216,6 +215,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newCommitCommand(prime),
 		newPublish(prime),
 		newEvalCommand(prime),
+		newManifestCommmand(prime),
 		artifactsCmd,
 	)
 

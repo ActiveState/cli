@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/termtest"
-	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/rtutils"
 
@@ -72,7 +72,7 @@ func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) fun
 	suite.Require().NoError(err)
 
 	// Wait for the svc to be ready
-	rtutils.Timeout(func() error {
+	err = rtutils.Timeout(func() error {
 		code := -1
 		for code != 0 {
 			code, _, _ = osutils.Execute(ts.SvcExe, []string{"status"}, func(cmd *exec.Cmd) error {
@@ -82,6 +82,7 @@ func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) fun
 		}
 		return nil
 	}, 10*time.Second)
+	suite.Require().NoError(err)
 
 	// This function seems to trigger lots of flisten errors that do not appear to be actual errors
 	// (the integration test expectations all pass). Just ignore log errors for sessions that call
@@ -106,7 +107,8 @@ func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) fun
 				suite.Require().NoError(err2)
 			}
 			suite.T().Logf("svc did not stop in time, Stdout:\n%s\n\nStderr:\n%s", stdout.String(), stderr.String())
-			cmd.Process.Kill()
+			err = cmd.Process.Kill()
+			suite.Require().NoError(err)
 		}
 
 		errMsg := fmt.Sprintf("svc foreground did not complete as expected. Stdout:\n%s\n\nStderr:\n%s", stdout.String(), stderr.String())
@@ -559,7 +561,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
 	ts.PrepareActiveStateYAML(contents)
 
 	cp := ts.Spawn("activate")
-	cp.Expect("Cannot initialize runtime for a headless project", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Cannot operate on a headless project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 }

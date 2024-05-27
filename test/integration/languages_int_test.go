@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/termtest"
 	goversion "github.com/hashicorp/go-version"
-	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -57,13 +58,8 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	cp.Expect("python")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("languages", "install", "python")
-	cp.Expect("Language: python is already installed")
-	cp.ExpectExitCode(1)
-	ts.IgnoreLogErrors()
-
 	cp = ts.Spawn("languages", "install", "python@3.9.16")
-	cp.Expect("Language added: python@3.9.16")
+	cp.Expect("Language updated: python@3.9.16")
 	// This can take a little while
 	cp.ExpectExitCode(0, termtest.OptExpectTimeout(60*time.Second))
 
@@ -117,6 +113,46 @@ func (suite *LanguagesIntegrationTestSuite) TestSearch() {
 	cp.Expect("ruby")
 	cp.Expect("3.2")
 	cp.ExpectExitCode(0)
+}
+
+func (suite *LanguagesIntegrationTestSuite) TestWildcards() {
+	suite.OnlyRunForTags(tagsuite.Languages)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	// Test explicit wildcard.
+	cp = ts.Spawn("languages", "install", "python@3.9.x")
+	cp.Expect("Language updated: python@3.9.x")
+	cp.ExpectExitCode(0)
+	cp = ts.Spawn("history")
+	cp.Expect("→ >=3.9,<3.10")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("reset", "-n")
+	cp.Expect("Successfully reset")
+	cp.ExpectExitCode(0)
+
+	// Test implicit wildcard.
+	cp = ts.Spawn("languages", "install", "python@3.9")
+	cp.Expect("Language updated: python@3.9")
+	cp.ExpectExitCode(0)
+	cp = ts.Spawn("history")
+	cp.Expect("→ >=3.9,<3.10")
+	cp.ExpectExitCode(0)
+
+	// Test non-matching version.
+	// Enable the runtime to actually solve the build and invalidate the version.
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("languages", "install", "python@100"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Failed")
+	cp.ExpectNotExitCode(0)
 }
 
 func TestLanguagesIntegrationTestSuite(t *testing.T) {

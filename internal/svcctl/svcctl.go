@@ -154,14 +154,12 @@ func startAndWait(ctx context.Context, ipComm IPCommunicator, exec, argText stri
 		args = args[:len(args)-1]
 	}
 
-	debugInfo := newDebugData(ipComm, startSvc, argText)
-
 	if _, err := osutils.ExecuteAndForget(exec, args); err != nil {
 		return locale.WrapError(err, "svcctl_cannot_exec_and_forget", "Cannot execute service in background: {{.V0}}", err.Error())
 	}
 
 	logging.Debug("Waiting for service")
-	if err := waitUp(ctx, ipComm, debugInfo); err != nil {
+	if err := waitUp(ctx, ipComm, newDebugData(ipComm, startSvc, argText)); err != nil {
 		return locale.WrapError(err, "svcctl_wait_startup_failed", "Waiting for service startup confirmation failed")
 	}
 
@@ -212,14 +210,12 @@ func waitUp(ctx context.Context, ipComm IPCommunicator, debugInfo *debugData) er
 }
 
 func stopAndWait(ctx context.Context, ipComm IPCommunicator) error {
-	debugInfo := newDebugData(ipComm, stopSvc, "")
-
 	if err := ipComm.StopServer(ctx); err != nil {
 		return locale.WrapError(err, "svcctl_stop_req_failed", "Service stop request failed")
 	}
 
 	logging.Debug("Waiting for service to die")
-	if err := waitDown(ctx, ipComm, debugInfo); err != nil {
+	if err := waitDown(ctx, ipComm, newDebugData(ipComm, stopSvc, "")); err != nil {
 		return locale.WrapError(err, "svcctl_wait_shutdown_failed", "Waiting for service shutdown confirmation failed")
 	}
 

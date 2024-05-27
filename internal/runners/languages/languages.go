@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -50,8 +51,10 @@ type languageOutput struct {
 
 // Run executes the list behavior.
 func (l *Languages) Run() error {
+	l.out.Notice(locale.T("manifest_deprecation_warning"))
+
 	if l.project == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 
 	commitID, err := localcommit.Get(l.project.Dir())
@@ -69,13 +72,13 @@ func (l *Languages) Run() error {
 		)
 	}
 
-	langs, err := model.FetchLanguagesForCommit(commitID)
+	langs, err := model.FetchLanguagesForCommit(commitID, l.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_fetching_languages", "Cannot obtain languages")
 	}
 
 	// Fetch resolved artifacts list for showing full version numbers.
-	rt, err := runtime.NewFromProject(l.project, nil, target.TriggerLanguage, l.analytics, l.svcModel, l.out, l.auth, l.cfg)
+	rt, err := runtime.SolveAndUpdate(l.auth, l.out, l.analytics, l.project, nil, target.TriggerLanguage, l.svcModel, l.cfg, runtime.OptMinimalUI)
 	if err != nil {
 		return locale.WrapError(err, "err_languages_runtime", "Could not initialize runtime")
 	}

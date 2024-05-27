@@ -3,7 +3,6 @@ package integration
 import (
 	"context"
 	"errors"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -37,7 +36,7 @@ func buildTestExecutable(t *testing.T, dir string) string {
 }
 
 func Test_acquirePidLockProcesses(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "")
+	tmpDir, err := os.MkdirTemp("", "")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -178,7 +177,7 @@ func Test_acquirePidLockProcesses(t *testing.T) {
 }
 
 func Test_acquirePidLock(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "")
+	tmpDir, err := os.MkdirTemp("", "")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 

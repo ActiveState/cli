@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -26,7 +25,7 @@ import (
 var (
 	rootPath         = environment.GetRootPathUnsafe()
 	defaultBuildDir  = filepath.Join(rootPath, "build")
-	defaultInputDir  = filepath.Join(defaultBuildDir, "payload", constants.ToplevelInstallArchiveDir)
+	defaultInputDir  = filepath.Join(defaultBuildDir, "payload", constants.LegacyToplevelInstallArchiveDir)
 	defaultOutputDir = filepath.Join(rootPath, "public")
 )
 
@@ -51,7 +50,7 @@ func fetchPlatform() string {
 
 func generateSha256(path string) string {
 	hasher := sha256.New()
-	b, err := ioutil.ReadFile(path)
+	b, err := os.ReadFile(path)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -92,7 +91,7 @@ func createUpdate(outputPath, channel, version, versionNumber, platform, target 
 
 	infoPath := filepath.Join(outputPath, relChannelPath, "info.json")
 	fmt.Printf("Creating %s\n", infoPath)
-	err = ioutil.WriteFile(infoPath, b, 0o755)
+	err = os.WriteFile(infoPath, b, 0o755)
 	if err != nil {
 		return errs.Wrap(err, "Failed to write info.json.")
 	}

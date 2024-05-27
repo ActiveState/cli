@@ -15,7 +15,8 @@ import (
 func TestInstallRoot(t *testing.T) {
 	tempdirWithInstall := fileutils.TempDirUnsafe()
 	tempdirWithOutInstall := fileutils.TempDirUnsafe()
-	fileutils.Touch(filepath.Join(tempdirWithInstall, InstallDirMarker))
+	err := fileutils.Touch(filepath.Join(tempdirWithInstall, InstallDirMarker))
+	require.NoError(t, err)
 
 	tests := []struct {
 		name    string
@@ -58,7 +59,8 @@ func TestInstallRoot(t *testing.T) {
 func TestBinPathFromInstallPath(t *testing.T) {
 	tempdirWithInstall := fileutils.TempDirUnsafe()
 	tempdirWithOutInstall := fileutils.TempDirUnsafe()
-	fileutils.Touch(filepath.Join(tempdirWithInstall, InstallDirMarker))
+	err := fileutils.Touch(filepath.Join(tempdirWithInstall, InstallDirMarker))
+	require.NoError(t, err)
 
 	tests := []struct {
 		name        string

@@ -28,6 +28,8 @@ func TestTable_colWidths(t1 *testing.T) {
 						{[]string{"1", "2", "3"}},
 					},
 					false,
+					false,
+					false,
 				},
 				100,
 			},
@@ -41,6 +43,8 @@ func TestTable_colWidths(t1 *testing.T) {
 					[]row{
 						{[]string{"1", "2", "3"}},
 					},
+					false,
+					false,
 					false,
 				},
 				100,
@@ -57,6 +61,8 @@ func TestTable_colWidths(t1 *testing.T) {
 						{[]string{"1", "0123456789012345678901234567890123456789"}},
 					},
 					false,
+					false,
+					false,
 				},
 				100,
 			},
@@ -71,6 +77,8 @@ func TestTable_colWidths(t1 *testing.T) {
 						{[]string{"123", "1234", "12345"}},
 					},
 					false,
+					false,
+					false,
 				},
 				100,
 			},
@@ -84,6 +92,8 @@ func TestTable_colWidths(t1 *testing.T) {
 					[]row{
 						{[]string{"1", "2", "3"}},
 					},
+					false,
+					false,
 					false,
 				},
 				100,
@@ -100,6 +110,8 @@ func TestTable_colWidths(t1 *testing.T) {
 						{[]string{strings.Repeat(" ", 100)}},
 					},
 					false,
+					false,
+					false,
 				},
 				100,
 			},
@@ -114,6 +126,8 @@ func TestTable_colWidths(t1 *testing.T) {
 						{[]string{"1", "1", "12", "12"}},
 						{[]string{"1", strings.Repeat(" ", 200)}},
 					},
+					false,
+					false,
 					false,
 				},
 				100,
@@ -333,7 +347,7 @@ func Test_rescaleColumns(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rescaleColumns(tt.args.colWidths, tt.args.targetTotal)
+			rescaleColumns(tt.args.colWidths, tt.args.targetTotal, false, tt.args.colWidths[0])
 			if !reflect.DeepEqual(tt.args.colWidths, tt.want) {
 				t.Errorf("rescaleColumns() got = %v, want %v", tt.args.colWidths, tt.want)
 			}

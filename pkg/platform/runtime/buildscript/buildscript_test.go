@@ -349,8 +349,10 @@ func TestRoundTrip(t *testing.T) {
 	script, err := New([]byte(example))
 	require.NoError(t, err)
 
-	tmpfile.Write([]byte(script.String()))
-	tmpfile.Close()
+	_, err = tmpfile.Write([]byte(script.String()))
+	require.NoError(t, err)
+	err = tmpfile.Close()
+	require.NoError(t, err)
 
 	roundTripScript, err := ScriptFromFile(tmpfile.Name())
 	require.NoError(t, err)
@@ -374,7 +376,7 @@ main = runtime
 	require.NoError(t, err)
 
 	inputJson := &bytes.Buffer{}
-	json.Compact(inputJson, []byte(`{
+	err = json.Compact(inputJson, []byte(`{
     "let": {
       "runtime": {
         "solve": {
@@ -391,12 +393,14 @@ main = runtime
       "in": "$runtime"
     }
   }`))
+	require.NoError(t, err)
 	// Cannot compare marshaled JSON directly with inputJson due to key sort order, so unmarshal and
 	// remarshal before making the comparison. json.Marshal() produces the same key sort order.
 	marshaledInput := make(map[string]interface{})
 	err = json.Unmarshal(inputJson.Bytes(), &marshaledInput)
 	require.NoError(t, err)
 	expectedJson, err := json.Marshal(marshaledInput)
+	require.NoError(t, err)
 
 	actualJson, err := json.Marshal(script.Expr)
 	require.NoError(t, err)
@@ -451,7 +455,7 @@ func TestBuildExpression(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify conversions between buildscripts and buildexpressions is accurate.
-	script, err := NewFromCommit(nil, expr)
+	script, err := NewFromBuildExpression(nil, expr)
 	require.NoError(t, err)
 	require.NotNil(t, script)
 	newExpr := script.Expr
@@ -462,7 +466,7 @@ func TestBuildExpression(t *testing.T) {
 	assert.Equal(t, string(exprBytes), string(newExprBytes))
 
 	// Verify comparisons between buildscripts is accurate.
-	newScript, err := NewFromCommit(nil, newExpr)
+	newScript, err := NewFromBuildExpression(nil, newExpr)
 	require.NoError(t, err)
 	assert.True(t, script.Equals(newScript))
 

@@ -57,7 +57,7 @@ main = runtime`))
 	mergedExpr, err := Merge(exprA, exprB, strategies)
 	require.NoError(t, err)
 
-	mergedScript, err := buildscript.NewFromCommit(scriptA.AtTime, mergedExpr)
+	mergedScript, err := buildscript.NewFromBuildExpression(scriptA.AtTime, mergedExpr)
 	require.NoError(t, err)
 
 	assert.Equal(t,
@@ -89,7 +89,6 @@ runtime = solve(
 	],
 	requirements = [
 		Req(name = "perl", namespace = "language"),
-		Req(name = "JSON", namespace = "language/perl"),
 		Req(name = "DateTime", namespace = "language/perl")
 	]
 )
@@ -108,6 +107,7 @@ runtime = solve(
 	],
 	requirements = [
 		Req(name = "perl", namespace = "language"),
+		Req(name = "JSON", namespace = "language/perl"),
 		Req(name = "DateTime", namespace = "language/perl")
 	]
 )
@@ -127,7 +127,7 @@ main = runtime`))
 	mergedExpr, err := Merge(exprA, exprB, strategies)
 	require.NoError(t, err)
 
-	mergedScript, err := buildscript.NewFromCommit(scriptA.AtTime, mergedExpr)
+	mergedScript, err := buildscript.NewFromBuildExpression(scriptA.AtTime, mergedExpr)
 	require.NoError(t, err)
 
 	assert.Equal(t,
