@@ -224,6 +224,25 @@ func (e ErrFailedArtifacts) Error() string {
 	return "ErrFailedArtifacts"
 }
 
+func (bp *BuildPlanner) BuildTarget(owner, project, commitID, target string) error {
+	logging.Debug("BuildTarget, owner: %s, project: %s, commitID: %s, target: %s", owner, project, commitID, target)
+	resp := &response.BuildTargetResult{}
+	err := bp.client.Run(request.Evaluate(owner, project, commitID, target), resp)
+	if err != nil {
+		return processBuildPlannerError(err, "Failed to evaluate target")
+	}
+
+	if resp.Build == nil {
+		return errs.New("Build is nil")
+	}
+
+	if response.IsErrorResponse(resp.Build.Type) {
+		return response.ProcessBuildError(resp.Build, "Could not process error response from evaluate target")
+	}
+
+	return nil
+}
+
 // WaitForBuild polls the build until it has passed the completed stage (ie. it's either successful or failed).
 func (b *BuildPlanner) WaitForBuild(commitID strfmt.UUID, owner, project string, target *string) error {
 	failedArtifacts := map[strfmt.UUID]*response.ArtifactResponse{}

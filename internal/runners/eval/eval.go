@@ -63,8 +63,12 @@ func (e *Eval) Run(params *Params) (rerr error) {
 	}()
 
 	bp := buildplanner.NewBuildPlannerModel(e.auth)
-	if err := bp.WaitForBuild(commitID, e.project.Owner(), e.project.Name(), &params.Target); err != nil {
+	if err := bp.BuildTarget(e.project.Owner(), e.project.Name(), commitID.String(), params.Target); err != nil {
 		return locale.WrapError(err, "err_eval", "Failed to evaluate target '{{.V0}}'", params.Target)
+	}
+
+	if err := bp.WaitForBuild(commitID, e.project.Owner(), e.project.Name(), &params.Target); err != nil {
+		return locale.WrapError(err, "err_eval_wait_for_build", "Failed to build target: '{{.V)}}'", params.Target)
 	}
 
 	pg.Stop("OK")
