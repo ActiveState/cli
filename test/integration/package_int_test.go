@@ -764,11 +764,8 @@ func (suite *PackageIntegrationTestSuite) TestChangeSummary() {
 	cp.Expect("Successfully set")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "."),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
+	cp = ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Checked out")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
