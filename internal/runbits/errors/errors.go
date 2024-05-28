@@ -225,5 +225,5 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 }
 
 func IsReportableError(err error) bool {
-	return !locale.IsInputError(err) && !errs.IsExternalError(err)
+	return !locale.IsInputError(err) && !errs.IsExternalError(err) && !errs.IsSilent(err)
 }

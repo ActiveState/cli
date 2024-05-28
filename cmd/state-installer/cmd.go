@@ -215,9 +215,7 @@ func main() {
 	an.Event(anaConst.CatInstallerFunnel, "pre-exec")
 	err = cmd.Execute(processedArgs[1:])
 	if err != nil {
-		if !errs.IsSilent(err) {
-			errors.ReportError(err, cmd, an)
-		}
+		errors.ReportError(err, cmd, an)
 		if locale.IsInputError(err) {
 			an.EventWithLabel(anaConst.CatInstaller, "input-error", errs.JoinMessage(err))
 			logging.Debug("Installer input error: " + errs.JoinMessage(err))
