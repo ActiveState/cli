@@ -21,24 +21,18 @@ const showUpdatedPackages = true
 // OutputChangeSummary looks over the given build plans, and computes and lists the additional
 // dependencies being installed for the requested packages, if any.
 func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan) {
-	requested := newBuildPlan.RequestedArtifacts()
-	if len(requested) == 0 {
-		return // nothing to do
-	}
-
 	addedString := []string{}
 	addedLocale := []string{}
-	for _, i := range requested.Ingredients() {
-		v := fmt.Sprintf("%s@%s", i.Name, i.Version)
-		addedString = append(addedLocale, v)
-		addedLocale = append(addedLocale, fmt.Sprintf("[ACTIONABLE]%s[/RESET]", v))
-	}
-
+	added := buildplan.Ingredients{}
 	dependencies := buildplan.Ingredients{}
 	directDependencies := buildplan.Ingredients{}
 	changeset := newBuildPlan.DiffArtifacts(oldBuildPlan, false)
 	for _, a := range changeset.Added {
+		added = append(added, a.Ingredients...)
 		for _, i := range a.Ingredients {
+			v := fmt.Sprintf("%s@%s", i.Name, i.Version)
+			addedString = append(addedLocale, v)
+			addedLocale = append(addedLocale, fmt.Sprintf("[ACTIONABLE]%s[/RESET]", v))
 			dependencies = append(dependencies, i.RuntimeDependencies(true)...)
 			directDependencies = append(dependencies, i.RuntimeDependencies(false)...)
 		}
