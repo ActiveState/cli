@@ -18,17 +18,15 @@ import (
 // dependency numbers.
 const showUpdatedPackages = true
 
-// OutputChangeSummary looks over the given artifact changeset and attempts to determine if a single
-// package install request was made. If so, it computes and lists the additional dependencies being
-// installed for that package.
-// `artifacts` is an ArtifactMap containing artifacts in the changeset, and `filter` contains any
-// runtime requirements/artifacts already installed.
-func OutputChangeSummary(out output.Outputer, changeset *buildplan.ArtifactChangeset, alreadyInstalled buildplan.Artifacts) {
+// OutputChangeSummary looks over the given build plans, and computes and lists the additional
+// dependencies being installed for the requested packages, if any.
+func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan) {
 	addedString := []string{}
 	addedLocale := []string{}
 	added := buildplan.Ingredients{}
 	dependencies := buildplan.Ingredients{}
 	directDependencies := buildplan.Ingredients{}
+	changeset := newBuildPlan.DiffArtifacts(oldBuildPlan, false)
 	for _, a := range changeset.Added {
 		added = append(added, a.Ingredients...)
 		for _, i := range a.Ingredients {
@@ -55,6 +53,10 @@ func OutputChangeSummary(out output.Outputer, changeset *buildplan.ArtifactChang
 	}
 
 	// Process the existing runtime requirements into something we can easily compare against.
+	alreadyInstalled := buildplan.Artifacts{}
+	if oldBuildPlan != nil {
+		alreadyInstalled = oldBuildPlan.Artifacts()
+	}
 	oldRequirements := alreadyInstalled.Ingredients().ToIDMap()
 
 	localeKey := "additional_dependencies"

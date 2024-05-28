@@ -260,11 +260,10 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 			oldBuildPlan = commit.BuildPlan()
 		}
 
-		changedArtifacts := rtCommit.BuildPlan().DiffArtifacts(oldBuildPlan, false)
-
-		dependencies.OutputChangeSummary(r.Output, &changedArtifacts, oldBuildPlan.Artifacts())
+		dependencies.OutputChangeSummary(r.Output, rtCommit.BuildPlan(), oldBuildPlan)
 
 		// Report CVEs
+		changedArtifacts := rtCommit.BuildPlan().DiffArtifacts(oldBuildPlan, false)
 		if err := r.cveReport(changedArtifacts, requirements...); err != nil {
 			return errs.Wrap(err, "Could not report CVEs")
 		}

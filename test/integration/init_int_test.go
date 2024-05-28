@@ -219,6 +219,28 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrg() {
 	suite.Contains(string(fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))), "ActiveState-CLI")
 }
 
+func (suite *InitIntegrationTestSuite) TestInit_ChangeSummary() {
+	suite.OnlyRunForTags(tagsuite.Init)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.Expect("Successfully set")
+	cp.ExpectExitCode(0)
+
+	project := "test-init-change-summary-" + sysinfo.OS().String()
+	cp = ts.Spawn("init", "ActiveState-CLI/"+project, "--language", "python@3.10.10")
+	cp.Expect("Resolving Dependencies")
+	cp.Expect("Done")
+	ts.NotifyProjectCreated("ActiveState-CLI", project)
+	cp.Expect("Setting up the following dependencies:")
+	cp.Expect("└─ python@3.10.10")
+	suite.Assert().NotContains(cp.Snapshot(), "├─", "more than one dependency was printed")
+	cp.ExpectExitCode(0)
+}
+
 func TestInitIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(InitIntegrationTestSuite))
 }
