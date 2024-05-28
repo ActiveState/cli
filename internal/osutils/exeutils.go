@@ -16,7 +16,28 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-// Executables will return all the Executables that need to be symlinked in the various provided bin directories
+func ExecutablePaths(env map[string]string) ([]string, error) {
+	// Retrieve artifact binary directory
+	var bins []string
+	if p, ok := env["PATH"]; ok {
+		bins = strings.Split(p, string(os.PathListSeparator))
+	}
+
+	exes, err := Executables(bins)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not detect executables")
+	}
+
+	// Remove duplicate executables as per PATH and PATHEXT
+	exes, err = UniqueExes(exes, os.Getenv("PATHEXT"))
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
+	}
+
+	return exes, nil
+}
+
+// Executables will find all directories that contain executables from the provided list of paths
 func Executables(bins []string) ([]string, error) {
 	exes := []string{}
 

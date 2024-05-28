@@ -10,11 +10,15 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/httputil"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/sliceutils"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
 	"github.com/ActiveState/cli/pkg/runtime/events"
 	"github.com/ActiveState/cli/pkg/runtime/events/progress"
 	"github.com/ActiveState/cli/pkg/runtime/internal/buildlog"
@@ -199,6 +203,11 @@ func (s *setup) update() error {
 		return errs.Wrap(err, "errors occurred during install")
 	}
 
+	// Update executors
+	if err := s.updateExecutors(); err != nil {
+		return errs.Wrap(err, "Could not update executors")
+	}
+
 	// Save depot changes
 	if err := s.depot.Save(); err != nil {
 		return errs.Wrap(err, "Could not save depot")
@@ -307,6 +316,35 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 
 	if err := fireEvent(s.opts.EventHandlers, events.ArtifactUnpackSuccess{artifact.ArtifactID}); err != nil {
 		return errs.Wrap(errs.Pack(err, err), "Could not handle ArtifactUnpackSuccess event")
+	}
+
+	return nil
+}
+
+func (s *setup) updateExecutors() error {
+	execPath := filepath.Join(s.path, configDir, executorDir)
+	if err := fileutils.MkdirUnlessExists(execPath); err != nil {
+		return errs.Wrap(err, "Could not create executors directory")
+	}
+
+	env, err := s.env.Environment()
+	if err != nil {
+		return errs.Wrap(err, "Could not get env")
+	}
+
+	exePaths, err := osutils.ExecutablePaths(env)
+	if err != nil {
+		return errs.Wrap(err, "Could not get executable paths")
+	}
+
+	execInit := executors.New(execPath)
+	if err := execInit.Apply(svcctl.NewIPCSockPathFromGlobals().String(), executors.NewTarget(
+		s.opts.Annotations.CommitUUID,
+		s.opts.Annotations.Owner,
+		s.opts.Annotations.Project,
+		s.path,
+	), env, exePaths); err != nil {
+		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
 	}
 
 	return nil

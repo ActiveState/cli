@@ -10,7 +10,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors/execmeta"
 	"github.com/go-openapi/strfmt"
 
@@ -25,6 +24,38 @@ type Targeter interface {
 	Name() string
 	Owner() string
 	Dir() string
+}
+
+type Target struct {
+	commitUUID strfmt.UUID
+	owner      string
+	name       string
+	dir        string
+}
+
+func NewTarget(commitUUID strfmt.UUID, owner, name, dir string) *Target {
+	return &Target{
+		commitUUID: commitUUID,
+		owner:      owner,
+		name:       name,
+		dir:        dir,
+	}
+}
+
+func (t *Target) CommitUUID() strfmt.UUID {
+	return t.commitUUID
+}
+
+func (t *Target) Owner() string {
+	return t.owner
+}
+
+func (t *Target) Name() string {
+	return t.name
+}
+
+func (t *Target) Dir() string {
+	return t.dir
 }
 
 type Executors struct {
@@ -46,7 +77,7 @@ func (es *Executors) ExecutorSrc() (string, error) {
 	return installation.ExecutorExec()
 }
 
-func (es *Executors) Apply(sockPath string, targeter Targeter, env map[string]string, exes envdef.ExecutablePaths) error {
+func (es *Executors) Apply(sockPath string, target Targeter, env map[string]string, exes []string) error {
 	logging.Debug("Creating executors at %s, exes: %v", es.executorPath, exes)
 
 	executors := make(map[string]string) // map[alias]dest
@@ -62,11 +93,11 @@ func (es *Executors) Apply(sockPath string, targeter Targeter, env map[string]st
 		return locale.WrapError(err, "err_mkdir", "Could not create directory: {{.V0}}", es.executorPath)
 	}
 
-	ns := project.NewNamespace(targeter.Owner(), targeter.Name(), "")
+	ns := project.NewNamespace(target.Owner(), target.Name(), "")
 	t := execmeta.Target{
-		CommitUUID: targeter.CommitUUID().String(),
+		CommitUUID: target.CommitUUID().String(),
 		Namespace:  ns.String(),
-		Dir:        targeter.Dir(),
+		Dir:        target.Dir(),
 	}
 	m := execmeta.New(sockPath, osutils.EnvMapToSlice(env), t, executors)
 	if err := m.WriteToDisk(es.executorPath); err != nil {

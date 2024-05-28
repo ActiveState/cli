@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/runtime/events"
+	"github.com/go-openapi/strfmt"
 )
 
 // Constants covering the stored runtime
@@ -16,6 +17,7 @@ const (
 	hashFile        = "hash.txt"
 	buildLogFile    = "build.log"
 	environmentFile = "environment.json"
+	executorDir     = "exec"
 )
 
 // depotName is the directory name under which we store our artifact depot; ie. we symlink these artifacts into the
@@ -35,6 +37,15 @@ type Opts struct {
 	PreferredLibcVersion string
 	EventHandlers        []events.HandlerFunc
 	BuildlogFilePath     string
+
+	// Annotations are used strictly to pass information for the purposes of analytics
+	// These should never be used for business logic. If the need to use them for business logic arises either we are
+	// going down a wrong rabbit hole or we need to revisit the architecture.
+	Annotations struct {
+		Owner      string
+		Project    string
+		CommitUUID strfmt.UUID
+	}
 }
 
 type SetOpt func(*Opts)
@@ -88,4 +99,24 @@ func (r *Runtime) Update(bp *buildplan.BuildPlan, hash string) error {
 
 func (r *Runtime) Env() Environment {
 	return Environment{}
+}
+
+func WithEventHandlers(handlers ...events.HandlerFunc) SetOpt {
+	return func(opts *Opts) { opts.EventHandlers = handlers }
+}
+
+func WithBuildlogFilePath(path string) SetOpt {
+	return func(opts *Opts) { opts.BuildlogFilePath = path }
+}
+
+func WithPreferredLibcVersion(version string) SetOpt {
+	return func(opts *Opts) { opts.PreferredLibcVersion = version }
+}
+
+func WithAnnotations(owner, project string, commitUUID strfmt.UUID) SetOpt {
+	return func(opts *Opts) {
+		opts.Annotations.Owner = owner
+		opts.Annotations.Project = project
+		opts.Annotations.CommitUUID = commitUUID
+	}
 }
