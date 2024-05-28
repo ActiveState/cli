@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -121,7 +120,6 @@ func (r *Runtime) NeedsUpdate() bool {
 }
 
 func (r *Runtime) validateCache() error {
-	fmt.Println("Validating cache")
 	if r.target.ProjectDir() == "" {
 		return nil
 	}
