@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -168,12 +168,12 @@ func (r *Runtime) validateBuildScript() error {
 		}
 	}
 
-	equals, err := script.Equals(cachedScript)
-	if err != nil {
-		return errs.Wrap(err, "Could not compare buildscript")
-	}
-
 	if cachedScript != nil {
+		equals, err := script.Equals(cachedScript)
+		if err != nil {
+			return errs.Wrap(err, "Could not compare buildscript")
+		}
+
 		if script != nil && !equals {
 			return NeedsCommitError
 		}
