@@ -388,23 +388,21 @@ func (suite *CheckoutIntegrationTestSuite) TestNoLanguage() {
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestChangeSummary() {
-	if runtime.GOOS == "windows" {
-		suite.T().Skip("cp.SendCtrlC() does not work on Windows")
-	}
 	suite.OnlyRunForTags(tagsuite.Checkout)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/small-python"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.Expect("Successfully set")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("checkout", "ActiveState-CLI/small-python")
 	cp.Expect("Resolving Dependencies")
 	cp.Expect("Done")
 	cp.Expect("Setting up the following dependencies:")
 	cp.Expect("└─ python@3.10.10")
-	cp.SendCtrlC() // don't care what happens after
-	cp.ExpectNotExitCode(0)
+	suite.Assert().NotContains(cp.Snapshot(), "├─", "more than one dependency was printed")
+	cp.ExpectExitCode(0)
 }
 
 func TestCheckoutIntegrationTestSuite(t *testing.T) {

@@ -220,27 +220,25 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrg() {
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_ChangeSummary() {
-	if runtime.GOOS == "windows" {
-		suite.T().Skip("cp.SendCtrlC() does not work on Windows")
-	}
 	suite.OnlyRunForTags(tagsuite.Init)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	ts.LoginAsPersistentUser()
 
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.Expect("Successfully set")
+	cp.ExpectExitCode(0)
+
 	project := "test-init-change-summary-" + sysinfo.OS().String()
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("init", "ActiveState-CLI/"+project, "--language", "python@3.10.10"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp = ts.Spawn("init", "ActiveState-CLI/"+project, "--language", "python@3.10.10")
 	cp.Expect("Resolving Dependencies")
 	cp.Expect("Done")
 	ts.NotifyProjectCreated("ActiveState-CLI", project)
 	cp.Expect("Setting up the following dependencies:")
 	cp.Expect("└─ python@3.10.10")
-	cp.SendCtrlC() // don't care what happens after
-	cp.ExpectNotExitCode(0)
+	suite.Assert().NotContains(cp.Snapshot(), "├─", "more than one dependency was printed")
+	cp.ExpectExitCode(0)
 }
 
 func TestInitIntegrationTestSuite(t *testing.T) {
