@@ -780,7 +780,7 @@ func (suite *PackageIntegrationTestSuite) TestChangeSummary() {
 	cp.Expect("├─ ")
 	cp.Expect("├─ ")
 	cp.Expect("└─ ")
-	cp.Expect("Package added: requests", e2e.RuntimeBuildSourcingTimeoutOpt)
+	cp.Expect("Package added: requests", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 
