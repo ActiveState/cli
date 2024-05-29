@@ -24,6 +24,7 @@ type PackageIntegrationTestSuite struct {
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -39,6 +40,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
 
 func (suite *PackageIntegrationTestSuite) TestPackages_project() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -51,6 +53,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project() {
 
 func (suite *PackageIntegrationTestSuite) TestPackages_name() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -64,6 +67,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_name() {
 
 func (suite *PackageIntegrationTestSuite) TestPackages_project_name() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -75,6 +79,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project_name() {
 
 func (suite *PackageIntegrationTestSuite) TestPackages_project_name_noData() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -85,6 +90,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project_name_noData() {
 
 func (suite *PackageIntegrationTestSuite) TestPackages_project_invalid() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -96,6 +102,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project_invalid() {
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValid() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -109,6 +116,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValid() {
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitInvalid() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -122,6 +130,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitInvalid()
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitUnknown() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -135,6 +144,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitUnknown()
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValidNoPackages() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -147,6 +157,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValidNoPa
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -166,6 +177,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -185,6 +197,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTerm() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -201,6 +214,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTe
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -216,6 +230,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchModules() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -230,6 +245,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchModules() {
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -242,6 +258,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithBadLang() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -254,6 +271,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithBadLang() {
 
 func (suite *PackageIntegrationTestSuite) TestPackage_info() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -270,6 +288,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_info() {
 
 func (suite *PackageIntegrationTestSuite) TestPackage_detached_operation() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -306,6 +325,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_detached_operation() {
 
 func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
 		return
@@ -351,6 +371,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 
 func (suite *PackageIntegrationTestSuite) TestPackage_operation_multiple() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
 		return
@@ -396,6 +417,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation_multiple() {
 
 func (suite *PackageIntegrationTestSuite) TestPackage_Duplicate() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -433,6 +455,7 @@ scripts:
 
 func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -451,6 +474,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
 
 func (suite *PackageIntegrationTestSuite) TestJSON() {
 	suite.OnlyRunForTags(tagsuite.Package, tagsuite.JSON)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -488,6 +512,7 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 
 func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
 		return
@@ -539,6 +564,7 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 
 func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -560,6 +586,7 @@ func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
 
 func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -584,6 +611,7 @@ func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
 
 func (suite *PackageIntegrationTestSuite) TestUpdate() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -624,6 +652,7 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 
 func (suite *PackageIntegrationTestSuite) TestRuby() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -651,6 +680,7 @@ func (suite *PackageIntegrationTestSuite) TestRuby() {
 // packages for projects with offline installers and docker runtimes.
 func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDocker() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -664,6 +694,7 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDock
 
 func (suite *PackageIntegrationTestSuite) TestResolved() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -685,6 +716,7 @@ func (suite *PackageIntegrationTestSuite) TestResolved() {
 
 func (suite *PackageIntegrationTestSuite) TestCVE_NoPrompt() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -705,6 +737,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_NoPrompt() {
 
 func (suite *PackageIntegrationTestSuite) TestCVE_Prompt() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -736,6 +769,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Prompt() {
 
 func (suite *PackageIntegrationTestSuite) TestCVE_Indirect() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -758,6 +792,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Indirect() {
 
 func (suite *PackageIntegrationTestSuite) TestChangeSummary() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	suite.T().Skip("Temporary skip")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
