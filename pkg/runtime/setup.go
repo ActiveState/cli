@@ -25,6 +25,7 @@ import (
 	"github.com/ActiveState/cli/pkg/runtime/internal/envdef"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
+	"golang.org/x/net/context"
 )
 
 type onPayloadReadyFunc func(artifact *buildplan.Artifact)
@@ -116,8 +117,23 @@ func newSetup(path string, bp *buildplan.BuildPlan, opts *Opts) (*setup, error) 
 	}, nil
 }
 
-func (s *setup) RunAndWait() error {
-	if err := fireEvent(s.opts.EventHandlers, events.Start{
+func (s *setup) RunAndWait() (rerr error) {
+	defer func() {
+		// Handle success / failure event
+		var name = "success"
+		var ev events.Event = events.Success{}
+		if rerr != nil {
+			name = "failure"
+			ev = events.Failure{}
+		}
+
+		err := s.fireEvent(ev)
+		if err != nil {
+			rerr = errs.Pack(rerr, errs.Wrap(err, "Could not handle %s event", name))
+		}
+	}()
+
+	if err := s.fireEvent(events.Start{
 		RecipeID:            s.buildplan.RecipeID(),
 		RequiresBuild:       s.buildplan.IsBuildInProgress() && len(s.toDownload) > 0,
 		LogFilePath:         s.opts.BuildlogFilePath,
@@ -155,9 +171,8 @@ func (s *setup) update() error {
 		WithEventHandler(s.opts.EventHandlers...).
 		WithLogFile(filepath.Join(s.path, configDir, buildLogFile))
 
-	wp := workerpool.New(maxConcurrency)
-
 	// Download artifacts when ready
+	wp := workerpool.New(maxConcurrency)
 	for _, a := range s.toDownload {
 		s.onArtifactBuildReady(blog, a, func(artifact *buildplan.Artifact) {
 			wp.Submit(func() error {
@@ -169,6 +184,14 @@ func (s *setup) update() error {
 		})
 	}
 
+	// Wait for build to finish
+	if !s.buildplan.IsBuildReady() {
+		if err := blog.Wait(context.Background()); err != nil {
+			return errs.Wrap(err, "errors occurred during buildlog streaming")
+		}
+	}
+
+	// Wait for workerpool handling build results to finish
 	if err := wp.Wait(); err != nil {
 		return errs.Wrap(err, "errors occurred during obtain")
 	}
@@ -191,14 +214,15 @@ func (s *setup) update() error {
 	for _, a := range s.toInstall {
 		func(a *buildplan.Artifact) { // We can get rid of this once we upgrade to Go 1.22 -- https://go.dev/blog/loopvar-preview
 			wp.Submit(func() error {
-				if err := s.depot.Deploy(a.ArtifactID, s.path); err != nil {
-					return errs.Wrap(err, "Could not link artifact")
+				if err := s.install(a.ArtifactID); err != nil {
+					return errs.Wrap(err, "Could not install artifact")
 				}
 				return nil
 			})
 		}(a)
 	}
 
+	// Wait for workerpool handling artifact installs to finish
 	if err := wp.Wait(); err != nil {
 		return errs.Wrap(err, "errors occurred during install")
 	}
@@ -220,6 +244,7 @@ func (s *setup) onArtifactBuildReady(blog *buildlog.BuildLog, artifact *buildpla
 	if _, ok := s.toBuild[artifact.ArtifactID]; !ok {
 		// No need to build, artifact can already be downloaded
 		cb(artifact)
+		return
 	}
 
 	blog.OnArtifactReady(artifact.ArtifactID, cb)
@@ -243,7 +268,7 @@ func (s *setup) obtain(artifact *buildplan.Artifact) (rerr error) {
 func (s *setup) download(artifact *buildplan.Artifact) (_ []byte, rerr error) {
 	defer func() {
 		if rerr != nil {
-			if err := fireEvent(s.opts.EventHandlers, events.ArtifactDownloadFailure{artifact.ArtifactID, rerr}); err != nil {
+			if err := s.fireEvent(events.ArtifactDownloadFailure{artifact.ArtifactID, rerr}); err != nil {
 				rerr = errs.Pack(rerr, errs.Wrap(err, "Could not handle ArtifactDownloadFailure event"))
 			}
 		}
@@ -251,13 +276,13 @@ func (s *setup) download(artifact *buildplan.Artifact) (_ []byte, rerr error) {
 
 	b, err := httputil.GetWithProgress(artifact.URL, &progress.Report{
 		ReportSizeCb: func(size int) error {
-			if err := fireEvent(s.opts.EventHandlers, events.ArtifactDownloadStarted{artifact.ArtifactID, size}); err != nil {
+			if err := s.fireEvent(events.ArtifactDownloadStarted{artifact.ArtifactID, size}); err != nil {
 				return ProgressReportError{errs.Wrap(err, "Could not handle ArtifactDownloadStarted event")}
 			}
 			return nil
 		},
 		ReportIncrementCb: func(inc int) error {
-			if err := fireEvent(s.opts.EventHandlers, events.ArtifactDownloadProgress{artifact.ArtifactID, inc}); err != nil {
+			if err := s.fireEvent(events.ArtifactDownloadProgress{artifact.ArtifactID, inc}); err != nil {
 				return errs.Wrap(err, "Could not handle ArtifactDownloadProgress event")
 			}
 			return nil
@@ -266,7 +291,7 @@ func (s *setup) download(artifact *buildplan.Artifact) (_ []byte, rerr error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "Download %s failed", artifact.URL)
 	}
-	if err := fireEvent(s.opts.EventHandlers, events.ArtifactDownloadSuccess{artifact.ArtifactID}); err != nil {
+	if err := s.fireEvent(events.ArtifactDownloadSuccess{artifact.ArtifactID}); err != nil {
 		return nil, errs.Wrap(errs.Pack(err, err), "Could not handle ArtifactDownloadSuccess event")
 	}
 
@@ -276,7 +301,7 @@ func (s *setup) download(artifact *buildplan.Artifact) (_ []byte, rerr error) {
 func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 	defer func() {
 		if rerr != nil {
-			if err := fireEvent(s.opts.EventHandlers, events.ArtifactUnpackFailure{artifact.ArtifactID, rerr}); err != nil {
+			if err := s.fireEvent(events.ArtifactUnpackFailure{artifact.ArtifactID, rerr}); err != nil {
 				rerr = errs.Pack(rerr, errs.Wrap(err, "Could not handle ArtifactUnpackFailure event"))
 			}
 		}
@@ -287,7 +312,7 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 		ua = unarchiver.NewZip()
 	}
 
-	if err := fireEvent(s.opts.EventHandlers, events.ArtifactUnpackStarted{artifact.ArtifactID, len(b)}); err != nil {
+	if err := s.fireEvent(events.ArtifactUnpackStarted{artifact.ArtifactID, len(b)}); err != nil {
 		return errs.Wrap(err, "Could not handle ArtifactUnpackStarted event")
 	}
 
@@ -300,7 +325,7 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 
 	proxy := proxyreader.NewProxyReader(&progress.Report{
 		ReportIncrementCb: func(inc int) error {
-			if err := fireEvent(s.opts.EventHandlers, events.ArtifactUnpackProgress{artifact.ArtifactID, inc}); err != nil {
+			if err := s.fireEvent(events.ArtifactUnpackProgress{artifact.ArtifactID, inc}); err != nil {
 				return errs.Wrap(err, "Could not handle ArtifactUnpackProgress event")
 			}
 			return nil
@@ -314,7 +339,7 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 		return errs.Wrap(err, "Could not put artifact in depot")
 	}
 
-	if err := fireEvent(s.opts.EventHandlers, events.ArtifactUnpackSuccess{artifact.ArtifactID}); err != nil {
+	if err := s.fireEvent(events.ArtifactUnpackSuccess{artifact.ArtifactID}); err != nil {
 		return errs.Wrap(errs.Pack(err, err), "Could not handle ArtifactUnpackSuccess event")
 	}
 
@@ -363,5 +388,27 @@ func (s *setup) save() error {
 		return errs.Wrap(err, "Could not write environment file")
 	}
 
+	return nil
+}
+
+func (s *setup) install(id strfmt.UUID) (rerr error) {
+	defer func() {
+		if rerr == nil {
+			if err := s.fireEvent(events.ArtifactInstallSuccess{}); err != nil {
+				rerr = errs.Pack(rerr, errs.Wrap(err, "Could not handle ArtifactInstallSuccess event"))
+			}
+		} else {
+			if err := s.fireEvent(events.ArtifactInstallFailure{id, rerr}); err != nil {
+				rerr = errs.Pack(rerr, errs.Wrap(err, "Could not handle ArtifactInstallFailure event"))
+			}
+		}
+	}()
+
+	if err := s.fireEvent(events.ArtifactInstallStarted{id}); err != nil {
+		return errs.Wrap(err, "Could not handle ArtifactInstallStarted event")
+	}
+	if err := s.depot.Deploy(id, s.path); err != nil {
+		return errs.Wrap(err, "Could not link artifact")
+	}
 	return nil
 }

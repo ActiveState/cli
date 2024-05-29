@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/runtime/events"
 	"github.com/go-openapi/strfmt"
 	"github.com/imacks/bitflags-go"
 )
@@ -102,8 +101,12 @@ func SolveAndUpdate(
 		pg := NewRuntimeProgressIndicator(out)
 		defer rtutils.Closer(pg.Close, &rerr)
 
-		err := rt.SolveAndUpdate(pg)
+		commit, err := solveWithProgress(target.CommitUUID(), target.Owner(), target.Name(), auth, out)
 		if err != nil {
+			return nil, errs.Wrap(err, "Failed to solve runtime")
+		}
+
+		if err := rt.Update(rt.Setup(pg), commit); err != nil {
 			return nil, locale.WrapError(err, "err_packages_update_runtime_install")
 		}
 	}
@@ -158,10 +161,10 @@ func Solve(
 		return nil, nil, locale.WrapError(err, "err_packages_update_runtime_init")
 	}
 
-	setup := rt.Setup(&events.VoidHandler{})
-	commit, err := setup.Solve()
+	bpm := bpModel.NewBuildPlannerModel(auth)
+	commit, err := bpm.FetchCommit(rtTarget.CommitUUID(), rtTarget.Owner(), rtTarget.Name(), nil)
 	if err != nil {
-		return nil, nil, errs.Wrap(err, "Solve failed")
+		return nil, nil, errs.Wrap(err, "Failed to fetch build result")
 	}
 
 	return rt, commit, nil

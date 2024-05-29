@@ -55,11 +55,6 @@ type Failure struct {
 
 func (Failure) IsEvent() {}
 
-type BuildSkipped struct {
-}
-
-func (BuildSkipped) IsEvent() {}
-
 type BuildStarted struct {
 	LogFilePath string
 }
@@ -117,12 +112,6 @@ type ArtifactDownloadStarted struct {
 
 func (ArtifactDownloadStarted) IsEvent() {}
 
-type ArtifactDownloadSkipped struct {
-	ArtifactID strfmt.UUID
-}
-
-func (ArtifactDownloadSkipped) IsEvent() {}
-
 type ArtifactDownloadProgress struct {
 	ArtifactID      strfmt.UUID
 	IncrementBySize int
@@ -145,23 +134,9 @@ func (ArtifactDownloadSuccess) IsEvent() {}
 
 type ArtifactInstallStarted struct {
 	ArtifactID strfmt.UUID
-	TotalSize  int
 }
 
 func (ArtifactInstallStarted) IsEvent() {}
-
-type ArtifactInstallProgress struct {
-	ArtifactID      strfmt.UUID
-	IncrementBySize int
-}
-
-func (ArtifactInstallSkipped) IsEvent() {}
-
-type ArtifactInstallSkipped struct {
-	ArtifactID strfmt.UUID
-}
-
-func (ArtifactInstallProgress) IsEvent() {}
 
 type ArtifactInstallFailure struct {
 	ArtifactID strfmt.UUID
@@ -202,19 +177,3 @@ type ArtifactUnpackSuccess struct {
 }
 
 func (ArtifactUnpackSuccess) IsEvent() {}
-
-type SolveStart struct{}
-
-func (SolveStart) IsEvent() {}
-
-type SolveError struct {
-	Error error
-}
-
-func (SolveError) IsEvent() {}
-
-type SolveSuccess struct{}
-
-func (SolveSuccess) IsEvent() {
-
-}

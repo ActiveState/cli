@@ -106,7 +106,7 @@ func NewProgressIndicator(w io.Writer, out output.Outputer) *ProgressDigester {
 	}
 }
 
-func (p *ProgressDigester) Handle(ev events.Eventer) error {
+func (p *ProgressDigester) Handle(ev events.Event) error {
 	p.dbgEventLog = append(p.dbgEventLog, fmt.Sprintf("%T", ev))
 
 	p.mutex.Lock()
@@ -149,29 +149,6 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 
 	case events.Success:
 		p.success = true
-
-	case events.SolveStart:
-		p.out.Notice(locale.T("setup_runtime"))
-		p.solveSpinner = output.StartSpinner(p.out, locale.T("progress_solve"), refreshRate)
-
-	case events.SolveError:
-		if p.solveSpinner == nil {
-			return errs.New("SolveError called before solveBar was initialized")
-		}
-		p.solveSpinner.Stop(locale.T("progress_fail"))
-		p.solveSpinner = nil
-
-	case events.SolveSuccess:
-		if p.solveSpinner == nil {
-			return errs.New("SolveSuccess called before solveBar was initialized")
-		}
-		p.solveSpinner.Stop(locale.T("progress_success"))
-		p.solveSpinner = nil
-
-	case events.BuildSkipped:
-		if p.buildBar != nil {
-			return errs.New("BuildSkipped called, but buildBar was initialized.. this should not happen as they should be mutually exclusive")
-		}
 
 	case events.BuildStarted:
 		if p.buildBar != nil {
@@ -238,11 +215,6 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 			return errs.Wrap(err, "Failed to add or update artifact bar")
 		}
 
-	case events.ArtifactDownloadSkipped:
-		initDownloadBar()
-		delete(p.downloadsExpected, v.ArtifactID)
-		p.downloadBar.Increment()
-
 	case events.ArtifactDownloadSuccess:
 		if p.downloadBar == nil {
 			return errs.New("ArtifactDownloadSuccess called before downloadBar was initialized")
@@ -259,23 +231,23 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		delete(p.downloadsExpected, v.ArtifactID)
 		p.downloadBar.Increment()
 
-	case events.ArtifactInstallStarted:
+	// Note we listen for ArtifactUnpackStarted instead of ArtifactInstallStarted, because while unpacking does not happen
+	// as part of the install, it is still considered install progress from a user perspective.
+	case events.ArtifactUnpackStarted:
 		if p.installBar == nil {
 			p.installBar = p.addTotalBar(locale.Tl("progress_building", "Installing"), int64(len(p.installsExpected)), mpb.BarPriority(StepInstall.priority))
 		}
 		if _, ok := p.installsExpected[v.ArtifactID]; !ok {
-			return errs.New("ArtifactInstallStarted called for an artifact that was not expected: %s", v.ArtifactID.String())
+			return errs.New("ArtifactUnpackStarted called for an artifact that was not expected: %s", v.ArtifactID.String())
 		}
 		if err := p.addArtifactBar(v.ArtifactID, StepInstall, int64(v.TotalSize), true); err != nil {
 			return errs.Wrap(err, "Failed to add or update artifact bar")
 		}
 
-	case events.ArtifactInstallSkipped:
-		if p.installBar == nil {
-			return errs.New("ArtifactInstallSkipped called before installBar was initialized, artifact ID: %s", v.ArtifactID.String())
+	case events.ArtifactUnpackProgress:
+		if err := p.updateArtifactBar(v.ArtifactID, StepInstall, v.IncrementBySize); err != nil {
+			return errs.Wrap(err, "Failed to add or update artifact bar")
 		}
-		delete(p.installsExpected, v.ArtifactID)
-		p.installBar.Increment()
 
 	case events.ArtifactInstallSuccess:
 		if p.installBar == nil {
@@ -292,11 +264,6 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		}
 		delete(p.installsExpected, v.ArtifactID)
 		p.installBar.Increment()
-
-	case events.ArtifactInstallProgress:
-		if err := p.updateArtifactBar(v.ArtifactID, StepInstall, v.IncrementBySize); err != nil {
-			return errs.Wrap(err, "Failed to add or update artifact bar")
-		}
 
 	}
 
