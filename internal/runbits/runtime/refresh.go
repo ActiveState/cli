@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"strings"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -40,6 +42,15 @@ type Configurable interface {
 	GetBool(key string) bool
 }
 
+var overrideAsyncTriggersMap = map[target.Trigger]bool{
+	target.TriggerRefresh:  true,
+	target.TriggerActivate: true,
+	target.TriggerShell:    true,
+	target.TriggerScript:   true,
+	target.TriggerDeploy:   true,
+	target.TriggerUse:      true,
+}
+
 // SolveAndUpdate should be called after runtime mutations.
 func SolveAndUpdate(
 	auth *authentication.Auth,
@@ -62,15 +73,15 @@ func SolveAndUpdate(
 		return nil, rationalize.ErrHeadless
 	}
 
+	if cfg.GetBool(constants.AsyncRuntimeConfig) && !overrideAsyncTriggers(trigger) {
+		logging.Debug("Skipping runtime solve due to async runtime")
+		return nil, nil
+	}
+
 	target := target.NewProjectTarget(proj, customCommitID, trigger)
 	rt, err := runtime.New(target, an, svcm, auth, cfg, out)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_packages_update_runtime_init")
-	}
-
-	if cfg.GetBool(constants.AsyncRuntimeConfig) {
-		logging.Debug("Skipping runtime solve due to async runtime")
-		return rt, nil
 	}
 
 	if !bitflags.Has(opts, OptOrderChanged) && !bitflags.Has(opts, OptMinimalUI) && !rt.NeedsUpdate() {
@@ -99,6 +110,10 @@ func SolveAndUpdate(
 	}
 
 	return rt, nil
+}
+
+func overrideAsyncTriggers(trigger target.Trigger) bool {
+	return overrideAsyncTriggersMap[trigger] || strings.HasPrefix(string(trigger), string(target.TriggerExec))
 }
 
 func Solve(
