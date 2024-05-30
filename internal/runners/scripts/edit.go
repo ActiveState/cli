@@ -57,12 +57,15 @@ func (e *Edit) Run(params *EditParams) error {
 		return rationalize.ErrNoProject
 	}
 
-	script := e.project.ScriptByName(params.Name)
+	script, err := e.project.ScriptByName(params.Name)
+	if err != nil {
+		return errs.Wrap(err, "Could not get script")
+	}
 	if script == nil {
 		return locale.NewInputError("edit_scripts_no_name", "Could not find script with the given name {{.V0}}", params.Name)
 	}
 
-	err := e.editScript(script, params)
+	err = e.editScript(script, params)
 	if err != nil {
 		return locale.WrapError(err, "error_edit_script", "Failed to edit script.")
 	}
@@ -259,7 +262,10 @@ func updateProjectFile(cfg projectfile.ConfigGetter, pj *project.Project, script
 	}
 
 	pjf := pj.Source()
-	script := pj.ScriptByName(name)
+	script, err := pj.ScriptByName(name)
+	if err != nil {
+		return errs.Wrap(err, "Could not get script")
+	}
 	if script == nil {
 		return locale.NewError("err_update_script_cannot_find", "Could not find the source script to update.")
 	}

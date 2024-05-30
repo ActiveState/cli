@@ -76,17 +76,17 @@ func (suite *EditTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *EditTestSuite) TestCreateScriptFile() {
-	script := suite.project.ScriptByName("hello")
+	script, err := suite.project.ScriptByName("hello")
+	suite.Require().NoError(err)
 
-	var err error
 	suite.scriptFile, err = createScriptFile(script, false)
 	suite.Require().NoError(err, "should create file")
 }
 
 func (suite *EditTestSuite) TestCreateScriptFile_Expand() {
-	script := suite.project.ScriptByName("hello-constant")
+	script, err := suite.project.ScriptByName("hello-constant")
+	suite.Require().NoError(err)
 
-	var err error
 	suite.scriptFile, err = createScriptFile(script, true)
 	suite.Require().NoError(err, "should create file")
 
@@ -98,9 +98,9 @@ func (suite *EditTestSuite) TestCreateScriptFile_Expand() {
 }
 
 func (suite *EditTestSuite) TestNewScriptWatcher() {
-	script := suite.project.ScriptByName("hello")
+	script, err := suite.project.ScriptByName("hello")
+	suite.Require().NoError(err)
 
-	var err error
 	suite.scriptFile, err = createScriptFile(script, false)
 	suite.Require().NoError(err, "should create file")
 
@@ -123,9 +123,9 @@ func (suite *EditTestSuite) TestNewScriptWatcher() {
 }
 
 func (suite *EditTestSuite) TestUpdateProjectFile() {
-	replace := suite.project.ScriptByName("replace")
+	replace, err := suite.project.ScriptByName("replace")
+	suite.Require().NoError(err)
 
-	var err error
 	suite.scriptFile, err = createScriptFile(replace, false)
 	suite.Require().NoError(err, "unexpected error creating script file")
 
@@ -138,7 +138,9 @@ func (suite *EditTestSuite) TestUpdateProjectFile() {
 	suite.Require().NoError(err, "unexpected error getting project")
 	v1, err := replace.Value()
 	suite.Require().NoError(err)
-	v2, err := updatedProject.ScriptByName("replace").Value()
+	script, err := updatedProject.ScriptByName("replace")
+	suite.Require().NoError(err)
+	v2, err := script.Value()
 	suite.Require().NoError(err)
 	suite.Equal(v1, v2)
 }

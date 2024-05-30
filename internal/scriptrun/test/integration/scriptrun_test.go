@@ -77,7 +77,9 @@ scripts:
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
 	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
-	err = scriptRun.Run(proj.ScriptByName("run"), []string{})
+	script, err := proj.ScriptByName("run")
+	require.NoError(t, err)
+	err = scriptRun.Run(script, []string{})
 	assert.NoError(t, err, "No error occurred")
 }
 
@@ -119,7 +121,9 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 
 	out := capturer.CaptureOutput(func() {
 		scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
-		err = scriptRun.Run(proj.ScriptByName("run"), nil)
+		script, err := proj.ScriptByName("run")
+		require.NoError(t, err, "Error: "+errs.JoinMessage(err))
+		err = scriptRun.Run(script, nil)
 		assert.NoError(t, err, "Error: "+errs.JoinMessage(err))
 	})
 
@@ -166,8 +170,10 @@ scripts:
 
 	out := outputhelper.NewCatcher()
 	scriptRun := scriptrun.New(auth, out, subshell.New(cfg), proj, cfg, blackhole.New(), nil)
-	fmt.Println(proj.ScriptByName("run"))
-	err = scriptRun.Run(proj.ScriptByName("run"), nil)
+	script, err := proj.ScriptByName("run")
+	fmt.Println(script)
+	require.NoError(t, err)
+	err = scriptRun.Run(script, nil)
 	assert.NoError(t, err, "No error occurred")
 }
 
@@ -198,7 +204,7 @@ scripts:
 
 	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
 	err = scriptRun.Run(nil, nil)
-	assert.Error(t, err, "Error occurred")
+	assert.Error(t, err, "No error occurred")
 }
 
 func (suite *ScriptRunSuite) TestRunUnknownCommand() {
@@ -228,8 +234,10 @@ scripts:
 	defer func() { require.NoError(t, cfg.Close()) }()
 
 	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
-	err = scriptRun.Run(proj.ScriptByName("run"), nil)
-	assert.Error(t, err, "Error occurred")
+	script, err := proj.ScriptByName("run")
+	require.NoError(t, err)
+	err = scriptRun.Run(script, nil)
+	assert.Error(t, err, "No error occurred")
 }
 
 func (suite *ScriptRunSuite) TestRunActivatedCommand() {
@@ -282,7 +290,9 @@ scripts:
 
 	// Run the command.
 	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
-	err = scriptRun.Run(proj.ScriptByName("run"), nil)
+	script, err := proj.ScriptByName("run")
+	require.NoError(t, err)
+	err = scriptRun.Run(script, nil)
 	assert.NoError(t, err, "No error occurred")
 
 	// Reset.
@@ -378,7 +388,10 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 
 	outStr, outErr := osutil.CaptureStdout(func() {
 		scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
-		err = scriptRun.Run(proj.ScriptByName(cmdName), cmdArgs)
+		var script *project.Script
+		if script, err = proj.ScriptByName(cmdName); err == nil {
+			err = scriptRun.Run(script, cmdArgs)
+		}
 	})
 	require.NoError(t, outErr, "error capturing stdout")
 
