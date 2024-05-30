@@ -4,12 +4,13 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/pkg/runtime"
 	"github.com/google/uuid"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -31,11 +32,12 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, useExecutors bool, projectDir,
 	envMap := make(map[string]string)
 
 	// Source runtime environment information
-	if !v.runtime.Disabled() {
-		var err error
-		envMap, err = v.runtime.Env(inherit, useExecutors)
-		if err != nil {
-			return envMap, err
+	if condition.RuntimeDisabled() {
+		env := v.runtime.Env()
+		if useExecutors {
+			envMap = env.VariablesWithExecutors
+		} else {
+			envMap = env.Variables
 		}
 	}
 

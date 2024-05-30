@@ -93,7 +93,7 @@ func main() {
 	var err error
 	cfg, err = config.New()
 	if err != nil {
-		multilog.Error("Could not set up configuration handler: " + errs.JoinMessage(err))
+		multilog.Critical("Could not set up configuration handler: " + errs.JoinMessage(err))
 		fmt.Fprintln(os.Stderr, err.Error())
 		exitCode = 1
 	}
@@ -108,7 +108,7 @@ func main() {
 		Interactive: false,
 	})
 	if err != nil {
-		multilog.Error("Could not set up output handler: " + errs.JoinMessage(err))
+		multilog.Critical("Could not set up output handler: " + errs.JoinMessage(err))
 		fmt.Fprintln(os.Stderr, err.Error())
 		exitCode = 1
 		return
@@ -148,7 +148,7 @@ func main() {
 		"state-installer",
 		"",
 		"Installs or updates the State Tool",
-		primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an),
+		primer.New(out, cfg, an),
 		[]*captain.Flag{ // The naming of these flags is slightly inconsistent due to backwards compatibility requirements
 			{
 				Name:        "command",

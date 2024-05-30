@@ -1,4 +1,4 @@
-package runtime
+package runtime_legacy
 
 import (
 	"errors"

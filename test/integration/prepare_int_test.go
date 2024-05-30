@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"testing"
 
+	rt "github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
@@ -23,7 +24,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	rt "github.com/ActiveState/cli/pkg/platform/runtime/target"
 )
 
 type PrepareIntegrationTestSuite struct {
@@ -146,7 +146,7 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	suite.Assert().NoError(err, "should have removed executor directory, to ensure that it gets re-created")
 
 	// check existens of exec dir
-	targetDir := rt.ProjectDirToTargetDir(ts.Dirs.Work, ts.Dirs.Cache)
+	targetDir := rt.ProjectDirToTargetDir(ts.Dirs.Cache, ts.Dirs.Work)
 	projectExecDir := setup.ExecDir(targetDir)
 	suite.DirExists(projectExecDir)
 

@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
@@ -19,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -111,7 +111,7 @@ func (m *Manifest) fetchBuildplanRequirements() (buildplan.Ingredients, error) {
 	}
 
 	target := target.NewProjectTarget(m.project, nil, target.TriggerManifest)
-	rt, err := runtime.New(target, m.analytics, m.svcModel, m.auth, m.cfg, m.out)
+	rt, err := runtime_legacy.New(target, m.analytics, m.svcModel, m.auth, m.cfg, m.out)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
 	}

@@ -115,14 +115,12 @@ func run(cfg *config.Instance) error {
 		return runStart(out, "svc-start:mouse")
 	}
 
-	p := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an)
-
 	showVersion := false
 	cmd := captain.NewCommand(
 		path.Base(os.Args[0]),
 		"",
 		"",
-		p,
+		primer.New(out, cfg, an),
 		[]*captain.Flag{
 			{
 				Name:      "version",

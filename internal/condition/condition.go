@@ -81,3 +81,7 @@ func IsNetworkingError(err error) bool {
 	}
 	return false
 }
+
+func RuntimeDisabled() bool {
+	return os.Getenv(constants.DisableRuntime) == "true"
+}

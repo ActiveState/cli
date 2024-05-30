@@ -22,14 +22,15 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	runbit "github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	vulnModel "github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
@@ -37,8 +38,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/runtime"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
@@ -62,6 +63,10 @@ func (pv *PackageVersion) Set(arg string) error {
 }
 
 type RequirementOperation struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	Output    output.Outputer
 	Prompt    prompt.Prompter
 	Project   *project.Project
@@ -83,6 +88,7 @@ type primeable interface {
 
 func NewRequirementOperation(prime primeable) *RequirementOperation {
 	return &RequirementOperation{
+		prime,
 		prime.Output(),
 		prime.Prompt(),
 		prime.Project(),
@@ -236,7 +242,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 
 		// Solve runtime
-		rt, rtCommit, err := runbit.Solve(r.Auth, r.Output, r.Analytics, r.Project, &commitID, trigger, r.SvcModel, r.Config, runbit.OptNone)
+		rtCommit, err := runtime_runbit.Solve(r.prime, &commitID)
 		if err != nil {
 			return errs.Wrap(err, "Could not solve runtime")
 		}
@@ -250,10 +256,9 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 
 		var oldBuildPlan *buildplan.BuildPlan
-		rtTarget := target.NewProjectTarget(r.Project, &commitID, trigger)
 		if oldCommit.ParentCommitID != "" {
 			bpm := bpModel.NewBuildPlannerModel(r.Auth)
-			commit, err := bpm.FetchCommit(oldCommit.ParentCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
+			commit, err := bpm.FetchCommit(oldCommit.ParentCommitID, r.Project.Owner(), r.Project.Name(), nil)
 			if err != nil {
 				return errs.Wrap(err, "Failed to fetch build result")
 			}
@@ -272,18 +277,11 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		// Start runtime update UI
 		if !r.Config.GetBool(constants.AsyncRuntimeConfig) {
 			out.Notice("")
-			if !rt.HasCache() {
-				out.Notice(output.Title(locale.T("install_runtime")))
-				out.Notice(locale.T("install_runtime_info"))
-			} else {
-				out.Notice(output.Title(locale.T("update_runtime")))
-				out.Notice(locale.T("update_runtime_info"))
-			}
 
 			// refresh or install runtime
-			err = runbit.UpdateByReference(rt, rtCommit, r.Auth, r.Project, r.Output, runbit.OptMinimalUI)
+			_, err = runtime_runbit.Update(r.prime, trigger, runtime_runbit.WithCommitID(commitID))
 			if err != nil {
-				if !runbits.IsBuildError(err) {
+				if !IsBuildError(err) {
 					// If the error is not a build error we want to retain the changes
 					if err2 := r.updateCommitID(commitID); err2 != nil {
 						return errs.Pack(err, locale.WrapError(err2, "err_package_update_commit_id"))
@@ -936,4 +934,9 @@ func requirementNames(requirements ...*Requirement) []string {
 		names = append(names, requirement.Name)
 	}
 	return names
+}
+
+func IsBuildError(err error) bool {
+	return errs.Matches(err, &runtime.BuildError{}) ||
+		errs.Matches(err, &response.BuildPlannerError{})
 }

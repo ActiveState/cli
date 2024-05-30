@@ -12,11 +12,11 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -44,7 +44,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutPython() {
 	suite.Require().True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, constants.ConfigFileName)), "ActiveState-CLI/Python3 was not checked out properly")
 
 	// Verify runtime was installed correctly and works.
-	targetDir := target.ProjectDirToTargetDir(ts.Dirs.Work, ts.Dirs.Cache)
+	targetDir := target.ProjectDirToTargetDir(ts.Dirs.Cache, ts.Dirs.Work)
 	pythonExe := filepath.Join(setup.ExecDir(targetDir), "python3"+osutils.ExeExtension)
 	cp = ts.SpawnCmd(pythonExe, "--version")
 	cp.Expect("Python 3")
@@ -52,7 +52,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutPython() {
 
 	suite.Run("Cached", func() {
 		artifactCacheDir := filepath.Join(ts.Dirs.Cache, constants.ArtifactMetaDir)
-		projectCacheDir := target.ProjectDirToTargetDir(ts.Dirs.Work, ts.Dirs.Cache)
+		projectCacheDir := target.ProjectDirToTargetDir(ts.Dirs.Cache, ts.Dirs.Work)
 		suite.Require().NotEmpty(fileutils.ListFilesUnsafe(artifactCacheDir), "Artifact cache dir should have files")
 		suite.Require().NotEmpty(fileutils.ListFilesUnsafe(projectCacheDir), "Project cache dir should have files")
 
@@ -89,7 +89,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutPerl() {
 	cp.Expect("Checked out project")
 
 	// Verify runtime was installed correctly and works.
-	targetDir := target.ProjectDirToTargetDir(ts.Dirs.Work, ts.Dirs.Cache)
+	targetDir := target.ProjectDirToTargetDir(ts.Dirs.Cache, ts.Dirs.Work)
 	perlExe := filepath.Join(setup.ExecDir(targetDir), "perl"+osutils.ExeExtension)
 	cp = ts.SpawnCmd(perlExe, "--version")
 	cp.Expect("This is perl")

@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
 	"github.com/ActiveState/cli/pkg/runtime/events"
@@ -28,7 +29,22 @@ import (
 	"golang.org/x/net/context"
 )
 
-type onPayloadReadyFunc func(artifact *buildplan.Artifact)
+type Opts struct {
+	PreferredLibcVersion string
+	EventHandlers        []events.HandlerFunc
+	BuildlogFilePath     string
+
+	// Annotations are used strictly to pass information for the purposes of analytics
+	// These should never be used for business logic. If the need to use them for business logic arises either we are
+	// going down a wrong rabbit hole or we need to revisit the architecture.
+	Annotations struct {
+		Owner      string
+		Project    string
+		CommitUUID strfmt.UUID
+	}
+}
+
+type SetOpt func(*Opts)
 
 type setup struct {
 	path      string
@@ -50,8 +66,6 @@ type setup struct {
 
 	// toUninstall encompasses all artifacts that will need to be uninstalled for this runtime.
 	toUninstall map[strfmt.UUID]struct{}
-
-	onPayloadReadyFuncs map[strfmt.UUID][]onPayloadReadyFunc
 }
 
 func newSetup(path string, bp *buildplan.BuildPlan, opts *Opts) (*setup, error) {
@@ -103,6 +117,22 @@ func newSetup(path string, bp *buildplan.BuildPlan, opts *Opts) (*setup, error) 
 	// course we only want to filter artifacts that actually require a build, as the build may be cached server side.
 	artifactsToBuild := append(artifactsToDownload, artifactsToDownload.Dependencies(true)...).Filter(buildplan.FilterNeedsBuild())
 	artifactsToBuild = sliceutils.UniqueByProperty(artifactsToBuild, func(a *buildplan.Artifact) any { return a.ArtifactID })
+
+	// Check for cached build failures
+	for _, a := range artifactsToBuild {
+		var aErr error
+		if a.Status == types.ArtifactFailedPermanently || a.Status == types.ArtifactFailedTransiently {
+			errV := &ArtifactCachedBuildFailed{errs.New("artifact failed, status: %s", a.Status), a}
+			if aErr == nil {
+				aErr = errV
+			} else {
+				aErr = errs.Pack(aErr, errV)
+			}
+		}
+		if aErr != nil {
+			return nil, aErr
+		}
+	}
 
 	return &setup{
 		path:        path,

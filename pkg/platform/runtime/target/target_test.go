@@ -1,21 +1,25 @@
 package target
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/ActiveState/cli/internal/runbits/runtime/target"
+)
 
 func TestTrigger_IndicatesUsage(t *testing.T) {
 	tests := []struct {
 		name string
-		t    Trigger
+		t    target.Trigger
 		want bool
 	}{
 		{
 			"Activate counts as usage",
-			TriggerActivate,
+			target.TriggerActivate,
 			true,
 		},
 		{
 			"Reset exec does not count as usage",
-			TriggerResetExec,
+			target.TriggerResetExec,
 			false,
 		},
 	}

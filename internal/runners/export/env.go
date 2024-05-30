@@ -6,13 +6,17 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 type Env struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	out       output.Outputer
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
@@ -23,6 +27,7 @@ type Env struct {
 
 func NewEnv(prime primeable) *Env {
 	return &Env{
+		prime,
 		prime.Output(),
 		prime.Analytics(),
 		prime.SvcModel(),
@@ -42,17 +47,14 @@ func (e *Env) Run() error {
 		e.project.Dir()),
 	)
 
-	rt, err := runtime.SolveAndUpdate(e.auth, e.out, e.analytics, e.project, nil, target.TriggerActivate, e.svcModel, e.cfg, runtime.OptMinimalUI)
+	rt, err := runtime_runbit.Update(e.prime, target.TriggerActivate)
 	if err != nil {
 		return locale.WrapError(err, "err_export_new_runtime", "Could not initialize runtime")
 	}
 
-	env, err := rt.Env(false, true)
-	if err != nil {
-		return locale.WrapError(err, "err_env_get_env", "Could not get runtime environment")
-	}
+	envVars := rt.Env().Variables
 
-	e.out.Print(output.Prepare(env, env))
+	e.out.Print(output.Prepare(envVars, envVars))
 
 	return nil
 }

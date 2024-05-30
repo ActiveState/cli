@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
@@ -31,8 +32,6 @@ import (
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -49,6 +48,10 @@ type RunParams struct {
 
 // Initialize stores scope-related dependencies.
 type Initialize struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	auth      *authentication.Auth
 	config    Configurable
 	out       output.Outputer
@@ -67,6 +70,7 @@ type primeable interface {
 	primer.Outputer
 	primer.Analyticer
 	primer.SvcModeler
+	primer.Projecter
 }
 
 type errProjectExists struct {
@@ -85,7 +89,7 @@ type errUnrecognizedLanguage struct {
 
 // New returns a prepared ptr to Initialize instance.
 func New(prime primeable) *Initialize {
-	return &Initialize{prime.Auth(), prime.Config(), prime.Output(), prime.Analytics(), prime.SvcModel()}
+	return &Initialize{prime, prime.Auth(), prime.Config(), prime.Output(), prime.Analytics(), prime.SvcModel()}
 }
 
 // inferLanguage tries to infer a reasonable default language from the project currently in use
@@ -247,6 +251,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	if err != nil {
 		return err
 	}
+	r.prime.SetProject(proj)
 
 	logging.Debug("Creating Platform project")
 
@@ -279,7 +284,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
-	rti, commit, err := runtime.Solve(r.auth, r.out, r.analytics, proj, &commitID, target.TriggerInit, r.svcModel, r.config, runtime.OptNoIndent)
+	commit, err := runtime_runbit.Solve(r.prime, &commitID)
 	if err != nil {
 		logging.Debug("Deleting remotely created project due to runtime setup error")
 		err2 := model.DeleteProject(namespace.Owner, namespace.Project, r.auth)
@@ -291,19 +296,18 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	}
 	artifacts := commit.BuildPlan().Artifacts().Filter(buildplan.FilterStateArtifacts(), buildplan.FilterRuntimeArtifacts())
 	dependencies.OutputSummary(r.out, artifacts)
-	err = runtime.UpdateByReference(rti, commit, r.auth, proj, r.out, runtime.OptNone)
+	rti, err := runtime_runbit.Update(r.prime, target.TriggerInit, runtime_runbit.WithCommit(commit))
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime after init")
 	}
 
 	projectfile.StoreProjectMapping(r.config, namespace.String(), filepath.Dir(proj.Source().Path()))
 
-	projectTarget := target.NewProjectTarget(proj, nil, "").Dir()
-	executables := setup.ExecDir(projectTarget)
+	executorsPath := rti.Env().ExecutorsPath
 
-	initSuccessMsg := locale.Tr("init_success", namespace.String(), path, executables)
+	initSuccessMsg := locale.Tr("init_success", namespace.String(), path, executorsPath)
 	if !strings.EqualFold(paramOwner, resolvedOwner) {
-		initSuccessMsg = locale.Tr("init_success_resolved_owner", namespace.String(), path, executables)
+		initSuccessMsg = locale.Tr("init_success_resolved_owner", namespace.String(), path, executorsPath)
 	}
 
 	r.out.Print(output.Prepare(
@@ -315,7 +319,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}{
 			namespace.String(),
 			path,
-			executables,
+			executorsPath,
 		},
 	))
 

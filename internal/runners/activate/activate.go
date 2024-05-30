@@ -26,16 +26,20 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 type Activate struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	activateCheckout *checkout.Checkout
 	auth             *authentication.Auth
 	out              output.Outputer
@@ -67,6 +71,7 @@ type primeable interface {
 
 func NewActivate(prime primeable) *Activate {
 	return &Activate{
+		prime,
 		checkout.New(git.NewRepo(), prime),
 		prime.Auth(),
 		prime.Output(),
@@ -101,6 +106,8 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 			return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
 		}
 	}
+
+	r.prime.SetProject(proj)
 
 	alreadyActivated := process.IsActivated(r.config)
 	if alreadyActivated {
@@ -175,7 +182,7 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		}
 	}
 
-	rt, err := runtime.SolveAndUpdate(r.auth, r.out, r.analytics, proj, nil, target.TriggerActivate, r.svcModel, r.config, runtime.OptMinimalUI)
+	rt, err := runtime_runbit.Update(r.prime, target.TriggerActivate)
 	if err != nil {
 		return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
 	}

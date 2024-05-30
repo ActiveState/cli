@@ -1,42 +1,70 @@
-package runtime
+package runtime_runbit
 
 import (
-	"github.com/ActiveState/cli/internal/analytics"
+	"errors"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/hash"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
+	"github.com/ActiveState/cli/internal/runbits/runtime/target"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/runtime"
 	"github.com/go-openapi/strfmt"
-	"github.com/imacks/bitflags-go"
 )
 
 func init() {
 	configMediator.RegisterOption(constants.AsyncRuntimeConfig, configMediator.Bool, false)
 }
 
-type Opts int
+type Opts struct {
+	PrintHeaders bool
+	TargetDir    string
 
-const (
-	OptNone         Opts = 1 << iota
-	OptNoIndent          // Don't indent progress output
-	OptMinimalUI         // Only print progress output, don't decorate the UI in any other way
-	OptNoUI              // Don't print progress output, don't decorate the UI in any other way
-	OptOrderChanged      // Indicate that the order has changed, and the runtime should be refreshed regardless of internal dirty checking mechanics
-)
+	// Note CommitID and Commit are mutually exclusive. If Commit is provided then CommitID is disregarded.
+	CommitID strfmt.UUID
+	Commit   *bpModel.Commit
+}
 
-type Configurable interface {
-	GetString(key string) string
-	GetBool(key string) bool
+type SetOpt func(*Opts)
+
+func WithPrintHeaders(printHeaders bool) SetOpt {
+	return func(opts *Opts) {
+		opts.PrintHeaders = printHeaders
+	}
+}
+
+func WithTargetDir(targetDir string) SetOpt {
+	return func(opts *Opts) {
+		opts.TargetDir = targetDir
+	}
+}
+
+func WithCommit(commit *bpModel.Commit) SetOpt {
+	return func(opts *Opts) {
+		opts.Commit = commit
+	}
+}
+
+func WithCommitID(commitID strfmt.UUID) SetOpt {
+	return func(opts *Opts) {
+		opts.CommitID = commitID
+	}
 }
 
 var overrideAsyncTriggers = map[target.Trigger]bool{
@@ -49,158 +77,162 @@ var overrideAsyncTriggers = map[target.Trigger]bool{
 	target.TriggerUse:      true,
 }
 
-// SolveAndUpdate should be called after runtime mutations.
-func SolveAndUpdate(
-	auth *authentication.Auth,
-	out output.Outputer,
-	an analytics.Dispatcher,
-	proj *project.Project,
-	customCommitID *strfmt.UUID,
-	trigger target.Trigger,
-	svcm *model.SvcModel,
-	cfg Configurable,
-	opts Opts,
-) (_ *runtime.Runtime, rerr error) {
-	defer rationalizeError(auth, proj, &rerr)
+type solvePrimer interface {
+	primer.Projecter
+	primer.Auther
+	primer.Outputer
+}
+
+func Solve(
+	prime solvePrimer,
+	overrideCommitID *strfmt.UUID,
+) (_ *bpModel.Commit, rerr error) {
+	defer rationalizeSolveError(prime, &rerr)
+
+	proj := prime.Project()
 
 	if proj == nil {
 		return nil, rationalize.ErrNoProject
 	}
 
-	if proj.IsHeadless() {
-		return nil, rationalize.ErrHeadless
+	var err error
+	var commitID strfmt.UUID
+	if overrideCommitID != nil {
+		commitID = *overrideCommitID
+	} else {
+		commitID, err = localcommit.Get(proj.Dir())
+		if err != nil {
+			return nil, errs.Wrap(err, "Failed to get local commit")
+		}
 	}
 
-	if cfg.GetBool(constants.AsyncRuntimeConfig) && !overrideAsyncTriggers[trigger] {
-		logging.Debug("Skipping runtime solve due to async runtime")
-		return nil, nil
-	}
+	solveSpinner := output.StartSpinner(prime.Output(), locale.T("progress_solve"), constants.TerminalAnimationInterval)
 
-	target := target.NewProjectTarget(proj, customCommitID, trigger)
-	rt, err := runtime.New(target, an, svcm, auth, cfg, out)
+	bpm := bpModel.NewBuildPlannerModel(prime.Auth())
+	commit, err := bpm.FetchCommit(commitID, proj.Owner(), proj.Name(), nil)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_packages_update_runtime_init")
+		solveSpinner.Stop(locale.T("progress_fail"))
+		return nil, errs.Wrap(err, "Failed to fetch build result")
 	}
 
-	if !bitflags.Has(opts, OptOrderChanged) && !bitflags.Has(opts, OptMinimalUI) && !rt.NeedsUpdate() {
-		out.Notice(locale.T("pkg_already_uptodate"))
+	solveSpinner.Stop(locale.T("progress_success"))
+
+	return commit, nil
+}
+
+type updatePrimer interface {
+	primer.Projecter
+	primer.Auther
+	primer.Outputer
+	primer.Configurer
+}
+
+func Update(
+	prime updatePrimer,
+	trigger target.Trigger,
+	setOpts ...SetOpt,
+) (_ *runtime.Runtime, rerr error) {
+	defer rationalizeUpdateError(prime, &rerr)
+
+	opts := &Opts{}
+	for _, setOpt := range setOpts {
+		setOpt(opts)
+	}
+
+	proj := prime.Project()
+
+	if proj == nil {
+		return nil, rationalize.ErrNoProject
+	}
+
+	targetDir := opts.TargetDir
+	if targetDir == "" {
+		targetDir = targetDirFromProject(proj)
+	}
+
+	rt, err := runtime.New(targetDir)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not initialize runtime")
+	}
+
+	optinBuildscripts := prime.Config().GetBool(constants.OptinBuildscriptsConfig)
+
+	commitID := opts.CommitID
+	if commitID == "" {
+		commitID, err = localcommit.Get(proj.Dir())
+		if err != nil {
+			return nil, errs.Wrap(err, "Failed to get local commit")
+		}
+	}
+
+	commitHash := string(commitID)
+	if optinBuildscripts {
+		bs, err := fileutils.ReadFile(filepath.Join(proj.Dir(), constants.BuildScriptFileName))
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				return nil, ErrBuildscriptNotExist
+			}
+			return nil, errs.Wrap(err, "Unknown failure while reading buildscript file")
+		}
+		commitHash += string(bs)
+	}
+
+	rtHash := hash.ShortHash(strings.Join([]string{proj.NamespaceString(), proj.Dir(), commitHash}, ""))
+	if optinBuildscripts && rt.Hash() != "" && rt.Hash() != rtHash {
+		return nil, ErrBuildScriptNeedsCommit
+	}
+
+	if opts.PrintHeaders {
+		if !rt.HasCache() {
+			prime.Output().Notice(output.Title(locale.T("install_runtime")))
+		} else {
+			prime.Output().Notice(output.Title(locale.T("update_runtime")))
+		}
+	}
+
+	if rt.Hash() == rtHash {
+		prime.Output().Notice(locale.T("pkg_already_uptodate"))
 		return rt, nil
 	}
 
-	if rt.NeedsUpdate() && !bitflags.Has(opts, OptMinimalUI) {
-		if !rt.HasCache() {
-			out.Notice(output.Title(locale.T("install_runtime")))
-			out.Notice(locale.T("install_runtime_info"))
-		} else {
-			out.Notice(output.Title(locale.T("update_runtime")))
-			out.Notice(locale.T("update_runtime_info"))
-		}
-	}
-
-	if rt.NeedsUpdate() {
-		pg := NewRuntimeProgressIndicator(out)
-		defer rtutils.Closer(pg.Close, &rerr)
-
-		commit, err := solveWithProgress(target.CommitUUID(), target.Owner(), target.Name(), auth, out)
+	commit := opts.Commit
+	if commit == nil {
+		commit, err = Solve(prime, &commitID)
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to solve runtime")
 		}
+	}
 
-		if err := rt.Update(rt.Setup(pg), commit); err != nil {
-			return nil, locale.WrapError(err, "err_packages_update_runtime_install")
-		}
+	// Async runtimes should still do everything up to the actual update itself, because we still want to raise
+	// any errors regarding solves, buildscripts, etc.
+	if prime.Config().GetBool(constants.AsyncRuntimeConfig) && !overrideAsyncTriggers[trigger] {
+		logging.Debug("Skipping runtime update due to async runtime")
+		return rt, nil
+	}
+
+	pg := progress.NewRuntimeProgressIndicator(prime.Output())
+	defer rtutils.Closer(pg.Close, &rerr)
+	if err := rt.Update(commit.BuildPlan(), rtHash,
+		runtime.WithAnnotations(proj.Owner(), proj.Name(), commitID),
+		runtime.WithEventHandlers(pg.Handle),
+		runtime.WithPreferredLibcVersion(prime.Config().GetString(constants.PreferredGlibcVersionConfig)),
+	); err != nil {
+		return nil, locale.WrapError(err, "err_packages_update_runtime_install")
 	}
 
 	return rt, nil
 }
 
-func Solve(
-	auth *authentication.Auth,
-	out output.Outputer,
-	an analytics.Dispatcher,
-	proj *project.Project,
-	customCommitID *strfmt.UUID,
-	trigger target.Trigger,
-	svcm *model.SvcModel,
-	cfg Configurable,
-	opts Opts,
-) (_ *runtime.Runtime, _ *bpModel.Commit, rerr error) {
-	defer rationalizeError(auth, proj, &rerr)
-
-	if proj == nil {
-		return nil, nil, rationalize.ErrNoProject
+func targetDirFromProject(proj *project.Project) string {
+	if cache := proj.Cache(); cache != "" {
+		return cache
 	}
 
-	if proj.IsHeadless() {
-		return nil, nil, rationalize.ErrHeadless
-	}
-
-	var spinner *output.Spinner
-	if !bitflags.Has(opts, OptMinimalUI) {
-		localeName := "progress_solve_preruntime"
-		if bitflags.Has(opts, OptNoIndent) {
-			localeName = "progress_solve"
-		}
-		spinner = output.StartSpinner(out, locale.T(localeName), constants.TerminalAnimationInterval)
-	}
-
-	defer func() {
-		if spinner == nil {
-			return
-		}
-		if rerr != nil {
-			spinner.Stop(locale.T("progress_fail"))
-		} else {
-			spinner.Stop(locale.T("progress_success"))
-		}
-	}()
-
-	rtTarget := target.NewProjectTarget(proj, customCommitID, trigger)
-	rt, err := runtime.New(rtTarget, an, svcm, auth, cfg, out)
+	resolvedDir, err := fileutils.ResolveUniquePath(proj.Dir())
 	if err != nil {
-		return nil, nil, locale.WrapError(err, "err_packages_update_runtime_init")
+		multilog.Error("Could not resolve unique path for projectDir: %s, error: %s", proj.Dir(), err.Error())
+		resolvedDir = proj.Dir()
 	}
 
-	bpm := bpModel.NewBuildPlannerModel(auth)
-	commit, err := bpm.FetchCommit(rtTarget.CommitUUID(), rtTarget.Owner(), rtTarget.Name(), nil)
-	if err != nil {
-		return nil, nil, errs.Wrap(err, "Failed to fetch build result")
-	}
-
-	return rt, commit, nil
-}
-
-// UpdateByReference will update the given runtime if necessary. This is functionally the same as SolveAndUpdateByReference
-// except that it does not do its own solve.
-func UpdateByReference(
-	rt *runtime.Runtime,
-	commit *bpModel.Commit,
-	auth *authentication.Auth,
-	proj *project.Project,
-	out output.Outputer,
-	opts Opts,
-) (rerr error) {
-	defer rationalizeError(auth, proj, &rerr)
-
-	if rt.NeedsUpdate() {
-		if !bitflags.Has(opts, OptMinimalUI) {
-			if !rt.HasCache() {
-				out.Notice(output.Title(locale.T("install_runtime")))
-				out.Notice(locale.T("install_runtime_info"))
-			} else {
-				out.Notice(output.Title(locale.T("update_runtime")))
-				out.Notice(locale.T("update_runtime_info"))
-			}
-		}
-
-		pg := NewRuntimeProgressIndicator(out)
-		defer rtutils.Closer(pg.Close, &rerr)
-
-		err := rt.Setup(pg).Update(commit)
-		if err != nil {
-			return locale.WrapError(err, "err_packages_update_runtime_install")
-		}
-	}
-
-	return nil
+	return filepath.Join(storage.CachePath(), hash.ShortHash(resolvedDir))
 }

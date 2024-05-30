@@ -3,6 +3,7 @@ package progress
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -85,7 +86,18 @@ type ProgressDigester struct {
 	success bool
 }
 
-func NewProgressIndicator(w io.Writer, out output.Outputer) *ProgressDigester {
+func NewRuntimeProgressIndicator(out output.Outputer) events.Handler {
+	var w io.Writer = os.Stdout
+	if out.Type() != output.PlainFormatName {
+		w = nil
+	}
+	if out.Config().Interactive {
+		return newProgressIndicator(w, out)
+	}
+	return newDotProgressIndicator(out)
+}
+
+func newProgressIndicator(w io.Writer, out output.Outputer) *ProgressDigester {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &ProgressDigester{
 		mainProgress: mpb.NewWithContext(

@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/termtest"
 	"github.com/thoas/go-funk"
@@ -23,7 +24,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	helperSuite "github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 )
 
 type AnalyticsIntegrationTestSuite struct {

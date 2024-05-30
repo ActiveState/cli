@@ -1,4 +1,4 @@
-package runbits
+package example
 
 import (
 	"github.com/ActiveState/cli/internal/errs"

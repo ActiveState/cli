@@ -29,39 +29,12 @@ const maxConcurrency = 5
 
 type Runtime struct {
 	path string
-	opts *Opts
 	hash string // The stored hash for the given runtime path, if one exists (otherwise empty)
 }
 
-type Opts struct {
-	PreferredLibcVersion string
-	EventHandlers        []events.HandlerFunc
-	BuildlogFilePath     string
-
-	// Annotations are used strictly to pass information for the purposes of analytics
-	// These should never be used for business logic. If the need to use them for business logic arises either we are
-	// going down a wrong rabbit hole or we need to revisit the architecture.
-	Annotations struct {
-		Owner      string
-		Project    string
-		CommitUUID strfmt.UUID
-	}
-}
-
-type SetOpt func(*Opts)
-
-func New(path string, setOpts ...SetOpt) (*Runtime, error) {
+func New(path string) (*Runtime, error) {
 	r := &Runtime{
 		path: path,
-		opts: &Opts{},
-	}
-
-	for _, setOpt := range setOpts {
-		setOpt(r.opts)
-	}
-
-	if r.opts.BuildlogFilePath == "" {
-		r.opts.BuildlogFilePath = filepath.Join(path, configDir, buildLogFile)
 	}
 
 	if err := r.loadHash(); err != nil {
@@ -75,13 +48,26 @@ func (r *Runtime) Hash() string {
 	return r.hash
 }
 
-func (r *Runtime) Update(bp *buildplan.BuildPlan, hash string) error {
+func (r *Runtime) HasCache() bool {
+	return r.hash != ""
+}
+
+func (r *Runtime) Update(bp *buildplan.BuildPlan, hash string, setOpts ...SetOpt) error {
 	if r.hash == hash {
 		logging.Debug("Runtime is already up to date")
 		return nil
 	}
 
-	setup, err := newSetup(r.path, bp, r.opts)
+	opts := &Opts{}
+	for _, setOpt := range setOpts {
+		setOpt(opts)
+	}
+
+	if opts.BuildlogFilePath == "" {
+		opts.BuildlogFilePath = filepath.Join(r.path, configDir, buildLogFile)
+	}
+
+	setup, err := newSetup(r.path, bp, opts)
 	if err != nil {
 		return errs.Wrap(err, "Failed to calculate artifacts to install")
 	}
@@ -99,6 +85,10 @@ func (r *Runtime) Update(bp *buildplan.BuildPlan, hash string) error {
 
 func (r *Runtime) Env() Environment {
 	return Environment{}
+}
+
+func (r *Runtime) Path() string {
+	return r.path
 }
 
 func WithEventHandlers(handlers ...events.HandlerFunc) SetOpt {

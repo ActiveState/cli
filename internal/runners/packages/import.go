@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -21,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -61,6 +61,10 @@ func NewImportRunParams() *ImportRunParams {
 
 // Import manages the importing execution context.
 type Import struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	auth *authentication.Auth
 	out  output.Outputer
 	prompt.Prompter
@@ -83,6 +87,7 @@ type primeable interface {
 // NewImport prepares an importation execution context for use.
 func NewImport(prime primeable) *Import {
 	return &Import{
+		prime,
 		prime.Auth(),
 		prime.Output(),
 		prime.Prompt(),
@@ -153,7 +158,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
-	_, err = runtime.SolveAndUpdate(i.auth, i.out, i.analytics, i.proj, &commitID, target.TriggerImport, i.svcModel, i.cfg, runtime.OptOrderChanged)
+	_, err = runtime_runbit.Update(i.prime, target.TriggerImport, runtime_runbit.WithCommitID(commitID))
 	return err
 }
 

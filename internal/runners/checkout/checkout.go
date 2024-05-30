@@ -18,11 +18,11 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -43,9 +43,14 @@ type primeable interface {
 	primer.Configurer
 	primer.SvcModeler
 	primer.Analyticer
+	primer.Projecter
 }
 
 type Checkout struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	auth      *authentication.Auth
 	out       output.Outputer
 	checkout  *checkout.Checkout
@@ -57,6 +62,7 @@ type Checkout struct {
 
 func NewCheckout(prime primeable) *Checkout {
 	return &Checkout{
+		prime,
 		prime.Auth(),
 		prime.Output(),
 		checkout.New(git.NewRepo(), prime),
@@ -84,6 +90,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 	if err != nil {
 		return locale.WrapError(err, "err_project_frompath")
 	}
+	u.prime.SetProject(proj)
 
 	// If an error occurs, remove the created activestate.yaml file and/or directory.
 	if !params.Force {
@@ -107,12 +114,14 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		}()
 	}
 
-	rti, commit, err := runtime.Solve(u.auth, u.out, u.analytics, proj, nil, target.TriggerCheckout, u.svcModel, u.config, runtime.OptNoIndent)
+	commit, err := runtime_runbit.Solve(u.prime, nil)
 	if err != nil {
 		return errs.Wrap(err, "Could not checkout project")
 	}
 	dependencies.OutputSummary(u.out, commit.BuildPlan().RequestedArtifacts())
-	err = runtime.UpdateByReference(rti, commit, u.auth, proj, u.out, runtime.OptNone)
+	rti, err := runtime_runbit.Update(u.prime, target.TriggerCheckout,
+		runtime_runbit.WithCommit(commit),
+	)
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime")
 	}
@@ -120,7 +129,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 	var execDir string
 	var checkoutStatement string
 	if !u.config.GetBool(constants.AsyncRuntimeConfig) {
-		execDir = setup.ExecDir(rti.Target().Dir())
+		execDir = setup.ExecDir(rti.Path())
 		checkoutStatement = locale.Tr("checkout_project_statement", proj.NamespaceString(), proj.Dir(), execDir)
 	} else {
 		checkoutStatement = locale.Tr("checkout_project_statement_async", proj.NamespaceString(), proj.Dir())

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/shirou/gopsutil/v3/process"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -30,7 +31,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -41,6 +41,10 @@ type Configurable interface {
 }
 
 type Exec struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	subshell  subshell.SubShell
 	proj      *project.Project
 	auth      *authentication.Auth
@@ -66,6 +70,7 @@ type Params struct {
 
 func New(prime primeable) *Exec {
 	return &Exec{
+		prime,
 		prime.Subshell(),
 		prime.Project(),
 		prime.Auth(),
@@ -94,7 +99,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	// If the path passed resolves to a runtime dir (ie. has a runtime marker) then the project is not used
 	var proj *project.Project
 	var err error
-	if params.Path != "" && runtime.IsRuntimeDir(params.Path) {
+	if params.Path != "" && runtime_legacy.IsRuntimeDir(params.Path) {
 		projectDir = projectFromRuntimeDir(s.cfg, params.Path)
 		proj, err = project.FromPath(projectDir)
 		if err != nil {
@@ -117,9 +122,11 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		projectNamespace = proj.NamespaceString()
 	}
 
+	s.prime.SetProject(proj)
+
 	s.out.Notice(locale.Tr("operating_message", projectNamespace, projectDir))
 
-	rt, err := rtrunbit.SolveAndUpdate(s.auth, s.out, s.analytics, proj, nil, trigger, s.svcModel, s.cfg, rtrunbit.OptMinimalUI)
+	rt, err := rtrunbit.Update(s.prime, trigger)
 	if err != nil {
 		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 	}
@@ -138,7 +145,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 
 	exeTarget := args[0]
 	if !fileutils.TargetExists(exeTarget) {
-		rtDirs, err := rt.ExecutableDirs()
+		rtDirs, err := osutils.ExecutablePaths(rt.Env().Variables)
 		if err != nil {
 			return errs.Wrap(err, "Could not detect runtime executable paths")
 		}

@@ -7,7 +7,8 @@ import (
 	rt "runtime"
 	"strings"
 
-	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
+	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -28,7 +29,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -153,7 +153,7 @@ func (d *Deploy) commitID(namespace project.Namespaced) (strfmt.UUID, error) {
 func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 	d.output.Notice(output.Title(locale.T("deploy_install")))
 
-	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth, d.cfg, d.output)
+	rti, err := runtime_legacy.New(rtTarget, d.analytics, d.svcModel, d.auth, d.cfg, d.output)
 	if err != nil {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
@@ -162,7 +162,7 @@ func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 		return nil
 	}
 
-	pg := rtrunbit.NewRuntimeProgressIndicator(d.output)
+	pg := progress.NewRuntimeProgressIndicator(d.output)
 	defer rtutils.Closer(pg.Close, &rerr)
 	if err := rti.SolveAndUpdate(pg); err != nil {
 		return locale.WrapError(err, "deploy_install_failed", "Installation failed.")
@@ -189,7 +189,7 @@ func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 }
 
 func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter, userScope bool) error {
-	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth, d.cfg, d.output)
+	rti, err := runtime_legacy.New(rtTarget, d.analytics, d.svcModel, d.auth, d.cfg, d.output)
 	if err != nil {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
@@ -226,7 +226,7 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 }
 
 func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
-	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth, d.cfg, d.output)
+	rti, err := runtime_legacy.New(rtTarget, d.analytics, d.svcModel, d.auth, d.cfg, d.output)
 	if err != nil {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
@@ -344,7 +344,7 @@ type Report struct {
 }
 
 func (d *Deploy) report(rtTarget setup.Targeter) error {
-	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth, d.cfg, d.output)
+	rti, err := runtime_legacy.New(rtTarget, d.analytics, d.svcModel, d.auth, d.cfg, d.output)
 	if err != nil {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}

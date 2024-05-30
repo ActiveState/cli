@@ -13,19 +13,35 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/process"
 	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+type primeable interface {
+	primer.Auther
+	primer.Outputer
+	primer.Projecter
+	primer.Subsheller
+	primer.Configurer
+	primer.Analyticer
+	primer.SvcModeler
+}
+
 // ScriptRun manages the context required to run a script.
 type ScriptRun struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
+
 	auth      *authentication.Auth
 	out       output.Outputer
 	sub       subshell.SubShell
@@ -39,15 +55,16 @@ type ScriptRun struct {
 }
 
 // New returns a pointer to a prepared instance of ScriptRun.
-func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance, analytics analytics.Dispatcher, svcModel *model.SvcModel) *ScriptRun {
+func New(prime primeable) *ScriptRun {
 	return &ScriptRun{
-		auth,
-		out,
-		subs,
-		proj,
-		cfg,
-		analytics,
-		svcModel,
+		prime,
+		prime.Auth(),
+		prime.Output(),
+		prime.Subshell(),
+		prime.Project(),
+		prime.Config(),
+		prime.Analytics(),
+		prime.SvcModel(),
 
 		false,
 
@@ -65,7 +82,7 @@ func (s *ScriptRun) NeedsActivation() bool {
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
 func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
-	rt, err := rtrunbit.SolveAndUpdate(s.auth, s.out, s.analytics, s.project, nil, target.TriggerScript, s.svcModel, s.cfg, rtrunbit.OptMinimalUI)
+	rt, err := rtrunbit.Update(s.prime, target.TriggerScript)
 	if err != nil {
 		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 	}

@@ -9,8 +9,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/internal/svcctl"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -97,7 +97,7 @@ func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) err
 		}
 	}
 
-	projectInstallPath := target.ProjectDirToTargetDir(projectDir, storage.CachePath())
+	projectInstallPath := target.ProjectDirToTargetDir(storage.CachePath(), projectDir)
 	logging.Debug("Remove project path: %s", projectInstallPath)
 	err := os.RemoveAll(projectInstallPath)
 	if err != nil {

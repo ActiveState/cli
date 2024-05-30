@@ -30,6 +30,7 @@ import (
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
@@ -44,7 +45,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/alternative"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/camel"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/platform/runtime/validate"
 	"github.com/ActiveState/cli/pkg/runtime/events"
 	"github.com/ActiveState/cli/pkg/runtime/events/progress"
@@ -487,11 +487,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 		var aErr error
 		if a.Status == types.ArtifactFailedPermanently || a.Status == types.ArtifactFailedTransiently {
 			errV := &ArtifactCachedBuildFailed{errs.New("artifact failed, status: %s", a.Status), a}
-			if aErr == nil {
-				aErr = errV
-			} else {
-				aErr = errs.Pack(aErr, errV)
-			}
+			aErr = errs.Pack(aErr, errV)
 		}
 		if aErr != nil {
 			return nil, nil, aErr
