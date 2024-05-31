@@ -6,10 +6,9 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/runbits/runtime/target"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	runtime_helpers "github.com/ActiveState/cli/pkg/runtime/helpers"
 )
 
 type Show struct {
@@ -38,8 +37,7 @@ func (s *Show) Run() error {
 		return locale.WrapError(err, "err_use_show_get_project", "Could not get your project.")
 	}
 
-	projectTarget := target.NewProjectTarget(proj, nil, "")
-	executables := setup.ExecDir(projectTarget.Dir())
+	executables := runtime_helpers.ExecutorPathFromProject(proj)
 
 	s.out.Print(output.Prepare(
 		locale.Tr("use_show_project_statement",

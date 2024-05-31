@@ -12,6 +12,7 @@ import (
 	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
 	"github.com/ActiveState/cli/internal/runbits/runtime/target"
+	"github.com/ActiveState/cli/pkg/runtime/helpers"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -199,7 +200,7 @@ func (d *Deploy) configure(params *Params) error {
 		return locale.WrapInputError(err, "err_deploy_run_install")
 	}
 
-	rti, err := runtime_runbit.FromProject(proj)
+	rti, err := runtime_helpers.FromProject(proj)
 	if err != nil {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
@@ -239,7 +240,7 @@ func (d *Deploy) symlink(params *Params) error {
 		return locale.WrapInputError(err, "err_deploy_run_install")
 	}
 
-	rti, err := runtime_runbit.FromProject(proj)
+	rti, err := runtime_helpers.FromProject(proj)
 	if err != nil {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
@@ -363,7 +364,7 @@ func (d *Deploy) report(params *Params) error {
 		return locale.WrapInputError(err, "err_deploy_run_install")
 	}
 
-	rti, err := runtime_runbit.FromProject(proj)
+	rti, err := runtime_helpers.FromProject(proj)
 	if err != nil {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}

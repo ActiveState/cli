@@ -115,3 +115,7 @@ func WithAnnotations(owner, project string, commitUUID strfmt.UUID) SetOpt {
 func IsRuntimeDir(dir string) bool {
 	return fileutils.TargetExists(filepath.Join(dir, configDir, hashFile))
 }
+
+func ExecutorsPath(baseDir string) string {
+	return filepath.Join(baseDir, configDir, executorDir)
+}

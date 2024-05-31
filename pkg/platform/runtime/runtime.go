@@ -43,7 +43,7 @@ type Configurable interface {
 
 type Runtime struct {
 	disabled  bool
-	target    setup.Targeter
+	target    legacy_setup.Targeter
 	store     *store.Store
 	analytics analytics.Dispatcher
 	svcm      *model.SvcModel
@@ -60,7 +60,7 @@ var NeedsCommitError = errors.New("runtime needs commit")
 // NeedsBuildscriptResetError is an error returned when the runtime is improperly referenced in the project (eg. missing buildscript)
 var NeedsBuildscriptResetError = errors.New("needs runtime reset")
 
-func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel, auth *authentication.Auth, cfg Configurable, out output.Outputer) (*Runtime, error) {
+func newRuntime(target legacy_setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel, auth *authentication.Auth, cfg Configurable, out output.Outputer) (*Runtime, error) {
 	rt := &Runtime{
 		target:    target,
 		store:     store.New(target.Dir()),
@@ -80,7 +80,7 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 }
 
 // New attempts to create a new runtime from local storage.
-func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, auth *authentication.Auth, cfg Configurable, out output.Outputer) (*Runtime, error) {
+func New(target legacy_setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, auth *authentication.Auth, cfg Configurable, out output.Outputer) (*Runtime, error) {
 	logging.Debug("Initializing runtime for: %s/%s@%s", target.Owner(), target.Name(), target.CommitUUID())
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
@@ -186,15 +186,15 @@ func (r *Runtime) Disabled() bool {
 	return r.disabled
 }
 
-func (r *Runtime) Target() setup.Targeter {
+func (r *Runtime) Target() legacy_setup.Targeter {
 	return r.target
 }
 
-func (r *Runtime) Setup(eventHandler events.Handler) *setup.Setup {
-	return setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out, r.svcm)
+func (r *Runtime) Setup(eventHandler events.Handler) *legacy_setup.Setup {
+	return legacy_setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out, r.svcm)
 }
 
-func (r *Runtime) Update(setup *setup.Setup, commit *bpModel.Commit) (rerr error) {
+func (r *Runtime) Update(setup *legacy_setup.Setup, commit *bpModel.Commit) (rerr error) {
 	if r.disabled {
 		logging.Debug("Skipping update as it is disabled")
 		return nil // nothing to do
@@ -259,7 +259,7 @@ func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error
 
 	env := envDef.GetEnv(inherit)
 
-	execDir := filepath.Clean(setup.ExecDir(r.target.Dir()))
+	execDir := filepath.Clean(legacy_setup.ExecDir(r.target.Dir()))
 	if useExecutors {
 		// Override PATH entry with exec path
 		pathEntries := []string{execDir}
@@ -302,24 +302,24 @@ func (r *Runtime) recordCompletion(err error) {
 	// download error to be cause by an input error.
 	case locale.IsInputError(err):
 		errorType = "input"
-	case errs.Matches(err, &setup.BuildError{}), errs.Matches(err, &buildlog.BuildError{}):
+	case errs.Matches(err, &legacy_setup.BuildError{}), errs.Matches(err, &buildlog.BuildError{}):
 		errorType = "build"
 	case errs.Matches(err, &bpResp.BuildPlannerError{}):
 		errorType = "buildplan"
-	case errs.Matches(err, &setup.ArtifactSetupErrors{}):
-		if setupErrors := (&setup.ArtifactSetupErrors{}); errors.As(err, &setupErrors) {
+	case errs.Matches(err, &legacy_setup.ArtifactSetupErrors{}):
+		if setupErrors := (&legacy_setup.ArtifactSetupErrors{}); errors.As(err, &setupErrors) {
 			// Label the loop so we can break out of it when we find the first download
 			// or build error.
 		Loop:
 			for _, err := range setupErrors.Errors() {
 				switch {
-				case errs.Matches(err, &setup.ArtifactDownloadError{}):
+				case errs.Matches(err, &legacy_setup.ArtifactDownloadError{}):
 					errorType = "download"
 					break Loop // it only takes one download failure to report the runtime failure as due to download error
-				case errs.Matches(err, &setup.ArtifactInstallError{}):
+				case errs.Matches(err, &legacy_setup.ArtifactInstallError{}):
 					errorType = "install"
 					// Note: do not break because there could be download errors, and those take precedence
-				case errs.Matches(err, &setup.BuildError{}), errs.Matches(err, &buildlog.BuildError{}):
+				case errs.Matches(err, &legacy_setup.BuildError{}), errs.Matches(err, &buildlog.BuildError{}):
 					errorType = "build"
 					break Loop // it only takes one build failure to report the runtime failure as due to build error
 				}
@@ -327,9 +327,9 @@ func (r *Runtime) recordCompletion(err error) {
 		}
 	// Progress/event handler errors should come last because they can wrap one of the above errors,
 	// and those errors actually caused the failure, not these.
-	case errs.Matches(err, &setup.ProgressReportError{}) || errs.Matches(err, &buildlog.EventHandlerError{}):
+	case errs.Matches(err, &legacy_setup.ProgressReportError{}) || errs.Matches(err, &buildlog.EventHandlerError{}):
 		errorType = "progress"
-	case errs.Matches(err, &setup.ExecutorSetupError{}):
+	case errs.Matches(err, &legacy_setup.ExecutorSetupError{}):
 		errorType = "postprocess"
 	}
 
@@ -366,7 +366,7 @@ func (r *Runtime) recordUsage() {
 	}
 }
 
-func recordAttempt(an analytics.Dispatcher, target setup.Targeter) {
+func recordAttempt(an analytics.Dispatcher, target legacy_setup.Targeter) {
 	if !target.Trigger().IndicatesUsage() {
 		logging.Debug("Not recording usage attempt as %s is not a usage trigger", target.Trigger().String())
 		return
@@ -375,7 +375,7 @@ func recordAttempt(an analytics.Dispatcher, target setup.Targeter) {
 	an.Event(anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeAttempt, usageDims(target))
 }
 
-func usageDims(target setup.Targeter) *dimensions.Values {
+func usageDims(target legacy_setup.Targeter) *dimensions.Values {
 	return &dimensions.Values{
 		Trigger:          ptr.To(target.Trigger().String()),
 		CommitID:         ptr.To(target.CommitUUID().String()),

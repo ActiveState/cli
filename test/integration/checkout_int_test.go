@@ -16,8 +16,10 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	rt "github.com/ActiveState/cli/pkg/runtime"
+	runtime_helpers "github.com/ActiveState/cli/pkg/runtime/helpers"
 )
 
 type CheckoutIntegrationTestSuite struct {
@@ -44,8 +46,10 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutPython() {
 	suite.Require().True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, constants.ConfigFileName)), "ActiveState-CLI/Python3 was not checked out properly")
 
 	// Verify runtime was installed correctly and works.
-	targetDir := target.ProjectDirToTargetDir(ts.Dirs.Cache, ts.Dirs.Work)
-	pythonExe := filepath.Join(setup.ExecDir(targetDir), "python3"+osutils.ExeExtension)
+	proj, err := project.FromPath(ts.Dirs.Work)
+	suite.Require().NoError(err)
+	targetDir := runtime_helpers.TargetDirFromProject(proj)
+	pythonExe := filepath.Join(rt.ExecutorsPath(targetDir), "python3"+osutils.ExeExtension)
 	cp = ts.SpawnCmd(pythonExe, "--version")
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
@@ -89,8 +93,9 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutPerl() {
 	cp.Expect("Checked out project")
 
 	// Verify runtime was installed correctly and works.
-	targetDir := target.ProjectDirToTargetDir(ts.Dirs.Cache, ts.Dirs.Work)
-	perlExe := filepath.Join(setup.ExecDir(targetDir), "perl"+osutils.ExeExtension)
+	proj, err := project.FromPath(ts.Dirs.Work)
+	suite.Require().NoError(err)
+	perlExe := filepath.Join(runtime_helpers.ExecutorPathFromProject(proj), "perl"+osutils.ExeExtension)
 	cp = ts.SpawnCmd(perlExe, "--version")
 	cp.Expect("This is perl")
 	cp.ExpectExitCode(0)
@@ -204,7 +209,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 	)
 	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 
-	pythonExe := filepath.Join(setup.ExecDir(customRTPath), "python3"+osutils.ExeExtension)
+	pythonExe := filepath.Join(rt.ExecutorsPath(customRTPath), "python3"+osutils.ExeExtension)
 	suite.Require().True(fileutils.DirExists(customRTPath))
 	suite.Require().True(fileutils.FileExists(pythonExe))
 

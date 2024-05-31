@@ -10,6 +10,7 @@ import (
 
 	rt "github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
+	runtime2 "github.com/ActiveState/cli/pkg/runtime"
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
@@ -23,7 +24,6 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 )
 
 type PrepareIntegrationTestSuite struct {
@@ -147,7 +147,7 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 
 	// check existens of exec dir
 	targetDir := rt.ProjectDirToTargetDir(ts.Dirs.Cache, ts.Dirs.Work)
-	projectExecDir := setup.ExecDir(targetDir)
+	projectExecDir := runtime2.ExecutorsPath(targetDir)
 	suite.DirExists(projectExecDir)
 
 	// remove complete marker to force re-creation of executors

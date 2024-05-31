@@ -22,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -129,7 +128,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 	var execDir string
 	var checkoutStatement string
 	if !u.config.GetBool(constants.AsyncRuntimeConfig) {
-		execDir = setup.ExecDir(rti.Path())
+		execDir = rti.Env().ExecutorsPath
 		checkoutStatement = locale.Tr("checkout_project_statement", proj.NamespaceString(), proj.Dir(), execDir)
 	} else {
 		checkoutStatement = locale.Tr("checkout_project_statement_async", proj.NamespaceString(), proj.Dir())

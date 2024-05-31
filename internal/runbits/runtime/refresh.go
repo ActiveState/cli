@@ -10,11 +10,9 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
-	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
@@ -23,8 +21,8 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/runtime"
+	"github.com/ActiveState/cli/pkg/runtime/helpers"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -81,15 +79,6 @@ type solvePrimer interface {
 	primer.Projecter
 	primer.Auther
 	primer.Outputer
-}
-
-func FromProject(proj *project.Project) (_ *runtime.Runtime, rerr error) {
-	targetDir := targetDirFromProject(proj)
-	rt, err := runtime.New(targetDir)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not initialize runtime")
-	}
-	return rt, nil
 }
 
 func Solve(
@@ -156,7 +145,7 @@ func Update(
 
 	targetDir := opts.TargetDir
 	if targetDir == "" {
-		targetDir = targetDirFromProject(proj)
+		targetDir = runtime_helpers.TargetDirFromProject(proj)
 	}
 
 	rt, err := runtime.New(targetDir)
@@ -230,18 +219,4 @@ func Update(
 	}
 
 	return rt, nil
-}
-
-func targetDirFromProject(proj *project.Project) string {
-	if cache := proj.Cache(); cache != "" {
-		return cache
-	}
-
-	resolvedDir, err := fileutils.ResolveUniquePath(proj.Dir())
-	if err != nil {
-		multilog.Error("Could not resolve unique path for projectDir: %s, error: %s", proj.Dir(), err.Error())
-		resolvedDir = proj.Dir()
-	}
-
-	return filepath.Join(storage.CachePath(), hash.ShortHash(resolvedDir))
 }

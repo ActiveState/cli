@@ -21,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -98,7 +97,8 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapError(err, "err_use_default", "Could not setup your project for use.")
 	}
 
-	execDir := setup.ExecDir(rti.Target().Dir())
+	execDir := rti.Env().ExecutorsPath
+
 	u.out.Print(output.Prepare(
 		locale.Tr("use_project_statement", proj.NamespaceString(), proj.Dir(), execDir),
 		&struct {

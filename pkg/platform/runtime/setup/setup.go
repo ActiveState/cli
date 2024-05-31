@@ -1,4 +1,4 @@
-package setup
+package legacy_setup
 
 import (
 	"context"

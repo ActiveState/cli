@@ -8,11 +8,11 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
+	"github.com/ActiveState/cli/pkg/project"
+	runtime_helpers "github.com/ActiveState/cli/pkg/runtime/helpers"
 )
 
 // Disabled due to DX-1514
@@ -92,8 +92,9 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 	)
 	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 
-	targetDir := target.ProjectDirToTargetDir(ts.Dirs.Cache, ts.Dirs.Work)
-	pythonExe := filepath.Join(setup.ExecDir(targetDir), "python3"+osutils.ExeExtension)
+	proj, err := project.FromPath(ts.Dirs.Work)
+	suite.Require().NoError(err)
+	pythonExe := filepath.Join(runtime_helpers.ExecutorPathFromProject(proj), "python3"+osutils.ExeExtension)
 	cp = ts.SpawnCmd(pythonExe, "-c", `print(__import__('sys').version)`)
 	cp.Expect("3.8.8")
 	cp.ExpectExitCode(0)
