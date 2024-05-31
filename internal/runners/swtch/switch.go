@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
-	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -124,7 +123,7 @@ func (s *Switch) Run(params SwitchParams) error {
 		return errs.Wrap(err, "Unable to set local commit")
 	}
 
-	_, err = runtime_runbit.Update(s.prime, target.TriggerSwitch)
+	_, err = runtime_runbit.Update(s.prime, runtime_runbit.TriggerSwitch)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

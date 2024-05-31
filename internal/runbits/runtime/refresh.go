@@ -1,15 +1,8 @@
 package runtime_runbit
 
 import (
-	"errors"
-	"os"
-	"path/filepath"
-	"strings"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
@@ -18,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
-	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/runtime"
@@ -63,16 +55,6 @@ func WithCommitID(commitID strfmt.UUID) SetOpt {
 	return func(opts *Opts) {
 		opts.CommitID = commitID
 	}
-}
-
-var overrideAsyncTriggers = map[target.Trigger]bool{
-	target.TriggerRefresh:  true,
-	target.TriggerExec:     true,
-	target.TriggerActivate: true,
-	target.TriggerShell:    true,
-	target.TriggerScript:   true,
-	target.TriggerDeploy:   true,
-	target.TriggerUse:      true,
 }
 
 type solvePrimer interface {
@@ -127,7 +109,7 @@ type updatePrimer interface {
 
 func Update(
 	prime updatePrimer,
-	trigger target.Trigger,
+	trigger Trigger,
 	setOpts ...SetOpt,
 ) (_ *runtime.Runtime, rerr error) {
 	defer rationalizeUpdateError(prime, &rerr)
@@ -153,8 +135,6 @@ func Update(
 		return nil, errs.Wrap(err, "Could not initialize runtime")
 	}
 
-	optinBuildscripts := prime.Config().GetBool(constants.OptinBuildscriptsConfig)
-
 	commitID := opts.CommitID
 	if commitID == "" {
 		commitID, err = localcommit.Get(proj.Dir())
@@ -163,21 +143,9 @@ func Update(
 		}
 	}
 
-	commitHash := string(commitID)
-	if optinBuildscripts {
-		bs, err := fileutils.ReadFile(filepath.Join(proj.Dir(), constants.BuildScriptFileName))
-		if err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				return nil, ErrBuildscriptNotExist
-			}
-			return nil, errs.Wrap(err, "Unknown failure while reading buildscript file")
-		}
-		commitHash += string(bs)
-	}
-
-	rtHash := hash.ShortHash(strings.Join([]string{proj.NamespaceString(), proj.Dir(), commitHash}, ""))
-	if optinBuildscripts && rt.Hash() != "" && rt.Hash() != rtHash {
-		return nil, ErrBuildScriptNeedsCommit
+	rtHash, err := runtime_helpers.Hash(proj, &commitID)
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to get runtime hash")
 	}
 
 	if opts.PrintHeaders {
@@ -203,7 +171,7 @@ func Update(
 
 	// Async runtimes should still do everything up to the actual update itself, because we still want to raise
 	// any errors regarding solves, buildscripts, etc.
-	if prime.Config().GetBool(constants.AsyncRuntimeConfig) && !overrideAsyncTriggers[trigger] {
+	if prime.Config().GetBool(constants.AsyncRuntimeConfig) {
 		logging.Debug("Skipping runtime update due to async runtime")
 		return rt, nil
 	}

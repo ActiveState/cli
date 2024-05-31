@@ -6,7 +6,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
-	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -47,7 +46,7 @@ func (e *Env) Run() error {
 		e.project.Dir()),
 	)
 
-	rt, err := runtime_runbit.Update(e.prime, target.TriggerActivate)
+	rt, err := runtime_runbit.Update(e.prime, runtime_runbit.TriggerActivate)
 	if err != nil {
 		return locale.WrapError(err, "err_export_new_runtime", "Could not initialize runtime")
 	}

@@ -11,13 +11,12 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/svcctl"
-	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/runtime"
+	"github.com/ActiveState/cli/pkg/runtime/executors"
 )
 
 type DefaultConfigurer interface {
@@ -76,9 +75,10 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return errs.Wrap(err, "Could not get executable paths")
 	}
 
-	target := target.NewProjectTargetCache(proj, storage.GlobalBinDir(), nil, target.TriggerActivate)
 	execInit := executors.New(BinDir())
-	if err := execInit.Apply(svcctl.NewIPCSockPathFromGlobals().String(), target, env.Variables, exes); err != nil {
+	if err := execInit.Apply(svcctl.NewIPCSockPathFromGlobals().String(),
+		executors.NewTarget("", proj.Owner(), proj.Name(), storage.GlobalBinDir()),
+		env.Variables, exes); err != nil {
 		return locale.WrapError(err, "err_globaldefault_fw", "Could not set up forwarders")
 	}
 

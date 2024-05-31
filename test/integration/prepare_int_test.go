@@ -8,9 +8,9 @@ import (
 	"runtime"
 	"testing"
 
-	rt "github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
-	runtime2 "github.com/ActiveState/cli/pkg/runtime"
+	rt "github.com/ActiveState/cli/pkg/runtime"
+	runtime_helpers "github.com/ActiveState/cli/pkg/runtime/helpers"
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
@@ -146,8 +146,9 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	suite.Assert().NoError(err, "should have removed executor directory, to ensure that it gets re-created")
 
 	// check existens of exec dir
-	targetDir := rt.ProjectDirToTargetDir(ts.Dirs.Cache, ts.Dirs.Work)
-	projectExecDir := runtime2.ExecutorsPath(targetDir)
+	targetDir, err := runtime_helpers.TargetDirFromProjectDir(ts.Dirs.Work)
+	suite.Assert().NoError(err)
+	projectExecDir := rt.ExecutorsPath(targetDir)
 	suite.DirExists(projectExecDir)
 
 	// remove complete marker to force re-creation of executors

@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
-	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -158,7 +157,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
-	_, err = runtime_runbit.Update(i.prime, target.TriggerImport, runtime_runbit.WithCommitID(commitID))
+	_, err = runtime_runbit.Update(i.prime, runtime_runbit.TriggerImport, runtime_runbit.WithCommitID(commitID))
 	return err
 }
 

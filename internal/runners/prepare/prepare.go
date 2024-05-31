@@ -15,19 +15,16 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	rt "github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
+	runtime_helpers "github.com/ActiveState/cli/pkg/runtime/helpers"
 	"github.com/thoas/go-funk"
 )
 
@@ -69,28 +66,26 @@ func (r *Prepare) resetExecutors() error {
 	}
 
 	logging.Debug("Reset default project at %s", defaultProjectDir)
-	defaultTargetDir := target.ProjectDirToTargetDir(storage.CachePath(), defaultProjectDir)
-
 	proj, err := project.FromPath(defaultProjectDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not get project from its directory")
 	}
 
-	commitID, err := localcommit.Get(proj.Dir())
-	if err != nil {
-		return errs.Wrap(err, "Unable to get local commit")
-	}
-
-	run, err := rt.New(target.NewCustomTarget(proj.Owner(), proj.Name(), commitID, defaultTargetDir, target.TriggerResetExec), r.analytics, r.svcModel, nil, r.cfg, r.out)
+	rt, err := runtime_helpers.FromProject(proj)
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize runtime for project.")
 	}
 
-	if !run.NeedsUpdate() {
-		return nil // project was never set up, so no executors to reset
+	rtHash, err := runtime_helpers.Hash(proj, nil)
+	if err != nil {
+		return errs.Wrap(err, "Could not get runtime hash")
 	}
 
-	if err := globaldefault.SetupDefaultActivation(r.subshell, r.cfg, run, proj); err != nil {
+	if rtHash == rt.Hash() || !rt.HasCache() {
+		return nil
+	}
+
+	if err := globaldefault.SetupDefaultActivation(r.subshell, r.cfg, rt, proj); err != nil {
 		return errs.Wrap(err, "Failed to rewrite the executors.")
 	}
 

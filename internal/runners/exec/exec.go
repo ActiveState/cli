@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
-	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/pkg/runtime"
+	"github.com/ActiveState/cli/pkg/runtime/executors"
 	"github.com/shirou/gopsutil/v3/process"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -30,7 +30,6 @@ import (
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -93,7 +92,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		return nil
 	}
 
-	trigger := target.NewExecTrigger(args[0])
+	trigger := rtrunbit.NewExecTrigger(args[0])
 
 	// Detect target and project dir
 	// If the path passed resolves to a runtime dir (ie. has a runtime marker) then the project is not used

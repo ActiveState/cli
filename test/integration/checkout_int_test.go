@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -56,7 +55,8 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutPython() {
 
 	suite.Run("Cached", func() {
 		artifactCacheDir := filepath.Join(ts.Dirs.Cache, constants.ArtifactMetaDir)
-		projectCacheDir := target.ProjectDirToTargetDir(ts.Dirs.Cache, ts.Dirs.Work)
+		projectCacheDir, err := runtime_helpers.TargetDirFromProjectDir(ts.Dirs.Work)
+		suite.Require().NoError(err)
 		suite.Require().NotEmpty(fileutils.ListFilesUnsafe(artifactCacheDir), "Artifact cache dir should have files")
 		suite.Require().NotEmpty(fileutils.ListFilesUnsafe(projectCacheDir), "Project cache dir should have files")
 

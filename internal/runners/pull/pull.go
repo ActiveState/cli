@@ -21,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/commit"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
-	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -202,7 +201,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		})
 	}
 
-	_, err = runtime_runbit.Update(p.prime, target.TriggerPull)
+	_, err = runtime_runbit.Update(p.prime, runtime_runbit.TriggerPull)
 	if err != nil {
 		return locale.WrapError(err, "err_pull_refresh", "Could not refresh runtime after pull")
 	}

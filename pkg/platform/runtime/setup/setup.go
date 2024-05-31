@@ -30,7 +30,7 @@ import (
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
-	"github.com/ActiveState/cli/internal/runbits/runtime/target"
+	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
@@ -41,13 +41,13 @@ import (
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifactcache"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
-	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/alternative"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/camel"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/validate"
 	"github.com/ActiveState/cli/pkg/runtime/events"
 	"github.com/ActiveState/cli/pkg/runtime/events/progress"
+	"github.com/ActiveState/cli/pkg/runtime/executors"
 	"github.com/ActiveState/cli/pkg/runtime/internal/buildlog"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/faiface/mainthread"
@@ -132,7 +132,7 @@ type Targeter interface {
 	Name() string
 	Owner() string
 	Dir() string
-	Trigger() target.Trigger
+	Trigger() runtime_runbit.Trigger
 	ProjectDir() string
 
 	// ReadOnly communicates that this target should only use cached runtime information (ie. don't check for updates)

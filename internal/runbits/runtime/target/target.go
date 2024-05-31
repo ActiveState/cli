@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
@@ -16,7 +17,7 @@ type Targeter interface {
 	CommitUUID() strfmt.UUID
 	Name() string
 	Owner() string
-	Trigger() Trigger
+	Trigger() runtime_runbit.Trigger
 	Dir() string
 }
 
@@ -25,14 +26,14 @@ type Target struct {
 	name        string
 	dirOverride *string
 	commit      strfmt.UUID
-	trigger     Trigger
+	trigger     runtime_runbit.Trigger
 }
 
-func NewProjectTarget(owner, name string, commit strfmt.UUID, trigger Trigger, dirOverride *string) *Target {
+func NewProjectTarget(owner, name string, commit strfmt.UUID, trigger runtime_runbit.Trigger, dirOverride *string) *Target {
 	return &Target{owner, name, dirOverride, commit, trigger}
 }
 
-func NewProjectTargetCache(pj *project.Project, cacheDir string, customCommit *strfmt.UUID, trigger Trigger) *Target {
+func NewProjectTargetCache(pj *project.Project, cacheDir string, customCommit *strfmt.UUID, trigger runtime_runbit.Trigger) *Target {
 	return &Target{pj, cacheDir, customCommit, trigger}
 }
 
@@ -48,9 +49,9 @@ func (t *Target) CommitUUID() strfmt.UUID {
 	return t.commit
 }
 
-func (t *Target) Trigger() Trigger {
+func (t *Target) Trigger() runtime_runbit.Trigger {
 	if t.trigger == "" {
-		return triggerUnknown
+		return runtime_runbit.triggerUnknown
 	}
 	return t.trigger
 }
@@ -78,10 +79,10 @@ type CustomTarget struct {
 	name       string
 	commitUUID strfmt.UUID
 	dir        string
-	trigger    Trigger
+	trigger    runtime_runbit.Trigger
 }
 
-func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir string, trigger Trigger) *CustomTarget {
+func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir string, trigger runtime_runbit.Trigger) *CustomTarget {
 	cleanDir, err := fileutils.ResolveUniquePath(dir)
 	if err != nil {
 		multilog.Error("Could not resolve unique path for dir: %s, error: %s", dir, err.Error())
@@ -107,9 +108,9 @@ func (c *CustomTarget) InstallDir() string {
 	return c.dir
 }
 
-func (c *CustomTarget) Trigger() Trigger {
+func (c *CustomTarget) Trigger() runtime_runbit.Trigger {
 	if c.trigger == "" {
-		return triggerUnknown
+		return runtime_runbit.triggerUnknown
 	}
 	return c.trigger
 }
@@ -126,7 +127,7 @@ type OfflineTarget struct {
 	ns           *project.Namespaced
 	dir          string
 	artifactsDir string
-	trigger      Trigger
+	trigger      runtime_runbit.Trigger
 }
 
 func NewOfflineTarget(namespace *project.Namespaced, dir string, artifactsDir string) *OfflineTarget {
@@ -136,7 +137,7 @@ func NewOfflineTarget(namespace *project.Namespaced, dir string, artifactsDir st
 	} else {
 		dir = cleanDir
 	}
-	return &OfflineTarget{namespace, dir, artifactsDir, TriggerOffline}
+	return &OfflineTarget{namespace, dir, artifactsDir, runtime_runbit.TriggerOffline}
 }
 
 func (i *OfflineTarget) Owner() string {
@@ -164,11 +165,11 @@ func (i *OfflineTarget) InstallDir() string {
 	return i.dir
 }
 
-func (i *OfflineTarget) SetTrigger(t Trigger) {
+func (i *OfflineTarget) SetTrigger(t runtime_runbit.Trigger) {
 	i.trigger = t
 }
 
-func (i *OfflineTarget) Trigger() Trigger {
+func (i *OfflineTarget) Trigger() runtime_runbit.Trigger {
 	return i.trigger
 }
 

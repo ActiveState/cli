@@ -2,14 +2,18 @@ package runtime_helpers
 
 import (
 	"path/filepath"
+	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/runtime"
+	"github.com/go-openapi/strfmt"
 )
 
 /*
@@ -25,6 +29,21 @@ func FromProject(proj *project.Project) (_ *runtime.Runtime, rerr error) {
 		return nil, errs.Wrap(err, "Could not initialize runtime")
 	}
 	return rt, nil
+}
+
+func Hash(proj *project.Project, overrideCommitID *strfmt.UUID) (string, error) {
+	var err error
+	var commitID strfmt.UUID
+	if overrideCommitID == nil {
+		commitID, err = localcommit.Get(proj.Dir())
+		if err != nil {
+			return "", errs.Wrap(err, "Failed to get local commit")
+		}
+	} else {
+		commitID = *overrideCommitID
+	}
+
+	return hash.ShortHash(strings.Join([]string{proj.NamespaceString(), proj.Dir(), commitID.String(), constants.RevisionHashShort}, "")), nil
 }
 
 func ExecutorPathFromProject(proj *project.Project) string {
@@ -43,4 +62,24 @@ func TargetDirFromProject(proj *project.Project) string {
 	}
 
 	return filepath.Join(storage.CachePath(), hash.ShortHash(resolvedDir))
+}
+
+func TargetDirFromProjectDir(path string) (string, error) {
+	// Attempt to route via project file if it exists, since this considers the configured cache dir
+	if fileutils.TargetExists(filepath.Join(path, constants.ConfigFileName)) {
+		proj, err := project.FromPath(path)
+		if err != nil {
+			return "", errs.Wrap(err, "Could not load project from path")
+		}
+		return TargetDirFromProject(proj), nil
+	}
+
+	// Fall back on the provided path, because we can't assume the project file exists and is valid
+	resolvedDir, err := fileutils.ResolveUniquePath(path)
+	if err != nil {
+		multilog.Error("Could not resolve unique path for projectDir: %s, error: %s", path, err.Error())
+		resolvedDir = path
+	}
+
+	return filepath.Join(storage.CachePath(), hash.ShortHash(resolvedDir)), nil
 }

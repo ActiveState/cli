@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/runtime/executors/execmeta"
 
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/pkg/platform/runtime/executors/execmeta"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -19,13 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-type Targeter interface {
-	CommitUUID() strfmt.UUID
-	Name() string
-	Owner() string
-	Dir() string
-}
-
 type Target struct {
 	commitUUID strfmt.UUID
 	owner      string
@@ -33,8 +26,8 @@ type Target struct {
 	dir        string
 }
 
-func NewTarget(commitUUID strfmt.UUID, owner, name, dir string) *Target {
-	return &Target{
+func NewTarget(commitUUID strfmt.UUID, owner, name, dir string) Target {
+	return Target{
 		commitUUID: commitUUID,
 		owner:      owner,
 		name:       name,
@@ -77,7 +70,7 @@ func (es *Executors) ExecutorSrc() (string, error) {
 	return installation.ExecutorExec()
 }
 
-func (es *Executors) Apply(sockPath string, target Targeter, env map[string]string, exes []string) error {
+func (es *Executors) Apply(sockPath string, target Target, env map[string]string, exes []string) error {
 	logging.Debug("Creating executors at %s, exes: %v", es.executorPath, exes)
 
 	executors := make(map[string]string) // map[alias]dest

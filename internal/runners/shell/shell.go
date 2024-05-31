@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/activation"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
-	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/localcommit"
@@ -89,7 +88,7 @@ func (u *Shell) Run(params *Params) error {
 		return locale.NewInputError("err_shell_commit_id_mismatch")
 	}
 
-	rti, err := runtime_runbit.Update(u.prime, target.TriggerShell)
+	rti, err := runtime_runbit.Update(u.prime, runtime_runbit.TriggerShell)
 	if err != nil {
 		return locale.WrapExternalError(err, "err_shell_runtime_new", "Could not start a shell/prompt for this project.")
 	}

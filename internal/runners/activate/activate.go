@@ -26,7 +26,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
-	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/localcommit"
@@ -182,7 +181,7 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		}
 	}
 
-	rt, err := runtime_runbit.Update(r.prime, target.TriggerActivate)
+	rt, err := runtime_runbit.Update(r.prime, runtime_runbit.TriggerActivate)
 	if err != nil {
 		return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
 	}

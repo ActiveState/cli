@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/process"
 	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
-	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -82,7 +81,7 @@ func (s *ScriptRun) NeedsActivation() bool {
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
 func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
-	rt, err := rtrunbit.Update(s.prime, target.TriggerScript)
+	rt, err := rtrunbit.Update(s.prime, rtrunbit.TriggerScript)
 	if err != nil {
 		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 	}
