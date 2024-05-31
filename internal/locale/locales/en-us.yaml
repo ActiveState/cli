@@ -1514,6 +1514,8 @@ err_country_blocked:
   other: This service is not available in your region.
 err_commit_id_invalid:
   other: "Your activestate.yaml contains an invalid commit ID: '{{.V0}}'. Please run '[ACTIONABLE]state reset[/RESET]' to fix it."
+err_commit_id_invalid_given:
+  other: "Invalid commit ID: '{{.V0}}'."
 err_shortcutdir_writable:
   other: Could not continue as we don't have permission to create [ACTIONABLE]{{.V0}}[/RESET].
 move_prompt:
