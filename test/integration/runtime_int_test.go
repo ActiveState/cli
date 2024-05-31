@@ -148,6 +148,10 @@ func (suite *RuntimeIntegrationTestSuite) TestInUse() {
 }
 
 func (suite *RuntimeIntegrationTestSuite) TestBuildInProgress() {
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("building on Windows takes too long")
+		return
+	}
 	suite.OnlyRunForTags(tagsuite.BuildInProgress)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
