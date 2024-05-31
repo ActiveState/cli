@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/runtime/events"
@@ -109,4 +110,8 @@ func WithAnnotations(owner, project string, commitUUID strfmt.UUID) SetOpt {
 		opts.Annotations.Project = project
 		opts.Annotations.CommitUUID = commitUUID
 	}
+}
+
+func IsRuntimeDir(dir string) bool {
+	return fileutils.TargetExists(filepath.Join(dir, configDir, hashFile))
 }

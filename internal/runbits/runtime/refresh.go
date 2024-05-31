@@ -83,6 +83,15 @@ type solvePrimer interface {
 	primer.Outputer
 }
 
+func FromProject(proj *project.Project) (_ *runtime.Runtime, rerr error) {
+	targetDir := targetDirFromProject(proj)
+	rt, err := runtime.New(targetDir)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not initialize runtime")
+	}
+	return rt, nil
+}
+
 func Solve(
 	prime solvePrimer,
 	overrideCommitID *strfmt.UUID,

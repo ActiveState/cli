@@ -9,6 +9,7 @@ import (
 
 	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/target"
+	"github.com/ActiveState/cli/pkg/runtime"
 	"github.com/shirou/gopsutil/v3/process"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -29,7 +30,6 @@ import (
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -99,7 +99,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	// If the path passed resolves to a runtime dir (ie. has a runtime marker) then the project is not used
 	var proj *project.Project
 	var err error
-	if params.Path != "" && runtime_legacy.IsRuntimeDir(params.Path) {
+	if params.Path != "" && runtime.IsRuntimeDir(params.Path) {
 		projectDir = projectFromRuntimeDir(s.cfg, params.Path)
 		proj, err = project.FromPath(projectDir)
 		if err != nil {

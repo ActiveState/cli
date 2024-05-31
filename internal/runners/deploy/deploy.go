@@ -7,6 +7,9 @@ import (
 	rt "runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/runbits/checkout"
+	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
 	"github.com/ActiveState/cli/internal/runbits/runtime/target"
 	"github.com/go-openapi/strfmt"
@@ -27,8 +30,6 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -48,6 +49,10 @@ func RequiresAdministratorRights(step Step, userScope bool) bool {
 }
 
 type Deploy struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	auth      *authentication.Auth
 	output    output.Outputer
 	subshell  subshell.SubShell
@@ -64,10 +69,12 @@ type primeable interface {
 	primer.Configurer
 	primer.Analyticer
 	primer.SvcModeler
+	primer.Projecter
 }
 
 func NewDeploy(step Step, prime primeable) *Deploy {
 	return &Deploy{
+		prime,
 		prime.Auth(),
 		prime.Output(),
 		prime.Subshell(),
@@ -94,31 +101,29 @@ func (d *Deploy) Run(params *Params) error {
 		return locale.WrapError(err, "err_deploy_commitid", "Could not grab commit ID for project: {{.V0}}.", params.Namespace.String())
 	}
 
-	rtTarget := target.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, params.Path, target.TriggerDeploy) /* TODO: handle empty path */
-
 	logging.Debug("runSteps: %s", d.step.String())
 
 	if d.step == UnsetStep || d.step == InstallStep {
 		logging.Debug("Running install step")
-		if err := d.install(rtTarget); err != nil {
+		if err := d.install(params, commitID); err != nil {
 			return err
 		}
 	}
 	if d.step == UnsetStep || d.step == ConfigureStep {
 		logging.Debug("Running configure step")
-		if err := d.configure(params.Namespace, rtTarget, params.UserScope); err != nil {
+		if err := d.configure(params); err != nil {
 			return err
 		}
 	}
 	if d.step == UnsetStep || d.step == SymlinkStep {
 		logging.Debug("Running symlink step")
-		if err := d.symlink(rtTarget, params.Force); err != nil {
+		if err := d.symlink(params); err != nil {
 			return err
 		}
 	}
 	if d.step == UnsetStep || d.step == ReportStep {
 		logging.Debug("Running report step")
-		if err := d.report(rtTarget); err != nil {
+		if err := d.report(params); err != nil {
 			return err
 		}
 	}
@@ -150,37 +155,37 @@ func (d *Deploy) commitID(namespace project.Namespaced) (strfmt.UUID, error) {
 	return *commitID, nil
 }
 
-func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
+func (d *Deploy) install(params *Params, commitID strfmt.UUID) (rerr error) {
 	d.output.Notice(output.Title(locale.T("deploy_install")))
 
-	rti, err := runtime_legacy.New(rtTarget, d.analytics, d.svcModel, d.auth, d.cfg, d.output)
+	if err := checkout.CreateProjectFiles(
+		params.Path, params.Path, params.Namespace.Owner, params.Namespace.Project,
+		constants.DefaultBranchName, commitID.String(), "",
+	); err != nil {
+		return errs.Wrap(err, "Could not create project files")
+	}
+
+	proj, err := project.FromPath(params.Path)
 	if err != nil {
-		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
+		return locale.WrapError(err, "err_project_frompath")
 	}
-	if !rti.NeedsUpdate() {
-		d.output.Notice(locale.Tl("deploy_already_installed", "Already installed"))
-		return nil
-	}
+	d.prime.SetProject(proj)
 
 	pg := progress.NewRuntimeProgressIndicator(d.output)
 	defer rtutils.Closer(pg.Close, &rerr)
-	if err := rti.SolveAndUpdate(pg); err != nil {
-		return locale.WrapError(err, "deploy_install_failed", "Installation failed.")
-	}
 
-	// Todo Remove with https://www.pivotaltracker.com/story/show/178161240
-	// call rti.Environ as this completes the runtime activation cycle:
-	// It ensures that the analytics event for failure / success are sent
-	_, _ = rti.Env(false, false)
+	if _, err := runtime_runbit.Update(d.prime, target.TriggerDeploy, runtime_runbit.WithTargetDir(params.Path)); err != nil {
+		return locale.WrapError(err, "err_deploy_runtime_err", "Could not initialize runtime")
+	}
 
 	if rt.GOOS == "windows" {
 		contents, err := assets.ReadFileBytes("scripts/setenv.bat")
 		if err != nil {
 			return err
 		}
-		err = fileutils.WriteFile(filepath.Join(rtTarget.Dir(), "setenv.bat"), contents)
+		err = fileutils.WriteFile(filepath.Join(params.Path, "setenv.bat"), contents)
 		if err != nil {
-			return locale.WrapError(err, "err_deploy_write_setenv", "Could not create setenv batch scriptfile at path: %s", rtTarget.Dir())
+			return locale.WrapError(err, "err_deploy_write_setenv", "Could not create setenv batch scriptfile at path: %s", params.Path)
 		}
 	}
 
@@ -188,36 +193,39 @@ func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 	return nil
 }
 
-func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter, userScope bool) error {
-	rti, err := runtime_legacy.New(rtTarget, d.analytics, d.svcModel, d.auth, d.cfg, d.output)
+func (d *Deploy) configure(params *Params) error {
+	proj, err := project.FromPath(params.Path)
+	if err != nil {
+		return locale.WrapInputError(err, "err_deploy_run_install")
+	}
+
+	rti, err := runtime_runbit.FromProject(proj)
 	if err != nil {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
-	if rti.NeedsUpdate() {
-		return locale.NewInputError("err_deploy_run_install")
-	}
 
-	env, err := rti.Env(false, false)
-	if err != nil {
-		return err
+	if !rti.HasCache() {
+		return locale.NewInputError("err_deploy_run_install")
 	}
 
 	d.output.Notice(output.Title(locale.Tr("deploy_configure_shell", d.subshell.Shell())))
 
+	env := rti.Env().Variables
+
 	// Configure available shells
-	err = subshell.ConfigureAvailableShells(d.subshell, d.cfg, env, sscommon.DeployID, userScope)
+	err = subshell.ConfigureAvailableShells(d.subshell, d.cfg, env, sscommon.DeployID, params.UserScope)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
 	}
 
-	binPath := filepath.Join(rtTarget.Dir(), "bin")
+	binPath := filepath.Join(rti.Path(), "bin")
 	if err := fileutils.MkdirUnlessExists(binPath); err != nil {
 		return locale.WrapError(err, "err_deploy_binpath", "Could not create bin directory.")
 	}
 
 	// Write global env file
-	d.output.Notice(fmt.Sprintf("Writing shell env file to %s\n", filepath.Join(rtTarget.Dir(), "bin")))
-	err = d.subshell.SetupShellRcFile(binPath, env, &namespace, d.cfg)
+	d.output.Notice(fmt.Sprintf("Writing shell env file to %s\n", filepath.Join(rti.Path(), "bin")))
+	err = d.subshell.SetupShellRcFile(binPath, env, &params.Namespace, d.cfg)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_subshell_rc_file", "Could not create environment script.")
 	}
@@ -225,12 +233,18 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 	return nil
 }
 
-func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
-	rti, err := runtime_legacy.New(rtTarget, d.analytics, d.svcModel, d.auth, d.cfg, d.output)
+func (d *Deploy) symlink(params *Params) error {
+	proj, err := project.FromPath(params.Path)
+	if err != nil {
+		return locale.WrapInputError(err, "err_deploy_run_install")
+	}
+
+	rti, err := runtime_runbit.FromProject(proj)
 	if err != nil {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
-	if rti.NeedsUpdate() {
+
+	if !rti.HasCache() {
 		return locale.NewInputError("err_deploy_run_install")
 	}
 
@@ -244,7 +258,7 @@ func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
 	}
 
 	// Retrieve artifact binary directories
-	bins, err := rti.ExecutablePaths()
+	bins, err := osutils.ExecutablePaths(rti.Env().Variables)
 	if err != nil {
 		return locale.WrapError(err, "err_symlink_exes", "Could not detect executable paths")
 	}
@@ -262,7 +276,7 @@ func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
 
 	if rt.GOOS != "windows" {
 		// Symlink to PATH (eg. /usr/local/bin)
-		if err := symlinkWithTarget(overwrite, path, exes, d.output); err != nil {
+		if err := symlinkWithTarget(params.Force, path, exes, d.output); err != nil {
 			return locale.WrapError(err, "err_symlink", "Could not create symlinks to {{.V0}}.", path)
 		}
 	} else {
@@ -343,19 +357,22 @@ type Report struct {
 	Environment       map[string]string
 }
 
-func (d *Deploy) report(rtTarget setup.Targeter) error {
-	rti, err := runtime_legacy.New(rtTarget, d.analytics, d.svcModel, d.auth, d.cfg, d.output)
+func (d *Deploy) report(params *Params) error {
+	proj, err := project.FromPath(params.Path)
+	if err != nil {
+		return locale.WrapInputError(err, "err_deploy_run_install")
+	}
+
+	rti, err := runtime_runbit.FromProject(proj)
 	if err != nil {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
-	if rti.NeedsUpdate() {
+
+	if !rti.HasCache() {
 		return locale.NewInputError("err_deploy_run_install")
 	}
 
-	env, err := rti.Env(false, false)
-	if err != nil {
-		return err
-	}
+	env := rti.Env().Variables
 
 	var bins []string
 	if path, ok := env["PATH"]; ok {
@@ -373,7 +390,7 @@ func (d *Deploy) report(rtTarget setup.Targeter) error {
 	d.output.Notice(output.Title(locale.T("deploy_restart")))
 
 	if rt.GOOS == "windows" {
-		d.output.Notice(locale.Tr("deploy_restart_cmd", filepath.Join(rtTarget.Dir(), "setenv.bat")))
+		d.output.Notice(locale.Tr("deploy_restart_cmd", filepath.Join(params.Path, "setenv.bat")))
 	} else {
 		d.output.Notice(locale.T("deploy_restart_shell"))
 	}
