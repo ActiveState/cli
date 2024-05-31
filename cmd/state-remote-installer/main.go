@@ -210,6 +210,7 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	}
 	out.Print(locale.Tl("remote_install_status_done", "[SUCCESS]✔ Done[/RESET]"))
 
+	out.Print(locale.Tl("remote_install_status_running", "• Running Installer..."))
 	if params.nonInteractive {
 		args = append(args, "-n") // forward to installer
 	}
