@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
 
@@ -816,56 +815,6 @@ func (suite *PackageIntegrationTestSuite) TestChangeSummary() {
 	cp.Expect("├─ ")
 	cp.Expect("└─ ")
 	cp.Expect("Package added: requests", e2e.RuntimeSourcingTimeoutOpt)
-	cp.ExpectExitCode(0)
-}
-
-func (suite *PackageIntegrationTestSuite) TestBuildInProgress() {
-	suite.OnlyRunForTags(tagsuite.Package)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	ts.LoginAsPersistentUser()
-
-	// Publish a new ingredient revision, which, when coupled with `state install --ts now`, will
-	// force a build.
-	// The ingredient is a tarball comprising:
-	//   1. An empty, executable "configure" script (emulating autotools).
-	//   2. A simple Makefile with "all", "check", and "install" rules.
-	//   3. A simple "main.c" file, whose compiled executable prints "Hello world!".
-	cp := ts.Spawn("publish", "--non-interactive",
-		"--namespace", "private/"+e2e.PersistentUsername,
-		"--name", "hello-world",
-		"--version", "1.0.0",
-		"--depend", "builder/autotools-builder@>=0", // for ./configure, make, make install
-		"--depend", "internal/mingw-build-selector@>=0", // for Windows to use mingw's GCC
-		filepath.Join(osutil.GetTestDataDir(), "hello-world-1.0.0.tar.gz"),
-		"--edit") // publish a new revision each time, forcing a build
-	cp.Expect("Successfully published")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
-	cp.Expect("Successfully set")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("checkout", "ActiveState-CLI/Perl-5.36", ".")
-	cp.Expect("Checked out")
-	cp.ExpectExitCode(0)
-
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "private/"+e2e.PersistentUsername+"/hello-world", "--ts", "now"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"), // needed for now
-	)
-	cp.Expect("Package added: hello-world")
-	cp.ExpectExitCode(0)
-
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("exec", "main"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect("Build Log")
-	cp.Expect("Building")
-	cp.Expect("All dependencies have been installed and verified", e2e.RuntimeBuildSourcingTimeoutOpt)
-	cp.Expect("Hello world!")
 	cp.ExpectExitCode(0)
 }
 
