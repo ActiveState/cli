@@ -22,7 +22,7 @@ func rationalizeCommonError(err *error, auth *authentication.Auth) {
 
 	case errors.As(*err, &invalidCommitIdErr):
 		*err = errs.WrapUserFacing(
-			*err, locale.Tr("err_commit_id_invalid", invalidCommitIdErr.id),
+			*err, locale.Tr("err_commit_id_invalid_given", invalidCommitIdErr.id),
 			errs.SetInput())
 
 	case errors.As(*err, &projectNotFoundErr):
