@@ -1,5 +1,3 @@
-scalar Void
-
 type Version {
     state: StateVersion!
 }
@@ -73,8 +71,6 @@ type Query {
     fetchLogTail: String!
     getProcessesInUse(execDir: String!): [ProcessInfo!]!
     getCommit(owner: String!, project: String!, commitID: String!): CommitResponse
-    getCache(key: String!): String!
-    storeCache(key: String!, value: String!): Void
 }
 
 type ConfigChangedResponse {

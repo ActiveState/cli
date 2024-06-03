@@ -89,12 +89,10 @@ type ComplexityRoot struct {
 		CheckMessages      func(childComplexity int, command string, flags []string) int
 		ConfigChanged      func(childComplexity int, key string) int
 		FetchLogTail       func(childComplexity int) int
-		GetCache           func(childComplexity int, key string) int
 		GetCommit          func(childComplexity int, owner string, project string, commitID string) int
 		GetProcessesInUse  func(childComplexity int, execDir string) int
 		Projects           func(childComplexity int) int
 		ReportRuntimeUsage func(childComplexity int, pid int, exec string, source string, dimensionsJSON string) int
-		StoreCache         func(childComplexity int, key string, value string) int
 		Version            func(childComplexity int) int
 	}
 
@@ -126,8 +124,6 @@ type QueryResolver interface {
 	FetchLogTail(ctx context.Context) (string, error)
 	GetProcessesInUse(ctx context.Context, execDir string) ([]*graph.ProcessInfo, error)
 	GetCommit(ctx context.Context, owner string, project string, commitID string) (*graph.CommitResponse, error)
-	GetCache(ctx context.Context, key string) (string, error)
-	StoreCache(ctx context.Context, key string, value string) (*string, error)
 }
 
 type executableSchema struct {
@@ -340,18 +336,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.FetchLogTail(childComplexity), true
 
-	case "Query.getCache":
-		if e.complexity.Query.GetCache == nil {
-			break
-		}
-
-		args, err := ec.field_Query_getCache_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.GetCache(childComplexity, args["key"].(string)), true
-
 	case "Query.getCommit":
 		if e.complexity.Query.GetCommit == nil {
 			break
@@ -394,18 +378,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.ReportRuntimeUsage(childComplexity, args["pid"].(int), args["exec"].(string), args["source"].(string), args["dimensionsJson"].(string)), true
-
-	case "Query.storeCache":
-		if e.complexity.Query.StoreCache == nil {
-			break
-		}
-
-		args, err := ec.field_Query_storeCache_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.StoreCache(childComplexity, args["key"].(string), args["value"].(string)), true
 
 	case "Query.version":
 		if e.complexity.Query.Version == nil {
@@ -515,9 +487,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "../../../schema/schema.graphqls", Input: `scalar Void
-
-type Version {
+	{Name: "../../../schema/schema.graphqls", Input: `type Version {
     state: StateVersion!
 }
 
@@ -590,8 +560,6 @@ type Query {
     fetchLogTail: String!
     getProcessesInUse(execDir: String!): [ProcessInfo!]!
     getCommit(owner: String!, project: String!, commitID: String!): CommitResponse
-    getCache(key: String!): String!
-    storeCache(key: String!, value: String!): Void
 }
 
 type ConfigChangedResponse {
@@ -745,21 +713,6 @@ func (ec *executionContext) field_Query_configChanged_args(ctx context.Context, 
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_getCache_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["key"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["key"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Query_getCommit_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -847,30 +800,6 @@ func (ec *executionContext) field_Query_reportRuntimeUsage_args(ctx context.Cont
 		}
 	}
 	args["dimensionsJson"] = arg3
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_storeCache_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["key"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["key"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["value"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["value"] = arg1
 	return args, nil
 }
 
@@ -2337,111 +2266,6 @@ func (ec *executionContext) fieldContext_Query_getCommit(ctx context.Context, fi
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_getCommit_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_getCache(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_getCache(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetCache(rctx, fc.Args["key"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_getCache(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_getCache_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_storeCache(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_storeCache(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().StoreCache(rctx, fc.Args["key"].(string), fc.Args["value"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOVoid2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_storeCache(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Void does not have child fields")
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_storeCache_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -5181,46 +5005,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "getCache":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_getCache(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return rrm(innerCtx)
-			})
-		case "storeCache":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_storeCache(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return rrm(innerCtx)
-			})
 		case "__type":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
@@ -6276,22 +6060,6 @@ func (ec *executionContext) marshalOVersion2ᚖgithubᚗcomᚋActiveStateᚋcli�
 		return graphql.Null
 	}
 	return ec._Version(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOVoid2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := graphql.UnmarshalString(v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOVoid2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	res := graphql.MarshalString(*v)
-	return res
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

@@ -210,27 +210,6 @@ func (m *SvcModel) GetCommit(ctx context.Context, owner, name, commitID string) 
 	return &Commit{script, bp}, nil
 }
 
-func (m *SvcModel) GetCache(ctx context.Context, key string) (string, error) {
-	r := request.NewCacheRequest(key)
-	response := make(map[string]string)
-	if err := m.request(ctx, r, &response); err != nil {
-		return "", errs.Wrap(err, "Error sending GetCache request to state-svc")
-	}
-	if resp, ok := response["getCache"]; ok {
-		return resp, nil
-	}
-	return "", errs.New("svcModel.GetCache() did not return an expected value")
-}
-
-func (m *SvcModel) StoreCache(ctx context.Context, key, value string) error {
-	r := request.NewStoreCacheRequest(key, value)
-	response := make(map[string]string)
-	if err := m.request(ctx, r, &response); err != nil {
-		return errs.Wrap(err, "Error sending StoreCache request to state-svc")
-	}
-	return nil
-}
-
 func jsonFromMap(m map[string]interface{}) string {
 	d, err := json.Marshal(m)
 	if err != nil {
