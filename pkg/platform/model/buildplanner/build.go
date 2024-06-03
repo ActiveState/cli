@@ -38,7 +38,7 @@ type Commit struct {
 }
 
 func (c *Commit) CommitUUID() strfmt.UUID {
-	return c.CommitID
+	return c.Commit.CommitID
 }
 
 func (c *Commit) BuildPlan() *buildplan.BuildPlan {
@@ -54,25 +54,6 @@ func (c *client) Run(req gqlclient.Request, resp interface{}) error {
 }
 
 func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, target *string) (*Commit, error) {
-	commit, err := b.FetchRawCommit(commitID, owner, project, target)
-	if err != nil {
-		return nil, errs.Wrap(err, "failed to fetch commit")
-	}
-
-	bp, err := buildplan.Unmarshal(commit.Build.RawMessage)
-	if err != nil {
-		return nil, errs.Wrap(err, "failed to unmarshal build plan")
-	}
-
-	script, err := buildscript.UnmarshalBuildExpression(commit.Expression, ptr.To(time.Time(commit.AtTime)))
-	if err != nil {
-		return nil, errs.Wrap(err, "failed to parse build expression")
-	}
-
-	return &Commit{commit, bp, script}, nil
-}
-
-func (b *BuildPlanner) FetchRawCommit(commitID strfmt.UUID, owner, project string, target *string) (*response.Commit, error) {
 	logging.Debug("FetchBuildResult, commitID: %s, owner: %s, project: %s", commitID, owner, project)
 	resp := &response.ProjectCommitResponse{}
 	err := b.client.Run(request.ProjectCommit(commitID.String(), owner, project, target), resp)
@@ -90,7 +71,19 @@ func (b *BuildPlanner) FetchRawCommit(commitID strfmt.UUID, owner, project strin
 		}
 	}
 
-	return resp.Project.Commit, nil
+	commit := resp.Project.Commit
+
+	bp, err := buildplan.Unmarshal(commit.Build.RawMessage)
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to unmarshal build plan")
+	}
+
+	script, err := buildscript.UnmarshalBuildExpression(commit.Expression, ptr.To(time.Time(commit.AtTime)))
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to parse build expression")
+	}
+
+	return &Commit{commit, bp, script}, nil
 }
 
 // processBuildPlannerError will check for special error types that should be

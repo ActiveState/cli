@@ -14,12 +14,8 @@ import (
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
 	"github.com/ActiveState/graphql"
-	"github.com/go-openapi/strfmt"
 )
 
 var SvcTimeoutMinimal = time.Millisecond * 500
@@ -178,36 +174,6 @@ func (m *SvcModel) GetProcessesInUse(ctx context.Context, execDir string) ([]*gr
 	}
 
 	return response.Processes, nil
-}
-
-type Commit struct {
-	buildscript *buildscript.BuildScript
-	buildplan   *buildplan.BuildPlan
-}
-
-func (m *SvcModel) GetCommit(ctx context.Context, owner, name, commitID string) (*Commit, error) {
-	req := request.NewCommitRequest(owner, name, commitID)
-	response := graph.GetCommitResponse{}
-	if err := m.request(ctx, req, &response); err != nil {
-		return nil, errs.Wrap(err, "Error sending GetCommit request to state-svc")
-	}
-
-	bp, err := buildplan.Unmarshal([]byte(response.BuildPlan))
-	if err != nil {
-		return nil, errs.Wrap(err, "failed to unmarshal build plan")
-	}
-
-	dt, err := strfmt.ParseDateTime(response.AtTime)
-	if err != nil {
-		return nil, errs.Wrap(err, "failed to parse commit at time")
-	}
-
-	script, err := buildscript.UnmarshalBuildExpression([]byte(response.Expression), ptr.To(time.Time(dt)))
-	if err != nil {
-		return nil, errs.Wrap(err, "failed to parse build expression")
-	}
-
-	return &Commit{script, bp}, nil
 }
 
 func jsonFromMap(m map[string]interface{}) string {
