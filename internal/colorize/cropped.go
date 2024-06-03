@@ -1,5 +1,9 @@
 package colorize
 
+import (
+	"regexp"
+)
+
 type CroppedLines []CroppedLine
 
 type CroppedLine struct {
@@ -16,7 +20,15 @@ func (c CroppedLines) String() string {
 	return result
 }
 
+var indentRegexp = regexp.MustCompile(`^([ ]+)`)
+
 func GetCroppedText(text string, maxLen int, includeLineEnds bool) CroppedLines {
+	indent := ""
+	if indentMatch := indentRegexp.FindStringSubmatch(text); indentMatch != nil {
+		indent = indentMatch[0]
+		maxLen -= len(indent)
+	}
+
 	entries := make([]CroppedLine, 0)
 	colorCodes := colorRx.FindAllStringSubmatchIndex(text, -1)
 
@@ -55,7 +67,7 @@ func GetCroppedText(text string, maxLen int, includeLineEnds bool) CroppedLines 
 				}
 				// Extract the word from the current line if it doesn't start the line.
 				if i > 0 && i < len(entry.Line)-1 {
-					wrapped = entry.Line[i:]
+					wrapped = indent + entry.Line[i:]
 					entry.Line = entry.Line[:i]
 					entry.Length -= wrappedLength
 					isLineEnd = true // emulate for wrapping purposes
