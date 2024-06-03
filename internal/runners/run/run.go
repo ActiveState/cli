@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -73,7 +74,10 @@ func (r *Run) Run(name string, args []string) error {
 		checker.RunCommitsBehindNotifier(r.proj, r.out, r.auth)
 	}
 
-	script := r.proj.ScriptByName(name)
+	script, err := r.proj.ScriptByName(name)
+	if err != nil {
+		return errs.Wrap(err, "Could not get script")
+	}
 	if script == nil {
 		return locale.NewInputError("error_state_run_unknown_name", "", name)
 	}

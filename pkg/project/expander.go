@@ -126,7 +126,10 @@ func EventExpander(_ string, name string, meta string, isFunction bool, ctx *Exp
 
 // ScriptExpander expands scripts defined in the project-file.
 func ScriptExpander(_ string, name string, meta string, isFunction bool, ctx *Expansion) (string, error) {
-	script := ctx.Project.ScriptByName(name)
+	script, err := ctx.Project.ScriptByName(name)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not get script")
+	}
 	if script == nil {
 		return "", nil
 	}
