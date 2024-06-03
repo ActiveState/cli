@@ -2,6 +2,7 @@ package colorize
 
 import (
 	"regexp"
+	"strings"
 )
 
 type CroppedLines []CroppedLine
@@ -26,6 +27,9 @@ func GetCroppedText(text string, maxLen int, includeLineEnds bool) CroppedLines 
 	indent := ""
 	if indentMatch := indentRegexp.FindStringSubmatch(text); indentMatch != nil {
 		indent = indentMatch[0]
+		if len(text) > len(indent) && strings.HasPrefix(text[len(indent):], "• ") {
+			indent += "  "
+		}
 		maxLen -= len(indent)
 	}
 
