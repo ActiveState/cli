@@ -7,13 +7,14 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/runtime"
 )
 
-var ErrBuildscriptNotExist = errors.New("buildscript file does not exist")
+var ErrBuildscriptNotExist = buildscript_runbit.ErrBuildscriptNotExist
 
 var ErrBuildScriptNeedsCommit = errors.New("buildscript is dirty, need to run state commit")
 

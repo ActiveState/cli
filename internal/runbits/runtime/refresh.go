@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
 	"github.com/ActiveState/cli/pkg/localcommit"
@@ -61,6 +62,7 @@ type solvePrimer interface {
 	primer.Projecter
 	primer.Auther
 	primer.Outputer
+	primer.SvcModeler
 }
 
 func Solve(
@@ -105,6 +107,7 @@ type updatePrimer interface {
 	primer.Auther
 	primer.Outputer
 	primer.Configurer
+	primer.SvcModeler
 }
 
 func Update(
@@ -166,6 +169,21 @@ func Update(
 		commit, err = Solve(prime, &commitID)
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to solve runtime")
+		}
+	}
+
+	// Validate buildscript
+	if prime.Config().GetBool(constants.OptinBuildscriptsConfig) {
+		bs, err := buildscript_runbit.ScriptFromProject(proj)
+		if err != nil {
+			return nil, errs.Wrap(err, "Failed to get buildscript")
+		}
+		isClean, err := bs.Equals(commit.BuildScript())
+		if err != nil {
+			return nil, errs.Wrap(err, "Failed to compare buildscript")
+		}
+		if !isClean {
+			return nil, ErrBuildScriptNeedsCommit
 		}
 	}
 
