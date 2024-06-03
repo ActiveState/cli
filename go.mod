@@ -2,8 +2,6 @@ module github.com/ActiveState/cli
 
 go 1.20
 
-replace cloud.google.com/go => cloud.google.com/go v0.110.0
-
 require (
 	github.com/99designs/gqlgen v0.17.19
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
