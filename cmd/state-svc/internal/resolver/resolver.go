@@ -43,6 +43,7 @@ type Resolver struct {
 	anForClient    *sync.Client // Use separate client for events sent through service so we don't contaminate one with the other
 	rtwatch        *rtwatcher.Watcher
 	auth           *authentication.Auth
+	cache          map[string]string
 }
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
@@ -91,6 +92,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 		anForClient,
 		rtwatcher.New(cfg, anForClient),
 		auth,
+		map[string]string{},
 	}, nil
 }
 
@@ -280,6 +282,22 @@ func (r *Resolver) GetCommit(ctx context.Context, owner string, project string, 
 		Expression: string(commit.Expression),
 		BuildPlan:  string(commit.Build.RawMessage),
 	}, nil
+}
+
+func (r *Resolver) GetCache(ctx context.Context, key string) (string, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
+	v, _ := r.cache[key]
+
+	return v, nil
+}
+
+func (r *Resolver) StoreCache(ctx context.Context, key string, hash string) (*string, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
+	r.cache[key] = hash
+
+	return nil, nil
 }
 
 func handlePanics(recovered interface{}, stack []byte) {
