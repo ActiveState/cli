@@ -19,3 +19,9 @@ type CheckMessagesResponse struct {
 type GetProcessesInUseResponse struct {
 	Processes []*ProcessInfo `json:"getProcessesInUse"`
 }
+
+type GetCommitResponse struct {
+	AtTime     string `json:"atTime"`
+	Expression string `json:"expression"`
+	BuildPlan  string `json:"buildPlan"`
+}

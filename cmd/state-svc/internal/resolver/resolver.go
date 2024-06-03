@@ -9,13 +9,14 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ActiveState/cli/cmd/state-svc/internal/cache/commitcache"
+	"github.com/ActiveState/cli/cmd/state-svc/internal/cache/projectcache"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/messages"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/rtwatcher"
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
-	"github.com/ActiveState/cli/internal/cache/projectcache"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -27,6 +28,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -36,6 +38,7 @@ type Resolver struct {
 	updatePoller   *poller.Poller
 	authPoller     *poller.Poller
 	projectIDCache *projectcache.ID
+	commitCache    *commitcache.Cache
 	an             *sync.Client
 	anForClient    *sync.Client // Use separate client for events sent through service so we don't contaminate one with the other
 	rtwatch        *rtwatcher.Watcher
@@ -72,6 +75,8 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 		return nil, nil
 	})
 
+	bpm := bpModel.NewBuildPlannerModel(auth)
+
 	// Note: source does not matter here, as analytics sent via the resolver have a source
 	// (e.g. State Tool or Executor), and that source will be used.
 	anForClient := sync.New(anaConsts.SrcStateTool, cfg, auth, nil)
@@ -81,6 +86,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 		pollUpdate,
 		pollAuth,
 		projectcache.NewID(),
+		commitcache.New(bpm),
 		an,
 		anForClient,
 		rtwatcher.New(cfg, anForClient),
@@ -260,6 +266,20 @@ func (r *Resolver) GetProcessesInUse(ctx context.Context, execDir string) ([]*gr
 		processes = append(processes, &graph.ProcessInfo{entry.Exec, entry.PID})
 	}
 	return processes, nil
+}
+
+func (r *Resolver) GetCommit(ctx context.Context, owner string, project string, commitID string) (*graph.CommitResponse, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
+	commit, err := r.commitCache.Get(owner, project, commitID)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not fetch commit")
+	}
+	return &graph.CommitResponse{
+		AtTime:     commit.AtTime.String(),
+		Expression: string(commit.Expression),
+		BuildPlan:  string(commit.Build.RawMessage),
+	}, nil
 }
 
 func handlePanics(recovered interface{}, stack []byte) {

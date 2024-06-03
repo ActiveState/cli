@@ -70,6 +70,7 @@ type Query {
     configChanged(key: String!): ConfigChangedResponse
     fetchLogTail: String!
     getProcessesInUse(execDir: String!): [ProcessInfo!]!
+    getCommit(owner: String!, project: String!, commitID: String!): CommitResponse
 }
 
 type ConfigChangedResponse {
@@ -79,4 +80,10 @@ type ConfigChangedResponse {
 type ProcessInfo {
     exe: String!
     pid: Int!
+}
+
+type CommitResponse {
+	atTime: String!
+	expression: String!
+	buildPlan: String!
 }

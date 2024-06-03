@@ -20,6 +20,12 @@ type AvailableUpdate struct {
 	Sha256   string `json:"sha256"`
 }
 
+type CommitResponse struct {
+	AtTime     string `json:"atTime"`
+	Expression string `json:"expression"`
+	BuildPlan  string `json:"buildPlan"`
+}
+
 type ConfigChangedResponse struct {
 	Received bool `json:"received"`
 }
