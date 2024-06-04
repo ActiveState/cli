@@ -1308,9 +1308,9 @@ warning_vulnerable_directonly:
   other: |
     [ERROR]Warning: Dependency has {{.V0}} known vulnerabilities (CVEs)[/RESET]
 more_info_vulnerabilities:
-  other: |
-    For more information on these vulnerabilities run '[ACTIONABLE]state security open <ID>[/RESET]'.
-    To disable prompting for vulnerabilities run '[ACTIONABLE]state config set security.prompt.enable false[/RESET]'.
+  other: For more information on these vulnerabilities run '[ACTIONABLE]state security open <ID>[/RESET]'.
+disable_prompting_vulnerabilities:
+  other: To disable prompting for vulnerabilities run '[ACTIONABLE]state config set security.prompt.enable false[/RESET]'.
 prompt_continue_pkg_operation:
   other: |
     Do you want to continue installing this dependency despite its vulnerabilities?
