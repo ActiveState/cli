@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/commit"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	gqlmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -160,7 +161,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Unable to set local commit")
 	}
 
-	_, err = runtime_runbit.Update(r.prime, runtime_runbit.TriggerRevert)
+	_, err = runtime_runbit.Update(r.prime, trigger.TriggerRevert)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

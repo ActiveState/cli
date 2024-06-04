@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -133,7 +134,7 @@ func (r *Reset) Run(params *Params) error {
 		}
 	}
 
-	_, err = runtime_runbit.Update(r.prime, runtime_runbit.TriggerReset)
+	_, err = runtime_runbit.Update(r.prime, trigger.TriggerReset)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

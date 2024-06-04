@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/termtest"
 	"github.com/thoas/go-funk"
@@ -144,7 +144,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 			if e.Dimensions == nil || e.Dimensions.Trigger == nil {
 				return false
 			}
-			return (*e.Dimensions.Trigger) == runtime_runbit.TriggerExecutor.String()
+			return (*e.Dimensions.Trigger) == trigger.TriggerExecutor.String()
 		})
 		suite.Require().Equal(1, countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt, anaConst.SrcExecutor),
 			ts.DebugMessage("Should have a runtime attempt, events:\n"+suite.summarizeEvents(executorEvents)))

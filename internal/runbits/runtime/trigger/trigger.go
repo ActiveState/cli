@@ -1,4 +1,4 @@
-package runtime_runbit
+package trigger
 
 import (
 	"fmt"

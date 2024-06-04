@@ -3,23 +3,23 @@ package target
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 )
 
 func TestTrigger_IndicatesUsage(t *testing.T) {
 	tests := []struct {
 		name string
-		t    runtime_runbit.Trigger
+		t    trigger.Trigger
 		want bool
 	}{
 		{
 			"Activate counts as usage",
-			runtime_runbit.TriggerActivate,
+			trigger.TriggerActivate,
 			true,
 		},
 		{
 			"Reset exec does not count as usage",
-			runtime_runbit.TriggerResetExec,
+			trigger.TriggerResetExec,
 			false,
 		},
 	}

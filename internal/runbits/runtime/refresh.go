@@ -12,6 +12,7 @@ import (
 	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/runtime"
@@ -112,7 +113,7 @@ type updatePrimer interface {
 
 func Update(
 	prime updatePrimer,
-	trigger Trigger,
+	trigger trigger.Trigger,
 	setOpts ...SetOpt,
 ) (_ *runtime.Runtime, rerr error) {
 	defer rationalizeUpdateError(prime, &rerr)

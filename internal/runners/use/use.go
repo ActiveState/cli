@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -87,7 +88,7 @@ func (u *Use) Run(params *Params) error {
 		return locale.NewInputError("err_use_commit_id_mismatch")
 	}
 
-	rti, err := runtime_runbit.Update(u.prime, runtime_runbit.TriggerUse)
+	rti, err := runtime_runbit.Update(u.prime, trigger.TriggerUse)
 	if err != nil {
 		return locale.WrapError(err, "err_use_runtime_new", "Cannot use this project.")
 	}

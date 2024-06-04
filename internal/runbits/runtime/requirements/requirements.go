@@ -26,6 +26,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
@@ -230,14 +231,14 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
 		ns := requirements[0].Namespace
-		var trigger runtime_runbit.Trigger
+		var trigger trigger.Trigger
 		switch ns.Type() {
 		case model.NamespaceLanguage:
-			trigger = runtime_runbit.TriggerLanguage
+			trigger = trigger.TriggerLanguage
 		case model.NamespacePlatform:
-			trigger = runtime_runbit.TriggerPlatform
+			trigger = trigger.TriggerPlatform
 		default:
-			trigger = runtime_runbit.TriggerPackage
+			trigger = trigger.TriggerPackage
 		}
 
 		// Solve runtime

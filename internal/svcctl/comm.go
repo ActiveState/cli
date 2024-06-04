@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/panics"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/svcctl/svcmsg"
 	"github.com/ActiveState/cli/pkg/runtime/executors/execmeta"
 )
@@ -112,7 +112,7 @@ func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter
 			}
 
 			dims := &dimensions.Values{
-				Trigger:          ptr.To(runtime_runbit.TriggerExecutor.String()),
+				Trigger:          ptr.To(trigger.TriggerExecutor.String()),
 				Headless:         ptr.To(strconv.FormatBool(metaData.Headless)),
 				CommitID:         ptr.To(metaData.CommitUUID),
 				ProjectNameSpace: ptr.To(metaData.Namespace),

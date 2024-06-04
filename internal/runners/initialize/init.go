@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
@@ -295,7 +296,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	}
 	artifacts := commit.BuildPlan().Artifacts().Filter(buildplan.FilterStateArtifacts(), buildplan.FilterRuntimeArtifacts())
 	dependencies.OutputSummary(r.out, artifacts)
-	rti, err := runtime_runbit.Update(r.prime, runtime_runbit.TriggerInit, runtime_runbit.WithCommit(commit))
+	rti, err := runtime_runbit.Update(r.prime, trigger.TriggerInit, runtime_runbit.WithCommit(commit))
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime after init")
 	}

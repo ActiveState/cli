@@ -30,7 +30,7 @@ import (
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
@@ -132,7 +132,7 @@ type Targeter interface {
 	Name() string
 	Owner() string
 	Dir() string
-	Trigger() runtime_runbit.Trigger
+	Trigger() trigger.Trigger
 	ProjectDir() string
 
 	// ReadOnly communicates that this target should only use cached runtime information (ie. don't check for updates)

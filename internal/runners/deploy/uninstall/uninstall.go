@@ -15,7 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/localcommit"
@@ -99,7 +99,7 @@ func (u *Uninstall) Run(params *Params) error {
 	}
 
 	u.analytics.Event(constants.CatRuntimeUsage, constants.ActRuntimeDelete, &dimensions.Values{
-		Trigger:          ptr.To(runtime_runbit.TriggerDeploy.String()),
+		Trigger:          ptr.To(trigger.TriggerDeploy.String()),
 		CommitID:         ptr.To(commitID.String()),
 		ProjectNameSpace: ptr.To(proj.Namespace().String()),
 		InstanceID:       ptr.To(instanceid.ID()),

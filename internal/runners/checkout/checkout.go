@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -117,7 +118,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Could not checkout project")
 	}
 	dependencies.OutputSummary(u.out, commit.BuildPlan().RequestedArtifacts())
-	rti, err := runtime_runbit.Update(u.prime, runtime_runbit.TriggerCheckout,
+	rti, err := runtime_runbit.Update(u.prime, trigger.TriggerCheckout,
 		runtime_runbit.WithCommit(commit),
 	)
 	if err != nil {

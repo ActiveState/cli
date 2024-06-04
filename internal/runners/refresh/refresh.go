@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -70,7 +71,7 @@ func (r *Refresh) Run(params *Params) error {
 
 	r.prime.SetProject(proj)
 
-	rti, err := runtime_runbit.Update(r.prime, runtime_runbit.TriggerRefresh)
+	rti, err := runtime_runbit.Update(r.prime, trigger.TriggerRefresh)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime_new", "Could not update runtime for this project.")
 	}

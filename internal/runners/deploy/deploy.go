@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/checkout"
 	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/runtime/helpers"
 	"github.com/go-openapi/strfmt"
 
@@ -174,7 +175,7 @@ func (d *Deploy) install(params *Params, commitID strfmt.UUID) (rerr error) {
 	pg := progress.NewRuntimeProgressIndicator(d.output)
 	defer rtutils.Closer(pg.Close, &rerr)
 
-	if _, err := runtime_runbit.Update(d.prime, runtime_runbit.TriggerDeploy, runtime_runbit.WithTargetDir(params.Path)); err != nil {
+	if _, err := runtime_runbit.Update(d.prime, trigger.TriggerDeploy, runtime_runbit.WithTargetDir(params.Path)); err != nil {
 		return locale.WrapError(err, "err_deploy_runtime_err", "Could not initialize runtime")
 	}
 

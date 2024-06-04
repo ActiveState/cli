@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
+	trigger2 "github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/runtime"
 	"github.com/ActiveState/cli/pkg/runtime/executors"
 	"github.com/shirou/gopsutil/v3/process"
@@ -92,7 +93,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		return nil
 	}
 
-	trigger := rtrunbit.NewExecTrigger(args[0])
+	trigger := trigger2.NewExecTrigger(args[0])
 
 	// Detect target and project dir
 	// If the path passed resolves to a runtime dir (ie. has a runtime marker) then the project is not used
