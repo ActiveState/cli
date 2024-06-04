@@ -231,14 +231,14 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
 		ns := requirements[0].Namespace
-		var trigger trigger.Trigger
+		var trig trigger.Trigger
 		switch ns.Type() {
 		case model.NamespaceLanguage:
-			trigger = trigger.TriggerLanguage
+			trig = trigger.TriggerLanguage
 		case model.NamespacePlatform:
-			trigger = trigger.TriggerPlatform
+			trig = trigger.TriggerPlatform
 		default:
-			trigger = trigger.TriggerPackage
+			trig = trigger.TriggerPackage
 		}
 
 		// Solve runtime
@@ -279,7 +279,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 			out.Notice("")
 
 			// refresh or install runtime
-			_, err = runtime_runbit.Update(r.prime, trigger, runtime_runbit.WithCommitID(commitID))
+			_, err = runtime_runbit.Update(r.prime, trig, runtime_runbit.WithCommitID(commitID))
 			if err != nil {
 				if !IsBuildError(err) {
 					// If the error is not a build error we want to retain the changes

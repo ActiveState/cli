@@ -51,8 +51,12 @@ const (
 
 // MarshalText marshals a join directive for environment variables
 func (j *VariableJoin) MarshalText() ([]byte, error) {
+	if j == nil {
+		return nil, errs.New("MarshalText called on nil pointer")
+	}
+
 	var res string
-	switch j {
+	switch *j {
 	default:
 		res = "prepend"
 	case Append:

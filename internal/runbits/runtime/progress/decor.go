@@ -84,10 +84,7 @@ func (p *ProgressDigester) updateArtifactBar(id strfmt.UUID, step step, inc int)
 	}
 	p.artifactBars[aStep.ID()].IncrBy(inc)
 
-	name := locale.T("artifact_unknown_name")
-	if aname, ok := p.artifactNames[id]; ok {
-		name = aname
-	}
+	name := p.artifactName(id, step)
 	if p.artifactBars[aStep.ID()].Current() >= p.artifactBars[aStep.ID()].total {
 		logging.Debug("%s Artifact bar reached total: %s", step.verb, name)
 	}
@@ -97,10 +94,7 @@ func (p *ProgressDigester) updateArtifactBar(id strfmt.UUID, step step, inc int)
 
 // dropArtifactBar removes an artifact bar from the progress display
 func (p *ProgressDigester) dropArtifactBar(id strfmt.UUID, step step) error {
-	name := locale.T("artifact_unknown_name")
-	if aname, ok := p.artifactNames[id]; ok {
-		name = aname
-	}
+	name := p.artifactName(id, step)
 	logging.Debug("Dropping %s artifact bar: %s", step.verb, name)
 
 	aStep := artifactStep{id, step}
@@ -133,6 +127,25 @@ func (p *ProgressDigester) addBar(name string, total int64, countsBytes bool, op
 	)
 
 	return &bar{p.mainProgress.AddBar(total, options...), time.Now(), total}
+}
+
+func (p *ProgressDigester) artifactName(id strfmt.UUID, step step) string {
+	name := locale.T("artifact_unknown_name")
+	switch step {
+	case StepBuild:
+		if a, ok := p.buildsExpected[id]; ok {
+			name = a.NameAndVersion()
+		}
+	case StepDownload:
+		if a, ok := p.downloadsExpected[id]; ok {
+			name = a.NameAndVersion()
+		}
+	case StepInstall:
+		if a, ok := p.installsExpected[id]; ok {
+			name = a.NameAndVersion()
+		}
+	}
+	return name
 }
 
 // MaxNameWidth returns the maximum width to be used for a name in a progress bar
