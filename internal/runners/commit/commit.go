@@ -61,7 +61,7 @@ func rationalizeError(err *error) {
 	case errors.Is(*err, ErrNoChanges):
 		*err = errs.WrapUserFacing(*err, locale.Tl(
 			"commit_notice_no_change",
-			"No change to the buildscript was found.",
+			"Your buildscript contains no new changes. No commit necessary.",
 		), errs.SetInput())
 
 	case errs.Matches(*err, buildscript_runbit.ErrBuildscriptNotExist):
