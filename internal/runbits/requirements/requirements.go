@@ -260,6 +260,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 			oldBuildPlan = commit.BuildPlan()
 		}
 
+		r.Output.Notice("") // blank line
 		dependencies.OutputChangeSummary(r.Output, rtCommit.BuildPlan(), oldBuildPlan)
 
 		// Report CVEs
