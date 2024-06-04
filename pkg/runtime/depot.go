@@ -119,7 +119,7 @@ func (d *depot) Deploy(id strfmt.UUID, path string) error {
 		return errs.Wrap(err, "failed to resolve path")
 	}
 
-	artifactInfo, err := d.envDef.Get(d.Path(id))
+	artifactInfo, err := d.envDef.Load(d.Path(id))
 	if err != nil {
 		return errs.Wrap(err, "failed to get artifact info")
 	}
@@ -166,6 +166,10 @@ func (d *depot) Undeploy(id strfmt.UUID, path string) error {
 	path, err = fileutils.ResolvePath(path)
 	if err != nil {
 		return errs.Wrap(err, "failed to resolve path")
+	}
+
+	if err := d.envDef.Unload(d.Path(id)); err != nil {
+		return errs.Wrap(err, "failed to get artifact info")
 	}
 
 	// Find record of our deployment

@@ -68,9 +68,7 @@ type setup struct {
 	toUninstall map[strfmt.UUID]struct{}
 }
 
-func newSetup(path string, bp *buildplan.BuildPlan, opts *Opts) (*setup, error) {
-	env := envdef.NewCollection()
-
+func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, opts *Opts) (*setup, error) {
 	depot, err := newDepot(env)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create depot")
@@ -183,7 +181,7 @@ func (s *setup) RunAndWait() (rerr error) {
 	// on implicit behavior of other packages to achieve the results we want in this one, and it's cached anyway so
 	// the performance impact is trivial.
 	for id := range s.depot.List(s.path) {
-		_, err := s.env.Get(s.depot.Path(id))
+		_, err := s.env.Load(s.depot.Path(id))
 		if err != nil {
 			return errs.Wrap(err, "Could not get env")
 		}
@@ -191,6 +189,10 @@ func (s *setup) RunAndWait() (rerr error) {
 
 	if err := s.save(); err != nil {
 		return errs.Wrap(err, "Could not save runtime config")
+	}
+
+	if err := s.env.Save(); err != nil {
+		return errs.Wrap(err, "Could not save env")
 	}
 
 	return nil
