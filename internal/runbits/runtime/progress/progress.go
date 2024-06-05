@@ -209,7 +209,6 @@ func (p *ProgressDigester) Handle(ev events.Event) error {
 		if p.buildBar.Current() == p.buildBar.total {
 			return errs.New("Build bar is already complete, this should not happen")
 		}
-		delete(p.buildsExpected, v.ArtifactID)
 		p.buildBar.Increment()
 
 	case events.ArtifactDownloadStarted:
@@ -240,7 +239,6 @@ func (p *ProgressDigester) Handle(ev events.Event) error {
 		if p.downloadBar.Current() == p.downloadBar.total {
 			return errs.New("Download bar is already complete, this should not happen")
 		}
-		delete(p.downloadsExpected, v.ArtifactID)
 		p.downloadBar.Increment()
 
 	// Note we listen for ArtifactUnpackStarted instead of ArtifactInstallStarted, because while unpacking does not happen
@@ -274,7 +272,6 @@ func (p *ProgressDigester) Handle(ev events.Event) error {
 		if p.installBar.Current() == p.installBar.total {
 			return errs.New("Install bar is already complete, this should not happen")
 		}
-		delete(p.installsExpected, v.ArtifactID)
 		p.installBar.Increment()
 
 	}
