@@ -70,7 +70,7 @@ func (p *ProgressDigester) addArtifactBar(id strfmt.UUID, step step, total int64
 
 	aStep := artifactStep{id, step}
 	if _, ok := p.artifactBars[aStep.ID()]; ok {
-		return errs.New("Artifact bar already exists")
+		return errs.New("Artifact bar %s for step %s already exists", id, step.name)
 	}
 	p.artifactBars[aStep.ID()] = p.addBar(fmt.Sprintf("  - %s %s", step.verb, name), total, countsBytes, mpb.BarRemoveOnComplete(), mpb.BarPriority(step.priority+len(p.artifactBars)))
 	return nil
