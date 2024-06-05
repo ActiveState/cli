@@ -79,9 +79,8 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 			prefix = "└─"
 		}
 
-		ingredientDeps := ingredient.RuntimeDependencies(true)
 		subdependencies := ""
-		if numSubs := len(ingredientDeps); numSubs > 0 {
+		if numSubs := len(ingredient.RuntimeDependencies(false)); numSubs > 0 {
 			subdependencies = fmt.Sprintf(" ([ACTIONABLE]%s[/RESET] dependencies)", // intentional leading space
 				strconv.Itoa(numSubs))
 		}
