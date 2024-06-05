@@ -363,7 +363,11 @@ Artifact Build Failed.
 				}
 			case Heartbeat:
 				waiting := stillWaiting()
-				msg := fmt.Sprintf("Heartbeat (still waiting for %d: %s)", len(waiting), strings.Join(waiting, ", "))
+				if len(waiting) == 0 {
+					buildSuccess()
+					return
+				}
+				msg := fmt.Sprintf("Heartbeat (still waiting for %d more artifacts: %s)", len(waiting), strings.Join(waiting, ", "))
 				if err := writeLogFile("", msg); err != nil {
 					errCh <- errs.Wrap(err, "Could not write to log file")
 					return
