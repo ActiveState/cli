@@ -132,7 +132,7 @@ func (d *depot) Deploy(id strfmt.UUID, path string) error {
 		return errs.Wrap(err, "failed to get artifact info")
 	}
 
-	artifactInstallDir := filepath.Join(d.Path(id), artifactInfo.InstallDir())
+	artifactInstallDir := filepath.Join(d.Path(id), artifactInfo.InstallationDir())
 	if !fileutils.DirExists(artifactInstallDir) {
 		return errs.New("artifact installdir does not exist: %s", artifactInstallDir)
 	}

@@ -24,8 +24,8 @@ type EnvironmentDefinition struct {
 	// Transforms is a list of file transformations
 	Transforms []FileTransform `json:"file_transforms"`
 
-	// installDir is the directory (inside the artifact tarball) that needs to be installed on the user's computer
-	installDir string `json:"installdir"`
+	// InstallDir is the directory (inside the artifact tarball) that needs to be installed on the user's computer
+	InstallDir string `json:"installdir"`
 }
 
 // EnvironmentVariable defines a single environment variable and its values
@@ -449,6 +449,6 @@ func (ed *EnvironmentDefinition) NeedsTransforms() bool {
 	return len(ed.Transforms) > 0
 }
 
-func (ed *EnvironmentDefinition) InstallDir() string {
-	return ed.installDir
+func (ed *EnvironmentDefinition) InstallationDir() string {
+	return ed.InstallDir
 }
