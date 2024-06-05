@@ -123,6 +123,10 @@ func (d *depot) Deploy(id strfmt.UUID, path string) error {
 		return errs.Wrap(err, "failed to resolve path")
 	}
 
+	if err := fileutils.MkdirUnlessExists(path); err != nil {
+		return errs.Wrap(err, "failed to create path")
+	}
+
 	artifactInfo, err := d.envDef.Load(d.Path(id))
 	if err != nil {
 		return errs.Wrap(err, "failed to get artifact info")
