@@ -160,12 +160,19 @@ func NewWithCustomConnections(artifactMap buildplan.ArtifactIDMap,
 			return result
 		}
 
-		buildSuccess := func() {
-			if err := writeLogFile("", "Build Succeeded"); err != nil {
+		anyFailures := false
+		buildFinished := func() {
+			status := "Succeeded"
+			var event events.Eventer = events.BuildSuccess{}
+			if anyFailures {
+				status = "Failed"
+				event = events.BuildFailure{}
+			}
+			if err := writeLogFile("", "Build "+status); err != nil {
 				errCh <- errs.Wrap(err, "Could not write to build log file")
 			}
-			if err := handleEvent(eventHandler, events.BuildSuccess{}); err != nil {
-				errCh <- errs.Wrap(err, "Could not handle BuildSuccess event")
+			if err := handleEvent(eventHandler, event); err != nil {
+				errCh <- errs.Wrap(err, "Could not handle BuildSuccess/BuildFailure event")
 			}
 		}
 
@@ -208,7 +215,7 @@ func NewWithCustomConnections(artifactMap buildplan.ArtifactIDMap,
 				if observed(msg.MessageTypeValue()) {
 					break
 				}
-				buildSuccess()
+				buildFinished()
 				return
 			case ArtifactStarted:
 				m := msg.messager.(ArtifactMessage)
@@ -293,10 +300,11 @@ Artifact Build Succeeded.
 				// and stop monitoring the buildlogstreamer when we've received events for all our artifacts.
 				// This can be dropped once buildlostreamer speaks buildplans.
 				if len(stillWaiting()) == 0 {
-					buildSuccess()
+					buildFinished()
 					return
 				}
 			case ArtifactFailed:
+				anyFailures = true
 				m := msg.messager.(ArtifactFailedMessage)
 
 				ad, ok := artifactMap[m.ArtifactID]
@@ -332,6 +340,11 @@ Artifact Build Failed.
 					&m,
 				}
 
+				if len(stillWaiting()) == 0 {
+					buildFinished()
+					return
+				}
+
 			case ArtifactProgress:
 				m := msg.messager.(ArtifactProgressMessage)
 
@@ -363,7 +376,7 @@ Artifact Build Failed.
 				}
 			case Heartbeat:
 				waiting := stillWaiting()
-				msg := fmt.Sprintf("Heartbeat (still waiting for %d: %s)", len(waiting), strings.Join(waiting, ", "))
+				msg := fmt.Sprintf("Heartbeat (still waiting for %d more artifacts: %s)", len(waiting), strings.Join(waiting, ", "))
 				if err := writeLogFile("", msg); err != nil {
 					errCh <- errs.Wrap(err, "Could not write to log file")
 					return
