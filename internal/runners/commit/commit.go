@@ -82,13 +82,6 @@ func (c *Commit) Run() (rerr error) {
 		return rationalize.ErrNoProject
 	}
 
-	pg := output.StartSpinner(c.out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
-	defer func() {
-		if pg != nil {
-			pg.Stop(locale.T("progress_fail") + "\n")
-		}
-	}()
-
 	// Get buildscript.as representation
 	script, err := buildscript_runbit.ScriptFromProject(c.proj)
 	if err != nil {
@@ -115,6 +108,13 @@ func (c *Commit) Run() (rerr error) {
 	if equals {
 		return ErrNoChanges
 	}
+
+	pg := output.StartSpinner(c.out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
+	defer func() {
+		if pg != nil {
+			pg.Stop(locale.T("progress_fail") + "\n")
+		}
+	}()
 
 	stagedCommitID, err := bp.StageCommit(buildplanner.StageCommitParams{
 		Owner:        c.proj.Owner(),
