@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-openapi/strfmt"
-
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -23,10 +21,7 @@ const showUpdatedPackages = true
 // OutputChangeSummary looks over the given build plans, and computes and lists the additional
 // dependencies being installed for the requested packages, if any.
 func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan) {
-	requested := make(map[strfmt.UUID]bool)
-	for _, a := range newBuildPlan.RequestedArtifacts() {
-		requested[a.ArtifactID] = true
-	}
+	requested := newBuildPlan.RequestedArtifacts().ToIDMap()
 
 	addedString := []string{}
 	addedLocale := []string{}
