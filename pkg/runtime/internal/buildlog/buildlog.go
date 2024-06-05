@@ -51,8 +51,6 @@ type EventHandlerError struct {
 	*errs.WrapperError
 }
 
-type onArtifactReadyFunc func(artifact *buildplan.Artifact)
-
 // BuildLog is an implementation of a build log
 type BuildLog struct {
 	// The buildlog streamer still uses recipe IDs, the API will resolve this to the appropriate buildplan
@@ -60,7 +58,7 @@ type BuildLog struct {
 	artifactMap          buildplan.ArtifactIDMap
 	eventHandlers        []events.HandlerFunc
 	logFilePath          string
-	onArtifactReadyFuncs map[strfmt.UUID][]onArtifactReadyFunc
+	onArtifactReadyFuncs map[strfmt.UUID][]func()
 }
 
 // New creates a new BuildLog instance that allows us to wait for incoming build log information
@@ -85,9 +83,9 @@ func (b *BuildLog) WithLogFile(logFilePath string) *BuildLog {
 // OnArtifactReady registers a callback function to be called when an artifact is ready
 // Technically this is redundant with the event handler, but since handling artifacts is the main purpose of the
 // buildlog streamer it makes sense to make this an explicit function and make consuming code more readable in the process.
-func (b *BuildLog) OnArtifactReady(id strfmt.UUID, cb onArtifactReadyFunc) {
+func (b *BuildLog) OnArtifactReady(id strfmt.UUID, cb func()) {
 	if _, ok := b.onArtifactReadyFuncs[id]; !ok {
-		b.onArtifactReadyFuncs[id] = []onArtifactReadyFunc{}
+		b.onArtifactReadyFuncs[id] = []func(){}
 	}
 	b.onArtifactReadyFuncs[id] = append(b.onArtifactReadyFuncs[id], cb)
 }
@@ -330,7 +328,7 @@ Artifact Build Succeeded.
 			cbs, ok := b.onArtifactReadyFuncs[ad.ArtifactID]
 			if ok {
 				for _, cb := range cbs {
-					cb(ad)
+					cb()
 				}
 			}
 

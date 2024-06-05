@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/sliceutils"
@@ -28,6 +29,9 @@ import (
 	"github.com/go-openapi/strfmt"
 	"golang.org/x/net/context"
 )
+
+// maxConcurrency is the maximum number of concurrent workers that can be running at any given time during an update
+const maxConcurrency = 1
 
 type Opts struct {
 	PreferredLibcVersion string
@@ -206,14 +210,16 @@ func (s *setup) update() error {
 	// Download artifacts when ready
 	wp := workerpool.New(maxConcurrency)
 	for _, a := range s.toDownload {
-		s.onArtifactBuildReady(blog, a, func(artifact *buildplan.Artifact) {
-			wp.Submit(func() error {
-				if err := s.obtain(artifact); err != nil {
-					return errs.Wrap(err, "download failed")
-				}
-				return nil
+		func(a *buildplan.Artifact) { // We can get rid of this once we upgrade to Go 1.22 -- https://go.dev/blog/loopvar-preview
+			s.onArtifactBuildReady(blog, a, func() {
+				wp.Submit(func() error {
+					if err := s.obtain(a); err != nil {
+						return errs.Wrap(err, "obtain failed")
+					}
+					return nil
+				})
 			})
-		})
+		}(a)
 	}
 
 	// Wait for build to finish
@@ -272,10 +278,10 @@ func (s *setup) update() error {
 	return nil
 }
 
-func (s *setup) onArtifactBuildReady(blog *buildlog.BuildLog, artifact *buildplan.Artifact, cb func(*buildplan.Artifact)) {
+func (s *setup) onArtifactBuildReady(blog *buildlog.BuildLog, artifact *buildplan.Artifact, cb func()) {
 	if _, ok := s.toBuild[artifact.ArtifactID]; !ok {
 		// No need to build, artifact can already be downloaded
-		cb(artifact)
+		cb()
 		return
 	}
 
@@ -339,6 +345,7 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 		}
 	}()
 
+	logging.Debug("%s:1", artifact.ArtifactID)
 	var ua unarchiver.Unarchiver = unarchiver.NewTarGz()
 	if strings.HasSuffix(strings.ToLower(artifact.URL), "zip") {
 		ua = unarchiver.NewZip()
@@ -347,13 +354,6 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 	if err := s.fireEvent(events.ArtifactUnpackStarted{artifact.ArtifactID, len(b)}); err != nil {
 		return errs.Wrap(err, "Could not handle ArtifactUnpackStarted event")
 	}
-
-	var numUnpackedFiles int
-	ua.SetNotifier(func(_ string, _ int64, isDir bool) {
-		if !isDir {
-			numUnpackedFiles++
-		}
-	})
 
 	proxy := proxyreader.NewProxyReader(&progress.Report{
 		ReportIncrementCb: func(inc int) error {
@@ -367,14 +367,17 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 		return errs.Wrap(err, "unpack failed")
 	}
 
+	logging.Debug("%s:2", artifact.ArtifactID)
 	if err := s.depot.Put(artifact.ArtifactID); err != nil {
 		return errs.Wrap(err, "Could not put artifact in depot")
 	}
+	logging.Debug("%s:3", artifact.ArtifactID)
 
 	if err := s.fireEvent(events.ArtifactUnpackSuccess{artifact.ArtifactID}); err != nil {
 		return errs.Wrap(errs.Pack(err, err), "Could not handle ArtifactUnpackSuccess event")
 	}
 
+	logging.Debug("%s:done", artifact.ArtifactID)
 	return nil
 }
 
@@ -426,7 +429,7 @@ func (s *setup) save() error {
 func (s *setup) install(id strfmt.UUID) (rerr error) {
 	defer func() {
 		if rerr == nil {
-			if err := s.fireEvent(events.ArtifactInstallSuccess{}); err != nil {
+			if err := s.fireEvent(events.ArtifactInstallSuccess{id}); err != nil {
 				rerr = errs.Pack(rerr, errs.Wrap(err, "Could not handle ArtifactInstallSuccess event"))
 			}
 		} else {
@@ -440,7 +443,7 @@ func (s *setup) install(id strfmt.UUID) (rerr error) {
 		return errs.Wrap(err, "Could not handle ArtifactInstallStarted event")
 	}
 	if err := s.depot.Deploy(id, s.path); err != nil {
-		return errs.Wrap(err, "Could not link artifact")
+		return errs.Wrap(err, "Could not deploy artifact")
 	}
 	return nil
 }

@@ -28,9 +28,6 @@ const (
 // actual runtimes.
 const depotName = "depot"
 
-// maxConcurrency is the maximum number of concurrent workers that can be running at any given time during an update
-const maxConcurrency = 5
-
 type Runtime struct {
 	path          string
 	hash          string // The stored hash for the given runtime path, if one exists (otherwise empty)
