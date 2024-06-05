@@ -44,13 +44,17 @@ type depot struct {
 func newDepot(envDef *envdef.Collection) (*depot, error) {
 	depotPath := filepath.Join(storage.CachePath(), depotName)
 
-	if !fileutils.TargetExists(depotPath) {
-		return &depot{}, nil
-	}
-
 	result := &depot{
+		config: depotConfig{
+			Deployments: map[strfmt.UUID][]deployment{},
+		},
 		depotPath: depotPath,
 		envDef:    envDef,
+		artifacts: map[strfmt.UUID]struct{}{},
+	}
+
+	if !fileutils.TargetExists(depotPath) {
+		return result, nil
 	}
 
 	configFile := filepath.Join(depotPath, depotFile)
