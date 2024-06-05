@@ -359,9 +359,6 @@ const RuntimeInstallDirs = "INSTALLDIR,perl"
 // RuntimeMetaFile is the json file that holds meta information about our runtime
 const RuntimeMetaFile = "metadata.json"
 
-// RuntimeDefinitionFilename is the filename for runtime meta data bundled with artifacts, if they are built by the alternative builder
-const RuntimeDefinitionFilename = "runtime.json"
-
 // LocalRuntimeEnvironmentDirectory is the directory (relative to the installation of a runtime build) where runtime definition files are stored
 const LocalRuntimeEnvironmentDirectory = "_runtime_store"
 

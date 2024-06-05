@@ -2,10 +2,14 @@ package envdef
 
 import (
 	"encoding/json"
+	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 )
+
+// EnvironmentDefinitionFilename is the filename for runtime meta data bundled with artifacts, if they are built by the alternative builder
+const EnvironmentDefinitionFilename = "runtime.json"
 
 type raw struct {
 	EnvDefs map[string]*EnvironmentDefinition `json:"Definitions"`
@@ -54,7 +58,7 @@ func (c *Collection) Load(path string) (*EnvironmentDefinition, error) {
 		return envDef, nil
 	}
 
-	envDef, err := NewEnvironmentDefinition(path)
+	envDef, err := NewEnvironmentDefinition(filepath.Join(path, EnvironmentDefinitionFilename))
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to initialize environment definition")
 	}
