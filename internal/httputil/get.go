@@ -81,7 +81,7 @@ func httpGetWithProgressRetry(url string, prg progress.Reporter, attempt int, re
 	var src io.Reader = resp.Body
 	defer resp.Body.Close()
 
-	if prg != nil {
+	if prg != nil && attempt == 1 {
 		if err := prg.ReportSize(total); err != nil {
 			return nil, errs.Wrap(err, "Could not report size")
 		}
