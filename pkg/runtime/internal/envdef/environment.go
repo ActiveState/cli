@@ -12,7 +12,6 @@ import (
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/locale"
 )
 
 // EnvironmentDefinition provides all the information needed to set up an
@@ -106,12 +105,12 @@ func (ev *EnvironmentVariable) UnmarshalJSON(data []byte) error {
 func NewEnvironmentDefinition(fp string) (*EnvironmentDefinition, error) {
 	blob, err := os.ReadFile(fp)
 	if err != nil {
-		return nil, locale.WrapError(err, "envdef_file_not_found", "", fp)
+		return nil, errs.Wrap(err, "could not read environment definition file: %s", fp)
 	}
 	ed := &EnvironmentDefinition{}
 	err = json.Unmarshal(blob, ed)
 	if err != nil {
-		return nil, locale.WrapError(err, "envdef_unmarshal_error", "", fp)
+		return nil, errs.Wrap(err, "could not unmarshal environment definition file: %s", fp)
 	}
 	return ed, nil
 }

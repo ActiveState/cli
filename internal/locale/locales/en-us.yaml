@@ -938,18 +938,6 @@ deploy_uninstall_success:
     Successfully removed deployment.
 
     Please restart your terminal or start a new terminal session in order to clear any residual Runtime Environment variables and settings.
-envdef_file_not_found:
-  other: |
-    Your installation seems to be corrupted.
-
-    Cannot find runtime definition file at [NOTICE]{{.V0}}[/RESET].
-    You can try to manually delete the cache directory and re-activating the project.
-envdef_unmarshal_error:
-  other: |
-    Your installation seems to be corrupted.
-
-    Cannot not parse runtime definition file at [NOTICE]{{.V0}}[/RESET]
-    This indicates a problem with the build. You can try updating your project
 err_arg_required:
   other: "The following argument is required:\n  Name: [NOTICE]{{.V0}}[/RESET]\n  Description: [NOTICE]{{.V1}}[/RESET]"
 err_init_no_language:
