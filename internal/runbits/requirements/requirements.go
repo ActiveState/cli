@@ -705,11 +705,11 @@ func (r *RequirementOperation) summarizeCVEs(out output.Outputer, vulnerabilitie
 
 	switch {
 	case vulnerabilities.CountPrimary == 0:
-		out.Print(locale.Tr("warning_vulnerable_indirectonly", strconv.Itoa(vulnerabilities.Count)))
+		out.Print("   " + locale.Tr("warning_vulnerable_indirectonly", strconv.Itoa(vulnerabilities.Count)))
 	case vulnerabilities.CountPrimary == vulnerabilities.Count:
-		out.Print(locale.Tr("warning_vulnerable_directonly", strconv.Itoa(vulnerabilities.Count)))
+		out.Print("   " + locale.Tr("warning_vulnerable_directonly", strconv.Itoa(vulnerabilities.Count)))
 	default:
-		out.Print(locale.Tr("warning_vulnerable", strconv.Itoa(vulnerabilities.CountPrimary), strconv.Itoa(vulnerabilities.Count-vulnerabilities.CountPrimary)))
+		out.Print("   " + locale.Tr("warning_vulnerable", strconv.Itoa(vulnerabilities.CountPrimary), strconv.Itoa(vulnerabilities.Count-vulnerabilities.CountPrimary)))
 	}
 
 	printVulnerabilities := func(vulnerableIngredients model.VulnerableIngredientsByLevel, name, color string) {
@@ -722,7 +722,7 @@ func (r *RequirementOperation) summarizeCVEs(out output.Outputer, vulnerabilitie
 				}
 				ings = append(ings, fmt.Sprintf("%s[CYAN]%s[/RESET]", prefix, strings.Join(vulns.CVEIDs, ", ")))
 			}
-			out.Print(fmt.Sprintf(" • [%s]%d %s:[/RESET] %s", color, vulnerableIngredients.Count, name, strings.Join(ings, ", ")))
+			out.Print(fmt.Sprintf("    • [%s]%d %s:[/RESET] %s", color, vulnerableIngredients.Count, name, strings.Join(ings, ", ")))
 		}
 	}
 
@@ -732,7 +732,8 @@ func (r *RequirementOperation) summarizeCVEs(out output.Outputer, vulnerabilitie
 	printVulnerabilities(vulnerabilities.Low, locale.Tl("cve_low", "Low"), "MAGENTA")
 
 	out.Print("")
-	out.Print(locale.T("more_info_vulnerabilities"))
+	out.Print("   " + locale.T("more_info_vulnerabilities"))
+	out.Print("   " + locale.T("disable_prompting_vulnerabilities"))
 }
 
 func (r *RequirementOperation) promptForSecurity() (bool, error) {
