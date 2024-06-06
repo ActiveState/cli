@@ -65,7 +65,7 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 	if numIndirect > 0 {
 		localeKey = "additional_total_dependencies"
 	}
-	out.Notice(locale.Tr(localeKey, strings.Join(addedLocale, ", "), strconv.Itoa(len(directDependencies)), strconv.Itoa(numIndirect)))
+	out.Notice("   " + locale.Tr(localeKey, strings.Join(addedLocale, ", "), strconv.Itoa(len(directDependencies)), strconv.Itoa(numIndirect)))
 
 	// A direct dependency list item is of the form:
 	//   ├─ name@version (X dependencies)
@@ -74,9 +74,9 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 	// depending on whether or not it has subdependencies, and whether or not showUpdatedPackages is
 	// `true`.
 	for i, ingredient := range directDependencies {
-		prefix := "├─"
+		prefix := " ├─"
 		if i == len(directDependencies)-1 {
-			prefix = "└─"
+			prefix = " └─"
 		}
 
 		ingredientDeps := ingredient.RuntimeDependencies(true)
