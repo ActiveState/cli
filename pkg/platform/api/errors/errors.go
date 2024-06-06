@@ -1,4 +1,4 @@
-package platform
+package api_errors
 
 import (
 	"github.com/ActiveState/cli/internal/locale"
