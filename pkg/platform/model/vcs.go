@@ -880,6 +880,37 @@ func GetCommitWithinCommitHistory(currentCommitID, targetCommitID strfmt.UUID, a
 	return commit, nil
 }
 
+// GetCommitWithinProjectHistory searches for the a commit with the given commit ID in the given
+// project (including all of its branch history) and returns it if found. Otherwise, it returns
+// ErrCommitNotInHistory.
+// It doesn't matter if the commit exists in multiple branches, as commits do not belong to
+// branches.
+// This function exists primarily as an existence check because the buildplanner API currently
+// accepts a query for a org/project#commitID even if commitID does not belong to org/project.
+// See DS-1705 (yes, DS, not DX).
+func GetCommitWithinProjectHistory(commitID strfmt.UUID, owner, name string, auth *authentication.Auth) (*mono_models.Commit, error) {
+	commit, err := GetCommit(commitID, auth)
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to get commit")
+	}
+
+	branches, err := BranchesForProject(owner, name)
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to get branches for project")
+	}
+	for _, branch := range branches {
+		ok, err := CommitWithinCommitHistory(*branch.CommitID, commitID, auth)
+		if err != nil {
+			return nil, errs.Wrap(err, "Unable to determine if commit exists in branch history")
+		}
+		if ok {
+			return commit, nil
+		}
+	}
+
+	return nil, ErrCommitNotInHistory
+}
+
 func AddRevertCommit(commit *mono_models.Commit, auth *authentication.Auth) (*mono_models.Commit, error) {
 	params := vcsClient.NewAddCommitParams()
 

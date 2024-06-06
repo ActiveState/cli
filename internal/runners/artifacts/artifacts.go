@@ -362,6 +362,16 @@ func getBuildPlan(
 
 	// Return the artifact map for the given commitID of the given project.
 	case namespaceProvided && commitIdProvided:
+		// Note: the Platform does not raise an error when requesting a commit ID that does not exist in
+		// a given project, so we have verify existence client-side. See DS-1705 (yes, DS, not DX).
+		_, err := model.GetCommitWithinProjectHistory(commitUUID, namespace.Owner, namespace.Project, auth)
+		if err != nil {
+			if err != model.ErrCommitNotInHistory {
+				err = errs.Wrap(err, "Unable to determine if commit exists in project")
+			}
+			return nil, err
+		}
+
 		bp := bpModel.NewBuildPlannerModel(auth)
 		commit, err = bp.FetchCommit(commitUUID, namespace.Owner, namespace.Project, targetPtr)
 		if err != nil {

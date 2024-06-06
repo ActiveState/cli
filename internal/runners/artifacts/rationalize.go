@@ -30,6 +30,11 @@ func rationalizeCommonError(err *error, auth *authentication.Auth) {
 			locale.Tr("err_api_project_not_found", projectNotFoundErr.Organization, projectNotFoundErr.Project),
 			errs.SetIf(!auth.Authenticated(), errs.SetTips(locale.T("tip_private_project_auth"))),
 			errs.SetInput())
+
+	case errors.Is(*err, model.ErrCommitNotInHistory):
+		*err = errs.WrapUserFacing(*err,
+			locale.Tl("err_commit_id_not_in_history", "That project does not have that commit."),
+			errs.SetInput())
 	}
 
 }
