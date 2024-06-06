@@ -55,7 +55,7 @@ func OptInUnstable(cfg Configurable) bool {
 	if v := os.Getenv(constants.OptinUnstableEnvVarName); v != "" {
 		return v == "true"
 	}
-	return cfg.GetBool(constants.UnstableConfig)
+	return BuiltOnDevMachine() || cfg.GetBool(constants.UnstableConfig)
 }
 
 func IsNetworkingError(err error) bool {
