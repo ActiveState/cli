@@ -1,6 +1,7 @@
 package buildplan
 
 import (
+	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildplan/raw"
 	"github.com/go-openapi/strfmt"
 )
@@ -58,7 +59,8 @@ func (i Ingredients) ToNameMap() IngredientNameMap {
 }
 
 func (i *Ingredient) RuntimeDependencies(recursive bool) Ingredients {
-	return i.runtimeDependencies(recursive, make(map[strfmt.UUID]struct{}))
+	dependencies := i.runtimeDependencies(recursive, make(map[strfmt.UUID]struct{}))
+	return sliceutils.UniqueByProperty(dependencies, func(i *Ingredient) any { return i.IngredientID })
 }
 
 func (i *Ingredient) runtimeDependencies(recursive bool, seen map[strfmt.UUID]struct{}) Ingredients {
