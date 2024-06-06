@@ -24,10 +24,6 @@ func (r *Runtime) loadHash() error {
 
 func (r *Runtime) saveHash(hash string) error {
 	path := filepath.Join(r.path, configDir, hashFile)
-	if !fileutils.TargetExists(path) {
-		return errs.New("Hash file does not exist")
-	}
-
 	if err := fileutils.WriteFile(path, []byte(hash)); err != nil {
 		return errs.Wrap(err, "Failed to write hash file")
 	}
