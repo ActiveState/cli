@@ -109,7 +109,7 @@ func main() {
 	if err != nil {
 		exitCode, err = errors.ParseUserFacing(err)
 		if err != nil {
-			out.Error(err)
+			out.Print(err)
 		}
 	}
 }

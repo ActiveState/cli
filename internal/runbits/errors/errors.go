@@ -45,7 +45,7 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	if errors.As(o.error, &userFacingError) {
 		message := userFacingError.UserError()
 		if f == output.PlainFormatName {
-			outLines = append(outLines, formatMessage(message)...)
+			outLines = append(outLines, formatMessage(message, isInputError)...)
 		} else {
 			outLines = append(outLines, message)
 		}
@@ -59,7 +59,7 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 		for _, errv := range rerrs {
 			message := normalizeError(locale.ErrorMessage(errv))
 			if f == output.PlainFormatName {
-				outLines = append(outLines, formatMessage(message)...)
+				outLines = append(outLines, formatMessage(message, isInputError)...)
 			} else {
 				outLines = append(outLines, message)
 			}
@@ -85,14 +85,22 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 // formatMessage formats the error message for plain output. It adds a
 // x prefix to the first line and indents the rest of the lines to match
 // the indentation of the first line.
-func formatMessage(message string) []string {
+func formatMessage(message string, isInputError bool) []string {
 	var output []string
 	lines := strings.Split(message, "\n")
 	for i, line := range lines {
-		if i == 0 {
-			output = append(output, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", line))
+		if isInputError {
+			if len(lines) == 1 {
+				output = append(output, line)
+				break
+			}
+			output = append(output, fmt.Sprintf(" - %s", line))
 		} else {
-			output = append(output, fmt.Sprintf("  %s", line))
+			if i == 0 {
+				output = append(output, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", line))
+			} else {
+				output = append(output, fmt.Sprintf("  %s", line))
+			}
 		}
 	}
 
