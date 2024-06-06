@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	runtime_helpers "github.com/ActiveState/cli/pkg/runtime/helpers"
 )
 
 type Params struct {
@@ -67,6 +68,15 @@ func (r *Refresh) Run(params *Params) error {
 			return locale.WrapError(err, "err_use_default_project_does_not_exist")
 		}
 		return rationalize.ErrNoProject
+	}
+
+	needsUpdate, err := runtime_helpers.NeedsUpdate(proj, nil)
+	if err != nil {
+		return errs.Wrap(err, "could not determine if runtime needs update")
+	}
+
+	if !needsUpdate {
+		return locale.NewInputError("refresh_runtime_uptodate")
 	}
 
 	r.prime.SetProject(proj)

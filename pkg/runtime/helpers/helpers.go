@@ -22,13 +22,27 @@ with certain concepts, like projects, we still want convenience layers for inter
 of projects.
 */
 
-func FromProject(proj *project.Project) (_ *runtime.Runtime, rerr error) {
+func FromProject(proj *project.Project) (*runtime.Runtime, error) {
 	targetDir := TargetDirFromProject(proj)
 	rt, err := runtime.New(targetDir)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not initialize runtime")
 	}
 	return rt, nil
+}
+
+func NeedsUpdate(proj *project.Project, overrideCommitID *strfmt.UUID) (bool, error) {
+	rt, err := FromProject(proj)
+	if err != nil {
+		return false, errs.Wrap(err, "Could not obtain runtime")
+	}
+
+	hash, err := Hash(proj, overrideCommitID)
+	if err != nil {
+		return false, errs.Wrap(err, "Could not get hash")
+	}
+
+	return hash != rt.Hash(), nil
 }
 
 func Hash(proj *project.Project, overrideCommitID *strfmt.UUID) (string, error) {
@@ -43,7 +57,12 @@ func Hash(proj *project.Project, overrideCommitID *strfmt.UUID) (string, error) 
 		commitID = *overrideCommitID
 	}
 
-	return hash.ShortHash(strings.Join([]string{proj.NamespaceString(), proj.Dir(), commitID.String(), constants.RevisionHashShort}, "")), nil
+	path, err := fileutils.ResolveUniquePath(proj.Dir())
+	if err != nil {
+		return "", errs.Wrap(err, "Could not resolve unique path for projectDir")
+	}
+
+	return hash.ShortHash(strings.Join([]string{proj.NamespaceString(), path, commitID.String(), constants.RevisionHashShort}, "")), nil
 }
 
 func ExecutorPathFromProject(proj *project.Project) string {
