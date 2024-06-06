@@ -960,7 +960,7 @@ func ResolvePath(path string) (string, error) {
 }
 
 func ResolvePathIfPossible(path string) string {
-	if resolvedPath, err := ResolvePath(path); err == nil {
+	if resolvedPath, err := ResolveUniquePath(path); err == nil {
 		return resolvedPath
 	}
 	return path
