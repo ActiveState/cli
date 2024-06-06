@@ -822,9 +822,9 @@ func copyFiles(src, dest string, remove bool) error {
 // CopySymlink reads the symlink at src and creates a new
 // link at dest
 func CopySymlink(src, dest string) error {
-	link, err := os.Readlink(src)
+	link, err := filepath.EvalSymlinks(src)
 	if err != nil {
-		return errs.Wrap(err, "os.Readlink %s failed", src)
+		return errs.Wrap(err, "Readlink %s failed", src)
 	}
 
 	err = os.Symlink(link, dest)
