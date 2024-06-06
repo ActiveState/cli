@@ -34,7 +34,8 @@ func (s step) String() string {
 var (
 	StepBuild    = step{"build", locale.T("building"), 10000} // the priority is high because the artifact progress bars need to fit in between the steps
 	StepDownload = step{"download", locale.T("downloading"), 20000}
-	StepInstall  = step{"install", locale.T("installing"), 30000}
+	StepUnpack   = step{"unpack", locale.T("unpacking"), 30000}
+	StepInstall  = step{"install", locale.T("installing"), 40000}
 )
 
 type artifactStepID string
@@ -56,6 +57,7 @@ type ProgressDigester struct {
 	mainProgress *mpb.Progress
 	buildBar     *bar
 	downloadBar  *bar
+	unpackBar    *bar
 	installBar   *bar
 	solveSpinner *output.Spinner
 	artifactBars map[artifactStepID]*bar
@@ -241,22 +243,43 @@ func (p *ProgressDigester) Handle(ev events.Event) error {
 		}
 		p.downloadBar.Increment()
 
-	// Note we listen for ArtifactUnpackStarted instead of ArtifactInstallStarted, because while unpacking does not happen
-	// as part of the install, it is still considered install progress from a user perspective.
 	case events.ArtifactUnpackStarted:
-		if p.installBar == nil {
-			p.installBar = p.addTotalBar(locale.Tl("progress_building", "Installing"), int64(len(p.installsExpected)), mpb.BarPriority(StepInstall.priority))
+		if p.unpackBar == nil {
+			p.unpackBar = p.addTotalBar(locale.Tl("progress_unpacking", "Unpacking"), int64(len(p.downloadsExpected)), mpb.BarPriority(StepUnpack.priority))
 		}
-		if _, ok := p.installsExpected[v.ArtifactID]; !ok {
+		if _, ok := p.downloadsExpected[v.ArtifactID]; !ok {
 			return errs.New("ArtifactUnpackStarted called for an artifact that was not expected: %s", v.ArtifactID.String())
 		}
-		if err := p.addArtifactBar(v.ArtifactID, StepInstall, int64(v.TotalSize), true); err != nil {
-			return errs.Wrap(err, "Failed to add or update artifact bar")
+		if err := p.addArtifactBar(v.ArtifactID, StepUnpack, int64(v.TotalSize), true); err != nil {
+			return errs.Wrap(err, "Failed to add or update artifact unpack bar")
 		}
 
 	case events.ArtifactUnpackProgress:
-		if err := p.updateArtifactBar(v.ArtifactID, StepInstall, v.IncrementBySize); err != nil {
-			return errs.Wrap(err, "Failed to add or update artifact bar")
+		if _, ok := p.downloadsExpected[v.ArtifactID]; !ok {
+			return errs.New("ArtifactUnpackSuccess called for an artifact that was not expected: %s", v.ArtifactID.String())
+		}
+		if err := p.updateArtifactBar(v.ArtifactID, StepUnpack, v.IncrementBySize); err != nil {
+			return errs.Wrap(err, "Failed to add or update artifact unpack bar")
+		}
+
+	case events.ArtifactUnpackSuccess:
+		if p.unpackBar == nil {
+			return errs.New("ArtifactUnpackSuccess called before unpackBar was initialized")
+		}
+		if _, ok := p.downloadsExpected[v.ArtifactID]; !ok {
+			return errs.New("ArtifactUnpackSuccess called for an artifact that was not expected: %s", v.ArtifactID.String())
+		}
+		if p.unpackBar.Current() == p.unpackBar.total {
+			return errs.New("Unpack bar is already complete, this should not happen")
+		}
+		p.unpackBar.Increment()
+
+	case events.ArtifactInstallStarted:
+		if p.installBar == nil {
+			p.installBar = p.addTotalBar(locale.Tl("progress_installing", "Installing"), int64(len(p.installsExpected)), mpb.BarPriority(StepInstall.priority))
+		}
+		if _, ok := p.installsExpected[v.ArtifactID]; !ok {
+			return errs.New("ArtifactUnpackStarted called for an artifact that was not expected: %s", v.ArtifactID.String())
 		}
 
 	case events.ArtifactInstallSuccess:
@@ -265,9 +288,6 @@ func (p *ProgressDigester) Handle(ev events.Event) error {
 		}
 		if _, ok := p.installsExpected[v.ArtifactID]; !ok {
 			return errs.New("ArtifactInstallSuccess called for an artifact that was not expected: %s", v.ArtifactID.String())
-		}
-		if err := p.dropArtifactBar(v.ArtifactID, StepInstall); err != nil {
-			return errs.Wrap(err, "Failed to drop install bar")
 		}
 		if p.installBar.Current() == p.installBar.total {
 			return errs.New("Install bar is already complete, this should not happen")

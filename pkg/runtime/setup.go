@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"bytes"
-	"encoding/json"
 	"path/filepath"
 	"strings"
 
@@ -31,7 +30,7 @@ import (
 )
 
 // maxConcurrency is the maximum number of concurrent workers that can be running at any given time during an update
-const maxConcurrency = 1
+const maxConcurrency = 5
 
 type Opts struct {
 	PreferredLibcVersion string
@@ -72,12 +71,7 @@ type setup struct {
 	toUninstall map[strfmt.UUID]struct{}
 }
 
-func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, opts *Opts) (*setup, error) {
-	depot, err := newDepot(env)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not create depot")
-	}
-
+func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depot *depot, opts *Opts) (*setup, error) {
 	installedArtifacts := depot.List(path)
 
 	platformID, err := model.FilterCurrentPlatform(sysinfo.OS().String(), bp.Platforms(), opts.PreferredLibcVersion)
@@ -180,25 +174,6 @@ func (s *setup) RunAndWait() (rerr error) {
 		return errs.Wrap(err, "Could not update")
 	}
 
-	// Ensure our collection has all our artifacts
-	// Technically this is redundant as the depot would've already hit these, but it's better not to rely
-	// on implicit behavior of other packages to achieve the results we want in this one, and it's cached anyway so
-	// the performance impact is trivial.
-	for id := range s.depot.List(s.path) {
-		_, err := s.env.Load(s.depot.Path(id))
-		if err != nil {
-			return errs.Wrap(err, "Could not get env")
-		}
-	}
-
-	if err := s.save(); err != nil {
-		return errs.Wrap(err, "Could not save runtime config")
-	}
-
-	if err := s.env.Save(); err != nil {
-		return errs.Wrap(err, "Could not save env")
-	}
-
 	return nil
 }
 
@@ -235,15 +210,15 @@ func (s *setup) update() error {
 	}
 
 	// Now we start modifying the runtime directory
-	// This happens AFTER all the download steps are finished, and should be extremely fast because installing is
-	// simply creating links to the depot.
+	// This happens AFTER all the download steps are finished, and should be very fast because installing is mostly just
+	// creating links to the depot. The
 	// We do this as a separate step so we don't leave the runtime dir in a half-installed state if issues happen earlier
 	// on in the process.
 
 	// Uninstall artifacts
 	for id := range s.toUninstall {
-		if err := s.depot.Undeploy(id, s.path); err != nil {
-			return errs.Wrap(err, "Could not unlink artifact")
+		if err := s.uninstall(id); err != nil {
+			return errs.Wrap(err, "Could not uninstall artifact")
 		}
 	}
 
@@ -382,12 +357,12 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 }
 
 func (s *setup) updateExecutors() error {
-	execPath := filepath.Join(s.path, configDir, executorDir)
+	execPath := ExecutorsPath(s.path)
 	if err := fileutils.MkdirUnlessExists(execPath); err != nil {
 		return errs.Wrap(err, "Could not create executors directory")
 	}
 
-	env, err := s.env.Environment()
+	env, err := s.env.Environment(s.path)
 	if err != nil {
 		return errs.Wrap(err, "Could not get env")
 	}
@@ -410,22 +385,6 @@ func (s *setup) updateExecutors() error {
 	return nil
 }
 
-func (s *setup) save() error {
-	env, err := s.env.Environment()
-	if err != nil {
-		return errs.Wrap(err, "Could not get env")
-	}
-	envB, err := json.Marshal(env)
-	if err != nil {
-		return errs.Wrap(err, "Could not marshal env")
-	}
-	if err := fileutils.WriteFile(filepath.Join(s.path, configDir, environmentFile), envB); err != nil {
-		return errs.Wrap(err, "Could not write environment file")
-	}
-
-	return nil
-}
-
 func (s *setup) install(id strfmt.UUID) (rerr error) {
 	defer func() {
 		if rerr == nil {
@@ -442,8 +401,51 @@ func (s *setup) install(id strfmt.UUID) (rerr error) {
 	if err := s.fireEvent(events.ArtifactInstallStarted{id}); err != nil {
 		return errs.Wrap(err, "Could not handle ArtifactInstallStarted event")
 	}
-	if err := s.depot.Deploy(id, s.path); err != nil {
-		return errs.Wrap(err, "Could not deploy artifact")
+
+	artifactDepotPath := s.depot.Path(id)
+	envDef, err := s.env.Load(artifactDepotPath)
+	if err != nil {
+		return errs.Wrap(err, "Could not get env")
 	}
+
+	if envDef.NeedsTransforms() {
+		if err := s.depot.DeployViaCopy(id, envDef.InstallDir, s.path); err != nil {
+			return errs.Wrap(err, "Could not deploy artifact via copy")
+		}
+		if err := envDef.ApplyFileTransforms(s.path); err != nil {
+			return errs.Wrap(err, "Could not apply env transforms")
+		}
+	} else {
+		if err := s.depot.DeployViaLink(id, envDef.InstallDir, s.path); err != nil {
+			return errs.Wrap(err, "Could not deploy artifact via link")
+		}
+	}
+
+	return nil
+}
+
+func (s *setup) uninstall(id strfmt.UUID) (rerr error) {
+	defer func() {
+		if rerr == nil {
+			if err := s.fireEvent(events.ArtifactUninstallSuccess{id}); err != nil {
+				rerr = errs.Pack(rerr, errs.Wrap(err, "Could not handle ArtifactUninstallSuccess event"))
+			}
+		} else {
+			if err := s.fireEvent(events.ArtifactUninstallFailure{id, rerr}); err != nil {
+				rerr = errs.Pack(rerr, errs.Wrap(err, "Could not handle ArtifactUninstallFailure event"))
+			}
+		}
+	}()
+
+	if err := s.fireEvent(events.ArtifactUninstallStarted{id}); err != nil {
+		return errs.Wrap(err, "Could not handle ArtifactUninstallStarted event")
+	}
+	if err := s.env.Unload(s.depot.Path(id)); err != nil {
+		return errs.Wrap(err, "Could not unload artifact envdef")
+	}
+	if err := s.depot.Undeploy(id, s.path); err != nil {
+		return errs.Wrap(err, "Could not unlink artifact")
+	}
+
 	return nil
 }

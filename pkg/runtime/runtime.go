@@ -1,7 +1,7 @@
 package runtime
 
 import (
-	"errors"
+	"maps"
 	"os"
 	"path/filepath"
 
@@ -33,6 +33,7 @@ type Runtime struct {
 	hash          string // The stored hash for the given runtime path, if one exists (otherwise empty)
 	envCollection *envdef.Collection
 	env           Environment
+	depot         *depot
 }
 
 type Environment struct {
@@ -42,14 +43,17 @@ type Environment struct {
 }
 
 func New(path string) (*Runtime, error) {
-	env, err := envdef.NewCollection(filepath.Join(path, configDir, environmentFile))
-	if err != nil && !errors.Is(err, envdef.ErrFileNotFound) { // File not found is not an error if this is a new checkout
-		return nil, errs.Wrap(err, "Failed to create environment collection")
+	env := envdef.New()
+
+	depot, err := newDepot()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not create depot")
 	}
 
 	r := &Runtime{
 		path:          path,
 		envCollection: env,
+		depot:         depot,
 	}
 
 	if err := r.loadHash(); err != nil {
@@ -86,7 +90,7 @@ func (r *Runtime) Update(bp *buildplan.BuildPlan, hash string, setOpts ...SetOpt
 		opts.BuildlogFilePath = filepath.Join(r.path, configDir, buildLogFile)
 	}
 
-	setup, err := newSetup(r.path, bp, r.envCollection, opts)
+	setup, err := newSetup(r.path, bp, r.envCollection, r.depot, opts)
 	if err != nil {
 		return errs.Wrap(err, "Failed to calculate artifacts to install")
 	}
@@ -105,14 +109,21 @@ func (r *Runtime) Update(bp *buildplan.BuildPlan, hash string, setOpts ...SetOpt
 // hydrateEnvironment will populate the environment information so that when Env() is called it's just passing already
 // calculated data
 func (r *Runtime) hydrateEnvironment() error {
-	vars, err := r.envCollection.Environment()
+	// Ingest environment files according to artifacts referenced in depot
+	for id := range r.depot.List(r.path) {
+		if _, err := r.envCollection.Load(r.depot.Path(id)); err != nil {
+			return errs.Wrap(err, "Failed to load environment")
+		}
+	}
+
+	vars, err := r.envCollection.Environment(r.path)
 	if err != nil {
 		return errs.Wrap(err, "Failed to get environment variables")
 	}
 
 	executorsPath := ExecutorsPath(r.path)
 
-	execVars := vars
+	execVars := maps.Clone(vars)
 	execVars["PATH"] = executorsPath
 	if _, ok := vars["PATH"]; ok {
 		execVars["PATH"] += string(os.PathListSeparator) + vars["PATH"]
@@ -160,5 +171,5 @@ func IsRuntimeDir(dir string) bool {
 }
 
 func ExecutorsPath(baseDir string) string {
-	return filepath.Join(baseDir, configDir, executorDir)
+	return filepath.Join(baseDir, executorDir)
 }

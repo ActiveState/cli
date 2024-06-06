@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/smartlink"
-	"github.com/ActiveState/cli/pkg/runtime/internal/envdef"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -38,11 +37,9 @@ type depot struct {
 	config    depotConfig
 	depotPath string
 	artifacts map[strfmt.UUID]struct{}
-
-	envDef *envdef.Collection
 }
 
-func newDepot(envDef *envdef.Collection) (*depot, error) {
+func newDepot() (*depot, error) {
 	depotPath := filepath.Join(storage.CachePath(), depotName)
 
 	result := &depot{
@@ -50,7 +47,6 @@ func newDepot(envDef *envdef.Collection) (*depot, error) {
 			Deployments: map[strfmt.UUID][]deployment{},
 		},
 		depotPath: depotPath,
-		envDef:    envDef,
 		artifacts: map[strfmt.UUID]struct{}{},
 	}
 
@@ -66,6 +62,13 @@ func newDepot(envDef *envdef.Collection) (*depot, error) {
 		}
 		if err := json.Unmarshal(b, &result.config); err != nil {
 			return nil, errs.Wrap(err, "failed to unmarshal depot file")
+		}
+
+		// Filter out deployments that no longer exist (eg. user ran `state clean cache`)
+		for id, deployments := range result.config.Deployments {
+			result.config.Deployments[id] = sliceutils.Filter(deployments, func(d deployment) bool {
+				return fileutils.DirExists(d.Path)
+			})
 		}
 	}
 
@@ -109,59 +112,73 @@ func (d *depot) Put(id strfmt.UUID) error {
 	return nil
 }
 
-// Deploy will take an artifact from the depot and deploy it to the target path.
-// A deployment can be either a series of links or a copy of the files in question, depending on whether the artifact
-// requires runtime specific transformations.
-func (d *depot) Deploy(id strfmt.UUID, path string) error {
+// DeployViaLink will take an artifact from the depot and link it to the target path.
+func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) error {
 	if !d.Exists(id) {
 		return errs.New("artifact not found in depot")
 	}
 
 	// Collect artifact meta info
 	var err error
-	path, err = fileutils.ResolvePath(path)
+	absoluteDest, err = fileutils.ResolvePath(absoluteDest)
 	if err != nil {
 		return errs.Wrap(err, "failed to resolve path")
 	}
 
-	if err := fileutils.MkdirUnlessExists(path); err != nil {
+	if err := fileutils.MkdirUnlessExists(absoluteDest); err != nil {
 		return errs.Wrap(err, "failed to create path")
 	}
 
-	artifactInfo, err := d.envDef.Load(d.Path(id))
-	if err != nil {
-		return errs.Wrap(err, "failed to get artifact info")
-	}
-
-	artifactInstallDir := filepath.Join(d.Path(id), artifactInfo.InstallationDir())
-	if !fileutils.DirExists(artifactInstallDir) {
-		return errs.New("artifact installdir does not exist: %s", artifactInstallDir)
+	absoluteSrc := filepath.Join(d.Path(id), relativeSrc)
+	if !fileutils.DirExists(absoluteSrc) {
+		return errs.New("artifact src does not exist: %s", absoluteSrc)
 	}
 
 	// Copy or link the artifact files, depending on whether the artifact in question relies on file transformations
-	var deployType deploymentType
-	if artifactInfo.NeedsTransforms() {
-		if err := fileutils.CopyFiles(artifactInstallDir, path); err != nil {
-			return errs.Wrap(err, "failed to copy artifact")
-		}
-
-		if err := artifactInfo.ApplyFileTransforms(path); err != nil {
-			return errs.Wrap(err, "Could not apply env transforms")
-		}
-
-		deployType = deploymentTypeCopy
-	} else {
-		if err := smartlink.LinkContents(artifactInstallDir, path); err != nil {
-			return errs.Wrap(err, "failed to link artifact")
-		}
-		deployType = deploymentTypeLink
+	if err := smartlink.LinkContents(absoluteSrc, absoluteDest); err != nil {
+		return errs.Wrap(err, "failed to link artifact")
 	}
 
 	// Record deployment to config
 	if _, ok := d.config.Deployments[id]; !ok {
 		d.config.Deployments[id] = []deployment{}
 	}
-	d.config.Deployments[id] = append(d.config.Deployments[id], deployment{Type: deployType, Path: path})
+	d.config.Deployments[id] = append(d.config.Deployments[id], deployment{Type: deploymentTypeLink, Path: absoluteDest})
+
+	return nil
+}
+
+// DeployViaCopy will take an artifact from the depot and copy it to the target path.
+func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) error {
+	if !d.Exists(id) {
+		return errs.New("artifact not found in depot")
+	}
+
+	var err error
+	absoluteDest, err = fileutils.ResolvePath(absoluteDest)
+	if err != nil {
+		return errs.Wrap(err, "failed to resolve path")
+	}
+
+	if err := fileutils.MkdirUnlessExists(absoluteDest); err != nil {
+		return errs.Wrap(err, "failed to create path")
+	}
+
+	absoluteSrc := filepath.Join(d.Path(id), relativeSrc)
+	if !fileutils.DirExists(absoluteSrc) {
+		return errs.New("artifact src does not exist: %s", absoluteSrc)
+	}
+
+	// Copy or link the artifact files, depending on whether the artifact in question relies on file transformations
+	if err := fileutils.CopyFiles(absoluteSrc, absoluteDest); err != nil {
+		return errs.Wrap(err, "failed to copy artifact")
+	}
+
+	// Record deployment to config
+	if _, ok := d.config.Deployments[id]; !ok {
+		d.config.Deployments[id] = []deployment{}
+	}
+	d.config.Deployments[id] = append(d.config.Deployments[id], deployment{Type: deploymentTypeCopy, Path: absoluteDest})
 
 	return nil
 }
@@ -175,10 +192,6 @@ func (d *depot) Undeploy(id strfmt.UUID, path string) error {
 	path, err = fileutils.ResolvePath(path)
 	if err != nil {
 		return errs.Wrap(err, "failed to resolve path")
-	}
-
-	if err := d.envDef.Unload(d.Path(id)); err != nil {
-		return errs.Wrap(err, "failed to get artifact info")
 	}
 
 	// Find record of our deployment

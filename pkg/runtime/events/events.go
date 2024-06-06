@@ -151,6 +151,25 @@ type ArtifactInstallSuccess struct {
 
 func (ArtifactInstallSuccess) IsEvent() {}
 
+type ArtifactUninstallStarted struct {
+	ArtifactID strfmt.UUID
+}
+
+func (ArtifactUninstallStarted) IsEvent() {}
+
+type ArtifactUninstallFailure struct {
+	ArtifactID strfmt.UUID
+	Error      error
+}
+
+func (ArtifactUninstallFailure) IsEvent() {}
+
+type ArtifactUninstallSuccess struct {
+	ArtifactID strfmt.UUID
+}
+
+func (ArtifactUninstallSuccess) IsEvent() {}
+
 type ArtifactUnpackStarted struct {
 	ArtifactID strfmt.UUID
 	TotalSize  int
