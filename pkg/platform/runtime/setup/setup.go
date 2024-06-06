@@ -614,7 +614,12 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 		s.analytics.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeDownload, dimensions)
 	}
 
-	err = s.installArtifactsFromBuild(bp.IsBuildReady(), bp.Engine(), recipeID, artifactsToInstall, installFunc, logFilePath)
+	buildReady := bp.IsBuildReady()
+	if !buildReady && len(artifactsToInstall.Filter(buildplan.FilterSuccessfulArtifacts())) == len(artifactsToInstall) {
+		// Even though the build may not be complete, all of the necessary artifacts are ready.
+		buildReady = true
+	}
+	err = s.installArtifactsFromBuild(buildReady, bp.Engine(), recipeID, artifactsToInstall, installFunc, logFilePath)
 	if err != nil {
 		return nil, nil, err
 	}
