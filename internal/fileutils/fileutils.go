@@ -819,35 +819,6 @@ func copyFiles(src, dest string, remove bool) error {
 	return nil
 }
 
-// SmartLinkContents will symlink the contents of src to desc
-func SmartLinkContents(src, dest string) error {
-	if !DirExists(src) {
-		return errs.New("src dir does not exist: %s", src)
-	}
-	if err := MkdirUnlessExists(dest); err != nil {
-		return errs.Wrap(err, "Could not create dir: %s", dest)
-	}
-
-	entries, err := os.ReadDir(src)
-	if err != nil {
-		return errs.Wrap(err, "Reading dir %s failed", src)
-	}
-	for _, entry := range entries {
-		if err := SmartLink(filepath.Join(src, entry.Name()), filepath.Join(dest, entry.Name())); err != nil {
-			return errs.Wrap(err, "SmartLink failed")
-		}
-	}
-
-	return nil
-}
-
-func SymLink(src, dest string) error {
-	if err := os.Symlink(src, dest); err != nil {
-		return errs.Wrap(err, "os.Symlink %s:%s failed", src, dest)
-	}
-	return nil
-}
-
 // CopySymlink reads the symlink at src and creates a new
 // link at dest
 func CopySymlink(src, dest string) error {

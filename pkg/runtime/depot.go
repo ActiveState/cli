@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/sliceutils"
+	"github.com/ActiveState/cli/internal/smartlink"
 	"github.com/ActiveState/cli/pkg/runtime/internal/envdef"
 	"github.com/go-openapi/strfmt"
 )
@@ -150,7 +151,7 @@ func (d *depot) Deploy(id strfmt.UUID, path string) error {
 
 		deployType = deploymentTypeCopy
 	} else {
-		if err := fileutils.SmartLinkContents(artifactInstallDir, path); err != nil {
+		if err := smartlink.LinkContents(artifactInstallDir, path); err != nil {
 			return errs.Wrap(err, "failed to link artifact")
 		}
 		deployType = deploymentTypeLink
@@ -196,7 +197,7 @@ func (d *depot) Undeploy(id strfmt.UUID, path string) error {
 			return errs.Wrap(err, "failed to remove artifact")
 		}
 	} else {
-		if err := fileutils.SmartUnlinkContents(d.Path(id), path); err != nil {
+		if err := smartlink.UnlinkContents(d.Path(id), path); err != nil {
 			return errs.Wrap(err, "failed to unlink artifact")
 		}
 	}
