@@ -32,7 +32,7 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, useExecutors bool, projectDir,
 	envMap := make(map[string]string)
 
 	// Source runtime environment information
-	if condition.RuntimeDisabled() {
+	if !condition.RuntimeDisabled() {
 		env := v.runtime.Env()
 		if useExecutors {
 			envMap = env.VariablesWithExecutors
