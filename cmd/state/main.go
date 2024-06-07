@@ -162,6 +162,8 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		return logData
 	})
 
+	projectfile.RegisterOutputer(out) // note: this needs to be done before using auth
+
 	auth := authentication.New(cfg)
 	defer events.Close("auth", auth.Close)
 
