@@ -192,7 +192,6 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 	suite.createProjectFile(ts, 3)
 
 	ts.LoginAsPersistentUser()
-	defer ts.LogoutUser()
 
 	cp := ts.Spawn("run", "test-interrupt")
 	cp.Expect("Start of script")

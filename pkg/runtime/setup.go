@@ -198,7 +198,7 @@ func (s *setup) update() error {
 	}
 
 	// Wait for build to finish
-	if !s.buildplan.IsBuildReady() {
+	if !s.buildplan.IsBuildReady() && len(s.toBuild) > 0 {
 		if err := blog.Wait(context.Background()); err != nil {
 			return errs.Wrap(err, "errors occurred during buildlog streaming")
 		}

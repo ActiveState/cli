@@ -98,8 +98,20 @@ func New(p primeable) *Artifacts {
 }
 
 type errInvalidCommitId struct {
-	error
 	id string
+}
+
+func (e *errInvalidCommitId) Error() string {
+	return "Invalid commit ID"
+}
+
+type errCommitDoesNotExistInProject struct {
+	Project  string
+	CommitID string
+}
+
+func (e *errCommitDoesNotExistInProject) Error() string {
+	return "Commit does not exist in project"
 }
 
 func rationalizeArtifactsError(rerr *error, auth *authentication.Auth) {
@@ -290,7 +302,7 @@ func getBuildPlan(
 
 	commitUUID := strfmt.UUID(commitID)
 	if commitUUID != "" && !strfmt.IsUUID(commitUUID.String()) {
-		return nil, &errInvalidCommitId{errs.New("Invalid commit ID"), commitUUID.String()}
+		return nil, &errInvalidCommitId{commitUUID.String()}
 	}
 
 	namespaceProvided := namespace.IsValid()
@@ -370,6 +382,26 @@ func getBuildPlan(
 
 	default:
 		return nil, errs.New("Unhandled case")
+	}
+
+	// Note: the Platform does not raise an error when requesting a commit ID that does not exist in
+	// a given project, so we have verify existence client-side. See DS-1705 (yes, DS, not DX).
+	var owner, name, nsString string
+	if namespaceProvided {
+		owner = namespace.Owner
+		name = namespace.Project
+		nsString = namespace.String()
+	} else {
+		owner = pj.Owner()
+		name = pj.Name()
+		nsString = pj.NamespaceString()
+	}
+	_, err = model.GetCommitWithinProjectHistory(commit.CommitID, owner, name, auth)
+	if err != nil {
+		if err == model.ErrCommitNotInHistory {
+			return nil, errs.Pack(err, &errCommitDoesNotExistInProject{nsString, commit.CommitID.String()})
+		}
+		return nil, errs.Wrap(err, "Unable to determine if commit exists in project")
 	}
 
 	return commit.BuildPlan(), nil

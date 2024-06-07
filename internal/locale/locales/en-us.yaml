@@ -1298,9 +1298,9 @@ warning_vulnerable_directonly:
   other: |
     [ERROR]Warning: Dependency has {{.V0}} known vulnerabilities (CVEs)[/RESET]
 more_info_vulnerabilities:
-  other: |
-    For more information on these vulnerabilities run '[ACTIONABLE]state security open <ID>[/RESET]'.
-    To disable prompting for vulnerabilities run '[ACTIONABLE]state config set security.prompt.enable false[/RESET]'.
+  other: For more information on these vulnerabilities run '[ACTIONABLE]state security open <ID>[/RESET]'.
+disable_prompting_vulnerabilities:
+  other: To disable prompting for vulnerabilities run '[ACTIONABLE]state config set security.prompt.enable false[/RESET]'.
 prompt_continue_pkg_operation:
   other: |
     Do you want to continue installing this dependency despite its vulnerabilities?
@@ -1470,6 +1470,14 @@ refresh_project_statement:
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 export_project_statement:
   other: Exporting env for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+export_runtime_statement:
+  other: Exporting runtime details for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+export_runtime_details:
+  other: |
+    Project Path: {{.V0}}
+    Runtime Path: {{.V1}}
+    Executables Path: {{.V2}}
+    Environment Variables:{{.V3}}
 err_rtprogress_outofsync:
   other: |
     Received events that appear to be out of order.
@@ -1496,6 +1504,8 @@ err_country_blocked:
   other: This service is not available in your region.
 err_commit_id_invalid:
   other: "Your activestate.yaml contains an invalid commit ID: '{{.V0}}'. Please run '[ACTIONABLE]state reset[/RESET]' to fix it."
+err_commit_id_invalid_given:
+  other: "Invalid commit ID: '{{.V0}}'."
 err_shortcutdir_writable:
   other: Could not continue as we don't have permission to create [ACTIONABLE]{{.V0}}[/RESET].
 move_prompt:
@@ -1536,8 +1546,6 @@ uploadingredient_success:
     You can install this package by running `[ACTIONABLE]state install {{.V1}}/{{.V0}} --ts now`[/RESET].
 err_runtime_cache_invalid:
   other: Your runtime needs to be updated, please run '[ACTIONABLE]state refresh[/RESET]'.
-err_target_not_found:
-  other: Could not find buildscript target '[ACTIONABLE]{{.V0}}[/reset]'. Please check your buildscript and ensure the target exists.
 err_buildscript_not_exist:
   other: Your project does not have a buildscript.as file. Please refer to the documentation on how to create one.
 commit_success:
@@ -1602,7 +1610,7 @@ err_initial_no_requirement:
     To check for available packages run '[ACTIONABLE]state search <package_name>[/RESET]'.
 manifest_deprecation_warning:
   other: |
-    [WARNING]Warning:[/RESET] This command is deprecated, please use '[ACTIONABLE]state manfiest[/RESET]' instead.
+    [WARNING]Warning:[/RESET] This command is deprecated, please use '[ACTIONABLE]state manifest[/RESET]' instead.
 manifest_runtime_needs_update:
   other: "[WARNING]WARNING:[/RESET] Your runtime is out of date, in order to ensure an accurate manifest please run [ACTIONABLE]state refresh[/RESET].\n"
 vulnerability_critical:

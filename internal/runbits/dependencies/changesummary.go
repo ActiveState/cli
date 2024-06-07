@@ -18,23 +18,23 @@ import (
 // dependency numbers.
 const showUpdatedPackages = true
 
-// OutputChangeSummary looks over the given artifact changeset and attempts to determine if a single
-// package install request was made. If so, it computes and lists the additional dependencies being
-// installed for that package.
-// `artifacts` is an ArtifactMap containing artifacts in the changeset, and `filter` contains any
-// runtime requirements/artifacts already installed.
-func OutputChangeSummary(out output.Outputer, changeset *buildplan.ArtifactChangeset, alreadyInstalled buildplan.Artifacts) {
+// OutputChangeSummary looks over the given build plans, and computes and lists the additional
+// dependencies being installed for the requested packages, if any.
+func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan) {
+	requested := newBuildPlan.RequestedArtifacts().ToIDMap()
+
 	addedString := []string{}
 	addedLocale := []string{}
-	added := buildplan.Ingredients{}
 	dependencies := buildplan.Ingredients{}
 	directDependencies := buildplan.Ingredients{}
+	changeset := newBuildPlan.DiffArtifacts(oldBuildPlan, false)
 	for _, a := range changeset.Added {
-		added = append(added, a.Ingredients...)
-		for _, i := range a.Ingredients {
-			v := fmt.Sprintf("%s@%s", i.Name, i.Version)
+		if _, exists := requested[a.ArtifactID]; exists {
+			v := fmt.Sprintf("%s@%s", a.Name(), a.Version())
 			addedString = append(addedLocale, v)
 			addedLocale = append(addedLocale, fmt.Sprintf("[ACTIONABLE]%s[/RESET]", v))
+		}
+		for _, i := range a.Ingredients {
 			dependencies = append(dependencies, i.RuntimeDependencies(true)...)
 			directDependencies = append(dependencies, i.RuntimeDependencies(false)...)
 		}
@@ -55,13 +55,17 @@ func OutputChangeSummary(out output.Outputer, changeset *buildplan.ArtifactChang
 	}
 
 	// Process the existing runtime requirements into something we can easily compare against.
+	alreadyInstalled := buildplan.Artifacts{}
+	if oldBuildPlan != nil {
+		alreadyInstalled = oldBuildPlan.Artifacts()
+	}
 	oldRequirements := alreadyInstalled.Ingredients().ToIDMap()
 
 	localeKey := "additional_dependencies"
 	if numIndirect > 0 {
 		localeKey = "additional_total_dependencies"
 	}
-	out.Notice(locale.Tr(localeKey, strings.Join(addedLocale, ", "), strconv.Itoa(len(directDependencies)), strconv.Itoa(numIndirect)))
+	out.Notice("   " + locale.Tr(localeKey, strings.Join(addedLocale, ", "), strconv.Itoa(len(directDependencies)), strconv.Itoa(numIndirect)))
 
 	// A direct dependency list item is of the form:
 	//   ├─ name@version (X dependencies)
@@ -70,14 +74,13 @@ func OutputChangeSummary(out output.Outputer, changeset *buildplan.ArtifactChang
 	// depending on whether or not it has subdependencies, and whether or not showUpdatedPackages is
 	// `true`.
 	for i, ingredient := range directDependencies {
-		prefix := "├─"
+		prefix := " ├─"
 		if i == len(directDependencies)-1 {
-			prefix = "└─"
+			prefix = " └─"
 		}
 
-		ingredientDeps := ingredient.RuntimeDependencies(true)
 		subdependencies := ""
-		if numSubs := len(ingredientDeps); numSubs > 0 {
+		if numSubs := len(ingredient.RuntimeDependencies(true)); numSubs > 0 {
 			subdependencies = fmt.Sprintf(" ([ACTIONABLE]%s[/RESET] dependencies)", // intentional leading space
 				strconv.Itoa(numSubs))
 		}

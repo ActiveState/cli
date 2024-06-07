@@ -23,6 +23,10 @@ github.com/ActiveState/pty v0.0.0-20230628221854-6fb90eb08a14 h1:RdhhSiwmgyUaaF2
 github.com/ActiveState/pty v0.0.0-20230628221854-6fb90eb08a14/go.mod h1:5mM6vNRQwshCjlkOnVpwC//4ZpkiC6nmZr8lPOxJdXs=
 github.com/ActiveState/termtest v0.7.3-0.20231006191111-13d903a6f2de h1:KqSmWBIEQracF6ixlQ0eNeKN+wYxDHNJWbrShI6F8NE=
 github.com/ActiveState/termtest v0.7.3-0.20231006191111-13d903a6f2de/go.mod h1:RyWp2NaaTrVAa+XjMHpKAqwBFWbL6wE12HQxiZNGAqU=
+github.com/ActiveState/termtest v0.7.3-0.20240516194214-af40d395ed40 h1:YDXHYDjYNJRlH1Qr2PD/NnYIR38PhhRATcxlgwcQjpY=
+github.com/ActiveState/termtest v0.7.3-0.20240516194214-af40d395ed40/go.mod h1:RyWp2NaaTrVAa+XjMHpKAqwBFWbL6wE12HQxiZNGAqU=
+github.com/ActiveState/termtest v0.7.3-0.20240522153407-fcd066736664 h1:0W+6cvjhkhF7AtCQJDGooMpOhDF4wqZpZyO2loIqtgY=
+github.com/ActiveState/termtest v0.7.3-0.20240522153407-fcd066736664/go.mod h1:RyWp2NaaTrVAa+XjMHpKAqwBFWbL6wE12HQxiZNGAqU=
 github.com/AlecAivazis/survey/v2 v2.0.5/go.mod h1:WYBhg6f0y/fNYUuesWQc0PKbJcEliGcYHB9sNT3Bg74=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 h1:w+iIsaOQNcT7OZ575w+acHgRric5iCyQh+xv+KJ4HB8=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78/go.mod h1:LmzpDX56iTiv29bbRTIsUNlaFfuhWRQBWjQdVyAevI8=

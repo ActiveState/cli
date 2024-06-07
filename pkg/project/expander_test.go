@@ -230,7 +230,8 @@ func TestExpandScriptPathRecursive(t *testing.T) {
 
 func TestExpandBashScriptPath(t *testing.T) {
 	prj := loadProject(t)
-	script := prj.ScriptByName("bashScriptPath")
+	script, err := prj.ScriptByName("bashScriptPath")
+	require.NoError(t, err)
 	require.NotNil(t, script, "bashScriptPath script does not exist")
 	value, err := script.Value()
 	require.NoError(t, err)

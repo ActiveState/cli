@@ -163,14 +163,6 @@ func main() {
 	err = cmd.Execute(os.Args[1:])
 	if err != nil {
 		errors.ReportError(err, cmd, an)
-		if locale.IsInputError(err) {
-			logging.Error("Installer input error: " + errs.JoinMessage(err))
-		} else if errs.IsExternalError(err) {
-			logging.Error("Installer external error: " + errs.JoinMessage(err))
-		} else {
-			multilog.Critical("Installer error: " + errs.JoinMessage(err))
-		}
-
 		exitCode, err = errors.ParseUserFacing(err)
 		if err != nil {
 			out.Error(err)
@@ -218,6 +210,7 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	}
 	out.Print(locale.Tl("remote_install_status_done", "[SUCCESS]✔ Done[/RESET]"))
 
+	out.Print(locale.Tl("remote_install_status_running", "• Running Installer..."))
 	if params.nonInteractive {
 		args = append(args, "-n") // forward to installer
 	}

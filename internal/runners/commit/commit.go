@@ -61,7 +61,7 @@ func rationalizeError(err *error) {
 	case errors.Is(*err, ErrNoChanges):
 		*err = errs.WrapUserFacing(*err, locale.Tl(
 			"commit_notice_no_change",
-			"No change to the buildscript was found.",
+			"Your buildscript contains no new changes. No commit necessary.",
 		), errs.SetInput())
 
 	case errs.Matches(*err, buildscript_runbit.ErrBuildscriptNotExist):
@@ -81,13 +81,6 @@ func (c *Commit) Run() (rerr error) {
 	if c.proj == nil {
 		return rationalize.ErrNoProject
 	}
-
-	pg := output.StartSpinner(c.out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
-	defer func() {
-		if pg != nil {
-			pg.Stop(locale.T("progress_fail") + "\n")
-		}
-	}()
 
 	// Get buildscript.as representation
 	script, err := buildscript_runbit.ScriptFromProject(c.proj)
@@ -115,6 +108,13 @@ func (c *Commit) Run() (rerr error) {
 	if equals {
 		return ErrNoChanges
 	}
+
+	pg := output.StartSpinner(c.out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
+	defer func() {
+		if pg != nil {
+			pg.Stop(locale.T("progress_fail") + "\n")
+		}
+	}()
 
 	stagedCommitID, err := bp.StageCommit(buildplanner.StageCommitParams{
 		Owner:        c.proj.Owner(),

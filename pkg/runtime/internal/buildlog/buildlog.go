@@ -199,12 +199,19 @@ func (b *BuildLog) waitForBuildLog(ctx context.Context, conn *websocket.Conn, er
 		return result
 	}
 
-	buildSuccess := func() {
-		if err := writeLogFile("", "Build Succeeded"); err != nil {
+	anyFailures := false
+	buildFinished := func() {
+		status := "Succeeded"
+		var event events.Event = events.BuildSuccess{}
+		if anyFailures {
+			status = "Failed"
+			event = events.BuildFailure{}
+		}
+		if err := writeLogFile("", "Build "+status); err != nil {
 			errCh <- errs.Wrap(err, "Could not write to build log file")
 		}
-		if err := b.fireEvent(events.BuildSuccess{}); err != nil {
-			errCh <- errs.Wrap(err, "Could not handle BuildSuccess event")
+		if err := b.fireEvent(event); err != nil {
+			errCh <- errs.Wrap(err, "Could not handle BuildSuccess/BuildFailure event")
 		}
 	}
 
@@ -247,7 +254,7 @@ func (b *BuildLog) waitForBuildLog(ctx context.Context, conn *websocket.Conn, er
 			if observed(msg.MessageTypeValue()) {
 				break
 			}
-			buildSuccess()
+			buildFinished()
 			return
 		case ArtifactStarted:
 			m := msg.messager.(ArtifactMessage)
@@ -337,10 +344,11 @@ Artifact Build Succeeded.
 			// and stop monitoring the buildlogstreamer when we've received events for all our artifacts.
 			// This can be dropped once buildlostreamer speaks buildplans.
 			if len(stillWaiting()) == 0 {
-				buildSuccess()
+				buildFinished()
 				return
 			}
 		case ArtifactFailed:
+			anyFailures = true
 			m := msg.messager.(ArtifactFailedMessage)
 
 			ad, ok := b.artifactMap[m.ArtifactID]
@@ -374,6 +382,11 @@ Artifact Build Failed.
 				errs.New("artifact build failed"),
 				ad,
 				&m,
+			}
+
+			if len(stillWaiting()) == 0 {
+				buildFinished()
+				return
 			}
 
 		case ArtifactProgress:

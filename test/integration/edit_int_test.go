@@ -112,7 +112,8 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 	pj, err := project.FromPath(ts.Dirs.Work)
 	suite.Require().NoError(err)
 
-	s := pj.ScriptByName("test-script")
+	s, err := pj.ScriptByName("test-script")
+	suite.Require().NoError(err)
 	suite.Require().NotNil(s, "test-script should not be empty")
 	v, err := s.Value()
 	suite.Require().NoError(err)

@@ -46,7 +46,8 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newExportGithubActionCommand(prime),
 		newExportDocsCommand(prime),
 		newExportEnvCommand(prime),
-		newLogCommand(prime),
+		newExportLogCommand(prime),
+		newExportRuntimeCommand(prime),
 	)
 
 	platformsCmd := newPlatformsCommand(prime)
@@ -238,10 +239,10 @@ var (
 	ProjectUsageGroup     = captain.NewCommandGroup(locale.Tl("group_project_usages", "Project Usage"), 8)
 	PackagesGroup         = captain.NewCommandGroup(locale.Tl("group_packages", "Package Management"), 7)
 	PlatformGroup         = captain.NewCommandGroup(locale.Tl("group_tools", "Platform"), 6)
-	VCSGroup              = captain.NewCommandGroup(locale.Tl("group_vcs", "Version Control"), 5)
-	AutomationGroup       = captain.NewCommandGroup(locale.Tl("group_automation", "Automation"), 4)
-	UtilsGroup            = captain.NewCommandGroup(locale.Tl("group_utils", "Utilities"), 3)
-	AuthorGroup           = captain.NewCommandGroup(locale.Tl("group_author", "Author"), 6)
+	AuthorGroup           = captain.NewCommandGroup(locale.Tl("group_author", "Author"), 5)
+	VCSGroup              = captain.NewCommandGroup(locale.Tl("group_vcs", "Version Control"), 4)
+	AutomationGroup       = captain.NewCommandGroup(locale.Tl("group_automation", "Automation"), 3)
+	UtilsGroup            = captain.NewCommandGroup(locale.Tl("group_utils", "Utilities"), 2)
 )
 
 func newGlobalOptions() *globalOptions {
