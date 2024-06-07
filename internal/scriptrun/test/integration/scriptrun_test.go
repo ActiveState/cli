@@ -143,7 +143,7 @@ func (suite *ScriptRunSuite) TestRunNoProjectInheritance() {
 project: "https://platform.activestate.com/ActiveState/pjfile"
 scripts:
   - name: run
-    value: echo $ACTIVESTATE_PROJECT
+    value: echo $ACTIVESTATE_ACTIVATED
     standalone: true
 `)
 	} else {
@@ -151,7 +151,7 @@ scripts:
 project: "https://platform.activestate.com/ActiveState/pjfile"
 scripts:
   - name: run
-    value: echo %ACTIVESTATE_PROJECT%
+    value: echo %ACTIVESTATE_ACTIVATED%
     standalone: true
 `)
 	}
