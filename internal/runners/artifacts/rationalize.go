@@ -13,6 +13,7 @@ import (
 func rationalizeCommonError(err *error, auth *authentication.Auth) {
 	var invalidCommitIdErr *errInvalidCommitId
 	var projectNotFoundErr *model.ErrProjectNotFound
+	var commitIdDoesNotExistInProject *errCommitDoesNotExistInProject
 
 	switch {
 	case errors.Is(*err, rationalize.ErrNoProject):
@@ -29,6 +30,15 @@ func rationalizeCommonError(err *error, auth *authentication.Auth) {
 		*err = errs.WrapUserFacing(*err,
 			locale.Tr("err_api_project_not_found", projectNotFoundErr.Organization, projectNotFoundErr.Project),
 			errs.SetIf(!auth.Authenticated(), errs.SetTips(locale.T("tip_private_project_auth"))),
+			errs.SetInput())
+
+	case errors.As(*err, &commitIdDoesNotExistInProject):
+		*err = errs.WrapUserFacing(*err,
+			locale.Tl("err_commit_id_not_in_history",
+				"The project '[ACTIONABLE]{{.V0}}[/RESET]' does not contain the provided commit: '[ACTIONABLE]{{.V1}}[/RESET]'.",
+				commitIdDoesNotExistInProject.Project,
+				commitIdDoesNotExistInProject.CommitID,
+			),
 			errs.SetInput())
 	}
 
