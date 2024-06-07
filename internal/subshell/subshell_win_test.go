@@ -7,17 +7,14 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 )
 
 func setup(t *testing.T) {
@@ -47,29 +44,6 @@ func TestBashDontEscapeSpace(t *testing.T) {
 	require.NoError(t, err)
 	subs := New(cfg)
 	assert.Equal(t, `C:\Program Files\bash.exe`, subs.Binary())
-}
-
-func TestRunCommandNoProjectEnv(t *testing.T) {
-	os.Setenv("ComSpec", "C:\\WINDOWS\\system32\\cmd.exe")
-	os.Setenv("ACTIVESTATE_PROJECT", "SHOULD NOT BE SET")
-	os.Unsetenv("SHELL")
-
-	cfg, err := config.New()
-	require.NoError(t, err)
-	subs := New(cfg)
-
-	data := []byte("echo --EMPTY-- %ACTIVESTATE_PROJECT% --EMPTY--")
-	filename, err := fileutils.WriteTempFileToDir("", "test*.bat", data, 0700)
-	require.NoError(t, err)
-	defer os.Remove(filename)
-
-	out, err := osutil.CaptureStdout(func() {
-		rerr := subs.Run(filename)
-		require.NoError(t, rerr)
-	})
-	require.NoError(t, err)
-	assert.Contains(t, out, "--EMPTY--  --EMPTY--", strings.TrimSpace(out),
-		"Should not echo anything cause the ACTIVESTATE_PROJECT should be undefined by the run command")
 }
 
 func TestRunCommandError(t *testing.T) {

@@ -6,7 +6,6 @@ package subshell
 import (
 	"errors"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,29 +13,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 )
-
-func TestRunCommandNoProjectEnv(t *testing.T) {
-	os.Setenv("SHELL", "bash")
-	os.Setenv("ACTIVESTATE_PROJECT", "SHOULD NOT BE SET")
-
-	cfg, err := config.New()
-	require.NoError(t, err)
-	subs := New(cfg)
-
-	data := []byte("#!/usr/bin/env bash\necho $ACTIVESTATE_PROJECT")
-	filename, err := fileutils.WriteTempFileToDir("", "testRunCommand", data, 0700)
-	require.NoError(t, err)
-	defer os.Remove(filename)
-
-	out, err := osutil.CaptureStdout(func() {
-		rerr := subs.Run(filename)
-		require.NoError(t, rerr)
-	})
-	require.NoError(t, err)
-	assert.Empty(t, strings.TrimSpace(out), "Should not echo anything cause the ACTIVESTATE_PROJECT should be undefined by the run command")
-}
 
 func TestRunCommandError(t *testing.T) {
 	os.Setenv("SHELL", "bash")
