@@ -387,19 +387,19 @@ func getBuildPlan(
 	// Note: the Platform does not raise an error when requesting a commit ID that does not exist in
 	// a given project, so we have verify existence client-side. See DS-1705 (yes, DS, not DX).
 	var owner, name, nsString string
-	if pj != nil {
-		owner = pj.Owner()
-		name = pj.Name()
-		nsString = pj.NamespaceString()
-	} else {
+	if namespaceProvided {
 		owner = namespace.Owner
 		name = namespace.Project
 		nsString = namespace.String()
+	} else {
+		owner = pj.Owner()
+		name = pj.Name()
+		nsString = pj.NamespaceString()
 	}
 	_, err = model.GetCommitWithinProjectHistory(commit.CommitID, owner, name, auth)
 	if err != nil {
 		if err == model.ErrCommitNotInHistory {
-			return nil, &errCommitDoesNotExistInProject{nsString, commit.CommitID.String()}
+			return nil, errs.Pack(err, &errCommitDoesNotExistInProject{nsString, commit.CommitID.String()})
 		}
 		return nil, errs.Wrap(err, "Unable to determine if commit exists in project")
 	}
