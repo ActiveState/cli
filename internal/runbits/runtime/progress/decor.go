@@ -57,7 +57,7 @@ func (p *ProgressDigester) addArtifactBar(id strfmt.UUID, step step, total int64
 		if a, ok := p.buildsExpected[id]; ok {
 			name = a.NameAndVersion()
 		}
-	case StepDownload:
+	case StepDownload, StepUnpack:
 		if a, ok := p.downloadsExpected[id]; ok {
 			name = a.NameAndVersion()
 		}
