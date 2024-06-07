@@ -137,15 +137,12 @@ func (ft *FileTransform) ApplyTransform(baseDir string, constants Constants) err
 
 // ApplyFileTransforms applies all file transformations to the files in the base directory
 func (ed *EnvironmentDefinition) ApplyFileTransforms(installDir string) error {
-	constants, err := NewConstants(installDir)
-	if err != nil {
-		return errs.Wrap(err, "Could not get new environment constants")
-	}
+	constants := NewConstants(installDir)
 
 	for _, ft := range ed.Transforms {
 		err := ft.ApplyTransform(installDir, constants)
 		if err != nil {
-			return err
+			return errs.Wrap(err, "transformation failed")
 		}
 	}
 	return nil

@@ -66,10 +66,6 @@ func (c *Collection) Environment(installPath string) (map[string]string, error) 
 			return nil, errs.Wrap(err, "Failed to merge environment definitions")
 		}
 	}
-	constants, err := NewConstants(installPath)
-	if err != nil {
-		return nil, errs.Wrap(err, "Failed to load constants")
-	}
-
+	constants := NewConstants(installPath)
 	return result.ExpandVariables(constants).GetEnv(false), nil
 }

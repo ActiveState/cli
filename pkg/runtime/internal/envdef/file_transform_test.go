@@ -63,9 +63,7 @@ func TestApplyConstTransforms(t *testing.T) {
 	dir, err = fileutils.GetLongPathName(dir)
 	assert.NoError(t, err)
 
-	cs, err := NewConstants(dir)
-	assert.NoError(t, err)
-	assert.NoError(t, err)
+	cs := NewConstants(dir)
 
 	cases := []struct {
 		Name          string
