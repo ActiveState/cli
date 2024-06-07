@@ -440,10 +440,18 @@ func (s *setup) uninstall(id strfmt.UUID) (rerr error) {
 	if err := s.fireEvent(events.ArtifactUninstallStarted{id}); err != nil {
 		return errs.Wrap(err, "Could not handle ArtifactUninstallStarted event")
 	}
-	if err := s.env.Unload(s.depot.Path(id)); err != nil {
+
+	artifactDepotPath := s.depot.Path(id)
+	envDef, err := s.env.Load(artifactDepotPath)
+	if err != nil {
+		return errs.Wrap(err, "Could not get env")
+	}
+
+	if err := s.env.Unload(artifactDepotPath); err != nil {
 		return errs.Wrap(err, "Could not unload artifact envdef")
 	}
-	if err := s.depot.Undeploy(id, s.path); err != nil {
+
+	if err := s.depot.Undeploy(id, envDef.InstallDir, s.path); err != nil {
 		return errs.Wrap(err, "Could not unlink artifact")
 	}
 

@@ -183,7 +183,7 @@ func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) 
 	return nil
 }
 
-func (d *depot) Undeploy(id strfmt.UUID, path string) error {
+func (d *depot) Undeploy(id strfmt.UUID, relativeSrc, path string) error {
 	if !d.Exists(id) {
 		return errs.New("artifact not found in depot")
 	}
@@ -205,14 +205,8 @@ func (d *depot) Undeploy(id strfmt.UUID, path string) error {
 	}
 
 	// Perform uninstall based on deployment type
-	if deploy[0].Type == deploymentTypeCopy {
-		if err := os.RemoveAll(path); err != nil {
-			return errs.Wrap(err, "failed to remove artifact")
-		}
-	} else {
-		if err := smartlink.UnlinkContents(d.Path(id), path); err != nil {
-			return errs.Wrap(err, "failed to unlink artifact")
-		}
+	if err := smartlink.UnlinkContents(filepath.Join(d.Path(id), relativeSrc), path); err != nil {
+		return errs.Wrap(err, "failed to unlink artifact")
 	}
 
 	// Write changes to config

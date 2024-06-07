@@ -6,6 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 // LinkContents will link the contents of src to desc
@@ -89,6 +90,7 @@ func UnlinkContents(src, dest string) error {
 		srcPath := filepath.Join(src, entry.Name())
 		destPath := filepath.Join(dest, entry.Name())
 		if !fileutils.TargetExists(destPath) {
+			logging.Warning("Could not unlink '%s' as it does not exist", destPath)
 			continue
 		}
 
@@ -97,8 +99,8 @@ func UnlinkContents(src, dest string) error {
 				return err // Not wrapping here cause it'd just repeat the same error due to the recursion
 			}
 		} else {
-			if err := unlinkFile(srcPath, destPath); err != nil {
-				return errs.Wrap(err, "Could not unlink %s", destPath)
+			if err := os.Remove(destPath); err != nil {
+				return errs.Wrap(err, "Could not delete %s", destPath)
 			}
 		}
 	}
@@ -112,34 +114,6 @@ func UnlinkContents(src, dest string) error {
 		if err := os.Remove(dest); err != nil {
 			return errs.Wrap(err, "Could not delete dir %s", dest)
 		}
-	}
-
-	return nil
-}
-
-// unlinkFile will unlink dest from src, provided that it does in fact link to src
-func unlinkFile(src, dest string) error {
-	if !fileutils.TargetExists(dest) {
-		return errs.New("dest dir does not exist: %s", dest)
-	}
-
-	if fileutils.IsDir(dest) {
-		return errs.New("dest is a directory, not a file: %s", dest)
-	}
-
-	realPath, err := filepath.EvalSymlinks(dest)
-	if err != nil {
-		return errs.Wrap(err, "Could not evaluate symlink of %s", dest)
-	}
-
-	// Ensure we only delete this file if we can ensure that it comes from our src
-	if realPath != src {
-		return errs.New("File %s has unexpected link: %s", dest, realPath)
-	}
-
-	// Delete the link
-	if err := os.Remove(dest); err != nil {
-		return errs.Wrap(err, "Could not unlink %s", dest)
 	}
 
 	return nil
