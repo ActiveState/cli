@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/osutils/termsize"
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 )
 
 type TermsizeTestSuite struct {

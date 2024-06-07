@@ -1,4 +1,4 @@
-package buildscript
+package buildscript_runbit
 
 import (
 	"path/filepath"
@@ -6,13 +6,13 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
+	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDiff(t *testing.T) {
-	script, err := buildscript.New([]byte(
+	script, err := buildscript.Unmarshal([]byte(
 		`at_time = "2000-01-01T00:00:00.000Z"
 runtime = solve(
 	at_time = at_time,
@@ -21,15 +21,18 @@ runtime = solve(
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/perl")
+		Req(name = "perl", namespace = "language")
 	]
 )
 
 main = runtime`))
 	require.NoError(t, err)
 
+	bs, err := script.Marshal()
+	require.NoError(t, err)
+
 	// Modify the build script.
-	modifiedScript, err := buildscript.New([]byte(strings.Replace(script.String(), "12345", "77777", 1)))
+	modifiedScript, err := buildscript.Unmarshal([]byte(strings.Replace(string(bs), "12345", "77777", 1)))
 	require.NoError(t, err)
 
 	// Generate the difference between the modified script and the original expression.
@@ -47,7 +50,7 @@ runtime = solve(
 		"67890"
 	],
 	requirements = [
-		Req(name = "language/perl")
+		Req(name = "perl", namespace = "language")
 	]
 )
 
@@ -62,9 +65,9 @@ main = runtime`, result)
 //   - The local project pulls from the Platform project, resulting in conflicting times and version
 //     requirements for requests.
 func TestRealWorld(t *testing.T) {
-	script1, err := buildscript.New(fileutils.ReadFileUnsafe(filepath.Join("testdata", "buildscript1.as")))
+	script1, err := buildscript.Unmarshal(fileutils.ReadFileUnsafe(filepath.Join("testdata", "buildscript1.as")))
 	require.NoError(t, err)
-	script2, err := buildscript.New(fileutils.ReadFileUnsafe(filepath.Join("testdata", "buildscript2.as")))
+	script2, err := buildscript.Unmarshal(fileutils.ReadFileUnsafe(filepath.Join("testdata", "buildscript2.as")))
 	require.NoError(t, err)
 	result, err := generateDiff(script1, script2)
 	require.NoError(t, err)
@@ -88,11 +91,11 @@ sources = solve(
 		"96b7e6f2-bebf-564c-bc1c-f04482398f38"
 	],
 	requirements = [
-		Req(name = "language/python", version = Eq(value = "3.10.11")),
+		Req(name = "python", namespace = "language", version = Eq(value = "3.10.11")),
 <<<<<<< local
-		Req(name = "language/python/requests")
+		Req(name = "requests", namespace = "language/python")
 =======
-		Req(name = "language/python/requests", version = Eq(value = "2.30.0"))
+		Req(name = "requests", namespace = "language/python", version = Eq(value = "2.30.0"))
 >>>>>>> remote
 	],
 	solver_version = null

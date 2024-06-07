@@ -59,8 +59,6 @@ const (
 	protocolCommandKey = `SOFTWARE\Classes\state\shell\open\command`
 )
 
-type createKeyFunc = func(path string) (osutils.RegistryKey, bool, error)
-
 func setStateProtocol() error {
 	isAdmin, err := osutils.IsAdmin()
 	if err != nil {

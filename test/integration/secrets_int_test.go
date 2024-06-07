@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	"github.com/ActiveState/cli/internal/runners/secrets"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -14,7 +14,6 @@ import (
 
 type SecretsIntegrationTestSuite struct {
 	tagsuite.Suite
-	originalWd string
 }
 
 func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {

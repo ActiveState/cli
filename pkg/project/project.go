@@ -132,7 +132,7 @@ func (p *Project) Events() []*Event {
 // EventByName returns a reference to a projectfile.Script with a given name.
 func (p *Project) EventByName(name string, bashifyPaths bool) *Event {
 	for _, event := range p.Events() {
-		if strings.ToLower(event.Name()) == strings.ToLower(name) {
+		if strings.EqualFold(event.Name(), name) {
 			event.BashifyPaths = bashifyPaths
 			return event
 		}
@@ -141,27 +141,31 @@ func (p *Project) EventByName(name string, bashifyPaths bool) *Event {
 }
 
 // Scripts returns a reference to projectfile.Scripts
-func (p *Project) Scripts() []*Script {
+func (p *Project) Scripts() ([]*Script, error) {
 	constrained, err := constraints.FilterUnconstrained(pConditional, p.projectfile.Scripts.AsConstrainedEntities())
 	if err != nil {
-		logging.Warning("Could not filter unconstrained scripts: %v", err)
+		return nil, errs.Wrap(err, "Could not filter unconstrained scripts")
 	}
 	scs := projectfile.MakeScriptsFromConstrainedEntities(constrained)
 	scripts := make([]*Script, 0, len(scs))
 	for _, s := range scs {
 		scripts = append(scripts, &Script{s, p})
 	}
-	return scripts
+	return scripts, nil
 }
 
 // ScriptByName returns a reference to a projectfile.Script with a given name.
-func (p *Project) ScriptByName(name string) *Script {
-	for _, script := range p.Scripts() {
+func (p *Project) ScriptByName(name string) (*Script, error) {
+	scripts, err := p.Scripts()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get scripts")
+	}
+	for _, script := range scripts {
 		if script.Name() == name {
-			return script
+			return script, nil
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 // Jobs returns a reference to projectfile.Jobs
@@ -576,12 +580,16 @@ func (j *Job) Constants() []*Constant {
 	return constants
 }
 
-func (j *Job) Scripts() []*Script {
+func (j *Job) Scripts() ([]*Script, error) {
 	scripts := []*Script{}
 	for _, scriptName := range j.job.Scripts {
-		if script := j.project.ScriptByName(scriptName); script != nil {
+		script, err := j.project.ScriptByName(scriptName)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get script")
+		}
+		if script != nil {
 			scripts = append(scripts, script)
 		}
 	}
-	return scripts
+	return scripts, nil
 }

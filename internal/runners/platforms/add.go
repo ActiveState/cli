@@ -4,8 +4,9 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -40,24 +41,24 @@ func NewAdd(prime primeable) *Add {
 func (a *Add) Run(ps AddRunParams) error {
 	logging.Debug("Execute platforms add")
 
-	params, err := prepareParams(ps.Params, a.prime.Auth())
+	params, err := prepareParams(ps.Params)
 	if err != nil {
 		return err
 	}
 
 	if a.prime.Project() == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 
 	if err := requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(
-		params.name,
-		params.version,
 		nil,
-		params.BitWidth,
-		bpModel.OperationAdded,
-		nil,
-		&model.NamespacePlatform,
-		nil,
+		&requirements.Requirement{
+			Name:          params.name,
+			Version:       params.version,
+			Operation:     types.OperationAdded,
+			BitWidth:      params.BitWidth,
+			NamespaceType: &model.NamespacePlatform,
+		},
 	); err != nil {
 		return locale.WrapError(err, "err_add_platform", "Could not add platform.")
 	}

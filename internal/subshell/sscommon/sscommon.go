@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/sighandler"
 )
 
@@ -28,9 +29,14 @@ func Start(cmd *exec.Cmd) chan error {
 
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 
-	cmd.Start()
-
 	errors := make(chan error, 1)
+
+	err := cmd.Start()
+	if err != nil {
+		errors <- errs.Wrap(err, "Failed to start command: %s", cmd.String())
+		close(errors)
+		return errors
+	}
 
 	go func() {
 		defer close(errors)
@@ -121,7 +127,7 @@ func runWithCmd(env []string, name string, args ...string) error {
 	case ".bat":
 		// No action required
 	case ".ps1":
-		args = append([]string{"-file", name}, args...)
+		args = append([]string{"-executionpolicy", "bypass", "-file", name}, args...)
 		name = "powershell"
 	case ".sh":
 		bashPath, err := osutils.BashifyPath(name)
@@ -151,13 +157,13 @@ func binaryPathCmd(env []string, name string) (string, error) {
 
 	split := strings.Split(string(out), "\r\n")
 	if len(split) == 0 {
-		return "", locale.NewInputError("err_sscommon_binary_path", name)
+		return "", locale.NewExternalError("err_sscommon_binary_path", name)
 	}
 
 	return split[0], nil
 }
 
-func runDirect(env []string, name string, args ...string) error {
+func runDirect(env []string, name string, args ...string) (rerr error) {
 	logging.Debug("Running command: %s %s", name, strings.Join(args, " "))
 
 	runCmd := exec.Command(name, args...)
@@ -175,7 +181,7 @@ func runDirect(env []string, name string, args ...string) error {
 	// - https://www.pivotaltracker.com/story/show/167523128
 	bs := sighandler.NewBackgroundSignalHandler(func(_ os.Signal) {}, os.Interrupt)
 	sighandler.Push(bs)
-	defer sighandler.Pop()
+	defer rtutils.Closer(sighandler.Pop, &rerr)
 
 	err := runCmd.Run()
 	// silence exit code errors

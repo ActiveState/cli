@@ -6,8 +6,8 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/stretchr/testify/suite"
 )
 
 type ProgressIntegrationTestSuite struct {
@@ -23,7 +23,7 @@ func (suite *ProgressIntegrationTestSuite) TestProgress() {
 		e2e.OptArgs("checkout", "ActiveState-CLI/small-python"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect(locale.T("setup_runtime"))
+	cp.Expect(locale.T("install_runtime"))
 	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
 	suite.Assert().NotContains(cp.Output(), "...")
 	cp.ExpectExitCode(0)

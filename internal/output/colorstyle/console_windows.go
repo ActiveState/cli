@@ -20,11 +20,13 @@ var consoleStyleMap = map[Style]uint16{
 	Black:   0,
 	Red:     consoleRed,
 	Green:   consoleGreen,
-	Yellow:  consoleRed | consoleGreen,
+	Yellow:  consoleRed | consoleGreen | consoleIntensity,
 	Blue:    consoleBlue,
 	Magenta: consoleRed | consoleBlue,
 	Cyan:    consoleGreen | consoleBlue,
-	White:   consoleRed | consoleGreen | consoleBlue}
+	White:   consoleRed | consoleGreen | consoleBlue,
+	Orange:  consoleRed | consoleGreen,
+}
 
 const (
 	consoleBlue      = uint16(0x0001)
@@ -69,7 +71,7 @@ func init() {
 	procGetStdHandle = kernel32.NewProc("GetStdHandle")
 	hStdout, _, _ = procGetStdHandle.Call(uintptr(stdOutHandle))
 	bufferInfo = getConsoleScreenBufferInfo(hStdout)
-	syscall.LoadDLL("")
+	_, _ = syscall.LoadDLL("")
 }
 
 type Styler struct {

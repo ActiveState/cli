@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/go-openapi/strfmt"
@@ -40,7 +42,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -350,6 +351,17 @@ func (s *Session) PrepareProject(namespace, commitID string) {
 	}
 }
 
+func (s *Session) PrepareProjectAndBuildScript(namespace, commitID string) {
+	s.PrepareProject(namespace, commitID)
+	bp := buildplanner.NewBuildPlannerModel(nil)
+	script, err := bp.GetBuildScript(commitID)
+	require.NoError(s.T, err)
+	b, err := script.Marshal()
+	require.NoError(s.T, err)
+	err = fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.BuildScriptFileName), b)
+	require.NoError(s.T, err)
+}
+
 // PrepareFile writes a file to path with contents, expecting no error
 func (s *Session) PrepareFile(path, contents string) {
 	errMsg := fmt.Sprintf("cannot setup file %q", path)
@@ -439,16 +451,6 @@ const deleteUUIDProjects = "__delete_uuid_projects" // some unique project name
 // projects.
 func (s *Session) DeleteUUIDProjects(org string) {
 	s.NotifyProjectCreated(org, deleteUUIDProjects)
-}
-
-func observeSendFn(s *Session) func(string, int, error) {
-	return func(msg string, num int, err error) {
-		if err == nil {
-			return
-		}
-
-		s.T.Fatalf("Could not send data to terminal\nerror: %v", err)
-	}
 }
 
 func (s *Session) DebugMessage(prefix string) string {
@@ -604,18 +606,19 @@ func (s *Session) InstallerLog() string {
 	if !fileutils.DirExists(logDir) {
 		return ""
 	}
-	files := fileutils.ListDirSimple(logDir, false)
-	lines := []string{}
+	files, err := fileutils.ListDirSimple(logDir, false)
+	if err != nil {
+		return fmt.Sprintf("Could not list log dir: %v", err)
+	}
 	for _, file := range files {
 		if !strings.HasPrefix(filepath.Base(file), "state-installer") {
 			continue
 		}
 		b := fileutils.ReadFileUnsafe(file)
-		lines = append(lines, filepath.Base(file)+":"+strings.Split(string(b), "\n")[0])
 		return string(b) + "\n\nCurrent time: " + time.Now().String()
 	}
 
-	return fmt.Sprintf("Could not find state-installer log, checked under %s, found: \n%v\n, files: \n%v\n", logDir, lines, files)
+	return fmt.Sprintf("Could not find state-installer log, checked under %s, found: \n, files: \n%v\n", logDir, files)
 }
 
 func (s *Session) SvcLog() string {
@@ -623,7 +626,10 @@ func (s *Session) SvcLog() string {
 	if !fileutils.DirExists(logDir) {
 		return ""
 	}
-	files := fileutils.ListDirSimple(logDir, false)
+	files, err := fileutils.ListDirSimple(logDir, false)
+	if err != nil {
+		return fmt.Sprintf("Could not list log dir: %v", err)
+	}
 	lines := []string{}
 	for _, file := range files {
 		if !strings.HasPrefix(filepath.Base(file), "state-svc") {
@@ -648,7 +654,7 @@ func (s *Session) LogFiles() []string {
 		return result
 	}
 
-	filepath.WalkDir(logDir, func(path string, f fs.DirEntry, err error) error {
+	err := filepath.WalkDir(logDir, func(path string, f fs.DirEntry, err error) error {
 		if err != nil {
 			panic(err)
 		}
@@ -659,6 +665,9 @@ func (s *Session) LogFiles() []string {
 		result = append(result, path)
 		return nil
 	})
+	if err != nil {
+		fmt.Printf("Error walking log dir: %v", err)
+	}
 
 	return result
 }
@@ -710,12 +719,19 @@ func (s *Session) IgnoreLogErrors() {
 var errorOrPanicRegex = regexp.MustCompile(`(?:\[ERR |\[CRT |Panic:)`)
 
 func (s *Session) detectLogErrors() {
+	var sectionStart, sectionEnd string
+	sectionStart = "\n=== "
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		sectionStart = "##[group]"
+		sectionEnd = "##[endgroup]"
+	}
 	for _, path := range s.LogFiles() {
 		if !strings.HasPrefix(filepath.Base(path), "state-") {
 			continue
 		}
 		if contents := string(fileutils.ReadFileUnsafe(path)); errorOrPanicRegex.MatchString(contents) {
-			s.T.Errorf("Found error and/or panic in log file %s\nIf this was expected, call session.IgnoreLogErrors() to avoid this check\nLog contents:\n%s", path, contents)
+			s.T.Errorf("%sFound error and/or panic in log file %s\nIf this was expected, call session.IgnoreLogErrors() to avoid this check\nLog contents:\n%s%s",
+				sectionStart, path, contents, sectionEnd)
 		}
 	}
 }

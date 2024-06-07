@@ -13,15 +13,9 @@ import (
 
 const dash = "\u2500"
 const linebreak = "\n"
-const linebreakRune = '\n'
 const padding = 2
 
 type FormatFunc func(string, ...interface{}) string
-
-type entry struct {
-	line   string
-	length int
-}
 
 type row struct {
 	columns []string
@@ -32,6 +26,7 @@ type Table struct {
 	rows    []row
 
 	HideHeaders bool
+	HideDash    bool
 	Vertical    bool
 }
 
@@ -57,7 +52,9 @@ func (t *Table) Render() string {
 	var out string
 	if !t.HideHeaders {
 		out += "[NOTICE]" + renderRow(t.headers, colWidths) + "[/RESET]" + linebreak
-		out += "[DISABLED]" + strings.Repeat(dash, total) + "[/RESET]" + linebreak
+		if !t.HideDash {
+			out += "[DISABLED]" + strings.Repeat(dash, total) + "[/RESET]" + linebreak
+		}
 	}
 	for _, row := range t.rows {
 		out += renderRow(row.columns, colWidths) + linebreak
@@ -180,7 +177,7 @@ func renderRow(providedColumns []string, colWidths []int) string {
 
 	// Combine column widths if we have a spanned column
 	if len(widths) < len(colWidths) {
-		widths[len(widths)-1] = mathutils.Total(colWidths[len(widths)-1 : len(colWidths)]...)
+		widths[len(widths)-1] = mathutils.Total(colWidths[len(widths)-1:]...)
 	}
 
 	croppedColumns := []colorize.CroppedLines{}
@@ -214,9 +211,4 @@ func renderRow(providedColumns []string, colWidths []int) string {
 	}
 
 	return strings.TrimRight(strings.Join(lines, linebreak), linebreak)
-}
-
-func pad(v string) string {
-	padded := strings.Repeat(" ", padding)
-	return padded + v + padded
 }

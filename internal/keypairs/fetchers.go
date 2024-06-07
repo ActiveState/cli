@@ -19,7 +19,7 @@ func FetchRaw(secretsClient *secretsapi.Client, cfg authentication.Configurable,
 	kpOk, err := secretsClient.Keys.GetKeypair(nil, auth.ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 404 {
-			return nil, &ErrKeypairNotFound{locale.WrapInputError(err, "keypair_err_not_found")}
+			return nil, &ErrKeypairNotFound{locale.WrapExternalError(err, "keypair_err_not_found")}
 		}
 		multilog.Error("Error when fetching keypair: %v", api.ErrorMessageFromPayload(err))
 		return nil, errs.Wrap(err, "GetKeypair failed")
@@ -35,7 +35,7 @@ func FetchPublicKey(secretsClient *secretsapi.Client, user *mono_models.User, au
 	pubKeyOk, err := secretsClient.Keys.GetPublicKey(params, auth.ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 404 {
-			return nil, &ErrKeypairNotFound{locale.WrapInputError(err, "keypair_err_publickey_not_found", "", user.Username, user.UserID.String())}
+			return nil, &ErrKeypairNotFound{locale.WrapExternalError(err, "keypair_err_publickey_not_found", "", user.Username, user.UserID.String())}
 		}
 		return nil, errs.Wrap(err, "GetPublicKey failed")
 	}

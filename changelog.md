@@ -10,33 +10,61 @@ and this project adheres to
 
 ### Added
 
-* Added buildscripts, the ActiveState platform equivalent of a pyproject.toml file. You will find this file alongside
-  your activestate.yaml file.
-* Added the `state builds` command, which lists all available builds produced for your project (eg. installers, docker images, python wheels, ..)
-* Added the `state builds dl` command, which lets you download individual builds for your project.
-* 
+* We've added the `state manifest` command, which lists all your package, bundle and language requirements in your
+  project. This command deprecates the old `state packages`, `state languages` and `state bundles` commands.
+* `state artifacts` now indicates which artifacts are still building.
+* You can now use wildcard versions when running `state install` and `state languages install`, just like you can
+  with `state init`. eg. `state install datetime@1.x`.
+* We now warn you when installing the State Tool as an administrator on Windows.
+* `state publish` now lets you specify the type of a dependency (ie. runtime, buildtime, or testing) via the new
+  `--depend-build`, `--depend-runtime` and `--depend-test` flags. The existing `--depend` flag maps to `--depend-build`.
+* We now ensure the runtime is not currently in use before making changes to it. If the runtime is the user will receive
+  an error asking them to stop using the runtime before proceeding.
+* You can now supply multiple packages to the `state install` and `state uninstall` commands.
 
 ### Changed
 
-* `state info` has been updated to give more meta information, including CVE details across versions of the requested package.
-* `state info` now respects the case sensitivity rules of your projects language. 
-* `state install` will now show a dependency tree for which dependencies were brought in along with the requested package.
-* `state install` will now warn you above CVE's in the package being installed. If there are CVE's of level critical it
-  will prompt you to confirm before installing. This mechanic is configurable.
-* `state history` now shows catalog revision information.
-* `state update lock` will now disable auto updates, in addition to locking your project down to the current State Tool version.
-* We now show both the requested and resulting version of packages across different commands, eg. `state packages`, `state languages`, ..
-* Auto update will no longer run for certain critical commands or when using structured output (eg. `--output json`).
-* Raised the artifact cache size from 500MB to 1GB.
+* Increased the time State Tool will wait for the state-svc to start, which is required for using the State Tool. This
+  is mainly intended for when you just started your system, when it is still under heavy load and thus processes can
+  take longer to start.
+* You will now receive an actionable error when your activestate.yaml does not contain a commit ID.
+* State revert "HEAD" has been renamed to "REMOTE", though "HEAD" is still supported with a deprecation warning. This
+  is to avoid confusion with how git uses the HEAD term, which isn't how we were using it.
+* `state run` and `state exec` now use powershell under the hood instead of cmd. This means that invoking shell
+  built-ins like `where` will no longer work as powershell has different built-ins. But if you're invoking shell
+  built-ins you probably shouldn't be using these commands anyway.
+* State tool now identifies more network errors, making for more actionable error messages.
+* We have introduced a new project file versioning mechanic. You'll start seeing a new `config_version` property in your
+  activestate.yaml. Do not edit or delete this or you may run into issues.
+* Buildscripts are no longer automatically created when opted in. Instead you need to run `state reset LOCAL` in order
+  to first create the buildscript. You only need to do this once, after it exists it will be updated as needed.
+    * This is merely a growing pain while this feature is optin only. Once buildscripts ship as stable you will not need
+      to do this.
+* CVE information provided when running `state install` is now recursive, meaning we show CVE information for the
+  requested package as well as all its dependencies.
+* `state init` now automatically assumes wildcards when a partial version is specified.
 
 ### Fixed
 
-* Fixed issue where `state shell` would improperly set up your PATH if there are entries with spaces.
-* Fixed update available message being printed twice.
+* Fixed issue where `state refresh` would tell you you have uncommitted changes when you are up to date (when opted into
+  buildscripts).
+* Fixed issue where `state uninstall` would give you superfluous output intended for `state install`.
+* Fixed issue where running `state update` would show deprecation messages for the version you are updating from.
+* Fixed issue where `state run` and `state exec` would not forward arguments correctly on Windows. This is a limitation
+  of the `cmd` shell. We now utilize powershell instead to facilitate commands.
+* Fixed issue where `state languages` would show a larger than / smaller than version notation rather than `auto`.
+* Fixed issue where `state checkout` would save the `main` branch to your activestate.yaml when you checked out a commit
+  on a sub-branch. It now correctly saves the sub-branch.
+* Fixed issue where `state search` gave an unintended "wrapped tips" error when given an invalid version number.
+* Fixed issue where text was wrapped when producing non-interactive output, making it impossible to use the output in
+  automations without first cleaning up the output.
+* Fixed issue where manually resolving conflicts when running `state pull` would not allow you to commit these changes
+  if you picked only the local changes. This only applies if opted in to buildscripts.
+* Fixed issue where conflicts on the `at_time` buildscript field would show the wrong local value.
 
 ### Removed
 
-* Removed `state security report`, you can now access everything through `state security` instead.
+* `state export recipe` has been removed, as the platform no longer uses recipes.
 
 ## 0.43.0
 
@@ -50,42 +78,72 @@ and this project adheres to
 * Added the `state languages search` command, allowing you to discover what languages you may want to use.
 * Added a new `state export log` command, which lets you easily inspect the debug log.
 * State tool executables on Windows now provide sufficient meta information.
+* Added preview version of buildscripts, the ActiveState platform equivalent of a pyproject.toml file. Currently they
+  only work with the new `state commit` and `state eval` commands.
+* Added the `state artifacts` command, which lists all available artifacts produced for your project (eg. installers,
+  docker
+  images, python wheels, ..)
+* Added the `state artifacts dl` command, which lets you download individual builds for your project.
 
 ### Changed
 
 * `state refresh` has been marked stable.
 * `state checkout` will now revert any changes made to the filesystem if the runtime fails to source.
-  * You can now specify the `--force` flag in order for it to always checkout the project even if it  cannot be installed. 
-    Allowing you to work on the project via the CLI and fix the underlying issue.
-* `state import` no longer overwrites your project with the imported requirements. Instead the requirements are appended.
+    * You can now specify the `--force` flag in order for it to always checkout the project even if it cannot be
+      installed.
+      Allowing you to work on the project via the CLI and fix the underlying issue.
+* `state import` no longer overwrites your project with the imported requirements. Instead the requirements are
+  appended.
 * `state platforms search` will no longer show platforms that are unsupported.
 * `state packages --filter` is now case-insensitive.
-* You can now revert to the head of a branch by specifying `state revert HEAD`, rather than having to figure out the commit ID yourself.
-* Constants defined in the activestate.yaml are no longer exported as environment variables unless you specify the `export: true` property.
+* You can now revert to the head of a branch by specifying `state revert HEAD`, rather than having to figure out the
+  commit ID yourself.
+* Constants defined in the activestate.yaml are no longer exported as environment variables unless you specify
+  the `export: true` property.
 * We now clearly communicate that you are using a project runtime whenever you open a new shell.
 * If installation fails due to a networking issue we will now clearly communicate the cause.
-* We have introduced a new mechanic for handling errors, which should produce more actionable error messages. This mechanic
-  is being rolled out to various commands over time, as of right now we have targeted common commands like `init`, `checkout`, and `install`.
-* The installer will no longer refuse to install if you already have the State Tool installed, but the installed State 
+* We have introduced a new mechanic for handling errors, which should produce more actionable error messages. This
+  mechanic is being rolled out to various commands over time, as of right now we have targeted common commands
+  like `init`, `checkout`, and `install`.
+* The installer will no longer refuse to install if you already have the State Tool installed, but the installed State
   Tool is not properly configured.
 * The installer will no longer leave behind temporary files in your system temp dir.
 * Structured output (ie. `--output json`) now includes tips when errors occur.
 * All our executables now support the `--version` flag.
 * Reduced the verbosity of the debug log.
-
+* `state info` has been updated to give more meta information, including CVE details across versions of the requested
+  package.
+* `state info` now respects the case sensitivity rules of your projects language.
+* `state install` and `state checkout` will now show a dependency tree for which dependencies were brought in along with
+  the requested package.
+* `state install` will now warn you above CVE's in the package being installed. If there are CVE's of level critical it
+  will prompt you to confirm before installing. This mechanic is configurable.
+* `state history` now shows catalog revision information.
+* `state update lock` will now disable auto updates, in addition to locking your project down to the current State Tool
+  version.
+* We now show both the requested and resulting version of packages across different commands,
+  eg. `state packages`, `state languages`, ..
+* Auto update will no longer run for certain critical commands or when using structured output (eg. `--output json`).
+* Raised the artifact cache size from 500MB to 1GB.
 
 ### Fixed
 
-* Fixed issue where specifying multiple version constraints (eg. `>1.0,<2.0`) only preserved the last constraint (eg. `<2.0`).
+* Fixed issue where specifying multiple version constraints (eg. `>1.0,<2.0`) only preserved the last constraint (
+  eg. `<2.0`).
 * Fixed `state init` being unable to initialize a ruby project without an explicit version.
 * Fixed using `state shell` through `tcsh` not setting up environment correctly.
-* Fixed `state activate` checking out the wrong commit if the commit you specified does not exist. It will now error out.
+* Fixed `state activate` checking out the wrong commit if the commit you specified does not exist. It will now error
+  out.
 * Fixed issue where typing during a selection prompt would make the prompt disappear.
 * Fixed various localisation issues.
+* Fixed issue where `state shell` would improperly set up your PATH if there are entries with spaces.
+* Fixed update available message being printed twice.
+* Fixed issue where local cache was not always used to install artifacts.
 
 ### Removed
 
 * Removed the `--set-project` flag from `state pull` as it covered a use-case that no longer exists.
+* Removed `state security report`, you can now access everything through `state security` instead.
 
 ## 0.42.1
 

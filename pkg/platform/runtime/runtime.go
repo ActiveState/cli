@@ -6,6 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/pkg/buildplan"
+	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"golang.org/x/net/context"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -22,11 +26,8 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
@@ -41,33 +42,23 @@ type Configurable interface {
 }
 
 type Runtime struct {
-	disabled          bool
-	target            setup.Targeter
-	store             *store.Store
-	analytics         analytics.Dispatcher
-	svcm              *model.SvcModel
-	auth              *authentication.Auth
-	completed         bool
-	cfg               Configurable
-	out               output.Outputer
-	resolvedArtifacts []*artifact.Artifact
-}
-
-// NeedsUpdateError is an error returned when the runtime is not completely installed yet.
-type NeedsUpdateError struct{ error }
-
-// IsNeedsUpdateError checks if the error is a NeedsUpdateError
-func IsNeedsUpdateError(err error) bool {
-	return errs.Matches(err, &NeedsUpdateError{})
+	disabled  bool
+	target    setup.Targeter
+	store     *store.Store
+	analytics analytics.Dispatcher
+	svcm      *model.SvcModel
+	auth      *authentication.Auth
+	completed bool
+	cfg       Configurable
+	out       output.Outputer
 }
 
 // NeedsCommitError is an error returned when the local runtime's build script has changes that need
 // staging. This is not a fatal error. A runtime can still be used, but a warning should be emitted.
-type NeedsCommitError struct{ error }
+var NeedsCommitError = errors.New("runtime needs commit")
 
-func IsNeedsCommitError(err error) bool {
-	return errs.Matches(err, &NeedsCommitError{})
-}
+// NeedsBuildscriptResetError is an error returned when the runtime is improperly referenced in the project (eg. missing buildscript)
+var NeedsBuildscriptResetError = errors.New("needs runtime reset")
 
 func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel, auth *authentication.Auth, cfg Configurable, out output.Outputer) (*Runtime, error) {
 	rt := &Runtime{
@@ -88,7 +79,7 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 	return rt, nil
 }
 
-// New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
+// New attempts to create a new runtime from local storage.
 func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, auth *authentication.Auth, cfg Configurable, out output.Outputer) (*Runtime, error) {
 	logging.Debug("Initializing runtime for: %s/%s@%s", target.Owner(), target.Name(), target.CommitUUID())
 
@@ -110,50 +101,81 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, a
 			CommitID: ptr.To(target.CommitUUID().String()),
 		})
 	}
+
 	return r, err
 }
 
-func (r *Runtime) validateCache() error {
+func (r *Runtime) NeedsUpdate() bool {
+	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
+		return false
+	}
 	if !r.store.MarkerIsValid(r.target.CommitUUID()) {
 		if r.target.ReadOnly() {
 			logging.Debug("Using forced cache")
 		} else {
-			return &NeedsUpdateError{errs.New("Runtime requires setup.")}
+			return true
 		}
 	}
+	return false
+}
 
+func (r *Runtime) validateCache() error {
 	if r.target.ProjectDir() == "" {
 		return nil
 	}
 
-	commitID := r.target.CommitUUID().String()
-	_, err := r.store.GetAndValidateBuildExpression(commitID)
+	err := r.validateBuildScript()
 	if err != nil {
-		bp := model.NewBuildPlannerModel(r.auth)
-		bpExpr, err := bp.GetBuildExpression(commitID)
-		if err != nil {
-			return errs.Wrap(err, "Unable to get remote build expression")
+		return errs.Wrap(err, "Error validating build script")
+	}
+
+	return nil
+}
+
+// validateBuildScript asserts the local build script does not have changes that should be committed.
+func (r *Runtime) validateBuildScript() error {
+	logging.Debug("Checking to see if local build script has changes that should be committed")
+	if !r.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		logging.Debug("Not opted into buildscripts")
+		return nil
+	}
+
+	script, err := buildscript_runbit.ScriptFromProject(r.target)
+	if err != nil {
+		if errors.Is(err, buildscript_runbit.ErrBuildscriptNotExist) {
+			return errs.Pack(err, NeedsBuildscriptResetError)
 		}
-		if err := r.store.StoreBuildExpression(bpExpr, commitID); err != nil {
-			return errs.Wrap(err, "Unable to store build expression")
+		return errs.Wrap(err, "Could not get buildscript from project")
+	}
+
+	cachedCommitID, err := r.store.CommitID()
+	if err != nil {
+		logging.Debug("No commit ID to read; refresh needed")
+		return nil
+	}
+
+	if cachedCommitID != r.target.CommitUUID().String() {
+		logging.Debug("Runtime commit ID does not match project commit ID; refresh needed")
+		return nil
+	}
+
+	cachedScript, err := r.store.BuildScript()
+	if err != nil {
+		if errors.Is(err, store.ErrNoBuildScriptFile) {
+			logging.Warning("No buildscript file exists in store, unable to check if buildscript is dirty. This can happen if you cleared your cache.")
+		} else {
+			return errs.Wrap(err, "Could not retrieve buildscript from store")
 		}
 	}
 
-	// Check if local build script has changes that should be committed.
-	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		cachedScript, err := r.store.BuildScript()
-		switch {
-		case err == nil:
-			script, err := buildscript.ScriptFromProject(r.target)
-			if err != nil && !errs.Matches(err, buildscript.ErrBuildscriptNotExist) {
-				return errs.Wrap(err, "Unable to get local build script")
-			}
-			if script != nil && !script.Equals(cachedScript) {
-				return &NeedsCommitError{errs.New("Runtime changes should be committed")}
-			}
+	if cachedScript != nil {
+		equals, err := script.Equals(cachedScript)
+		if err != nil {
+			return errs.Wrap(err, "Could not compare buildscript")
+		}
 
-		case !errors.Is(err, store.ErrNoBuildScriptFile):
-			return errs.Wrap(err, "Unable to read cached build script")
+		if script != nil && !equals {
+			return NeedsCommitError
 		}
 	}
 
@@ -168,9 +190,11 @@ func (r *Runtime) Target() setup.Targeter {
 	return r.target
 }
 
-// Update updates the runtime by downloading all necessary artifacts from the Platform and installing them locally.
-// This function is usually called, after New() returned with a NeedsUpdateError
-func (r *Runtime) Update(eventHandler events.Handler) (rerr error) {
+func (r *Runtime) Setup(eventHandler events.Handler) *setup.Setup {
+	return setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out, r.svcm)
+}
+
+func (r *Runtime) Update(setup *setup.Setup, commit *bpModel.Commit) (rerr error) {
 	if r.disabled {
 		logging.Debug("Skipping update as it is disabled")
 		return nil // nothing to do
@@ -182,7 +206,7 @@ func (r *Runtime) Update(eventHandler events.Handler) (rerr error) {
 		r.recordCompletion(rerr)
 	}()
 
-	if err := setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out).Update(); err != nil {
+	if err := setup.Update(commit); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}
 
@@ -192,6 +216,26 @@ func (r *Runtime) Update(eventHandler events.Handler) (rerr error) {
 		return errs.Wrap(err, "Could not reinitialize runtime after update")
 	}
 	*r = *rt
+
+	return nil
+}
+
+// SolveAndUpdate updates the runtime by downloading all necessary artifacts from the Platform and installing them locally.
+func (r *Runtime) SolveAndUpdate(eventHandler events.Handler) error {
+	if r.disabled {
+		logging.Debug("Skipping update as it is disabled")
+		return nil // nothing to do
+	}
+
+	setup := r.Setup(eventHandler)
+	commit, err := setup.Solve()
+	if err != nil {
+		return errs.Wrap(err, "Could not solve")
+	}
+
+	if err := r.Update(setup, commit); err != nil {
+		return errs.Wrap(err, "Could not update")
+	}
 
 	return nil
 }
@@ -258,25 +302,26 @@ func (r *Runtime) recordCompletion(err error) {
 	// download error to be cause by an input error.
 	case locale.IsInputError(err):
 		errorType = "input"
-	case errs.Matches(err, &model.SolverError{}):
-		errorType = "solve"
 	case errs.Matches(err, &setup.BuildError{}), errs.Matches(err, &buildlog.BuildError{}):
 		errorType = "build"
-	case errs.Matches(err, &bpModel.BuildPlannerError{}):
+	case errs.Matches(err, &bpResp.BuildPlannerError{}):
 		errorType = "buildplan"
 	case errs.Matches(err, &setup.ArtifactSetupErrors{}):
 		if setupErrors := (&setup.ArtifactSetupErrors{}); errors.As(err, &setupErrors) {
+			// Label the loop so we can break out of it when we find the first download
+			// or build error.
+		Loop:
 			for _, err := range setupErrors.Errors() {
 				switch {
 				case errs.Matches(err, &setup.ArtifactDownloadError{}):
 					errorType = "download"
-					break // it only takes one download failure to report the runtime failure as due to download error
+					break Loop // it only takes one download failure to report the runtime failure as due to download error
 				case errs.Matches(err, &setup.ArtifactInstallError{}):
 					errorType = "install"
 					// Note: do not break because there could be download errors, and those take precedence
 				case errs.Matches(err, &setup.BuildError{}), errs.Matches(err, &buildlog.BuildError{}):
 					errorType = "build"
-					break // it only takes one build failure to report the runtime failure as due to build error
+					break Loop // it only takes one build failure to report the runtime failure as due to build error
 				}
 			}
 		}
@@ -315,7 +360,9 @@ func (r *Runtime) recordUsage() {
 		multilog.Critical("Could not marshal dimensions for runtime-usage: %s", errs.JoinMessage(err))
 	}
 	if r.svcm != nil {
-		r.svcm.ReportRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), anaConsts.SrcStateTool, dimsJson)
+		if err := r.svcm.ReportRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), anaConsts.SrcStateTool, dimsJson); err != nil {
+			multilog.Critical("Could not report runtime usage: %s", errs.JoinMessage(err))
+		}
 	}
 }
 
@@ -368,28 +415,14 @@ func IsRuntimeDir(dir string) bool {
 	return store.New(dir).HasMarker()
 }
 
-func (r *Runtime) ResolvedArtifacts() ([]*artifact.Artifact, error) {
-	if r.resolvedArtifacts == nil {
-		runtimeStore := r.store
-		if runtimeStore == nil {
-			runtimeStore = store.New(r.target.Dir())
-		}
-
-		plan, err := runtimeStore.BuildPlan()
-		if err != nil {
-			return nil, errs.Wrap(err, "Unable to fetch build plan")
-		}
-
-		r.resolvedArtifacts = make([]*artifact.Artifact, len(plan.Sources))
-		for i, source := range plan.Sources {
-			r.resolvedArtifacts[i] = &artifact.Artifact{
-				ArtifactID: source.NodeID,
-				Name:       source.Name,
-				Namespace:  source.Namespace,
-				Version:    &source.Version,
-			}
-		}
+func (r *Runtime) BuildPlan() (*buildplan.BuildPlan, error) {
+	runtimeStore := r.store
+	if runtimeStore == nil {
+		runtimeStore = store.New(r.target.Dir())
 	}
-
-	return r.resolvedArtifacts, nil
+	plan, err := runtimeStore.BuildPlan()
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to fetch build plan")
+	}
+	return plan, nil
 }

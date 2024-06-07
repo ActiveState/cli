@@ -130,9 +130,6 @@ const OverwriteDefaultInstallationPathEnvVarName = "ACTIVESTATE_TEST_INSTALL_PAT
 // OverwriteDefaultSystemPathEnvVarName is the environment variable name to overwrite the system app installation directory updates FOR TESTING PURPOSES ONLY
 const OverwriteDefaultSystemPathEnvVarName = "ACTIVESTATE_TEST_SYSTEM_PATH"
 
-// OverrideOSNameEnvVarName is used to override the OS name used when initializing projects
-const OverrideOSNameEnvVarName = "ACTIVESTATE_OVERRIDE_OS_NAME"
-
 // TestAutoUpdateEnvVarName is used to test auto updates, when set to true will always attempt to auto update
 const TestAutoUpdateEnvVarName = "ACTIVESTATE_TEST_AUTO_UPDATE"
 
@@ -381,9 +378,6 @@ const RuntimeRecipeStore = "recipe"
 // RuntimeBuildPlanStore containts a serialization of the build plan used to create this build
 const RuntimeBuildPlanStore = "build_plan"
 
-// BuildExpressionStore holds the cached build expression for the current commit ID.
-const BuildExpressionStore = "build_expression"
-
 // BuildScriptStore holds the cached buildscript for the current project.
 const BuildScriptStore = "build_script"
 
@@ -441,6 +435,9 @@ const DefaultBranchName = "main"
 // UnstableConfig is the config key used to determine whether the user has opted in to unstable commands
 const UnstableConfig = "optin.unstable"
 
+// AsyncRuntimeConfig is the config key used to determine whether the user has opted in to async runtimes
+const AsyncRuntimeConfig = "optin.unstable.async_runtime"
+
 // OptinBuildscriptsConfig is the config key used to determine whether the user has opted in to buildscripts
 const OptinBuildscriptsConfig = "optin.buildscripts"
 
@@ -489,8 +486,9 @@ const InstallerName = "State Installer"
 // StateExecutorCmd is the name of the state executor binary
 const StateExecutorCmd = "state-exec"
 
-// ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
-const ToplevelInstallArchiveDir = "state-install"
+// LegacyToplevelInstallArchiveDir is the top-level directory for files in an installation archive
+// This constant will be removed in DX-2081.
+const LegacyToplevelInstallArchiveDir = "state-install"
 
 // FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
 const FirstMultiFileStateToolVersion = "0.29.0"

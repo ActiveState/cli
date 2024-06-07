@@ -6,14 +6,15 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/buildscript"
+	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
 
 func rationalizeError(auth *authentication.Auth, err *error) {
-	var commitError *bpModel.CommitError
-	var requirementNotFoundErr *buildexpression.RequirementNotFoundError
+	var commitError *bpResp.CommitError
+	var requirementNotFoundErr *buildscript.RequirementNotFoundError
 
 	switch {
 	case err == nil:
@@ -29,24 +30,24 @@ func rationalizeError(auth *authentication.Auth, err *error) {
 	// Error staging a commit during install.
 	case errors.As(*err, &commitError):
 		switch commitError.Type {
-		case bpModel.NotFoundErrorType:
+		case types.NotFoundErrorType:
 			*err = errs.WrapUserFacing(*err,
 				locale.Tl("err_packages_not_found", "Could not make runtime changes because your project was not found."),
 				errs.SetInput(),
 				errs.SetTips(locale.T("tip_private_project_auth")),
 			)
-		case bpModel.ForbiddenErrorType:
+		case types.ForbiddenErrorType:
 			*err = errs.WrapUserFacing(*err,
 				locale.Tl("err_packages_forbidden", "Could not make runtime changes because you do not have permission to do so."),
 				errs.SetInput(),
 				errs.SetTips(locale.T("tip_private_project_auth")),
 			)
-		case bpModel.HeadOnBranchMovedErrorType:
+		case types.HeadOnBranchMovedErrorType:
 			*err = errs.WrapUserFacing(*err,
 				locale.T("err_buildplanner_head_on_branch_moved"),
 				errs.SetInput(),
 			)
-		case bpModel.NoChangeSinceLastCommitErrorType:
+		case types.NoChangeSinceLastCommitErrorType:
 			*err = errs.WrapUserFacing(*err,
 				locale.Tl("err_packages_exists", "That package is already installed."),
 				errs.SetInput(),

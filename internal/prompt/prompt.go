@@ -75,9 +75,9 @@ func (p *Prompt) Input(title, message string, defaultResponse *string, flags ...
 // The "message" argument is the prompt's user-facing message.
 func interactiveInputError(message string) error {
 	if runtime.GOOS == "windows" {
-		return locale.NewInputError("err_non_interactive_mode")
+		return locale.NewExternalError("err_non_interactive_mode")
 	}
-	return locale.NewInputError("err_non_interactive_prompt", message)
+	return locale.NewExternalError("err_non_interactive_prompt", message)
 }
 
 // InputAndValidate prompts an input field and allows you to specfiy a custom validation function as well as the built in flags

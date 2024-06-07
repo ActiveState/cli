@@ -2,16 +2,18 @@ package integration
 
 import (
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
-	"github.com/stretchr/testify/suite"
 )
 
 // Disabled due to DX-1514
@@ -55,7 +57,6 @@ import (
 
 	rt, err := runtime.New(offlineTarget, analytics, nil, nil)
 	suite.Require().Error(err)
-	suite.Assert().True(runtime.IsNeedsUpdateError(err), "runtime should require an update")
 	err = rt.Update(eventHandler)
 	suite.Require().NoError(err)
 
@@ -108,6 +109,91 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 
 	cp = ts.SpawnCmd(pythonExe, "-c", `print(__import__('sys').version)`)
 	cp.Expect("3.8.8") // current runtime still works
+	cp.ExpectExitCode(0)
+	ts.IgnoreLogErrors() // Should see an error related to the interrupted setup
+}
+
+func (suite *RuntimeIntegrationTestSuite) TestInUse() {
+	if runtime.GOOS == "darwin" {
+		return // gopsutil errors on later versions of macOS (DX-2723)
+	}
+	suite.OnlyRunForTags(tagsuite.Critical)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl-5.36", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("shell"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.SendLine("perl")
+	time.Sleep(1 * time.Second) // allow time for perl to start up
+
+	cp2 := ts.SpawnWithOpts(
+		e2e.OptArgs("install", "DateTime"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp2.Expect("currently in use", e2e.RuntimeSourcingTimeoutOpt)
+	cp2.Expect("perl")
+	cp2.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
+
+	cp.SendCtrlC()
+	cp.SendLine("exit")
+	cp.ExpectExit() // code can vary depending on shell; just assert process finished
+}
+
+func (suite *RuntimeIntegrationTestSuite) TestBuildInProgress() {
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("building on Windows takes too long")
+		return
+	}
+	suite.OnlyRunForTags(tagsuite.BuildInProgress)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	// Publish a new ingredient revision, which, when coupled with `state install --ts now`, will
+	// force a build.
+	// The ingredient is a tarball comprising:
+	//   1. An empty, executable "configure" script (emulating autotools).
+	//   2. A simple Makefile with "all", "check", and "install" rules.
+	//   3. A simple "main.c" file, whose compiled executable prints "Hello world!".
+	cp := ts.Spawn("publish", "--non-interactive",
+		"--namespace", "private/"+e2e.PersistentUsername,
+		"--name", "hello-world",
+		"--version", "1.0.0",
+		"--depend", "builder/autotools-builder@>=0", // for ./configure, make, make install
+		"--depend", "internal/mingw-build-selector@>=0", // for Windows to use mingw's GCC
+		filepath.Join(osutil.GetTestDataDir(), "hello-world-1.0.0.tar.gz"),
+		"--edit") // publish a new revision each time, forcing a build
+	cp.Expect("Successfully published")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("checkout", "ActiveState-CLI/Perl-5.36", ".")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("install", "private/"+e2e.PersistentUsername+"/hello-world", "--ts", "now"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Build Log")
+	cp.Expect("Building")
+	cp.Expect("All dependencies have been installed and verified", e2e.RuntimeBuildSourcingTimeoutOpt)
+	cp.Expect("Package added: hello-world")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("exec", "main"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Hello world!")
 	cp.ExpectExitCode(0)
 }
 

@@ -3,6 +3,7 @@ package ghactions
 import (
 	"gopkg.in/yaml.v2"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -19,9 +20,6 @@ type Params struct{}
 type primeable interface {
 	primer.Projecter
 	primer.Outputer
-}
-
-type templateParams struct {
 }
 
 func New(primer primeable) *GithubActions {
@@ -64,7 +62,11 @@ func (g *GithubActions) Run(p *Params) error {
 			}
 			workflowJob.Env[constant.Name()] = v
 		}
-		for _, script := range job.Scripts() {
+		scripts, err := job.Scripts()
+		if err != nil {
+			return errs.Wrap(err, "Could not get scripts")
+		}
+		for _, script := range scripts {
 			workflowJob.Steps = append(workflowJob.Steps, WorkflowStep{
 				Name: script.Name(),
 				Run:  "state run " + script.Name(),

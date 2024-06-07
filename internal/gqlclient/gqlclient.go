@@ -149,7 +149,19 @@ func (c *Client) Run(request Request, response interface{}) error {
 	return err // Needs var so the cancel defer triggers at the right time
 }
 
-func (c *Client) RunWithContext(ctx context.Context, request Request, response interface{}) error {
+type PostProcessor interface {
+	PostProcess() error
+}
+
+func (c *Client) RunWithContext(ctx context.Context, request Request, response interface{}) (rerr error) {
+	defer func() {
+		if rerr != nil {
+			return
+		}
+		if postProcessor, ok := response.(PostProcessor); ok {
+			rerr = postProcessor.PostProcess()
+		}
+	}()
 	name := strutils.Summarize(request.Query(), 25)
 	defer profile.Measure(fmt.Sprintf("gqlclient:RunWithContext:(%s)", name), time.Now())
 
@@ -280,7 +292,7 @@ func (c *Client) runWithFiles(ctx context.Context, gqlReq RequestWithFiles, resp
 	c.Log(fmt.Sprintf(">> variables: %s", string(varJson)))
 	fnames := []string{}
 	for _, file := range gqlReq.Files() {
-		fnames = append(fnames, fmt.Sprintf("%s", file.Name))
+		fnames = append(fnames, file.Name)
 	}
 	c.Log(fmt.Sprintf(">> files: %v", fnames))
 

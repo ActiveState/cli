@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/google/uuid"
 	"golang.org/x/sys/windows"
 )
 
@@ -33,13 +32,12 @@ func IsExecutable(path string) bool {
 	pathExts := strings.Split(os.Getenv("PATHEXT"), ";")
 	for _, pe := range pathExts {
 		// pathext entries have `.` and are capitalize
-		if strings.ToLower(ext) == strings.ToLower(pe) {
+		if strings.EqualFold(ext, pe) {
 			return true
 		}
 	}
 	return false
 }
-
 
 // IsWritable returns true if the given path is writable
 func IsWritable(path string) bool {
@@ -62,19 +60,6 @@ func IsWritable(path string) bool {
 	return true
 }
 
-func isWritableTempFile(path string) bool {
-	fpath := filepath.Join(path, uuid.New().String())
-	if err := Touch(fpath); err != nil {
-		return false
-	}
-
-	if errr := os.Remove(fpath); errr != nil {
-		return false
-	}
-
-	return true
-}
-
 // ResolveUniquePath gets the absolute location of the provided path
 // with the best effort attempt to produce the same result for all possible paths to the
 // given target.
@@ -88,7 +73,7 @@ func ResolveUniquePath(path string) (string, error) {
 	if err != nil {
 		// GetLongPathName can fail on unsupported file-systems or if evalPath is not a physical path.
 		// => just log the error (unless err due to file not existing) and resume with resolved path
-		if !errors.Is(err, os.ErrNotExist) && !errs.Matches(err, os.ErrNotExist) {
+		if !errors.Is(err, os.ErrNotExist) && !errors.Is(err, os.ErrNotExist) {
 			multilog.Error("could not resolve long version of %s: %v", evalPath, err)
 		}
 		return filepath.Clean(evalPath), nil
@@ -101,7 +86,11 @@ func HideFile(path string) error {
 	k32 := syscall.NewLazyDLL("kernel32.dll")
 	setFileAttrs := k32.NewProc("SetFileAttributesW")
 
-	uipPath := uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(path)))
+	utfPath, err := syscall.UTF16PtrFromString(path)
+	if err != nil {
+		return fmt.Errorf("Hide file (UTF16 conversion): %w", err)
+	}
+	uipPath := uintptr(unsafe.Pointer(utfPath))
 	r1, _, err := setFileAttrs.Call(uipPath, 2)
 	if r1 == 0 && !errors.Is(err, windows.ERROR_SUCCESS) {
 		return fmt.Errorf("Hide file (set attributes): %w", err)

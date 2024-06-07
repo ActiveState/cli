@@ -18,23 +18,6 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-var cache = make(map[string]interface{})
-
-func getCache(key string, getter func() (interface{}, error)) (interface{}, error) {
-	if v, ok := cache[key]; ok {
-		return v, nil
-	}
-	v, err := getter()
-	if err != nil {
-		return nil, err
-	}
-	cache[key] = v
-	return v, err
-}
-
-// For testing.
-var osOverride, osVersionOverride, archOverride, libcOverride, compilerOverride string
-
 type Conditional struct {
 	params map[string]interface{}
 	funcs  template.FuncMap
@@ -140,13 +123,15 @@ func (c *Conditional) RegisterParam(name string, value interface{}) {
 }
 
 func (c *Conditional) Eval(conditional string) (bool, error) {
-	tpl, err := template.New("letter").Funcs(c.funcs).Parse(fmt.Sprintf(`{{if %s}}1{{end}}`, conditional))
+	tpl, err := template.New("").Funcs(c.funcs).Parse(fmt.Sprintf(`{{if %s}}1{{end}}`, conditional))
 	if err != nil {
 		return false, locale.WrapInputError(err, "err_conditional", "Invalid 'if' condition: '{{.V0}}', error: '{{.V1}}'.", conditional, err.Error())
 	}
 
 	result := bytes.Buffer{}
-	tpl.Execute(&result, c.params)
+	if err := tpl.Execute(&result, c.params); err != nil {
+		return false, locale.WrapInputError(err, "err_conditional", "Invalid 'if' condition: '{{.V0}}', error: '{{.V1}}'.", conditional, err.Error())
+	}
 
 	return result.String() == "1", nil
 }
@@ -169,7 +154,7 @@ func FilterUnconstrained(conditional *Conditional, items []projectfile.Constrain
 		if conditional != nil && item.ConditionalFilter() != "" {
 			isTrue, err := conditional.Eval(string(item.ConditionalFilter()))
 			if err != nil {
-				return nil, err
+				return nil, locale.WrapInputError(err, "err_conditional_eval", "There was an error with the conditional in your activestate.yaml's '{{.V0}}' script", item.ID())
 			}
 
 			if isTrue {

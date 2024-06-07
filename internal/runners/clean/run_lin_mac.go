@@ -160,25 +160,34 @@ type dirNotEmptyError struct {
 }
 
 func removeEmptyDir(dir string) error {
+	if !fileutils.DirExists(dir) {
+		return nil
+	}
+
 	empty, err := fileutils.IsEmptyDir(dir)
-	if err == nil && empty {
-		removeErr := os.RemoveAll(dir)
-		if err != nil {
-			return errs.Wrap(removeErr, "Could not remove directory")
-		}
-	} else if err != nil {
+	if err != nil {
 		return errs.Wrap(err, "Could not check if directory is empty")
 	}
 
-	if !empty {
+	if empty {
+		removeErr := os.RemoveAll(dir)
+		if removeErr != nil {
+			return errs.Wrap(removeErr, "Could not remove directory")
+		}
+	} else {
+		files, err := fileutils.ListDirSimple(dir, true)
+		if err != nil {
+			return errs.Wrap(err, "Could not list directory")
+		}
+
 		content, err := strutils.ParseTemplate(
 			"{{- range $file := .Files}}\n - {{$file}}\n{{- end}}",
-			map[string]interface{}{"Files": fileutils.ListDirSimple(dir, true)},
+			map[string]interface{}{"Files": files},
 			nil)
 		if err != nil {
 			return errs.Wrap(err, "Could not parse file list template")
 		}
-		return &dirNotEmptyError{locale.NewInputError("uninstall_warn_not_empty", "", content)}
+		return &dirNotEmptyError{locale.NewExternalError("uninstall_warn_not_empty", "", content)}
 	}
 
 	return nil

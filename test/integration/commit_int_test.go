@@ -8,11 +8,12 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/termtest"
 )
 
 type CommitIntegrationTestSuite struct {
@@ -20,35 +21,23 @@ type CommitIntegrationTestSuite struct {
 }
 
 func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
-	suite.OnlyRunForTags(tagsuite.Commit)
+	suite.OnlyRunForTags(tagsuite.Commit, tagsuite.BuildScripts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("config", "set", constants.OptinBuildscriptsConfig, "true")
-	cp.ExpectExitCode(0)
-
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs(
-			"checkout",
-			"ActiveState-CLI/Commit-Test-A#7a1b416e-c17f-4d4a-9e27-cbad9e8f5655",
-			".",
-		),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
-	cp.ExpectExitCode(0)
+	ts.PrepareProjectAndBuildScript("ActiveState-CLI/Commit-Test-A", "7a1b416e-c17f-4d4a-9e27-cbad9e8f5655")
 
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.NoError(err, "Error loading project")
 
-	_, err = buildscript.ScriptFromProject(proj)
+	_, err = buildscript_runbit.ScriptFromProject(proj)
 	suite.Require().NoError(err) // verify validity
 
-	cp = ts.Spawn("commit")
-	cp.Expect("No change")
+	cp := ts.Spawn("commit")
+	cp.Expect("no new changes")
 	cp.ExpectExitCode(1)
 
-	_, err = buildscript.ScriptFromProject(proj)
+	_, err = buildscript_runbit.ScriptFromProject(proj)
 	suite.Require().NoError(err) // verify validity
 
 	scriptPath := filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName)
@@ -61,27 +50,25 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	)
 	cp.Expect("successfully created")
 	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("pkg"),
+	)
+	cp.Expect("case ", e2e.RuntimeSourcingTimeoutOpt) // note: intentional trailing whitespace to not match 'casestyle'
+	cp.ExpectExitCode(0)
 }
 
 func (suite *CommitIntegrationTestSuite) TestCommitAtTimeChange() {
-	suite.OnlyRunForTags(tagsuite.Commit)
+	suite.OnlyRunForTags(tagsuite.Commit, tagsuite.BuildScripts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("config", "set", constants.OptinBuildscriptsConfig, "true")
-	cp.ExpectExitCode(0)
-
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/Commit-Test-A#7a1b416e-c17f-4d4a-9e27-cbad9e8f5655", "."),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
-	cp.ExpectExitCode(0)
+	ts.PrepareProjectAndBuildScript("ActiveState-CLI/Commit-Test-A", "7a1b416e-c17f-4d4a-9e27-cbad9e8f5655")
 
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.NoError(err, "Error loading project")
 
-	_, err = buildscript.ScriptFromProject(proj)
+	_, err = buildscript_runbit.ScriptFromProject(proj)
 	suite.Require().NoError(err) // verify validity
 
 	// Update top-level at_time variable.
@@ -89,11 +76,12 @@ func (suite *CommitIntegrationTestSuite) TestCommitAtTimeChange() {
 	buildScriptFile := filepath.Join(proj.Dir(), constants.BuildScriptFileName)
 	contents, err := fileutils.ReadFile(buildScriptFile)
 	suite.Require().NoError(err)
-	suite.Require().NoError(fileutils.WriteFile(buildScriptFile, bytes.Replace(contents, []byte("2023-06-22T21:56:10.504Z"), []byte(dateTime), 1)))
+	contents = bytes.Replace(contents, []byte("2023-06-22T21:56:10.504Z"), []byte(dateTime), 1)
+	suite.Require().NoError(fileutils.WriteFile(buildScriptFile, contents))
 	suite.Require().Contains(string(fileutils.ReadFileUnsafe(filepath.Join(proj.Dir(), constants.BuildScriptFileName))), dateTime)
 
-	cp = ts.Spawn("commit")
-	cp.Expect("successfully created")
+	cp := ts.Spawn("commit")
+	cp.Expect("successfully created", termtest.OptExpectErrorMessage(string(contents)))
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("history")

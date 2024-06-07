@@ -162,11 +162,16 @@ func ParseUserFacing(err error) (int, error) {
 }
 
 func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
-	var ee errs.Errorable
 	stack := "not provided"
+	var ee errs.Errorable
 	isErrs := errors.As(err, &ee)
-	if isErrs {
-		stack = ee.Stack().String()
+
+	// Get the stack closest to the root as that will most accurately tell us where the error originated
+	for childErr := err; childErr != nil; childErr = errors.Unwrap(childErr) {
+		var ee2 errs.Errorable
+		if errors.As(childErr, &ee2) {
+			stack = ee2.Stack().String()
+		}
 	}
 
 	_, hasMarshaller := err.(output.Marshaller)
@@ -191,7 +196,7 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 	// Log error if this isn't a user input error
 	var action string
 	errorMsg := err.Error()
-	if !locale.IsInputError(err) {
+	if IsReportableError(err) {
 		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.JoinMessage(err), stack)
 		action = anaConst.ActCommandError
 	} else {
@@ -217,4 +222,8 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 			panic(fmt.Sprintf("Errors must be localized! Please localize: %s, called at: %s\n", errs.JoinMessage(err), stack))
 		}
 	}
+}
+
+func IsReportableError(err error) bool {
+	return !locale.IsInputError(err) && !errs.IsExternalError(err) && !errs.IsSilent(err)
 }

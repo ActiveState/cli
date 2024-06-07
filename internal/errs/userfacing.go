@@ -1,6 +1,8 @@
 package errs
 
-import "errors"
+import (
+	"errors"
+)
 
 type UserFacingError interface {
 	error
@@ -30,6 +32,10 @@ func (e *userFacingError) ErrorTips() []string {
 
 func (e *userFacingError) InputError() bool {
 	return e.input
+}
+
+func (e *userFacingError) Unwrap() error {
+	return e.wrapped
 }
 
 func NewUserFacing(message string, opts ...ErrOpt) *userFacingError {

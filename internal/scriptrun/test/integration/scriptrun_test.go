@@ -2,7 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -11,11 +10,11 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics/client/blackhole"
 	"github.com/ActiveState/cli/internal/scriptrun"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/kami-zh/go-capturer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -77,7 +76,9 @@ scripts:
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
 	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
-	err = scriptRun.Run(proj.ScriptByName("run"), []string{})
+	script, err := proj.ScriptByName("run")
+	require.NoError(t, err)
+	err = scriptRun.Run(script, []string{})
 	assert.NoError(t, err, "No error occurred")
 }
 
@@ -118,7 +119,9 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 
 	out := capturer.CaptureOutput(func() {
 		scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
-		err = scriptRun.Run(proj.ScriptByName("run"), nil)
+		script, err := proj.ScriptByName("run")
+		require.NoError(t, err, "Error: "+errs.JoinMessage(err))
+		err = scriptRun.Run(script, nil)
 		assert.NoError(t, err, "Error: "+errs.JoinMessage(err))
 	})
 
@@ -164,8 +167,10 @@ scripts:
 
 	out := outputhelper.NewCatcher()
 	scriptRun := scriptrun.New(auth, out, subshell.New(cfg), proj, cfg, blackhole.New(), nil)
-	fmt.Println(proj.ScriptByName("run"))
-	err = scriptRun.Run(proj.ScriptByName("run"), nil)
+	script, err := proj.ScriptByName("run")
+	fmt.Println(script)
+	require.NoError(t, err)
+	err = scriptRun.Run(script, nil)
 	assert.NoError(t, err, "No error occurred")
 }
 
@@ -195,7 +200,7 @@ scripts:
 
 	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
 	err = scriptRun.Run(nil, nil)
-	assert.Error(t, err, "Error occurred")
+	assert.Error(t, err, "No error occurred")
 }
 
 func (suite *ScriptRunSuite) TestRunUnknownCommand() {
@@ -224,8 +229,10 @@ scripts:
 	defer func() { require.NoError(t, cfg.Close()) }()
 
 	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
-	err = scriptRun.Run(proj.ScriptByName("run"), nil)
-	assert.Error(t, err, "Error occurred")
+	script, err := proj.ScriptByName("run")
+	require.NoError(t, err)
+	err = scriptRun.Run(script, nil)
+	assert.Error(t, err, "No error occurred")
 }
 
 func (suite *ScriptRunSuite) TestRunActivatedCommand() {
@@ -238,7 +245,8 @@ func (suite *ScriptRunSuite) TestRunActivatedCommand() {
 	// Prepare an empty activated environment.
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
-	os.Chdir(filepath.Join(root, "test"))
+	err = os.Chdir(filepath.Join(root, "test"))
+	assert.NoError(t, err, "Should change directory")
 
 	cfg, err := config.New()
 	require.NoError(t, err)
@@ -276,7 +284,9 @@ scripts:
 
 	// Run the command.
 	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
-	err = scriptRun.Run(proj.ScriptByName("run"), nil)
+	script, err := proj.ScriptByName("run")
+	require.NoError(t, err)
+	err = scriptRun.Run(script, nil)
 	assert.NoError(t, err, "No error occurred")
 }
 
@@ -284,7 +294,7 @@ func (suite *ScriptRunSuite) TestPathProvidesLang() {
 	suite.OnlyRunForTags(tagsuite.Scripts)
 	t := suite.T()
 
-	temp, err := ioutil.TempDir("", filepath.Base(t.Name()))
+	temp, err := os.MkdirTemp("", filepath.Base(t.Name()))
 	require.NoError(t, err)
 
 	tf := filepath.Join(temp, "python3")
@@ -321,7 +331,7 @@ func setupProjectWithScriptsExpectingArgs(t *testing.T, cmdName string) *project
 		os.Setenv("SHELL", "bash")
 	}
 
-	tmpfile, err := ioutil.TempFile("", "testRunCommand")
+	tmpfile, err := os.CreateTemp("", "testRunCommand")
 	require.NoError(t, err)
 	tmpfile.Close()
 	os.Remove(tmpfile.Name())
@@ -367,7 +377,10 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 
 	outStr, outErr := osutil.CaptureStdout(func() {
 		scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
-		err = scriptRun.Run(proj.ScriptByName(cmdName), cmdArgs)
+		var script *project.Script
+		if script, err = proj.ScriptByName(cmdName); err == nil {
+			err = scriptRun.Run(script, cmdArgs)
+		}
 	})
 	require.NoError(t, outErr, "error capturing stdout")
 

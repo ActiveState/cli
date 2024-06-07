@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -158,7 +158,6 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 	defer ts.Close()
 
 	ts.SetupRCFile()
-	suite.T().Setenv("ACTIVESTATE_HOME", ts.Dirs.HomeDir)
 
 	targetID, err := uuid.NewUUID()
 	suite.Require().NoError(err)
@@ -262,7 +261,6 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 	defer ts.Close()
 
 	ts.SetupRCFile()
-	suite.T().Setenv("ACTIVESTATE_HOME", ts.Dirs.HomeDir)
 
 	targetID, err := uuid.NewUUID()
 	suite.Require().NoError(err)

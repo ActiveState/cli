@@ -1,12 +1,11 @@
 package fileutils_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -22,10 +21,10 @@ type MoveAllFilesTestSuite struct {
 func (suite *MoveAllFilesTestSuite) BeforeTest(suiteName, testName string) {
 	var err error
 
-	suite.fromDir, err = ioutil.TempDir("", "mvallfiles-from")
+	suite.fromDir, err = os.MkdirTemp("", "mvallfiles-from")
 	suite.Require().NoError(err, "creating temp from-dir")
 
-	suite.toDir, err = ioutil.TempDir("", "mvallfiles-to")
+	suite.toDir, err = os.MkdirTemp("", "mvallfiles-to")
 	suite.Require().NoError(err, "creating temp to-dir")
 }
 
@@ -35,7 +34,7 @@ func (suite *MoveAllFilesTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *MoveAllFilesTestSuite) TestFromDir_IsNotDirectory() {
-	tmpFile, err := ioutil.TempFile("", "mvallfiles-tmpfile")
+	tmpFile, err := os.CreateTemp("", "mvallfiles-tmpfile")
 	suite.Require().NoError(err, "creating fake from-dir as a file")
 
 	err = fileutils.MoveAllFiles(tmpFile.Name(), suite.toDir)
@@ -44,7 +43,7 @@ func (suite *MoveAllFilesTestSuite) TestFromDir_IsNotDirectory() {
 }
 
 func (suite *MoveAllFilesTestSuite) TestToDir_IsNotDirectory() {
-	tmpFile, err := ioutil.TempFile("", "mvallfiles-tmpfile")
+	tmpFile, err := os.CreateTemp("", "mvallfiles-tmpfile")
 	suite.Require().NoError(err, "creating fake from-dir as a file")
 
 	err = fileutils.MoveAllFiles(suite.fromDir, tmpFile.Name())

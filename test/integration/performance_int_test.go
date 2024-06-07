@@ -15,8 +15,8 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/termtest"
-	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -40,14 +40,14 @@ func (suite *PerformanceIntegrationTestSuite) TestVersionPerformance() {
 	stdout, stderr, err := osutils.ExecSimple(ts.SvcExe, []string{"start"}, []string{})
 	suite.Require().NoError(err, fmt.Sprintf("Full error:\n%v\nstdout:\n%s\nstderr:\n%s", errs.JoinMessage(err), stdout, stderr))
 
-	performanceTest([]string{"--version"}, "", StateVersionTotalSamples, StateVersionMaxTime, false, suite.Suite, ts)
+	performanceTest([]string{"--version"}, "", StateVersionTotalSamples, StateVersionMaxTime, false, &suite.Suite, ts)
 }
 
 func TestPerformanceIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(PerformanceIntegrationTestSuite))
 }
 
-func performanceTest(commands []string, expect string, samples int, maxTime time.Duration, verbose bool, suite tagsuite.Suite, ts *e2e.Session) time.Duration {
+func performanceTest(commands []string, expect string, samples int, maxTime time.Duration, verbose bool, suite *tagsuite.Suite, ts *e2e.Session) time.Duration {
 	rx := regexp.MustCompile(`Profiling: main took .*\((\d+)\)`)
 	var firstEntry, firstLogs string
 	times := []time.Duration{}

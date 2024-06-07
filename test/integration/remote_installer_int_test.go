@@ -11,8 +11,8 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/stretchr/testify/suite"
 )
 
 type RemoteInstallIntegrationTestSuite struct {
@@ -47,7 +47,7 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 			installPath := filepath.Join(ts.Dirs.Work, "install")
 			stateExePath := filepath.Join(installPath, "bin", constants.StateCmd+osutils.ExeExtension)
 
-			args := []string{}
+			args := []string{"-n"}
 			if tt.Version != "" {
 				args = append(args, "--version", tt.Version)
 			}
@@ -67,6 +67,8 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 
 			cp.Expect("Terms of Service")
 			cp.SendLine("Y")
+			cp.Expect("Downloading")
+			cp.Expect("Running Installer...")
 			cp.Expect("Installing")
 			cp.Expect("Installation Complete")
 			cp.Expect("Press ENTER to exit")

@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/termtest"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -34,11 +34,10 @@ func (suite *AuthIntegrationTestSuite) TestAuth() {
 	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	user := ts.CreateNewUser()
 	ts.LogoutUser()
-	suite.interactiveLogin(ts, user.Username, user.Password)
+	suite.interactiveLogin(ts, e2e.PersistentUsername, e2e.PersistentPassword)
 	ts.LogoutUser()
-	suite.loginFlags(ts, user.Username)
+	suite.loginFlags(ts, e2e.PersistentUsername)
 	suite.ensureLogout(ts)
 }
 
@@ -105,7 +104,7 @@ func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 	cp := ts.Spawn(tagsuite.Auth, "--output", method)
 	cp.Expect(`"}`)
 	cp.ExpectExitCode(0)
-	suite.Contains(cp.Output(), fmt.Sprintf("%s", string(expected)))
+	suite.Contains(cp.Output(), string(expected))
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {

@@ -26,7 +26,7 @@ func NewSearch(prime primeable) *Search {
 func (s *Search) Run() error {
 	logging.Debug("Execute platforms search")
 
-	modelPlatforms, err := model.FetchPlatforms(s.auth)
+	modelPlatforms, err := model.FetchPlatforms()
 	if err != nil {
 		return errs.Wrap(err, "Unable to fetch platforms")
 	}

@@ -89,7 +89,7 @@ func (u *Update) Run(params *Params) error {
 	err = update.InstallBlocking(installPath)
 	if err != nil {
 		if os.IsPermission(err) {
-			return locale.WrapInputError(err, "update_permission_err", "", constants.DocumentationURL, errs.JoinMessage(err))
+			return locale.WrapExternalError(err, "update_permission_err", "", constants.DocumentationURL, errs.JoinMessage(err))
 		}
 		return locale.WrapError(err, "err_update_generic", "Update could not be installed.")
 	}

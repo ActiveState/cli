@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/stretchr/testify/suite"
 )
 
 type CveIntegrationTestSuite struct {
@@ -54,10 +54,6 @@ func (suite *CveIntegrationTestSuite) TestCveNoVulnerabilities() {
 	ts.PrepareProject("ActiveState-CLI/small-python", "9733d11a-dfb3-41de-a37a-843b7c421db4")
 
 	cp := ts.Spawn("cve")
-	cp.Expect("No CVEs detected")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("cve", "report") // legacy alias
 	cp.Expect("No CVEs detected")
 	cp.ExpectExitCode(0)
 }

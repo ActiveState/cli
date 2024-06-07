@@ -185,6 +185,10 @@ run_description:
   other: Run your project scripts
 scripts_description:
   other: Show project scripts
+runtime_setup_in_use_err:
+  other: |
+    Could not update your runtime as it is currently in use. Please stop any active runtime processes and try again. State Tool found the following processes to be using the runtime:
+    {{.V0}}
 runtime_alternative_file_transforms_err:
   other: "Could not apply necessary file transformations after unpacking."
 scripts_no_scripts:
@@ -400,8 +404,6 @@ err_order_marshal:
   other: Failed to marshal/unmarshal order
 err_no_data_found:
   other: No data found
-err_project_no_languages:
-  other: Your project does not have any languages configured
 err_add_commit:
   other: "Error occurred while trying to create a commit: {{.V0}}"
 err_update_branch:
@@ -593,7 +595,7 @@ package_list_flag_name_description:
 namespace_list_flag_project_description:
   other: The namespace packages should be listed from
 package_search_flag_ns_description:
-  other: The namespace to search within. This trumps the language flag.
+  other: The namespace to search within.
 package_flag_ts_description:
   other: The timestamp at which you want to query. Can be either 'now' or RFC3339 formatted timestamp.
 package_flag_rev_description:
@@ -652,6 +654,10 @@ bundle_added:
   other: "[SUCCESS]✔ {{.V0}} Bundle successfully installed![/RESET]"
 bundle_version_added:
   other: "[SUCCESS]✔ {{.V0}} Bundle @ version {{.V1}} successfully installed![/RESET]"
+language_updated:
+  other: "Language updated: [NOTICE]{{.V0}}[/RESET]"
+language_version_updated:
+  other: "Language updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
 err_package_updated:
   other: Failed to update package
 err_bundle_updated:
@@ -687,7 +693,7 @@ raw_version_updated:
 raw_updated:
   other: "Package updated: [NOTICE]{{.V0}}[/RESET]"
 raw_removed:
-  other: "Package removed: [NOTICE]{{.V0}}[/NOTICE]"
+  other: "Package removed: [NOTICE]{{.V0}}[/RESET]"
 notice_commit_build_script:
   other: |
     Your local build script has changes that should be committed. Please run '[ACTIONABLE]state commit[/RESET]' to do so.
@@ -698,8 +704,6 @@ command_cmd_no_such_cmd:
   other: "No such command: [NOTICE]{{.V0}}[/RESET]"
 err_fetch_languages:
   other: "Could not retrieve languages for your project. Does your project exist on the Platform?"
-err_no_languages:
-  other: "Your project does not have any language configured"
 err_incompatible_move_file_dir:
   other: |
     Could not move [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].  One is a file, the other a directory.
@@ -763,6 +767,8 @@ err_could_not_marshal_print:
   other: "Could not marshal the value being printed, please check the error log for more information."
 err_no_structured_output:
   other: "This command does not support the '{{.V0}}' output format. Please try again without that output flag."
+err_unsupported_structured_output:
+  other: "Failed to structure output in the requested format. Please consider reporting this on our forums: {{.V0}}."
 err_main_outputer:
   other: "Could not create output writer, please contact developers if this problem persists. Error: {{.V0}}"
 field_name:
@@ -860,10 +866,6 @@ arg_languages_install_description:
   other: The language to update in the form of <language>@<version>
 err_language_format:
   other: The language and version provided is not formatting correctly, must be in the form of <language>@<version>
-err_update_not_found:
-  other: "Could not find the requested language: [NOTICE]{{.V0}}[/RESET]. Please ensure the language name is correct and supported by the ActiveState platform"
-err_language_version_not_found:
-  other: The requested version [NOTICE]{{.V0}}[/RESET] for the language [NOTICE]{{.V1}}[/RESET] is not available
 err_language_mismatch:
   other: Cannot change languages, only changes to the current project's language is allowed
 err_no_recipes:
@@ -1069,6 +1071,8 @@ artifact_succeeded:
   other: "Completed: [NOTICE]{{.V0}} ({{.V1}}/{{.V2}})[/RESET]"
 artifact_failed:
   other: "Failed: [NOTICE]{{.V0}}[/RESET]. Error returned: [ERROR]{{.V1}}[/RESET]"
+artifact_unknown_name:
+  other: Unnamed Artifact
 err_package_update_commit_id:
   other: "Could not update your project runtime's commit ID. Please run '[ACTIONABLE]state pull[/RESET]' manually."
 prepare_protocol_warning:
@@ -1083,8 +1087,6 @@ err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory or its parent directories.
 err_project_not_found:
   other: Could not find project at [NOTICE]{{.V0}}[/RESET]
-err_projectfile_parse:
-  other: Unable to parse {{.V0}}
 err_non_interactive_prompt:
   other: Prompt "{{.V0}}" cannot be resolved in non-interactive mode.
 err_read_projectfile:
@@ -1132,8 +1134,13 @@ err_user_network_solution:
   other: |
     Please ensure your device has access to internet during installation. Make sure software like a VPN, Firewall or Anti-Virus are not blocking your connectivity.
     If your issue persists consider reporting it on our forums at {{.V0}}.
+err_user_network_timeout:
+  other: "Request failed due to timeout. {{.V0}}"
 err_user_libc_solution:
   other: If you specified a glibc version, please check it is configured → [ACTIONABLE]{{.V0}}[/RESET].
+warn_revert_head:
+  other: |
+    [NOTICE]DEPRECATION WARNING[/RESET]: 'state revert HEAD' has been deprecated in favor of '[ACTIONABLE]state revert REMOTE[/RESET]'. Please use '[ACTIONABLE]state revert REMOTE[/RESET]' instead.
 err_revert_get_commit:
   other: "Could not fetch commit details for commit with ID: {{.V0}}"
 err_revert_commit:
@@ -1256,15 +1263,15 @@ package_ingredient_alternatives_nolang:
 progress_search:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalog"
 progress_cve_search:
-  other: " • Searching for vulnerabilities (CVEs) on [ACTIONABLE]{{.V0}}[/RESET] and its dependencies"
+  other: " • Searching for new vulnerabilities (CVEs) on [ACTIONABLE]{{.V0}}[/RESET] and any dependencies"
 setup_runtime:
   other: "Setting Up Runtime"
 progress_solve:
   other: "Resolving Dependencies"
 additional_dependencies:
-  other: Installing [ACTIONABLE]{{.V0}}@{{.V1}}[/RESET] includes [ACTIONABLE]{{.V2}}[/RESET] direct dependencies.
+  other: Installing {{.V0}} includes [ACTIONABLE]{{.V1}}[/RESET] direct dependencies.
 additional_total_dependencies:
-  other: Installing [ACTIONABLE]{{.V0}}@{{.V1}}[/RESET] includes [ACTIONABLE]{{.V2}}[/RESET] direct dependencies, and a total of [ACTIONABLE]{{.V3}}[/RESET] direct and indirect dependencies.
+  other: Installing {{.V0}} includes [ACTIONABLE]{{.V1}}[/RESET] direct dependencies, and [ACTIONABLE]{{.V2}}[/RESET] indirect dependencies.
 progress_success:
   other: " [SUCCESS]✔ Done[/RESET]"
 progress_found:
@@ -1277,6 +1284,8 @@ progress_unsafe:
   other: " [ERROR]x Unsafe[/RESET]"
 progress_commit:
   other: " • Creating commit"
+progress_solve_preruntime:
+  other: " • Resolving Dependencies"
 progress_pkg_nolang:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] across all languages in the ActiveState Catalog"
 progress_build_log:
@@ -1291,14 +1300,17 @@ unstable_feature_banner:
   other: "[NOTICE]Beta Feature: This feature is still in beta and may be unstable.[/RESET]\n"
 warning_vulnerable:
   other: |
-    • [ERROR]Warning:[/RESET] Dependency has [ERROR]{{.V0}} known vulnerabilities (CVEs)[/RESET]. Severity: {{.V1}}. Run `[ACTIONABLE]state security[/RESET]` for more info.
-warning_vulnerable_simple:
+    [ERROR]Warning: Dependency has {{.V0}} direct and {{.V1}} indirect known vulnerabilities (CVEs)[/RESET]
+warning_vulnerable_indirectonly:
+  other: |
+    [ERROR]Warning: Dependency has {{.V0}} indirect known vulnerabilities (CVEs)[/RESET]
+warning_vulnerable_directonly:
   other: |
     [ERROR]Warning: Dependency has {{.V0}} known vulnerabilities (CVEs)[/RESET]
 more_info_vulnerabilities:
-  other: |
-    For more information on these vulnerabilities run '[ACTIONABLE]state security open <ID>[/RESET]'.
-    To disable prompting for vulnerabilities run '[ACTIONABLE]state config set security.prompt.enable false[/RESET]'.
+  other: For more information on these vulnerabilities run '[ACTIONABLE]state security open <ID>[/RESET]'.
+disable_prompting_vulnerabilities:
+  other: To disable prompting for vulnerabilities run '[ACTIONABLE]state config set security.prompt.enable false[/RESET]'.
 prompt_continue_pkg_operation:
   other: |
     Do you want to continue installing this dependency despite its vulnerabilities?
@@ -1312,6 +1324,9 @@ secrets_unstable_warning:
     The secrets feature is currently unstable and not ready for production use. If you want to opt-in to unstable features, run the following command:
 
     [ACTIONABLE]state config set optin.unstable true[/RESET]
+installer_prompt_is_admin:
+  other: |
+    You are installing the State Tool as an administrator. The State Tool was designed to be installed without administrator privileges, and you may run into issues if you continue. Are you sure you want to do this?
 err_update_corrupt_install:
   other: |
     Unfortunately your current installation appears to have been corrupted. Please reinstall the State Tool by first
@@ -1455,12 +1470,24 @@ checkout_project_statement:
   other: |
     Checked out project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
+checkout_project_statement_async:
+  other: |
+    Checked out project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
+    Run '[ACTIONABLE]state refresh[/RESET]' to source the runtime.
 refresh_project_statement:
   other: |
     Runtime updated for project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 export_project_statement:
   other: Exporting env for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+export_runtime_statement:
+  other: Exporting runtime details for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+export_runtime_details:
+  other: |
+    Project Path: {{.V0}}
+    Runtime Path: {{.V1}}
+    Executables Path: {{.V2}}
+    Environment Variables:{{.V3}}
 err_rtprogress_outofsync:
   other: |
     Received events that appear to be out of order.
@@ -1486,7 +1513,9 @@ err_init_project_exists:
 err_country_blocked:
   other: This service is not available in your region.
 err_commit_id_invalid:
-  other: "Expected commit ID to be UUID formatted, but got: {{.V0}}"
+  other: "Your activestate.yaml contains an invalid commit ID: '{{.V0}}'. Please run '[ACTIONABLE]state reset[/RESET]' to fix it."
+err_commit_id_invalid_given:
+  other: "Invalid commit ID: '{{.V0}}'."
 err_shortcutdir_writable:
   other: Could not continue as we don't have permission to create [ACTIONABLE]{{.V0}}[/RESET].
 move_prompt:
@@ -1527,8 +1556,6 @@ uploadingredient_success:
     You can install this package by running `[ACTIONABLE]state install {{.V1}}/{{.V0}} --ts now`[/RESET].
 err_runtime_cache_invalid:
   other: Your runtime needs to be updated, please run '[ACTIONABLE]state refresh[/RESET]'.
-err_target_not_found:
-  other: Could not find buildscript target '[ACTIONABLE]{{.V0}}[/reset]'. Please check your buildscript and ensure the target exists.
 err_buildscript_not_exist:
   other: Your project does not have a buildscript.as file. Please refer to the documentation on how to create one.
 commit_success:
@@ -1539,14 +1566,77 @@ commit_success:
 builds_dl_downloading:
   other: Downloading {{.V0}}
 warn_has_failed_artifacts:
-  other: "Warning: This project has failed builds, and some artifacts will be missing as a result.\n"
+  other: "[ERROR]Some artifacts failed to build. Please see error messages and logs above for further details.[/RESET]"
+artifact_status_failed:
+  other: Failed
+artifact_status_failed_message:
+  other: Message
+artifact_status_failed_log:
+  other: Log
+artifact_status_skipped:
+  other: Skipped
+artifact_status_building:
+  other: Building
+warn_build_not_complete:
+  other: "[WARNING]Some artifacts are still being built. Try running this command again in a few minutes.[/RESET]"
 err_build_artifacts_failed:
   other: |
     The following artifacts failed to build, please refer to their logs for more information:
     
     {{.V0}}
+err_build_artifact_failed_msg:
+  other: The artifact '[ACTIONABLE]{{.V0}}[/RESET]' failed to build.
 err_build_artifact_failed:
   other: |
     [NOTICE]{{.V0}}[/RESET]
     [DISABLED]├─ Message:[/RESET] [ERROR]{{.V1}}[/RESET]
     [DISABLED]└─ Log:[/RESET] [ACTIONABLE]{{.V2}}[/RESET]
+err_packages_update_runtime_init:
+  other: Could not initialize runtime.
+pkg_already_uptodate:
+  other: Requested dependencies are already configured and installed.
+install_runtime:
+  other: Installing Runtime
+install_runtime_info:
+  other: "Installing your runtime and dependencies.\n"
+update_runtime:
+  other: Updating Runtime
+update_runtime_info:
+  other: "Changes to your runtime may require some dependencies to be rebuilt.\n"
+err_packages_update_runtime_install:
+  other: Could not install dependencies.
+err_buildscript_notexist:
+  other: Your project does not have a buildscript.as file. Please refer to the documentation on how to create one.
+err_projectfile_version_too_high:
+  other: Your local checkout of this project depends on a newer version of the State Tool. Please update your State Tool by running [ACTIONABLE]state update[/RESET].
+err_headless:
+  other: Cannot operate on a headless project. Please visit {{.V0}} to convert your project and try again.
+notice_needs_buildscript_reset:
+  other: Your project is missing its buildscript file, please run '[ACTIONABLE]state reset LOCAL[/RESET]' to recreate it.
+
+err_initial_no_requirement:
+  other: |
+    Could not find compatible requirement for initial commit. Please ensure that you are trying to install a valid package.
+    To check for available packages run '[ACTIONABLE]state search <package_name>[/RESET]'.
+manifest_deprecation_warning:
+  other: |
+    [WARNING]Warning:[/RESET] This command is deprecated, please use '[ACTIONABLE]state manifest[/RESET]' instead.
+manifest_runtime_needs_update:
+  other: "[WARNING]WARNING:[/RESET] Your runtime is out of date, in order to ensure an accurate manifest please run [ACTIONABLE]state refresh[/RESET].\n"
+vulnerability_critical:
+  other: "[RED]{{.V0}} Critical[/RESET]"
+vulnerability_high:
+  other: "[ORANGE]{{.V0}} High[/RESET]"
+vulnerability_medium:
+  other: "[YELLOW]{{.V0}} Medium[/RESET]"
+vulnerability_low:
+  other: "[GREEN]{{.V0}} Low[/RESET]"
+err_runtime_needs_refresh:
+  other: Your runtime needs to be updated, please run '[ACTIONABLE]state refresh[/RESET]' and then try again.
+err_pull_no_common_parent:
+  other: |
+    The local commit ID [NOTICE]{{.V0}}[/RESET] and latest remote commit ID [NOTICE]{{.V1}}[/RESET] have no common parent. 
+    To review your project history run '[ACTIONABLE]state history[/RESET]'.
+warn_package_list_runtime:
+  other: |
+    [WARNING]WARNING:[/RESET] Could not initialize runtime. Resolved version information will not be available. Run '[ACTIONABLE]state refresh[/RESET]' for more information.

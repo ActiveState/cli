@@ -9,12 +9,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -25,7 +24,7 @@ type CheckoutIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutPython() {
 	suite.OnlyRunForTags(tagsuite.Checkout)
 
 	ts := e2e.New(suite.T(), false)
@@ -40,6 +39,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 	cp.Expect("Setting up the following dependencies:")
 	cp.Expect("All dependencies have been installed and verified", e2e.RuntimeSourcingTimeoutOpt)
 	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
 	suite.Require().True(fileutils.DirExists(ts.Dirs.Work), "state checkout should have created "+ts.Dirs.Work)
 	suite.Require().True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, constants.ConfigFileName)), "ActiveState-CLI/Python3 was not checked out properly")
 
@@ -72,6 +72,30 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 	})
 }
 
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutPerl() {
+	suite.OnlyRunForTags(tagsuite.Checkout, tagsuite.Critical)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// Checkout and verify.
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", "ActiveState-CLI/Perl-Alternative", "."),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Checking out project: ")
+	cp.Expect("Setting up the following dependencies:")
+	cp.Expect("All dependencies have been installed and verified", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Checked out project")
+
+	// Verify runtime was installed correctly and works.
+	targetDir := target.ProjectDirToTargetDir(ts.Dirs.Work, ts.Dirs.Cache)
+	perlExe := filepath.Join(setup.ExecDir(targetDir), "perl"+osutils.ExeExtension)
+	cp = ts.SpawnCmd(perlExe, "--version")
+	cp.Expect("This is perl")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
 	suite.OnlyRunForTags(tagsuite.Checkout)
 
@@ -87,7 +111,6 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
 	// Checkout and verify.
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/Python3", tmpdir),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("already a project checked out at")
 	cp.ExpectExitCode(1)
@@ -101,7 +124,6 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
 	suite.Require().NoError(os.Remove(filepath.Join(tmpdir, constants.ConfigFileName)))
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/Python3", tmpdir),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
@@ -198,7 +220,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 	if runtime.GOOS == "windows" {
 		customRTPath, err = fileutils.GetLongPathName(customRTPath)
 		suite.Require().NoError(err)
-		customRTPath = strings.ToLower(customRTPath)
+		customRTPath = strings.ToUpper(customRTPath[:1]) + strings.ToLower(customRTPath[1:]) // capitalize drive letter
 	}
 	cp.Expect(customRTPath, e2e.RuntimeSourcingTimeoutOpt)
 }
@@ -270,11 +292,11 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCaseInsensitive() {
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutBuildtimeClosure() {
-	suite.OnlyRunForTags(tagsuite.Checkout)
-
-	if runtime.GOOS != "linux" {
-		suite.T().Skip("Skipping buildtime closure test on non-linux platform")
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("Skipping on windows since the build time is different there, and testing it on mac/linux is sufficient")
+		return
 	}
+	suite.OnlyRunForTags(tagsuite.Checkout)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -285,10 +307,10 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutBuildtimeClosure() {
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	// Expect the number of build deps to be 27 which is more than the number of runtime deps.
-	// Also expect libxcrypt which should not be in the runtime closure.
-	cp.Expect("27")
-	cp.Expect("libxcrypt")
-	cp.ExpectExitCode(0)
+	// Also expect ncurses which should not be in the runtime closure.
+	cp.Expect("ncurses", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("27/27", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestFail() {
@@ -300,7 +322,7 @@ func (suite *CheckoutIntegrationTestSuite) TestFail() {
 		e2e.OptArgs("checkout", "ActiveState-CLI/fail"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Something Went Wrong")
+	cp.Expect("failed to build")
 	cp.ExpectNotExitCode(0)
 	suite.Assert().NoDirExists(filepath.Join(ts.Dirs.Work, "fail"), "state checkout fail did not remove created directory")
 	ts.IgnoreLogErrors()
@@ -309,7 +331,7 @@ func (suite *CheckoutIntegrationTestSuite) TestFail() {
 		e2e.OptArgs("checkout", "ActiveState-CLI/fail", "."),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Something Went Wrong")
+	cp.Expect("failed to build")
 	cp.ExpectNotExitCode(0)
 	suite.Assert().NoFileExists(filepath.Join(ts.Dirs.Work, constants.ConfigFileName), "state checkout fail did not remove created activestate.yaml")
 
@@ -317,9 +339,68 @@ func (suite *CheckoutIntegrationTestSuite) TestFail() {
 		e2e.OptArgs("checkout", "ActiveState-CLI/fail", "--force"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Something Went Wrong")
+	cp.Expect("failed to build")
 	cp.ExpectNotExitCode(0)
 	suite.Assert().DirExists(filepath.Join(ts.Dirs.Work, "fail"), "state checkout fail did not leave created directory there despite --force flag override")
+}
+
+func (suite *CheckoutIntegrationTestSuite) TestBranch() {
+	suite.OnlyRunForTags(tagsuite.Checkout)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Branches", "--branch", "firstbranch", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	asy := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
+	suite.Assert().Contains(string(fileutils.ReadFileUnsafe(asy)), "branch=firstbranch", "activestate.yaml does not have correct branch")
+
+	suite.Require().NoError(os.Remove(asy))
+
+	// Infer branch name from commit.
+	cp = ts.Spawn("checkout", "ActiveState-CLI/Branches#46c83477-d580-43e2-a0c6-f5d3677517f1", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	suite.Assert().Contains(string(fileutils.ReadFileUnsafe(asy)), "branch=secondbranch", "activestate.yaml does not have correct branch")
+}
+
+func (suite *CheckoutIntegrationTestSuite) TestNoLanguage() {
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("The Window's platform is not available for ActiveState-CLI/langless")
+	}
+
+	suite.OnlyRunForTags(tagsuite.Checkout, tagsuite.Critical)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", "ActiveState-CLI/langless", "."),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0)
+}
+
+func (suite *CheckoutIntegrationTestSuite) TestChangeSummary() {
+	suite.OnlyRunForTags(tagsuite.Checkout)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.Expect("Successfully set")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("checkout", "ActiveState-CLI/small-python")
+	cp.Expect("Resolving Dependencies")
+	cp.Expect("Done")
+	cp.Expect("Setting up the following dependencies:")
+	cp.Expect("└─ python@3.10.10")
+	suite.Assert().NotContains(cp.Snapshot(), "├─", "more than one dependency was printed")
+	cp.ExpectExitCode(0)
 }
 
 func TestCheckoutIntegrationTestSuite(t *testing.T) {

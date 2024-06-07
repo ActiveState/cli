@@ -7,8 +7,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/stretchr/testify/suite"
 )
 
 type RevertIntegrationTestSuite struct {
@@ -66,7 +66,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *RevertIntegrationTestSuite) TestRevertHead() {
+func (suite *RevertIntegrationTestSuite) TestRevertRemote() {
 	suite.OnlyRunForTags(tagsuite.Revert)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -80,7 +80,7 @@ func (suite *RevertIntegrationTestSuite) TestRevertHead() {
 	cp.Expect("Package added")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("revert", "HEAD", "--non-interactive")
+	cp = ts.Spawn("revert", "REMOTE", "--non-interactive")
 	cp.Expect("Successfully reverted")
 	cp.ExpectExitCode(0)
 

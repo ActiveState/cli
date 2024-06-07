@@ -3,7 +3,6 @@ package envdef
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -101,7 +100,7 @@ func (ev *EnvironmentVariable) UnmarshalJSON(data []byte) error {
 // NewEnvironmentDefinition returns an environment definition unmarshaled from a
 // file
 func NewEnvironmentDefinition(fp string) (*EnvironmentDefinition, error) {
-	blob, err := ioutil.ReadFile(fp)
+	blob, err := os.ReadFile(fp)
 	if err != nil {
 		return nil, locale.WrapError(err, "envdef_file_not_found", "", fp)
 	}
@@ -119,7 +118,7 @@ func (ed *EnvironmentDefinition) WriteFile(filepath string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filepath, blob, 0666)
+	return os.WriteFile(filepath, blob, 0666)
 }
 
 // WriteFile marshals an environment definition to a file
@@ -248,11 +247,14 @@ func (ev EnvironmentVariable) Merge(other EnvironmentVariable) (*EnvironmentVari
 	case Disallowed:
 		if len(ev.Values) != 1 || len(other.Values) != 1 || (ev.Values[0] != other.Values[0]) {
 			sep := string(ev.Separator)
-			return nil, fmt.Errorf(
-				"cannot merge environment definitions: no join strategy for variable %s with values %s and %s",
-				ev.Name,
-				strings.Join(ev.Values, sep), strings.Join(other.Values, sep),
-			)
+			// It's possible that the merged env vars will still be equal, so only error if they are not.
+			if strings.Join(ev.Values, sep) != strings.Join(other.Values, sep) {
+				return nil, fmt.Errorf(
+					"cannot merge environment definitions: no join strategy for variable %s with values %s and %s",
+					ev.Name,
+					strings.Join(ev.Values, sep), strings.Join(other.Values, sep),
+				)
+			}
 
 		}
 	default:

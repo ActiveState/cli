@@ -2,7 +2,6 @@ package subshell
 
 import (
 	"os"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
@@ -11,16 +10,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 )
-
-func setup(t *testing.T) {
-	root, err := environment.GetRootPath()
-	assert.NoError(t, err, "Should detect root path")
-	os.Chdir(filepath.Join(root, "test"))
-}
 
 func TestRunCommand(t *testing.T) {
 	data := []byte("echo Hello")

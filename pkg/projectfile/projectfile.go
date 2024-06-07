@@ -3,7 +3,6 @@ package projectfile
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"os/user"
@@ -12,7 +11,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/ActiveState/cli/internal/assets"
@@ -42,8 +40,8 @@ import (
 )
 
 var (
-	urlProjectRegexStr = fmt.Sprintf(`https:\/\/[\w\.]+\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*([^&]*)(?:\&branch=)*(.*)`)
-	urlCommitRegexStr  = fmt.Sprintf(`https:\/\/[\w\.]+\/commit\/(.*)`)
+	urlProjectRegexStr = `https:\/\/[\w\.]+\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*([^&]*)(?:\&branch=)*(.*)`
+	urlCommitRegexStr  = `https:\/\/[\w\.]+\/commit\/(.*)`
 
 	// ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
 	ProjectURLRe = regexp.MustCompile(urlProjectRegexStr)
@@ -54,6 +52,18 @@ var (
 	// nonAlphanumericRegex covers all non alphanumeric characters
 	nonAlphanumericRegex = regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
 )
+
+const ConfigVersion = 1
+
+type MigratorFunc func(project *Project, configVersion int) (int, error)
+
+var migrationRunning bool
+
+var migrator MigratorFunc
+
+func RegisterMigrator(m MigratorFunc) {
+	migrator = m
+}
 
 type ErrorParseProject struct{ *locale.LocalizedError }
 
@@ -70,8 +80,6 @@ type projectURL struct {
 	LegacyCommitID string
 	BranchName     string
 }
-
-var projectMapMutex = &sync.Mutex{}
 
 const LocalProjectsConfigKey = "projects"
 
@@ -91,6 +99,7 @@ type ProjectSimple struct {
 // Project covers the top level project structure of our yaml
 type Project struct {
 	Project       string        `yaml:"project"`
+	ConfigVersion int           `yaml:"config_version"`
 	Lock          string        `yaml:"lock,omitempty"`
 	Environments  string        `yaml:"environments,omitempty"`
 	Constants     Constants     `yaml:"constants,omitempty"`
@@ -402,7 +411,7 @@ type Jobs []Job
 // Parse the given filepath, which should be the full path to an activestate.yaml file
 func Parse(configFilepath string) (_ *Project, rerr error) {
 	projectDir := filepath.Dir(configFilepath)
-	files, err := ioutil.ReadDir(projectDir)
+	files, err := os.ReadDir(projectDir)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_project_readdir", "Could not read project directory: {{.V0}}.", projectDir)
 	}
@@ -451,6 +460,29 @@ func Parse(configFilepath string) (_ *Project, rerr error) {
 	namespace := fmt.Sprintf("%s/%s", project.parsedURL.Owner, project.parsedURL.Name)
 	StoreProjectMapping(cfg, namespace, filepath.Dir(project.Path()))
 
+	// Migrate project file if needed
+	if !migrationRunning && project.ConfigVersion != ConfigVersion && migrator != nil {
+		// Migrations may themselves utilize the projectfile package, so we have to ensure we don't start an infinite loop
+		migrationRunning = true
+		defer func() { migrationRunning = false }()
+
+		if project.ConfigVersion > ConfigVersion {
+			return nil, locale.NewInputError("err_projectfile_version_too_high")
+		}
+		updatedConfigVersion, errMigrate := migrator(project, ConfigVersion)
+
+		// Ensure we update the config version regardless of any error that occurred, because we don't want to repeat
+		// the same version migrations
+		project.ConfigVersion = updatedConfigVersion
+		if err := NewYamlField("config_version", ConfigVersion).Save(project.Path()); err != nil {
+			return nil, errs.Pack(errMigrate, errs.Wrap(err, "Could not save config_version"))
+		}
+
+		if errMigrate != nil {
+			return nil, errs.Wrap(errMigrate, "Migrator failed")
+		}
+	}
+
 	return project, nil
 }
 
@@ -488,9 +520,9 @@ func parse(configFilepath string) (*Project, error) {
 		return nil, &ErrorNoProject{locale.NewInputError("err_no_projectfile")}
 	}
 
-	dat, err := ioutil.ReadFile(configFilepath)
+	dat, err := os.ReadFile(configFilepath)
 	if err != nil {
-		return nil, errs.Wrap(err, "ioutil.ReadFile %s failure", configFilepath)
+		return nil, errs.Wrap(err, "os.ReadFile %s failure", configFilepath)
 	}
 
 	return parseData(dat, configFilepath)
@@ -506,7 +538,7 @@ func parseData(dat []byte, configFilepath string) (*Project, error) {
 	project.path = configFilepath
 
 	if err2 != nil {
-		return nil, &ErrorParseProject{locale.NewInputError(
+		return nil, &ErrorParseProject{locale.NewExternalError(
 			"err_project_parsed",
 			"Project file `{{.V1}}` could not be parsed, the parser produced the following error: {{.V0}}", err2.Error(), configFilepath),
 		}
@@ -525,7 +557,7 @@ func detectDeprecations(dat []byte, configFilepath string) error {
 		dep := strings.TrimSpace(strings.TrimSuffix(string(dat[depIdxs[0]:depIdxs[1]]), ":"))
 		deplist = append(deplist, locale.Tr("pjfile_deprecation_entry", dep, strconv.Itoa(depIdxs[0])))
 	}
-	return &ErrorParseProject{locale.NewInputError(
+	return &ErrorParseProject{locale.NewExternalError(
 		"pjfile_deprecation_msg",
 		"", configFilepath, strings.Join(deplist, "\n"), constants.DocumentationURL+"config/#deprecation"),
 	}
@@ -630,7 +662,7 @@ func (p *Project) parseURL() (projectURL, error) {
 
 func validateUUID(uuidStr string) error {
 	if ok := strfmt.Default.Validates("uuid", uuidStr); !ok {
-		return locale.NewError("invalid_uuid_val", "Invalid commit ID {{.V0}} in activestate.yaml. Please remove it and run `[ACTIONABLE]state pull[/RESET]` to reset it", uuidStr)
+		return locale.NewError("err_commit_id_invalid", "", uuidStr)
 	}
 
 	var uuid strfmt.UUID
@@ -846,7 +878,7 @@ func FromEnv() (*Project, error) {
 
 	project, err := Parse(projectFilePath)
 	if err != nil {
-		return nil, locale.WrapInputError(err, "err_projectfile_parse", "", projectFilePath)
+		return nil, errs.Wrap(err, "Could not parse projectfile")
 	}
 
 	return project, nil
@@ -861,14 +893,14 @@ func FromPath(path string) (*Project, error) {
 		return nil, &ErrorNoProject{locale.WrapInputError(err, "err_project_not_found", "", path)}
 	}
 
-	_, err = ioutil.ReadFile(projectFilePath)
+	_, err = os.ReadFile(projectFilePath)
 	if err != nil {
 		logging.Warning("Cannot load config file: %v", err)
 		return nil, &ErrorNoProject{locale.WrapInputError(err, "err_no_projectfile")}
 	}
 	project, err := Parse(projectFilePath)
 	if err != nil {
-		return nil, locale.WrapInputError(err, "err_projectfile_parse", "", projectFilePath)
+		return nil, errs.Wrap(err, "Could not parse projectfile")
 	}
 
 	return project, nil
@@ -883,14 +915,14 @@ func FromExactPath(path string) (*Project, error) {
 		return nil, &ErrorNoProject{locale.NewInputError("err_no_projectfile")}
 	}
 
-	_, err := ioutil.ReadFile(projectFilePath)
+	_, err := os.ReadFile(projectFilePath)
 	if err != nil {
 		logging.Warning("Cannot load config file: %v", err)
 		return nil, &ErrorNoProject{locale.WrapInputError(err, "err_no_projectfile")}
 	}
 	project, err := Parse(projectFilePath)
 	if err != nil {
-		return nil, locale.WrapInputError(err, "err_projectfile_parse", projectFilePath)
+		return nil, errs.Wrap(err, "Could not parse projectfile")
 	}
 
 	return project, nil
@@ -985,9 +1017,10 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	data := map[string]interface{}{
-		"Project": params.ProjectURL,
-		"Content": content,
-		"Private": params.Private,
+		"Project":       params.ProjectURL,
+		"Content":       content,
+		"Private":       params.Private,
+		"ConfigVersion": ConfigVersion,
 	}
 
 	tplName := "activestate.yaml.tpl"
@@ -1066,9 +1099,9 @@ func ParseVersionInfo(projectFilePath string) (*VersionInfo, error) {
 		return nil, nil
 	}
 
-	dat, err := ioutil.ReadFile(projectFilePath)
+	dat, err := os.ReadFile(projectFilePath)
 	if err != nil {
-		return nil, errs.Wrap(err, "ioutil.ReadFile %s failed", projectFilePath)
+		return nil, errs.Wrap(err, "os.ReadFile %s failed", projectFilePath)
 	}
 
 	versionStruct := VersionInfo{}
@@ -1108,25 +1141,25 @@ func AddLockInfo(projectFilePath, branch, version string) error {
 	if lockRegex.Match(data) {
 		versionUpdate := []byte(fmt.Sprintf("lock: %s@%s", branch, version))
 		replaced := lockRegex.ReplaceAll(data, versionUpdate)
-		return ioutil.WriteFile(projectFilePath, replaced, 0644)
+		return os.WriteFile(projectFilePath, replaced, 0644)
 	}
 
 	projectRegex := regexp.MustCompile(fmt.Sprintf("(?m:(^project:\\s*%s))", ProjectURLRe))
 	lockString := fmt.Sprintf("%s@%s", branch, version)
 	lockUpdate := []byte(fmt.Sprintf("${1}\nlock: %s", lockString))
 
-	data, err = ioutil.ReadFile(projectFilePath)
+	data, err = os.ReadFile(projectFilePath)
 	if err != nil {
 		return err
 	}
 
 	updated := projectRegex.ReplaceAll(data, lockUpdate)
 
-	return ioutil.WriteFile(projectFilePath, updated, 0644)
+	return os.WriteFile(projectFilePath, updated, 0644)
 }
 
 func RemoveLockInfo(projectFilePath string) error {
-	data, err := ioutil.ReadFile(projectFilePath)
+	data, err := os.ReadFile(projectFilePath)
 	if err != nil {
 		return locale.WrapError(err, "err_read_projectfile", "", projectFilePath)
 	}
@@ -1134,7 +1167,7 @@ func RemoveLockInfo(projectFilePath string) error {
 	lockRegex := regexp.MustCompile(`(?m)^lock:.*`)
 	clean := lockRegex.ReplaceAll(data, []byte(""))
 
-	err = ioutil.WriteFile(projectFilePath, clean, 0644)
+	err = os.WriteFile(projectFilePath, clean, 0644)
 	if err != nil {
 		return locale.WrapError(err, "err_write_unlocked_projectfile", "Could not remove lock from projectfile")
 	}
@@ -1143,7 +1176,7 @@ func RemoveLockInfo(projectFilePath string) error {
 }
 
 func cleanVersionInfo(projectFilePath string) ([]byte, error) {
-	data, err := ioutil.ReadFile(projectFilePath)
+	data, err := os.ReadFile(projectFilePath)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_read_projectfile", "", projectFilePath)
 	}
@@ -1154,7 +1187,7 @@ func cleanVersionInfo(projectFilePath string) ([]byte, error) {
 	versionRegex := regexp.MustCompile(`(?m:^version:\s*\d+.\d+.\d+-[A-Za-z0-9]+\n)`)
 	clean = versionRegex.ReplaceAll(clean, []byte(""))
 
-	err = ioutil.WriteFile(projectFilePath, clean, 0644)
+	err = os.WriteFile(projectFilePath, clean, 0644)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_write_clean_projectfile", "Could not write cleaned projectfile information")
 	}
@@ -1281,7 +1314,7 @@ func GetProjectPaths(cfg ConfigGetter, namespace string) []string {
 	// match case-insensitively
 	var paths []string
 	for key, value := range projects {
-		if strings.ToLower(key) == strings.ToLower(namespace) {
+		if strings.EqualFold(key, namespace) {
 			paths = append(paths, value...)
 		}
 	}
@@ -1340,7 +1373,7 @@ func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 		},
 	)
 	if err != nil {
-		multilog.Error("Could not set project mapping in config, error: %v", err)
+		multilog.Error("Could not set project mapping in config, error: %v", errs.JoinMessage(err))
 	}
 }
 

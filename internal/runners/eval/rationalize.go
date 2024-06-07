@@ -7,8 +7,8 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
-	"github.com/ActiveState/cli/pkg/platform/model"
+	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 )
 
 func rationalizeError(rerr *error) {
@@ -16,13 +16,14 @@ func rationalizeError(rerr *error) {
 		return
 	}
 
-	var planningError *bpModel.BuildPlannerError
-	var failedArtifactsError model.ErrFailedArtifacts
+	var planningError *bpResp.BuildPlannerError
+	var failedArtifactsError buildplanner.ErrFailedArtifacts
+	var targetNotFoundError *bpResp.TargetNotFoundError
 
 	switch {
 	case errors.Is(*rerr, rationalize.ErrNotAuthenticated):
 		*rerr = errs.WrapUserFacing(*rerr,
-			locale.T("err_init_authenticated"),
+			locale.Tl("err_eval_not_authenticated", "You need to authenticate to evaluate a target"),
 			errs.SetInput(),
 		)
 
@@ -30,6 +31,9 @@ func rationalizeError(rerr *error) {
 		*rerr = errs.WrapUserFacing(*rerr,
 			locale.Tr("err_no_project"),
 			errs.SetInput())
+
+	case errors.As(*rerr, &targetNotFoundError):
+		*rerr = errs.WrapUserFacing(*rerr, locale.Tl("err_target_not_found", "{{.V0}}", targetNotFoundError.Message))
 
 	case errors.As(*rerr, &planningError):
 		// Forward API error to user.

@@ -83,10 +83,11 @@ func (r *Prepare) resetExecutors() error {
 
 	run, err := rt.New(target.NewCustomTarget(proj.Owner(), proj.Name(), commitID, defaultTargetDir, target.TriggerResetExec), r.analytics, r.svcModel, nil, r.cfg, r.out)
 	if err != nil {
-		if rt.IsNeedsUpdateError(err) {
-			return nil // project was never set up, so no executors to reset
-		}
 		return errs.Wrap(err, "Could not initialize runtime for project.")
+	}
+
+	if !run.NeedsUpdate() {
+		return nil // project was never set up, so no executors to reset
 	}
 
 	if err := globaldefault.SetupDefaultActivation(r.subshell, r.cfg, run, proj); err != nil {
@@ -123,7 +124,7 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 	err := r.prepareOS()
 	if err != nil {
 		if installation.IsStateExeDoesNotExistError(err) && runtime.GOOS == "windows" {
-			return locale.WrapInputError(err, "err_install_state_exe_does_not_exist", "", constants.ForumsURL)
+			return locale.WrapExternalError(err, "err_install_state_exe_does_not_exist", "", constants.ForumsURL)
 		}
 		return errs.Wrap(err, "Could not prepare OS")
 	}

@@ -76,7 +76,7 @@ func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an ana
 			return false, nil // ignore
 		}
 		if os.IsPermission(err) {
-			return false, locale.WrapInputError(err, locale.Tr("auto_update_permission_err", constants.DocumentationURL, errs.JoinMessage(err)))
+			return false, locale.WrapExternalError(err, locale.Tr("auto_update_permission_err", constants.DocumentationURL, errs.JoinMessage(err)))
 		}
 		return false, locale.WrapError(err, locale.T("auto_update_failed"))
 	}
@@ -189,6 +189,6 @@ func isFreshInstall() bool {
 		multilog.Error("Could not stat file: %s, error: %v", exe, err)
 		return true
 	}
-	diff := time.Now().Sub(stat.ModTime())
+	diff := time.Since(stat.ModTime())
 	return diff < 24*time.Hour
 }

@@ -2,14 +2,12 @@ package integration
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
-
-	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -19,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 )
@@ -36,13 +35,13 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	ts.SetupRCFile()
 	suite.T().Setenv(constants.HomeEnvVarName, ts.Dirs.HomeDir)
 
-	dir, err := ioutil.TempDir("", "system*")
+	dir, err := os.MkdirTemp("", "system*")
 	suite.NoError(err)
 
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.OptArgs(installationDir(ts)),
+		e2e.OptArgs(installationDir(ts), "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=false"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -59,7 +58,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	// Ensure installing overtop doesn't result in errors
 	cp = ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.OptArgs(installationDir(ts)),
+		e2e.OptArgs(installationDir(ts), "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=false"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -73,7 +72,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(installationDir(ts), installation.InstallDirMarker), []byte{}))
 	cp = ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.OptArgs(installationDir(ts)),
+		e2e.OptArgs(installationDir(ts), "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=false"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -134,7 +133,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallIncompatible() {
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.OptArgs(installationDir(ts)),
+		e2e.OptArgs(installationDir(ts), "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=false", sysinfo.VersionOverrideEnvVar+"=10.0.0"),
 	)
 
@@ -149,12 +148,12 @@ func (suite *InstallerIntegrationTestSuite) TestInstallNoErrorTips() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	dir, err := ioutil.TempDir("", "system*")
+	dir, err := os.MkdirTemp("", "system*")
 	suite.NoError(err)
 
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.OptArgs(installationDir(ts), "--activate", "ActiveState/DoesNotExist"),
+		e2e.OptArgs(installationDir(ts), "--activate", "ActiveState/DoesNotExist", "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=true"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -169,12 +168,12 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	dir, err := ioutil.TempDir("", "system*")
+	dir, err := os.MkdirTemp("", "system*")
 	suite.NoError(err)
 
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.OptArgs(installationDir(ts), "--activate", "ActiveState-CLI/Python3"),
+		e2e.OptArgs(installationDir(ts), "--activate", "ActiveState-CLI/Python3", "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=true"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -204,7 +203,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
 
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.OptArgs(installationDir(ts)),
+		e2e.OptArgs(installationDir(ts), "-n"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 	)
 	cp.Expect("Done")
@@ -214,7 +213,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
 	// State Service.app should be overwritten cleanly without error.
 	cp = ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.OptArgs(installationDir(ts)+"2"),
+		e2e.OptArgs(installationDir(ts)+"2", "-n"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 	)
 	cp.Expect("Done")
@@ -231,12 +230,12 @@ func (suite *InstallerIntegrationTestSuite) TestInstallWhileInUse() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	dir, err := ioutil.TempDir("", "system*")
+	dir, err := os.MkdirTemp("", "system*")
 	suite.NoError(err)
 
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.OptArgs(installationDir(ts)),
+		e2e.OptArgs(installationDir(ts), "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=true"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -252,7 +251,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallWhileInUse() {
 	// executables. Verify that this works without error.
 	cp2 := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.OptArgs(installationDir(ts), "-f"),
+		e2e.OptArgs(installationDir(ts), "-f", "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=true"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -262,7 +261,10 @@ func (suite *InstallerIntegrationTestSuite) TestInstallWhileInUse() {
 	cp2.ExpectExit() // the return code can vary depending on shell (e.g. zsh vs. bash); just assert the installer shell exited
 
 	oldStateExeFound := false
-	for _, file := range fileutils.ListDirSimple(filepath.Join(installationDir(ts), "bin"), false) {
+	files, err := fileutils.ListDirSimple(filepath.Join(installationDir(ts), "bin"), false)
+	suite.Require().NoError(err)
+
+	for _, file := range files {
 		if strings.Contains(file, "state.exe") && strings.HasSuffix(file, ".old") {
 			oldStateExeFound = true
 			break
@@ -311,7 +313,7 @@ func installationDir(ts *e2e.Session) string {
 
 func (suite *InstallerIntegrationTestSuite) SetupSuite() {
 	rootPath := environment.GetRootPathUnsafe()
-	localPayload := filepath.Join(rootPath, "build", "payload", constants.ToplevelInstallArchiveDir)
+	localPayload := filepath.Join(rootPath, "build", "payload", constants.LegacyToplevelInstallArchiveDir)
 	suite.Require().DirExists(localPayload, "locally generated payload exists")
 
 	installerExe := filepath.Join(localPayload, constants.StateInstallerCmd+osutils.ExeExtension)

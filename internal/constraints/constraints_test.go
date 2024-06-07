@@ -91,15 +91,6 @@ func TestSysinfoMacOSEnv(t *testing.T) {
 	}
 }
 
-func sliceContains(s []int, v int) bool {
-	for _, sv := range s {
-		if sv == v {
-			return true
-		}
-	}
-	return false
-}
-
 func TestConditional_Eval(t *testing.T) {
 	type fields struct {
 		params map[string]interface{}

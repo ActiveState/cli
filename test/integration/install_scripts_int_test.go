@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
 
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
@@ -69,6 +69,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			installDir := filepath.Join(ts.Dirs.Work, "install")
 			argsPlain := []string{script}
 			argsPlain = append(argsPlain, "-t", installDir)
+			argsPlain = append(argsPlain, "-n")
 			if tt.Channel != "" {
 				argsPlain = append(argsPlain, "-b", tt.Channel)
 			}
@@ -158,7 +159,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
 	defer ts.Close()
 
 	script := scriptPath(suite.T(), ts.Dirs.Work)
-	argsPlain := []string{script, "-t", ts.Dirs.Work}
+	argsPlain := []string{script, "-t", ts.Dirs.Work, "-n"}
 	argsPlain = append(argsPlain, "-b", constants.ChannelName)
 	var cp *e2e.SpawnedCmd
 	if runtime.GOOS != "windows" {
@@ -181,7 +182,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_VersionDoesNotExist
 	defer ts.Close()
 
 	script := scriptPath(suite.T(), ts.Dirs.Work)
-	args := []string{script, "-t", ts.Dirs.Work}
+	args := []string{script, "-t", ts.Dirs.Work, "-n"}
 	args = append(args, "-v", "does-not-exist")
 	var cp *e2e.SpawnedCmd
 	if runtime.GOOS != "windows" {
@@ -221,15 +222,16 @@ func scriptPath(t *testing.T, targetDir string) string {
 
 // assertBinDirContents checks if given files are or are not in the bin directory
 func (suite *InstallScriptsIntegrationTestSuite) assertBinDirContents(dir string) {
-	binFiles := listFilesOnly(dir)
+	binFiles := suite.listFilesOnly(dir)
 	suite.Contains(binFiles, "state"+osutils.ExeExtension)
 	suite.Contains(binFiles, "state-svc"+osutils.ExeExtension)
 }
 
 // listFilesOnly is a helper function for assertBinDirContents filtering a directory recursively for base filenames
 // It allows for simple and coarse checks if a file exists or does not exist in the directory structure
-func listFilesOnly(dir string) []string {
-	files := fileutils.ListDirSimple(dir, true)
+func (suite *InstallScriptsIntegrationTestSuite) listFilesOnly(dir string) []string {
+	files, err := fileutils.ListDirSimple(dir, true)
+	suite.Require().NoError(err)
 	files = funk.Filter(files, func(f string) bool {
 		return !fileutils.IsDir(f)
 	}).([]string)

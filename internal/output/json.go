@@ -61,12 +61,10 @@ func (f *JSON) Fprint(writer io.Writer, value interface{}) {
 		b = []byte(colorize.StripColorCodes(string(b)))
 	}
 
-	writer.Write(b)
-}
-
-type StructuredError struct {
-	Error string   `json:"error"`
-	Tips  []string `json:"tips,omitempty"`
+	_, err := writer.Write(b)
+	if err != nil {
+		multilog.Error("Could not write json output, error: %v", err)
+	}
 }
 
 // Error will marshal and print the given value to the error writer
@@ -80,9 +78,9 @@ func (f *JSON) Error(value interface{}) {
 
 	var b []byte
 	var err error
-	switch value.(type) {
+	switch value := value.(type) {
 	case []byte:
-		b = value.([]byte)
+		b = value
 	default:
 		b, err = json.Marshal(toStructuredError(value))
 	}
@@ -92,7 +90,10 @@ func (f *JSON) Error(value interface{}) {
 	}
 	b = []byte(colorize.StripColorCodes(string(b)))
 
-	f.cfg.OutWriter.Write(b)
+	_, err = f.cfg.OutWriter.Write(b)
+	if err != nil {
+		multilog.Error("Could not write json output, error: %v", err)
+	}
 }
 
 // Notice is ignored by JSON, as they are considered as non-critical output and there's currently no reliable way to
@@ -113,6 +114,16 @@ func prepareJSONValue(v interface{}) interface{} {
 	return v
 }
 
+// StructuredError communicates that an error happened due to output that was meant to be structured but wasn't.
+type StructuredError struct {
+	Message string   `json:"error"`
+	Tips    []string `json:"tips,omitempty"`
+}
+
+func (s StructuredError) Error() string {
+	return s.Message
+}
+
 // toStructuredError attempts to convert the given interface into a StructuredError struct.
 // It accepts an error object or a single string error message.
 // If it cannot perform the conversion, it returns a StructuredError indicating so.
@@ -121,11 +132,11 @@ func toStructuredError(v interface{}) StructuredError {
 	case StructuredError:
 		return vv
 	case error:
-		return StructuredError{Error: locale.JoinedErrorMessage(vv)}
+		return StructuredError{Message: locale.JoinedErrorMessage(vv)}
 	case string:
-		return StructuredError{Error: vv}
+		return StructuredError{Message: vv}
 	}
 	message := fmt.Sprintf("Not a recognized error format: %v", v)
 	multilog.Error(message)
-	return StructuredError{Error: message}
+	return StructuredError{Message: message}
 }

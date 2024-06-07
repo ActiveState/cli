@@ -1,10 +1,12 @@
 package scripts
 
 import (
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -36,15 +38,19 @@ func (s *Scripts) Run() error {
 	logging.Debug("Execute scripts command")
 
 	if s.project == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 	s.output.Notice(locale.Tr("operating_message", s.project.NamespaceString(), s.project.Dir()))
 
 	name, owner := s.project.Name(), s.project.Owner()
 	logging.Debug("listing scripts for org=%s, project=%s", owner, name)
 
-	scripts := make([]scriptLine, len(s.project.Scripts()))
-	for i, s := range s.project.Scripts() {
+	projectScripts, err := s.project.Scripts()
+	if err != nil {
+		return errs.Wrap(err, "Could not get scripts")
+	}
+	scripts := make([]scriptLine, len(projectScripts))
+	for i, s := range projectScripts {
 		scripts[i] = scriptLine{s.Name(), s.Description()}
 	}
 

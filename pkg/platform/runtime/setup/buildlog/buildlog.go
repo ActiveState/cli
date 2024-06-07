@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/go-openapi/strfmt"
 	"github.com/gorilla/websocket"
@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
 // verboseLogging is true if the user provided an environment variable for it
@@ -41,17 +40,23 @@ type BuildLogConnector interface {
 type Events interface {
 	BuildStarting(total int)
 	BuildFinished()
-	ArtifactBuildStarting(artifactID artifact.ArtifactID)
-	ArtifactBuildCached(artifactID artifact.ArtifactID, logURI string)
-	ArtifactBuildCompleted(artifactID artifact.ArtifactID, logURI string)
-	ArtifactBuildFailed(artifactID artifact.ArtifactID, logURI string, errorMessage string)
-	ArtifactBuildProgress(artifact artifact.ArtifactID, timestamp string, message string, facility, pipeName, source string)
+	ArtifactBuildStarting(artifactID strfmt.UUID)
+	ArtifactBuildCached(artifactID strfmt.UUID, logURI string)
+	ArtifactBuildCompleted(artifactID strfmt.UUID, logURI string)
+	ArtifactBuildFailed(artifactID strfmt.UUID, logURI string, errorMessage string)
+	ArtifactBuildProgress(artifact strfmt.UUID, timestamp string, message string, facility, pipeName, source string)
 	Heartbeat(time.Time)
 }
 
 // BuildError designates a build log build error.
 type BuildError struct {
 	*locale.LocalizedError
+}
+
+type ArtifactBuildError struct {
+	*errs.WrapperError
+	Artifact *buildplan.Artifact
+	Message  *ArtifactFailedMessage
 }
 
 // EventHandlerError designates an error in the event handler for reporting progress.
@@ -61,14 +66,14 @@ type EventHandlerError struct {
 
 // BuildLog is an implementation of a build log
 type BuildLog struct {
-	ch    chan artifact.ArtifactDownload
+	ch    chan *buildplan.Artifact
 	errCh chan error
 	conn  *websocket.Conn
 }
 
 // New creates a new BuildLog instance that allows us to wait for incoming build log information
 // artifactMap comprises all artifacts (from the runtime closure) that are in the recipe, alreadyBuilt is set of artifact IDs that have already been built in the past
-func New(ctx context.Context, artifactMap artifact.Map, eventHandler events.Handler, recipeID strfmt.UUID, logFilePath string, buildResult *model.BuildResult) (*BuildLog, error) {
+func New(ctx context.Context, artifactMap buildplan.ArtifactIDMap, eventHandler events.Handler, recipeID strfmt.UUID, logFilePath string) (*BuildLog, error) {
 	conn, err := buildlogstream.Connect(ctx)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not connect to build-log streamer build updates")
@@ -84,11 +89,11 @@ func New(ctx context.Context, artifactMap artifact.Map, eventHandler events.Hand
 }
 
 // NewWithCustomConnections creates a new BuildLog instance with all physical connections managed by the caller
-func NewWithCustomConnections(artifactMap artifact.Map,
+func NewWithCustomConnections(artifactMap buildplan.ArtifactIDMap,
 	conn BuildLogConnector, eventHandler events.Handler,
 	recipeID strfmt.UUID, logFilePath string) (*BuildLog, error) {
 
-	ch := make(chan artifact.ArtifactDownload)
+	ch := make(chan *buildplan.Artifact)
 	errCh := make(chan error)
 
 	if err := handleEvent(eventHandler, events.BuildStarted{logFilePath}); err != nil {
@@ -99,7 +104,20 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 		defer close(ch)
 		defer close(errCh)
 
-		artifactsDone := make(map[artifact.ArtifactID]struct{})
+		// It is currently possible for the buildlogstreamer to send the same event twice.
+		// This happens, when nomad looses track of a build job and the HC re-schedules it.
+		// The following code is used to identify duplicate events.
+		uniqueEvents := make(map[string]struct{})
+		observed := func(id ...string) bool {
+			idStr := strings.Join(id, ".")
+			_, ok := uniqueEvents[idStr]
+			if !ok {
+				uniqueEvents[idStr] = struct{}{}
+			}
+			return ok
+		}
+
+		artifactsDone := make(map[strfmt.UUID]struct{})
 
 		// Set up log file
 		logMutex := &sync.Mutex{}
@@ -109,12 +127,12 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 			return
 		}
 		defer logfile.Close()
-		writeLogFile := func(artifactID artifact.ArtifactID, msg string) error {
+		writeLogFile := func(artifactID strfmt.UUID, msg string) error {
 			logMutex.Lock()
 			defer logMutex.Unlock()
 			name := artifactID.String()
 			if a, ok := artifactMap[artifactID]; ok {
-				name = a.Name + " (" + artifactID.String() + ")"
+				name = a.Name() + " (" + artifactID.String() + ")"
 			}
 			if name != "" {
 				name = name + ": "
@@ -134,7 +152,7 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 				if _, done := artifactsDone[id]; !done {
 					name := id.String()
 					if a, ok := artifactMap[id]; ok {
-						name = a.Name + " (" + id.String() + ")"
+						name = a.Name() + " (" + id.String() + ")"
 					}
 					result = append(result, name)
 				}
@@ -142,12 +160,19 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 			return result
 		}
 
-		buildSuccess := func() {
-			if err := writeLogFile("", "Build Succeeded"); err != nil {
+		anyFailures := false
+		buildFinished := func() {
+			status := "Succeeded"
+			var event events.Eventer = events.BuildSuccess{}
+			if anyFailures {
+				status = "Failed"
+				event = events.BuildFailure{}
+			}
+			if err := writeLogFile("", "Build "+status); err != nil {
 				errCh <- errs.Wrap(err, "Could not write to build log file")
 			}
-			if err := handleEvent(eventHandler, events.BuildSuccess{}); err != nil {
-				errCh <- errs.Wrap(err, "Could not handle BuildSuccess event")
+			if err := handleEvent(eventHandler, event); err != nil {
+				errCh <- errs.Wrap(err, "Could not handle BuildSuccess/BuildFailure event")
 			}
 		}
 
@@ -167,27 +192,46 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 
 			switch msg.MessageType() {
 			case BuildStarted:
+				if observed(msg.MessageTypeValue()) {
+					break
+				}
 				if err := writeLogFile("", "Build Started"); err != nil {
 					errCh <- errs.Wrap(err, "Could not write to build log file")
 				}
 			case BuildFailed:
+				if observed(msg.MessageTypeValue()) {
+					break
+				}
 				m := msg.messager.(BuildFailedMessage)
 				if err := writeLogFile("", m.ErrorMessage); err != nil {
 					errCh <- errs.Wrap(err, "Could not write to build log file")
 				}
-				if err := handleEvent(eventHandler, events.BuildFailure{}); err != nil {
+				if err := handleEvent(eventHandler, events.BuildFailure{m.ErrorMessage}); err != nil {
 					errCh <- errs.Wrap(err, "Could not handle BuildFailure event")
 				}
 				errCh <- &BuildError{locale.WrapError(artifactErr, "err_logstream_build_failed", "Build failed with error message: {{.V0}}.", m.ErrorMessage)}
 				return
 			case BuildSucceeded:
-				buildSuccess()
+				if observed(msg.MessageTypeValue()) {
+					break
+				}
+				buildFinished()
 				return
 			case ArtifactStarted:
 				m := msg.messager.(ArtifactMessage)
 				// NOTE: fix to ignore current noop "final pkg artifact"
-				if artifact.ArtifactID(m.ArtifactID) == recipeID {
-					continue
+				if m.ArtifactID == recipeID {
+					break
+				}
+
+				_, ok := artifactMap[m.ArtifactID]
+				if !ok {
+					logging.Debug("Ignoring ArtifactStarted %s as we are not monitoring this artifact", m.ArtifactID)
+					break
+				}
+
+				if observed(msg.MessageTypeValue(), m.ArtifactID.String()) {
+					break
 				}
 
 				if err := writeLogFile(m.ArtifactID, "Artifact Build Started"); err != nil {
@@ -216,6 +260,16 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 					break
 				}
 
+				ad, ok := artifactMap[m.ArtifactID]
+				if !ok {
+					logging.Debug("Ignoring ArtifactSucceeded %s as we are not monitoring this artifact", m.ArtifactID)
+					break
+				}
+
+				if observed(msg.MessageTypeValue(), m.ArtifactID.String()) {
+					break
+				}
+
 				artifactsDone[m.ArtifactID] = struct{}{}
 
 				if err := writeLogFile(m.ArtifactID, fmt.Sprintf(strings.TrimSpace(`
@@ -227,7 +281,14 @@ Artifact Build Succeeded.
 					errCh <- errs.Wrap(err, "Could not write to build log file")
 				}
 
-				ch <- artifact.ArtifactDownload{ArtifactID: m.ArtifactID, DownloadURI: m.ArtifactURI, Checksum: m.ArtifactChecksum}
+				if m.ArtifactURI == "" {
+					errCh <- errs.Wrap(err, "Received artifact succeeded event without artifact URL: %+v", m)
+					return
+				}
+
+				ad.SetDownload(m.ArtifactURI, m.ArtifactChecksum)
+
+				ch <- ad
 
 				if err := handleEvent(eventHandler, events.ArtifactBuildSuccess{m.ArtifactID, m.LogURI}); err != nil {
 					errCh <- errs.Wrap(err, "Could not handle ArtifactBuildSuccess event")
@@ -239,13 +300,22 @@ Artifact Build Succeeded.
 				// and stop monitoring the buildlogstreamer when we've received events for all our artifacts.
 				// This can be dropped once buildlostreamer speaks buildplans.
 				if len(stillWaiting()) == 0 {
-					buildSuccess()
+					buildFinished()
 					return
 				}
 			case ArtifactFailed:
-
+				anyFailures = true
 				m := msg.messager.(ArtifactFailedMessage)
-				artifactName, _ := resolveArtifactName(m.ArtifactID, artifactMap)
+
+				ad, ok := artifactMap[m.ArtifactID]
+				if !ok {
+					logging.Debug("Ignoring ArtifactFailed %s as we are not monitoring this artifact", m.ArtifactID)
+					break
+				}
+
+				if observed(msg.MessageTypeValue(), m.ArtifactID.String()) {
+					break
+				}
 
 				artifactsDone[m.ArtifactID] = struct{}{}
 
@@ -257,14 +327,36 @@ Artifact Build Failed.
 					errCh <- errs.Wrap(err, "Could not write to build log file")
 				}
 
-				artifactErr = locale.WrapError(artifactErr, "err_artifact_failed", "Failed to build \"{{.V0}}\", error reported: {{.V1}}.", artifactName, m.ErrorMessage)
+				artifactErr = locale.WrapError(artifactErr, "err_artifact_failed", "Failed to build \"{{.V0}}\", error reported: {{.V1}}.", ad.Name(), m.ErrorMessage)
 
 				if err := handleEvent(eventHandler, events.ArtifactBuildFailure{m.ArtifactID, m.LogURI, m.ErrorMessage}); err != nil {
 					errCh <- errs.Wrap(err, "Could not handle ArtifactBuildFailure event")
 					return
 				}
+
+				errCh <- &ArtifactBuildError{
+					errs.New("artifact build failed"),
+					ad,
+					&m,
+				}
+
+				if len(stillWaiting()) == 0 {
+					buildFinished()
+					return
+				}
+
 			case ArtifactProgress:
 				m := msg.messager.(ArtifactProgressMessage)
+
+				_, ok := artifactMap[m.ArtifactID]
+				if !ok {
+					break
+				}
+
+				if _, ok := artifactsDone[m.ArtifactID]; ok {
+					// ignore progress reports for artifacts that have finished
+					break
+				}
 
 				if err := writeLogFile(m.ArtifactID, "Log: "+m.Body.Message); err != nil {
 					errCh <- errs.Wrap(err, "Could not write to log file")
@@ -284,7 +376,7 @@ Artifact Build Failed.
 				}
 			case Heartbeat:
 				waiting := stillWaiting()
-				msg := fmt.Sprintf("Heartbeat (still waiting for %d: %s)", len(waiting), strings.Join(waiting, ", "))
+				msg := fmt.Sprintf("Heartbeat (still waiting for %d more artifacts: %s)", len(waiting), strings.Join(waiting, ", "))
 				if err := writeLogFile("", msg); err != nil {
 					errCh <- errs.Wrap(err, "Could not write to log file")
 					return
@@ -308,9 +400,13 @@ Artifact Build Failed.
 
 // Wait waits for the build log to close because the build is done and all downloadable artifacts are here
 func (bl *BuildLog) Wait() error {
+	var rerr error
 	var errors []error
 	for err := range bl.errCh {
-		errors = append(errors, err)
+		if rerr == nil {
+			rerr = errs.New("failed build")
+		}
+		rerr = errs.Pack(rerr, err)
 	}
 	if len(errors) > 0 {
 		return errors[0]
@@ -328,17 +424,8 @@ func (bl *BuildLog) Close() error {
 }
 
 // BuiltArtifactsChannel returns the channel to listen for downloadable artifacts on
-func (bl *BuildLog) BuiltArtifactsChannel() <-chan artifact.ArtifactDownload {
+func (bl *BuildLog) BuiltArtifactsChannel() <-chan *buildplan.Artifact {
 	return bl.ch
-}
-
-func resolveArtifactName(artifactID artifact.ArtifactID, artifactMap artifact.Map) (name string, ok bool) {
-	artf, ok := artifactMap[artifactID]
-	if !ok {
-		return locale.Tl("unknown_artifact_name", "unknown"), false
-	}
-
-	return artf.NameWithVersion(), true
 }
 
 func handleEvent(handler events.Handler, ev events.Eventer) error {

@@ -26,6 +26,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/sighandler"
 	"github.com/ActiveState/cli/internal/table"
 	"github.com/spf13/cobra"
@@ -46,10 +47,6 @@ var appEventPrefix string = func() string {
 }()
 
 var cobraMapping map[*cobra.Command]*Command = make(map[*cobra.Command]*Command)
-
-type cobraCommander interface {
-	GetCobraCmd() *cobra.Command
-}
 
 type primer interface {
 	Output() output.Outputer
@@ -183,8 +180,7 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 			}
 			cmd.outputTitleIfAny()
 		} else if cmd.out.Type().IsStructured() && !cmd.structuredOutput {
-			cmd.out.Error(locale.NewInputError("err_no_structured_output", "", string(cmd.out.Type())))
-			return nil
+			return locale.NewInputError("err_no_structured_output", "", string(cmd.out.Type()))
 		}
 		return err
 	})
@@ -230,7 +226,9 @@ func NewHiddenShimCommand(name string, prime primer, flags []*Flag, args []*Argu
 	}
 
 	cmd.cobra.SetHelpFunc(func(_ *cobra.Command, args []string) {
-		cmd.execute(cmd, args)
+		if err := cmd.execute(cmd, args); err != nil {
+			panic(err)
+		}
 	})
 
 	if err := cmd.setFlags(flags); err != nil {
@@ -288,7 +286,7 @@ func (c *Command) ShortDescription() string {
 }
 
 func (c *Command) Execute(args []string) error {
-	defer profile.Measure(fmt.Sprintf("cobra:Execute"), time.Now())
+	defer profile.Measure("cobra:Execute", time.Now())
 	c.cobra.SetArgs(args)
 	err := c.cobra.Execute()
 	c.cobra.SetArgs(nil)
@@ -618,7 +616,7 @@ func (c *Command) commandNames(includeRoot bool) []string {
 
 // cobraExecHandler is the function that we've routed cobra to run when a command gets executed.
 // It allows us to wrap some over-arching logic around command executions, and should never be called directly.
-func (c *Command) cobraExecHandler(cobraCmd *cobra.Command, args []string) error {
+func (c *Command) cobraExecHandler(cobraCmd *cobra.Command, args []string) (rerr error) {
 	defer profile.Measure("captain:runner", time.Now())
 
 	subCommandString := c.JoinedSubCommandNames()
@@ -656,8 +654,7 @@ func (c *Command) cobraExecHandler(cobraCmd *cobra.Command, args []string) error
 		c.out.Notice(locale.Tr("unstable_command_warning"))
 		return nil
 	} else if c.out.Type().IsStructured() && !c.structuredOutput {
-		c.out.Error(locale.NewInputError("err_no_structured_output", "", string(c.out.Type())))
-		return nil
+		return locale.NewInputError("err_no_structured_output", "", string(c.out.Type()))
 	}
 
 	// Run OnUse functions for non-persistent flags
@@ -690,7 +687,7 @@ func (c *Command) cobraExecHandler(cobraCmd *cobra.Command, args []string) error
 	// initialize signal handler for analytics events
 	as := sighandler.NewAwaitingSigHandler(os.Interrupt)
 	sighandler.Push(as)
-	defer sighandler.Pop()
+	defer rtutils.Closer(sighandler.Pop, &rerr)
 
 	err := as.WaitForFunc(func() error {
 		defer profile.Measure("captain:cmd:execute", time.Now())
@@ -702,6 +699,9 @@ func (c *Command) cobraExecHandler(cobraCmd *cobra.Command, args []string) error
 		}
 
 		if err := c.execute(c, args); err != nil {
+			if !locale.HasError(err) {
+				return locale.WrapError(err, "unexpected_error", "Command failed due to unexpected error. For your convenience, this is the error chain:\n{{.V0}}", errs.JoinMessage(err))
+			}
 			return errs.Wrap(err, "execute failed")
 		}
 
@@ -773,16 +773,9 @@ func (c *Command) outputTitleIfAny() {
 	}
 }
 
-func (c *Command) argValidator(cobraCmd *cobra.Command, args []string) error {
-	return nil
-}
-
 // setupSensibleErrors inspects an error value for certain errors and returns a
 // wrapped error that can be checked and that is localized.
 func setupSensibleErrors(err error, args []string) error {
-	if err, ok := err.(error); ok && err == nil {
-		return nil
-	}
 	if err == nil {
 		return nil
 	}

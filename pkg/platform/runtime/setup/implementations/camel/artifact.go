@@ -3,7 +3,6 @@ package camel
 import (
 	"bytes"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -13,9 +12,9 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/unarchiver"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
+	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 )
 
@@ -24,11 +23,11 @@ type ErrNotExecutable struct{ *locale.LocalizedError }
 type ErrNoPrefixes struct{ *locale.LocalizedError }
 
 type ArtifactSetup struct {
-	artifactID artifact.ArtifactID
+	artifactID strfmt.UUID
 	store      *store.Store
 }
 
-func NewArtifactSetup(artifactID artifact.ArtifactID, store *store.Store) *ArtifactSetup {
+func NewArtifactSetup(artifactID strfmt.UUID, store *store.Store) *ArtifactSetup {
 	return &ArtifactSetup{artifactID, store}
 }
 
@@ -42,7 +41,7 @@ func (as *ArtifactSetup) EnvDef(tmpDir string) (*envdef.EnvironmentDefinition, e
 	// First: We need to identify the values for <archiveName> and <relInstallDir>
 
 	var archiveName string
-	fs, err := ioutil.ReadDir(tmpDir)
+	fs, err := os.ReadDir(tmpDir)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not read temporary installation directory %s", tmpDir)
 	}
@@ -205,7 +204,7 @@ func fileTransformsInDir(instDir string, searchDir string, searchString string, 
 			return nil
 		}
 
-		b, err := ioutil.ReadFile(path)
+		b, err := os.ReadFile(path)
 		if err != nil {
 			return errs.Wrap(err, "Could not read file path %s", path)
 		}

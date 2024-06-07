@@ -3,6 +3,7 @@ package cmdcall
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -100,7 +101,11 @@ func (cc *CmdCall) Run(eventType project.EventType) error {
 		}
 
 		scriptName, scriptArgs := ss[0], ss[1:]
-		if err := cc.scriptrun.Run(cc.proj.ScriptByName(scriptName), scriptArgs); err != nil {
+		script, err := cc.proj.ScriptByName(scriptName)
+		if err != nil {
+			return errs.Wrap(err, "Could not get script")
+		}
+		if err := cc.scriptrun.Run(script, scriptArgs); err != nil {
 			return locale.WrapError(
 				err, "cmdcall_event_err_script_run",
 				"Failure running defined script '[NOTICE]{{.V0}}[/RESET]' for event '[NOTICE]{{.V1}}[/RESET]'",

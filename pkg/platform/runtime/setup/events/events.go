@@ -1,7 +1,6 @@
 package events
 
 import (
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -15,6 +14,17 @@ type Handler interface {
 	Close() error
 }
 
+type VoidHandler struct {
+}
+
+func (v *VoidHandler) Handle(Eventer) error {
+	return nil
+}
+
+func (v *VoidHandler) Close() error {
+	return nil
+}
+
 type Event struct{}
 
 type Eventer interface {
@@ -25,12 +35,12 @@ type Start struct {
 	RecipeID strfmt.UUID
 
 	RequiresBuild bool
-	ArtifactNames artifact.Named
+	Artifacts     map[strfmt.UUID]string
 	LogFilePath   string
 
-	ArtifactsToBuild    []artifact.ArtifactID
-	ArtifactsToDownload []artifact.ArtifactID
-	ArtifactsToInstall  []artifact.ArtifactID
+	ArtifactsToBuild    []strfmt.UUID
+	ArtifactsToDownload []strfmt.UUID
+	ArtifactsToInstall  []strfmt.UUID
 }
 
 func (Start) IsEvent() Event {
@@ -74,6 +84,7 @@ func (BuildSuccess) IsEvent() Event {
 }
 
 type BuildFailure struct {
+	Message string
 }
 
 func (BuildFailure) IsEvent() Event {
@@ -81,7 +92,7 @@ func (BuildFailure) IsEvent() Event {
 }
 
 type ArtifactBuildStarted struct {
-	ArtifactID artifact.ArtifactID
+	ArtifactID strfmt.UUID
 	FromCache  bool
 }
 
@@ -90,7 +101,7 @@ func (ArtifactBuildStarted) IsEvent() Event {
 }
 
 type ArtifactBuildProgress struct {
-	ArtifactID   artifact.ArtifactID
+	ArtifactID   strfmt.UUID
 	LogTimestamp string
 	LogLevel     string // eg. (INFO/ERROR/...)
 	LogChannel   string // channel through which this log line was generated (stdout/stderr/...)
@@ -103,7 +114,7 @@ func (ArtifactBuildProgress) IsEvent() Event {
 }
 
 type ArtifactBuildFailure struct {
-	ArtifactID   artifact.ArtifactID
+	ArtifactID   strfmt.UUID
 	LogURI       string
 	ErrorMessage string
 }
@@ -113,7 +124,7 @@ func (ArtifactBuildFailure) IsEvent() Event {
 }
 
 type ArtifactBuildSuccess struct {
-	ArtifactID artifact.ArtifactID
+	ArtifactID strfmt.UUID
 	LogURI     string
 }
 
@@ -122,7 +133,7 @@ func (ArtifactBuildSuccess) IsEvent() Event {
 }
 
 type ArtifactDownloadStarted struct {
-	ArtifactID artifact.ArtifactID
+	ArtifactID strfmt.UUID
 	TotalSize  int
 }
 
@@ -131,7 +142,7 @@ func (ArtifactDownloadStarted) IsEvent() Event {
 }
 
 type ArtifactDownloadSkipped struct {
-	ArtifactID artifact.ArtifactID
+	ArtifactID strfmt.UUID
 }
 
 func (ArtifactDownloadSkipped) IsEvent() Event {
@@ -139,7 +150,7 @@ func (ArtifactDownloadSkipped) IsEvent() Event {
 }
 
 type ArtifactDownloadProgress struct {
-	ArtifactID      artifact.ArtifactID
+	ArtifactID      strfmt.UUID
 	IncrementBySize int
 }
 
@@ -148,7 +159,7 @@ func (ArtifactDownloadProgress) IsEvent() Event {
 }
 
 type ArtifactDownloadFailure struct {
-	ArtifactID artifact.ArtifactID
+	ArtifactID strfmt.UUID
 	Error      error
 }
 
@@ -157,7 +168,7 @@ func (ArtifactDownloadFailure) IsEvent() Event {
 }
 
 type ArtifactDownloadSuccess struct {
-	ArtifactID artifact.ArtifactID
+	ArtifactID strfmt.UUID
 }
 
 func (ArtifactDownloadSuccess) IsEvent() Event {
@@ -165,7 +176,7 @@ func (ArtifactDownloadSuccess) IsEvent() Event {
 }
 
 type ArtifactInstallStarted struct {
-	ArtifactID artifact.ArtifactID
+	ArtifactID strfmt.UUID
 	TotalSize  int
 }
 
@@ -174,7 +185,7 @@ func (ArtifactInstallStarted) IsEvent() Event {
 }
 
 type ArtifactInstallProgress struct {
-	ArtifactID      artifact.ArtifactID
+	ArtifactID      strfmt.UUID
 	IncrementBySize int
 }
 
@@ -183,7 +194,7 @@ func (ArtifactInstallSkipped) IsEvent() Event {
 }
 
 type ArtifactInstallSkipped struct {
-	ArtifactID artifact.ArtifactID
+	ArtifactID strfmt.UUID
 }
 
 func (ArtifactInstallProgress) IsEvent() Event {
@@ -191,7 +202,7 @@ func (ArtifactInstallProgress) IsEvent() Event {
 }
 
 type ArtifactInstallFailure struct {
-	ArtifactID artifact.ArtifactID
+	ArtifactID strfmt.UUID
 	Error      error
 }
 
@@ -200,7 +211,7 @@ func (ArtifactInstallFailure) IsEvent() Event {
 }
 
 type ArtifactInstallSuccess struct {
-	ArtifactID artifact.ArtifactID
+	ArtifactID strfmt.UUID
 }
 
 func (ArtifactInstallSuccess) IsEvent() Event {

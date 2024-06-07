@@ -15,11 +15,11 @@ func HandlePanics(recovered interface{}, stack []byte) bool {
 		multilog.Error("Panic: %v", recovered)
 		logging.Debug("Stack: %s", string(stack))
 
-		fmt.Fprintln(os.Stderr, fmt.Sprintf(`An unexpected error occurred.
+		fmt.Fprintf(os.Stderr, `An unexpected error occurred.
 Error: %v
 Stack trace: %s
 Check the error log for more information: %s
-Please consider reporting your issue on the forums: %s`, recovered, string(stack), logging.FilePath(), constants.ForumsURL))
+Please consider reporting your issue on the forums: %s`, recovered, string(stack), logging.FilePath(), constants.ForumsURL)
 		return true
 	}
 	return false

@@ -94,7 +94,7 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	if params.Package.Version != "" {
 		ingredientVersion, err = specificIngredientVersion(pkg.Ingredient.IngredientID, params.Package.Version, i.auth)
 		if err != nil {
-			return locale.WrapInputError(err, "info_err_version_not_found", "Could not find version {{.V0}} for package {{.V1}}", params.Package.Version, params.Package.Name)
+			return locale.WrapExternalError(err, "info_err_version_not_found", "Could not find version {{.V0}} for package {{.V1}}", params.Package.Version, params.Package.Name)
 		}
 	}
 

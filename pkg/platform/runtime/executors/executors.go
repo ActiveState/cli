@@ -1,7 +1,6 @@
 package executors
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	rt "runtime"
@@ -20,11 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
-
-// executorTarget tracks the target executable of the executor and is used to determine whether an existing
-// executor needs to be updating.
-// Update this if you want to blow away older targets (ie. you made changes to the template)
-const executorTarget = "Target: "
 
 type Targeter interface {
 	CommitUUID() strfmt.UUID
@@ -111,7 +105,7 @@ func (es *Executors) Clean() error {
 		return nil
 	}
 
-	files, err := ioutil.ReadDir(es.executorPath)
+	files, err := os.ReadDir(es.executorPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not read dir: %s", es.executorPath)
 	}

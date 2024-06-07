@@ -60,9 +60,10 @@ func FetchLanguagesForCommit(commitID strfmt.UUID, auth *authentication.Auth) ([
 	languages := []Language{}
 	for _, requirement := range checkpoint {
 		if NamespaceMatch(requirement.Namespace, NamespaceLanguageMatch) {
+			version := MonoConstraintsToString(requirement.VersionConstraints)
 			lang := Language{
 				Name:    requirement.Requirement,
-				Version: requirement.VersionConstraint,
+				Version: version,
 			}
 			languages = append(languages, lang)
 		}
@@ -219,7 +220,7 @@ func hostPlatformToPlatformID(os string) (string, error) {
 	case strings.ToLower(sysinfo.Windows.String()):
 		return constants.Win10Bit64UUID, nil
 	default:
-		return "", locale.NewInputError("err_unsupported_platform", "", os)
+		return "", locale.NewExternalError("err_unsupported_platform", "", os)
 	}
 }
 

@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
@@ -19,6 +19,7 @@ import (
 	vcsClient "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -206,7 +207,7 @@ func NewNamespacePlatform() Namespace {
 func NewOrgNamespace(orgName string) Namespace {
 	return Namespace{
 		nsType: NamespaceOrg,
-		value:  fmt.Sprintf("org/%s", orgName),
+		value:  fmt.Sprintf("private/%s", orgName),
 	}
 }
 
@@ -331,11 +332,14 @@ func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64, auth *authent
 			return nil, errs.Wrap(err, "Could not get auth client")
 		}
 		res, err = authClient.VersionControl.GetCommitHistory(params, auth.ClientAuth())
+		if err != nil {
+			return nil, locale.WrapError(err, "err_get_commit_history", "", api.ErrorMessageFromPayload(err))
+		}
 	} else {
 		res, err = mono.New().VersionControl.GetCommitHistory(params, nil)
-	}
-	if err != nil {
-		return nil, locale.WrapError(err, "err_get_commit_history", "", api.ErrorMessageFromPayload(err))
+		if err != nil {
+			return nil, locale.WrapError(err, "err_get_commit_history", "", api.ErrorMessageFromPayload(err))
+		}
 	}
 
 	return res.Payload, nil
@@ -488,7 +492,7 @@ func updateBranch(branchID strfmt.UUID, changeset *mono_models.BranchEditable, a
 	_, err = authClient.VersionControl.UpdateBranch(params, auth.ClientAuth())
 	if err != nil {
 		if _, ok := err.(*version_control.UpdateBranchForbidden); ok {
-			return &ErrUpdateBranchAuth{locale.NewInputError("err_branch_update_auth", "Branch update failed with authentication error")}
+			return &ErrUpdateBranchAuth{locale.NewExternalError("err_branch_update_auth", "Branch update failed with authentication error")}
 		}
 		return locale.NewError("err_update_branch", "", api.ErrorMessageFromPayload(err))
 	}
@@ -582,7 +586,7 @@ func CommitInitial(hostPlatform string, langName, langVersion string, auth *auth
 }
 
 func versionStringToConstraints(version string) ([]*mono_models.Constraint, error) {
-	requirements, err := VersionStringToRequirements(version)
+	requirements, err := bpModel.VersionStringToRequirements(version)
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to process version string into requirements")
 	}
@@ -590,8 +594,8 @@ func versionStringToConstraints(version string) ([]*mono_models.Constraint, erro
 	constraints := make([]*mono_models.Constraint, len(requirements))
 	for i, constraint := range requirements {
 		constraints[i] = &mono_models.Constraint{
-			Comparator: constraint[bpModel.VersionRequirementComparatorKey],
-			Version:    constraint[bpModel.VersionRequirementVersionKey],
+			Comparator: constraint[types.VersionRequirementComparatorKey],
+			Version:    constraint[types.VersionRequirementVersionKey],
 		}
 	}
 	return constraints, nil
@@ -656,27 +660,6 @@ func ResolveRequirementNameAndVersion(name, version string, word int, namespace 
 	}
 
 	return name, version, nil
-}
-
-func commitChangeset(parentCommit strfmt.UUID, op Operation, ns Namespace, requirement, version string) ([]*mono_models.CommitChangeEditable, error) {
-	var res []*mono_models.CommitChangeEditable
-	if ns.Type() == NamespaceLanguage {
-		res = append(res, &mono_models.CommitChangeEditable{
-			Operation:         string(OperationUpdated),
-			Namespace:         ns.String(),
-			Requirement:       requirement,
-			VersionConstraint: version,
-		})
-	} else {
-		res = append(res, &mono_models.CommitChangeEditable{
-			Operation:         string(op),
-			Namespace:         ns.String(),
-			Requirement:       requirement,
-			VersionConstraint: version,
-		})
-	}
-
-	return res, nil
 }
 
 func ChangesetFromRequirements(op Operation, reqs []*gqlModel.Requirement) Changeset {

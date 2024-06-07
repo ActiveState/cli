@@ -232,7 +232,10 @@ func SetupShellRcFile(rcFileName, templateName string, env map[string]string, na
 	}
 	defer f.Close()
 
-	f.WriteString(out.String())
+	_, err = f.WriteString(out.String())
+	if err != nil {
+		return errs.Wrap(err, "Failed to write to output buffer.")
+	}
 
 	err = os.Chmod(rcFileName, 0755)
 	if err != nil {
@@ -283,7 +286,11 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	globalBinDir := filepath.Clean(storage.GlobalBinDir())
 
 	// Prepare script map to be parsed by template
-	for _, cmd := range prj.Scripts() {
+	projectScripts, err := prj.Scripts()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get project scripts")
+	}
+	for _, cmd := range projectScripts {
 		explicitName = fmt.Sprintf("%s_%s", prj.NormalizedName(), cmd.Name())
 
 		path, err := exec.LookPath(cmd.Name())
@@ -347,6 +354,9 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	listSep := string(os.PathListSeparator)
 	pathList, ok := env["PATH"]
 	inPathList, err := fileutils.PathInList(listSep, pathList, currExecAbsDir)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not check if %s is in PATH", currExecAbsDir)
+	}
 	if !ok || !inPathList {
 		safeExec := currExec
 		if strings.ContainsAny(currExec, " ") {
@@ -377,7 +387,10 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	}
 	defer tmpFile.Close()
 
-	tmpFile.WriteString(o.String())
+	_, err = tmpFile.WriteString(o.String())
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to write to output buffer.")
+	}
 
 	logging.Debug("Using project RC: (%s) %s", tmpFile.Name(), o.String())
 

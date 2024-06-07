@@ -3,12 +3,12 @@ package testhelper
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/environment"
-	model "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/stretchr/testify/require"
@@ -29,7 +29,7 @@ func dataPath(t *testing.T) string {
 }
 
 func LoadRecipe(t *testing.T, name string) *inventory_models.Recipe {
-	d, err := ioutil.ReadFile(filepath.Join(dataPath(t), "recipes", fmt.Sprintf("%s.json", name)))
+	d, err := os.ReadFile(filepath.Join(dataPath(t), "recipes", fmt.Sprintf("%s.json", name)))
 	require.NoError(t, err)
 
 	var recipe inventory_models.Recipe
@@ -39,11 +39,11 @@ func LoadRecipe(t *testing.T, name string) *inventory_models.Recipe {
 	return &recipe
 }
 
-func LoadBuildPlan(t *testing.T, name string) *model.BuildPlan {
-	d, err := ioutil.ReadFile(filepath.Join(dataPath(t), "buildplans", fmt.Sprintf("%s.json", name)))
+func LoadBuildPlan(t *testing.T, name string) *response.ProjectCommitResponse {
+	d, err := os.ReadFile(filepath.Join(dataPath(t), "buildplans", fmt.Sprintf("%s.json", name)))
 	require.NoError(t, err)
 
-	var bp model.BuildPlan
+	var bp response.ProjectCommitResponse
 	err = json.Unmarshal(d, &bp)
 	require.NoError(t, err)
 
@@ -66,11 +66,11 @@ func save(dir, name string, m interface{}) error {
 		return err
 	}
 
-	return ioutil.WriteFile(fn, d, 0666)
+	return os.WriteFile(fn, d, 0666)
 }
 
 func LoadBuildResponse(t *testing.T, name string) *headchef_models.V1BuildStatusResponse {
-	d, err := ioutil.ReadFile(filepath.Join(dataPath(t), "builds", fmt.Sprintf("%s.json", name)))
+	d, err := os.ReadFile(filepath.Join(dataPath(t), "builds", fmt.Sprintf("%s.json", name)))
 	require.NoError(t, err)
 
 	var status headchef_models.V1BuildStatusResponse

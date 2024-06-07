@@ -2,7 +2,7 @@ package integration
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -13,9 +13,9 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 )
 
 type InitIntegrationTestSuite struct {
@@ -89,8 +89,9 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, lang string, ex
 			"Language": expectedConfigLanguage,
 			"LangExe":  language.MakeByName(expectedConfigLanguage).Executable().Filename(),
 		}, nil)
+	suite.Require().NoError(err)
 
-	content, err := ioutil.ReadFile(configFilepath)
+	content, err := os.ReadFile(configFilepath)
 	suite.Require().NoError(err)
 	suite.Contains(string(content), yaml)
 }
@@ -155,11 +156,7 @@ func (suite *InitIntegrationTestSuite) TestInit_AlreadyExists() {
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_Resolved() {
-	suite.OnlyRunForTags(tagsuite.Init)
-	if runtime.GOOS == "darwin" {
-		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
-		return
-	}
+	suite.OnlyRunForTags(tagsuite.Init, tagsuite.Languages)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
@@ -180,7 +177,7 @@ func (suite *InitIntegrationTestSuite) TestInit_Resolved() {
 	// Run `state languages` to verify a full language version was resolved.
 	cp = ts.Spawn("languages")
 	cp.Expect("python")
-	cp.Expect("Auto → 3.10.") // note: the patch version is variable, so just expect that it exists
+	cp.Expect(">=3.10,<3.11 → 3.10.") // note: the patch version is variable, so just expect that it exists
 	cp.ExpectExitCode(0)
 }
 
@@ -203,7 +200,7 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrg() {
 	ts.IgnoreLogErrors()
 
 	org := "ActiveState-CLI"
-	projectName := fmt.Sprintf("test-project-%s", model.HostPlatform)
+	projectName := fmt.Sprintf("test-project-%s", sysinfo.OS().String())
 
 	// First, checkout project to set last used org.
 	cp := ts.Spawn("checkout", fmt.Sprintf("%s/Python3", org))
@@ -220,6 +217,28 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrg() {
 
 	// Verify the config file has the correct project owner.
 	suite.Contains(string(fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))), "ActiveState-CLI")
+}
+
+func (suite *InitIntegrationTestSuite) TestInit_ChangeSummary() {
+	suite.OnlyRunForTags(tagsuite.Init)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.Expect("Successfully set")
+	cp.ExpectExitCode(0)
+
+	project := "test-init-change-summary-" + sysinfo.OS().String()
+	cp = ts.Spawn("init", "ActiveState-CLI/"+project, "--language", "python@3.10.10")
+	cp.Expect("Resolving Dependencies")
+	cp.Expect("Done")
+	ts.NotifyProjectCreated("ActiveState-CLI", project)
+	cp.Expect("Setting up the following dependencies:")
+	cp.Expect("└─ python@3.10.10")
+	suite.Assert().NotContains(cp.Snapshot(), "├─", "more than one dependency was printed")
+	cp.ExpectExitCode(0)
 }
 
 func TestInitIntegrationTestSuite(t *testing.T) {

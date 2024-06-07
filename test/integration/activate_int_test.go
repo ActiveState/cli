@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/termtest"
-	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/rtutils"
 
@@ -72,7 +72,7 @@ func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) fun
 	suite.Require().NoError(err)
 
 	// Wait for the svc to be ready
-	rtutils.Timeout(func() error {
+	err = rtutils.Timeout(func() error {
 		code := -1
 		for code != 0 {
 			code, _, _ = osutils.Execute(ts.SvcExe, []string{"status"}, func(cmd *exec.Cmd) error {
@@ -82,6 +82,7 @@ func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) fun
 		}
 		return nil
 	}, 10*time.Second)
+	suite.Require().NoError(err)
 
 	// This function seems to trigger lots of flisten errors that do not appear to be actual errors
 	// (the integration test expectations all pass). Just ignore log errors for sessions that call
@@ -106,7 +107,8 @@ func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) fun
 				suite.Require().NoError(err2)
 			}
 			suite.T().Logf("svc did not stop in time, Stdout:\n%s\n\nStderr:\n%s", stdout.String(), stderr.String())
-			cmd.Process.Kill()
+			err = cmd.Process.Kill()
+			suite.Require().NoError(err)
 		}
 
 		errMsg := fmt.Sprintf("svc foreground did not complete as expected. Stdout:\n%s\n\nStderr:\n%s", stdout.String(), stderr.String())
@@ -134,7 +136,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "ActiveState-CLI/Python3#6d9280e7-75eb-401a-9e71-0d99759fbad3", "--path", ts.Dirs.Work),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput()
@@ -372,8 +373,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_SpaceInCacheDir() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
-	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Perl)
+func (suite *ActivateIntegrationTestSuite) TestActivatePerlCamel() {
+	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Perl, tagsuite.Critical)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Perl not supported on macOS")
 	}
@@ -446,7 +447,7 @@ version: %s
 	)
 	c2.Expect("Activated")
 
-	c2.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
+	c2.ExpectInput()
 	c2.SendLine("exit")
 	c2.ExpectExitCode(0)
 }
@@ -479,7 +480,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_NamespaceWins() {
 	c2.Expect("ActiveState-CLI/Python2")
 	c2.Expect("Activated")
 
-	c2.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
+	c2.ExpectInput()
 	if runtime.GOOS == "windows" {
 		c2.SendLine("@echo %cd%")
 	} else {
@@ -559,7 +560,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
 	ts.PrepareActiveStateYAML(contents)
 
 	cp := ts.Spawn("activate")
-	cp.Expect("Cannot initialize runtime for a headless project", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Cannot operate on a headless project")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 }

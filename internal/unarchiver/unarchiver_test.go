@@ -1,14 +1,13 @@
 package unarchiver_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/unarchiver"
-	"github.com/stretchr/testify/suite"
 )
 
 type UnarchiverTestSuite struct {
@@ -48,7 +47,7 @@ func (suite *UnarchiverTestSuite) TestUnarchive() {
 			"successful unpacking targz",
 			unarchiver.NewTarGz(),
 			"testfile.tar.gz", func(destination string) {
-				err := ioutil.WriteFile(destination, []byte{}, 0666)
+				err := os.WriteFile(destination, []byte{}, 0666)
 				suite.Require().NoError(err)
 			},
 		},
@@ -56,7 +55,7 @@ func (suite *UnarchiverTestSuite) TestUnarchive() {
 			"successful unpacking zip",
 			unarchiver.NewZip(),
 			"testfile.zip", func(destination string) {
-				err := ioutil.WriteFile(destination, []byte{}, 0666)
+				err := os.WriteFile(destination, []byte{}, 0666)
 				suite.Require().NoError(err)
 			},
 		},
@@ -67,7 +66,7 @@ func (suite *UnarchiverTestSuite) TestUnarchive() {
 
 			testfile := filepath.Join("testdata", tc.testfile)
 
-			tempDir, err := ioutil.TempDir("", "unarchiver-test-destination-root")
+			tempDir, err := os.MkdirTemp("", "unarchiver-test-destination-root")
 			suite.Require().NoError(err)
 			destination := filepath.Join(tempDir, "destination")
 
@@ -123,7 +122,7 @@ func (suite *UnarchiverTestSuite) TestPrepareUnpackingWithError() {
 		prep     func(destination string)
 	}{{
 		"cannot create destination", "testfile.tar.gz", func(destination string) {
-			err := ioutil.WriteFile(destination, []byte{}, 0666)
+			err := os.WriteFile(destination, []byte{}, 0666)
 			suite.Require().NoError(err)
 		},
 	}, {
@@ -137,7 +136,7 @@ func (suite *UnarchiverTestSuite) TestPrepareUnpackingWithError() {
 			ua := unarchiver.NewTarGz()
 			testfile := filepath.Join("testdata", tc.testfile)
 
-			tempDir, err := ioutil.TempDir("", "unarchiver-test-destination-root")
+			tempDir, err := os.MkdirTemp("", "unarchiver-test-destination-root")
 			suite.Require().NoError(err)
 			destination := filepath.Join(tempDir, "destination")
 			tc.prep(destination)

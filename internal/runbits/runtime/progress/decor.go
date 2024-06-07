@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/termutils"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/go-openapi/strfmt"
 	"github.com/vbauerster/mpb/v7"
 	"github.com/vbauerster/mpb/v7/decor"
 )
@@ -23,11 +23,6 @@ type bar struct {
 	*mpb.Bar
 	started time.Time
 	total   int64
-}
-
-func (b *bar) setInternalTotal(v int64) {
-	b.Bar.SetTotal(v, false)
-	b.total = v
 }
 
 // Completed reports whether the bar has reached 100%. We have our own assertion prior to the mpb one as for whatever
@@ -54,30 +49,11 @@ func (p *ProgressDigester) addTotalBar(name string, total int64, options ...mpb.
 	return p.addBar(name, total, false, append(options, mpb.BarFillerClearOnComplete())...)
 }
 
-// addSpinnerBar adds a bar with a spinning progress indicator
-func (p *ProgressDigester) addSpinnerBar(name string, options ...mpb.BarOption) *bar {
-	logging.Debug("Adding spinner bar: %s", name)
-	return &bar{
-		p.mainProgress.Add(1,
-			mpb.NewBarFiller(mpb.SpinnerStyle(output.SpinnerFrames...)),
-			append(options,
-				mpb.BarFillerClearOnComplete(),
-				mpb.PrependDecorators(
-					decor.Name(name, decor.WC{W: p.maxNameWidth, C: decor.DidentRight}),
-				),
-				mpb.AppendDecorators(
-					decor.OnComplete(decor.NewPercentage("", decor.WC{W: 5}), ""),
-				),
-			)...,
-		), time.Now(), 1,
-	}
-}
-
 // addArtifactBar adds a bar counting the progress in a specific artifact setup step
-func (p *ProgressDigester) addArtifactBar(id artifact.ArtifactID, step step, total int64, countsBytes bool) error {
-	name, ok := p.artifactNames[id]
-	if !ok {
-		name = locale.Tl("artifact_unknown_name", "Unnamed Artifact")
+func (p *ProgressDigester) addArtifactBar(id strfmt.UUID, step step, total int64, countsBytes bool) error {
+	name := locale.T("artifact_unknown_name")
+	if aname, ok := p.artifacts[id]; ok {
+		name = aname
 	}
 	logging.Debug("Adding %s artifact bar: %s", step.verb, name)
 
@@ -90,16 +66,16 @@ func (p *ProgressDigester) addArtifactBar(id artifact.ArtifactID, step step, tot
 }
 
 // updateArtifactBar sets the current progress of an artifact bar
-func (p *ProgressDigester) updateArtifactBar(id artifact.ArtifactID, step step, inc int) error {
+func (p *ProgressDigester) updateArtifactBar(id strfmt.UUID, step step, inc int) error {
 	aStep := artifactStep{id, step}
 	if _, ok := p.artifactBars[aStep.ID()]; !ok {
 		return errs.New("%s Artifact bar doesn't exists", step.verb)
 	}
 	p.artifactBars[aStep.ID()].IncrBy(inc)
 
-	name, ok := p.artifactNames[id]
-	if !ok {
-		name = locale.Tl("artifact_unknown_name", "Unnamed Artifact")
+	name := locale.T("artifact_unknown_name")
+	if aname, ok := p.artifacts[id]; ok {
+		name = aname
 	}
 	if p.artifactBars[aStep.ID()].Current() >= p.artifactBars[aStep.ID()].total {
 		logging.Debug("%s Artifact bar reached total: %s", step.verb, name)
@@ -109,10 +85,10 @@ func (p *ProgressDigester) updateArtifactBar(id artifact.ArtifactID, step step, 
 }
 
 // dropArtifactBar removes an artifact bar from the progress display
-func (p *ProgressDigester) dropArtifactBar(id artifact.ArtifactID, step step) error {
-	name, ok := p.artifactNames[id]
-	if !ok {
-		name = locale.Tl("artifact_unknown_name", "Unnamed Artifact")
+func (p *ProgressDigester) dropArtifactBar(id strfmt.UUID, step step) error {
+	name := locale.T("artifact_unknown_name")
+	if aname, ok := p.artifacts[id]; ok {
+		name = aname
 	}
 	logging.Debug("Dropping %s artifact bar: %s", step.verb, name)
 

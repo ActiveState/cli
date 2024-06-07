@@ -1,9 +1,6 @@
 package testhelper
 
-import (
-	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-)
+import "github.com/go-openapi/strfmt"
 
 type MockProgressOutput struct {
 	BuildStartedCalled          bool
@@ -30,17 +27,17 @@ func (mpo *MockProgressOutput) BuildCompleted(bool) error {
 	return nil
 }
 
-func (mpo *MockProgressOutput) BuildArtifactStarted(artifactID artifact.ArtifactID, artifactName string) error {
+func (mpo *MockProgressOutput) BuildArtifactStarted(artifactID strfmt.UUID, artifactName string) error {
 	return nil
 }
-func (mpo *MockProgressOutput) BuildArtifactCompleted(artifactID artifact.ArtifactID, artifactName, logURI string, cachedBuild bool) error {
+func (mpo *MockProgressOutput) BuildArtifactCompleted(artifactID strfmt.UUID, artifactName, logURI string, cachedBuild bool) error {
 	mpo.BuildCurrent++
 	return nil
 }
-func (mpo *MockProgressOutput) BuildArtifactFailure(artifactID artifact.ArtifactID, artifactName, logURI string, errorMessage string, cachedBuild bool) error {
+func (mpo *MockProgressOutput) BuildArtifactFailure(artifactID strfmt.UUID, artifactName, logURI string, errorMessage string, cachedBuild bool) error {
 	return nil
 }
-func (mpo *MockProgressOutput) BuildArtifactProgress(artifactID artifact.ArtifactID, artifactName, timeStamp, message, facility, pipeName, source string) error {
+func (mpo *MockProgressOutput) BuildArtifactProgress(artifactID strfmt.UUID, artifactName, timeStamp, message, facility, pipeName, source string) error {
 	return nil
 }
 
@@ -57,19 +54,19 @@ func (mpo *MockProgressOutput) InstallationCompleted(bool) error {
 	mpo.InstallationCompletedCalled = true
 	return nil
 }
-func (mpo *MockProgressOutput) ArtifactStepStarted(artifact.ArtifactID, string, string, int64, bool) error {
+func (mpo *MockProgressOutput) ArtifactStepStarted(strfmt.UUID, string, string, int64, bool) error {
 	mpo.ArtifactStartedCalled++
 	return nil
 }
-func (mpo *MockProgressOutput) ArtifactStepIncrement(artifact.ArtifactID, string, string, int64) error {
+func (mpo *MockProgressOutput) ArtifactStepIncrement(strfmt.UUID, string, string, int64) error {
 	mpo.ArtifactIncrementCalled++
 	return nil
 }
-func (mpo *MockProgressOutput) ArtifactStepCompleted(artifact.ArtifactID, string, string) error {
+func (mpo *MockProgressOutput) ArtifactStepCompleted(strfmt.UUID, string, string) error {
 	mpo.ArtifactCompletedCalled++
 	return nil
 }
-func (mpo *MockProgressOutput) ArtifactStepFailure(artifact.ArtifactID, string, string, string) error {
+func (mpo *MockProgressOutput) ArtifactStepFailure(strfmt.UUID, string, string, string) error {
 	mpo.ArtifactFailureCalled++
 	return nil
 }
@@ -81,9 +78,6 @@ func (mpo *MockProgressOutput) SolverStart() error {
 }
 
 func (mpo *MockProgressOutput) SolverSuccess() error {
-	return nil
-}
-func (mpo *MockProgressOutput) SolverError(serr *model.SolverError) error {
 	return nil
 }
 func (mpo *MockProgressOutput) Close() error { return nil }

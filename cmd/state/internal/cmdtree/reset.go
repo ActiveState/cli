@@ -19,9 +19,9 @@ func newResetCommand(prime *primer.Values, globals *globalOptions) *captain.Comm
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
-				Name:        locale.Tl("arg_state_reset_target", "target"),
-				Description: locale.Tl("arg_state_reset_target_description", "The commit ID or branch name to reset to. If not specified, resets local checkout to be equal to the project on the platform"),
-				Value:       &params.Target,
+				Name:        locale.Tl("arg_state_reset_commitid", "CommitID"),
+				Description: locale.Tl("arg_state_reset_commitid_description", "Reset to the given commit. If not specified, resets local checkout to be equal to the project on the platform"),
+				Value:       &params.CommitID,
 			},
 		},
 		func(ccmd *captain.Command, args []string) error {

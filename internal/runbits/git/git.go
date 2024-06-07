@@ -2,7 +2,6 @@ package git
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,7 +16,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"gopkg.in/src-d/go-git.v4"
+	"github.com/go-git/go-git/v5"
 )
 
 // Repository is the interface used to represent a version control system repository
@@ -42,7 +41,7 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer, an an
 		return locale.WrapError(err, "err_git_fetch_project", "Could not fetch project details")
 	}
 
-	tempDir, err := ioutil.TempDir("", fmt.Sprintf("state-activate-repo-%s-%s", owner, name))
+	tempDir, err := os.MkdirTemp("", fmt.Sprintf("state-activate-repo-%s-%s", owner, name))
 	if err != nil {
 		return locale.WrapError(err, "err_git_tempdir", "Could not create temporary directory for git clone operation")
 	}
@@ -95,7 +94,7 @@ func EnsureCorrectProject(owner, name, projectFilePath, repoURL string, out outp
 		return locale.WrapError(err, "err_git_project", "Could not create new project from project file at: {{.V0}}", projectFile.Path())
 	}
 
-	if !(strings.ToLower(proj.Owner()) == strings.ToLower(owner)) || !(strings.ToLower(proj.Name()) == strings.ToLower(name)) {
+	if !(strings.EqualFold(proj.Owner(), owner)) || !(strings.EqualFold(proj.Name(), name)) {
 		out.Notice(locale.Tr("warning_git_project_mismatch", repoURL, project.NewNamespace(owner, name, "").String(), constants.DocumentationURLMismatch))
 		err = proj.Source().SetNamespace(owner, name)
 		if err != nil {
