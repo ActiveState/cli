@@ -79,7 +79,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutPython() {
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutPerl() {
 	suite.OnlyRunForTags(tagsuite.Checkout, tagsuite.Critical)
 
-	ts := e2e.New(suite.T(), false)
+	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
 	// Checkout and verify.
@@ -95,7 +95,13 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutPerl() {
 	// Verify runtime was installed correctly and works.
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.Require().NoError(err)
-	perlExe := filepath.Join(runtime_helpers.ExecutorPathFromProject(proj), "perl"+osutils.ExeExtension)
+
+	var perlExe string
+	ts.RunInSandboxedEnv(func() error {
+		perlExe = filepath.Join(runtime_helpers.ExecutorPathFromProject(proj), "perl"+osutils.ExeExtension)
+		return nil
+	})
+
 	cp = ts.SpawnCmd(perlExe, "--version")
 	cp.Expect("This is perl")
 	cp.ExpectExitCode(0)

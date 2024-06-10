@@ -95,7 +95,13 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.Require().NoError(err)
-	pythonExe := filepath.Join(runtime_helpers.ExecutorPathFromProject(proj), "python3"+osutils.ExeExtension)
+
+	var pythonExe string
+	ts.RunInSandboxedEnv(func() error {
+		pythonExe = filepath.Join(runtime_helpers.ExecutorPathFromProject(proj), "python3"+osutils.ExeExtension)
+		return nil
+	})
+
 	cp = ts.SpawnCmd(pythonExe, "-c", `print(__import__('sys').version)`)
 	cp.Expect("3.8.8")
 	cp.ExpectExitCode(0)
