@@ -12,14 +12,13 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -96,7 +95,7 @@ func (m *Manifest) fetchRequirements() ([]types.Requirement, error) {
 		return nil, errs.Wrap(err, "Could not get commit ID")
 	}
 
-	bp := buildplanner.NewBuildPlannerModel(m.auth)
+	bp := bpModel.NewBuildPlannerModel(m.auth)
 	script, err := bp.GetBuildScript(commitID.String())
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get remote build expr and time")
@@ -115,10 +114,20 @@ func (m *Manifest) fetchBuildplanRequirements() (buildplan.Ingredients, error) {
 		return nil, nil
 	}
 
-	commit, err := runtime_runbit.Solve(m.prime, nil)
+	commitID, err := localcommit.Get(m.project.Dir())
 	if err != nil {
-		return nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+		return nil, errs.Wrap(err, "Failed to get local commit")
 	}
+
+	// Solve runtime
+	solveSpinner := output.StartSpinner(m.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
+	bpm := bpModel.NewBuildPlannerModel(m.auth)
+	commit, err := bpm.FetchCommit(commitID, m.project.Owner(), m.project.Name(), nil)
+	if err != nil {
+		solveSpinner.Stop(locale.T("progress_fail"))
+		return nil, errs.Wrap(err, "Failed to fetch build result")
+	}
+	solveSpinner.Stop(locale.T("progress_success"))
 
 	return commit.BuildPlan().RequestedIngredients(), nil
 }

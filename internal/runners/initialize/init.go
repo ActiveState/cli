@@ -7,15 +7,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
-	"github.com/ActiveState/cli/internal/runbits/errors"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
-	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
-	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/sysinfo"
-	"github.com/go-openapi/strfmt"
-
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -27,13 +18,21 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
+	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
+	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/sysinfo"
+	"github.com/go-openapi/strfmt"
 )
 
 // RunParams stores run func parameters.
@@ -260,8 +259,8 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return errs.Wrap(err, "Unable to determine Platform ID from %s", sysinfo.OS().String())
 	}
 
-	bp := buildplanner.NewBuildPlannerModel(r.auth)
-	commitID, err := bp.CreateProject(&buildplanner.CreateProjectParams{
+	bp := bpModel.NewBuildPlannerModel(r.auth)
+	commitID, err := bp.CreateProject(&bpModel.CreateProjectParams{
 		Owner:       namespace.Owner,
 		Project:     namespace.Project,
 		PlatformID:  strfmt.UUID(platformID),
@@ -284,16 +283,21 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
-	commit, err := runtime_runbit.Solve(r.prime, &commitID)
+	// Solve runtime
+	solveSpinner := output.StartSpinner(r.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
+	bpm := bpModel.NewBuildPlannerModel(r.auth)
+	commit, err := bpm.FetchCommit(commitID, r.prime.Project().Owner(), r.prime.Project().Name(), nil)
 	if err != nil {
+		solveSpinner.Stop(locale.T("progress_fail"))
 		logging.Debug("Deleting remotely created project due to runtime setup error")
 		err2 := model.DeleteProject(namespace.Owner, namespace.Project, r.auth)
 		if err2 != nil {
 			multilog.Error("Error deleting remotely created project after runtime setup error: %v", errs.JoinMessage(err2))
 			return locale.WrapError(err, "err_init_refresh_delete_project", "Could not setup runtime after init, and could not delete newly created Platform project. Please delete it manually before trying again")
 		}
-		return errs.Wrap(err, "Could not initialize runtime")
+		return errs.Wrap(err, "Failed to fetch build result")
 	}
+	solveSpinner.Stop(locale.T("progress_success"))
 
 	dependencies.OutputSummary(r.out, commit.BuildPlan().RequestedArtifacts())
 	artifacts := commit.BuildPlan().Artifacts().Filter(buildplan.FilterStateArtifacts(), buildplan.FilterRuntimeArtifacts())

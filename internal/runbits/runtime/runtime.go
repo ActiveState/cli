@@ -66,43 +66,6 @@ type solvePrimer interface {
 	primer.SvcModeler
 }
 
-func Solve(
-	prime solvePrimer,
-	overrideCommitID *strfmt.UUID,
-) (_ *bpModel.Commit, rerr error) {
-	defer rationalizeSolveError(prime, &rerr)
-
-	proj := prime.Project()
-
-	if proj == nil {
-		return nil, rationalize.ErrNoProject
-	}
-
-	var err error
-	var commitID strfmt.UUID
-	if overrideCommitID != nil {
-		commitID = *overrideCommitID
-	} else {
-		commitID, err = localcommit.Get(proj.Dir())
-		if err != nil {
-			return nil, errs.Wrap(err, "Failed to get local commit")
-		}
-	}
-
-	solveSpinner := output.StartSpinner(prime.Output(), locale.T("progress_solve"), constants.TerminalAnimationInterval)
-
-	bpm := bpModel.NewBuildPlannerModel(prime.Auth())
-	commit, err := bpm.FetchCommit(commitID, proj.Owner(), proj.Name(), nil)
-	if err != nil {
-		solveSpinner.Stop(locale.T("progress_fail"))
-		return nil, errs.Wrap(err, "Failed to fetch build result")
-	}
-
-	solveSpinner.Stop(locale.T("progress_success"))
-
-	return commit, nil
-}
-
 type updatePrimer interface {
 	primer.Projecter
 	primer.Auther
@@ -167,10 +130,17 @@ func Update(
 
 	commit := opts.Commit
 	if commit == nil {
-		commit, err = Solve(prime, &commitID)
+		// Solve
+		solveSpinner := output.StartSpinner(prime.Output(), locale.T("progress_solve"), constants.TerminalAnimationInterval)
+
+		bpm := bpModel.NewBuildPlannerModel(prime.Auth())
+		commit, err = bpm.FetchCommit(commitID, proj.Owner(), proj.Name(), nil)
 		if err != nil {
-			return nil, errs.Wrap(err, "Failed to solve runtime")
+			solveSpinner.Stop(locale.T("progress_fail"))
+			return nil, errs.Wrap(err, "Failed to fetch build result")
 		}
+
+		solveSpinner.Stop(locale.T("progress_success"))
 	}
 
 	// Validate buildscript

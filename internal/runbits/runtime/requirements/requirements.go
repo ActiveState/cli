@@ -242,10 +242,14 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 
 		// Solve runtime
-		rtCommit, err := runtime_runbit.Solve(r.prime, &commitID)
+		solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve"), constants.TerminalAnimationInterval)
+		bpm := bpModel.NewBuildPlannerModel(r.Auth)
+		rtCommit, err := bpm.FetchCommit(commitID, r.Project.Owner(), r.Project.Name(), nil)
 		if err != nil {
-			return errs.Wrap(err, "Could not solve runtime")
+			solveSpinner.Stop(locale.T("progress_fail"))
+			return errs.Wrap(err, "Failed to fetch build result")
 		}
+		solveSpinner.Stop(locale.T("progress_success"))
 
 		// Get old buildplan
 		// We can't use the local store here; because it might not exist (ie. integrationt test, user cleaned cache, ..),

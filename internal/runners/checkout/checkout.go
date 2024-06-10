@@ -20,8 +20,10 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -113,10 +115,21 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		}()
 	}
 
-	commit, err := runtime_runbit.Solve(u.prime, nil)
+	commitID, err := localcommit.Get(proj.Path())
 	if err != nil {
-		return errs.Wrap(err, "Could not checkout project")
+		return errs.Wrap(err, "Could not get local commit")
 	}
+
+	// Solve runtime
+	solveSpinner := output.StartSpinner(u.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
+	bpm := bpModel.NewBuildPlannerModel(u.auth)
+	commit, err := bpm.FetchCommit(commitID, proj.Owner(), proj.Name(), nil)
+	if err != nil {
+		solveSpinner.Stop(locale.T("progress_fail"))
+		return errs.Wrap(err, "Failed to fetch build result")
+	}
+	solveSpinner.Stop(locale.T("progress_success"))
+
 	dependencies.OutputSummary(u.out, commit.BuildPlan().RequestedArtifacts())
 	rti, err := runtime_runbit.Update(u.prime, trigger.TriggerCheckout,
 		runtime_runbit.WithCommit(commit),
