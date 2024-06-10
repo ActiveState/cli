@@ -76,7 +76,7 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 
 	platformID, err := model.FilterCurrentPlatform(sysinfo.OS().String(), bp.Platforms(), opts.PreferredLibcVersion)
 	if err != nil {
-		return nil, ErrNoPlatformMatch
+		return nil, errs.Wrap(err, "Could not get platform ID")
 	}
 
 	// Start off with the full range of artifacts relevant to our platform

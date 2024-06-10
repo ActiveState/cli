@@ -25,8 +25,6 @@ func rationalizeUpdateError(prime primeable, rerr *error) {
 		return
 	}
 
-	auth := prime.Auth()
-
 	var artifactCachedBuildErr *runtime.ArtifactCachedBuildFailed
 	var artifactBuildErr *runtime.ArtifactBuildError
 
@@ -59,19 +57,8 @@ func rationalizeUpdateError(prime primeable, rerr *error) {
 			errs.SetInput(),
 		)
 
-	// If updating failed due to unidentified errors, and the user is not authenticated, add a tip suggesting that they authenticate as
-	// this may be a private project.
-	// Note since we cannot assert the actual error type we do not wrap this as user-facing, as we do not know what we're
-	// dealing with so the localized underlying errors are more appropriate.
 	default:
-		// Add authentication tip if we could not assert the error type
-		// This must only happen after all error assertions have failed, because if we can assert the error we can give
-		// an appropriate message, rather than a vague tip that suggests MAYBE this is a private project.
-		if auth != nil && !auth.Authenticated() {
-			*rerr = errs.AddTips(*rerr,
-				locale.T("tip_private_project_auth"),
-			)
-		}
+		RationalizeSolveError(prime.Project(), prime.Auth(), rerr)
 
 	}
 }

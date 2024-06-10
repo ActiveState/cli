@@ -6,10 +6,6 @@ import (
 	"github.com/ActiveState/cli/pkg/runtime/internal/buildlog"
 )
 
-var (
-	ErrNoPlatformMatch = errs.New("Current platform does not match any of the runtime platforms")
-)
-
 // ProgressReportError designates an error in the event handler for reporting progress.
 type ProgressReportError struct {
 	*errs.WrapperError
