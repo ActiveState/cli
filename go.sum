@@ -21,10 +21,6 @@ github.com/ActiveState/graphql v0.0.0-20230719154233-6949037a6e48 h1:UCx/ObpVRgC
 github.com/ActiveState/graphql v0.0.0-20230719154233-6949037a6e48/go.mod h1:NhUbNQ8UpfnC6nZvZ8oThqYSCE/G8FQp9JUrK9jXJs0=
 github.com/ActiveState/pty v0.0.0-20230628221854-6fb90eb08a14 h1:RdhhSiwmgyUaaF2GBNrbqTwE5SM+MaVjwf91Ua+CK8c=
 github.com/ActiveState/pty v0.0.0-20230628221854-6fb90eb08a14/go.mod h1:5mM6vNRQwshCjlkOnVpwC//4ZpkiC6nmZr8lPOxJdXs=
-github.com/ActiveState/termtest v0.7.3-0.20231006191111-13d903a6f2de h1:KqSmWBIEQracF6ixlQ0eNeKN+wYxDHNJWbrShI6F8NE=
-github.com/ActiveState/termtest v0.7.3-0.20231006191111-13d903a6f2de/go.mod h1:RyWp2NaaTrVAa+XjMHpKAqwBFWbL6wE12HQxiZNGAqU=
-github.com/ActiveState/termtest v0.7.3-0.20240516194214-af40d395ed40 h1:YDXHYDjYNJRlH1Qr2PD/NnYIR38PhhRATcxlgwcQjpY=
-github.com/ActiveState/termtest v0.7.3-0.20240516194214-af40d395ed40/go.mod h1:RyWp2NaaTrVAa+XjMHpKAqwBFWbL6wE12HQxiZNGAqU=
 github.com/ActiveState/termtest v0.7.3-0.20240522153407-fcd066736664 h1:0W+6cvjhkhF7AtCQJDGooMpOhDF4wqZpZyO2loIqtgY=
 github.com/ActiveState/termtest v0.7.3-0.20240522153407-fcd066736664/go.mod h1:RyWp2NaaTrVAa+XjMHpKAqwBFWbL6wE12HQxiZNGAqU=
 github.com/AlecAivazis/survey/v2 v2.0.5/go.mod h1:WYBhg6f0y/fNYUuesWQc0PKbJcEliGcYHB9sNT3Bg74=
@@ -144,8 +140,6 @@ github.com/dustin/go-humanize v1.0.1 h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkp
 github.com/elazarl/goproxy v0.0.0-20230808193330-2592e75ae04a h1:mATvB/9r/3gvcejNsXKSkQ6lcIaNec2nyfOdlTBR2lU=
 github.com/emirpasic/gods v1.18.1 h1:FXtiHYKDGKCW2KzwZKx0iC0PQmdlorYgdFG9jPXJ1Bc=
 github.com/emirpasic/gods v1.18.1/go.mod h1:8tpGGwCnJ5H4r6BWwaV6OrWmMoPhUl5jm/FMNAnJvWQ=
-github.com/faiface/mainthread v0.0.0-20171120011319-8b78f0a41ae3 h1:baVdMKlASEHrj19iqjARrPbaRisD7EuZEVJj6ZMLl1Q=
-github.com/faiface/mainthread v0.0.0-20171120011319-8b78f0a41ae3/go.mod h1:VEPNJUlxl5KdWjDvz6Q1l+rJlxF2i6xqDeGuGAxa87M=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fatih/color v1.10.0 h1:s36xzo75JdqLaaWoiEHk767eHiwo0598uUxyfiPkDsg=
 github.com/fatih/color v1.10.0/go.mod h1:ELkj/draVOlAH/xkhN6mQ50Qd0MPOk5AAr3maGEBuJM=
@@ -702,8 +696,6 @@ go.mongodb.org/mongo-driver v1.4.6/go.mod h1:WcMNYLx/IlOxLe6JRJiv2uXuCz6zBLndR4S
 go.mongodb.org/mongo-driver v1.5.1/go.mod h1:gRXCHX4Jo7J0IJ1oDQyUxF7jfy19UfxniMS4xxMmUqw=
 go.mongodb.org/mongo-driver v1.5.3 h1:wWbFB6zaGHpzguF3f7tW94sVE8sFl3lHx8OZx/4OuFI=
 go.mongodb.org/mongo-driver v1.5.3/go.mod h1:gRXCHX4Jo7J0IJ1oDQyUxF7jfy19UfxniMS4xxMmUqw=
-go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352 h1:CCriYyAfq1Br1aIYettdHZTy8mBTIPo7We18TuO/bak=
-go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352/go.mod h1:SNgMg+EgDFwmvSmLRTNKC5fegJjB7v23qTQ0XLGUNHk=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
 go.uber.org/atomic v1.4.0/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=

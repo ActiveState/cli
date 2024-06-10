@@ -206,9 +206,6 @@ github.com/emirpasic/gods/lists/arraylist
 github.com/emirpasic/gods/trees
 github.com/emirpasic/gods/trees/binaryheap
 github.com/emirpasic/gods/utils
-# github.com/faiface/mainthread v0.0.0-20171120011319-8b78f0a41ae3
-## explicit
-github.com/faiface/mainthread
 # github.com/fatih/color v1.10.0
 ## explicit; go 1.13
 github.com/fatih/color
@@ -665,9 +662,6 @@ go.mongodb.org/mongo-driver/bson/bsonrw
 go.mongodb.org/mongo-driver/bson/bsontype
 go.mongodb.org/mongo-driver/bson/primitive
 go.mongodb.org/mongo-driver/x/bsonx/bsoncore
-# go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352
-## explicit; go 1.11
-go.mozilla.org/pkcs7
 # golang.org/x/crypto v0.23.0
 ## explicit; go 1.18
 golang.org/x/crypto/acme
