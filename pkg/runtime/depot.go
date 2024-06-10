@@ -66,6 +66,10 @@ func newDepot() (*depot, error) {
 
 		// Filter out deployments that no longer exist (eg. user ran `state clean cache`)
 		for id, deployments := range result.config.Deployments {
+			if !fileutils.DirExists(result.Path(id)) {
+				delete(result.config.Deployments, id)
+				continue
+			}
 			result.config.Deployments[id] = sliceutils.Filter(deployments, func(d deployment) bool {
 				return fileutils.DirExists(d.Path)
 			})
