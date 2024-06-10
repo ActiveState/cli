@@ -69,7 +69,6 @@ scripts:
 	}
 	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -104,7 +103,6 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 
 	pjfile, err := projectfile.Parse(prjPath)
 	require.NoError(t, err, "parsing pjfile file")
-	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -146,7 +144,7 @@ func (suite *ScriptRunSuite) TestRunNoProjectInheritance() {
 project: "https://platform.activestate.com/ActiveState/pjfile"
 scripts:
   - name: run
-    value: echo $ACTIVESTATE_PROJECT
+    value: echo $ACTIVESTATE_ACTIVATED
     standalone: true
 `)
 	} else {
@@ -154,13 +152,12 @@ scripts:
 project: "https://platform.activestate.com/ActiveState/pjfile"
 scripts:
   - name: run
-    value: echo %ACTIVESTATE_PROJECT%
+    value: echo %ACTIVESTATE_ACTIVATED%
     standalone: true
 `)
 	}
 	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -194,7 +191,6 @@ scripts:
   `)
 	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -225,7 +221,6 @@ scripts:
   `)
 	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -284,7 +279,6 @@ scripts:
 	}
 	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -295,9 +289,6 @@ scripts:
 	require.NoError(t, err)
 	err = scriptRun.Run(script, nil)
 	assert.NoError(t, err, "No error occurred")
-
-	// Reset.
-	projectfile.Reset()
 }
 
 func (suite *ScriptRunSuite) TestPathProvidesLang() {
@@ -377,8 +368,6 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 	require.NoError(t, err)
 
 	pjfile := setupProjectWithScriptsExpectingArgs(t, tmplCmdName)
-	require.NoError(t, pjfile.Persist())
-	defer projectfile.Reset()
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)

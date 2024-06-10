@@ -1071,6 +1071,9 @@ err_no_project:
   other: To run this command you need to be in an existing project. You can create a new project with [ACTIONABLE]state init[/RESET] or run this command from a directory that is in an existing project. You can also use an existing project by running '[ACTIONABLE]state activate --default[/RESET]' inside your project directory.
 err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory or its parent directories.
+warning_activestate_project_env_var:
+  other: |
+    [NOTICE]DEPRECATION WARNING[/RESET] The '[ACTIONABLE]ACTIVESTATE_PROJECT[/RESET]' environment variable is no longer supported. Instead run your command from the directory with your activestate.yaml.
 err_project_not_found:
   other: Could not find project at [NOTICE]{{.V0}}[/RESET]
 err_non_interactive_prompt:

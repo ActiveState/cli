@@ -288,21 +288,8 @@ func Parse(fpath string) (*Project, error) {
 	return New(pjfile, output.Get())
 }
 
-func Get() (*Project, error) {
-	pjFile, err := projectfile.Get()
-	if err != nil {
-		return nil, err
-	}
-	project, err := New(pjFile, output.Get())
-	if err != nil {
-		return nil, err
-	}
-
-	return project, nil
-}
-
-// GetOnce returns project struct the same as Get and GetSafe, but it avoids persisting the project
-func GetOnce() (*Project, error) {
+// FromWD will return the project that's located at the current working directory
+func FromWD() (*Project, error) {
 	wd, err := osutils.Getwd()
 	if err != nil {
 		return nil, errs.Wrap(err, "Getwd failure")
