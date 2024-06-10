@@ -151,7 +151,7 @@ func getProjectHost(service Service) *string {
 		return &testingPlatform
 	}
 
-	pj, err := projectfile.GetOnce()
+	pj, err := projectfile.FromEnv()
 	if err != nil {
 		return nil
 	}

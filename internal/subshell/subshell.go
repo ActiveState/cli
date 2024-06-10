@@ -7,9 +7,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/thoas/go-funk"
-
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
@@ -116,11 +113,8 @@ func New(cfg sscommon.Configurable) SubShell {
 
 	logging.Debug("Using binary: %s", path)
 	subs.SetBinary(path)
-
-	env := funk.FilterString(os.Environ(), func(s string) bool {
-		return !strings.HasPrefix(s, constants.ProjectEnvVarName)
-	})
-	err := subs.SetEnv(osutils.EnvSliceToMap(env))
+	
+	err := subs.SetEnv(osutils.EnvSliceToMap(os.Environ()))
 	if err != nil {
 		// We cannot error here, but this error will resurface when activating a runtime, so we can
 		// notify the user at that point.

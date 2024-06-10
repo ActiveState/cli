@@ -1,7 +1,6 @@
 package subshell
 
 import (
-	"fmt"
 	"os"
 	"runtime"
 	"strings"
@@ -11,19 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func TestRunCommand(t *testing.T) {
-	projectURL := fmt.Sprintf("https://%s/string/string", constants.PlatformURL)
-	pjfile := projectfile.Project{
-		Project: projectURL,
-	}
-	require.NoError(t, pjfile.Persist())
-
 	data := []byte("echo Hello")
 	if runtime.GOOS == "windows" {
 		// Windows supports bash, but for the purpose of this test we only want to test cmd.exe, so ensure
@@ -51,6 +42,4 @@ func TestRunCommand(t *testing.T) {
 
 	trimmed := strings.TrimSpace(out)
 	assert.Equal(t, "Hello", trimmed[len(trimmed)-len("Hello"):])
-
-	projectfile.Reset()
 }
