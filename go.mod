@@ -1,6 +1,6 @@
 module github.com/ActiveState/cli
 
-go 1.20
+go 1.22
 
 replace cloud.google.com/go => cloud.google.com/go v0.110.0
 

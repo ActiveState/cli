@@ -51,7 +51,7 @@ scripts:
     if: ne .Shell "cmd"
     value: |
       if ! type "go" &> /dev/null; then
-        echo "go is not installed. Please install Go version 1.20 or above."
+        echo "go is not installed. Please install Go version 1.22 or above."
         exit 1
       fi
       if ! type "golangci-lint" &> /dev/null; then
