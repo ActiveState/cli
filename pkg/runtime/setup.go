@@ -150,7 +150,9 @@ func (s *setup) RunAndWait() (rerr error) {
 		var ev events.Event = events.Success{}
 		if rerr != nil {
 			name = "failure"
-			ev = events.Failure{}
+			ev = events.Failure{
+				Error: rerr,
+			}
 		}
 
 		err := s.fireEvent(ev)
@@ -240,14 +242,8 @@ func (s *setup) update() error {
 		return errs.Wrap(err, "errors occurred during install")
 	}
 
-	// Update executors
-	if err := s.updateExecutors(); err != nil {
-		return errs.Wrap(err, "Could not update executors")
-	}
-
-	// Save depot changes
-	if err := s.depot.Save(); err != nil {
-		return errs.Wrap(err, "Could not save depot")
+	if err := s.postProcess(); err != nil {
+		return errs.Wrap(err, "Postprocessing failed")
 	}
 
 	return nil
@@ -463,6 +459,36 @@ func (s *setup) uninstall(id strfmt.UUID) (rerr error) {
 
 	if err := s.depot.Undeploy(id, envDef.InstallDir, s.path); err != nil {
 		return errs.Wrap(err, "Could not unlink artifact")
+	}
+
+	return nil
+}
+
+func (s *setup) postProcess() (rerr error) {
+	if err := s.fireEvent(events.PostProcessStarted{}); err != nil {
+		return errs.Wrap(err, "Could not handle PostProcessStarted event")
+	}
+
+	defer func() {
+		if rerr == nil {
+			if err := s.fireEvent(events.PostProcessSuccess{}); err != nil {
+				rerr = errs.Pack(rerr, errs.Wrap(err, "Could not handle PostProcessSuccess event"))
+			}
+		} else {
+			if err := s.fireEvent(events.PostProcessFailure{rerr}); err != nil {
+				rerr = errs.Pack(rerr, errs.Wrap(err, "Could not handle PostProcessFailure event"))
+			}
+		}
+	}()
+
+	// Update executors
+	if err := s.updateExecutors(); err != nil {
+		return errs.Wrap(err, "Could not update executors")
+	}
+
+	// Save depot changes
+	if err := s.depot.Save(); err != nil {
+		return errs.Wrap(err, "Could not save depot")
 	}
 
 	return nil

@@ -18,7 +18,7 @@ var ErrBuildscriptNotExist = buildscript_runbit.ErrBuildscriptNotExist
 
 var ErrBuildScriptNeedsCommit = errors.New("buildscript is dirty, need to run state commit")
 
-func rationalizeUpdateError(prime updatePrimer, rerr *error) {
+func rationalizeUpdateError(prime primeable, rerr *error) {
 	if *rerr == nil {
 		return
 	}
@@ -74,7 +74,7 @@ func rationalizeUpdateError(prime updatePrimer, rerr *error) {
 	}
 }
 
-func rationalizeSolveError(prime solvePrimer, rerr *error) {
+func rationalizeSolveError(prime primeable, rerr *error) {
 	if *rerr == nil {
 		return
 	}

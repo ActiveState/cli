@@ -51,6 +51,7 @@ type Success struct {
 func (Success) IsEvent() {}
 
 type Failure struct {
+	Error error
 }
 
 func (Failure) IsEvent() {}
@@ -196,3 +197,19 @@ type ArtifactUnpackSuccess struct {
 }
 
 func (ArtifactUnpackSuccess) IsEvent() {}
+
+type PostProcessStarted struct {
+}
+
+func (PostProcessStarted) IsEvent() {}
+
+type PostProcessSuccess struct {
+}
+
+func (PostProcessSuccess) IsEvent() {}
+
+type PostProcessFailure struct {
+	Error error
+}
+
+func (PostProcessFailure) IsEvent() {}

@@ -1,23 +1,34 @@
 package runtime_runbit
 
 import (
+	"os"
+
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/runtime"
+	"github.com/ActiveState/cli/pkg/runtime/events"
 	"github.com/ActiveState/cli/pkg/runtime/helpers"
 	"github.com/go-openapi/strfmt"
+	"golang.org/x/net/context"
 )
 
 func init() {
@@ -59,23 +70,17 @@ func WithCommitID(commitID strfmt.UUID) SetOpt {
 	}
 }
 
-type solvePrimer interface {
-	primer.Projecter
-	primer.Auther
-	primer.Outputer
-	primer.SvcModeler
-}
-
-type updatePrimer interface {
+type primeable interface {
 	primer.Projecter
 	primer.Auther
 	primer.Outputer
 	primer.Configurer
 	primer.SvcModeler
+	primer.Analyticer
 }
 
 func Update(
-	prime updatePrimer,
+	prime primeable,
 	trigger trigger.Trigger,
 	setOpts ...SetOpt,
 ) (_ *runtime.Runtime, rerr error) {
@@ -110,8 +115,25 @@ func Update(
 		}
 	}
 
+	ah, err := newAnalyticsHandler(prime, trigger, commitID)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not create event handler")
+	}
+
+	// Runtime debugging encapsulates more than just sourcing of the runtime, so we handle some of these events
+	// external from the runtime event handling.
+	ah.fire(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeStart, nil)
+	defer func() {
+		if rerr == nil {
+			ah.fire(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeSuccess, nil)
+		} else {
+			ah.fireFailure(rerr)
+		}
+	}()
+
 	rtHash, err := runtime_helpers.Hash(proj, &commitID)
 	if err != nil {
+		ah.fire(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeCache, nil)
 		return nil, errs.Wrap(err, "Failed to get runtime hash")
 	}
 
@@ -169,11 +191,97 @@ func Update(
 	defer rtutils.Closer(pg.Close, &rerr)
 	if err := rt.Update(commit.BuildPlan(), rtHash,
 		runtime.WithAnnotations(proj.Owner(), proj.Name(), commitID),
-		runtime.WithEventHandlers(pg.Handle),
+		runtime.WithEventHandlers(pg.Handle, ah.handle),
 		runtime.WithPreferredLibcVersion(prime.Config().GetString(constants.PreferredGlibcVersionConfig)),
 	); err != nil {
 		return nil, locale.WrapError(err, "err_packages_update_runtime_install")
 	}
 
 	return rt, nil
+}
+
+type analyticsHandler struct {
+	prime         primeable
+	trigger       trigger.Trigger
+	commitID      strfmt.UUID
+	dimensionJson string
+	errorStage    string
+}
+
+func newAnalyticsHandler(prime primeable, trig trigger.Trigger, commitID strfmt.UUID) (*analyticsHandler, error) {
+	h := &analyticsHandler{prime, trig, commitID, "", ""}
+	dims := h.dimensions()
+
+	dimsJson, err := dims.Marshal()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not marshal dimensions")
+	}
+	h.dimensionJson = dimsJson
+
+	return h, nil
+}
+
+func (h *analyticsHandler) fire(category, action string, dimensions *dimensions.Values) {
+	if dimensions == nil {
+		dimensions = h.dimensions()
+	}
+	h.prime.Analytics().Event(category, action, dimensions)
+}
+
+func (h *analyticsHandler) fireFailure(err error) {
+	errorType := h.errorStage
+	if errorType == "" {
+		errorType = "unknown"
+		if locale.IsInputError(err) {
+			errorType = "input"
+		}
+	}
+	dims := h.dimensions()
+	dims.Error = ptr.To(errorType)
+	dims.Message = ptr.To(errs.JoinMessage(err))
+	h.prime.Analytics().Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeFailure, dims)
+}
+
+func (h *analyticsHandler) dimensions() *dimensions.Values {
+	return &dimensions.Values{
+		Trigger:          ptr.To(h.trigger.String()),
+		CommitID:         ptr.To(h.commitID.String()),
+		ProjectNameSpace: ptr.To(project.NewNamespace(h.prime.Project().Owner(), h.prime.Project().Name(), h.commitID.String()).String()),
+		InstanceID:       ptr.To(instanceid.ID()),
+	}
+}
+
+func (h *analyticsHandler) handle(event events.Event) error {
+	if !h.trigger.IndicatesUsage() {
+		return nil
+	}
+
+	switch event.(type) {
+	case events.Start:
+		h.prime.Analytics().Event(anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeAttempt, h.dimensions())
+	case events.Success:
+		if err := h.prime.SvcModel().ReportRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), anaConsts.SrcStateTool, h.dimensionJson); err != nil {
+			multilog.Critical("Could not report runtime usage: %s", errs.JoinMessage(err))
+		}
+	case events.ArtifactBuildFailure:
+		h.errorStage = anaConsts.ActRuntimeBuild
+		h.fire(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeBuild, nil)
+	case events.ArtifactDownloadFailure:
+		h.errorStage = anaConsts.ActRuntimeDownload
+		h.fire(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeDownload, nil)
+	case events.ArtifactUnpackFailure:
+		h.errorStage = anaConsts.ActRuntimeUnpack
+		h.fire(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeUnpack, nil)
+	case events.ArtifactInstallFailure:
+		h.errorStage = anaConsts.ActRuntimeInstall
+		h.fire(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeInstall, nil)
+	case events.ArtifactUninstallFailure:
+		h.errorStage = anaConsts.ActRuntimeUninstall
+		h.fire(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeUninstall, nil)
+	case events.PostProcessFailure:
+		h.errorStage = anaConsts.ActRuntimePostprocess
+		h.fire(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimePostprocess, nil)
+	}
+
+	return nil
 }
