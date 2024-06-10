@@ -65,8 +65,10 @@ type BuildLog struct {
 // artifactMap comprises all artifacts (from the runtime closure) that are in the recipe, alreadyBuilt is set of artifact IDs that have already been built in the past
 func New(recipeID strfmt.UUID, artifactMap buildplan.ArtifactIDMap) *BuildLog {
 	return &BuildLog{
-		recipeID:    recipeID,
-		artifactMap: artifactMap,
+		recipeID:             recipeID,
+		artifactMap:          artifactMap,
+		eventHandlers:        []events.HandlerFunc{},
+		onArtifactReadyFuncs: map[strfmt.UUID][]func(){},
 	}
 }
 
