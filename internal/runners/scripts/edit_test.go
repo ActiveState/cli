@@ -108,7 +108,7 @@ func (suite *EditTestSuite) TestNewScriptWatcher() {
 	suite.Require().NoError(err, "unexpected error creating script watcher")
 
 	catcher := outputhelper.NewCatcher()
-	proj, err := project.Get()
+	proj, err := project.FromWD()
 	suite.Require().NoError(err, "unexpected error getting project")
 	go watcher.run("hello", catcher.Outputer, suite.cfg, proj)
 
@@ -129,12 +129,12 @@ func (suite *EditTestSuite) TestUpdateProjectFile() {
 	suite.scriptFile, err = createScriptFile(replace, false)
 	suite.Require().NoError(err, "unexpected error creating script file")
 
-	proj, err := project.Get()
+	proj, err := project.FromWD()
 	suite.Require().NoError(err, "unexpected error getting project")
 	err = updateProjectFile(suite.cfg, proj, suite.scriptFile, "replace")
 	suite.Require().NoError(err, "should be able to update script file")
 
-	updatedProject, err := project.Get()
+	updatedProject, err := project.FromWD()
 	suite.Require().NoError(err, "unexpected error getting project")
 	v1, err := replace.Value()
 	suite.Require().NoError(err)
