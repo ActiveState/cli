@@ -41,13 +41,10 @@ func locatePythonExecutable(installDir string) (string, error) {
 	python2 := filepath.Join(installDir, "bin", constants.ActivePython2Executable)
 	python3 := filepath.Join(installDir, "bin", constants.ActivePython3Executable)
 
-	var executable string
 	var executablePath string
 	if fileutils.FileExists(python3) {
-		executable = constants.ActivePython3Executable
 		executablePath = python3
 	} else if fileutils.FileExists(python2) {
-		executable = constants.ActivePython2Executable
 		executablePath = python2
 	} else {
 		return "", locale.NewError("installer_err_runtime_no_executable", "", binPath, constants.ActivePython2Executable, constants.ActivePython3Executable)
