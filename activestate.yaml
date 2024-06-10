@@ -51,12 +51,12 @@ scripts:
     if: ne .Shell "cmd"
     value: |
       if ! type "go" &> /dev/null; then
-        echo "go is not installed. Please install Go version 1.20 or above."
+        echo "go is not installed. Please install Go version 1.22 or above."
         exit 1
       fi
       if ! type "golangci-lint" &> /dev/null; then
         echo "golangci-lint was not found on your PATH, installing .."
-        go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.2
+        go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1
       fi
       git config core.hooksPath .githooks
       if ! type "swagger" &> /dev/null; then
