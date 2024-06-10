@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildplan/raw"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
@@ -52,7 +51,6 @@ func (a *Artifact) Name() string {
 	if len(a.Ingredients) == 1 {
 		return a.Ingredients[0].Name
 	}
-	logging.Debug("Using displayname because artifact has %d ingredients", len(a.Ingredients))
 	return a.DisplayName
 }
 

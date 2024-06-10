@@ -392,10 +392,6 @@ installer_err_runtime_no_executable:
   other: Expected runtime installer '[NOTICE]{{.V0}}[/RESET]' to include '[ACTIONABLE]{{.V1}}[/RESET]' or '[ACTIONABLE]{{.V2}}[/RESET]'
 installer_err_runtime_no_file:
   other: Expected runtime installer '[NOTICE]{{.V0}}[/RESET]' to include '[ACTIONABLE]{{.V1}}[/RESET]'
-installer_err_runtime_executable_not_exec:
-  other: Executable '[NOTICE]{{.V1}}[/RESET]' does not have execute permissions for runtime '[NOTICE]{{.V0}}[/RESET]'
-installer_err_fail_obtain_prefixes:
-  other: Unable to obtain relocation prefixes for runtime '[NOTICE]{{.V0}}[/RESET]'
 build_status_in_progress:
   other: "Your changes are currently being built remotely on the ActiveState Platform. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress."
 err_no_default_branch:

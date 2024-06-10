@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/sliceutils"
@@ -23,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/pkg/runtime/events/progress"
 	"github.com/ActiveState/cli/pkg/runtime/executors"
 	"github.com/ActiveState/cli/pkg/runtime/internal/buildlog"
+	"github.com/ActiveState/cli/pkg/runtime/internal/camel"
 	"github.com/ActiveState/cli/pkg/runtime/internal/envdef"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
@@ -320,7 +320,6 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 		}
 	}()
 
-	logging.Debug("%s:1", artifact.ArtifactID)
 	var ua unarchiver.Unarchiver = unarchiver.NewTarGz()
 	if strings.HasSuffix(strings.ToLower(artifact.URL), "zip") {
 		ua = unarchiver.NewZip()
@@ -342,17 +341,28 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 		return errs.Wrap(err, "unpack failed")
 	}
 
-	logging.Debug("%s:2", artifact.ArtifactID)
 	if err := s.depot.Put(artifact.ArtifactID); err != nil {
 		return errs.Wrap(err, "Could not put artifact in depot")
 	}
-	logging.Debug("%s:3", artifact.ArtifactID)
+
+	// Camel artifacts do not have runtime.json, so in order to not have multiple paths of logic we generate one based
+	// on the camel specific info in the artifact.
+	if s.buildplan.Engine() == types.Camel {
+		artifactDepotPath := s.depot.Path(artifact.ArtifactID)
+		envDef, err := camel.NewEnvironmentDefinitions(artifactDepotPath)
+		if err != nil {
+			return errs.Wrap(err, "Could not get camel env")
+		}
+
+		if err := envDef.Save(artifactDepotPath); err != nil {
+			return errs.Wrap(err, "Could not save camel env")
+		}
+	}
 
 	if err := s.fireEvent(events.ArtifactUnpackSuccess{artifact.ArtifactID}); err != nil {
 		return errs.Wrap(errs.Pack(err, err), "Could not handle ArtifactUnpackSuccess event")
 	}
 
-	logging.Debug("%s:done", artifact.ArtifactID)
 	return nil
 }
 

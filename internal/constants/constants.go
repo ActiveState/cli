@@ -353,9 +353,6 @@ const (
 // ActivePythonDistsDir represents the base name of a directory where ActivePython dists will be installed under.
 const ActivePythonDistsDir = "python"
 
-// RuntimeInstallDirs represents the directory within a distribution archive where the distribution exists.
-const RuntimeInstallDirs = "INSTALLDIR,perl"
-
 // RuntimeMetaFile is the json file that holds meta information about our runtime
 const RuntimeMetaFile = "metadata.json"
 

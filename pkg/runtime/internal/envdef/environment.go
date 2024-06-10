@@ -27,6 +27,18 @@ type EnvironmentDefinition struct {
 	InstallDir string `json:"installdir"`
 }
 
+func (e *EnvironmentDefinition) Save(path string) error {
+	path = filepath.Join(path, EnvironmentDefinitionFilename)
+	b, err := json.Marshal(e)
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal environment definition")
+	}
+	if err := fileutils.WriteFile(path, b); err != nil {
+		return errs.Wrap(err, "Could not write environment definition file")
+	}
+	return nil
+}
+
 // EnvironmentVariable defines a single environment variable and its values
 type EnvironmentVariable struct {
 	Name      string       `json:"env_name"`
