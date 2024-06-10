@@ -70,6 +70,8 @@ func (r *Refresh) Run(params *Params) error {
 		return rationalize.ErrNoProject
 	}
 
+	r.prime.SetProject(proj)
+
 	needsUpdate, err := runtime_helpers.NeedsUpdate(proj, nil)
 	if err != nil {
 		return errs.Wrap(err, "could not determine if runtime needs update")

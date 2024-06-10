@@ -80,6 +80,8 @@ func (u *Shell) Run(params *Params) error {
 		return locale.WrapError(err, "err_shell_cannot_load_project")
 	}
 
+	u.prime.SetProject(proj)
+
 	commitID, err := localcommit.Get(proj.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
