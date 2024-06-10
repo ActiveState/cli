@@ -1,6 +1,7 @@
+//go:build darwin
 // +build darwin
 
-package camel_test
+package camel
 
 import (
 	"fmt"
@@ -8,7 +9,6 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/camel"
 )
 
 func (suite *MetaDataTestSuite) TestMetaData_Prepare() {
@@ -50,7 +50,7 @@ func (suite *MetaDataTestSuite) TestMetaData_Prepare() {
 	suite.Require().NoError(err)
 
 	contents := fmt.Sprintf(template, tempDir)
-	metaData, err := camel.ParseMetaData([]byte(contents))
+	metaData, err := parseMetaData([]byte(contents))
 	suite.Require().NoError(err)
 
 	err = metaData.Prepare(suite.dir)
@@ -58,7 +58,7 @@ func (suite *MetaDataTestSuite) TestMetaData_Prepare() {
 	suite.Assert().NotEmpty(metaData.Env["PYTHONIOENCODING"])
 
 	suite.Len(metaData.TargetedRelocations, 1, "expected one targeted relocation")
-	suite.Equal(camel.TargetedRelocation{
+	suite.Equal(targetedRelocation{
 		InDir:        relBinDir,
 		SearchString: "#!" + filepath.Join("/", relVersionedDir),
 		Replacement:  "#!" + filepath.Join("${INSTALLDIR}", relVersionedDir),

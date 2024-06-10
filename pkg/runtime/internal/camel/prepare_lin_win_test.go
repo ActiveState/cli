@@ -1,6 +1,7 @@
+//go:build !darwin
 // +build !darwin
 
-package camel_test
+package camel
 
 import (
 	"fmt"
@@ -10,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/camel"
 )
 
 func (suite *MetaDataTestSuite) TestMetaData_Prepare() {
@@ -41,7 +41,7 @@ func (suite *MetaDataTestSuite) TestMetaData_Prepare() {
 	suite.Require().NoError(err)
 
 	contents := fmt.Sprintf(template, tempDir)
-	metaData, err := camel.ParseMetaData([]byte(contents))
+	metaData, err := parseMetaData([]byte(contents))
 	suite.Require().NoError(err)
 
 	err = metaData.Prepare(suite.dir)
