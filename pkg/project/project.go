@@ -49,7 +49,12 @@ type Project struct {
 }
 
 // Source returns the source projectfile
-func (p *Project) Source() *projectfile.Project { return p.projectfile }
+func (p *Project) Source() *projectfile.Project {
+	if p == nil {
+		return nil
+	}
+	return p.projectfile
+}
 
 // Constants returns a reference to projectfile.Constants
 func (p *Project) Constants() []*Constant {
