@@ -1011,27 +1011,6 @@ deploy_usable_path:
     Please ensure '[NOTICE]{{.V0}}[/RESET]' exists and is on your PATH.
 script_watcher_watch_file:
   other: "Watching file changes at: [NOTICE]{{.V0}}[/RESET]"
-tutorial_newproject_intro:
-  other: |
-    The State Tool lets you create and maintain a set of virtual environments (eg., one per project), allowing you to
-    isolate and better manage language versions and dependencies on a per-project basis.
-    [[BR]][[BR]]
-    For every virtual environment, you'll be able to share the current configuration (language version & dependencies)
-    with your teammates so everyone stays in sync, as well as share secrets (or store your own, for your eyes only),
-    set up shared scripts, and much more.
-    [[BR]][[BR]]
-    We'll help you create your first virtual environment, after that you can create as many as you want by running
-    '[ACTIONABLE]state init[/RESET]'.
-    [[BR]]
-tutorial_newproject_outro:
-  other: |
-    Your Virtual Runtime Environment has been created.
-    [[BR]][[BR]]
-    To start using your project simply run '[ACTIONABLE]state activate[/RESET]' from your project directory at [ACTIONABLE]{{.Dir}}[/RESET].
-    You can also manage your project in your browser at [ACTIONABLE]{{.URL}}[/RESET].
-    [[BR]][[BR]]
-    To create another project run '[ACTIONABLE]state init[/RESET]', or if you want to find out more about the State Tool and what it can do
-    run '[ACTIONABLE]state --help[/RESET]' or check out [ACTIONABLE]{{.Docs}}[/RESET]
 ppm_convert_explanation:
   other: |
     State Tool, like Perl 7, is being developed from the ground up with modern software development practices in mind.
@@ -1564,7 +1543,7 @@ err_buildscript_not_exist:
 commit_success:
   other: |
     Commit '[ACTIONABLE]{{.V0}}[/RESET]' for project '[ACTIONABLE]{{.V1}}[/RESET]' successfully created.
-    
+
     Run '[ACTIONABLE]state refresh[/RESET]' to update your local runtime.
 builds_dl_downloading:
   other: Downloading {{.V0}}
@@ -1585,7 +1564,7 @@ warn_build_not_complete:
 err_build_artifacts_failed:
   other: |
     The following artifacts failed to build, please refer to their logs for more information:
-    
+
     {{.V0}}
 err_build_artifact_failed_msg:
   other: The artifact '[ACTIONABLE]{{.V0}}[/RESET]' failed to build.
@@ -1638,7 +1617,7 @@ err_runtime_needs_refresh:
   other: Your runtime needs to be updated, please run '[ACTIONABLE]state refresh[/RESET]' and then try again.
 err_pull_no_common_parent:
   other: |
-    The local commit ID [NOTICE]{{.V0}}[/RESET] and latest remote commit ID [NOTICE]{{.V1}}[/RESET] have no common parent. 
+    The local commit ID [NOTICE]{{.V0}}[/RESET] and latest remote commit ID [NOTICE]{{.V1}}[/RESET] have no common parent.
     To review your project history run '[ACTIONABLE]state history[/RESET]'.
 warn_package_list_runtime:
   other: |

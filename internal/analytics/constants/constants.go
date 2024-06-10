@@ -106,9 +106,6 @@ const CatPpmConversion = "ppm-conversion"
 // CatPPMShimCmd is the event category used for PPM shim events
 const CatPPMShimCmd = "ppm-shim"
 
-// CatTutorial is the event category used for tutorial level events
-const CatTutorial = "tutorial"
-
 // CatCommandExit is the event category used to track the success of state commands
 const CatCommandExit = "command-exit"
 
