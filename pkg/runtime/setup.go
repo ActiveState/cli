@@ -187,16 +187,14 @@ func (s *setup) update() error {
 	// Download artifacts when ready
 	wp := workerpool.New(maxConcurrency)
 	for _, a := range s.toDownload {
-		func(a *buildplan.Artifact) { // We can get rid of this once we upgrade to Go 1.22 -- https://go.dev/blog/loopvar-preview
-			s.onArtifactBuildReady(blog, a, func() {
-				wp.Submit(func() error {
-					if err := s.obtain(a); err != nil {
-						return errs.Wrap(err, "obtain failed")
-					}
-					return nil
-				})
+		s.onArtifactBuildReady(blog, a, func() {
+			wp.Submit(func() error {
+				if err := s.obtain(a); err != nil {
+					return errs.Wrap(err, "obtain failed")
+				}
+				return nil
 			})
-		}(a)
+		})
 	}
 
 	// Wait for build to finish
@@ -227,14 +225,12 @@ func (s *setup) update() error {
 	// Install artifacts
 	wp = workerpool.New(maxConcurrency)
 	for _, a := range s.toInstall {
-		func(a *buildplan.Artifact) { // We can get rid of this once we upgrade to Go 1.22 -- https://go.dev/blog/loopvar-preview
-			wp.Submit(func() error {
-				if err := s.install(a.ArtifactID); err != nil {
-					return errs.Wrap(err, "Could not install artifact")
-				}
-				return nil
-			})
-		}(a)
+		wp.Submit(func() error {
+			if err := s.install(a.ArtifactID); err != nil {
+				return errs.Wrap(err, "Could not install artifact")
+			}
+			return nil
+		})
 	}
 
 	// Wait for workerpool handling artifact installs to finish

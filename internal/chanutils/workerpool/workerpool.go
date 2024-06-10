@@ -35,29 +35,25 @@ func (wp *WorkerPool) Submit(fn func() error) {
 // possible when an error occurs.
 func (wp *WorkerPool) runQueue() {
 	n := 0
-	for _, fn1 := range wp.queue {
+	for _, fn := range wp.queue {
 		if wp.errorsOccurred {
 			// No point to keep going if errors have occurred, we want to raise these errors asap.
 			break
 		}
 
-		// We can get rid of this once we upgrade to Go 1.22 -- https://go.dev/blog/loopvar-preview
-		func(fn func() error) {
-			wp.inner.Submit(func() {
-				defer func() {
-					if p := recover(); p != nil {
-						wp.errorsOccurred = true
-						wp.errors <- errs.New("panic inside workerpool: %v", p)
-					}
-				}()
-				err := fn()
-				if err != nil {
+		wp.inner.Submit(func() {
+			defer func() {
+				if p := recover(); p != nil {
 					wp.errorsOccurred = true
+					wp.errors <- errs.New("panic inside workerpool: %v", p)
 				}
-				wp.errors <- err
-			})
-
-		}(fn1)
+			}()
+			err := fn()
+			if err != nil {
+				wp.errorsOccurred = true
+			}
+			wp.errors <- err
+		})
 
 		// Give some breathing room for errors to bubble up so we're not running a bunch of jobs we know will
 		// result in a failure anyway.
