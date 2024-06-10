@@ -66,6 +66,6 @@ func (p *Protocol) Run(params Params) error {
 	if err != nil {
 		return locale.WrapError(err, "err_protocol_os_executable", "Could not detect executable path of State Tool.")
 	}
-	_, _, err = osutils.ExecSimple(exe, []string{"activate", fmt.Sprintf("--%s", parsed.Fragment), namespace.String()}, nil)
+	_, _, err = osutils.ExecuteAndPipeStd(exe, []string{"activate", fmt.Sprintf("--%s", parsed.Fragment), namespace.String()}, []string{})
 	return err
 }
