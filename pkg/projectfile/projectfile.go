@@ -25,7 +25,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils"
@@ -64,14 +63,6 @@ var migrator MigratorFunc
 
 func RegisterMigrator(m MigratorFunc) {
 	migrator = m
-}
-
-var out output.Outputer
-
-// RegisterOutputer registers the outputer this package uses for outputing things like deprecation
-// warnings.
-func RegisterOutputer(o output.Outputer) {
-	out = o
 }
 
 type ErrorParseProject struct{ *locale.LocalizedError }
@@ -821,15 +812,8 @@ func GetProjectFilePath() (string, error) {
 	return "", &ErrorNoProject{locale.NewInputError("err_no_projectfile")}
 }
 
-var printedActiveStateProjectDeprecationNotice = false
-
 func getProjectFilePathFromEnv() (string, error) {
 	var projectFilePath string
-
-	if legacy := os.Getenv("ACTIVESTATE_PROJECT"); legacy != "" && !printedActiveStateProjectDeprecationNotice {
-		out.Notice(locale.T("warning_activestate_project_env_var"))
-		printedActiveStateProjectDeprecationNotice = true
-	}
 
 	if activatedProjectDirPath := os.Getenv(constants.ActivatedStateEnvVarName); activatedProjectDirPath != "" {
 		projectFilePath = filepath.Join(activatedProjectDirPath, constants.ConfigFileName)

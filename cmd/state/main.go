@@ -162,8 +162,6 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		return logData
 	})
 
-	projectfile.RegisterOutputer(out) // note: this needs to be done before using auth
-
 	auth := authentication.New(cfg)
 	defer events.Close("auth", auth.Close)
 
@@ -174,6 +172,9 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	projectfile.RegisterMigrator(migrator.NewMigrator(auth, cfg))
 
 	// Retrieve project file
+	if os.Getenv("ACTIVESTATE_PROJECT") != "" {
+		out.Notice(locale.T("warning_activestate_project_env_var"))
+	}
 	pjPath, err := projectfile.GetProjectFilePath()
 	if err != nil && errs.Matches(err, &projectfile.ErrorNoProjectFromEnv{}) {
 		// Fail if we are meant to inherit the projectfile from the environment, but the file doesn't exist
