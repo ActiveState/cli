@@ -252,10 +252,6 @@ func (h *analyticsHandler) dimensions() *dimensions.Values {
 }
 
 func (h *analyticsHandler) handle(event events.Event) error {
-	if !h.trigger.IndicatesUsage() {
-		return nil
-	}
-
 	switch event.(type) {
 	case events.Start:
 		h.prime.Analytics().Event(anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeAttempt, h.dimensions())
