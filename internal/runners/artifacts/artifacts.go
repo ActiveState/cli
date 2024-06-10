@@ -114,7 +114,7 @@ func (e *errCommitDoesNotExistInProject) Error() string {
 	return "Commit does not exist in project"
 }
 
-func rationalizeArtifactsError(rerr *error, auth *authentication.Auth) {
+func rationalizeArtifactsError(proj *project.Project, auth *authentication.Auth, rerr *error) {
 	if rerr == nil {
 		return
 	}
@@ -126,12 +126,12 @@ func rationalizeArtifactsError(rerr *error, auth *authentication.Auth) {
 		*rerr = errs.WrapUserFacing(*rerr, planningError.Error())
 
 	default:
-		rationalizeCommonError(rerr, auth)
+		rationalizeCommonError(proj, auth, rerr)
 	}
 }
 
 func (b *Artifacts) Run(params *Params) (rerr error) {
-	defer rationalizeArtifactsError(&rerr, b.auth)
+	defer rationalizeArtifactsError(b.project, b.auth, &rerr)
 
 	if b.project != nil && !params.Namespace.IsValid() {
 		b.out.Notice(locale.Tr("operating_message", b.project.NamespaceString(), b.project.Dir()))

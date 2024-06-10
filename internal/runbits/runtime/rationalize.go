@@ -10,7 +10,9 @@ import (
 	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	auth "github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/runtime"
 )
 
@@ -74,13 +76,10 @@ func rationalizeUpdateError(prime primeable, rerr *error) {
 	}
 }
 
-func rationalizeSolveError(prime primeable, rerr *error) {
+func RationalizeSolveError(proj *project.Project, auth *auth.Auth, rerr *error) {
 	if *rerr == nil {
 		return
 	}
-
-	proj := prime.Project()
-	auth := prime.Auth()
 
 	var noMatchingPlatformErr *model.ErrNoMatchingPlatform
 	var buildPlannerErr *bpResp.BuildPlannerError

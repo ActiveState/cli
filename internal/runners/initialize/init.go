@@ -120,6 +120,8 @@ func inferLanguage(config projectfile.ConfigGetter, auth *authentication.Auth) (
 }
 
 func (r *Initialize) Run(params *RunParams) (rerr error) {
+	defer func() { runtime_runbit.RationalizeSolveError(r.prime.Project(), r.auth, &rerr) }()
+
 	logging.Debug("Init: %s %v", params.Namespace, params.Private)
 
 	var (

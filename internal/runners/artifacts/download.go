@@ -58,7 +58,7 @@ type errArtifactExists struct {
 	Path string
 }
 
-func rationalizeDownloadError(err *error, auth *authentication.Auth) {
+func rationalizeDownloadError(proj *project.Project, auth *authentication.Auth, err *error) {
 	var artifactExistsErr *errArtifactExists
 
 	switch {
@@ -71,12 +71,12 @@ func rationalizeDownloadError(err *error, auth *authentication.Auth) {
 			errs.SetInput())
 
 	default:
-		rationalizeCommonError(err, auth)
+		rationalizeCommonError(proj, auth, err)
 	}
 }
 
 func (d *Download) Run(params *DownloadParams) (rerr error) {
-	defer rationalizeDownloadError(&rerr, d.auth)
+	defer rationalizeDownloadError(d.project, d.auth, &rerr)
 
 	if d.project != nil && !params.Namespace.IsValid() {
 		d.out.Notice(locale.Tr("operating_message", d.project.NamespaceString(), d.project.Dir()))

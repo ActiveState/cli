@@ -75,6 +75,8 @@ func NewCheckout(prime primeable) *Checkout {
 }
 
 func (u *Checkout) Run(params *Params) (rerr error) {
+	defer func() { runtime_runbit.RationalizeSolveError(u.prime.Project(), u.auth, &rerr) }()
+
 	logging.Debug("Checkout %v", params.Namespace)
 
 	logging.Debug("Checking out %s to %s", params.Namespace.String(), params.PreferredPath)
