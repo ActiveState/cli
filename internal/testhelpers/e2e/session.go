@@ -198,23 +198,6 @@ func NewNoPathUpdate(t *testing.T, retainDirs bool, extraEnv ...string) *Session
 	return new(t, retainDirs, false, extraEnv...)
 }
 
-// RunInSandboxedEnv will set up the env as per the sandboxed test environment constructed for this session, and then
-// run the provided function. Afterwards it will recover the original env.
-// This is NOT thread safe; use accordingly!
-func (s *Session) RunInSandboxedEnv(f func() error) error {
-	env := osutils.EnvSliceToMap(s.Env)
-	oldEnv := map[string]string{}
-	for k, v := range env {
-		oldEnv[k] = os.Getenv(k)
-		os.Setenv(k, v)
-	}
-	err := f()
-	for k, v := range oldEnv {
-		os.Setenv(k, v)
-	}
-	return err
-}
-
 func (s *Session) SetT(t *testing.T) {
 	s.T = t
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/project"
+	rt "github.com/ActiveState/cli/pkg/runtime"
 	runtime_helpers "github.com/ActiveState/cli/pkg/runtime/helpers"
 )
 
@@ -96,11 +97,8 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.Require().NoError(err)
 
-	var pythonExe string
-	ts.RunInSandboxedEnv(func() error {
-		pythonExe = filepath.Join(runtime_helpers.ExecutorPathFromProject(proj), "python3"+osutils.ExeExtension)
-		return nil
-	})
+	execPath := rt.ExecutorsPath(filepath.Join(ts.Dirs.Cache, runtime_helpers.DirNameFromProject(proj)))
+	pythonExe = filepath.Join(execPath, "python3"+osutils.ExeExtension)
 
 	cp = ts.SpawnCmd(pythonExe, "-c", `print(__import__('sys').version)`)
 	cp.Expect("3.8.8")

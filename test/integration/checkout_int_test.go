@@ -96,11 +96,8 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutPerl() {
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.Require().NoError(err)
 
-	var perlExe string
-	ts.RunInSandboxedEnv(func() error {
-		perlExe = filepath.Join(runtime_helpers.ExecutorPathFromProject(proj), "perl"+osutils.ExeExtension)
-		return nil
-	})
+	execPath := rt.ExecutorsPath(filepath.Join(ts.Dirs.Cache, runtime_helpers.DirNameFromProject(proj)))
+	perlExe := filepath.Join(execPath, "perl"+osutils.ExeExtension)
 
 	cp = ts.SpawnCmd(perlExe, "--version")
 	cp.Expect("This is perl")
