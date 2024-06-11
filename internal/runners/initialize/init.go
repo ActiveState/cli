@@ -273,7 +273,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		Description: locale.T("commit_message_add_initial"),
 	})
 	if err != nil {
-		return locale.WrapError(err, "err_init_commit", "Could not create project")
+		return errs.Wrap(err, "Could not create project")
 	}
 
 	if err := localcommit.Set(proj.Dir(), commitID.String()); err != nil {

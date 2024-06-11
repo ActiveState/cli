@@ -380,53 +380,6 @@ func parseAnalyticsEvents(suite TestingSuiteForAnalytics, ts *e2e.Session) []rep
 	return result
 }
 
-func (suite *AnalyticsIntegrationTestSuite) TestShim() {
-	suite.OnlyRunForTags(tagsuite.Analytics)
-
-	ts := e2e.New(suite.T(), true)
-	defer ts.Close()
-
-	asyData := strings.TrimSpace(`
-project: https://platform.activestate.com/ActiveState-CLI/test
-scripts:
-  - name: pip
-    language: bash
-    standalone: true
-    value: echo "pip"
-`)
-
-	ts.PrepareActiveStateYAML(asyData)
-	ts.PrepareCommitIdFile("9090c128-e948-4388-8f7f-96e2c1e00d98")
-
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("activate", "ActiveState-CLI/Alternate-Python"),
-		e2e.OptWD(ts.Dirs.Work),
-	)
-
-	cp.Expect("Creating a Virtual Environment")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Activated")
-	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
-
-	cp = ts.Spawn("run", "pip")
-	cp.Wait()
-
-	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
-	events := parseAnalyticsEvents(suite, ts)
-
-	var found int
-	for _, event := range events {
-		if event.Category == anaConst.CatRunCmd && event.Action == "run" {
-			found++
-			suite.Equal(constants.PipShim, event.Label)
-		}
-	}
-
-	if found <= 0 {
-		suite.Fail("Did not find shim event")
-	}
-}
-
 func (suite *AnalyticsIntegrationTestSuite) TestSend() {
 	suite.OnlyRunForTags(tagsuite.Analytics, tagsuite.Critical)
 

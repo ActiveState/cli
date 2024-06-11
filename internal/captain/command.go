@@ -189,78 +189,6 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 	return cmd
 }
 
-// NewHiddenShimCommand is a very specialized function that is used for adding the
-// PPM Shim.  Differences to NewCommand() are:
-// - the entrypoint is hidden in the help text
-// - calling the help for a subcommand will execute this subcommand
-func NewHiddenShimCommand(name string, prime primer, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
-	// Validate args
-	for idx, arg := range args {
-		if idx > 0 && arg.Required && !args[idx-1].Required {
-			msg := fmt.Sprintf(
-				"Cannot have a non-required argument followed by a required argument.\n\n%v\n\n%v",
-				arg, args[len(args)-1],
-			)
-			panic(msg)
-		}
-	}
-
-	cmd := &Command{
-		execute:   execute,
-		arguments: args,
-		flags:     flags,
-		out:       prime.Output(),
-		analytics: prime.Analytics(),
-	}
-
-	cmd.cobra = &cobra.Command{
-		Use:              name,
-		PersistentPreRun: cmd.persistRunner,
-		RunE:             cmd.cobraExecHandler,
-		Hidden:           true,
-
-		// Silence errors and usage, we handle that ourselves
-		SilenceErrors:      true,
-		SilenceUsage:       true,
-		DisableFlagParsing: true,
-	}
-
-	cmd.cobra.SetHelpFunc(func(_ *cobra.Command, args []string) {
-		if err := cmd.execute(cmd, args); err != nil {
-			panic(err)
-		}
-	})
-
-	if err := cmd.setFlags(flags); err != nil {
-		panic(err)
-	}
-
-	return cmd
-}
-
-// NewShimCommand is a very specialized function that is used to support sub-commands for a hidden shim command.
-// It has only a name a description and function to execute.  All flags and arguments are ignored.
-func NewShimCommand(name, description string, execute ExecuteFunc) *Command {
-	cmd := &Command{
-		execute: execute,
-	}
-
-	short := description
-	if idx := strings.IndexByte(description, '.'); idx > 0 {
-		short = description[0:idx]
-	}
-
-	cmd.cobra = &cobra.Command{
-		Use:                name,
-		Short:              short,
-		Long:               description,
-		DisableFlagParsing: true,
-		RunE:               cmd.cobraExecHandler,
-	}
-
-	return cmd
-}
-
 func (c *Command) Use() string {
 	return c.cobra.Use
 }
@@ -625,7 +553,7 @@ func (c *Command) cobraExecHandler(cobraCmd *cobra.Command, args []string) (rerr
 	// Send GA events unless they are handled in the runners...
 	if c.analytics != nil {
 		var label []string
-		if len(args) > 0 && (args[0] == constants.PpmShim || args[0] == constants.PipShim) {
+		if len(args) > 0 && (args[0] == constants.PipShim) {
 			label = append(label, args[0])
 		}
 

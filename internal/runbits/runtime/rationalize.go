@@ -95,7 +95,7 @@ func RationalizeSolveError(proj *project.Project, auth *auth.Auth, rerr *error) 
 	// We communicate buildplanner errors verbatim as the intend is that these are curated by the buildplanner
 	case errors.As(*rerr, &buildPlannerErr):
 		*rerr = errs.WrapUserFacing(*rerr,
-			buildPlannerErr.LocalizedError(),
+			buildPlannerErr.LocaleError(),
 			errs.SetIf(buildPlannerErr.InputError(), errs.SetInput()))
 
 	// If updating failed due to unidentified errors, and the user is not authenticated, add a tip suggesting that they authenticate as
