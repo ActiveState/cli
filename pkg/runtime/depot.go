@@ -2,15 +2,18 @@ package runtime
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
+
+	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/smartlink"
-	"github.com/go-openapi/strfmt"
 )
 
 const (
@@ -175,7 +178,12 @@ func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) 
 
 	// Copy or link the artifact files, depending on whether the artifact in question relies on file transformations
 	if err := fileutils.CopyFiles(absoluteSrc, absoluteDest); err != nil {
-		return errs.Wrap(err, "failed to copy artifact")
+		var errExist *fileutils.ErrAlreadyExist
+		if errors.As(err, &errExist) {
+			logging.Warning("Skipping files that already exist: " + errs.JoinMessage(errExist))
+		} else {
+			return errs.Wrap(err, "failed to copy artifact")
+		}
 	}
 
 	// Record deployment to config

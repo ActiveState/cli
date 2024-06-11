@@ -765,6 +765,14 @@ func CopyFiles(src, dst string) error {
 	return copyFiles(src, dst, false)
 }
 
+type ErrAlreadyExist struct {
+	Path string
+}
+
+func (e *ErrAlreadyExist) Error() string {
+	return fmt.Sprintf("file already exists: %s", e.Path)
+}
+
 func copyFiles(src, dest string, remove bool) error {
 	if !DirExists(src) {
 		return locale.NewError("err_os_not_a_directory", "", src)
@@ -778,6 +786,7 @@ func copyFiles(src, dest string, remove bool) error {
 		return errs.Wrap(err, "os.ReadDir %s failed", src)
 	}
 
+	var errAlreadyExist error
 	for _, entry := range entries {
 		srcPath := filepath.Join(src, entry.Name())
 		destPath := filepath.Join(dest, entry.Name())
@@ -787,13 +796,18 @@ func copyFiles(src, dest string, remove bool) error {
 			return errs.Wrap(err, "os.Lstat %s failed", srcPath)
 		}
 
+		if !fileInfo.IsDir() && TargetExists(destPath) {
+			errAlreadyExist = errs.Pack(errAlreadyExist, &ErrAlreadyExist{destPath})
+			continue
+		}
+
 		switch fileInfo.Mode() & os.ModeType {
 		case os.ModeDir:
 			err := MkdirUnlessExists(destPath)
 			if err != nil {
 				return errs.Wrap(err, "MkdirUnlessExists %s failed", destPath)
 			}
-			err = CopyFiles(srcPath, destPath)
+			err = copyFiles(srcPath, destPath, remove)
 			if err != nil {
 				return errs.Wrap(err, "CopyFiles %s:%s failed", srcPath, destPath)
 			}
@@ -814,6 +828,12 @@ func copyFiles(src, dest string, remove bool) error {
 		if err := os.RemoveAll(src); err != nil {
 			return errs.Wrap(err, "os.RemovaAll %s failed", src)
 		}
+	}
+
+	// If some files already exist we want to error on this, but only after all other remaining files have been copied.
+	// If ANY other type of error occurs then we don't bubble this up as this is the only error we handle that's non-critical.
+	if errAlreadyExist != nil {
+		return errAlreadyExist
 	}
 
 	return nil

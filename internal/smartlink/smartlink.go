@@ -62,6 +62,13 @@ func Link(src, dest string) error {
 		return nil
 	}
 
+	// Multiple artifacts can supply the same file. We do not have a better solution for this at the moment other than
+	// favouring the first one encountered.
+	if fileutils.TargetExists(dest) {
+		logging.Warning("Skipping linking '%s' to '%s' as it already exists", src, dest)
+		return nil
+	}
+
 	if err := linkFile(src, dest); err != nil {
 		return errs.Wrap(err, "could not link %s to %s", src, dest)
 	}
@@ -99,6 +106,18 @@ func UnlinkContents(src, dest string) error {
 				return err // Not wrapping here cause it'd just repeat the same error due to the recursion
 			}
 		} else {
+			srcInfo, err := entry.Info()
+			if err != nil {
+				return errs.Wrap(err, "Could not get info for src %s", srcPath)
+			}
+			destInfo, err := os.Stat(destPath)
+			if err != nil {
+				return errs.Wrap(err, "Could not get info for dst %s", destPath)
+			}
+			if srcInfo.Size() != destInfo.Size() {
+				return errs.New("Cannot unlink '%s' as it has a different size than its source: '%s' (%d != %d)",
+					destPath, srcPath, srcInfo.Size(), destInfo.Size())
+			}
 			if err := os.Remove(destPath); err != nil {
 				return errs.Wrap(err, "Could not delete %s", destPath)
 			}
