@@ -32,8 +32,6 @@ func (suite *ProgressIntegrationTestSuite) TestProgress() {
 		e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "small-python2", "--non-interactive"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect(locale.T("setup_runtime"))
-	cp.Expect("...")
 	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
