@@ -145,8 +145,6 @@ err_unsupported_platform:
   other: "Unsupported platform: [NOTICE]{{.V0}}[/RESET]"
 err_detect_language:
   other: Could not detect which language to use
-err_language_not_found:
-  other: "Could not find language: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
 project_checkout_empty:
   other: You have not activated any projects yet
 building:
@@ -622,8 +620,6 @@ err_bundle_added:
   other: Failed to add bundle
 err_language_updated:
   other: Failed to update language
-package_err_cannot_fetch_checkpoint:
-  other: Cannot fetch checkpoint for package listing
 bundle_err_cannot_fetch_checkpoint:
   other: Cannot fetch checkpoint for bundle listing
 package_err_cannot_obtain_commit:
@@ -702,8 +698,6 @@ command_flag_invalid_value:
   other: "Invalid value for {{.V0}} flag: [NOTICE]{{.V1}}[/RESET]"
 command_cmd_no_such_cmd:
   other: "No such command: [NOTICE]{{.V0}}[/RESET]"
-err_fetch_languages:
-  other: "Could not retrieve languages for your project. Does your project exist on the Platform?"
 err_incompatible_move_file_dir:
   other: |
     Could not move [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].  One is a file, the other a directory.

@@ -112,17 +112,12 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "package_err_cannot_obtain_commit")
 	}
 
-	reqs, err := fetchCheckpoint(&latestCommit, i.auth)
+	language, err := model.LanguageByCommit(latestCommit, i.auth)
 	if err != nil {
-		return locale.WrapError(err, "package_err_cannot_fetch_checkpoint")
+		return locale.WrapError(err, "err_import_language", "Unable to get language from project")
 	}
 
-	lang, err := model.CheckpointToLanguage(reqs, i.auth)
-	if err != nil {
-		return locale.WrapExternalError(err, "err_import_language", "Your project does not have a language associated with it, please add a language first.")
-	}
-
-	changeset, err := fetchImportChangeset(reqsimport.Init(), params.FileName, lang.Name)
+	changeset, err := fetchImportChangeset(reqsimport.Init(), params.FileName, language.Name)
 	if err != nil {
 		return errs.Wrap(err, "Could not import changeset")
 	}
