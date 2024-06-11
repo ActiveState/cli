@@ -3,21 +3,19 @@ package buildplan
 import (
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildplan/raw"
-	"github.com/go-openapi/strfmt"
 )
 
 // hydrate will add additional information to the unmarshalled structures, based on the raw data that was unmarshalled.
 // For example, rather than having to walk the buildplan to find associations between artifacts and ingredients, this
 // will add this context straight on the relevant artifacts.
 func (b *BuildPlan) hydrate() error {
-	logging.Debug("Hydrating build plan")
-
 	artifactLookup := make(map[strfmt.UUID]*Artifact)
 	ingredientLookup := make(map[strfmt.UUID]*Ingredient)
 

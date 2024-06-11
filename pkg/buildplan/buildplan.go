@@ -3,12 +3,12 @@ package buildplan
 import (
 	"encoding/json"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildplan/raw"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
-	"github.com/go-openapi/strfmt"
 )
 
 type BuildPlan struct {
@@ -21,8 +21,6 @@ type BuildPlan struct {
 }
 
 func Unmarshal(data []byte) (*BuildPlan, error) {
-	logging.Debug("Unmarshalling buildplan")
-
 	b := &BuildPlan{}
 
 	var rawBuild raw.Build
@@ -53,8 +51,6 @@ func (b *BuildPlan) Marshal() ([]byte, error) {
 // cleanup empty targets
 // The type aliasing in the query populates the response with emtpy targets that we should remove
 func (b *BuildPlan) cleanup() {
-	logging.Debug("Cleaning up build plan")
-
 	b.raw.Steps = sliceutils.Filter(b.raw.Steps, func(s *raw.Step) bool {
 		return s.StepID != ""
 	})
