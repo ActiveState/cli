@@ -507,21 +507,6 @@ func FetchLanguageForCommit(commitID strfmt.UUID, auth *authentication.Auth) (*L
 	return &langs[0], nil
 }
 
-func FetchLanguageByDetails(name, version string, auth *authentication.Auth) (*Language, error) {
-	languages, err := FetchLanguages(auth)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, language := range languages {
-		if language.Name == name && language.Version == version {
-			return &language, nil
-		}
-	}
-
-	return nil, locale.NewInputError("err_language_not_found", "", name, version)
-}
-
 func FetchLanguageVersions(name string, auth *authentication.Auth) ([]string, error) {
 	languages, err := FetchLanguages(auth)
 	if err != nil {
