@@ -69,7 +69,7 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_globaldefault_prepare", "Could not prepare environment.")
 	}
 
-	env := runtime.Env()
+	env := runtime.Env(false)
 	exes, err := osutils.ExecutablePaths(env.Variables)
 	if err != nil {
 		return errs.Wrap(err, "Could not get executable paths")

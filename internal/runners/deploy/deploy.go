@@ -7,13 +7,14 @@ import (
 	rt "runtime"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/runbits/checkout"
 	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/runtime/helpers"
-	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/assets"
@@ -211,7 +212,7 @@ func (d *Deploy) configure(params *Params) error {
 
 	d.output.Notice(output.Title(locale.Tr("deploy_configure_shell", d.subshell.Shell())))
 
-	env := rti.Env().Variables
+	env := rti.Env(false).Variables
 
 	// Configure available shells
 	err = subshell.ConfigureAvailableShells(d.subshell, d.cfg, env, sscommon.DeployID, params.UserScope)
@@ -259,7 +260,7 @@ func (d *Deploy) symlink(params *Params) error {
 	}
 
 	// Retrieve artifact binary directories
-	bins, err := osutils.ExecutablePaths(rti.Env().Variables)
+	bins, err := osutils.ExecutablePaths(rti.Env(false).Variables)
 	if err != nil {
 		return locale.WrapError(err, "err_symlink_exes", "Could not detect executable paths")
 	}
@@ -373,7 +374,7 @@ func (d *Deploy) report(params *Params) error {
 		return locale.NewInputError("err_deploy_run_install")
 	}
 
-	env := rti.Env().Variables
+	env := rti.Env(false).Variables
 
 	var bins []string
 	if path, ok := env["PATH"]; ok {

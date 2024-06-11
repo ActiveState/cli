@@ -88,7 +88,7 @@ func (r *Refresh) Run(params *Params) error {
 		return locale.WrapError(err, "err_refresh_runtime_new", "Could not update runtime for this project.")
 	}
 
-	execDir := rti.Env().ExecutorsPath
+	execDir := rti.Env(false).ExecutorsPath
 	r.out.Print(output.Prepare(
 		locale.Tr("refresh_project_statement", proj.NamespaceString(), proj.Dir(), execDir),
 		&struct {

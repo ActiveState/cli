@@ -57,7 +57,7 @@ func (c *Collection) Unload(path string) error {
 	return nil
 }
 
-func (c *Collection) Environment(installPath string) (map[string]string, error) {
+func (c *Collection) Environment(installPath string, inherit bool) (map[string]string, error) {
 	result := &EnvironmentDefinition{}
 	var err error
 	for _, envDef := range c.raw.EnvDefs {
@@ -67,5 +67,5 @@ func (c *Collection) Environment(installPath string) (map[string]string, error) 
 		}
 	}
 	constants := NewConstants(installPath)
-	return result.ExpandVariables(constants).GetEnv(false), nil
+	return result.ExpandVariables(constants).GetEnv(inherit), nil
 }

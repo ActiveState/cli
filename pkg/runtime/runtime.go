@@ -34,6 +34,7 @@ type Runtime struct {
 	hash          string // The stored hash for the given runtime path, if one exists (otherwise empty)
 	envCollection *envdef.Collection
 	env           Environment
+	envInherit    Environment
 	depot         *depot
 }
 
@@ -121,9 +122,39 @@ func (r *Runtime) hydrateEnvironment() error {
 		}
 	}
 
-	vars, err := r.envCollection.Environment(r.path)
+	vars, execVars, err := r.getEnv(false)
 	if err != nil {
 		return errs.Wrap(err, "Failed to get environment variables")
+	}
+
+	execPath := ExecutorsPath(r.path)
+
+	r.env = Environment{
+		Variables:              vars,
+		VariablesWithExecutors: execVars,
+		ExecutorsPath:          execPath,
+	}
+
+	vars, execVars, err = r.getEnv(true)
+	if err != nil {
+		return errs.Wrap(err, "Failed to get inherited environment variables")
+	}
+
+	r.envInherit = Environment{
+		Variables:              vars,
+		VariablesWithExecutors: execVars,
+		ExecutorsPath:          execPath,
+	}
+
+	return nil
+}
+
+func (r *Runtime) getEnv(inherit bool) (map[string]string, map[string]string, error) {
+	empty := map[string]string{}
+
+	vars, err := r.envCollection.Environment(r.path, false)
+	if err != nil {
+		return empty, empty, errs.Wrap(err, "Failed to get environment variables")
 	}
 
 	executorsPath := ExecutorsPath(r.path)
@@ -134,16 +165,13 @@ func (r *Runtime) hydrateEnvironment() error {
 		execVars["PATH"] += string(os.PathListSeparator) + vars["PATH"]
 	}
 
-	r.env = Environment{
-		Variables:              vars,
-		VariablesWithExecutors: execVars,
-		ExecutorsPath:          executorsPath,
-	}
-
-	return nil
+	return vars, execVars, nil
 }
 
-func (r *Runtime) Env() Environment {
+func (r *Runtime) Env(inherit bool) Environment {
+	if inherit {
+		return r.envInherit
+	}
 	return r.env
 }
 

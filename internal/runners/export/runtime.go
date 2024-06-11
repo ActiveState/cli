@@ -90,7 +90,7 @@ func (e *Runtime) Run(params *RuntimeParams) (rerr error) {
 		return errs.Wrap(err, "Could not parse env template for output")
 	}
 
-	env := rt.Env().VariablesWithExecutors
+	env := rt.Env(false).VariablesWithExecutors
 
 	var envOutput strings.Builder
 	err = tmpl.Execute(&envOutput, env)

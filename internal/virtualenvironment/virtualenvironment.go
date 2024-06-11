@@ -1,12 +1,14 @@
 package virtualenvironment
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/google/uuid"
+
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/pkg/runtime"
-	"github.com/google/uuid"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
@@ -33,12 +35,14 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, useExecutors bool, projectDir,
 
 	// Source runtime environment information
 	if !condition.RuntimeDisabled() {
-		env := v.runtime.Env()
+		env := v.runtime.Env(inherit)
 		if useExecutors {
 			envMap = env.VariablesWithExecutors
 		} else {
 			envMap = env.Variables
 		}
+	} else {
+		envMap = osutils.EnvSliceToMap(os.Environ())
 	}
 
 	if projectDir != "" {
@@ -59,10 +63,6 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, useExecutors bool, projectDir,
 				return nil, locale.WrapError(err, "err_venv_constant_val", "Could not retrieve value for constant: `{{.V0}}`.", constant.Name())
 			}
 		}
-	}
-
-	if inherit {
-		envMap = osutils.InheritEnv(envMap)
 	}
 
 	return envMap, nil

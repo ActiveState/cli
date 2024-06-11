@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -32,7 +34,6 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/pkg/sysinfo"
-	"github.com/go-openapi/strfmt"
 )
 
 // RunParams stores run func parameters.
@@ -311,7 +312,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	projectfile.StoreProjectMapping(r.config, namespace.String(), filepath.Dir(proj.Source().Path()))
 
-	executorsPath := rti.Env().ExecutorsPath
+	executorsPath := rti.Env(false).ExecutorsPath
 
 	initSuccessMsg := locale.Tr("init_success", namespace.String(), path, executorsPath)
 	if !strings.EqualFold(paramOwner, resolvedOwner) {

@@ -105,7 +105,7 @@ func (u *Shell) Run(params *Params) error {
 	u.out.Notice(locale.Tr("shell_project_statement",
 		proj.NamespaceString(),
 		proj.Dir(),
-		rti.Env().ExecutorsPath,
+		rti.Env(false).ExecutorsPath,
 	))
 
 	venv := virtualenvironment.New(rti)

@@ -5,6 +5,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+	"golang.org/x/net/context"
+
 	"github.com/ActiveState/cli/internal/chanutils/workerpool"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -25,8 +28,6 @@ import (
 	"github.com/ActiveState/cli/pkg/runtime/internal/camel"
 	"github.com/ActiveState/cli/pkg/runtime/internal/envdef"
 	"github.com/ActiveState/cli/pkg/sysinfo"
-	"github.com/go-openapi/strfmt"
-	"golang.org/x/net/context"
 )
 
 // maxConcurrency is the maximum number of concurrent workers that can be running at any given time during an update
@@ -364,7 +365,7 @@ func (s *setup) updateExecutors() error {
 		return errs.Wrap(err, "Could not create executors directory")
 	}
 
-	env, err := s.env.Environment(s.path)
+	env, err := s.env.Environment(s.path, false)
 	if err != nil {
 		return errs.Wrap(err, "Could not get env")
 	}

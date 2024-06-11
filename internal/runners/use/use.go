@@ -97,7 +97,7 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapError(err, "err_use_default", "Could not setup your project for use.")
 	}
 
-	execDir := rti.Env().ExecutorsPath
+	execDir := rti.Env(false).ExecutorsPath
 
 	u.out.Print(output.Prepare(
 		locale.Tr("use_project_statement", proj.NamespaceString(), proj.Dir(), execDir),

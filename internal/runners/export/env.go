@@ -52,7 +52,7 @@ func (e *Env) Run() error {
 		return locale.WrapError(err, "err_export_new_runtime", "Could not initialize runtime")
 	}
 
-	envVars := rt.Env().VariablesWithExecutors
+	envVars := rt.Env(false).VariablesWithExecutors
 
 	e.out.Print(output.Prepare(envVars, envVars))
 
