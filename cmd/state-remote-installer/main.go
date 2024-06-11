@@ -195,7 +195,7 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	if err != nil {
 		return errs.Wrap(err, "Could not retrieve install package information")
 	} else if availableUpdate == nil {
-		return locale.NewError("remote_install_no_available_update", "Could not find package to install. Please try again later.")
+		return locale.NewError("remote_install_no_available_update", "Could not find installer to download. This could be due to networking issues or temporary maintenance. Please try again later.")
 	}
 
 	version := availableUpdate.Version
