@@ -3,6 +3,7 @@ package exec
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -19,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
-	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -27,7 +27,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -181,25 +180,15 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		}
 	}
 
-	err = s.subshell.SetEnv(env)
+	_, _, err = osutils.ExecuteAndPipeStd(exeTarget, args[1:], osutils.EnvMapToSlice(env))
+	if eerr, ok := err.(*exec.ExitError); ok {
+		return errs.Silence(errs.WrapExitCode(eerr, eerr.ExitCode()))
+	}
 	if err != nil {
-		return locale.WrapError(err, "err_subshell_setenv")
+		return errs.Wrap(err, "Could not execute command")
 	}
 
-	lang := language.Bash
-	scriptArgs := fmt.Sprintf(`%q "$@"`, exeTarget)
-	if strings.Contains(s.subshell.Binary(), "cmd") {
-		lang = language.PowerShell
-		scriptArgs = fmt.Sprintf("& %q @args\nexit $LASTEXITCODE", exeTarget)
-	}
-
-	sf, err := scriptfile.New(lang, "state-exec", scriptArgs)
-	if err != nil {
-		return locale.WrapError(err, "err_exec_create_scriptfile", "Could not generate script")
-	}
-	defer sf.Clean()
-
-	return s.subshell.Run(sf.Filename(), args[1:]...)
+	return nil
 }
 
 func projectFromRuntimeDir(cfg projectfile.ConfigGetter, runtimeDir string) string {
