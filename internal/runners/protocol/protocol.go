@@ -3,14 +3,15 @@ package protocol
 import (
 	"fmt"
 	"net/url"
+	"os"
 
 	"github.com/skratchdot/open-golang/open"
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -60,5 +61,11 @@ func (p *Protocol) Run(params Params) error {
 		return locale.NewError("err_protocol_flag", "Invalid URL fragment, the only supported URL fragment is 'replace'")
 	}
 
-	return runbits.InvokeSilent("activate", fmt.Sprintf("--%s", parsed.Fragment), namespace.String())
+	// Execute state command
+	exe, err := os.Executable()
+	if err != nil {
+		return locale.WrapError(err, "err_protocol_os_executable", "Could not detect executable path of State Tool.")
+	}
+	_, _, err = osutils.ExecuteAndPipeStd(exe, []string{"activate", fmt.Sprintf("--%s", parsed.Fragment), namespace.String()}, []string{})
+	return err
 }
