@@ -5,13 +5,14 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/runtime/events"
 	"github.com/ActiveState/cli/pkg/runtime/internal/envdef"
-	"github.com/go-openapi/strfmt"
 )
 
 // Constants covering the stored runtime
@@ -101,6 +102,10 @@ func (r *Runtime) Update(bp *buildplan.BuildPlan, hash string, setOpts ...SetOpt
 
 	if err := r.saveHash(hash); err != nil {
 		return errs.Wrap(err, "Failed to save hash")
+	}
+
+	if err := r.hydrateEnvironment(); err != nil {
+		return errs.Wrap(err, "Failed to hydrate environment")
 	}
 
 	return nil
