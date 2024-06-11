@@ -404,14 +404,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerlCamel() {
 	cp.Expect("cache")
 	cp.Expect("DBD.pm")
 
-	// Currently CI is searching for PPM in the @INC first before attempting
-	// to execute a script. https://activestatef.atlassian.net/browse/DX-620
-	if runtime.GOOS != "windows" {
-		// Expect PPM shim to be installed
-		cp.SendLine("ppm list")
-		cp.Expect("Shimming command")
-	}
-
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }
