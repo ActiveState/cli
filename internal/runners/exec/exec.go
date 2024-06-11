@@ -7,11 +7,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/shirou/gopsutil/v3/process"
+
 	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/runtime"
 	"github.com/ActiveState/cli/pkg/runtime/executors"
-	"github.com/shirou/gopsutil/v3/process"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
@@ -137,23 +138,16 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	if err != nil {
 		return locale.WrapError(err, "err_exec_env", "Could not retrieve environment information for your runtime")
 	}
-	logging.Debug("Trying to exec %s on PATH=%s", args[0], env["PATH"])
+
+	exeTarget := args[0]
 
 	if err := handleRecursion(env, args); err != nil {
 		return errs.Wrap(err, "Could not handle recursion")
 	}
 
-	exeTarget := args[0]
 	if !fileutils.TargetExists(exeTarget) {
-		rtDirs, err := osutils.ExecutablePaths(rt.Env().Variables)
-		if err != nil {
-			return errs.Wrap(err, "Could not detect runtime executable paths")
-		}
-
-		RTPATH := strings.Join(rtDirs, string(os.PathListSeparator))
-
 		// Report recursive execution of executor: The path for the executable should be different from the default bin dir
-		exesOnPath := osutils.FilterExesOnPATH(args[0], RTPATH, func(exe string) bool {
+		exesOnPath := osutils.FilterExesOnPATH(exeTarget, env["PATH"], func(exe string) bool {
 			v, err := executors.IsExecutor(exe)
 			if err != nil {
 				logging.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
@@ -164,7 +158,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 
 		if len(exesOnPath) > 0 {
 			exeTarget = exesOnPath[0]
-		} else if osutils.FindExeOnPATH(exeTarget) == "" {
+		} else {
 			return errs.AddTips(locale.NewInputError(
 				"err_exec_not_found",
 				"The executable '{{.V0}}' was not found in your PATH or in your project runtime.",
