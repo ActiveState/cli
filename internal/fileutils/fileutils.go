@@ -25,6 +25,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
 // nullByte represents the null-terminator byte
@@ -809,7 +810,11 @@ func copyFiles(src, dest string, remove bool) error {
 			}
 			err = copyFiles(srcPath, destPath, remove)
 			if err != nil {
-				return errs.Wrap(err, "CopyFiles %s:%s failed", srcPath, destPath)
+				if errors.As(err, ptr.To(&ErrAlreadyExist{})) {
+					errAlreadyExist = errs.Pack(errAlreadyExist, err)
+				} else {
+					return errs.Wrap(err, "CopyFiles %s:%s failed", srcPath, destPath)
+				}
 			}
 		case os.ModeSymlink:
 			err := CopySymlink(srcPath, destPath)
