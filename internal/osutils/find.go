@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/logging"
 
 	"github.com/thoas/go-funk"
 )
