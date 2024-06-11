@@ -65,7 +65,7 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 	// We communicate buildplanner errors verbatim as the intend is that these are curated by the buildplanner
 	case errors.As(*rerr, &buildPlannerErr):
 		*rerr = errs.WrapUserFacing(*rerr,
-			buildPlannerErr.LocalizedError(),
+			buildPlannerErr.LocaleError(),
 			errs.SetIf(buildPlannerErr.InputError(), errs.SetInput()))
 
 	// User has modified the buildscript and needs to run `state commit`

@@ -70,7 +70,7 @@ func rationalizeError(err *error) {
 	// We communicate buildplanner errors verbatim as the intend is that these are curated by the buildplanner
 	case errors.As(*err, &buildPlannerErr):
 		*err = errs.WrapUserFacing(*err,
-			buildPlannerErr.LocalizedError(),
+			buildPlannerErr.LocaleError(),
 			errs.SetIf(buildPlannerErr.InputError(), errs.SetInput()))
 	}
 }
