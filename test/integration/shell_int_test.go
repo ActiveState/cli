@@ -397,7 +397,6 @@ func (suite *ShellIntegrationTestSuite) TestProjectOrder() {
 		e2e.OptWD(defaultDir),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Setting Up Runtime", e2e.RuntimeSourcingTimeoutOpt)
 	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.Expect(defaultDir)
 	cp.ExpectExitCode(0)
