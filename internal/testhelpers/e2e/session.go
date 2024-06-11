@@ -12,10 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
@@ -34,6 +30,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/strutils"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -42,7 +39,10 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
@@ -730,8 +730,8 @@ func (s *Session) detectLogErrors() {
 			continue
 		}
 		if contents := string(fileutils.ReadFileUnsafe(path)); errorOrPanicRegex.MatchString(contents) {
-			s.T.Errorf("%sFound error and/or panic in log file %s\nIf this was expected, call session.IgnoreLogErrors() to avoid this check\nLog contents:\n%s%s",
-				sectionStart, path, contents, sectionEnd)
+			s.T.Errorf(s.DebugMessage(fmt.Sprintf("%sFound error and/or panic in log file %s\nIf this was expected, call session.IgnoreLogErrors() to avoid this check\nLog contents:\n%s%s",
+				sectionStart, path, contents, sectionEnd)))
 		}
 	}
 }
