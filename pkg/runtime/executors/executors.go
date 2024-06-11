@@ -9,9 +9,10 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/runtime/executors/execmeta"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -71,7 +72,7 @@ func (es *Executors) ExecutorSrc() (string, error) {
 }
 
 func (es *Executors) Apply(sockPath string, target Target, env map[string]string, exes []string) error {
-	logging.Debug("Creating executors at %s, exes: %v", es.executorPath, exes)
+	logging.Debug("Creating executors at %s", es.executorPath)
 
 	executors := make(map[string]string) // map[alias]dest
 	for _, dest := range exes {
@@ -178,8 +179,6 @@ func isOwnedByUs(fileContents []byte) bool {
 func copyExecutor(destDir, executor, srcExec string) error {
 	name := filepath.Base(executor)
 	target := filepath.Clean(filepath.Join(destDir, name))
-
-	logging.Debug("Creating executor for %s at %s", name, target)
 
 	if fileutils.TargetExists(target) {
 		b, err := fileutils.ReadFile(target)
