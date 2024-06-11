@@ -28,7 +28,8 @@ const (
 	pollTimeout        = 30 * time.Second
 	buildStatusTimeout = 24 * time.Hour
 
-	codeExtensionKey = "code"
+	codeExtensionKey   = "code"
+	statusExtensionKey = "status"
 )
 
 type Commit struct {
@@ -117,6 +118,11 @@ func processBuildPlannerError(bpErr error, fallbackMessage string) error {
 		code, ok := graphqlErr.Extensions[codeExtensionKey].(string)
 		if ok && code == clientDeprecationErrorKey {
 			return &response.BuildPlannerError{Err: locale.NewExternalError("err_buildplanner_deprecated", "Encountered deprecation error: {{.V0}}", graphqlErr.Message)}
+		}
+		if status, ok := graphqlErr.Extensions[statusExtensionKey].(float64); ok {
+			if status >= 400 && status < 500 {
+				return locale.NewInputError("err_buildplanner_api_input_error", "{{.V0}}: {{.V1}}", fallbackMessage, bpErr.Error())
+			}
 		}
 	}
 	return &response.BuildPlannerError{Err: locale.NewExternalError("err_buildplanner", "{{.V0}}: Encountered unexpected error: {{.V1}}", fallbackMessage, bpErr.Error())}
