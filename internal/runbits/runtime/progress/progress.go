@@ -8,12 +8,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/runtime/events"
 	"github.com/go-openapi/strfmt"
 	"github.com/vbauerster/mpb/v7"
 	"golang.org/x/net/context"
+
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/runtime/events"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -135,8 +136,6 @@ func (p *ProgressDigester) Handle(ev events.Event) error {
 	switch v := ev.(type) {
 
 	case events.Start:
-		logging.Debug("Initialize Event: %#v", v)
-
 		// Ensure Start event is first.. because otherwise the prints below will cause output to be malformed.
 		if p.buildBar != nil || p.downloadBar != nil || p.installBar != nil || p.solveSpinner != nil {
 			return errs.New("Received Start event after bars were already initialized, event log: %v", p.dbgEventLog)

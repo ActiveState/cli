@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/termutils"
 	"github.com/go-openapi/strfmt"
 	"github.com/vbauerster/mpb/v7"
 	"github.com/vbauerster/mpb/v7/decor"
+
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/termutils"
 )
 
 const progressBarWidth = 40
@@ -45,7 +45,6 @@ func (p *ProgressDigester) trimName(name string) string {
 
 // addTotalBar adds a bar counting a number of sub-events adding up to total
 func (p *ProgressDigester) addTotalBar(name string, total int64, options ...mpb.BarOption) *bar {
-	logging.Debug("Adding total bar: %s", name)
 	return p.addBar(name, total, false, append(options, mpb.BarFillerClearOnComplete())...)
 }
 
@@ -66,7 +65,6 @@ func (p *ProgressDigester) addArtifactBar(id strfmt.UUID, step step, total int64
 			name = a.NameAndVersion()
 		}
 	}
-	logging.Debug("Adding %s artifact bar: %s", step.verb, name)
 
 	aStep := artifactStep{id, step}
 	if _, ok := p.artifactBars[aStep.ID()]; ok {
@@ -84,19 +82,11 @@ func (p *ProgressDigester) updateArtifactBar(id strfmt.UUID, step step, inc int)
 	}
 	p.artifactBars[aStep.ID()].IncrBy(inc)
 
-	name := p.artifactName(id, step)
-	if p.artifactBars[aStep.ID()].Current() >= p.artifactBars[aStep.ID()].total {
-		logging.Debug("%s Artifact bar reached total: %s", step.verb, name)
-	}
-
 	return nil
 }
 
 // dropArtifactBar removes an artifact bar from the progress display
 func (p *ProgressDigester) dropArtifactBar(id strfmt.UUID, step step) error {
-	name := p.artifactName(id, step)
-	logging.Debug("Dropping %s artifact bar: %s", step.verb, name)
-
 	aStep := artifactStep{id, step}
 	if _, ok := p.artifactBars[aStep.ID()]; !ok {
 		return errs.New("Artifact bar doesn't exists")
