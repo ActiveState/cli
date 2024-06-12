@@ -268,6 +268,9 @@ func (p *ProgressDigester) Handle(ev events.Event) error {
 		if _, ok := p.downloadsExpected[v.ArtifactID]; !ok {
 			return errs.New("ArtifactUnpackSuccess called for an artifact that was not expected: %s", v.ArtifactID.String())
 		}
+		if err := p.dropArtifactBar(v.ArtifactID, StepUnpack); err != nil {
+			return errs.Wrap(err, "Failed to drop unpack bar")
+		}
 		if p.unpackBar.Current() == p.unpackBar.total {
 			return errs.New("Unpack bar is already complete, this should not happen")
 		}
