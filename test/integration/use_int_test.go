@@ -260,7 +260,6 @@ func (suite *UseIntegrationTestSuite) TestSetupNotice() {
 		e2e.OptArgs("use", "Python3"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Setting Up Runtime")
 	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }

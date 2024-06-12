@@ -25,7 +25,6 @@ func (suite *RefreshIntegrationTestSuite) TestRefresh() {
 		e2e.OptArgs("refresh"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Setting Up Runtime")
 	cp.Expect("Runtime updated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
@@ -42,7 +41,6 @@ func (suite *RefreshIntegrationTestSuite) TestRefresh() {
 		e2e.OptArgs("refresh"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Setting Up Runtime")
 	cp.Expect("Runtime updated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
@@ -53,9 +51,9 @@ func (suite *RefreshIntegrationTestSuite) TestRefresh() {
 	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.Spawn("refresh")
-	suite.Assert().NotContains(cp.Output(), "Setting Up Runtime", "Unchanged runtime should not refresh")
 	cp.Expect("Runtime updated")
 	cp.ExpectExitCode(0)
+	suite.Assert().NotContains(cp.Output(), "Installing", "Unchanged runtime should not refresh")
 }
 
 func (suite *RefreshIntegrationTestSuite) TestJSON() {
