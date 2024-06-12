@@ -65,9 +65,3 @@ func FilterSuccessfulArtifacts() FilterArtifact {
 			a.Status == types.ArtifactReady
 	}
 }
-
-func FilterInstallableArtifacts() FilterArtifact {
-	return func(a *Artifact) bool {
-		return a.URL != ""
-	}
-}
