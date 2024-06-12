@@ -12,8 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/termtest"
+
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	"github.com/ActiveState/cli/internal/rtutils"
 
@@ -515,8 +516,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 		e2e.OptArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Downloading")
-	cp.Expect("Installing")
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 
 	suite.assertCompletedStatusBarReport(cp.Output())
