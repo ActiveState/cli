@@ -615,7 +615,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 	}
 
 	buildReady := bp.IsBuildReady()
-	if !buildReady && len(artifactsToInstall.Filter(buildplan.FilterSuccessfulArtifacts())) == len(artifactsToInstall) {
+	if !buildReady && len(artifactsToInstall.Filter(buildplan.FilterSuccessfulArtifacts(), buildplan.FilterInstallableArtifacts())) == len(artifactsToInstall) {
 		// Even though the build may not be complete, all of the necessary artifacts are ready.
 		buildReady = true
 	}
