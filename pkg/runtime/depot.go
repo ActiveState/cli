@@ -3,6 +3,7 @@ package runtime
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -49,8 +50,8 @@ type depot struct {
 }
 
 func newDepot(targetPath string) (*depot, error) {
-	if !fileutils.IsDir(targetPath) {
-		return nil, errors.New("target path must be a directory")
+	if fileutils.TargetExists(targetPath) && !fileutils.IsDir(targetPath) {
+		return nil, errors.New(fmt.Sprintf("target path must be a directory: %s", targetPath))
 	}
 
 	depotPath := filepath.Join(storage.CachePath(), depotName)
