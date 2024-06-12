@@ -310,6 +310,10 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 			if err := s.fireEvent(events.ArtifactUnpackFailure{artifact.ArtifactID, rerr}); err != nil {
 				rerr = errs.Pack(rerr, errs.Wrap(err, "Could not handle ArtifactUnpackFailure event"))
 			}
+		} else {
+			if err := s.fireEvent(events.ArtifactUnpackSuccess{artifact.ArtifactID}); err != nil {
+				rerr = errs.Pack(rerr, errs.Wrap(errs.Pack(err, err), "Could not handle ArtifactUnpackSuccess event"))
+			}
 		}
 	}()
 
@@ -352,9 +356,6 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 		}
 	}
 
-	if err := s.fireEvent(events.ArtifactUnpackSuccess{artifact.ArtifactID}); err != nil {
-		return errs.Wrap(errs.Pack(err, err), "Could not handle ArtifactUnpackSuccess event")
-	}
 
 	return nil
 }
