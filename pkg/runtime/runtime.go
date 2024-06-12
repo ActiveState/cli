@@ -47,6 +47,10 @@ type Environment struct {
 func New(path string) (*Runtime, error) {
 	env := envdef.New()
 
+	if err := fileutils.MkdirUnlessExists(path); err != nil {
+		return nil, errs.Wrap(err, "Could not create runtime directory")
+	}
+
 	depot, err := newDepot(path)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create depot")
