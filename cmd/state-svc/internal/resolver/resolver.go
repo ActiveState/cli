@@ -40,11 +40,6 @@ type Resolver struct {
 	anForClient    *sync.Client // Use separate client for events sent through service so we don't contaminate one with the other
 	rtwatch        *rtwatcher.Watcher
 	auth           *authentication.Auth
-
-	// mostRecentActivity records the most recent user activity that was sent to the resolver.
-	// This is meant to focus on user activity. If ever we start polling the svc without user activity then the
-	// intelligence behind this will need to be updated.
-	mostRecentActivity *time.Time
 }
 
 // jwtKeepAliveDuration determines how long after the last state tool interaction we want to keep the JWT alive
@@ -75,7 +70,6 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 
 	pollRateDuration := time.Duration(int64(time.Millisecond) * pollRate)
 
-	mostRecentActivity := ptr.To(time.Now())
 	pollAuth := poller.New(pollRateDuration, func() (interface{}, error) {
 		if auth.SyncRequired() {
 			return nil, auth.Sync()
@@ -96,7 +90,6 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 		anForClient,
 		rtwatcher.New(cfg, anForClient),
 		auth,
-		mostRecentActivity,
 	}, nil
 }
 
@@ -110,10 +103,7 @@ func (r *Resolver) Close() error {
 
 // Seems gqlgen supplies this so you can separate your resolver and query resolver logic
 // So far no need for this, so we're pointing back at ourselves..
-func (r *Resolver) Query() genserver.QueryResolver {
-	*r.mostRecentActivity = time.Now()
-	return r
-}
+func (r *Resolver) Query() genserver.QueryResolver { return r }
 
 func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
