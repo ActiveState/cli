@@ -40,7 +40,15 @@ type Resolver struct {
 	anForClient    *sync.Client // Use separate client for events sent through service so we don't contaminate one with the other
 	rtwatch        *rtwatcher.Watcher
 	auth           *authentication.Auth
+
+	// mostRecentActivity records the most recent user activity that was sent to the resolver.
+	// This is meant to focus on user activity. If ever we start polling the svc without user activity then the
+	// intelligence behind this will need to be updated.
+	mostRecentActivity *time.Time
 }
+
+// jwtKeepAliveDuration determines how long after the last state tool interaction we want to keep the JWT alive
+const jwtKeepAliveDuration = 1 * time.Hour
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
@@ -65,9 +73,12 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 		pollRate = overrideInt
 	}
 
-	pollAuth := poller.New(time.Duration(int64(time.Millisecond)*pollRate), func() (interface{}, error) {
-		if auth.SyncRequired() {
-			return nil, auth.Sync()
+	pollRateDuration := time.Duration(int64(time.Millisecond) * pollRate)
+
+	mostRecentActivity := ptr.To(time.Now())
+	pollAuth := poller.New(pollRateDuration, func() (interface{}, error) {
+		if err := auth.MaybeRenew(time.Now().Add(pollRateDuration)); err != nil {
+			return nil, errs.Wrap(err, "Could not renew auth")
 		}
 		return nil, nil
 	})
@@ -85,6 +96,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 		anForClient,
 		rtwatcher.New(cfg, anForClient),
 		auth,
+		mostRecentActivity,
 	}, nil
 }
 
@@ -98,7 +110,10 @@ func (r *Resolver) Close() error {
 
 // Seems gqlgen supplies this so you can separate your resolver and query resolver logic
 // So far no need for this, so we're pointing back at ourselves..
-func (r *Resolver) Query() genserver.QueryResolver { return r }
+func (r *Resolver) Query() genserver.QueryResolver {
+	*r.mostRecentActivity = time.Now()
+	return r
+}
 
 func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
@@ -260,6 +275,40 @@ func (r *Resolver) GetProcessesInUse(ctx context.Context, execDir string) ([]*gr
 		processes = append(processes, &graph.ProcessInfo{entry.Exec, entry.PID})
 	}
 	return processes, nil
+}
+
+func (r *Resolver) GetJwt(ctx context.Context) (*graph.Jwt, error) {
+	if r.auth.SyncRequired() {
+		return nil, r.auth.Sync()
+	}
+
+	if !r.auth.Authenticated() {
+		return nil, nil
+	}
+
+	user := r.auth.User()
+	if user == nil {
+		return nil, errs.New("user is nil")
+	}
+
+	jwt := &graph.Jwt{
+		Token: r.auth.BearerToken(),
+		User: &graph.User{
+			UserID:        user.UserID.String(),
+			Username:      user.Username,
+			Email:         user.Email,
+			Organizations: []*graph.Organization{},
+		},
+	}
+
+	for _, org := range user.Organizations {
+		jwt.User.Organizations = append(jwt.User.Organizations, &graph.Organization{
+			URLname: org.URLname,
+			Role:    org.Role,
+		})
+	}
+
+	return jwt, nil
 }
 
 func handlePanics(recovered interface{}, stack []byte) {
