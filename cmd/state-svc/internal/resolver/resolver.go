@@ -77,8 +77,8 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 
 	mostRecentActivity := ptr.To(time.Now())
 	pollAuth := poller.New(pollRateDuration, func() (interface{}, error) {
-		if err := auth.MaybeRenew(time.Now().Add(pollRateDuration)); err != nil {
-			return nil, errs.Wrap(err, "Could not renew auth")
+		if auth.SyncRequired() {
+			return nil, auth.Sync()
 		}
 		return nil, nil
 	})
@@ -278,8 +278,8 @@ func (r *Resolver) GetProcessesInUse(ctx context.Context, execDir string) ([]*gr
 }
 
 func (r *Resolver) GetJwt(ctx context.Context) (*graph.Jwt, error) {
-	if r.auth.SyncRequired() {
-		return nil, r.auth.Sync()
+	if err := r.auth.MaybeRenew(); err != nil {
+		return nil, errs.Wrap(err, "Could not renew auth token")
 	}
 
 	if !r.auth.Authenticated() {

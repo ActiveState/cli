@@ -36,9 +36,6 @@ type ErrTokenRequired struct{ *locale.LocalizedError }
 
 var errNotYetGranted = locale.NewInputError("err_auth_device_noauth")
 
-// jwtKeepaliveDuration determines how long after the last state tool interaction we want to keep the JWT alive.
-const jwtKeepaliveDuration = (6 * time.Hour)
-
 // jwtLifetime is the lifetime of the JWT. This is defined by the API, but the API doesn't communicate this.
 // We drop a minute from this to avoid race conditions with the API.
 const jwtLifetime = (1 * time.Hour) - (1 * time.Minute)
@@ -123,8 +120,9 @@ func (s *Auth) Sync() error {
 	return nil
 }
 
-// MaybeRenew will renew the JWT if it is set to expire before the provided cutoff
-func (s *Auth) MaybeRenew(cutoff time.Time) error {
+// MaybeRenew will renew the JWT if it has expired
+// This should only be called from the state-svc.
+func (s *Auth) MaybeRenew() error {
 	// If we're out of sync then we should just always renew
 	if s.SyncRequired() {
 		err := s.Sync()
@@ -139,8 +137,8 @@ func (s *Auth) MaybeRenew(cutoff time.Time) error {
 		return nil
 	}
 
-	if s.cutoffReached(cutoff) {
-		logging.Debug("Refreshing JWT as it will expire before the cutoff (%s)", cutoff.String())
+	if s.cutoffReached(time.Now()) {
+		logging.Debug("Refreshing JWT as has expired")
 		return s.AuthenticateWithToken(s.AvailableAPIToken())
 	}
 
