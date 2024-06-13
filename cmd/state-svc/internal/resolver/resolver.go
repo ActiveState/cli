@@ -42,9 +42,6 @@ type Resolver struct {
 	auth           *authentication.Auth
 }
 
-// jwtKeepAliveDuration determines how long after the last state tool interaction we want to keep the JWT alive
-const jwtKeepAliveDuration = 1 * time.Hour
-
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
 func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Resolver, error) {
@@ -68,9 +65,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 		pollRate = overrideInt
 	}
 
-	pollRateDuration := time.Duration(int64(time.Millisecond) * pollRate)
-
-	pollAuth := poller.New(pollRateDuration, func() (interface{}, error) {
+	pollAuth := poller.New(time.Duration(int64(time.Millisecond)*pollRate), func() (interface{}, error) {
 		if auth.SyncRequired() {
 			return nil, auth.Sync()
 		}
