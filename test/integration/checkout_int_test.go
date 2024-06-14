@@ -47,7 +47,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutPython() {
 	// Verify runtime was installed correctly and works.
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.Require().NoError(err)
-	targetDir := runtime_helpers.TargetDirFromProject(proj)
+	targetDir := filepath.Join(ts.Dirs.Cache, runtime_helpers.DirNameFromProjectDir(proj.Dir()))
 	pythonExe := filepath.Join(rt.ExecutorsPath(targetDir), "python3"+osutils.ExeExtension)
 	cp = ts.SpawnCmd(pythonExe, "--version")
 	cp.Expect("Python 3")
