@@ -97,7 +97,7 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.Require().NoError(err)
 
-	execPath := rt.ExecutorsPath(filepath.Join(ts.Dirs.Cache, runtime_helpers.DirNameFromProject(proj)))
+	execPath := rt.ExecutorsPath(filepath.Join(ts.Dirs.Cache, runtime_helpers.DirNameFromProjectDir(proj.Dir())))
 	pythonExe := filepath.Join(execPath, "python3"+osutils.ExeExtension)
 
 	cp = ts.SpawnCmd(pythonExe, "-c", `print(__import__('sys').version)`)

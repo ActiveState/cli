@@ -17,12 +17,10 @@ import (
 
 // Constants covering the stored runtime
 const (
-	configDir       = ".activestate"
-	stagingDir      = "staging"
-	hashFile        = "hash.txt"
-	buildLogFile    = "build.log"
-	environmentFile = "environment.json"
-	executorDir     = "exec"
+	configDir    = ".activestate"
+	hashFile     = "hash.txt"
+	buildLogFile = "build.log"
+	executorDir  = "exec"
 )
 
 // depotName is the directory name under which we store our artifact depot; ie. we symlink these artifacts into the

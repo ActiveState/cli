@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
@@ -14,6 +13,9 @@ import (
 
 // runtimeInstallDirs represents the directory within a distribution archive where the distribution exists.
 const runtimeInstallDirs = "INSTALLDIR,perl"
+
+// CamelRuntimeMetaFile is the json file that holds meta information about our runtime
+const CamelRuntimeMetaFile = "metadata.json"
 
 // targetedRelocation is a relocation instruction for files in a specific directory
 type targetedRelocation struct {
@@ -66,7 +68,7 @@ type metaDataBinary struct {
 // newMetaData will create an instance of metaData based on the metadata.json file found under the given artifact install dir
 func newMetaData(rootDir string) (*metaData, error) {
 	var md *metaData
-	metaFile := filepath.Join(rootDir, "support", constants.RuntimeMetaFile)
+	metaFile := filepath.Join(rootDir, "support", CamelRuntimeMetaFile)
 	if fileutils.FileExists(metaFile) {
 		contents, err := fileutils.ReadFile(metaFile)
 		if err != nil {
