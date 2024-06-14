@@ -1,6 +1,7 @@
 package uninstall
 
 import (
+	"errors"
 	"os"
 	"runtime"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -20,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Params struct {
@@ -74,6 +77,11 @@ func (u *Uninstall) Run(params *Params) error {
 
 	proj, err := project.FromExactPath(path)
 	if err != nil {
+		if errors.As(err, ptr.To(&projectfile.ErrorNoProject{})) {
+			return errs.AddTips(
+				locale.NewInputError("err_deploy_uninstall_not_deployed", "There is no deployed runtime at '{{.V0}}' to uninstall.", path),
+				locale.Tl("err_deploy_uninstall_not_deployed_tip", "Either change the current directory to a deployment or supply '--path <path>' arguments."))
+		}
 		return locale.WrapError(err, "err_deploy_uninstall_cannot_read_project", "Cannot read project at '{{.V0}}'", path)
 	}
 
