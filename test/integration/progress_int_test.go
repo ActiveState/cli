@@ -36,6 +36,7 @@ func (suite *ProgressIntegrationTestSuite) TestProgress() {
 	cp.Expect("...")
 	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
+
 }
 
 func TestProgressIntegrationTestSuite(t *testing.T) {

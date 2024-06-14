@@ -165,8 +165,12 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	auth := authentication.New(cfg)
 	defer events.Close("auth", auth.Close)
 
-	if err := auth.Sync(); err != nil {
-		logging.Warning("Could not sync authenticated state: %s", errs.JoinMessage(err))
+	if auth.AvailableAPIToken() != "" {
+		jwt, err := svcmodel.GetJWT(context.Background())
+		if err != nil {
+			return locale.NewError("err_main_jwt", "", errs.JoinMessage(err))
+		}
+		auth.UpdateSession(jwt)
 	}
 
 	projectfile.RegisterMigrator(migrator.NewMigrator(auth, cfg))

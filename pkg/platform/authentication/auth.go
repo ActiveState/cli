@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
@@ -35,6 +36,10 @@ type ErrTokenRequired struct{ *locale.LocalizedError }
 
 var errNotYetGranted = locale.NewInputError("err_auth_device_noauth")
 
+// jwtLifetime is the lifetime of the JWT. This is defined by the API, but the API doesn't communicate this.
+// We drop a minute from this to avoid race conditions with the API.
+const jwtLifetime = (1 * time.Hour) - (1 * time.Minute)
+
 // Auth is the base structure used to record the authenticated state
 type Auth struct {
 	client      *mono_client.Mono
@@ -42,6 +47,8 @@ type Auth struct {
 	bearerToken string
 	user        *mono_models.User
 	cfg         Configurable
+	lastRenewal *time.Time
+	jwtLifetime time.Duration
 }
 
 type Configurable interface {
@@ -84,7 +91,8 @@ func Reset() {
 func New(cfg Configurable) *Auth {
 	defer profile.Measure("auth:New", time.Now())
 	auth := &Auth{
-		cfg: cfg,
+		cfg:         cfg,
+		jwtLifetime: jwtLifetime,
 	}
 
 	return auth
@@ -110,6 +118,37 @@ func (s *Auth) Sync() error {
 		s.resetSession()
 	}
 	return nil
+}
+
+// MaybeRenew will renew the JWT if it has expired
+// This should only be called from the state-svc.
+func (s *Auth) MaybeRenew() error {
+	// If we're out of sync then we should just always renew
+	if s.SyncRequired() {
+		err := s.Sync()
+		if err != nil {
+			return errs.Wrap(err, "Could not sync during renew")
+		}
+		return nil
+	}
+
+	// Nothing to renew?
+	if s.AvailableAPIToken() == "" {
+		return nil
+	}
+
+	if s.cutoffReached(time.Now()) {
+		logging.Debug("Refreshing JWT as has expired")
+		return s.AuthenticateWithToken(s.AvailableAPIToken())
+	}
+
+	return nil
+}
+
+// cutoffReached checks whether the JWT will expire before the provided cutoff time
+func (s *Auth) cutoffReached(cutoff time.Time) bool {
+	expires := s.lastRenewal.Add(s.jwtLifetime)
+	return expires.Before(cutoff)
 }
 
 func (s *Auth) Close() error {
@@ -210,9 +249,7 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 		}
 	}
 
-	if err := s.updateSession(loginOK.Payload); err != nil {
-		return errs.Wrap(err, "Storing JWT failed")
-	}
+	s.UpdateSession(loginOK.Payload)
 
 	return nil
 }
@@ -229,9 +266,7 @@ func (s *Auth) AuthenticateWithDevice(deviceCode strfmt.UUID) (apiKey string, er
 		return "", errNotYetGranted
 	}
 
-	if err := s.updateSession(jwtToken); err != nil {
-		return "", errs.Wrap(err, "Storing JWT failed")
-	}
+	s.UpdateSession(jwtToken)
 
 	return apiKeyToken.Token, nil
 }
@@ -259,19 +294,18 @@ func (s *Auth) AuthenticateWithToken(token string) error {
 	})
 }
 
-// updateSession authenticates with the given access token obtained via a Platform
+// UpdateSession authenticates with the given access token obtained via a Platform
 // API request and response (e.g. username/password loging or device authentication).
-func (s *Auth) updateSession(accessToken *mono_models.JWT) error {
+func (s *Auth) UpdateSession(accessToken *mono_models.JWT) {
 	defer s.updateRollbarPerson()
 
 	s.user = accessToken.User
 	s.bearerToken = accessToken.Token
 	clientAuth := httptransport.BearerToken(s.bearerToken)
 	s.clientAuth = &clientAuth
+	s.lastRenewal = ptr.To(time.Now())
 
 	persist = s
-
-	return nil
 }
 
 // WhoAmI returns the username of the currently authenticated user, or an empty string if not authenticated
@@ -301,6 +335,10 @@ func (s *Auth) Email() string {
 		return s.user.Email
 	}
 	return ""
+}
+
+func (s *Auth) User() *mono_models.User {
+	return s.user
 }
 
 // UserID returns the user ID for the currently authenticated user, or nil if not authenticated
