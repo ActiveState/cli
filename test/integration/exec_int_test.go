@@ -181,7 +181,7 @@ func (suite *ExecIntegrationTestSuite) TestExecWithPath() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("exec", "--path", pythonDir, "which", "python3"),
+		e2e.OptArgs("exec", "--path", pythonDir, "--", "bash", "-c", "which python3"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Operating on project ActiveState-CLI/Python-3.9", e2e.RuntimeSourcingTimeoutOpt)
