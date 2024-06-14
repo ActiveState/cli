@@ -57,7 +57,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutPython() {
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutPerl() {
 	suite.OnlyRunForTags(tagsuite.Checkout, tagsuite.Critical)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	// Checkout and verify.
@@ -173,7 +173,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 	suite.OnlyRunForTags(tagsuite.Checkout)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	customRTPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "custom-cache"))

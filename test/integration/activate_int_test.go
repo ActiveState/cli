@@ -476,7 +476,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation(
 	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
 		suite.T().Skip("interrupting installation does not work on Windows on CI")
 	}
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	close := suite.addForegroundSvc(ts)
 	defer close()
@@ -492,7 +492,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation(
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Critical)
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	err := ts.ClearCache()
 	suite.Require().NoError(err)
 	defer ts.Close()
