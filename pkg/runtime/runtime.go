@@ -154,7 +154,7 @@ func (r *Runtime) hydrateEnvironment() error {
 func (r *Runtime) getEnv(inherit bool) (map[string]string, map[string]string, error) {
 	empty := map[string]string{}
 
-	vars, err := r.envCollection.Environment(r.path, false)
+	vars, err := r.envCollection.Environment(r.path, inherit)
 	if err != nil {
 		return empty, empty, errs.Wrap(err, "Failed to get environment variables")
 	}
