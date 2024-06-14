@@ -98,6 +98,10 @@ func Update(
 		return nil, rationalize.ErrNoProject
 	}
 
+	if proj.IsHeadless() {
+		return nil, rationalize.ErrHeadless
+	}
+
 	targetDir := opts.TargetDir
 	if targetDir == "" {
 		targetDir = runtime_helpers.TargetDirFromProject(proj)

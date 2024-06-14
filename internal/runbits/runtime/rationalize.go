@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/locale"
 	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	auth "github.com/ActiveState/cli/pkg/platform/authentication"
@@ -77,6 +78,12 @@ func rationalizeUpdateError(prime primeable, rerr *error) {
 			locale.Tr("runtime_setup_in_use_err", strings.Join(list, "\n")),
 			errs.SetInput(),
 		)
+
+	// Headless
+	case errors.Is(*rerr, rationalize.ErrHeadless):
+		*rerr = errs.WrapUserFacing(*rerr,
+			locale.Tr("err_headless", prime.Project().URL()),
+			errs.SetInput())
 
 	default:
 		RationalizeSolveError(prime.Project(), prime.Auth(), rerr)
