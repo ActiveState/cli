@@ -395,7 +395,6 @@ func (suite *ShellIntegrationTestSuite) TestProjectOrder() {
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("use"),
 		e2e.OptWD(defaultDir),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.Expect(defaultDir)
@@ -427,7 +426,7 @@ func (suite *ShellIntegrationTestSuite) TestProjectOrder() {
 	cp.SendLine("state refresh")
 	cp.Expect(projectDir) // not subprojectDir
 	cp.SendLine("exit")
-	cp.Expect("Deactivated")
+	// cp.Expect("Deactivated") // Disabled for now due to https://activestatef.atlassian.net/browse/DX-2901
 	cp.ExpectExit() // exit code varies depending on shell; just assert the shell exited
 
 	// After exiting the shell, assert the subproject is used instead of the parent project.

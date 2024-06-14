@@ -72,6 +72,8 @@ func (r *Refresh) Run(params *Params) error {
 
 	r.prime.SetProject(proj)
 
+	r.out.Notice(locale.Tr("operating_message", proj.NamespaceString(), proj.Dir()))
+
 	needsUpdate, err := runtime_helpers.NeedsUpdate(proj, nil)
 	if err != nil {
 		return errs.Wrap(err, "could not determine if runtime needs update")
