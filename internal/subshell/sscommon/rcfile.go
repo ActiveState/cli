@@ -389,8 +389,6 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 		return nil, errs.Wrap(err, "Failed to write to output buffer.")
 	}
 
-	logging.Debug("Using project RC: (%s) %s", tmpFile.Name(), o.String())
-
 	return tmpFile, nil
 }
 
