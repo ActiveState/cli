@@ -456,6 +456,7 @@ func (s *Session) DeleteUUIDProjects(org string) {
 func (s *Session) DebugMessage(prefix string) string {
 	var sectionStart, sectionEnd string
 	sectionStart = "\n=== "
+	sectionEnd = "\n/==\n"
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		sectionStart = "##[group]"
 		sectionEnd = "##[endgroup]"
