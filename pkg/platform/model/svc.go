@@ -195,7 +195,6 @@ func (m *SvcModel) GetJWT(ctx context.Context) (*mono_models.JWT, error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "Error unmarshaling JWT")
 	}
-	logging.Debug("Response: %#v\n", jwt)
 
 	return &jwt, nil
 }
