@@ -87,32 +87,6 @@ func (suite *ExecIntegrationTestSuite) TestExec_Args() {
 
 	suite.createProjectFile(ts)
 
-	scriptBlock := `
-for i; do
-    echo $i
-done
-echo "Number of arguments: $#"
-`
-
-	filename := fmt.Sprintf("%s/%s.sh", ts.Dirs.Work, suite.T().Name())
-	if runtime.GOOS == "windows" {
-		scriptBlock = `
-		set argCount=0
-		for %%a in (%*) do (
-			echo %%a
-			set /A argCount+=1
-		)
-		echo Number of arguments: %argCount%`
-		filename = fmt.Sprintf("%s/%s.bat", ts.Dirs.Work, suite.T().Name())
-	}
-
-	testScript := filepath.Join(filename)
-	err := fileutils.WriteFile(testScript, []byte(scriptBlock))
-	suite.Require().NoError(err)
-
-	err = os.Chmod(testScript, 0777)
-	suite.Require().NoError(err)
-
 	args := []string{
 		"firstArgument",
 		"secondArgument",
@@ -120,7 +94,9 @@ echo "Number of arguments: $#"
 	}
 
 	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("exec", "--", testScript, args[0], args[1], args[2]),
+		e2e.OptArgs("exec", "--", "python", "-c",
+			"import sys; print(sys.argv); print(\"Number of arguments: %d\" % (len(sys.argv) - 1))",
+			args[0], args[1], args[2]),
 	)
 	cp.Expect(args[0])
 	cp.Expect(args[1])
