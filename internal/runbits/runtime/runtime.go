@@ -22,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/runtime"
@@ -191,6 +192,17 @@ func Update(
 	if prime.Config().GetBool(constants.AsyncRuntimeConfig) {
 		logging.Debug("Skipping runtime update due to async runtime")
 		return rt, nil
+	}
+
+	// Determine if this runtime is currently in use.
+	ctx, cancel := context.WithTimeout(context.Background(), model.SvcTimeoutMinimal)
+	defer cancel()
+	if procs, err := prime.SvcModel().GetProcessesInUse(ctx, rt.Env(false).ExecutorsPath); err == nil {
+		if len(procs) > 0 {
+			return nil, &RuntimeInUseError{procs}
+		}
+	} else {
+		multilog.Error("Unable to determine if runtime is in use: %v", errs.JoinMessage(err))
 	}
 
 	pg := progress.NewRuntimeProgressIndicator(prime.Output())
