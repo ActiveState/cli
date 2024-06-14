@@ -45,8 +45,12 @@ func (suite *ExecIntegrationTestSuite) TestExec_Environment() {
 	err = os.Chmod(testScript, 0777)
 	suite.Require().NoError(err)
 
+	args := []string{"exec", "--", "bash", "-c", testScript}
+	if runtime.GOOS == "windows" {
+		args = []string{"exec", "--", "cmd", "/c", testScript}
+	}
 	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("exec", testScript),
+		e2e.OptArgs(args...),
 	)
 	cp.ExpectExitCode(0)
 	output := cp.Output()
@@ -74,8 +78,12 @@ func (suite *ExecIntegrationTestSuite) TestExec_ExitCode() {
 	err = os.Chmod(testScript, 0777)
 	suite.Require().NoError(err)
 
+	args := []string{"exec", "--", "bash", "-c", testScript}
+	if runtime.GOOS == "windows" {
+		args = []string{"exec", "--", "cmd", "/c", testScript}
+	}
 	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("exec", "--", testScript),
+		e2e.OptArgs(args...),
 	)
 	cp.ExpectExitCode(42)
 }
@@ -132,8 +140,12 @@ echo "Hello $name!"
 	err = os.Chmod(testScript, 0777)
 	suite.Require().NoError(err)
 
+	args := []string{"exec", "--", "bash", "-c", testScript}
+	if runtime.GOOS == "windows" {
+		args = []string{"exec", "--", "cmd", "/c", testScript}
+	}
 	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("exec", "--", testScript),
+		e2e.OptArgs(args...),
 	)
 	cp.SendLine("ActiveState")
 	cp.Expect("Hello ActiveState!")
