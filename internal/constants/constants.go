@@ -190,22 +190,6 @@ const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/state"
 // APIArtifactURL is the URL for downloading artifacts
 const APIArtifactURL = "https://s3.ca-central-1.amazonaws.com/cli-artifacts/"
 
-// ArtifactFile is the name of the artifact json file contained within artifacts
-const ArtifactFile = "artifact.json"
-
-// ArtifactArchiveName is the standardized name of an artifact archive
-const ArtifactArchiveName = "artifact.tar.gz"
-
-// ArtifactCacheFileName is the standardized name of an artifact cache file
-const ArtifactCacheFileName = "artifact_cache.json"
-
-// ArtifactMetaDir is the directory in which we store meta information about artifacts
-const ArtifactMetaDir = "artifacts"
-
-// ArtifactCacheSizeEnvVarName is the maximum size in MB of the artifact cache.
-// The default is 500MB.
-const ArtifactCacheSizeEnvVarName = "ACTIVESTATE_ARTIFACT_CACHE_SIZE_MB"
-
 // DefaultNamespaceDomain is the domain used when no namespace is given and one has to be constructed
 const DefaultNamespaceDomain = "github.com"
 

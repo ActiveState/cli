@@ -52,28 +52,6 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutPython() {
 	cp = ts.SpawnCmd(pythonExe, "--version")
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
-
-	suite.Run("Cached", func() {
-		artifactCacheDir := filepath.Join(ts.Dirs.Cache, constants.ArtifactMetaDir)
-		projectCacheDir, err := runtime_helpers.TargetDirFromProjectDir(ts.Dirs.Work)
-		suite.Require().NoError(err)
-		suite.Require().NotEmpty(fileutils.ListFilesUnsafe(artifactCacheDir), "Artifact cache dir should have files")
-		suite.Require().NotEmpty(fileutils.ListFilesUnsafe(projectCacheDir), "Project cache dir should have files")
-
-		suite.Require().NoError(os.RemoveAll(projectCacheDir))                                    // Ensure we can hit the cache by deleting the cache
-		suite.Require().NoError(os.Remove(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))) // Ensure we can do another checkout
-
-		cp = ts.SpawnWithOpts(
-			e2e.OptArgs("checkout", "ActiveState-CLI/Python-3.9", "."),
-			e2e.OptAppendEnv(
-				constants.DisableRuntime+"=false",
-				"VERBOSE=true", // Necessary to assert "Fetched cached artifact"
-			),
-		)
-		cp.Expect("Fetched cached artifact", e2e.RuntimeSourcingTimeoutOpt) // Comes from log, which is why we're using VERBOSE=true
-		cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
-		cp.ExpectExitCode(0)
-	})
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutPerl() {
