@@ -70,8 +70,8 @@ func rationalizeUpdateError(prime primeable, rerr *error) {
 	// Runtime in use
 	case errors.As(*rerr, &runtimeInUseErr):
 		list := []string{}
-		for exe, pid := range runtimeInUseErr.Processes {
-			list = append(list, fmt.Sprintf("   - %s (process: %d)", exe, pid))
+		for _, proc := range runtimeInUseErr.Processes {
+			list = append(list, fmt.Sprintf("   - %s (process: %d)", proc.Exe, proc.Pid))
 		}
 		*rerr = errs.WrapUserFacing(*rerr,
 			locale.Tr("runtime_setup_in_use_err", strings.Join(list, "\n")),
