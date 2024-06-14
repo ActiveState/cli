@@ -146,21 +146,19 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	suite.Assert().NoError(err, "should have removed executor directory, to ensure that it gets re-created")
 
 	// check existens of exec dir
-	targetDir, err := runtime_helpers.TargetDirFromProjectDir(ts.Dirs.Work)
-	suite.Assert().NoError(err)
+	targetDir := filepath.Join(ts.Dirs.Cache, runtime_helpers.DirNameFromProjectDir(ts.Dirs.Work))
 	projectExecDir := rt.ExecutorsPath(targetDir)
 	suite.DirExists(projectExecDir)
 
-	// remove complete marker to force re-creation of executors
-	err = os.Remove(filepath.Join(targetDir, constants.LocalRuntimeEnvironmentDirectory, constants.RuntimeInstallationCompleteMarker))
-	suite.Assert().NoError(err, "removal of complete marker should have worked")
+	// Invalidate hash
+	hashPath := filepath.Join(targetDir, ".activestate", "hash.txt")
+	suite.Require().NoError(fileutils.WriteFile(hashPath, []byte("bogus")))
 
 	cp = ts.Spawn("_prepare")
 	cp.ExpectExitCode(0)
 
-	suite.FileExists(filepath.Join(globalExecDir, "python3"+osutils.ExeExtension))
-	err = os.RemoveAll(projectExecDir)
-	suite.Assert().NoError(err, "should have removed executor directory, to ensure that it gets re-created")
+	suite.Require().FileExists(filepath.Join(globalExecDir, "python3"+osutils.ExeExtension), ts.DebugMessage(""))
+	suite.Require().NoError(os.RemoveAll(projectExecDir), "should have removed executor directory, to ensure that it gets re-created")
 
 	cp = ts.Spawn("activate")
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)

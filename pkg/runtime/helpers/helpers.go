@@ -74,14 +74,14 @@ func TargetDirFromProject(proj *project.Project) string {
 		return cache
 	}
 
-	return filepath.Join(storage.CachePath(), DirNameFromProject(proj))
+	return filepath.Join(storage.CachePath(), DirNameFromProjectDir(proj.Dir()))
 }
 
-func DirNameFromProject(proj *project.Project) string {
-	resolvedDir, err := fileutils.ResolveUniquePath(proj.Dir())
+func DirNameFromProjectDir(dir string) string {
+	resolvedDir, err := fileutils.ResolveUniquePath(dir)
 	if err != nil {
-		multilog.Error("Could not resolve unique path for projectDir: %s, error: %s", proj.Dir(), err.Error())
-		resolvedDir = proj.Dir()
+		multilog.Error("Could not resolve unique path for projectDir: %s, error: %s", dir, err.Error())
+		resolvedDir = dir
 	}
 
 	return hash.ShortHash(resolvedDir)
