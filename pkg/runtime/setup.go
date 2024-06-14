@@ -2,9 +2,11 @@ package runtime
 
 import (
 	"bytes"
+	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/go-openapi/strfmt"
 	"golang.org/x/net/context"
 
@@ -80,12 +82,16 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 		return nil, errs.Wrap(err, "Could not get platform ID")
 	}
 
-	// Start off with the full range of artifacts relevant to our platform
-	installableArtifacts := bp.Artifacts(
+	filterInstallable := []buildplan.FilterArtifact{
 		buildplan.FilterPlatformArtifacts(platformID),
-		buildplan.FilterRuntimeArtifacts(),
 		buildplan.FilterStateArtifacts(),
-	)
+	}
+	if os.Getenv(constants.InstallBuildDependenciesEnvVarName) != "true" {
+		filterInstallable = append(filterInstallable, buildplan.FilterRuntimeArtifacts())
+	}
+
+	// Start off with the full range of artifacts relevant to our platform
+	installableArtifacts := bp.Artifacts(filterInstallable...)
 
 	// Identify which artifacts we'll need to install, this filters out any artifacts that are already installed.
 	artifactsToInstall := installableArtifacts.Filter(func(a *buildplan.Artifact) bool {

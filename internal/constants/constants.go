@@ -58,8 +58,8 @@ const DisableLanguageTemplates = "ACTIVESTATE_CLI_DISABLE_LANGUAGE_TEMPLATES"
 // UpdateChannelEnvVarName is the env var that is used to override which channel to pull the update from
 const UpdateChannelEnvVarName = "ACTIVESTATE_CLI_UPDATE_CHANNEL"
 
-// InstallBuildDependencies is the env var that is used to override whether to install build dependencies
-const InstallBuildDependencies = "ACTIVESTATE_CLI_INSTALL_BUILD_DEPENDENCIES"
+// InstallBuildDependenciesEnvVarName is the env var that is used to override whether to install build dependencies
+const InstallBuildDependenciesEnvVarName = "ACTIVESTATE_CLI_INSTALL_BUILD_DEPENDENCIES"
 
 // InternalConfigFileNameLegacy is effectively the same as InternalConfigName, but includes our preferred extension
 const InternalConfigFileNameLegacy = "config.yaml"
