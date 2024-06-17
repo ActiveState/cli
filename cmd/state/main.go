@@ -225,7 +225,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	// Run the actual command
 	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, ipcClient, svcmodel, an), args...)
 
-	childCmd, err := cmds.Command().Find(args[1:])
+	childCmd, err := cmds.Command().FindChild(args[1:])
 	if err != nil {
 		logging.Debug("Could not find child command, error: %v", err)
 	}
