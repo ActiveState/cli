@@ -234,23 +234,22 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	cmds.OnExecStart(msger.OnExecStart)
 	cmds.OnExecStop(msger.OnExecStop)
 
-	if childCmd != nil && !childCmd.SkipChecks() && !out.Type().IsStructured() {
-		// Auto update to latest state tool version
-		if updated, err := autoUpdate(svcmodel, args, cfg, an, out); err == nil && updated {
-			return nil // command will be run by updated exe
-		} else if err != nil {
-			multilog.Error("Failed to autoupdate: %v", err)
-		}
+	// Auto update to latest state tool version if possible.
+	if updated, err := autoUpdate(svcmodel, args, childCmd, cfg, an, out); err == nil && updated {
+		return nil // command will be run by updated exe
+	} else if err != nil {
+		multilog.Error("Failed to autoupdate: %v", err)
+	}
 
-		if childCmd.Name() != "update" && pj != nil && pj.IsLocked() {
-			if (pj.Version() != "" && pj.Version() != constants.Version) ||
-				(pj.Channel() != "" && pj.Channel() != constants.ChannelName) {
-				return errs.AddTips(
-					locale.NewInputError("lock_version_mismatch", "", pj.Source().Lock, constants.ChannelName, constants.Version),
-					locale.Tr("lock_update_legacy_version", constants.DocumentationURLLocking),
-					locale.T("lock_update_lock"),
-				)
-			}
+	// Check to see if this state tool version is different from the lock version.
+	if (childCmd == nil || !childCmd.SkipChecks() || childCmd.Name() != "update") && pj != nil && pj.IsLocked() {
+		if (pj.Version() != "" && pj.Version() != constants.Version) ||
+			(pj.Channel() != "" && pj.Channel() != constants.ChannelName) {
+			return errs.AddTips(
+				locale.NewInputError("lock_version_mismatch", "", pj.Source().Lock, constants.ChannelName, constants.Version),
+				locale.Tr("lock_update_legacy_version", constants.DocumentationURLLocking),
+				locale.T("lock_update_lock"),
+			)
 		}
 	}
 
