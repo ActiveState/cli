@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -22,7 +23,7 @@ const (
 
 func Publish(vars PublishVariables, filepath string) (*PublishInput, error) {
 	var f *os.File
-	if filepath != "" {
+	if filepath != "" && !strings.HasPrefix(filepath, "https://") {
 		var err error
 		f, err = os.Open(filepath)
 		if err != nil {
@@ -63,6 +64,7 @@ type PublishVariables struct {
 
 	// GraphQL input only
 	Path         string  `yaml:"-" json:"path"`
+	FileUrl      string  `yaml:"-" json:"file_uri"`
 	File         *string `yaml:"-" json:"file"` // Intentionally a pointer that never gets set as the server expects this to always be nil
 	FileChecksum string  `yaml:"-" json:"file_checksum"`
 }

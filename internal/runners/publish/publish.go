@@ -91,8 +91,12 @@ func (r *Runner) Run(params *Params) error {
 		return locale.NewInputError("err_auth_required")
 	}
 
+	reqVars := request.PublishVariables{}
+
 	if params.Filepath != "" {
-		if !fileutils.FileExists(params.Filepath) {
+		if strings.HasPrefix(params.Filepath, "https://") {
+			reqVars.FileUrl = params.Filepath
+		} else if !fileutils.FileExists(params.Filepath) {
 			return locale.NewInputError("err_uploadingredient_file_not_found", "File not found: {{.V0}}", params.Filepath)
 		}
 		if !strings.HasSuffix(strings.ToLower(params.Filepath), ".zip") &&
@@ -102,8 +106,6 @@ func (r *Runner) Run(params *Params) error {
 	} else if !params.Edit {
 		return locale.NewInputError("err_uploadingredient_file_required", "You have to supply the source archive unless editing.")
 	}
-
-	reqVars := request.PublishVariables{}
 
 	// Pass input from meta file
 	if params.MetaFilepath != "" {
