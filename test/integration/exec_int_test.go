@@ -102,7 +102,7 @@ func (suite *ExecIntegrationTestSuite) TestExec_Args() {
 	}
 
 	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("exec", "--", "python", "-c",
+		e2e.OptArgs("exec", "--", "python3", "-c",
 			"import sys; print(sys.argv); print(\"Number of arguments: %d\" % (len(sys.argv) - 1))",
 			args[0], args[1], args[2]),
 	)
