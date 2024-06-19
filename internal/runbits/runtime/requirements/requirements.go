@@ -283,7 +283,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 			out.Notice("")
 
 			// refresh or install runtime
-			_, err = runtime_runbit.Update(r.prime, trig, runtime_runbit.WithCommitID(commitID))
+			_, err = runtime_runbit.Update(r.prime, trig, runtime_runbit.WithCommitID(commitID), runtime_runbit.WithNoHeaders())
 			if err != nil {
 				if !IsBuildError(err) {
 					// If the error is not a build error we want to retain the changes

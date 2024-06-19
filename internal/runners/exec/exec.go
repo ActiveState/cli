@@ -10,7 +10,7 @@ import (
 
 	"github.com/shirou/gopsutil/v3/process"
 
-	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/runtime"
 	"github.com/ActiveState/cli/pkg/runtime/executors"
@@ -126,7 +126,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 
 	s.out.Notice(locale.Tr("operating_message", projectNamespace, projectDir))
 
-	rt, err := rtrunbit.Update(s.prime, trigger)
+	rt, err := runtime_runbit.Update(s.prime, trigger, runtime_runbit.WithNoHeaders())
 	if err != nil {
 		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 	}

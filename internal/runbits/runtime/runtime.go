@@ -47,9 +47,9 @@ type Opts struct {
 
 type SetOpt func(*Opts)
 
-func WithPrintHeaders(printHeaders bool) SetOpt {
+func WithNoHeaders() SetOpt {
 	return func(opts *Opts) {
-		opts.PrintHeaders = printHeaders
+		opts.PrintHeaders = false
 	}
 }
 
@@ -87,7 +87,9 @@ func Update(
 ) (_ *runtime.Runtime, rerr error) {
 	defer rationalizeUpdateError(prime, &rerr)
 
-	opts := &Opts{}
+	opts := &Opts{
+		PrintHeaders: true,
+	}
 	for _, setOpt := range setOpts {
 		setOpt(opts)
 	}
