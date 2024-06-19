@@ -185,6 +185,8 @@ func (s *Auth) updateRollbarPerson() {
 }
 
 func (s *Auth) resetSession() {
+	s.clientAuth = nil
+	s.lastRenewal = nil
 	s.bearerToken = ""
 	s.user = nil
 }
