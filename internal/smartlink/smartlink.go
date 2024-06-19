@@ -97,7 +97,7 @@ func UnlinkContents(src, dest string) error {
 		srcPath := filepath.Join(src, entry.Name())
 		destPath := filepath.Join(dest, entry.Name())
 		if !fileutils.TargetExists(destPath) {
-			logging.Warning("Could not unlink '%s' as it does not exist", destPath)
+			logging.Warning("Could not unlink '%s' as it does not exist, it may have already been removed by another artifact", destPath)
 			continue
 		}
 
@@ -106,18 +106,6 @@ func UnlinkContents(src, dest string) error {
 				return err // Not wrapping here cause it'd just repeat the same error due to the recursion
 			}
 		} else {
-			srcInfo, err := entry.Info()
-			if err != nil {
-				return errs.Wrap(err, "Could not get info for src %s", srcPath)
-			}
-			destInfo, err := os.Stat(destPath)
-			if err != nil {
-				return errs.Wrap(err, "Could not get info for dst %s", destPath)
-			}
-			if srcInfo.Size() != destInfo.Size() {
-				return errs.New("Cannot unlink '%s' as it has a different size than its source: '%s' (%d != %d)",
-					destPath, srcPath, srcInfo.Size(), destInfo.Size())
-			}
 			if err := os.Remove(destPath); err != nil {
 				return errs.Wrap(err, "Could not delete %s", destPath)
 			}
