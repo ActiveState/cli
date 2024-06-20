@@ -11,12 +11,15 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -82,6 +85,8 @@ func (c *Commit) Run() (rerr error) {
 		return rationalize.ErrNoProject
 	}
 
+	c.out.Notice(locale.Tr("operating_message", c.proj.NamespaceString(), c.proj.Dir()))
+
 	// Get buildscript.as representation
 	script, err := buildscript_runbit.ScriptFromProject(c.proj)
 	if err != nil {
@@ -112,7 +117,7 @@ func (c *Commit) Run() (rerr error) {
 	pg := output.StartSpinner(c.out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
 	defer func() {
 		if pg != nil {
-			pg.Stop(locale.T("progress_fail") + "\n")
+			pg.Stop(locale.T("progress_fail"))
 		}
 	}()
 
@@ -140,8 +145,25 @@ func (c *Commit) Run() (rerr error) {
 		return errs.Wrap(err, "Could not update local build script")
 	}
 
-	pg.Stop(locale.T("progress_success") + "\n")
+	pg.Stop(locale.T("progress_success"))
 	pg = nil
+
+	// Solve runtime
+	_, rtCommit, err := runtime.Solve(c.auth, c.out, c.analytics, c.proj, &stagedCommitID, target.TriggerCommit, c.svcModel, c.cfg, runtime.OptNone)
+	if err != nil {
+		return errs.Wrap(err, "Could not solve runtime")
+	}
+
+	// Get old buildplan.
+	rtTarget := target.NewProjectTarget(c.proj, &stagedCommitID, target.TriggerCommit)
+	commit, err := bp.FetchCommit(localCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
+	if err != nil {
+		return errs.Wrap(err, "Failed to fetch build result")
+	}
+	oldBuildPlan := commit.BuildPlan()
+
+	// Output dependency list.
+	dependencies.OutputChangeSummary(c.out, rtCommit.BuildPlan(), oldBuildPlan)
 
 	c.out.Print(output.Prepare(
 		locale.Tl(
