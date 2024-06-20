@@ -48,7 +48,7 @@ type Opts struct {
 
 type SetOpt func(*Opts)
 
-func WithNoHeaders() SetOpt {
+func WithoutHeaders() SetOpt {
 	return func(opts *Opts) {
 		opts.PrintHeaders = false
 	}
