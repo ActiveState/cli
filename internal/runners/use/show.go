@@ -6,7 +6,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	runtime_helpers "github.com/ActiveState/cli/pkg/runtime/helpers"
@@ -32,7 +31,7 @@ func (s *Show) Run() error {
 
 	proj, err := project.FromPath(projectDir)
 	if err != nil {
-		if errs.Matches(err, ptr.To(&projectfile.ErrorNoProject{})) {
+		if errs.Matches(err, &projectfile.ErrorNoProject{}) {
 			return locale.WrapError(err, "err_use_default_project_does_not_exist")
 		}
 		return locale.WrapError(err, "err_use_show_get_project", "Could not get your project.")
