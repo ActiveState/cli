@@ -187,6 +187,10 @@ func (s *setup) RunAndWait() (rerr error) {
 }
 
 func (s *setup) update() error {
+	if err := fileutils.MkdirUnlessExists(filepath.Join(s.path, configDir)); err != nil {
+		return errs.Wrap(err, "Could not create runtime config dir")
+	}
+
 	blog := buildlog.New(s.buildplan.RecipeID(), s.toBuild).
 		WithEventHandler(s.opts.EventHandlers...).
 		WithLogFile(filepath.Join(s.path, configDir, buildLogFile))
