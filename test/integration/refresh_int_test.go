@@ -51,9 +51,8 @@ func (suite *RefreshIntegrationTestSuite) TestRefresh() {
 	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.Spawn("refresh")
-	cp.Expect("Runtime updated")
-	cp.ExpectExitCode(0)
-	suite.Assert().NotContains(cp.Output(), "Installing", "Unchanged runtime should not refresh")
+	cp.Expect("already up to date")
+	cp.ExpectExitCode(1)
 }
 
 func (suite *RefreshIntegrationTestSuite) TestJSON() {
