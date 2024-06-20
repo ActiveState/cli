@@ -109,8 +109,9 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false",
 			constants.RuntimeSetupWaitEnvVarName+"=true"),
 	)
-	time.Sleep(30 * time.Second)
+	cp.Expect("Downloading")
 	cp.SendCtrlC() // cancel pull/update
+	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnCmd(pythonExe, "-c", `print(__import__('sys').version)`)
 	cp.Expect("3.8.8") // current runtime still works
