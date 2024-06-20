@@ -242,7 +242,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	}
 
 	// Check to see if this state tool version is different from the lock version.
-	if (childCmd == nil || !childCmd.SkipChecks() || childCmd.Name() != "update") && pj != nil && pj.IsLocked() {
+	if (childCmd == nil || !childCmd.SkipChecks()) && pj != nil && pj.IsLocked() {
 		if (pj.Version() != "" && pj.Version() != constants.Version) ||
 			(pj.Channel() != "" && pj.Channel() != constants.ChannelName) {
 			return errs.AddTips(
