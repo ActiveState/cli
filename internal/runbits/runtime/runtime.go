@@ -131,6 +131,9 @@ func Update(
 	}
 
 	commitID := opts.CommitID
+	if opts.Commit != nil {
+		commitID = opts.Commit.CommitID
+	}
 	if commitID == "" {
 		commitID, err = localcommit.Get(proj.Dir())
 		if err != nil {
