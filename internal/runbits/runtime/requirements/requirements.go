@@ -251,18 +251,10 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 		solveSpinner.Stop(locale.T("progress_success"))
 
-		// Get old buildplan
-		// We can't use the local store here; because it might not exist (ie. integrationt test, user cleaned cache, ..),
-		// but also there's no guarantee the old one is sequential to the current.
-		oldCommit, err := model.GetCommit(commitID, r.Auth)
-		if err != nil {
-			return errs.Wrap(err, "Could not get commit")
-		}
-
 		var oldBuildPlan *buildplan.BuildPlan
-		if oldCommit.ParentCommitID != "" {
+		if rtCommit.ParentID != "" {
 			bpm := bpModel.NewBuildPlannerModel(r.Auth)
-			commit, err := bpm.FetchCommit(oldCommit.ParentCommitID, r.Project.Owner(), r.Project.Name(), nil)
+			commit, err := bpm.FetchCommit(rtCommit.ParentID, r.Project.Owner(), r.Project.Name(), nil)
 			if err != nil {
 				return errs.Wrap(err, "Failed to fetch build result")
 			}
@@ -283,7 +275,10 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 			out.Notice("")
 
 			// refresh or install runtime
-			_, err = runtime_runbit.Update(r.prime, trig, runtime_runbit.WithCommitID(commitID), runtime_runbit.WithNoHeaders())
+			_, err = runtime_runbit.Update(r.prime, trig,
+				runtime_runbit.WithCommit(rtCommit),
+				runtime_runbit.WithoutHeaders(),
+			)
 			if err != nil {
 				if !IsBuildError(err) {
 					// If the error is not a build error we want to retain the changes
