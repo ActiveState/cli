@@ -41,8 +41,9 @@ type Opts struct {
 	TargetDir    string
 
 	// Note CommitID and Commit are mutually exclusive. If Commit is provided then CommitID is disregarded.
-	CommitID strfmt.UUID
-	Commit   *bpModel.Commit
+	CommitID            strfmt.UUID
+	Commit              *bpModel.Commit
+	ValidateBuildscript bool
 }
 
 type SetOpt func(*Opts)
@@ -71,6 +72,14 @@ func WithCommitID(commitID strfmt.UUID) SetOpt {
 	}
 }
 
+// WithoutBuildscriptValidation skips validating whether the local buildscript has changed. This is useful when trying
+// to source a runtime that doesn't yet reflect the state of the project files (ie. as.yaml and buildscript).
+func WithoutBuildscriptValidation() SetOpt {
+	return func(opts *Opts) {
+		opts.ValidateBuildscript = false
+	}
+}
+
 type primeable interface {
 	primer.Projecter
 	primer.Auther
@@ -88,7 +97,8 @@ func Update(
 	defer rationalizeUpdateError(prime, &rerr)
 
 	opts := &Opts{
-		PrintHeaders: true,
+		PrintHeaders:        true,
+		ValidateBuildscript: true,
 	}
 	for _, setOpt := range setOpts {
 		setOpt(opts)
@@ -179,7 +189,7 @@ func Update(
 	}
 
 	// Validate buildscript
-	if prime.Config().GetBool(constants.OptinBuildscriptsConfig) {
+	if prime.Config().GetBool(constants.OptinBuildscriptsConfig) && opts.ValidateBuildscript {
 		bs, err := buildscript_runbit.ScriptFromProject(proj)
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to get buildscript")

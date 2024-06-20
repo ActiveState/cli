@@ -278,6 +278,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 			_, err = runtime_runbit.Update(r.prime, trig,
 				runtime_runbit.WithCommit(rtCommit),
 				runtime_runbit.WithoutHeaders(),
+				runtime_runbit.WithoutBuildscriptValidation(),
 			)
 			if err != nil {
 				if !IsBuildError(err) {
