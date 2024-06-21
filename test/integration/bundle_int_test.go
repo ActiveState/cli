@@ -3,6 +3,7 @@ package integration
 import (
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -71,7 +72,7 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/Bundles", "."),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)

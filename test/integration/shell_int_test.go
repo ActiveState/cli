@@ -297,7 +297,7 @@ func (suite *ShellIntegrationTestSuite) TestNestedShellNotification() {
 
 	var ss subshell.SubShell
 	var rcFile string
-	env := []string{"ACTIVESTATE_CLI_DISABLE_RUNTIME=false"}
+	env := []string{constants.DisableRuntime + "=false"}
 	switch runtime.GOOS {
 	case "darwin":
 		ss = &zsh.SubShell{}
