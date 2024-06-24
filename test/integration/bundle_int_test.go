@@ -64,29 +64,22 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 	suite.OnlyRunForTags(tagsuite.Bundle, tagsuite.JSON)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
+	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("bundles", "search", "Email", "--language", "Perl", "-o", "json")
 	cp.Expect(`"Name":"Email"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/Bundles", "."),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect("Checked out project")
+	cp = ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("bundles", "install", "Testing", "--output", "json"),
-	)
+	cp = ts.Spawn("bundles", "install", "Testing", "--output", "json")
 	cp.Expect(`"name":"Testing"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("bundles", "uninstall", "Testing", "-o", "editor"),
-	)
+	cp = ts.Spawn("bundles", "uninstall", "Testing", "-o", "editor")
 	cp.Expect(`"name":"Testing"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
