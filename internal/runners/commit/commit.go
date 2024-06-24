@@ -148,8 +148,15 @@ func (c *Commit) Run() (rerr error) {
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
 
+	pgSolve := output.StartSpinner(c.out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+	defer func() {
+		if pgSolve != nil {
+			pgSolve.Stop(locale.T("progress_fail"))
+		}
+	}()
+
 	// Solve runtime
-	_, rtCommit, err := runtime.Solve(c.auth, c.out, c.analytics, c.proj, &stagedCommitID, target.TriggerCommit, c.svcModel, c.cfg, runtime.OptNone)
+	_, rtCommit, err := runtime.Solve(c.auth, c.out, c.analytics, c.proj, &stagedCommitID, target.TriggerCommit, c.svcModel, c.cfg, runtime.OptMinimalUI)
 	if err != nil {
 		return errs.Wrap(err, "Could not solve runtime")
 	}
@@ -160,6 +167,9 @@ func (c *Commit) Run() (rerr error) {
 		return errs.Wrap(err, "Failed to fetch build result")
 	}
 	oldBuildPlan := commit.BuildPlan()
+
+	pgSolve.Stop(locale.T("progress_success"))
+	pgSolve = nil
 
 	// Output dependency list.
 	dependencies.OutputChangeSummary(c.out, rtCommit.BuildPlan(), oldBuildPlan)
