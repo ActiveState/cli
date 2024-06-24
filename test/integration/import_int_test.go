@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -28,10 +29,7 @@ func (suite *ImportIntegrationTestSuite) TestImport_detached() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3-Import", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out project")
-	cp.ExpectExitCode(0)
+	ts.PrepareProject("ActiveState-CLI/Python3-Import", "ecc61737-f598-4ca4-aa4e-52403aabb76c")
 
 	contents := `requests
 	urllib3`
@@ -40,7 +38,10 @@ func (suite *ImportIntegrationTestSuite) TestImport_detached() {
 	err := os.WriteFile(importPath, []byte(strings.TrimSpace(contents)), 0644)
 	suite.Require().NoError(err)
 
-	cp = ts.Spawn("import", importPath)
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("import", importPath),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
+	)
 	cp.Expect("Operating on project")
 	cp.Expect("ActiveState-CLI/Python3-Import")
 	cp.ExpectExitCode(0)
@@ -96,7 +97,10 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 		ts.SetT(suite.T())
 		ts.PrepareFile(reqsFilePath, badReqsData)
 
-		cp := ts.Spawn("import", "requirements.txt")
+		cp := ts.SpawnWithOpts(
+			e2e.OptArgs("import", "requirements.txt"),
+			e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
+		)
 		cp.ExpectNotExitCode(0)
 	})
 
@@ -104,8 +108,10 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 		ts.SetT(suite.T())
 		ts.PrepareFile(reqsFilePath, reqsData)
 
-		cp := ts.Spawn("import", "requirements.txt")
-		cp.ExpectExitCode(0)
+		cp := ts.SpawnWithOpts(
+			e2e.OptArgs("import", "requirements.txt"),
+			e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
+		)
 
 		cp = ts.Spawn("push")
 		cp.ExpectExitCode(0)
@@ -119,8 +125,10 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 		ts.SetT(suite.T())
 		ts.PrepareFile(reqsFilePath, complexReqsData)
 
-		cp := ts.Spawn("import", "requirements.txt")
-		cp.ExpectExitCode(0)
+		cp := ts.SpawnWithOpts(
+			e2e.OptArgs("import", "requirements.txt"),
+			e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
+		)
 
 		cp = ts.Spawn("packages")
 		cp.Expect("coverage")
