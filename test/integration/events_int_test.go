@@ -15,13 +15,9 @@ type EventsIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *EventsIntegrationTestSuite) TestEvents() {
-	suite.OnlyRunForTags(tagsuite.Events)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
+func (suite *EventsIntegrationTestSuite) prepareASY(ts *e2e.Session) {
 	ts.PrepareActiveStateYAML(strings.TrimSpace(`
-project: https://platform.activestate.com/ActiveState-CLI/Python3
+project: https://platform.activestate.com/ActiveState-CLI/Empty
 scripts:
   - name: before
     language: bash
@@ -43,7 +39,15 @@ events:
     scope: ["activate"]
     value: after
 `))
-	ts.PrepareCommitIdFile("fbc613d6-b0b1-4f84-b26e-4aa5869c4e54")
+	ts.PrepareCommitIdFile("6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8")
+}
+
+func (suite *EventsIntegrationTestSuite) TestEvents() {
+	suite.OnlyRunForTags(tagsuite.Events)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.prepareASY(ts)
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate"),
@@ -80,12 +84,9 @@ func (suite *EventsIntegrationTestSuite) TestJSON() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out")
-	cp.ExpectExitCode(0)
+	suite.prepareASY(ts)
 
-	cp = ts.Spawn("events", "-o", "json")
+	cp := ts.Spawn("events", "-o", "json")
 	cp.Expect(`[{"event":`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
