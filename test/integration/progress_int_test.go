@@ -3,7 +3,6 @@ package integration
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
@@ -19,21 +18,15 @@ func (suite *ProgressIntegrationTestSuite) TestProgress() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/small-python"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Empty")
 	cp.Expect(locale.T("install_runtime"))
 	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
 	suite.Assert().NotContains(cp.Output(), "...")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "small-python2", "--non-interactive"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect(locale.T("setup_runtime"))
+	cp = ts.Spawn("checkout", "ActiveState-CLI/Empty", "Empty2", "--non-interactive")
 	cp.Expect("...")
+	cp.Expect(locale.T("setup_runtime"))
 	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
