@@ -122,7 +122,18 @@ func (s *Auth) Sync() error {
 
 // MaybeRenew will renew the JWT if it has expired
 // This should only be called from the state-svc.
-func (s *Auth) MaybeRenew() error {
+func (s *Auth) MaybeRenew() (rerr error) {
+	defer func() {
+		if rerr == nil {
+			return
+		}
+
+		var errUnauthorized *apiAuth.PostLoginUnauthorized
+		if errors.As(rerr, &errUnauthorized) {
+			logging.Warning("API token invalid, clearing stored token: %s", errUnauthorized.Error())
+			rerr = s.Logout()
+		}
+	}()
 	// If we're out of sync then we should just always renew
 	if s.SyncRequired() {
 		err := s.Sync()
@@ -185,6 +196,7 @@ func (s *Auth) updateRollbarPerson() {
 }
 
 func (s *Auth) resetSession() {
+	s.client = nil
 	s.clientAuth = nil
 	s.lastRenewal = nil
 	s.bearerToken = ""
@@ -359,10 +371,7 @@ func (s *Auth) Logout() error {
 		return locale.WrapError(err, "err_logout_cfg", "Could not update config, if this persists please try running '[ACTIONABLE]state clean config[/RESET]'.")
 	}
 
-	s.client = nil
-	s.clientAuth = nil
-	s.bearerToken = ""
-	s.user = nil
+	s.resetSession()
 
 	// This is a bit of a hack, but it's safe to assume that the global legacy use-case should be reset whenever we logout a specific instance
 	// Handling it any other way would be far too error-prone by comparison
