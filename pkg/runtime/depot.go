@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/smartlink"
 )
 
@@ -26,13 +27,7 @@ type depotConfig struct {
 
 type deployment struct {
 	Type deploymentType `json:"type"`
-
-	// Path is unused at the moment: in the future we should record the exact paths that were deployed, so we can track
-	// file ownership when multiple artifacts deploy the same file.
-	// I've left this in so it's clear why we're employing a struct here rather than just have each deployment contain
-	// the deploymentType as the direct value. That would make it more difficult to update this logic later due to
-	// backward compatibility.
-	// Path string         `json:"path"`
+	Path string         `json:"path"`
 }
 
 type deploymentType string
@@ -43,33 +38,27 @@ const (
 )
 
 type depot struct {
-	config     depotConfig
-	depotPath  string
-	targetPath string
-	artifacts  map[strfmt.UUID]struct{}
+	config    depotConfig
+	depotPath string
+	artifacts map[strfmt.UUID]struct{}
 }
 
-func newDepot(targetPath string) (*depot, error) {
-	if fileutils.TargetExists(targetPath) && !fileutils.IsDir(targetPath) {
-		return nil, errors.New(fmt.Sprintf("target path must be a directory: %s", targetPath))
-	}
-
+func newDepot() (*depot, error) {
 	depotPath := filepath.Join(storage.CachePath(), depotName)
-	configFile := filepath.Join(targetPath, configDir, depotFile)
 
 	result := &depot{
 		config: depotConfig{
 			Deployments: map[strfmt.UUID][]deployment{},
 		},
-		depotPath:  depotPath,
-		targetPath: targetPath,
-		artifacts:  map[strfmt.UUID]struct{}{},
+		depotPath: depotPath,
+		artifacts: map[strfmt.UUID]struct{}{},
 	}
 
 	if !fileutils.TargetExists(depotPath) {
 		return result, nil
 	}
 
+	configFile := filepath.Join(depotPath, depotFile)
 	if fileutils.TargetExists(configFile) {
 		b, err := fileutils.ReadFile(configFile)
 		if err != nil {
@@ -79,11 +68,15 @@ func newDepot(targetPath string) (*depot, error) {
 			return nil, errs.Wrap(err, "failed to unmarshal depot file")
 		}
 
-		// Filter out artifacts that no longer exist (eg. user ran `state clean cache`)
-		for id := range result.config.Deployments {
+		// Filter out deployments that no longer exist (eg. user ran `state clean cache`)
+		for id, deployments := range result.config.Deployments {
 			if !fileutils.DirExists(result.Path(id)) {
 				delete(result.config.Deployments, id)
+				continue
 			}
+			result.config.Deployments[id] = sliceutils.Filter(deployments, func(d deployment) bool {
+				return fileutils.DirExists(d.Path)
+			})
 		}
 	}
 
@@ -128,9 +121,20 @@ func (d *depot) Put(id strfmt.UUID) error {
 }
 
 // DeployViaLink will take an artifact from the depot and link it to the target path.
-func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc string) error {
+func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) error {
 	if !d.Exists(id) {
 		return errs.New("artifact not found in depot")
+	}
+
+	// Collect artifact meta info
+	var err error
+	absoluteDest, err = fileutils.ResolvePath(absoluteDest)
+	if err != nil {
+		return errs.Wrap(err, "failed to resolve path")
+	}
+
+	if err := fileutils.MkdirUnlessExists(absoluteDest); err != nil {
+		return errs.Wrap(err, "failed to create path")
 	}
 
 	absoluteSrc := filepath.Join(d.Path(id), relativeSrc)
@@ -139,7 +143,7 @@ func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc string) error {
 	}
 
 	// Copy or link the artifact files, depending on whether the artifact in question relies on file transformations
-	if err := smartlink.LinkContents(absoluteSrc, d.targetPath); err != nil {
+	if err := smartlink.LinkContents(absoluteSrc, absoluteDest); err != nil {
 		return errs.Wrap(err, "failed to link artifact")
 	}
 
@@ -147,15 +151,25 @@ func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc string) error {
 	if _, ok := d.config.Deployments[id]; !ok {
 		d.config.Deployments[id] = []deployment{}
 	}
-	d.config.Deployments[id] = append(d.config.Deployments[id], deployment{Type: deploymentTypeLink})
+	d.config.Deployments[id] = append(d.config.Deployments[id], deployment{Type: deploymentTypeLink, Path: absoluteDest})
 
 	return nil
 }
 
 // DeployViaCopy will take an artifact from the depot and copy it to the target path.
-func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc string) error {
+func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) error {
 	if !d.Exists(id) {
 		return errs.New("artifact not found in depot")
+	}
+
+	var err error
+	absoluteDest, err = fileutils.ResolvePath(absoluteDest)
+	if err != nil {
+		return errs.Wrap(err, "failed to resolve path")
+	}
+
+	if err := fileutils.MkdirUnlessExists(absoluteDest); err != nil {
+		return errs.Wrap(err, "failed to create path")
 	}
 
 	absoluteSrc := filepath.Join(d.Path(id), relativeSrc)
@@ -164,7 +178,7 @@ func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc string) error {
 	}
 
 	// Copy or link the artifact files, depending on whether the artifact in question relies on file transformations
-	if err := fileutils.CopyFiles(absoluteSrc, d.targetPath); err != nil {
+	if err := fileutils.CopyFiles(absoluteSrc, absoluteDest); err != nil {
 		var errExist *fileutils.ErrAlreadyExist
 		if errors.As(err, &errExist) {
 			logging.Warning("Skipping files that already exist: " + errs.JoinMessage(errExist))
@@ -177,7 +191,7 @@ func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc string) error {
 	if _, ok := d.config.Deployments[id]; !ok {
 		d.config.Deployments[id] = []deployment{}
 	}
-	d.config.Deployments[id] = append(d.config.Deployments[id], deployment{Type: deploymentTypeCopy})
+	d.config.Deployments[id] = append(d.config.Deployments[id], deployment{Type: deploymentTypeCopy, Path: absoluteDest})
 
 	return nil
 }
@@ -187,9 +201,20 @@ func (d *depot) Undeploy(id strfmt.UUID, relativeSrc, path string) error {
 		return errs.New("artifact not found in depot")
 	}
 
+	var err error
+	path, err = fileutils.ResolvePath(path)
+	if err != nil {
+		return errs.Wrap(err, "failed to resolve path")
+	}
+
 	// Find record of our deployment
-	if _, ok := d.config.Deployments[id]; !ok {
+	deployments, ok := d.config.Deployments[id]
+	if !ok {
 		return errs.New("deployment for %s not found in depot", id)
+	}
+	deploy := sliceutils.Filter(deployments, func(d deployment) bool { return d.Path == path })
+	if len(deploy) != 1 {
+		return errs.New("no deployment found for %s in depot", path)
 	}
 
 	// Perform uninstall based on deployment type
@@ -198,7 +223,7 @@ func (d *depot) Undeploy(id strfmt.UUID, relativeSrc, path string) error {
 	}
 
 	// Write changes to config
-	delete(d.config.Deployments, id)
+	d.config.Deployments[id] = sliceutils.Filter(d.config.Deployments[id], func(d deployment) bool { return d.Path != path })
 
 	return nil
 }
@@ -216,7 +241,7 @@ func (d *depot) Save() error {
 	}
 
 	// Write config file changes to disk
-	configFile := filepath.Join(d.targetPath, configDir, depotFile)
+	configFile := filepath.Join(d.depotPath, depotFile)
 	b, err := json.Marshal(d.config)
 	if err != nil {
 		return errs.Wrap(err, "failed to marshal depot file")
@@ -227,10 +252,15 @@ func (d *depot) Save() error {
 	return nil
 }
 
-func (d *depot) List() map[strfmt.UUID]struct{} {
+func (d *depot) List(path string) map[strfmt.UUID]struct{} {
+	path = fileutils.ResolvePathIfPossible(path)
 	result := map[strfmt.UUID]struct{}{}
-	for id, _ := range d.config.Deployments {
-		result[id] = struct{}{}
+	for id, deploys := range d.config.Deployments {
+		for _, p := range deploys {
+			if fileutils.ResolvePathIfPossible(p.Path) == path {
+				result[id] = struct{}{}
+			}
+		}
 	}
 
 	return result

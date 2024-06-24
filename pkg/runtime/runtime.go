@@ -49,7 +49,7 @@ func New(path string) (*Runtime, error) {
 		return nil, errs.Wrap(err, "Could not create runtime directory")
 	}
 
-	depot, err := newDepot(path)
+	depot, err := newDepot()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create depot")
 	}
@@ -118,7 +118,7 @@ func (r *Runtime) Update(bp *buildplan.BuildPlan, hash string, setOpts ...SetOpt
 // calculated data
 func (r *Runtime) hydrateEnvironment() error {
 	// Ingest environment files according to artifacts referenced in depot
-	for id := range r.depot.List() {
+	for id := range r.depot.List(r.path) {
 		if _, err := r.envCollection.Load(r.depot.Path(id)); err != nil {
 			return errs.Wrap(err, "Failed to load environment")
 		}

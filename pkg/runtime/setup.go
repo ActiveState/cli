@@ -75,7 +75,7 @@ type setup struct {
 }
 
 func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depot *depot, opts *Opts) (*setup, error) {
-	installedArtifacts := depot.List()
+	installedArtifacts := depot.List(path)
 
 	platformID, err := model.FilterCurrentPlatform(sysinfo.OS().String(), bp.Platforms(), opts.PreferredLibcVersion)
 	if err != nil {
@@ -366,6 +366,7 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 		}
 	}
 
+
 	return nil
 }
 
@@ -422,14 +423,14 @@ func (s *setup) install(id strfmt.UUID) (rerr error) {
 	}
 
 	if envDef.NeedsTransforms() {
-		if err := s.depot.DeployViaCopy(id, envDef.InstallDir); err != nil {
+		if err := s.depot.DeployViaCopy(id, envDef.InstallDir, s.path); err != nil {
 			return errs.Wrap(err, "Could not deploy artifact via copy")
 		}
 		if err := envDef.ApplyFileTransforms(s.path); err != nil {
 			return errs.Wrap(err, "Could not apply env transforms")
 		}
 	} else {
-		if err := s.depot.DeployViaLink(id, envDef.InstallDir); err != nil {
+		if err := s.depot.DeployViaLink(id, envDef.InstallDir, s.path); err != nil {
 			return errs.Wrap(err, "Could not deploy artifact via link")
 		}
 	}
