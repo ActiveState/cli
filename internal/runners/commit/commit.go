@@ -155,8 +155,7 @@ func (c *Commit) Run() (rerr error) {
 	}
 
 	// Get old buildplan.
-	rtTarget := target.NewProjectTarget(c.proj, &stagedCommitID, target.TriggerCommit)
-	commit, err := bp.FetchCommit(localCommitID, rtTarget.Owner(), rtTarget.Name(), nil)
+	commit, err := bp.FetchCommit(localCommitID, c.proj.Owner(), c.proj.Name(), nil)
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch build result")
 	}
