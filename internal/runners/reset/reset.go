@@ -1,6 +1,8 @@
 package reset
 
 import (
+	"strings"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -86,7 +88,7 @@ func (r *Reset) Run(params *Params) error {
 		}
 		commitID = *latestCommit
 
-	case params.CommitID == local:
+	case strings.EqualFold(params.CommitID, local):
 		localCommitID, err := localcommit.Get(r.project.Dir())
 		if err != nil {
 			return errs.Wrap(err, "Unable to get local commit")

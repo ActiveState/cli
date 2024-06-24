@@ -160,38 +160,46 @@ const ActCommandInputError = "command-input-error"
 // ActExecutorExit is the event action used for executor exit codes
 const ActExecutorExit = "executor-exit"
 
-// UpdateLabelSuccess is the sent if an auto-update was successful
+// UpdateLabelSuccess is sent if an auto-update was successful
 const UpdateLabelSuccess = "success"
 
-// UpdateLabelFailed is the sent if an auto-update failed
+// UpdateLabelFailed is sent if an auto-update failed
 const UpdateLabelFailed = "failure"
 
-// UpdateLabelTrue is the sent if we should auto-update
+// UpdateLabelTrue is sent if we should auto-update
 const UpdateLabelTrue = "true"
 
-// UpdateLabelForward is the sent if we should not auto-update as we are forwarding a command
+// UpdateLabelForward is sent if we should not auto-update as we are forwarding a command
 const UpdateLabelForward = "forward"
 
-// UpdateLabelUnitTest is the sent if we should not auto-update as we are running unit tests
+// UpdateLabelUnitTest is sent if we should not auto-update as we are running unit tests
 const UpdateLabelUnitTest = "unittest"
 
-// UpdateLabelConflict is the sent if we should not auto-update as the current command might conflict
+// UpdateLabelConflict is sent if we should not auto-update as the current command might conflict
 const UpdateLabelConflict = "conflict"
 
-// UpdateLabelDisabledEnv is the sent if we should not auto-update as the user has disabled auto-updates via the environment
+// UpdateLabelDisabledEnv is sent if we should not auto-update as the user has disabled auto-updates via the environment
 const UpdateLabelDisabledEnv = "disabled-env"
 
-// UpdateLabelDisabledConfig is the sent if we should not auto-update as the user has disabled auto-updates via the config
+// UpdateLabelDisabledConfig is sent if we should not auto-update as the user has disabled auto-updates via the config
 const UpdateLabelDisabledConfig = "disabled-config"
 
-// AutoUpdateLabelDisabledCI is the sent if we should not auto-update as we are on CI
+// AutoUpdateLabelDisabledCI is sent if we should not auto-update as we are on CI
 const UpdateLabelCI = "ci"
 
-// UpdateLabelFreshInstall is the sent if we should not auto-update as we are on a fresh install
+// UpdateLabelFreshInstall is sent if we should not auto-update as we are on a fresh install
 const UpdateLabelFreshInstall = "fresh-install"
 
-// UpdateLabelLocked is the sent if we should not auto-update as the state tool is locked
+// UpdateLabelLocked is sent if we should not auto-update as the state tool is locked
 const UpdateLabelLocked = "locked"
+
+// UpdateLabelSkipChecks is sent if we should not auto-update because the command explicitly skips
+// auto update checks.
+const UpdateLabelSkipChecks = "skip-checks"
+
+// UpdateLabelStructuredOutput is sent if we should not auto-update because we're running in
+// structured output (JSON) mode.
+const UpdateLabelStructuredOutput = "structured-output"
 
 // UpdateLabelTooFreq is the sent if we should not auto-update as the last check was too recent
 const UpdateLabelTooFreq = "too-frequent"

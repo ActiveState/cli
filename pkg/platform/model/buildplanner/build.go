@@ -58,7 +58,11 @@ func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, 
 	resp := &response.ProjectCommitResponse{}
 	err := b.client.Run(request.ProjectCommit(commitID.String(), owner, project, target), resp)
 	if err != nil {
-		return nil, processBuildPlannerError(err, "failed to fetch commit")
+		err = processBuildPlannerError(err, "failed to fetch commit")
+		if !b.auth.Authenticated() {
+			err = errs.AddTips(err, locale.T("tip_private_project_auth"))
+		}
+		return nil, err
 	}
 
 	// The BuildPlanner will return a build plan with a status of
