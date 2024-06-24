@@ -61,7 +61,10 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, lang string, ex
 	}
 
 	// Run `state init`, creating the project.
-	cp := ts.Spawn(computedArgs...)
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs(computedArgs...),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
+	)
 	cp.Expect("Initializing Project")
 	cp.Expect("Skipping runtime setup")
 	cp.Expect(fmt.Sprintf("Project '%s' has been successfully initialized", namespace))
@@ -112,21 +115,24 @@ func (suite *InitIntegrationTestSuite) TestInit_InferLanguageFromUse() {
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3")
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", "ActiveState-CLI/Python3"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
+	)
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("use", "Python3"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp = ts.Spawn("use", "Python3")
 	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	pname := strutils.UUID()
 	namespace := fmt.Sprintf("%s/%s", e2e.PersistentUsername, pname)
-	cp = ts.Spawn("init", namespace)
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("init", namespace),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
+	)
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
@@ -166,10 +172,7 @@ func (suite *InitIntegrationTestSuite) TestInit_Resolved() {
 	namespace := fmt.Sprintf("%s/%s", e2e.PersistentUsername, pname)
 
 	// Run `state init`, creating the project.
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("init", namespace, "--language", "python@3.10"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp := ts.Spawn("init", namespace, "--language", "python@3.10")
 	cp.Expect(fmt.Sprintf("Project '%s' has been successfully initialized", namespace), e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(e2e.PersistentUsername, pname.String())
@@ -203,12 +206,14 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrg() {
 	projectName := fmt.Sprintf("test-project-%s", sysinfo.OS().String())
 
 	// First, checkout project to set last used org.
-	cp := ts.Spawn("checkout", fmt.Sprintf("%s/Python3", org))
-	cp.Expect("Skipping runtime setup")
+	cp := ts.Spawn("checkout", fmt.Sprintf("%s/Empty", org))
 	cp.Expect("Checked out project")
 
 	// Now, run `state init` without specifying the org.
-	cp = ts.Spawn("init", projectName, "--language", "python@3")
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("init", projectName, "--language", "python@3"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
+	)
 	cp.Expect(fmt.Sprintf("%s/%s", org, projectName))
 	cp.Expect("to track changes for this environment")
 	cp.Expect("successfully initialized")
@@ -226,12 +231,11 @@ func (suite *InitIntegrationTestSuite) TestInit_ChangeSummary() {
 
 	ts.LoginAsPersistentUser()
 
-	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
-	cp.Expect("Successfully set")
-	cp.ExpectExitCode(0)
-
 	project := "test-init-change-summary-" + sysinfo.OS().String()
-	cp = ts.Spawn("init", "ActiveState-CLI/"+project, "--language", "python@3.10.10")
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("init", "ActiveState-CLI/"+project, "--language", "python@3.10.10"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
+	)
 	cp.Expect("Resolving Dependencies")
 	cp.Expect("Done")
 	ts.NotifyProjectCreated("ActiveState-CLI", project)
