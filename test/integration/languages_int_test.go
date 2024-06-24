@@ -58,6 +58,9 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	cp.Expect("python")
 	cp.ExpectExitCode(0)
 
+	cp = ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
 	cp = ts.Spawn("languages", "install", "python@3.9.16")
 	cp.Expect("Language updated: python@3.9.16")
 	// This can take a little while
@@ -84,12 +87,9 @@ func (suite *LanguagesIntegrationTestSuite) TestJSON() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out")
-	cp.ExpectExitCode(0)
+	ts.PrepareProject("ActiveState-CLI/Python3", "971e48e4-7f9b-44e6-ad48-86cd03ffc12d")
 
-	cp = ts.Spawn("languages", "-o", "json")
+	cp := ts.Spawn("languages", "-o", "json")
 	cp.Expect(`[{"name":"python","version":`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
@@ -120,9 +120,9 @@ func (suite *LanguagesIntegrationTestSuite) TestWildcards() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out")
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
 	// Test explicit wildcard.
@@ -133,7 +133,10 @@ func (suite *LanguagesIntegrationTestSuite) TestWildcards() {
 	cp.Expect("→ >=3.9,<3.10")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("reset", "-n")
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("reset", "-n"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
+	)
 	cp.Expect("Successfully reset")
 	cp.ExpectExitCode(0)
 
@@ -147,10 +150,7 @@ func (suite *LanguagesIntegrationTestSuite) TestWildcards() {
 
 	// Test non-matching version.
 	// Enable the runtime to actually solve the build and invalidate the version.
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("languages", "install", "python@100"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp = ts.Spawn("languages", "install", "python@100")
 	cp.Expect("Failed")
 	cp.ExpectNotExitCode(0)
 }
