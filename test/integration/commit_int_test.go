@@ -45,15 +45,11 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	data = bytes.ReplaceAll(data, []byte("casestyle"), []byte("case"))
 	suite.Require().NoError(fileutils.WriteFile(scriptPath, data), "Update buildscript")
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("commit"),
-	)
+	cp = ts.Spawn("commit")
 	cp.Expect("successfully created")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("pkg"),
-	)
+	cp = ts.Spawn("pkg")
 	cp.Expect("case ", e2e.RuntimeSourcingTimeoutOpt) // note: intentional trailing whitespace to not match 'casestyle'
 	cp.ExpectExitCode(0)
 }
