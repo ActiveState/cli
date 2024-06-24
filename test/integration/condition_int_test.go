@@ -5,10 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/testhelpers/suite"
-
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
 
@@ -23,9 +21,7 @@ func (suite *ConditionIntegrationTestSuite) TestCondition() {
 
 	suite.PrepareActiveStateYAML(ts)
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("run", "test"),
-	)
+	cp := ts.Spawn("run", "test")
 	cp.Expect(`projectNameValue`)
 	cp.Expect(`projectOwnerValue`)
 	cp.Expect(`projectNamespaceValue`)
@@ -35,24 +31,17 @@ func (suite *ConditionIntegrationTestSuite) TestCondition() {
 	cp.Expect(`shellValue`)
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("activate"),
-		e2e.OptAppendEnv(constants.DisableActivateEventsEnvVarName+"=false"),
-	)
+	cp = ts.Spawn("activate")
 	cp.Expect(`Activation Event Ran`)
 	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("run", "complex-true"),
-	)
+	cp = ts.Spawn("run", "complex-true")
 	cp.Expect(`I exist`)
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("run", "complex-false"),
-	)
+	cp = ts.Spawn("run", "complex-false")
 	cp.ExpectExitCode(1)
 }
 
@@ -63,9 +52,7 @@ func (suite *ConditionIntegrationTestSuite) TestMixin() {
 
 	suite.PrepareActiveStateYAML(ts)
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("run", "MixinUser"),
-	)
+	cp := ts.Spawn("run", "MixinUser")
 	cp.ExpectExitCode(0)
 	suite.Assert().NotContains(cp.Output(), "authenticated: yes", "expected not to be authenticated, output was:\n%s.", cp.Output())
 	suite.Assert().NotContains(cp.Output(), e2e.PersistentUsername, "expected not to be authenticated, output was:\n%s", cp.Output())
@@ -73,9 +60,7 @@ func (suite *ConditionIntegrationTestSuite) TestMixin() {
 	ts.LoginAsPersistentUser()
 	defer ts.LogoutUser()
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("run", "MixinUser"),
-	)
+	cp = ts.Spawn("run", "MixinUser")
 	cp.Expect("authenticated: yes")
 	cp.Expect(e2e.PersistentUsername)
 	cp.ExpectExitCode(0)
@@ -88,9 +73,7 @@ func (suite *ConditionIntegrationTestSuite) TestConditionOSName() {
 
 	suite.PrepareActiveStateYAML(ts)
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("run", "OSName"),
-	)
+	cp := ts.Spawn("run", "OSName")
 	switch runtime.GOOS {
 	case "windows":
 		cp.Expect(`using-windows`)
@@ -109,9 +92,7 @@ func (suite *ConditionIntegrationTestSuite) TestConditionSyntaxError() {
 
 	suite.PrepareActiveStateYAMLWithSyntaxError(ts)
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("run", "test"),
-	)
+	cp := ts.Spawn("run", "test")
 	cp.Expect(`not defined`) // for now we aren't passing the error up the chain, so invalid syntax will lead to empty result
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
@@ -119,7 +100,7 @@ func (suite *ConditionIntegrationTestSuite) TestConditionSyntaxError() {
 
 func (suite *ConditionIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
 	asyData := strings.TrimSpace(`
-project: https://platform.activestate.com/ActiveState-CLI/test
+project: https://platform.activestate.com/ActiveState-CLI/Empty
 constants:
   - name: projectName
     value: invalidProjectName
@@ -218,11 +199,11 @@ events:
 `)
 
 	ts.PrepareActiveStateYAML(asyData)
-	ts.PrepareCommitIdFile("9090c128-e948-4388-8f7f-96e2c1e00d98")
+	ts.PrepareCommitIdFile("6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8")
 }
 func (suite *ConditionIntegrationTestSuite) PrepareActiveStateYAMLWithSyntaxError(ts *e2e.Session) {
 	asyData := strings.TrimSpace(`
-project: https://platform.activestate.com/ActiveState-CLI/test
+project: https://platform.activestate.com/ActiveState-CLI/Empty
 scripts:
   - name: test
     language: bash
@@ -237,7 +218,7 @@ scripts:
 `)
 
 	ts.PrepareActiveStateYAML(asyData)
-	ts.PrepareCommitIdFile("9090c128-e948-4388-8f7f-96e2c1e00d98")
+	ts.PrepareCommitIdFile("6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8")
 }
 
 func TestConditionIntegrationTestSuite(t *testing.T) {
