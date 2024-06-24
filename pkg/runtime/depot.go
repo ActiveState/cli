@@ -3,7 +3,6 @@ package runtime
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -26,8 +25,9 @@ type depotConfig struct {
 }
 
 type deployment struct {
-	Type deploymentType `json:"type"`
-	Path string         `json:"path"`
+	Type  deploymentType `json:"type"`
+	Path  string         `json:"path"`
+	Files []string       `json:"files"`
 }
 
 type deploymentType string
@@ -75,7 +75,7 @@ func newDepot() (*depot, error) {
 				continue
 			}
 			result.config.Deployments[id] = sliceutils.Filter(deployments, func(d deployment) bool {
-				return fileutils.DirExists(d.Path)
+				return someFilesExist(d.Files, d.Path)
 			})
 		}
 	}
@@ -147,11 +147,20 @@ func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) 
 		return errs.Wrap(err, "failed to link artifact")
 	}
 
+	files, err := fileutils.ListDir(absoluteSrc, false)
+	if err != nil {
+		return errs.Wrap(err, "failed to list files")
+	}
+
 	// Record deployment to config
 	if _, ok := d.config.Deployments[id]; !ok {
 		d.config.Deployments[id] = []deployment{}
 	}
-	d.config.Deployments[id] = append(d.config.Deployments[id], deployment{Type: deploymentTypeLink, Path: absoluteDest})
+	d.config.Deployments[id] = append(d.config.Deployments[id], deployment{
+		Type:  deploymentTypeLink,
+		Path:  absoluteDest,
+		Files: files.RelativePaths(),
+	})
 
 	return nil
 }
@@ -187,11 +196,20 @@ func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) 
 		}
 	}
 
+	files, err := fileutils.ListDir(absoluteSrc, false)
+	if err != nil {
+		return errs.Wrap(err, "failed to list files")
+	}
+
 	// Record deployment to config
 	if _, ok := d.config.Deployments[id]; !ok {
 		d.config.Deployments[id] = []deployment{}
 	}
-	d.config.Deployments[id] = append(d.config.Deployments[id], deployment{Type: deploymentTypeCopy, Path: absoluteDest})
+	d.config.Deployments[id] = append(d.config.Deployments[id], deployment{
+		Type:  deploymentTypeCopy,
+		Path:  absoluteDest,
+		Files: files.RelativePaths(),
+	})
 
 	return nil
 }
@@ -264,4 +282,20 @@ func (d *depot) List(path string) map[strfmt.UUID]struct{} {
 	}
 
 	return result
+}
+
+// someFilesExist will check up to 10 files from the given filepaths, if any of them exist it returns true.
+// This is a temporary workaround for https://activestatef.atlassian.net/browse/DX-2913
+// As of right now we cannot assert which artifact owns a given file, and so simply asserting if any one given file exists
+// is inssuficient as an assertion.
+func someFilesExist(filePaths []string, basePath string) bool {
+	for x, filePath := range filePaths {
+		if x == 10 {
+			break
+		}
+		if fileutils.TargetExists(filepath.Join(basePath, filePath)) {
+			return true
+		}
+	}
+	return false
 }

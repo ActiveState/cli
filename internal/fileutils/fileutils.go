@@ -1107,7 +1107,7 @@ type DirEntry struct {
 	rootPath     string
 }
 
-func (d DirEntry) Path() string {
+func (d DirEntry) AbsolutePath() string {
 	return d.absolutePath
 }
 
@@ -1116,9 +1116,19 @@ func (d DirEntry) RelativePath() string {
 	return strings.TrimPrefix(d.absolutePath, d.rootPath)
 }
 
+type DirEntries []DirEntry
+
+func (d DirEntries) RelativePaths() []string {
+	result := []string{}
+	for _, de := range d {
+		result = append(result, de.RelativePath())
+	}
+	return result
+}
+
 // ListDir recursively lists filepaths under the given sourcePath
 // This does not follow symlinks
-func ListDir(sourcePath string, includeDirs bool) ([]DirEntry, error) {
+func ListDir(sourcePath string, includeDirs bool) (DirEntries, error) {
 	result := []DirEntry{}
 	sourcePath = filepath.Clean(sourcePath)
 	if err := filepath.WalkDir(sourcePath, func(path string, f fs.DirEntry, err error) error {
