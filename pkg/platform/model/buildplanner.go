@@ -687,28 +687,12 @@ func (bp *BuildPlanner) BuildTarget(owner, project, commitID, target string) err
 		return processBuildPlannerError(err, "Failed to evaluate target")
 	}
 
-	if resp.Project == nil {
-		return errs.New("Project is nil")
-	}
-
-	if bpModel.IsErrorResponse(resp.Project.Type) {
-		return bpModel.ProcessProjectError(resp.Project, "Could not evaluate target")
-	}
-
-	if resp.Project.Commit == nil {
-		return errs.New("Commit is nil")
-	}
-
-	if bpModel.IsErrorResponse(resp.Project.Commit.Type) {
-		return bpModel.ProcessCommitError(resp.Project.Commit, "Could not process error response from evaluate target")
-	}
-
-	if resp.Project.Commit.Build == nil {
+	if resp.Build == nil {
 		return errs.New("Build is nil")
 	}
 
-	if bpModel.IsErrorResponse(resp.Project.Commit.Build.Type) {
-		return bpModel.ProcessBuildError(resp.Project.Commit.Build, "Could not process error response from evaluate target")
+	if bpModel.IsErrorResponse(resp.Build.Type) {
+		return bpModel.ProcessBuildError(resp.Build, "Could not process error response from evaluate target")
 	}
 
 	return nil

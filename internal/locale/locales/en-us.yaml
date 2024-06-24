@@ -1605,3 +1605,8 @@ vulnerability_medium:
   other: "[YELLOW]{{.V0}} Medium[/RESET]"
 vulnerability_low:
   other: "[GREEN]{{.V0}} Low[/RESET]"
+err_main_jwt:
+  other: |
+    State Tool could not obtain an authentication token from its internal service. 
+    Please try again or contact support if this issue persists. 
+    Error received: {{.V0}}
