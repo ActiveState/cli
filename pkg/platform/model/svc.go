@@ -190,13 +190,13 @@ func (m *SvcModel) GetJWT(ctx context.Context) (*mono_models.JWT, error) {
 		return nil, errs.Wrap(err, "Error sending messages request")
 	}
 
-	jwt := mono_models.JWT{}
+	jwt := &mono_models.JWT{}
 	err := json.Unmarshal(resp.Payload, &jwt)
 	if err != nil {
 		return nil, errs.Wrap(err, "Error unmarshaling JWT")
 	}
 
-	return &jwt, nil
+	return jwt, nil
 }
 
 func jsonFromMap(m map[string]interface{}) string {
