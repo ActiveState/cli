@@ -203,12 +203,8 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 		e2e.OptWD(filepath.Join(ts.Dirs.Work, "Python3")),
 	)
-	if runtime.GOOS == "windows" {
-		customRTPath, err = fileutils.GetLongPathName(customRTPath)
-		suite.Require().NoError(err)
-		customRTPath = strings.ToUpper(customRTPath[:1]) + strings.ToLower(customRTPath[1:]) // capitalize drive letter
-	}
 	cp.Expect(customRTPath, e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExit()
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutNotFound() {
