@@ -48,6 +48,7 @@ var overrideAsyncTriggers = map[target.Trigger]bool{
 	target.TriggerScript:   true,
 	target.TriggerDeploy:   true,
 	target.TriggerUse:      true,
+	target.TriggerExport:   true,
 }
 
 // SolveAndUpdate should be called after runtime mutations.
