@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/pkg/executors"
 	"github.com/go-openapi/strfmt"
 	"golang.org/x/net/context"
 
@@ -25,7 +26,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/runtime/events"
 	"github.com/ActiveState/cli/pkg/runtime/events/progress"
-	"github.com/ActiveState/cli/pkg/runtime/executors"
 	"github.com/ActiveState/cli/pkg/runtime/internal/buildlog"
 	"github.com/ActiveState/cli/pkg/runtime/internal/camel"
 	"github.com/ActiveState/cli/pkg/runtime/internal/envdef"
@@ -365,7 +365,6 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 			return errs.Wrap(err, "Could not save camel env")
 		}
 	}
-
 
 	return nil
 }

@@ -17,7 +17,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	runtime_helpers "github.com/ActiveState/cli/pkg/runtime/helpers"
+	"github.com/ActiveState/cli/pkg/runtime_helpers"
 )
 
 type Params struct {

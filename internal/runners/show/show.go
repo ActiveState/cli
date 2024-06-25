@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	runtime_helpers "github.com/ActiveState/cli/pkg/runtime/helpers"
+	"github.com/ActiveState/cli/pkg/runtime_helpers"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constraints"

@@ -14,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/project"
 	rt "github.com/ActiveState/cli/pkg/runtime"
-	runtime_helpers "github.com/ActiveState/cli/pkg/runtime/helpers"
+	"github.com/ActiveState/cli/pkg/runtime_helpers"
 )
 
 // Disabled due to DX-1514

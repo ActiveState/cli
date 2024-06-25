@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	rt "github.com/ActiveState/cli/pkg/runtime"
-	runtime_helpers "github.com/ActiveState/cli/pkg/runtime/helpers"
+	"github.com/ActiveState/cli/pkg/runtime_helpers"
 )
 
 type CheckoutIntegrationTestSuite struct {

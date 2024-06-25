@@ -24,7 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	runtime_helpers "github.com/ActiveState/cli/pkg/runtime/helpers"
+	"github.com/ActiveState/cli/pkg/runtime_helpers"
 	"github.com/thoas/go-funk"
 )
 

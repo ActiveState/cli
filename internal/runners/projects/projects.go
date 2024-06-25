@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/pkg/runtime/helpers"
+	"github.com/ActiveState/cli/pkg/runtime_helpers"
 )
 
 // Holds a union of project and organization parameters.
@@ -27,7 +27,7 @@ func newProjectWithOrg(prime primeable, name, org string, checkouts []string) pr
 	for _, checkout := range checkouts {
 		var execDir string
 		if proj, err := project.FromPath(checkout); err == nil {
-			execDir = runtime_helpers.ExecutorPathFromProject(proj)
+			execDir = runtime_helpers.runtime_helpers.ExecutorPathFromProject(proj)
 		} else {
 			multilog.Error("Unable to get project %s from checkout: %v", checkout, err)
 		}

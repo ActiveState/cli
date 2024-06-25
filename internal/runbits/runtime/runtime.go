@@ -27,7 +27,7 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/runtime"
 	"github.com/ActiveState/cli/pkg/runtime/events"
-	"github.com/ActiveState/cli/pkg/runtime/helpers"
+	"github.com/ActiveState/cli/pkg/runtime_helpers"
 	"github.com/go-openapi/strfmt"
 	"golang.org/x/net/context"
 )
@@ -157,7 +157,7 @@ func Update(
 		}
 	}()
 
-	rtHash, err := runtime_helpers.Hash(proj, &commitID)
+	rtHash, err := runtime_helpers.runtime_helpers.Hash(proj, &commitID)
 	if err != nil {
 		ah.fire(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeCache, nil)
 		return nil, errs.Wrap(err, "Failed to get runtime hash")

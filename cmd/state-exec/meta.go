@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/cli/pkg/runtime/executors/execmeta"
+	"github.com/ActiveState/cli/pkg/executors/execmeta"
 )
 
 const (

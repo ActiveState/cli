@@ -5,13 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/go-openapi/strfmt"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/runtime/events"
 	"github.com/ActiveState/cli/pkg/runtime/internal/envdef"
 )
 
@@ -179,26 +176,6 @@ func (r *Runtime) Env(inherit bool) Environment {
 
 func (r *Runtime) Path() string {
 	return r.path
-}
-
-func WithEventHandlers(handlers ...events.HandlerFunc) SetOpt {
-	return func(opts *Opts) { opts.EventHandlers = handlers }
-}
-
-func WithBuildlogFilePath(path string) SetOpt {
-	return func(opts *Opts) { opts.BuildlogFilePath = path }
-}
-
-func WithPreferredLibcVersion(version string) SetOpt {
-	return func(opts *Opts) { opts.PreferredLibcVersion = version }
-}
-
-func WithAnnotations(owner, project string, commitUUID strfmt.UUID) SetOpt {
-	return func(opts *Opts) {
-		opts.Annotations.Owner = owner
-		opts.Annotations.Project = project
-		opts.Annotations.CommitUUID = commitUUID
-	}
 }
 
 func IsRuntimeDir(dir string) bool {

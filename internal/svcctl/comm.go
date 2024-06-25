@@ -20,7 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/svcctl/svcmsg"
-	"github.com/ActiveState/cli/pkg/runtime/executors/execmeta"
+	"github.com/ActiveState/cli/pkg/executors/execmeta"
 )
 
 var (

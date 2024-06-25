@@ -14,9 +14,9 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/svcctl"
+	"github.com/ActiveState/cli/pkg/executors"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/runtime"
-	"github.com/ActiveState/cli/pkg/runtime/executors"
 )
 
 type DefaultConfigurer interface {

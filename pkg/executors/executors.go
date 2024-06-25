@@ -6,9 +6,8 @@ import (
 	rt "runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/pkg/executors/execmeta"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/runtime/executors/execmeta"
-
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/installation"
