@@ -168,9 +168,14 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	if auth.AvailableAPIToken() != "" {
 		jwt, err := svcmodel.GetJWT(context.Background())
 		if err != nil {
-			return locale.NewError("err_main_jwt", "", errs.JoinMessage(err))
+			multilog.Critical("Could not get JWT: %v", errs.JoinMessage(err))
 		}
-		auth.UpdateSession(jwt)
+		if err != nil || jwt == nil {
+			// Could not authenticate; user got logged out
+			auth.Logout()
+		} else {
+			auth.UpdateSession(jwt)
+		}
 	}
 
 	projectfile.RegisterMigrator(migrator.NewMigrator(auth, cfg))
