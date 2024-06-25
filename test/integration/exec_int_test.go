@@ -105,6 +105,7 @@ func (suite *ExecIntegrationTestSuite) TestExec_Args() {
 		e2e.OptArgs("exec", "--", "python3", "-c",
 			"import sys; print(sys.argv); print(\"Number of arguments: %d\" % (len(sys.argv) - 1))",
 			args[0], args[1], args[2]),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect(args[0])
 	cp.Expect(args[1])
