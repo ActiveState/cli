@@ -275,7 +275,8 @@
       "B": "ba|bb|bc",
       "C": "ca",
       "D": "da",
-      "E": "ea"
+      "E": "ea",
+      "OTHER": "something"
     }
   }
 ]

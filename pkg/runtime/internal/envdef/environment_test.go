@@ -89,9 +89,7 @@ func (suite *EnvironmentTestSuite) TestInheritPath() {
 		}`), ed1)
 	require.NoError(suite.T(), err)
 
-	env, err := ed1.GetEnvBasedOn(func(k string) (string, bool) {
-		return "OLDVALUE", true
-	})
+	env, err := ed1.GetEnvBasedOn(map[string]string{"PATH": "OLDVALUE"})
 	require.NoError(suite.T(), err)
 	suite.True(strings.HasPrefix(env["PATH"], "NEWVALUE"), "%s does not start with NEWVALUE", env["PATH"])
 	suite.True(strings.HasSuffix(env["PATH"], "OLDVALUE"), "%s does not end with OLDVALUE", env["PATH"])
@@ -127,12 +125,7 @@ func (suite *EnvironmentTestSuite) TestSharedTests() {
 				suite.Assert().NoError(err, "error merging %d-th definition", i)
 			}
 
-			lookupEnv := func(k string) (string, bool) {
-				res, ok := tc.BaseEnv[k]
-				return res, ok
-			}
-
-			res, err := ed.GetEnvBasedOn(lookupEnv)
+			res, err := ed.GetEnvBasedOn(tc.BaseEnv)
 			if tc.IsError {
 				suite.Assert().Error(err)
 				return

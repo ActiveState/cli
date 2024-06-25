@@ -3,11 +3,13 @@ package envdef
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/thoas/go-funk"
 
@@ -333,13 +335,13 @@ func (ev *EnvironmentVariable) ValueString() string {
 // environment (`Inherit==true`), the base environment defined by the
 // `envLookup` method is joined with these environment variables.
 // This function is mostly used for testing. Use GetEnv() in production.
-func (ed *EnvironmentDefinition) GetEnvBasedOn(envLookup func(string) (string, bool)) (map[string]string, error) {
-	res := map[string]string{}
+func (ed *EnvironmentDefinition) GetEnvBasedOn(envLookup map[string]string) (map[string]string, error) {
+	res := maps.Clone(envLookup)
 
 	for _, ev := range ed.Env {
 		pev := &ev
 		if pev.Inherit {
-			osValue, hasOsValue := envLookup(pev.Name)
+			osValue, hasOsValue := envLookup[pev.Name]
 			if hasOsValue {
 				osEv := ev
 				osEv.Values = []string{osValue}
@@ -350,7 +352,7 @@ func (ed *EnvironmentDefinition) GetEnvBasedOn(envLookup func(string) (string, b
 
 				}
 			}
-		} else if _, hasOsValue := os.LookupEnv(pev.Name); hasOsValue {
+		} else if _, hasOsValue := envLookup[pev.Name]; hasOsValue {
 			res[pev.Name] = "" // unset
 		}
 		// only add environment variable if at least one value is set (This allows us to remove variables from the environment.)
@@ -367,9 +369,9 @@ func (ed *EnvironmentDefinition) GetEnvBasedOn(envLookup func(string) (string, b
 // environment (`Inherit==true`), the base environment defined by the
 // `envLookup` method is joined with these environment variables.
 func (ed *EnvironmentDefinition) GetEnv(inherit bool) map[string]string {
-	lookupEnv := os.LookupEnv
-	if !inherit {
-		lookupEnv = func(_ string) (string, bool) { return "", false }
+	lookupEnv := map[string]string{}
+	if inherit {
+		lookupEnv = osutils.EnvSliceToMap(os.Environ())
 	}
 	res, err := ed.GetEnvBasedOn(lookupEnv)
 	if err != nil {
