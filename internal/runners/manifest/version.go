@@ -40,11 +40,11 @@ func resolveVersion(req types.Requirement, bpReqs buildplan.Ingredients) *resolv
 		requested = platformModel.BuildPlannerVersionConstraintsToString(req.VersionRequirement)
 	} else {
 		requested = locale.Tl("manifest_version_auto", "auto")
-		for _, bpr := range bpReqs {
-			if bpr.Namespace == req.Namespace && bpr.Name == req.Name {
-				resolved = bpr.Version
-				break
-			}
+	}
+	for _, bpr := range bpReqs {
+		if bpr.Namespace == req.Namespace && bpr.Name == req.Name {
+			resolved = bpr.Version
+			break
 		}
 	}
 
