@@ -46,12 +46,14 @@ type In struct {
 }
 
 var (
-	reqFuncName = "Req"
-	eqFuncName  = "Eq"
-	neFuncName  = "Ne"
-	gtFuncName  = "Gt"
-	gteFuncName = "Gte"
-	ltFuncName  = "Lt"
-	lteFuncName = "Lte"
-	andFuncName = "And"
+	reqFuncName       = "Req"
+	eqFuncName        = "Eq"
+	neFuncName        = "Ne"
+	gtFuncName        = "Gt"
+	gteFuncName       = "Gte"
+	ltFuncName        = "Lt"
+	lteFuncName       = "Lte"
+	andFuncName       = "And"
+	revisionFuncName  = "Revision"
+	buildFlagFuncName = "BuildFlag"
 )

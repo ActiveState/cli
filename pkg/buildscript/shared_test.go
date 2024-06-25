@@ -7,6 +7,12 @@ var atTime = "2000-01-01T00:00:00.000Z"
 var basicBuildScript = []byte(fmt.Sprintf(
 	`at_time = "%s"
 runtime = state_tool_artifacts(
+	build_flags = [
+		{
+			name = "foo",
+			value = "bar"
+		}
+	],
 	src = sources
 )
 sources = solve(
@@ -27,6 +33,12 @@ var basicBuildExpression = []byte(`{
     "in": "$runtime",
     "runtime": {
       "state_tool_artifacts": {
+        "build_flags": [
+          {
+            "name": "foo",
+            "value": "bar"
+          }
+        ],
         "src": "$sources"
       }
     },

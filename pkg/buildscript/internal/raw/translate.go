@@ -14,11 +14,14 @@ import (
 
 const (
 	AtTimeKey                         = "at_time"
-	RequirementNameKey                = "name"
+	NameKey                           = "name"
+	ValueKey                          = "value"
 	RequirementNamespaceKey           = "namespace"
 	RequirementVersionRequirementsKey = "version_requirements"
 	RequirementVersionKey             = "version"
+	RequirementConstraintsKey         = "constraints"
 	RequirementComparatorKey          = "comparator"
+	RequirementRevisionIdKey          = "revision_id"
 )
 
 // MarshalJSON marshals the Participle-produced Raw into an equivalent
@@ -83,8 +86,13 @@ func (v *Value) MarshalJSON() ([]byte, error) {
 }
 
 func (f *FuncCall) MarshalJSON() ([]byte, error) {
-	if f.Name == reqFuncName {
+	switch f.Name {
+	case reqFuncName:
 		return marshalReq(f.Arguments)
+	case revisionFuncName:
+		return marshalRevision(f.Arguments)
+	case buildFlagFuncName:
+		return marshalBuildFlag(f.Arguments)
 	}
 
 	m := make(map[string]interface{})
@@ -115,17 +123,17 @@ func marshalReq(args []*Value) ([]byte, error) {
 
 		switch {
 		// Marshal the name argument (e.g. name = "<name>") into {"name": "<name>"}
-		case assignment.Key == RequirementNameKey && assignment.Value.Str != nil:
-			requirement[RequirementNameKey] = strings.Trim(*assignment.Value.Str, `"`)
+		case assignment.Key == NameKey && assignment.Value.Str != nil:
+			requirement[NameKey] = strings.Trim(*assignment.Value.Str, `"`)
 
 		// Marshal the namespace argument (e.g. namespace = "<namespace>") into
 		// {"namespace": "<namespace>"}
 		case assignment.Key == RequirementNamespaceKey && assignment.Value.Str != nil:
 			requirement[RequirementNamespaceKey] = strings.Trim(*assignment.Value.Str, `"`)
 
-		// Marshal the version argument (e.g. version = <op>(value = "<version>")) into
+		// Marshal the constraints/version argument (e.g. constraints = <op>(value = "<version>")) into
 		// {"version_requirements": [{"comparator": "<op>", "version": "<version>"}]}
-		case assignment.Key == RequirementVersionKey && assignment.Value.FuncCall != nil:
+		case (assignment.Key == RequirementConstraintsKey || assignment.Key == RequirementVersionKey) && assignment.Value.FuncCall != nil:
 			var requirements []*Value
 			var addRequirement func(*FuncCall) error // recursive function for adding to requirements list
 			addRequirement = func(funcCall *FuncCall) error {
@@ -170,4 +178,58 @@ func marshalReq(args []*Value) ([]byte, error) {
 	}
 
 	return json.Marshal(requirement)
+}
+
+func marshalRevision(args []*Value) ([]byte, error) {
+	revision := make(map[string]interface{})
+
+	for _, arg := range args {
+		assignment := arg.Assignment
+		if assignment == nil {
+			return nil, errs.New("Cannot marshal %v", arg)
+		}
+
+		switch {
+		// Marshal the name argument (e.g. name = "<name>") into {"name": "<name>"}
+		case assignment.Key == NameKey && assignment.Value.Str != nil:
+			revision[NameKey] = strings.Trim(*assignment.Value.Str, `"`)
+
+		// Marshal the revision_id argument (e.g. revision_id = <id>) into {"revision_id": <id>}
+		case assignment.Key == RequirementRevisionIdKey && assignment.Value.Number != nil:
+			revision[RequirementRevisionIdKey] = *assignment.Value.Number
+
+		default:
+			logging.Debug("Adding unknown argument: %v", assignment)
+			revision[assignment.Key] = assignment.Value
+		}
+	}
+
+	return json.Marshal(revision)
+}
+
+func marshalBuildFlag(args []*Value) ([]byte, error) {
+	buildFlag := make(map[string]interface{})
+
+	for _, arg := range args {
+		assignment := arg.Assignment
+		if assignment == nil {
+			return nil, errs.New("Cannot marshal %v", arg)
+		}
+
+		switch {
+		// Marshal the name argument (e.g. name = "<name>") into {"name": "<name>"}
+		case assignment.Key == NameKey && assignment.Value.Str != nil:
+			buildFlag[NameKey] = strings.Trim(*assignment.Value.Str, `"`)
+
+		// Marshal the value argument (e.g. value = "<value>") into {"value": "<value>"}
+		case assignment.Key == ValueKey && assignment.Value.Str != nil:
+			buildFlag[ValueKey] = strings.Trim(*assignment.Value.Str, `"`)
+
+		default:
+			logging.Debug("Adding unknown argument: %v", assignment)
+			buildFlag[assignment.Key] = assignment.Value
+		}
+	}
+
+	return json.Marshal(buildFlag)
 }

@@ -286,3 +286,77 @@ func TestComplexVersions(t *testing.T) {
 		&atTime,
 	}, raw)
 }
+
+func TestNewOperations(t *testing.T) {
+	raw, err := Unmarshal([]byte(
+		`at_time = "2000-01-01T00:00:00.000Z"
+runtime = solve(
+	at_time = at_time,
+	build_flags = [
+		BuildFlag(name = "foo", value = "bar")
+	],
+	platforms = ["linux", "windows"],
+	requirements = [
+		Req(name = "python", namespace = "language", constraints = And(left = Gte(value = "3.10.0"), right = Lt(value = "3.11.0"))),
+		Revision(name = "baz", revision_id = 1)
+	]
+)
+
+main = runtime
+`))
+	require.NoError(t, err)
+
+	atTimeStrfmt, err := strfmt.ParseDateTime("2000-01-01T00:00:00.000Z")
+	require.NoError(t, err)
+	atTime := time.Time(atTimeStrfmt)
+
+	assert.Equal(t, &Raw{
+		[]*Assignment{
+			{"at_time", &Value{Str: ptr.To(`"2000-01-01T00:00:00.000Z"`)}},
+			{"runtime", &Value{
+				FuncCall: &FuncCall{"solve", []*Value{
+					{Assignment: &Assignment{"at_time", &Value{Ident: ptr.To(`at_time`)}}},
+					{Assignment: &Assignment{
+						"build_flags", &Value{List: &[]*Value{
+							{FuncCall: &FuncCall{
+								Name: "BuildFlag",
+								Arguments: []*Value{
+									{Assignment: &Assignment{"name", &Value{Str: ptr.To(`"foo"`)}}},
+									{Assignment: &Assignment{"value", &Value{Str: ptr.To(`"bar"`)}}},
+								},
+							}},
+						}}}},
+					{Assignment: &Assignment{
+						"platforms", &Value{List: &[]*Value{
+							{Str: ptr.To(`"linux"`)},
+							{Str: ptr.To(`"windows"`)},
+						}},
+					}},
+					{Assignment: &Assignment{
+						"requirements", &Value{List: &[]*Value{
+							{FuncCall: &FuncCall{"Req", []*Value{
+								{Assignment: &Assignment{"name", &Value{Str: ptr.To(`"python"`)}}},
+								{Assignment: &Assignment{"namespace", &Value{Str: ptr.To(`"language"`)}}},
+								{Assignment: &Assignment{
+									"constraints", &Value{FuncCall: &FuncCall{"And", []*Value{
+										{Assignment: &Assignment{"left", &Value{FuncCall: &FuncCall{"Gte", []*Value{
+											{Assignment: &Assignment{Key: "value", Value: &Value{Str: ptr.To(`"3.10.0"`)}}},
+										}}}}},
+										{Assignment: &Assignment{"right", &Value{FuncCall: &FuncCall{"Lt", []*Value{
+											{Assignment: &Assignment{Key: "value", Value: &Value{Str: ptr.To(`"3.11.0"`)}}},
+										}}}}},
+									}}},
+								}},
+							}}},
+							{FuncCall: &FuncCall{"Revision", []*Value{
+								{Assignment: &Assignment{"name", &Value{Str: ptr.To(`"baz"`)}}},
+								{Assignment: &Assignment{"revision_id", &Value{Number: ptr.To(float64(1))}}}}}},
+						}},
+					}},
+				}},
+			}},
+			{"main", &Value{Ident: ptr.To("runtime")}},
+		},
+		&atTime,
+	}, raw)
+}
