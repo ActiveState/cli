@@ -192,7 +192,7 @@ events:
     if: false
   - name: ACTIVATE
     value: echo "Activation Event Ran"
-    if: ne .Shell ""
+    if: ne .OS.Name ""
   - name: ACTIVATE
     value: echo "Wrong event"
     if: false
