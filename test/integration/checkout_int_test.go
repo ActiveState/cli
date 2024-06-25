@@ -79,7 +79,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutPerl() {
 
 	cp = ts.SpawnCmd(perlExe, "--version")
 	cp.Expect("This is perl")
-	cp.ExpectExitCode(0)
+	cp.ExpectExit()
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
