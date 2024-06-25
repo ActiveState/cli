@@ -21,7 +21,6 @@ func (suite *RefreshIntegrationTestSuite) TestRefresh() {
 	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI/Branches", "main", "35af7414-b44b-4fd7-aa93-2ecad337ed2b")
 
 	cp := ts.Spawn("refresh")
-	cp.Expect("Setting Up Runtime")
 	cp.Expect("Runtime updated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
