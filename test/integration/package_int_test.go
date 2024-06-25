@@ -746,7 +746,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Indirect() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "private/ActiveState-CLI-Testing/language/python/django_dep", "--ts=now"),
+		e2e.OptArgs("install", "org/cli-integration-tests/language/python:django_dep", "--ts=now"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.ExpectRe(`Warning: Dependency has \d indirect known vulnerabilities`, e2e.RuntimeSourcingTimeoutOpt)
@@ -755,30 +755,16 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Indirect() {
 	cp.ExpectExitCode(1)
 }
 
-func (suite *PackageIntegrationTestSuite) TestChangeSummary() {
-	suite.OnlyRunForTags(tagsuite.Package)
+func (suite *InstallIntegrationTestSuite) TestNamespace() {
+	suite.OnlyRunForTags(tagsuite.Install)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
-	cp.Expect("Successfully set")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
-	cp.Expect("Checked out")
-	cp.ExpectExitCode(0)
-
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "requests@2.31.0"),
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("install", "language/python:requests"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Resolving Dependencies")
-	cp.Expect("Done")
-	cp.Expect("Installing requests@2.31.0 includes 4 direct dependencies")
-	cp.Expect("├─ ")
-	cp.Expect("├─ ")
-	cp.Expect("├─ ")
-	cp.Expect("└─ ")
 	cp.Expect("Package added: requests", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
