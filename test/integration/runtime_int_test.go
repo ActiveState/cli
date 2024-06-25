@@ -88,10 +88,7 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/test-interrupt-small-python#863c45e2-3626-49b6-893c-c15e85a17241", "."),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp := ts.Spawn("checkout", "ActiveState-CLI/test-interrupt-small-python#863c45e2-3626-49b6-893c-c15e85a17241", ".")
 	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 
 	proj, err := project.FromPath(ts.Dirs.Work)
@@ -104,10 +101,7 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 	cp.Expect("3.8.8")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("pull"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp = ts.Spawn("pull")
 	cp.Expect("Downloading")
 	cp.SendCtrlC() // cancel pull/update
 	cp.ExpectExitCode(1)
@@ -126,22 +120,14 @@ func (suite *RuntimeIntegrationTestSuite) TestInUse() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl-5.36", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.ExpectExitCode(0)
+	ts.PrepareProject("ActiveState-CLI/Empty", "b55d0e63-db48-43c4-8341-e2b7a1cc134c")
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("shell"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp := ts.Spawn("shell")
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("perl")
 	time.Sleep(1 * time.Second) // allow time for perl to start up
 
-	cp2 := ts.SpawnWithOpts(
-		e2e.OptArgs("install", "DateTime"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp2 := ts.Spawn("install", "DateTime")
 	cp2.Expect("currently in use", e2e.RuntimeSourcingTimeoutOpt)
 	cp2.Expect("perl")
 	cp2.ExpectNotExitCode(0)
@@ -180,24 +166,16 @@ func (suite *RuntimeIntegrationTestSuite) TestBuildInProgress() {
 	cp.Expect("Successfully published")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("checkout", "ActiveState-CLI/Perl-5.36", ".")
-	cp.Expect("Checked out")
-	cp.ExpectExitCode(0)
+	ts.PrepareEmptyProject()
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "private/"+e2e.PersistentUsername+"/hello-world", "--ts", "now"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp = ts.Spawn("install", "private/"+e2e.PersistentUsername+"/hello-world", "--ts", "now")
 	cp.Expect("Build Log")
 	cp.Expect("Building")
 	cp.Expect("All dependencies have been installed and verified", e2e.RuntimeBuildSourcingTimeoutOpt)
 	cp.Expect("Package added: hello-world")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("exec", "main"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp = ts.Spawn("exec", "main")
 	cp.Expect("Hello world!")
 	cp.ExpectExitCode(0)
 }

@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -42,12 +41,9 @@ func (suite *ExportIntegrationTestSuite) TestExport_Env() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/Export", "5397f645-da8a-4591-b106-9d7fa99545fe")
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("export", "env"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect(`PATH: `, e2e.RuntimeSourcingTimeoutOpt)
+	ts.PrepareEmptyProject()
+	cp := ts.Spawn("export", "env")
+	cp.Expect(`PATH: `)
 	cp.ExpectExitCode(0)
 
 	suite.Assert().NotContains(cp.Output(), "ACTIVESTATE_ACTIVATED")
@@ -75,16 +71,13 @@ func (suite *ExportIntegrationTestSuite) TestExport_Runtime() {
 	suite.OnlyRunForTags(tagsuite.Export)
 	ts := e2e.New(suite.T(), false)
 
-	ts.PrepareProject("ActiveState-CLI/Export", "5397f645-da8a-4591-b106-9d7fa99545fe")
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("export", "runtime"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	ts.PrepareEmptyProject()
+	cp := ts.Spawn("export", "runtime")
 	cp.Expect("Project Path: ")
 	cp.Expect("Runtime Path: ")
 	cp.Expect("Executables Path: ")
 	cp.Expect("Environment Variables:") // intentional lack of trailing space
-	cp.Expect(` - PATH: `, e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect(` - PATH: `)
 	cp.ExpectExitCode(0)
 }
 
@@ -98,17 +91,10 @@ func (suite *ExportIntegrationTestSuite) TestJSON() {
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "."),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
+	ts.PrepareEmptyProject()
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("export", "env", "-o", "json"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
+	cp = ts.Spawn("export", "env", "-o", "json")
+	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
 	ts.LoginAsPersistentUser()
@@ -123,9 +109,7 @@ func (suite *ExportIntegrationTestSuite) TestJSON() {
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("export", "runtime", "-o", "json"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"))
+	cp = ts.Spawn("export", "runtime", "-o", "json")
 	cp.Expect(`{"project":"`)
 	cp.Expect(`"}}`)
 	cp.ExpectExitCode(0)

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.44.1
+
+### Changed
+
+* Authentication information is now cached between commands, increasing performance of State Tool commands.
+
 ## 0.44.0
 
 ### Added

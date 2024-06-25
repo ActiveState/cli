@@ -33,7 +33,6 @@ func sandboxedTestEnvironment(t *testing.T, dirs *Dirs, updatePath bool, extraEn
 	env = append(env, []string{
 		constants.ConfigEnvVarName + "=" + dirs.Config,
 		constants.CacheEnvVarName + "=" + dirs.Cache,
-		constants.DisableRuntime + "=true",
 		constants.ActivatedStateEnvVarName + "=",
 		constants.E2ETestEnvVarName + "=true",
 		constants.DisableUpdates + "=true",

@@ -342,6 +342,13 @@ func (s *Session) CommitID() string {
 	return pjfile.LegacyCommitID()
 }
 
+// PrepareEmptyProject creates a checkout of the empty ActiveState-CLI/Empty project without using
+// `state checkout`.
+func (s *Session) PrepareEmptyProject() {
+	s.PrepareActiveStateYAML(fmt.Sprintf("project: https://%s/%s", constants.DefaultAPIHost, "ActiveState-CLI/Empty"))
+	s.PrepareCommitIdFile("6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8")
+}
+
 // PrepareProject creates a very simple activestate.yaml file for the given org/project and, if a
 // commit ID is given, an .activestate/commit file.
 func (s *Session) PrepareProject(namespace, commitID string) {
@@ -391,8 +398,6 @@ func (s *Session) LoginAsPersistentUser() {
 
 func (s *Session) LogoutUser() {
 	p := s.Spawn(tagsuite.Auth, "logout")
-
-	p.Expect("logged out")
 	p.ExpectExitCode(0)
 }
 

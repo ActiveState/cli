@@ -262,6 +262,40 @@ func (r *Resolver) GetProcessesInUse(ctx context.Context, execDir string) ([]*gr
 	return processes, nil
 }
 
+func (r *Resolver) GetJwt(ctx context.Context) (*graph.Jwt, error) {
+	if err := r.auth.MaybeRenew(); err != nil {
+		return nil, errs.Wrap(err, "Could not renew auth token")
+	}
+
+	if !r.auth.Authenticated() {
+		return nil, nil
+	}
+
+	user := r.auth.User()
+	if user == nil {
+		return nil, errs.New("user is nil")
+	}
+
+	jwt := &graph.Jwt{
+		Token: r.auth.BearerToken(),
+		User: &graph.User{
+			UserID:        user.UserID.String(),
+			Username:      user.Username,
+			Email:         user.Email,
+			Organizations: []*graph.Organization{},
+		},
+	}
+
+	for _, org := range user.Organizations {
+		jwt.User.Organizations = append(jwt.User.Organizations, &graph.Organization{
+			URLname: org.URLname,
+			Role:    org.Role,
+		})
+	}
+
+	return jwt, nil
+}
+
 func handlePanics(recovered interface{}, stack []byte) {
 	if recovered != nil {
 		multilog.Error("Panic: %v", recovered)

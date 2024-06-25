@@ -54,7 +54,6 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 	sleepTime = sleepTime + (sleepTime / 2)
 
 	env := []string{
-		constants.DisableRuntime + "=false",
 		fmt.Sprintf("%s=%d", constants.HeartbeatIntervalEnvVarName, heartbeatInterval),
 	}
 
@@ -475,9 +474,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "ActiveState-CLI/Alternate-Python"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-		e2e.OptAppendEnv(constants.DisableActivateEventsEnvVarName+"=false"),
 		e2e.OptWD(ts.Dirs.Work),
+		e2e.OptAppendEnv(constants.DisableActivateEventsEnvVarName+"=false"),
 	)
 
 	cp.Expect("Creating a Virtual Environment")
@@ -519,7 +517,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeapEvents() {
 
 	ts.LoginAsPersistentUser()
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("activate", "ActiveState-CLI/Alternate-Python"),
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("activate", "ActiveState-CLI/Alternate-Python"),
 		e2e.OptWD(ts.Dirs.Work),
 	)
 
@@ -559,14 +558,16 @@ func (suite *AnalyticsIntegrationTestSuite) TestConfigEvents() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("config", "set", "optin.unstable", "false"),
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("config", "set", "optin.unstable", "false"),
 		e2e.OptWD(ts.Dirs.Work),
 	)
 	cp.Expect("Successfully set config key")
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events
 
-	cp = ts.SpawnWithOpts(e2e.OptArgs("config", "set", "optin.unstable", "true"),
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("config", "set", "optin.unstable", "true"),
 		e2e.OptWD(ts.Dirs.Work),
 	)
 	cp.Expect("Successfully set config key")
@@ -612,7 +613,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestCIAndInteractiveDimensions() {
 			if !interactive {
 				args = append(args, "--non-interactive")
 			}
-			cp := ts.SpawnWithOpts(e2e.OptArgs(args...))
+			cp := ts.Spawn(args...)
 			cp.Expect("ActiveState CLI")
 			cp.ExpectExitCode(0)
 

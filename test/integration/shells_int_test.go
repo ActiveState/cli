@@ -35,10 +35,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 	}
 
 	// Checkout the first instance. It doesn't matter which shell is used.
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/small-python"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python")
 	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
@@ -52,7 +49,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 			}
 
 			// Run the checkout in a particular shell.
-			cp = ts.SpawnShellWithOpts(shell)
+			cp = ts.SpawnShellWithOpts(shell, e2e.OptAppendEnv(constants.DisableRuntime+"=true"))
 			cp.SendLine(e2e.QuoteCommand(shell, ts.ExecutablePath(), "checkout", "ActiveState-CLI/small-python", string(shell)))
 			cp.Expect("Checked out project")
 			cp.SendLine("exit")
@@ -62,7 +59,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 
 			// There are 2 or more instances checked out, so we should get a prompt in whichever shell we
 			// use.
-			cp = ts.SpawnShellWithOpts(shell, e2e.OptAppendEnv(constants.DisableRuntime+"=false"))
+			cp = ts.SpawnShellWithOpts(shell)
 			cp.SendLine(e2e.QuoteCommand(shell, ts.ExecutablePath(), "shell", "small-python"))
 			cp.Expect("Multiple project paths")
 

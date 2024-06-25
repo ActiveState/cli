@@ -219,12 +219,9 @@ func (suite *UpdateIntegrationTestSuite) TestJSON() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out")
-	cp.ExpectExitCode(0)
+	ts.PrepareEmptyProject()
 
-	cp = ts.Spawn("update", "lock", "-o", "json")
+	cp := ts.Spawn("update", "lock", "-o", "json")
 	cp.Expect(`"channel":`)
 	cp.Expect(`"version":`)
 	cp.ExpectExitCode(0)
