@@ -157,7 +157,7 @@ func Update(
 		}
 	}()
 
-	rtHash, err := runtime_helpers.runtime_helpers.Hash(proj, &commitID)
+	rtHash, err := runtime_helpers.Hash(proj, &commitID)
 	if err != nil {
 		ah.fire(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeCache, nil)
 		return nil, errs.Wrap(err, "Failed to get runtime hash")

@@ -200,7 +200,7 @@ func (d *Deploy) configure(params *Params) error {
 		return locale.WrapInputError(err, "err_deploy_run_install")
 	}
 
-	rti, err := runtime_helpers.runtime_helpers.FromProject(proj)
+	rti, err := runtime_helpers.FromProject(proj)
 	if err != nil {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}

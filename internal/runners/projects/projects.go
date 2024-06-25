@@ -27,7 +27,7 @@ func newProjectWithOrg(prime primeable, name, org string, checkouts []string) pr
 	for _, checkout := range checkouts {
 		var execDir string
 		if proj, err := project.FromPath(checkout); err == nil {
-			execDir = runtime_helpers.runtime_helpers.ExecutorPathFromProject(proj)
+			execDir = runtime_helpers.ExecutorPathFromProject(proj)
 		} else {
 			multilog.Error("Unable to get project %s from checkout: %v", checkout, err)
 		}
