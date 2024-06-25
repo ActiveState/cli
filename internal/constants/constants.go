@@ -479,10 +479,6 @@ const AnalyticsPixelOverrideEnv = "ACTIVESTATE_CLI_ANALYTICS_PIXEL"
 // TerminalAnimationInterval is the interval we use for terminal animations
 const TerminalAnimationInterval = 150 * time.Millisecond
 
-// RuntimeSetupWaitEnvVarName is only used for an integration test to pause installation and wait
-// for Ctrl+C.
-const RuntimeSetupWaitEnvVarName = "ACTIVESTATE_CLI_RUNTIME_SETUP_WAIT"
-
 // PlatformApiRequestRequestsEnvVarName is only used for an integration test to print some Platform
 // API request info.
 const PlatformApiPrintRequestsEnvVarName = "ACTIVESTATE_CLI_PLATFORM_API_PRINT_REQUESTS"

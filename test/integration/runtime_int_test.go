@@ -106,8 +106,7 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("pull"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false",
-			constants.RuntimeSetupWaitEnvVarName+"=true"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Downloading")
 	cp.SendCtrlC() // cancel pull/update
