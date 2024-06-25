@@ -169,6 +169,10 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		jwt, err := svcmodel.GetJWT(context.Background())
 		if err != nil {
 			multilog.Critical("Could not get JWT: %v", errs.JoinMessage(err))
+		}
+		if err != nil || jwt == nil {
+			// Could not authenticate; user got logged out
+			auth.Logout()
 		} else {
 			auth.UpdateSession(jwt)
 		}
