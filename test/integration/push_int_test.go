@@ -53,12 +53,15 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	ts.LoginAsPersistentUser()
 	pname := strutils.UUID()
 	namespace := fmt.Sprintf("%s/%s", suite.username, pname)
-	cp := ts.Spawn(
-		"init",
-		"--language",
-		suite.languageFull,
-		namespace,
-		".",
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs(
+			"init",
+			"--language",
+			suite.languageFull,
+			namespace,
+			".",
+		),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
 	)
 	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
@@ -74,10 +77,13 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	suite.Require().NotEmpty(pj.BranchName(), "branch was not set after running push for project creation")
 
 	// ensure that we are logged out
-	cp = ts.Spawn(tagsuite.Auth, "logout")
+	cp = ts.Spawn("auth", "logout")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(e2e.OptArgs("install", suite.extraPackage))
+	cp = ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", suite.extraPackage)
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|being built", termtest.OptExpectTimeout(60*time.Second)) // while cold storage is off
@@ -95,7 +101,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 
 	ts.LoginAsPersistentUser()
 
-	cp = ts.SpawnWithOpts(e2e.OptArgs("push", namespace))
+	cp = ts.Spawn("push", namespace)
 	cp.Expect("Pushing to project")
 	cp.ExpectExitCode(0)
 }
@@ -112,13 +118,18 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	user := ts.CreateNewUser()
 	pname := strutils.UUID()
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("activate", suite.baseProject, "--path", ts.Dirs.Work))
-	cp.Expect("Activated", termtest.OptExpectTimeout(40*time.Second))
-	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
-	cp.SendLine("exit")
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", suite.baseProject, "."),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
+	)
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(e2e.OptArgs("install", suite.extraPackage))
+	cp = ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", suite.extraPackage)
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|being built", termtest.OptExpectTimeout(60*time.Second)) // while cold storage is off
@@ -133,7 +144,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	suite.Require().NoError(err)
 	suite.Require().Contains(pjfile.Project, suite.baseProject)
 
-	cp = ts.SpawnWithOpts(e2e.OptArgs("push"))
+	cp = ts.Spawn("push")
 	cp.Expect("not authorized")
 	cp.Expect("(Y/n)")
 	cp.SendLine("y")
@@ -164,26 +175,23 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	namespace := fmt.Sprintf("%s/%s", suite.username, pname)
 
 	wd := filepath.Join(ts.Dirs.Work, namespace)
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs(
-			"activate", suite.baseProject,
-			"--path", wd),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp := ts.Spawn("activate", suite.baseProject, "--path", wd)
 	// The activestate.yaml on Windows runs custom activation to set shortcuts and file associations.
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
 	// ensure that we are logged out
-	cp = ts.Spawn(tagsuite.Auth, "logout")
+	cp = ts.Spawn("auth", "logout")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
 	// anonymous commit
-	cp = ts.SpawnWithOpts(e2e.OptArgs(
-		"install", suite.extraPackage),
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("install", suite.extraPackage),
 		e2e.OptWD(wd),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	switch runtime.GOOS {
 	case "darwin":
@@ -215,7 +223,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoProject() {
 	defer ts.Close()
 
 	ts.LoginAsPersistentUser()
-	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
+	cp := ts.Spawn("push")
 	cp.Expect("No project found")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
@@ -231,9 +239,9 @@ func (suite *PushIntegrationTestSuite) TestPush_NoAuth() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/cli", "882ae76e-fbb7-4989-acc9-9a8b87d49388")
+	ts.PrepareEmptyProject()
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
+	cp := ts.Spawn("push")
 	cp.Expect("you need to be authenticated")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
@@ -249,11 +257,10 @@ func (suite *PushIntegrationTestSuite) TestPush_NoChanges() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "."))
-	cp.ExpectExitCode(0)
+	ts.PrepareEmptyProject()
 
 	ts.LoginAsPersistentUser()
-	cp = ts.SpawnWithOpts(e2e.OptArgs("push"))
+	cp := ts.Spawn("push")
 	cp.Expect("no local changes to push")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
@@ -274,7 +281,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NameInUse() {
 
 	ts.LoginAsPersistentUser()
 	// Target project already exists
-	cp := ts.SpawnWithOpts(e2e.OptArgs("push", "-n", "ActiveState-CLI/push-error-test"))
+	cp := ts.Spawn("push", "-n", "ActiveState-CLI/push-error-test")
 	cp.Expect("already in use")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
@@ -298,7 +305,7 @@ func (suite *PushIntegrationTestSuite) TestPush_Aborted() {
 
 	ts.LoginAsPersistentUser()
 	// Target project already exists
-	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
+	cp := ts.Spawn("push")
 	cp.Expect("Would you like to create a new project")
 	cp.SendLine("n")
 	cp.Expect("Project creation aborted by user", termtest.OptExpectTimeout(5*time.Second))
@@ -321,7 +328,7 @@ func (suite *PushIntegrationTestSuite) TestPush_InvalidHistory() {
 
 	ts.LoginAsPersistentUser()
 	// Target project already exists
-	cp := ts.SpawnWithOpts(e2e.OptArgs("push", "ActiveState-CLI/push-error-test"))
+	cp := ts.Spawn("push", "ActiveState-CLI/push-error-test")
 	cp.Expect("commit history does not match")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
@@ -341,7 +348,7 @@ func (suite *PushIntegrationTestSuite) TestPush_PullNeeded() {
 
 	ts.LoginAsPersistentUser()
 	// Target project already exists
-	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
+	cp := ts.Spawn("push")
 	cp.Expect("changes available that need to be merged")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
@@ -361,7 +368,7 @@ func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
 	ts.PrepareProject("ActiveState-CLI/cli", unPushedCommit)
 
 	ts.LoginAsPersistentUser()
-	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
+	cp := ts.Spawn("push")
 	cp.Expect("Your project has new changes available")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()

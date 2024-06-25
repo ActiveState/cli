@@ -45,7 +45,6 @@ jobs:
     runs-on: ${{ matrix.sys.os }}
     env:
       ACTIVESTATE_CI: true
-      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_SHA_OVERRIDE: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -406,7 +405,6 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       ACTIVESTATE_CI: true
-      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_SHA_OVERRIDE: ${{ github.event.pull_request.head.sha || github.sha }}

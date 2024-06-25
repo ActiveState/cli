@@ -216,7 +216,8 @@ func (s *Store) UpdateEnviron(orderedArtifacts []strfmt.UUID) (*envdef.Environme
 
 func (s *Store) updateEnviron(orderedArtifacts []strfmt.UUID, artifacts StoredArtifactMap) (*envdef.EnvironmentDefinition, error) {
 	if len(orderedArtifacts) == 0 {
-		return nil, errs.New("Environment cannot be updated if no artifacts were installed")
+		logging.Debug("Environment cannot be updated if no artifacts were installed")
+		return nil, nil
 	}
 
 	var rtGlobal *envdef.EnvironmentDefinition

@@ -2,7 +2,6 @@ package setup
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -433,6 +432,10 @@ func (s *Setup) updateExecutors(artifacts []strfmt.UUID) error {
 		return errs.Wrap(err, "Could not save combined environment file")
 	}
 
+	if edGlobal == nil {
+		return nil // this can happen if there are no runtime artifacts
+	}
+
 	exePaths, err := edGlobal.ExecutablePaths()
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_execpaths", "Could not retrieve runtime executable paths")
@@ -496,14 +499,6 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(bp *buildplan.BuildPlan, i
 		if aErr != nil {
 			return nil, nil, aErr
 		}
-	}
-
-	if len(allArtifacts) == 0 {
-		v, err := json.Marshal(bp.Artifacts())
-		if err != nil {
-			return nil, nil, err
-		}
-		return nil, nil, errs.New("did not find any artifacts that match our platform (%s), full artifacts list: %s", platformID, v)
 	}
 
 	resolver, err := selectArtifactResolver(bp)

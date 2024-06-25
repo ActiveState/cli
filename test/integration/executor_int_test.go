@@ -27,17 +27,12 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorForwards() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/Python3"),
-	)
-	cp.Expect("Checked out project")
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3")
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("shell", "ActiveState-CLI/Python3"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp = ts.Spawn("shell", "ActiveState-CLI/Python3")
+	cp.Expect("Activated")
 	cp.ExpectInput()
 
 	cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
@@ -54,17 +49,12 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorExitCode() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/Python3"),
-	)
-	cp.Expect("Checked out project")
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3")
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("shell", "ActiveState-CLI/Python3"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp = ts.Spawn("shell", "ActiveState-CLI/Python3")
+	cp.Expect("Activated")
 	cp.ExpectInput()
 
 	cp.SendLine("python3 -c \"exit(42)\"")

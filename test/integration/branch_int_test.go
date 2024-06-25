@@ -40,12 +40,9 @@ func (suite *BranchIntegrationTestSuite) TestJSON() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Branches", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out")
-	cp.ExpectExitCode(0)
+	ts.PrepareProject("ActiveState-CLI/Branches", e2e.CommitIDNotChecked)
 
-	cp = ts.Spawn("branch", "-o", "json")
+	cp := ts.Spawn("branch", "-o", "json")
 	cp.Expect(`"branchID":`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
