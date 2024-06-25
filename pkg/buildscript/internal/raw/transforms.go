@@ -16,6 +16,10 @@ func indent(s string) string {
 	return fmt.Sprintf("\t%s", strings.ReplaceAll(s, "\n", "\n\t"))
 }
 
+func isLegacyRequirementsList(list *buildexpression.Var) bool {
+	return len(*list.Value.List) > 0 && (*list.Value.List)[0].Object != nil
+}
+
 // transformRequirements transforms a buildexpression list of requirements in object form into a
 // list of requirements in function-call form, which is how requirements are represented in
 // buildscripts.
@@ -122,7 +126,7 @@ func transformVersion(requirements *buildexpression.Var) *buildexpression.Ap {
 }
 
 func assignmentString(a *buildexpression.Var) string {
-	if a.Name == buildexpression.RequirementsKey {
+	if a.Name == buildexpression.RequirementsKey && isLegacyRequirementsList(a) {
 		a = transformRequirements(a)
 	}
 	return fmt.Sprintf("%s = %s", a.Name, valueString(a.Value))
