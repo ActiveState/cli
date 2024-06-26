@@ -22,7 +22,7 @@ func rationalizeError(rerr *error) {
 	switch {
 	case errors.Is(*rerr, rationalize.ErrNotAuthenticated):
 		*rerr = errs.WrapUserFacing(*rerr,
-			locale.T("err_init_authenticated"),
+			locale.Tl("err_eval_not_authenticated", "You need to authenticate to evaluate a target"),
 			errs.SetInput(),
 		)
 

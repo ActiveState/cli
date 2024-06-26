@@ -96,6 +96,7 @@ const (
 	RevertConflictErrorType           = "RevertConflict"
 	CommitNotInTargetHistoryErrorType = "CommitNotInTargetHistory"
 	ComitHasNoParentErrorType         = "CommitHasNoParent"
+	TargetNotFoundErrorType           = "TargetNotFound"
 )
 
 func IsStateToolArtifact(mimeType string) bool {
@@ -416,6 +417,12 @@ func processPlanningError(message string, subErrors []*BuildExprLocation) error 
 	}
 
 	for _, se := range subErrors {
+		if se.Type == TargetNotFoundErrorType {
+			return &BuildPlannerError{
+				Err: locale.NewInputError("err_buildplanner_target_not_found", "{{.V0}}", se.Message),
+			}
+		}
+
 		if se.Type != RemediableSolveErrorType && se.Type != GenericSolveErrorType {
 			continue
 		}
@@ -559,7 +566,7 @@ type MergeCommitResult struct {
 }
 
 type BuildTargetResult struct {
-	Project *Project `json:"Project"`
+	Build *Build `json:"buildCommitTarget"`
 	*Error
 	*NotFoundError
 }
