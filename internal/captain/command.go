@@ -842,7 +842,14 @@ func (cmd *Command) Usage() error {
 		return errs.Wrap(err, "Could not execute template")
 	}
 
-	cmd.out.Print(out.String())
+	if writer := cmd.cobra.OutOrStdout(); writer != os.Stdout {
+		_, err := writer.Write(out.Bytes())
+		if err != nil {
+			return errs.Wrap(err, "Unable to write to cobra outWriter")
+		}
+	} else {
+		cmd.out.Print(out.String())
+	}
 
 	return nil
 
