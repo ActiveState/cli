@@ -159,7 +159,7 @@ func New() (*BuildExpression, error) {
 				}
 		},
 		"runtime": {
-				"state_tool_artifacts": {
+				"state_tool_artifacts_v1": {
 						"src": "$sources"
 				}
 		},
