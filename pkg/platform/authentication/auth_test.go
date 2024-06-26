@@ -8,6 +8,8 @@ import (
 )
 
 func TestAuth_cutoffReached(t *testing.T) {
+	now := time.Now()
+
 	tests := []struct {
 		name   string
 		auth   *Auth
@@ -17,28 +19,28 @@ func TestAuth_cutoffReached(t *testing.T) {
 		{
 			"Cutoff one second beyond keepalive",
 			&Auth{
-				lastRenewal: ptr.To(time.Now()),
+				lastRenewal: ptr.To(now),
 				jwtLifetime: time.Second,
 			},
-			time.Now().Add(2 * time.Second),
+			now.Add(2 * time.Second),
 			true,
 		},
 		{
 			"Cutoff one second before keepalive",
 			&Auth{
-				lastRenewal: ptr.To(time.Now()),
+				lastRenewal: ptr.To(now),
 				jwtLifetime: 2 * time.Second,
 			},
-			time.Now().Add(time.Second),
+			now.Add(time.Second),
 			false,
 		},
 		{
 			"Cutoff equal to keepalive",
 			&Auth{
-				lastRenewal: ptr.To(time.Now()),
+				lastRenewal: ptr.To(now),
 				jwtLifetime: time.Second,
 			},
-			time.Now().Add(time.Second),
+			now.Add(time.Second),
 			true,
 		},
 	}

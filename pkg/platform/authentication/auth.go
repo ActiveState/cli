@@ -159,7 +159,7 @@ func (s *Auth) MaybeRenew() (rerr error) {
 // cutoffReached checks whether the JWT will expire before the provided cutoff time
 func (s *Auth) cutoffReached(cutoff time.Time) bool {
 	expires := s.lastRenewal.Add(s.jwtLifetime)
-	return expires.Before(cutoff)
+	return expires.Equal(cutoff) || expires.Before(cutoff)
 }
 
 func (s *Auth) Close() error {
