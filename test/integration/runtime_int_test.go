@@ -83,6 +83,11 @@ type RuntimeIntegrationTestSuite struct {
 }
 
 func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
+	if runtime.GOOS == "windows" {
+		// https://activestatef.atlassian.net/browse/DX-2926
+		suite.T().Skip("interrupting on windows is currently broken when ran via CI")
+	}
+
 	suite.OnlyRunForTags(tagsuite.Interrupt)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
