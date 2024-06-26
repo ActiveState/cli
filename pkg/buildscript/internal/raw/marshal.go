@@ -81,7 +81,7 @@ func marshalFromBuildExpression(expr *buildexpression.BuildExpression, atTime *t
 	}
 
 	for _, assignment := range expr.Let.Assignments {
-		if assignment.Name == buildexpression.RequirementsKey {
+		if assignment.Name == buildexpression.RequirementsKey && isLegacyRequirementsList(assignment) {
 			assignment = transformRequirements(assignment)
 		}
 		buf.WriteString(assignmentString(assignment))

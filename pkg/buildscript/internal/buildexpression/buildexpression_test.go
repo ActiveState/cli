@@ -71,6 +71,13 @@ func TestNew(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "newObjects",
+			args: args{
+				filename: "buildexpression-new-objects.json",
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
