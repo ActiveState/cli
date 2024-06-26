@@ -22,6 +22,12 @@ const (
 
 // MarshalJSON returns this structure as a buildexpression in JSON format, suitable for sending to
 // the Platform.
+func (r *Raw) MarshalBuildExpression() ([]byte, error) {
+	return json.MarshalIndent(r, "", "  ")
+}
+
+// MarshalJSON returns this structure as a buildexpression in JSON format, suitable for sending to
+// the Platform.
 func (r *Raw) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
 	let := make(map[string]interface{})

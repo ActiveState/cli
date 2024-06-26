@@ -32,7 +32,6 @@ main = runtime
 
 	assert.Equal(t, &Raw{
 		[]*Assignment{
-			{"at_time", &Value{Str: ptr.To(`"2000-01-01T00:00:00.000Z"`)}},
 			{"runtime", &Value{
 				FuncCall: &FuncCall{"solve", []*Value{
 					{Assignment: &Assignment{"at_time", &Value{Ident: ptr.To(`at_time`)}}},
@@ -115,7 +114,6 @@ main = merge(
 
 	assert.Equal(t, &Raw{
 		[]*Assignment{
-			{"at_time", &Value{Str: ptr.To(`"2000-01-01T00:00:00.000Z"`)}},
 			{"linux_runtime", &Value{
 				FuncCall: &FuncCall{"solve", []*Value{
 					{Assignment: &Assignment{"at_time", &Value{Ident: ptr.To(`at_time`)}}},
@@ -200,7 +198,6 @@ func TestComplexVersions(t *testing.T) {
 
 	assert.Equal(t, &Raw{
 		[]*Assignment{
-			{"at_time", &Value{Str: ptr.To(`"2023-04-27T17:30:05.999Z"`)}},
 			{"runtime", &Value{
 				FuncCall: &FuncCall{"solve", []*Value{
 					{Assignment: &Assignment{

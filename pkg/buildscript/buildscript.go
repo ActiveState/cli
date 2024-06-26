@@ -1,174 +1,96 @@
 package buildscript
 
 import (
-	"encoding/json"
 	"time"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/pkg/buildscript/internal/buildexpression"
 	"github.com/ActiveState/cli/pkg/buildscript/internal/raw"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/go-openapi/strfmt"
 )
 
-// BuildScript is what we want consuming code to work with. This specifically makes the raw presentation private as no
-// consuming code should ever be looking at the raw representation, instead this package should facilitate the use-case
-// of the consuming code through convenience methods that are easy to understand and work with.
+// BuildScript is what we want consuming code to work with. This specifically makes the raw
+// presentation private as no consuming code should ever be looking at the raw representation.
+// Instead this package should facilitate the use-case of the consuming code through convenience
+// methods that are easy to understand and work with.
 type BuildScript struct {
-	// buildexpression is what we do all our modifications on. We will be planning work to move this to the raw type
-	// instead, but for now this is where most of the actual low level modification logic is done.
-	// https://activestatef.atlassian.net/jira/software/c/projects/DX/issues/DX-2825
-	buildexpression *buildexpression.BuildExpression
-	atTime          *time.Time
+	raw *raw.Raw
 }
 
 func New() (*BuildScript, error) {
-	expr, err := buildexpression.New()
+	raw, err := raw.New()
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not create empty build expression")
+		return nil, errs.Wrap(err, "Could not create empty build script")
 	}
-	script, err := unmarshalBuildExpressionTyped(expr, nil)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not create empty build expression")
-	}
-	return script, nil
+	return &BuildScript{raw}, nil
 }
 
-// Unmarshal will parse a buildscript from its presentation on disk
-// This needs to unmarshal the ascript representation, and then convert that representation into a build expression
+// Unmarshal returns a BuildScript from the given AScript (on-disk format).
 func Unmarshal(data []byte) (*BuildScript, error) {
 	raw, err := raw.Unmarshal(data)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not unmarshal buildscript")
+		return nil, errs.Wrap(err, "Could not unmarshal build script")
 	}
+	return &BuildScript{raw}, nil
+}
 
-	be, err := raw.MarshalBuildExpression()
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not marshal build expression from raw")
-	}
-
-	expr, err := buildexpression.Unmarshal(be)
+// UnmarshalBuildExpression returns a BuildScript constructed from the given build expression in
+// JSON format.
+// Build scripts and build expressions are almost identical, with the exception of the atTime field.
+// Build expressions ALWAYS set at_time to `$at_time`, which refers to the timestamp on the commit,
+// while buildscripts encode this timestamp as part of their definition. For this reason we have
+// to supply the timestamp as a separate argument.
+func UnmarshalBuildExpression(data []byte, atTime *time.Time) (*BuildScript, error) {
+	raw, err := raw.UnmarshalBuildExpression(data)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not unmarshal build expression")
 	}
-
-	return &BuildScript{expr, raw.AtTime}, nil
-}
-
-// UnmarshalBuildExpression will create buildscript using an existing build expression
-// Buildscripts and build expressions are almost identical, with the exception of the atTime field.
-// Build Expressions ALWAYS set at_time to `$at_time`, which refers to the timestamp on the commit.
-// Whereas buildscripts encode this timestamp as part of their definition. For this reason we have to supply the
-// timestamp as a separate argument.
-func UnmarshalBuildExpression(b []byte, atTime *time.Time) (*BuildScript, error) {
-	expr, err := buildexpression.Unmarshal(b)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not parse build expression")
-	}
-
-	return unmarshalBuildExpressionTyped(expr, atTime)
-}
-
-func unmarshalBuildExpressionTyped(expr *buildexpression.BuildExpression, atTime *time.Time) (*BuildScript, error) {
-	// Copy incoming build expression to keep any modifications local.
-	var err error
-	expr, err = expr.Copy()
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not copy build expression")
-	}
-
-	// Update old expressions that bake in at_time as a timestamp instead of as a variable.
-	// This will trump whatever value that held, which is fine because this only matters when we actually submit
-	// back the build expression, which by definition would be a write action on which we'd want to update the
-	// timestamp anyway.
-	err = expr.ForceAtTimeVar()
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not set default timestamp")
-	}
-
-	return &BuildScript{expr, atTime}, nil
-}
-
-// MarshalBuildExpression translates our buildscript into a build expression
-// The actual logic for this lives under the MarshalJSON methods below, named that way because that's what the json
-// marshaller is expecting to find.
-func (b *BuildScript) MarshalBuildExpression() ([]byte, error) {
-	bytes, err := json.MarshalIndent(b.buildexpression, "", "  ")
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not marshal build script to build expression")
-	}
-	return bytes, nil
-}
-
-// Requirements returns the requirements in the Buildscript
-// It returns an error if the requirements are not found or if they are malformed.
-func (b *BuildScript) Requirements() ([]types.Requirement, error) {
-	return b.buildexpression.Requirements()
-}
-
-// RequirementNotFoundError aliases the buildexpression error type, which can otherwise not be checked as its internal
-type RequirementNotFoundError = buildexpression.RequirementNotFoundError
-
-// UpdateRequirement updates the Buildscripts requirements based on the operation and requirement.
-func (b *BuildScript) UpdateRequirement(operation types.Operation, requirement types.Requirement) error {
-	return b.buildexpression.UpdateRequirement(operation, requirement)
-}
-
-func (b *BuildScript) UpdatePlatform(operation types.Operation, platformID strfmt.UUID) error {
-	return b.buildexpression.UpdatePlatform(operation, platformID)
+	raw.AtTime = atTime
+	return &BuildScript{raw}, nil
 }
 
 func (b *BuildScript) AtTime() *time.Time {
-	return b.atTime
+	return b.raw.AtTime
 }
 
 func (b *BuildScript) SetAtTime(t time.Time) {
-	b.atTime = &t
+	b.raw.AtTime = &t
 }
 
+// Marshal returns this BuildScript in AScript format, suitable for writing to disk.
 func (b *BuildScript) Marshal() ([]byte, error) {
-	raw, err := raw.UnmarshalBuildExpression(b.buildexpression, b.atTime)
-	if err != nil {
-		return []byte(""), errs.Wrap(err, "Could not unmarshal build expression to raw")
-	}
-	return raw.Marshal()
+	return b.raw.Marshal()
+}
+
+// MarshalBuildExpression returns for this BuildScript a build expression in JSON format, suitable
+// for sending to the Platform.
+func (b *BuildScript) MarshalBuildExpression() ([]byte, error) {
+	return b.raw.MarshalBuildExpression()
+}
+
+func (b *BuildScript) Requirements() ([]types.Requirement, error) {
+	return b.raw.Requirements()
+}
+
+type RequirementNotFoundError = raw.RequirementNotFoundError // expose
+
+func (b *BuildScript) UpdateRequirement(operation types.Operation, requirement types.Requirement) error {
+	return b.raw.UpdateRequirement(operation, requirement)
+}
+
+func (b *BuildScript) UpdatePlatform(operation types.Operation, platformID strfmt.UUID) error {
+	return b.raw.UpdatePlatform(operation, platformID)
 }
 
 func (b *BuildScript) Equals(other *BuildScript) (bool, error) {
-	// Compare top-level at_time.
-	switch {
-	case b.atTime != nil && other.atTime != nil && b.atTime.String() != other.atTime.String():
-		return false, nil
-	case (b.atTime == nil) != (other.atTime == nil):
-		return false, nil
-	}
-
-	// Compare buildexpression JSON.
-	myJson, err := b.MarshalBuildExpression()
+	myBytes, err := b.Marshal()
 	if err != nil {
-		return false, errs.New("Unable to marshal this buildscript to JSON: %s", errs.JoinMessage(err))
+		return false, errs.New("Unable to marshal this buildscript: %s", errs.JoinMessage(err))
 	}
-	otherJson, err := other.MarshalBuildExpression()
+	otherBytes, err := other.Marshal()
 	if err != nil {
-		return false, errs.New("Unable to marshal other buildscript to JSON: %s", errs.JoinMessage(err))
+		return false, errs.New("Unable to marshal other buildscript: %s", errs.JoinMessage(err))
 	}
-	return string(myJson) == string(otherJson), nil
-}
-
-func (b *BuildScript) Merge(b2 *BuildScript, strategies *mono_models.MergeStrategies) (*BuildScript, error) {
-	expr, err := buildexpression.Merge(b.buildexpression, b2.buildexpression, strategies)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not merge build expressions")
-	}
-
-	// When merging buildscripts we want to use the most recent timestamp
-	atTime := b.atTime
-	if b.atTime != nil && b.atTime.After(*b2.atTime) {
-		atTime = b2.atTime
-	}
-
-	bs, err := unmarshalBuildExpressionTyped(expr, atTime)
-
-	return bs, nil
+	return string(myBytes) == string(otherBytes), nil
 }

@@ -15,10 +15,11 @@ func TestRoundTripFromBuildScript(t *testing.T) {
 	script, err := Unmarshal(basicBuildScript)
 	require.NoError(t, err)
 
-	bs, err := script.Marshal()
+	data, err := script.Marshal()
 	require.NoError(t, err)
+	t.Logf("marshalled:\n%s\n---", string(data))
 
-	roundTripScript, err := Unmarshal(bs)
+	roundTripScript, err := Unmarshal(data)
 	require.NoError(t, err)
 
 	assert.Equal(t, script, roundTripScript)
@@ -27,23 +28,25 @@ func TestRoundTripFromBuildScript(t *testing.T) {
 // TestRoundTripFromBuildExpression tests that if we receive a build expression from the API and eventually write it
 // back without any modifications it is still the same.
 func TestRoundTripFromBuildExpression(t *testing.T) {
-	bs, err := UnmarshalBuildExpression(basicBuildExpression, nil)
+	script, err := UnmarshalBuildExpression(basicBuildExpression, nil)
 	require.NoError(t, err)
-	output, err := bs.MarshalBuildExpression()
+	data, err := script.MarshalBuildExpression()
 	require.NoError(t, err)
-	require.Equal(t, string(basicBuildExpression), string(output))
+	t.Logf("marshalled:\n%s\n---", string(data))
+	require.Equal(t, string(basicBuildExpression), string(data))
 }
 
 func TestExpressionToScript(t *testing.T) {
 	ts, err := time.Parse(strfmt.RFC3339Millis, atTime)
 	require.NoError(t, err)
 
-	bs, err := UnmarshalBuildExpression(basicBuildExpression, &ts)
+	script, err := UnmarshalBuildExpression(basicBuildExpression, &ts)
 	require.NoError(t, err)
 
-	as, err := bs.Marshal()
+	data, err := script.Marshal()
 	require.NoError(t, err)
-	require.Equal(t, string(basicBuildScript), string(as))
+	t.Logf("marshalled:\n%s\n---", string(data))
+	require.Equal(t, string(basicBuildScript), string(data))
 }
 
 func TestScriptToExpression(t *testing.T) {

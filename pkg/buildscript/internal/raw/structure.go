@@ -36,14 +36,3 @@ type FuncCall struct {
 	Name      string   `parser:"@Ident"`
 	Arguments []*Value `parser:"'(' @@ (',' @@)* ','? ')'"`
 }
-
-var (
-	reqFuncName = "Req"
-	eqFuncName  = "Eq"
-	neFuncName  = "Ne"
-	gtFuncName  = "Gt"
-	gteFuncName = "Gte"
-	ltFuncName  = "Lt"
-	lteFuncName = "Lte"
-	andFuncName = "And"
-)
