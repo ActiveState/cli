@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	AtTimeKey                         = "at_time"
 	RequirementNameKey                = "name"
 	RequirementNamespaceKey           = "namespace"
 	RequirementVersionRequirementsKey = "version_requirements"
@@ -21,9 +20,8 @@ const (
 	RequirementComparatorKey          = "comparator"
 )
 
-// MarshalJSON marshals the Participle-produced Raw into an equivalent
-// Users of buildscripts do not need to do this manually; the Expr field contains the
-// equivalent
+// MarshalJSON returns this structure as a buildexpression in JSON format, suitable for sending to
+// the Platform.
 func (r *Raw) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
 	let := make(map[string]interface{})
@@ -31,7 +29,7 @@ func (r *Raw) MarshalJSON() ([]byte, error) {
 		key := assignment.Key
 		value := assignment.Value
 		switch key {
-		case AtTimeKey:
+		case atTimeKey:
 			if value.Str == nil {
 				return nil, errs.New("String timestamp expected for '%s'", key)
 			}
@@ -41,7 +39,7 @@ func (r *Raw) MarshalJSON() ([]byte, error) {
 			}
 			r.AtTime = ptr.To(time.Time(atTime))
 			continue // do not include this custom assignment in the let block
-		case "main":
+		case mainKey:
 			key = "in"
 		}
 		let[key] = value
@@ -104,6 +102,9 @@ func (f *FuncCall) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m)
 }
 
+// marshalReq translates a Req() function into its equivalent buildexpression requirement object.
+// This is needed until buildexpressions support functions as requirements. Once they do, we can
+// remove this method entirely.
 func marshalReq(args []*Value) ([]byte, error) {
 	requirement := make(map[string]interface{})
 

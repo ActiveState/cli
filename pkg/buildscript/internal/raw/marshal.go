@@ -1,21 +1,24 @@
 package raw
 
 import (
+	"bytes"
 	"encoding/json"
-	"errors"
+	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/constants"
+	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
+
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/buildscript/internal/buildexpression"
-	"github.com/alecthomas/participle/v2"
-	"github.com/go-openapi/strfmt"
 )
 
-// Marshal converts our Raw structure into a the ascript format
+const mainKey = "main"
+
+// Marshal returns this structure in AScript, suitable for writing to disk.
 func (r *Raw) Marshal() ([]byte, error) {
 	be, err := r.MarshalBuildExpression()
 	if err != nil {
@@ -27,40 +30,12 @@ func (r *Raw) Marshal() ([]byte, error) {
 		return nil, errs.Wrap(err, "Could not unmarshal build expression")
 	}
 
-	return []byte(marshalFromBuildExpression(expr, r.AtTime)), nil
+	return marshalFromBuildExpression(expr, r.AtTime), nil
 }
 
 // MarshalBuildExpression converts our Raw structure into a build expression structure
 func (r *Raw) MarshalBuildExpression() ([]byte, error) {
 	return json.MarshalIndent(r, "", "  ")
-}
-
-// Unmarshal converts our ascript format into a Raw structure
-func Unmarshal(data []byte) (*Raw, error) {
-	parser, err := participle.Build[Raw]()
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not create parser for build script")
-	}
-
-	r, err := parser.ParseBytes(constants.BuildScriptFileName, data)
-	if err != nil {
-		var parseError participle.Error
-		if errors.As(err, &parseError) {
-			return nil, locale.WrapExternalError(err, "err_parse_buildscript_bytes", "Could not parse build script: {{.V0}}: {{.V1}}", parseError.Position().String(), parseError.Message())
-		}
-		return nil, locale.WrapError(err, "err_parse_buildscript_bytes", "Could not parse build script: {{.V0}}", err.Error())
-	}
-
-	if err := r.hydrate(); err != nil {
-		return nil, errs.Wrap(err, "Could not hydrate raw build script")
-	}
-
-	return r, nil
-}
-
-// UnmarshalBuildExpression converts a build expression into our raw structure
-func UnmarshalBuildExpression(expr *buildexpression.BuildExpression, atTime *time.Time) (*Raw, error) {
-	return Unmarshal([]byte(marshalFromBuildExpression(expr, atTime)))
 }
 
 // marshalFromBuildExpression is a bit special in that it is sort of an unmarshaller and a marshaller at the same time.
@@ -69,7 +44,7 @@ func UnmarshalBuildExpression(expr *buildexpression.BuildExpression, atTime *tim
 // of a buildscript (ie. the Raw structure). But that is a large refactor in and of itself that'll follow later.
 // For now we can use this to convert a build expression to a buildscript with an extra hop where we have to unmarshal
 // the resulting buildscript string.
-func marshalFromBuildExpression(expr *buildexpression.BuildExpression, atTime *time.Time) string {
+func marshalFromBuildExpression(expr *buildexpression.BuildExpression, atTime *time.Time) []byte {
 	buf := strings.Builder{}
 
 	if atTime != nil {
@@ -89,7 +64,7 @@ func marshalFromBuildExpression(expr *buildexpression.BuildExpression, atTime *t
 	}
 
 	buf.WriteString("\n")
-	buf.WriteString("main = ")
+	buf.WriteString(fmt.Sprintf("%s = ", mainKey))
 	switch {
 	case expr.Let.In.FuncCall != nil:
 		buf.WriteString(apString(expr.Let.In.FuncCall))
@@ -97,5 +72,111 @@ func marshalFromBuildExpression(expr *buildexpression.BuildExpression, atTime *t
 		buf.WriteString(*expr.Let.In.Name)
 	}
 
+	return []byte(buf.String())
+}
+
+func assignmentString(a *buildexpression.Var) string {
+	if a.Name == buildexpression.RequirementsKey && isLegacyRequirementsList(a) {
+		a = transformRequirements(a)
+	}
+	return fmt.Sprintf("%s = %s", a.Name, valueString(a.Value))
+}
+
+func indent(s string) string {
+	return fmt.Sprintf("\t%s", strings.ReplaceAll(s, "\n", "\n\t"))
+}
+
+func valueString(v *buildexpression.Value) string {
+	switch {
+	case v.Ap != nil:
+		return apString(v.Ap)
+
+	case v.List != nil:
+		buf := bytes.Buffer{}
+		buf.WriteString("[\n")
+		for i, item := range *v.List {
+			buf.WriteString(indent(valueString(item)))
+			if i+1 < len(*v.List) {
+				buf.WriteString(",")
+			}
+			buf.WriteString("\n")
+		}
+		buf.WriteString("]")
+		return buf.String()
+
+	case v.Str != nil:
+		if strings.HasPrefix(*v.Str, "$") { // variable reference
+			return strings.TrimLeft(*v.Str, "$")
+		}
+		return strconv.Quote(*v.Str)
+
+	case v.Float != nil:
+		return strconv.FormatFloat(*v.Float, 'G', -1, 64) // 64-bit float with minimum digits on display
+
+	case v.Null != nil:
+		return "null"
+
+	case v.Assignment != nil:
+		return assignmentString(v.Assignment)
+
+	case v.Object != nil:
+		buf := bytes.Buffer{}
+		buf.WriteString("{\n")
+		for i, pair := range *v.Object {
+			buf.WriteString(indent(assignmentString(pair)))
+			if i+1 < len(*v.Object) {
+				buf.WriteString(",")
+			}
+			buf.WriteString("\n")
+		}
+		buf.WriteString("}")
+		return buf.String()
+
+	case v.Ident != nil:
+		return *v.Ident
+	}
+
+	return "[\n]" // participle does not create v.List if it's empty
+}
+
+// inlineFunctions contains buildscript function names whose arguments should all be written on a
+// single line. By default, function arguments are written one per line.
+var inlineFunctions = []string{
+	reqFuncName,
+	eqFuncName, neFuncName,
+	gtFuncName, gteFuncName,
+	ltFuncName, lteFuncName,
+	andFuncName,
+}
+
+func apString(f *buildexpression.Ap) string {
+	var (
+		newline = "\n"
+		comma   = ","
+		indent  = indent
+	)
+
+	if funk.Contains(inlineFunctions, f.Name) {
+		newline = ""
+		comma = ", "
+		indent = func(s string) string {
+			return s
+		}
+	}
+
+	buf := bytes.Buffer{}
+	buf.WriteString(fmt.Sprintf("%s(%s", f.Name, newline))
+
+	for i, argument := range f.Arguments {
+		buf.WriteString(indent(valueString(argument)))
+
+		if i+1 < len(f.Arguments) {
+			buf.WriteString(comma)
+		}
+
+		buf.WriteString(newline)
+	}
+
+	buf.WriteString(")")
 	return buf.String()
 }

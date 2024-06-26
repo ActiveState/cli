@@ -1,20 +1,11 @@
 package raw
 
 import (
-	"bytes"
-	"fmt"
-	"strconv"
-	"strings"
-
-	"github.com/ActiveState/cli/pkg/buildscript/internal/buildexpression"
-	"github.com/thoas/go-funk"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-)
 
-func indent(s string) string {
-	return fmt.Sprintf("\t%s", strings.ReplaceAll(s, "\n", "\n\t"))
-}
+	"github.com/ActiveState/cli/pkg/buildscript/internal/buildexpression"
+)
 
 func isLegacyRequirementsList(list *buildexpression.Var) bool {
 	return len(*list.Value.List) > 0 && (*list.Value.List)[0].Object != nil
@@ -123,106 +114,4 @@ func transformVersion(requirements *buildexpression.Var) *buildexpression.Ap {
 		ap = &buildexpression.Ap{Name: andFuncName, Arguments: args}
 	}
 	return ap
-}
-
-func assignmentString(a *buildexpression.Var) string {
-	if a.Name == buildexpression.RequirementsKey && isLegacyRequirementsList(a) {
-		a = transformRequirements(a)
-	}
-	return fmt.Sprintf("%s = %s", a.Name, valueString(a.Value))
-}
-
-func valueString(v *buildexpression.Value) string {
-	switch {
-	case v.Ap != nil:
-		return apString(v.Ap)
-
-	case v.List != nil:
-		buf := bytes.Buffer{}
-		buf.WriteString("[\n")
-		for i, item := range *v.List {
-			buf.WriteString(indent(valueString(item)))
-			if i+1 < len(*v.List) {
-				buf.WriteString(",")
-			}
-			buf.WriteString("\n")
-		}
-		buf.WriteString("]")
-		return buf.String()
-
-	case v.Str != nil:
-		if strings.HasPrefix(*v.Str, "$") { // variable reference
-			return strings.TrimLeft(*v.Str, "$")
-		}
-		return strconv.Quote(*v.Str)
-
-	case v.Float != nil:
-		return strconv.FormatFloat(*v.Float, 'G', -1, 64) // 64-bit float with minimum digits on display
-
-	case v.Null != nil:
-		return "null"
-
-	case v.Assignment != nil:
-		return assignmentString(v.Assignment)
-
-	case v.Object != nil:
-		buf := bytes.Buffer{}
-		buf.WriteString("{\n")
-		for i, pair := range *v.Object {
-			buf.WriteString(indent(assignmentString(pair)))
-			if i+1 < len(*v.Object) {
-				buf.WriteString(",")
-			}
-			buf.WriteString("\n")
-		}
-		buf.WriteString("}")
-		return buf.String()
-
-	case v.Ident != nil:
-		return *v.Ident
-	}
-
-	return "[\n]" // participle does not create v.List if it's empty
-}
-
-// inlineFunctions contains buildscript function names whose arguments should all be written on a
-// single line. By default, function arguments are written one per line.
-var inlineFunctions = []string{
-	reqFuncName,
-	eqFuncName, neFuncName,
-	gtFuncName, gteFuncName,
-	ltFuncName, lteFuncName,
-	andFuncName,
-}
-
-func apString(f *buildexpression.Ap) string {
-	var (
-		newline = "\n"
-		comma   = ","
-		indent  = indent
-	)
-
-	if funk.Contains(inlineFunctions, f.Name) {
-		newline = ""
-		comma = ", "
-		indent = func(s string) string {
-			return s
-		}
-	}
-
-	buf := bytes.Buffer{}
-	buf.WriteString(fmt.Sprintf("%s(%s", f.Name, newline))
-
-	for i, argument := range f.Arguments {
-		buf.WriteString(indent(valueString(argument)))
-
-		if i+1 < len(f.Arguments) {
-			buf.WriteString(comma)
-		}
-
-		buf.WriteString(newline)
-	}
-
-	buf.WriteString(")")
-	return buf.String()
 }

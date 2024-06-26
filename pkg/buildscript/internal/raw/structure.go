@@ -4,14 +4,11 @@ import (
 	"time"
 )
 
-// Raw 's tagged fields will be initially filled in by Participle.
-// expr will be constructed later and is this script's buildexpression. We keep a copy of the build
-// expression here with any changes that have been applied before either writing it to disk or
-// submitting it to the build planner. It's easier to operate on build expressions directly than to
-// modify or manually populate the Participle-produced fields and re-generate a build expression.
+// Tagged fields will be filled in by Participle.
 type Raw struct {
 	Assignments []*Assignment `parser:"@@+"`
-	AtTime      *time.Time
+
+	AtTime *time.Time // set after initial read
 }
 
 type Assignment struct {
@@ -38,11 +35,6 @@ type Null struct {
 type FuncCall struct {
 	Name      string   `parser:"@Ident"`
 	Arguments []*Value `parser:"'(' @@ (',' @@)* ','? ')'"`
-}
-
-type In struct {
-	FuncCall *FuncCall `parser:"@@"`
-	Name     *string   `parser:"| @Ident"`
 }
 
 var (
