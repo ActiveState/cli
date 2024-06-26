@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
 	"github.com/ActiveState/graphql"
 )
@@ -174,6 +175,28 @@ func (m *SvcModel) GetProcessesInUse(ctx context.Context, execDir string) ([]*gr
 	}
 
 	return response.Processes, nil
+}
+
+// GetJWT grabs the JWT from the svc, if it exists.
+// Note we respond with mono_models.JWT here for compatibility and to minimize the changeset at time of implementation.
+// We can revisit this in the future.
+func (m *SvcModel) GetJWT(ctx context.Context) (*mono_models.JWT, error) {
+	logging.Debug("Checking for GetJWT")
+	defer profile.Measure("svc:GetJWT", time.Now())
+
+	r := request.NewJWTRequest()
+	resp := graph.GetJWTResponse{}
+	if err := m.request(ctx, r, &resp); err != nil {
+		return nil, errs.Wrap(err, "Error sending messages request")
+	}
+
+	jwt := &mono_models.JWT{}
+	err := json.Unmarshal(resp.Payload, &jwt)
+	if err != nil {
+		return nil, errs.Wrap(err, "Error unmarshaling JWT")
+	}
+
+	return jwt, nil
 }
 
 func jsonFromMap(m map[string]interface{}) string {

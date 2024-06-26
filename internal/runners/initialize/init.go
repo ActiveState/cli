@@ -78,8 +78,11 @@ var errNoOwner = errs.New("Could not find organization")
 var errNoLanguage = errs.New("No language specified")
 
 type errUnrecognizedLanguage struct {
-	error
 	Name string
+}
+
+func (e errUnrecognizedLanguage) Error() string {
+	return fmt.Sprintf("unrecognized language: %s", e.Name)
 }
 
 // New returns a prepared ptr to Initialize instance.
@@ -183,12 +186,12 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	// Require 'python', 'python@3', or 'python@2' instead of 'python3' or 'python2'.
 	if languageName == language.Python3.String() || languageName == language.Python2.String() {
-		return &errUnrecognizedLanguage{Name: languageName}
+		return &errUnrecognizedLanguage{languageName}
 	}
 
 	lang := language.MakeByNameAndVersion(languageName, languageVersion)
 	if !lang.Recognized() {
-		return &errUnrecognizedLanguage{Name: languageName}
+		return &errUnrecognizedLanguage{languageName}
 	}
 
 	version, err := deriveVersion(lang, languageVersion, r.auth)
@@ -327,7 +330,7 @@ func getKnownVersions(lang language.Language, auth *authentication.Auth) ([]stri
 	}
 
 	if len(pkgs) == 0 {
-		return nil, &errUnrecognizedLanguage{Name: lang.Requirement()}
+		return nil, &errUnrecognizedLanguage{lang.Requirement()}
 	}
 
 	knownVersions := make([]string, len(pkgs))

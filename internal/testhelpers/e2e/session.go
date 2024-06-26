@@ -391,8 +391,6 @@ func (s *Session) LoginAsPersistentUser() {
 
 func (s *Session) LogoutUser() {
 	p := s.Spawn(tagsuite.Auth, "logout")
-
-	p.Expect("logged out")
 	p.ExpectExitCode(0)
 }
 

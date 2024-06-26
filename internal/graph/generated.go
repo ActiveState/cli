@@ -24,6 +24,11 @@ type ConfigChangedResponse struct {
 	Received bool `json:"received"`
 }
 
+type Jwt struct {
+	Token string `json:"token"`
+	User  *User  `json:"user"`
+}
+
 type MessageInfo struct {
 	ID        string               `json:"id"`
 	Message   string               `json:"message"`
@@ -31,6 +36,11 @@ type MessageInfo struct {
 	Repeat    MessageRepeatType    `json:"repeat"`
 	Interrupt MessageInterruptType `json:"interrupt"`
 	Placement MessagePlacementType `json:"placement"`
+}
+
+type Organization struct {
+	URLname string `json:"URLname"`
+	Role    string `json:"role"`
 }
 
 type ProcessInfo struct {
@@ -53,6 +63,13 @@ type StateVersion struct {
 	Channel  string `json:"channel"`
 	Revision string `json:"revision"`
 	Date     string `json:"date"`
+}
+
+type User struct {
+	UserID        string          `json:"userID"`
+	Username      string          `json:"username"`
+	Email         string          `json:"email"`
+	Organizations []*Organization `json:"organizations"`
 }
 
 type Version struct {

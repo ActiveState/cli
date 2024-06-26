@@ -117,10 +117,9 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Could not setup runtime")
 	}
 
-	var execDir string
 	var checkoutStatement string
+	execDir := setup.ExecDir(rti.Target().Dir())
 	if !u.config.GetBool(constants.AsyncRuntimeConfig) {
-		execDir = setup.ExecDir(rti.Target().Dir())
 		checkoutStatement = locale.Tr("checkout_project_statement", proj.NamespaceString(), proj.Dir(), execDir)
 	} else {
 		checkoutStatement = locale.Tr("checkout_project_statement_async", proj.NamespaceString(), proj.Dir())

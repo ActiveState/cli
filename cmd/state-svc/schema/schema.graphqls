@@ -60,6 +60,23 @@ type MessageInfo {
     placement: MessagePlacementType!
 }
 
+type Organization {
+    URLname: String!
+    role: String!
+}
+
+type User {
+    userID: String!
+    username: String!
+    email: String!
+    organizations: [Organization!]!
+}
+
+type JWT {
+    token: String!
+    user: User!
+}
+
 type Query {
     version: Version
     availableUpdate(desiredChannel: String!, desiredVersion: String!): AvailableUpdate
@@ -70,6 +87,7 @@ type Query {
     configChanged(key: String!): ConfigChangedResponse
     fetchLogTail: String!
     getProcessesInUse(execDir: String!): [ProcessInfo!]!
+    getJWT: JWT
 }
 
 type ConfigChangedResponse {
