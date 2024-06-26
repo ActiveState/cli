@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/go-openapi/strfmt"
 
@@ -41,6 +42,7 @@ type depot struct {
 	config    depotConfig
 	depotPath string
 	artifacts map[strfmt.UUID]struct{}
+	fsMutex   *sync.Mutex
 }
 
 func newDepot() (*depot, error) {
@@ -52,6 +54,7 @@ func newDepot() (*depot, error) {
 		},
 		depotPath: depotPath,
 		artifacts: map[strfmt.UUID]struct{}{},
+		fsMutex:   &sync.Mutex{},
 	}
 
 	if !fileutils.TargetExists(depotPath) {
@@ -122,6 +125,9 @@ func (d *depot) Put(id strfmt.UUID) error {
 
 // DeployViaLink will take an artifact from the depot and link it to the target path.
 func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) error {
+	d.fsMutex.Lock()
+	defer d.fsMutex.Unlock()
+
 	if !d.Exists(id) {
 		return errs.New("artifact not found in depot")
 	}
@@ -167,6 +173,9 @@ func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) 
 
 // DeployViaCopy will take an artifact from the depot and copy it to the target path.
 func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) error {
+	d.fsMutex.Lock()
+	defer d.fsMutex.Unlock()
+
 	if !d.Exists(id) {
 		return errs.New("artifact not found in depot")
 	}
@@ -215,6 +224,9 @@ func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) 
 }
 
 func (d *depot) Undeploy(id strfmt.UUID, relativeSrc, path string) error {
+	d.fsMutex.Lock()
+	defer d.fsMutex.Unlock()
+
 	if !d.Exists(id) {
 		return errs.New("artifact not found in depot")
 	}
