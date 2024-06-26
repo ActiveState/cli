@@ -31,11 +31,14 @@ func (suite *ConditionIntegrationTestSuite) TestCondition() {
 	cp.Expect(`shellValue`)
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("activate")
-	cp.Expect(`Activation Event Ran`)
-	cp.ExpectInput()
-	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
+	if runtime.GOOS != "windows" {
+		// https://activestatef.atlassian.net/browse/DX-2925
+		cp = ts.Spawn("activate")
+		cp.Expect(`Activation Event Ran`)
+		cp.ExpectInput()
+		cp.SendLine("exit")
+		cp.ExpectExitCode(0)
+	}
 
 	cp = ts.Spawn("run", "complex-true")
 	cp.Expect(`I exist`)
