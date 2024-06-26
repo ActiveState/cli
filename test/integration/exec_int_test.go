@@ -87,7 +87,7 @@ func (suite *ExecIntegrationTestSuite) TestExec_Args() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareEmptyProject()
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
 
 	args := []string{
 		"firstArgument",
