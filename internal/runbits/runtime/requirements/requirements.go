@@ -242,7 +242,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 
 		// Solve runtime
-		solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve"), constants.TerminalAnimationInterval)
+		solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
 		bpm := bpModel.NewBuildPlannerModel(r.Auth)
 		rtCommit, err := bpm.FetchCommit(commitID, r.Project.Owner(), r.Project.Name(), nil)
 		if err != nil {
@@ -277,7 +277,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 			// refresh or install runtime
 			_, err = runtime_runbit.Update(r.prime, trig,
 				runtime_runbit.WithCommit(rtCommit),
-				runtime_runbit.WithoutHeaders(),
 				runtime_runbit.WithoutBuildscriptValidation(),
 			)
 			if err != nil {
