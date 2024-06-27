@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/go-openapi/strfmt"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
@@ -55,13 +57,16 @@ func UnmarshalBuildExpression(data []byte) (*Raw, error) {
 
 	var path []string
 	assignments, err := newAssignments(path, let)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not read assignments")
+	}
 
 	raw := &Raw{Assignments: assignments}
 
 	// Extract the 'at_time' from the solve node, if it exists, and change its value to be a
 	// reference to "$at_time", which is how we want to show it in AScript format.
 	if atTimeNode, err := raw.getSolveAtTimeValue(); err == nil && atTimeNode.Str != nil && !strings.HasPrefix(*atTimeNode.Str, `"$`) {
-		atTime, err := strfmt.ParseDateTime(*atTimeNode.Str)
+		atTime, err := strfmt.ParseDateTime(strings.Trim(*atTimeNode.Str, `"`))
 		if err != nil {
 			return nil, errs.Wrap(err, "Invalid timestamp: %s", *atTimeNode.Str)
 		}
@@ -70,6 +75,18 @@ func UnmarshalBuildExpression(data []byte) (*Raw, error) {
 		raw.AtTime = ptr.To(time.Time(atTime))
 	} else if err != nil {
 		return nil, errs.Wrap(err, "Could not get at_time node")
+	}
+
+	// If the requirements are in legacy object form, e.g.
+	//   requirements = [{"name": "<name>", "namespace": "<name>"}, {...}, ...]
+	// then transform them into function call form, which is what build scripts use, e.g.
+	//   requirements = [Req(name = "<name>", namespace = "<name>"), Req(...), ...]
+	requirements, err := raw.getRequirementsNode()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get requirements node")
+	}
+	if isLegacyRequirementsList(requirements) {
+		requirements.List = transformRequirements(requirements).List
 	}
 
 	return raw, nil
@@ -294,4 +311,107 @@ func newIn(path []string, inValue interface{}) (*Value, error) {
 	}
 
 	return in, nil
+}
+
+// isLegacyRequirementsList returns whether or not the given requirements list is in the legacy
+// object format, such as
+//
+//	[
+//		{"name": "<name>", "namespace": "<namespace>"},
+//		...,
+//	]
+func isLegacyRequirementsList(value *Value) bool {
+	return len(*value.List) > 0 && (*value.List)[0].Object != nil
+}
+
+// transformRequirements transforms a buildexpression list of requirements in object form into a
+// list of requirements in function-call form, which is how requirements are represented in
+// buildscripts.
+func transformRequirements(reqs *Value) *Value {
+	newReqs := &Value{List: &[]*Value{}}
+
+	for _, req := range *reqs.List {
+		*newReqs.List = append(*newReqs.List, transformRequirement(req))
+	}
+
+	return newReqs
+}
+
+// transformRequirement transforms a buildexpression requirement in object form into a requirement
+// in function-call form.
+// For example, transform something like
+//
+//	{"name": "<name>", "namespace": "<namespace>",
+//		"version_requirements": [{"comparator": "<op>", "version": "<version>"}]}
+//
+// into something like
+//
+//	Req(name = "<name>", namespace = "<namespace>", version = <op>(value = "<version>"))
+func transformRequirement(req *Value) *Value {
+	newReq := &Value{FuncCall: &FuncCall{reqFuncName, []*Value{}}}
+
+	for _, arg := range *req.Object {
+		key := arg.Key
+		value := arg.Value
+
+		// Transform the version value from the requirement object.
+		if key == requirementVersionRequirementsKey {
+			key = requirementVersionKey
+			value = &Value{FuncCall: transformVersion(arg)}
+		}
+
+		// Add the argument to the function transformation.
+		newReq.FuncCall.Arguments = append(newReq.FuncCall.Arguments, &Value{Assignment: &Assignment{key, value}})
+	}
+
+	return newReq
+}
+
+// transformVersion transforms a buildexpression version_requirements list in object form into
+// function-call form.
+// For example, transform something like
+//
+//	[{"comparator": "<op1>", "version": "<version1>"}, {"comparator": "<op2>", "version": "<version2>"}]
+//
+// into something like
+//
+//	And(<op1>(value = "<version1>"), <op2>(value = "<version2>"))
+func transformVersion(requirements *Assignment) *FuncCall {
+	var funcs []*FuncCall
+	for _, constraint := range *requirements.Value.List {
+		f := &FuncCall{}
+		for _, o := range *constraint.Object {
+			switch o.Key {
+			case requirementVersionKey:
+				f.Arguments = []*Value{
+					{Assignment: &Assignment{"value", &Value{Str: o.Value.Str}}},
+				}
+			case requirementComparatorKey:
+				f.Name = cases.Title(language.English).String(strings.Trim(*o.Value.Str, `"`))
+			}
+		}
+		funcs = append(funcs, f)
+	}
+
+	if len(funcs) == 1 {
+		return funcs[0] // e.g. Eq(value = "1.0")
+	}
+
+	// e.g. And(left = Gt(value = "1.0"), right = Lt(value = "3.0"))
+	// Iterate backwards over the requirements array and construct a binary tree of 'And()' functions.
+	// For example, given [Gt(value = "1.0"), Ne(value = "2.0"), Lt(value = "3.0")], produce:
+	//   And(left = Gt(value = "1.0"), right = And(left = Ne(value = "2.0"), right = Lt(value = "3.0")))
+	var f *FuncCall
+	for i := len(funcs) - 2; i >= 0; i-- {
+		right := &Value{FuncCall: funcs[i+1]}
+		if f != nil {
+			right = &Value{FuncCall: f}
+		}
+		args := []*Value{
+			{Assignment: &Assignment{"left", &Value{FuncCall: funcs[i]}}},
+			{Assignment: &Assignment{"right", right}},
+		}
+		f = &FuncCall{andFuncName, args}
+	}
+	return f
 }

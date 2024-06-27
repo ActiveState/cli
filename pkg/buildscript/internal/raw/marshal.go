@@ -53,9 +53,6 @@ func (r *Raw) Marshal() ([]byte, error) {
 }
 
 func assignmentString(a *Assignment) string {
-	if a.Key == requirementsKey && isLegacyRequirementsList(a.Value) {
-		a = transformRequirements(a)
-	}
 	return fmt.Sprintf("%s = %s", a.Key, valueString(a.Value))
 }
 

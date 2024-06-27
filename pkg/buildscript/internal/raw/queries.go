@@ -1,6 +1,8 @@
 package raw
 
 import (
+	"strings"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 )
@@ -9,9 +11,11 @@ const (
 	solveFuncName       = "solve"
 	solveLegacyFuncName = "solve_legacy"
 	platformsKey        = "platforms"
+	letKey              = "let"
 )
 
-var funcNodeNotFoundError = errs.New("Could not find function node")
+var errNodeNotFound = errs.New("Could not find node")
+var errValueNotFound = errs.New("Could not find value")
 
 func (r *Raw) Requirements() ([]types.Requirement, error) {
 	requirementsNode, err := r.getRequirementsNode()
@@ -20,23 +24,20 @@ func (r *Raw) Requirements() ([]types.Requirement, error) {
 	}
 
 	var requirements []types.Requirement
-	for _, r := range requirementsNode {
-		if r.Object == nil {
+	for _, r := range *requirementsNode.List {
+		if r.FuncCall == nil {
 			continue
 		}
 
 		var req types.Requirement
-		for _, o := range *r.Object {
-			if o.Key == RequirementNameKey {
-				req.Name = *o.Value.Str
-			}
-
-			if o.Key == RequirementNamespaceKey {
-				req.Namespace = *o.Value.Str
-			}
-
-			if o.Key == RequirementVersionRequirementsKey {
-				req.VersionRequirement = getVersionRequirements(o.Value.List)
+		for _, arg := range r.FuncCall.Arguments {
+			switch arg.Assignment.Key {
+			case RequirementNameKey:
+				req.Name = strings.Trim(*arg.Assignment.Value.Str, `"`)
+			case RequirementNamespaceKey:
+				req.Namespace = strings.Trim(*arg.Assignment.Value.Str, `"`)
+			case RequirementVersionKey:
+				req.VersionRequirement = getVersionRequirements(arg.Assignment.Value)
 			}
 		}
 		requirements = append(requirements, req)
@@ -45,50 +46,39 @@ func (r *Raw) Requirements() ([]types.Requirement, error) {
 	return requirements, nil
 }
 
-func (r *Raw) getRequirementsNode() ([]*Value, error) {
-	solveFunc, err := r.getSolveNode()
+func (r *Raw) getRequirementsNode() (*Value, error) {
+	node, err := r.getSolveNode()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get solve node")
 	}
 
-	var reqs []*Value
-	for _, arg := range solveFunc.Arguments {
-		if arg.Assignment == nil {
-			continue
-		}
-
-		if arg.Assignment.Key == requirementsKey && arg.Assignment.Value != nil {
-			reqs = *arg.Assignment.Value.List
+	for _, arg := range node.FuncCall.Arguments {
+		if arg.Assignment != nil && arg.Assignment.Key == requirementsKey {
+			return arg.Assignment.Value, nil
 		}
 	}
 
-	return reqs, nil
+	return nil, errNodeNotFound
 }
 
-func getVersionRequirements(v *[]*Value) []types.VersionRequirement {
-	var reqs []types.VersionRequirement
+func getVersionRequirements(v *Value) []types.VersionRequirement {
+	reqs := []types.VersionRequirement{}
 
-	if v == nil {
-		return reqs
-	}
+	switch v.FuncCall.Name {
+	case eqFuncName, neFuncName, gtFuncName, gteFuncName, ltFuncName, lteFuncName:
+		reqs = append(reqs, types.VersionRequirement{
+			RequirementComparatorKey: strings.ToLower(v.FuncCall.Name),
+			RequirementVersionKey:    strings.Trim(*v.FuncCall.Arguments[0].Assignment.Value.Str, `"`),
+		})
 
-	for _, r := range *v {
-		if r.Object == nil {
-			continue
-		}
-
-		versionReq := make(types.VersionRequirement)
-		for _, o := range *r.Object {
-			if o.Key == RequirementComparatorKey {
-				versionReq[RequirementComparatorKey] = *o.Value.Str
-			}
-
-			if o.Key == RequirementVersionKey {
-				versionReq[RequirementVersionKey] = *o.Value.Str
+	case andFuncName:
+		for _, arg := range v.FuncCall.Arguments {
+			if arg.Assignment != nil && arg.Assignment.Value.FuncCall != nil {
+				reqs = append(reqs, getVersionRequirements(arg.Assignment.Value)...)
 			}
 		}
-		reqs = append(reqs, versionReq)
 	}
+
 	return reqs
 }
 
@@ -105,52 +95,70 @@ func getVersionRequirements(v *[]*Value) []types.VersionRequirement {
 //	    }
 //	  }
 //	}
-func (r *Raw) getSolveNode() (*FuncCall, error) {
-	// Search for solve node in the top level assignments.
-	for _, a := range r.Assignments {
-		if a.Value.FuncCall == nil {
-			continue
+func (r *Raw) getSolveNode() (*Value, error) {
+	var search func([]*Assignment) *Value
+	search = func(assignments []*Assignment) *Value {
+		var nextLet []*Assignment
+		for _, a := range assignments {
+			if a.Key == letKey {
+				nextLet = *a.Value.Object // nested 'let' to search next
+				continue
+			}
+
+			if a.Value.FuncCall == nil {
+				continue
+			}
+
+			if a.Value.FuncCall.Name == solveFuncName || a.Value.FuncCall.Name == solveLegacyFuncName {
+				return a.Value
+			}
 		}
 
-		if a.Value.FuncCall.Name == solveFuncName || a.Value.FuncCall.Name == solveLegacyFuncName {
-			return a.Value.FuncCall, nil
+		// The highest level solve node is not found, so recurse into the next let.
+		if nextLet != nil {
+			return search(nextLet)
 		}
+
+		return nil
+	}
+	if node := search(r.Assignments); node != nil {
+		return node, nil
 	}
 
-	return nil, funcNodeNotFoundError
+	return nil, errNodeNotFound
 }
 
 func (r *Raw) getSolveNodeArguments() ([]*Value, error) {
-	solveFunc, err := r.getSolveNode()
+	node, err := r.getSolveNode()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get solve node")
 	}
 
-	return solveFunc.Arguments, nil
+	return node.FuncCall.Arguments, nil
 }
 
 func (r *Raw) getSolveAtTimeValue() (*Value, error) {
-	solveFunc, err := r.getSolveNode()
+	node, err := r.getSolveNode()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get solve node")
 	}
 
-	for _, arg := range solveFunc.Arguments {
+	for _, arg := range node.FuncCall.Arguments {
 		if arg.Assignment != nil && arg.Assignment.Key == atTimeKey {
 			return arg.Assignment.Value, nil
 		}
 	}
 
-	return nil, errs.New("Could not find %s", atTimeKey)
+	return nil, errValueNotFound
 }
 
 func (r *Raw) getPlatformsNode() (*[]*Value, error) {
-	solveFunc, err := r.getSolveNode()
+	node, err := r.getSolveNode()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get solve node")
 	}
 
-	for _, arg := range solveFunc.Arguments {
+	for _, arg := range node.FuncCall.Arguments {
 		if arg.Assignment == nil {
 			continue
 		}
@@ -160,5 +168,5 @@ func (r *Raw) getPlatformsNode() (*[]*Value, error) {
 		}
 	}
 
-	return nil, errs.New("Could not find platforms node")
+	return nil, errNodeNotFound
 }
