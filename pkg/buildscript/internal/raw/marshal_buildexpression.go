@@ -42,9 +42,9 @@ func (r *Raw) MarshalJSON() ([]byte, error) {
 			if value.Str == nil {
 				return nil, errs.New("String timestamp expected for '%s'", key)
 			}
-			atTime, err := strfmt.ParseDateTime(strings.Trim(*value.Str, `"`))
+			atTime, err := strfmt.ParseDateTime(strValue(value))
 			if err != nil {
-				return nil, errs.Wrap(err, "Invalid timestamp: %s", *value.Str)
+				return nil, errs.Wrap(err, "Invalid timestamp: %s", strValue(value))
 			}
 			r.AtTime = ptr.To(time.Time(atTime))
 			continue // do not include this custom assignment in the let block
@@ -70,7 +70,7 @@ func (v *Value) MarshalJSON() ([]byte, error) {
 	case v.List != nil:
 		return json.Marshal(v.List)
 	case v.Str != nil:
-		return json.Marshal(strings.Trim(*v.Str, `"`))
+		return json.Marshal(strValue(v))
 	case v.Number != nil:
 		return json.Marshal(*v.Number)
 	case v.Null != nil:
@@ -126,29 +126,29 @@ func marshalReq(args []*Value) ([]byte, error) {
 		switch {
 		// Marshal the name argument (e.g. name = "<name>") into {"name": "<name>"}
 		case assignment.Key == requirementNameKey && assignment.Value.Str != nil:
-			requirement[requirementNameKey] = strings.Trim(*assignment.Value.Str, `"`)
+			requirement[requirementNameKey] = strValue(assignment.Value)
 
 		// Marshal the namespace argument (e.g. namespace = "<namespace>") into
 		// {"namespace": "<namespace>"}
 		case assignment.Key == requirementNamespaceKey && assignment.Value.Str != nil:
-			requirement[requirementNamespaceKey] = strings.Trim(*assignment.Value.Str, `"`)
+			requirement[requirementNamespaceKey] = strValue(assignment.Value)
 
 		// Marshal the version argument (e.g. version = <op>(value = "<version>")) into
 		// {"version_requirements": [{"comparator": "<op>", "version": "<version>"}]}
 		case assignment.Key == requirementVersionKey && assignment.Value.FuncCall != nil:
-			var requirements []*Value
+			requirements := make([]interface{}, 0)
 			var addRequirement func(*FuncCall) error // recursive function for adding to requirements list
 			addRequirement = func(funcCall *FuncCall) error {
 				switch name := funcCall.Name; name {
 				case eqFuncName, neFuncName, gtFuncName, gteFuncName, ltFuncName, lteFuncName:
-					req := make([]*Assignment, 0)
-					req = append(req, &Assignment{requirementComparatorKey, &Value{Str: ptr.To(strings.ToLower(name))}})
+					req := make(map[string]string)
+					req[requirementComparatorKey] = strings.ToLower(name)
 					if len(funcCall.Arguments) == 0 || funcCall.Arguments[0].Assignment == nil ||
-						funcCall.Arguments[0].Assignment.Value.Str == nil || *funcCall.Arguments[0].Assignment.Value.Str == "value" {
+						funcCall.Arguments[0].Assignment.Value.Str == nil || strValue(funcCall.Arguments[0].Assignment.Value) == "value" {
 						return errs.New(`Illegal argument for version comparator '%s': 'value = "<version>"' expected`, name)
 					}
-					req = append(req, &Assignment{requirementVersionKey, &Value{Str: funcCall.Arguments[0].Assignment.Value.Str}})
-					requirements = append(requirements, &Value{Object: &req})
+					req[requirementVersionKey] = strValue(funcCall.Arguments[0].Assignment.Value)
+					requirements = append(requirements, req)
 				case andFuncName:
 					if len(funcCall.Arguments) != 2 {
 						return errs.New("Illegal arguments for version comparator '%s': 2 arguments expected, got %d", name, len(funcCall.Arguments))
@@ -171,7 +171,7 @@ func marshalReq(args []*Value) ([]byte, error) {
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not marshal requirement")
 			}
-			requirement[requirementVersionRequirementsKey] = &Value{List: &requirements}
+			requirement[requirementVersionRequirementsKey] = requirements
 
 		default:
 			logging.Debug("Adding unknown argument: %v", assignment)

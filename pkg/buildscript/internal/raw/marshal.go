@@ -8,8 +8,6 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
-
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
 const (
@@ -31,7 +29,7 @@ func (r *Raw) Marshal() ([]byte, error) {
 
 	if r.AtTime != nil {
 		buf.WriteString(assignmentString(
-			&Assignment{atTimeKey, &Value{Str: ptr.To(strconv.Quote(r.AtTime.Format(strfmt.RFC3339Millis)))}}))
+			&Assignment{atTimeKey, newString(r.AtTime.Format(strfmt.RFC3339Millis))}))
 		buf.WriteString("\n")
 	}
 
@@ -78,10 +76,7 @@ func valueString(v *Value) string {
 		return buf.String()
 
 	case v.Str != nil:
-		if strings.HasPrefix(*v.Str, `"$`) { // variable reference
-			return strings.Replace(*v.Str, `"$`, `"`, 1)
-		}
-		return *v.Str
+		return *v.Str // keep quoted
 
 	case v.Number != nil:
 		return strconv.FormatFloat(*v.Number, 'G', -1, 64) // 64-bit float with minimum digits on display

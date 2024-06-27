@@ -47,19 +47,19 @@ main = runtime
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{"name", &Value{Str: ptr.To(`"python"`)}}},
-									{Assignment: &Assignment{"namespace", &Value{Str: ptr.To(`"language"`)}}},
+									{Assignment: &Assignment{"name", newString("python")}},
+									{Assignment: &Assignment{"namespace", newString("language")}},
 								}}},
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{"name", &Value{Str: ptr.To(`"requests"`)}}},
-									{Assignment: &Assignment{"namespace", &Value{Str: ptr.To(`"language/python"`)}}},
+									{Assignment: &Assignment{"name", newString("requests")}},
+									{Assignment: &Assignment{"namespace", newString("language/python")}},
 									{Assignment: &Assignment{
 										"version", &Value{FuncCall: &FuncCall{
 											Name: "Eq",
 											Arguments: []*Value{
-												{Assignment: &Assignment{Key: "value", Value: &Value{Str: ptr.To(`"3.10.10"`)}}},
+												{Assignment: &Assignment{"value", newString("3.10.10")}},
 											},
 										}},
 									}},
@@ -116,8 +116,8 @@ main = merge(
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{"name", &Value{Str: ptr.To(`"python"`)}}},
-									{Assignment: &Assignment{"namespace", &Value{Str: ptr.To(`"language"`)}}},
+									{Assignment: &Assignment{"name", newString("python")}},
+									{Assignment: &Assignment{"namespace", newString("language")}},
 								},
 							}},
 						}},
@@ -135,8 +135,8 @@ main = merge(
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{"name", &Value{Str: ptr.To(`"perl"`)}}},
-									{Assignment: &Assignment{"namespace", &Value{Str: ptr.To(`"language"`)}}},
+									{Assignment: &Assignment{"name", newString("perl")}},
+									{Assignment: &Assignment{"namespace", newString("language")}},
 								},
 							}},
 						}},
@@ -194,20 +194,20 @@ func TestComplexVersions(t *testing.T) {
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{"name", &Value{Str: ptr.To(`"python"`)}}},
-									{Assignment: &Assignment{"namespace", &Value{Str: ptr.To(`"language"`)}}},
+									{Assignment: &Assignment{"name", newString("python")}},
+									{Assignment: &Assignment{"namespace", newString("language")}},
 								},
 							}},
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{"name", &Value{Str: ptr.To(`"requests"`)}}},
-									{Assignment: &Assignment{"namespace", &Value{Str: ptr.To(`"language/python"`)}}},
+									{Assignment: &Assignment{"name", newString("requests")}},
+									{Assignment: &Assignment{"namespace", newString("language/python")}},
 									{Assignment: &Assignment{
 										"version", &Value{FuncCall: &FuncCall{
 											Name: "Eq",
 											Arguments: []*Value{
-												{Assignment: &Assignment{Key: "value", Value: &Value{Str: ptr.To(`"3.10.10"`)}}},
+												{Assignment: &Assignment{Key: "value", Value: newString("3.10.10")}},
 											},
 										}},
 									}},
@@ -216,8 +216,8 @@ func TestComplexVersions(t *testing.T) {
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{"name", &Value{Str: ptr.To(`"argparse"`)}}},
-									{Assignment: &Assignment{"namespace", &Value{Str: ptr.To(`"language/python"`)}}},
+									{Assignment: &Assignment{"name", newString("argparse")}},
+									{Assignment: &Assignment{"namespace", newString("language/python")}},
 									{Assignment: &Assignment{
 										"version", &Value{FuncCall: &FuncCall{
 											Name: "And",
@@ -225,13 +225,13 @@ func TestComplexVersions(t *testing.T) {
 												{Assignment: &Assignment{Key: "left", Value: &Value{FuncCall: &FuncCall{
 													Name: "Gt",
 													Arguments: []*Value{
-														{Assignment: &Assignment{Key: "value", Value: &Value{Str: ptr.To(`"1.0"`)}}},
+														{Assignment: &Assignment{Key: "value", Value: newString("1.0")}},
 													},
 												}}}},
 												{Assignment: &Assignment{Key: "right", Value: &Value{FuncCall: &FuncCall{
 													Name: "Lt",
 													Arguments: []*Value{
-														{Assignment: &Assignment{Key: "value", Value: &Value{Str: ptr.To(`"2.0"`)}}},
+														{Assignment: &Assignment{Key: "value", Value: newString("2.0")}},
 													},
 												}}}},
 											},

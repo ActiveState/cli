@@ -35,9 +35,9 @@ func (r *Raw) Requirements() ([]types.Requirement, error) {
 		for _, arg := range r.FuncCall.Arguments {
 			switch arg.Assignment.Key {
 			case requirementNameKey:
-				req.Name = strings.Trim(*arg.Assignment.Value.Str, `"`)
+				req.Name = strValue(arg.Assignment.Value)
 			case requirementNamespaceKey:
-				req.Namespace = strings.Trim(*arg.Assignment.Value.Str, `"`)
+				req.Namespace = strValue(arg.Assignment.Value)
 			case requirementVersionKey:
 				req.VersionRequirement = getVersionRequirements(arg.Assignment.Value)
 			}
@@ -71,7 +71,7 @@ func getVersionRequirements(v *Value) []types.VersionRequirement {
 	case eqFuncName, neFuncName, gtFuncName, gteFuncName, ltFuncName, lteFuncName:
 		reqs = append(reqs, types.VersionRequirement{
 			requirementComparatorKey: strings.ToLower(v.FuncCall.Name),
-			requirementVersionKey:    strings.Trim(*v.FuncCall.Arguments[0].Assignment.Value.Str, `"`),
+			requirementVersionKey:    strValue(v.FuncCall.Arguments[0].Assignment.Value),
 		})
 
 	// e.g. And(left = Gte(value = "1.0"), right = Lt(value = "2.0"))
@@ -138,7 +138,7 @@ func (r *Raw) Platforms() ([]strfmt.UUID, error) {
 
 	list := []strfmt.UUID{}
 	for _, value := range *node.List {
-		list = append(list, strfmt.UUID(strings.Trim(*value.Str, `"`)))
+		list = append(list, strfmt.UUID(strValue(value)))
 	}
 	return list, nil
 }

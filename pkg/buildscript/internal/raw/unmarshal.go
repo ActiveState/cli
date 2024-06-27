@@ -2,7 +2,6 @@ package raw
 
 import (
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/alecthomas/participle/v2"
@@ -43,9 +42,9 @@ func Unmarshal(data []byte) (*Raw, error) {
 		if value.Str == nil {
 			break
 		}
-		atTime, err := strfmt.ParseDateTime(strings.Trim(*value.Str, `"`))
+		atTime, err := strfmt.ParseDateTime(strValue(value))
 		if err != nil {
-			return nil, errs.Wrap(err, "Invalid timestamp: %s", *value.Str)
+			return nil, errs.Wrap(err, "Invalid timestamp: %s", strValue(value))
 		}
 		r.AtTime = ptr.To(time.Time(atTime))
 		break

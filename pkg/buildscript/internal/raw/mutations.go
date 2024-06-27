@@ -1,9 +1,6 @@
 package raw
 
 import (
-	"strconv"
-	"strings"
-
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -39,8 +36,8 @@ func (r *Raw) UpdateRequirement(operation types.Operation, requirement types.Req
 func (r *Raw) addRequirement(requirement types.Requirement) error {
 	// Use object form for now, and then transform it into function form later.
 	obj := []*Assignment{
-		{requirementNameKey, &Value{Str: ptr.To(strconv.Quote(requirement.Name))}},
-		{requirementNamespaceKey, &Value{Str: ptr.To(strconv.Quote(requirement.Namespace))}},
+		{requirementNameKey, newString(requirement.Name)},
+		{requirementNamespaceKey, newString(requirement.Namespace)},
 	}
 
 	if requirement.Revision != nil {
@@ -51,8 +48,8 @@ func (r *Raw) addRequirement(requirement types.Requirement) error {
 		values := []*Value{}
 		for _, req := range requirement.VersionRequirement {
 			values = append(values, &Value{Object: &[]*Assignment{
-				{requirementComparatorKey, &Value{Str: ptr.To(strconv.Quote(req[requirementComparatorKey]))}},
-				{requirementVersionKey, &Value{Str: ptr.To(strconv.Quote(req[requirementVersionKey]))}},
+				{requirementComparatorKey, newString(req[requirementComparatorKey])},
+				{requirementVersionKey, newString(req[requirementVersionKey])},
 			}})
 		}
 		obj = append(obj, &Assignment{requirementVersionRequirementsKey, &Value{List: &values}})
@@ -88,7 +85,7 @@ func (r *Raw) removeRequirement(requirement types.Requirement) error {
 		}
 
 		for _, arg := range r.FuncCall.Arguments {
-			if arg.Assignment.Key == requirementNameKey && strings.Trim(*arg.Assignment.Value.Str, `"`) == requirement.Name {
+			if arg.Assignment.Key == requirementNameKey && strValue(arg.Assignment.Value) == requirement.Name {
 				list := *requirementsNode.List
 				list = append(list[:i], list[i+1:]...)
 				requirementsNode.List = &list
@@ -135,7 +132,7 @@ func (r *Raw) addPlatform(platformID strfmt.UUID) error {
 	}
 
 	list := *platformsNode.List
-	list = append(list, &Value{Str: ptr.To(strconv.Quote(platformID.String()))})
+	list = append(list, newString(platformID.String()))
 	platformsNode.List = &list
 
 	return nil
@@ -154,7 +151,7 @@ func (r *Raw) removePlatform(platformID strfmt.UUID) error {
 
 	var found bool
 	for i, value := range *platformsNode.List {
-		if value.Str != nil && strings.Trim(*value.Str, `"`) == platformID.String() {
+		if value.Str != nil && strValue(value) == platformID.String() {
 			list := *platformsNode.List
 			list = append(list[:i], list[i+1:]...)
 			platformsNode.List = &list

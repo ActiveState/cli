@@ -60,7 +60,7 @@ func UnmarshalBuildExpression(data []byte) (*Raw, error) {
 	}
 
 	var path []string
-	assignments, err := newAssignments(path, let)
+	assignments, err := unmarshalAssignments(path, let)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not parse assignments")
 	}
@@ -69,10 +69,10 @@ func UnmarshalBuildExpression(data []byte) (*Raw, error) {
 
 	// Extract the 'at_time' from the solve node, if it exists, and change its value to be a
 	// reference to "$at_time", which is how we want to show it in AScript format.
-	if atTimeNode, err := raw.getSolveAtTimeValue(); err == nil && atTimeNode.Str != nil && !strings.HasPrefix(*atTimeNode.Str, `"$`) {
-		atTime, err := strfmt.ParseDateTime(strings.Trim(*atTimeNode.Str, `"`))
+	if atTimeNode, err := raw.getSolveAtTimeValue(); err == nil && atTimeNode.Str != nil && !strings.HasPrefix(strValue(atTimeNode), `$`) {
+		atTime, err := strfmt.ParseDateTime(strValue(atTimeNode))
 		if err != nil {
-			return nil, errs.Wrap(err, "Invalid timestamp: %s", *atTimeNode.Str)
+			return nil, errs.Wrap(err, "Invalid timestamp: %s", strValue(atTimeNode))
 		}
 		atTimeNode.Str = nil
 		atTimeNode.Ident = ptr.To("at_time")
@@ -104,7 +104,7 @@ const (
 	ctxIn          = "in"
 )
 
-func newAssignments(path []string, m map[string]interface{}) ([]*Assignment, error) {
+func unmarshalAssignments(path []string, m map[string]interface{}) ([]*Assignment, error) {
 	path = append(path, ctxAssignments)
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
@@ -118,9 +118,9 @@ func newAssignments(path []string, m map[string]interface{}) ([]*Assignment, err
 		var value *Value
 		var err error
 		if key != inKey {
-			value, err = newValue(path, valueInterface)
+			value, err = unmarshalValue(path, valueInterface)
 		} else {
-			if value, err = newIn(path, valueInterface); err == nil {
+			if value, err = unmarshalIn(path, valueInterface); err == nil {
 				key = mainKey // rename
 			}
 		}
@@ -136,7 +136,7 @@ func newAssignments(path []string, m map[string]interface{}) ([]*Assignment, err
 	return assignments, nil
 }
 
-func newValue(path []string, valueInterface interface{}) (*Value, error) {
+func unmarshalValue(path []string, valueInterface interface{}) (*Value, error) {
 	path = append(path, ctxValue)
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
@@ -163,7 +163,7 @@ func newValue(path []string, valueInterface interface{}) (*Value, error) {
 			}
 
 			if isAp(path, val.(map[string]interface{})) {
-				f, err := newFuncCall(path, v)
+				f, err := unmarshalFuncCall(path, v)
 				if err != nil {
 					return nil, errs.Wrap(err, "Could not parse '%s' function's value: %v", key, v)
 				}
@@ -173,7 +173,7 @@ func newValue(path []string, valueInterface interface{}) (*Value, error) {
 
 		// It's not a function call, but an object.
 		if value.FuncCall == nil {
-			object, err := newAssignments(path, v)
+			object, err := unmarshalAssignments(path, v)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse object: %v", v)
 			}
@@ -183,7 +183,7 @@ func newValue(path []string, valueInterface interface{}) (*Value, error) {
 	case []interface{}:
 		values := []*Value{}
 		for _, item := range v {
-			value, err := newValue(path, item)
+			value, err := unmarshalValue(path, item)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse list: %v", v)
 			}
@@ -195,7 +195,7 @@ func newValue(path []string, valueInterface interface{}) (*Value, error) {
 		if sliceutils.Contains(path, ctxIn) || strings.HasPrefix(v, "$") {
 			value.Ident = ptr.To(strings.TrimPrefix(v, "$"))
 		} else {
-			value.Str = ptr.To(strconv.Quote(v))
+			value.Str = ptr.To(strconv.Quote(v)) // quoting is mandatory
 		}
 
 	case float64:
@@ -225,7 +225,7 @@ func isAp(path []string, value map[string]interface{}) bool {
 	return !hasIn || sliceutils.Contains(path, ctxAssignments)
 }
 
-func newFuncCall(path []string, m map[string]interface{}) (*FuncCall, error) {
+func unmarshalFuncCall(path []string, m map[string]interface{}) (*FuncCall, error) {
 	path = append(path, ctxFuncCall)
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
@@ -259,7 +259,7 @@ func newFuncCall(path []string, m map[string]interface{}) (*FuncCall, error) {
 	switch v := argsInterface.(type) {
 	case map[string]interface{}:
 		for key, valueInterface := range v {
-			value, err := newValue(path, valueInterface)
+			value, err := unmarshalValue(path, valueInterface)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse '%s' function's argument '%s': %v", name, key, valueInterface)
 			}
@@ -269,7 +269,7 @@ func newFuncCall(path []string, m map[string]interface{}) (*FuncCall, error) {
 
 	case []interface{}:
 		for _, item := range v {
-			value, err := newValue(path, item)
+			value, err := unmarshalValue(path, item)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse '%s' function's argument list item: %v", name, item)
 			}
@@ -283,7 +283,7 @@ func newFuncCall(path []string, m map[string]interface{}) (*FuncCall, error) {
 	return &FuncCall{Name: name, Arguments: args}, nil
 }
 
-func newIn(path []string, inValue interface{}) (*Value, error) {
+func unmarshalIn(path []string, inValue interface{}) (*Value, error) {
 	path = append(path, ctxIn)
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
@@ -296,7 +296,7 @@ func newIn(path []string, inValue interface{}) (*Value, error) {
 
 	switch v := inValue.(type) {
 	case map[string]interface{}:
-		f, err := newFuncCall(path, v)
+		f, err := unmarshalFuncCall(path, v)
 		if err != nil {
 			return nil, errs.Wrap(err, "'in' object is not a function call")
 		}
@@ -327,13 +327,11 @@ func isLegacyRequirementsList(value *Value) bool {
 // list of requirements in function-call form, which is how requirements are represented in
 // buildscripts.
 func transformRequirements(reqs *Value) *Value {
-	newReqs := &Value{List: &[]*Value{}}
-
+	newReqs := []*Value{}
 	for _, req := range *reqs.List {
-		*newReqs.List = append(*newReqs.List, transformRequirement(req))
+		newReqs = append(newReqs, transformRequirement(req))
 	}
-
-	return newReqs
+	return &Value{List: &newReqs}
 }
 
 // transformRequirement transforms a build expression requirement in object form into a requirement
@@ -347,7 +345,7 @@ func transformRequirements(reqs *Value) *Value {
 //
 //	Req(name = "<name>", namespace = "<namespace>", version = <op>(value = "<version>"))
 func transformRequirement(req *Value) *Value {
-	newReq := &Value{FuncCall: &FuncCall{reqFuncName, []*Value{}}}
+	args := []*Value{}
 
 	for _, arg := range *req.Object {
 		key := arg.Key
@@ -360,10 +358,10 @@ func transformRequirement(req *Value) *Value {
 		}
 
 		// Add the argument to the function transformation.
-		newReq.FuncCall.Arguments = append(newReq.FuncCall.Arguments, &Value{Assignment: &Assignment{key, value}})
+		args = append(args, &Value{Assignment: &Assignment{key, value}})
 	}
 
-	return newReq
+	return &Value{FuncCall: &FuncCall{reqFuncName, args}}
 }
 
 // transformVersion transforms a build expression version_requirements list in object form into
@@ -383,10 +381,10 @@ func transformVersion(requirements *Assignment) *FuncCall {
 			switch o.Key {
 			case requirementVersionKey:
 				f.Arguments = []*Value{
-					{Assignment: &Assignment{"value", &Value{Str: o.Value.Str}}},
+					{Assignment: &Assignment{"value", o.Value}},
 				}
 			case requirementComparatorKey:
-				f.Name = cases.Title(language.English).String(strings.Trim(*o.Value.Str, `"`))
+				f.Name = cases.Title(language.English).String(strValue(o.Value))
 			}
 		}
 		funcs = append(funcs, f)
