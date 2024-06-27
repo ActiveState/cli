@@ -88,7 +88,6 @@ func newDepot() (*depot, error) {
 		return nil, errs.Wrap(err, "failed to read depot path")
 	}
 
-	result.artifacts = map[strfmt.UUID]struct{}{}
 	for _, file := range files {
 		if !file.IsDir() {
 			continue
