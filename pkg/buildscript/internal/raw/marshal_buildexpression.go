@@ -13,20 +13,23 @@ import (
 )
 
 const (
-	RequirementNameKey                = "name"
-	RequirementNamespaceKey           = "namespace"
-	RequirementVersionRequirementsKey = "version_requirements"
-	RequirementVersionKey             = "version"
-	RequirementComparatorKey          = "comparator"
+	requirementNameKey                = "name"
+	requirementNamespaceKey           = "namespace"
+	requirementVersionRequirementsKey = "version_requirements"
+	requirementVersionKey             = "version"
+	requirementComparatorKey          = "comparator"
 )
 
-// MarshalJSON returns this structure as a buildexpression in JSON format, suitable for sending to
+// MarshalJSON returns this structure as a build expression in JSON format, suitable for sending to
 // the Platform.
 func (r *Raw) MarshalBuildExpression() ([]byte, error) {
 	return json.MarshalIndent(r, "", "  ")
 }
 
-// MarshalJSON returns this structure as a buildexpression in JSON format, suitable for sending to
+// Note: all of the MarshalJSON functions are named the way they are because Go's JSON package
+// specifically looks for them.
+
+// MarshalJSON returns this structure as a build expression in JSON format, suitable for sending to
 // the Platform.
 func (r *Raw) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
@@ -46,7 +49,7 @@ func (r *Raw) MarshalJSON() ([]byte, error) {
 			r.AtTime = ptr.To(time.Time(atTime))
 			continue // do not include this custom assignment in the let block
 		case mainKey:
-			key = inKey
+			key = inKey // rename
 		}
 		let[key] = value
 	}
@@ -88,7 +91,7 @@ func (v *Value) MarshalJSON() ([]byte, error) {
 
 func (f *FuncCall) MarshalJSON() ([]byte, error) {
 	if f.Name == reqFuncName {
-		return marshalReq(f.Arguments)
+		return marshalReq(f.Arguments) // marshal into legacy object format for now
 	}
 
 	m := make(map[string]interface{})
@@ -122,29 +125,29 @@ func marshalReq(args []*Value) ([]byte, error) {
 
 		switch {
 		// Marshal the name argument (e.g. name = "<name>") into {"name": "<name>"}
-		case assignment.Key == RequirementNameKey && assignment.Value.Str != nil:
-			requirement[RequirementNameKey] = strings.Trim(*assignment.Value.Str, `"`)
+		case assignment.Key == requirementNameKey && assignment.Value.Str != nil:
+			requirement[requirementNameKey] = strings.Trim(*assignment.Value.Str, `"`)
 
 		// Marshal the namespace argument (e.g. namespace = "<namespace>") into
 		// {"namespace": "<namespace>"}
-		case assignment.Key == RequirementNamespaceKey && assignment.Value.Str != nil:
-			requirement[RequirementNamespaceKey] = strings.Trim(*assignment.Value.Str, `"`)
+		case assignment.Key == requirementNamespaceKey && assignment.Value.Str != nil:
+			requirement[requirementNamespaceKey] = strings.Trim(*assignment.Value.Str, `"`)
 
 		// Marshal the version argument (e.g. version = <op>(value = "<version>")) into
 		// {"version_requirements": [{"comparator": "<op>", "version": "<version>"}]}
-		case assignment.Key == RequirementVersionKey && assignment.Value.FuncCall != nil:
+		case assignment.Key == requirementVersionKey && assignment.Value.FuncCall != nil:
 			var requirements []*Value
 			var addRequirement func(*FuncCall) error // recursive function for adding to requirements list
 			addRequirement = func(funcCall *FuncCall) error {
 				switch name := funcCall.Name; name {
 				case eqFuncName, neFuncName, gtFuncName, gteFuncName, ltFuncName, lteFuncName:
 					req := make([]*Assignment, 0)
-					req = append(req, &Assignment{RequirementComparatorKey, &Value{Str: ptr.To(strings.ToLower(name))}})
+					req = append(req, &Assignment{requirementComparatorKey, &Value{Str: ptr.To(strings.ToLower(name))}})
 					if len(funcCall.Arguments) == 0 || funcCall.Arguments[0].Assignment == nil ||
 						funcCall.Arguments[0].Assignment.Value.Str == nil || *funcCall.Arguments[0].Assignment.Value.Str == "value" {
 						return errs.New(`Illegal argument for version comparator '%s': 'value = "<version>"' expected`, name)
 					}
-					req = append(req, &Assignment{RequirementVersionKey, &Value{Str: funcCall.Arguments[0].Assignment.Value.Str}})
+					req = append(req, &Assignment{requirementVersionKey, &Value{Str: funcCall.Arguments[0].Assignment.Value.Str}})
 					requirements = append(requirements, &Value{Object: &req})
 				case andFuncName:
 					if len(funcCall.Arguments) != 2 {
@@ -168,7 +171,7 @@ func marshalReq(args []*Value) ([]byte, error) {
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not marshal requirement")
 			}
-			requirement[RequirementVersionRequirementsKey] = &Value{List: &requirements}
+			requirement[requirementVersionRequirementsKey] = &Value{List: &requirements}
 
 		default:
 			logging.Debug("Adding unknown argument: %v", assignment)

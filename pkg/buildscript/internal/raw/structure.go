@@ -19,7 +19,7 @@ type Assignment struct {
 type Value struct {
 	FuncCall *FuncCall `parser:"@@"`
 	List     *[]*Value `parser:"| '[' (@@ (',' @@)* ','?)? ']'"`
-	Str      *string   `parser:"| @String"`
+	Str      *string   `parser:"| @String"` // note: this value is ALWAYS quoted
 	Number   *float64  `parser:"| (@Float | @Int)"`
 	Null     *Null     `parser:"| @@"`
 

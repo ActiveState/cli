@@ -13,8 +13,7 @@ import (
 )
 
 const (
-	mainKey         = "main"
-	requirementsKey = "requirements"
+	mainKey = "main"
 
 	reqFuncName = "Req"
 	eqFuncName  = "Eq"
@@ -113,7 +112,7 @@ func valueString(v *Value) string {
 	return "[\n]" // participle does not create v.List if it's empty
 }
 
-// inlineFunctions contains buildscript function names whose arguments should all be written on a
+// inlineFunctions contains build script function names whose arguments should all be written on a
 // single line. By default, function arguments are written one per line.
 var inlineFunctions = []string{
 	reqFuncName,

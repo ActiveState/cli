@@ -11,15 +11,18 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
+// Merge merges the requirements from another BuildScript into this one, according to the given
+// merge strategy.
+// BuildScript merges are only possible if the scripts differ ONLY in requirements AND/OR at times.
 func (b *BuildScript) Merge(other *BuildScript, strategies *mono_models.MergeStrategies) error {
 	if !isAutoMergePossible(b, other) {
-		return errs.New("Unable to merge buildexpressions")
+		return errs.New("Unable to merge build scripts")
 	}
 	if len(strategies.Conflicts) > 0 {
-		return errs.New("Unable to merge buildexpressions due to conflicting requirements")
+		return errs.New("Unable to merge build scripts due to conflicting requirements")
 	}
 
-	// Update build expression requirements with merge results.
+	// Update requirements with merge results.
 	for _, req := range strategies.OverwriteChanges {
 		var op types.Operation
 		err := op.Unmarshal(req.Operation)
@@ -48,11 +51,11 @@ func (b *BuildScript) Merge(other *BuildScript, strategies *mono_models.MergeStr
 		}
 
 		if err := b.UpdateRequirement(op, bpReq); err != nil {
-			return errs.Wrap(err, "Unable to update buildexpression with merge results")
+			return errs.Wrap(err, "Unable to update build script with merge results")
 		}
 	}
 
-	// When merging buildscripts we want to use the most recent timestamp
+	// When merging build scripts we want to use the most recent timestamp
 	atTime := other.AtTime()
 	if atTime != nil && atTime.After(*b.AtTime()) {
 		b.SetAtTime(*atTime)
@@ -63,44 +66,39 @@ func (b *BuildScript) Merge(other *BuildScript, strategies *mono_models.MergeStr
 
 // isAutoMergePossible determines whether or not it is possible to auto-merge the given build
 // scripts.
-// This is only possible if the two build expressions differ ONLY in requirements.
+// This is only possible if the two build scripts differ ONLY in requirements.
 func isAutoMergePossible(scriptA *BuildScript, scriptB *BuildScript) bool {
 	jsonA, err := getComparableJson(scriptA)
 	if err != nil {
-		multilog.Error("Unable to get buildexpression minus requirements: %v", errs.JoinMessage(err))
+		multilog.Error("Unable to get build script minus requirements: %v", errs.JoinMessage(err))
 		return false
 	}
 	jsonB, err := getComparableJson(scriptB)
 	if err != nil {
-		multilog.Error("Unable to get buildxpression minus requirements: %v", errs.JoinMessage(err))
+		multilog.Error("Unable to get build script minus requirements: %v", errs.JoinMessage(err))
 		return false
 	}
-	logging.Debug("Checking for possibility of auto-merging build expressions")
+	logging.Debug("Checking for possibility of auto-merging build scripts")
 	logging.Debug("JsonA: %v", jsonA)
 	logging.Debug("JsonB: %v", jsonB)
 	return reflect.DeepEqual(jsonA, jsonB)
 }
 
 // getComparableJson returns a comparable JSON map[string]interface{} structure for the given build
-// expression. The map will not have a "requirements" field, nor will it have an "at_time" field.
-// String lists will also be sorted.
+// script. The map will not have a "requirements" field, nor will it have an "at_time" field.
 func getComparableJson(script *BuildScript) (map[string]interface{}, error) {
 	data, err := script.MarshalBuildExpression()
 	if err != nil {
-		return nil, errs.New("Unable to unmarshal marshaled buildxpression")
+		return nil, errs.New("Unable to unmarshal marshaled build expression")
 	}
 
 	m := make(map[string]interface{})
 	err = json.Unmarshal(data, &m)
 	if err != nil {
-		return nil, errs.New("Unable to unmarshal marshaled buildxpression")
+		return nil, errs.New("Unable to unmarshal marshaled build expression")
 	}
 
-	letValue, ok := m["let"]
-	if !ok {
-		return nil, errs.New("Build expression has no 'let' key")
-	}
-	letMap, ok := letValue.(map[string]interface{})
+	letMap, ok := m["let"].(map[string]interface{})
 	if !ok {
 		return nil, errs.New("'let' key is not a JSON object")
 	}

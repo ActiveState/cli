@@ -18,6 +18,9 @@ type BuildScript struct {
 	raw *raw.Raw
 }
 
+type RequirementNotFoundError = raw.RequirementNotFoundError // expose
+type PlatformNotFoundError = raw.PlatformNotFoundError       // expose
+
 func New() (*BuildScript, error) {
 	raw, err := raw.New()
 	if err != nil {
@@ -72,9 +75,6 @@ func (b *BuildScript) MarshalBuildExpression() ([]byte, error) {
 func (b *BuildScript) Requirements() ([]types.Requirement, error) {
 	return b.raw.Requirements()
 }
-
-type RequirementNotFoundError = raw.RequirementNotFoundError // expose
-type PlatformNotFoundError = raw.PlatformNotFoundError       // expose
 
 func (b *BuildScript) UpdateRequirement(operation types.Operation, requirement types.Requirement) error {
 	return b.raw.UpdateRequirement(operation, requirement)

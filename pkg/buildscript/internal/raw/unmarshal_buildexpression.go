@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/sliceutils"
 )
 
-// At this time, there is no way to ask the Platform for an empty buildexpression.
+// At this time, there is no way to ask the Platform for an empty build expression.
 const emptyBuildExpression = `{
 	"let": {
 		"sources": {
@@ -51,18 +51,18 @@ func UnmarshalBuildExpression(data []byte) (*Raw, error) {
 	expr := make(map[string]interface{})
 	err := json.Unmarshal(data, &expr)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not unmarshal buildexpression")
+		return nil, errs.Wrap(err, "Could not unmarshal build expression")
 	}
 
 	let, ok := expr[letKey].(map[string]interface{})
 	if !ok {
-		return nil, errs.New("Invalid buildexpression: 'let' value is not an object")
+		return nil, errs.New("Invalid build expression: 'let' value is not an object")
 	}
 
 	var path []string
 	assignments, err := newAssignments(path, let)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not read assignments")
+		return nil, errs.Wrap(err, "Could not parse assignments")
 	}
 
 	raw := &Raw{Assignments: assignments}
@@ -100,7 +100,7 @@ const (
 	ctxAssignments = "assignments"
 	ctxValue       = "value"
 	ctxFuncCall    = "funcCall"
-	ctxIsFuncCall  = "isFuncCall"
+	ctxIsAp        = "isAp"
 	ctxIn          = "in"
 )
 
@@ -120,8 +120,7 @@ func newAssignments(path []string, m map[string]interface{}) ([]*Assignment, err
 		if key != inKey {
 			value, err = newValue(path, valueInterface)
 		} else {
-			value, err = newIn(path, valueInterface)
-			if err == nil {
+			if value, err = newIn(path, valueInterface); err == nil {
 				key = mainKey // rename
 			}
 		}
@@ -163,7 +162,7 @@ func newValue(path []string, valueInterface interface{}) (*Value, error) {
 				continue
 			}
 
-			if isFuncCall(path, val.(map[string]interface{})) {
+			if isAp(path, val.(map[string]interface{})) {
 				f, err := newFuncCall(path, v)
 				if err != nil {
 					return nil, errs.Wrap(err, "Could not parse '%s' function's value: %v", key, v)
@@ -172,8 +171,8 @@ func newValue(path []string, valueInterface interface{}) (*Value, error) {
 			}
 		}
 
+		// It's not a function call, but an object.
 		if value.FuncCall == nil {
-			// It's not a function call, but an object.
 			object, err := newAssignments(path, v)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse object: %v", v)
@@ -213,8 +212,8 @@ func newValue(path []string, valueInterface interface{}) (*Value, error) {
 	return value, nil
 }
 
-func isFuncCall(path []string, value map[string]interface{}) bool {
-	path = append(path, ctxIsFuncCall)
+func isAp(path []string, value map[string]interface{}) bool {
+	path = append(path, ctxIsAp)
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
 		if err != nil {
@@ -223,11 +222,7 @@ func isFuncCall(path []string, value map[string]interface{}) bool {
 	}()
 
 	_, hasIn := value[inKey]
-	if hasIn && !sliceutils.Contains(path, ctxAssignments) {
-		return false
-	}
-
-	return true
+	return !hasIn || sliceutils.Contains(path, ctxAssignments)
 }
 
 func newFuncCall(path []string, m map[string]interface{}) (*FuncCall, error) {
@@ -240,7 +235,7 @@ func newFuncCall(path []string, m map[string]interface{}) (*FuncCall, error) {
 	}()
 
 	// m is a mapping of function name to arguments. There should only be one
-	// set of arugments. Since the arguments are key-value pairs, it should be
+	// set of arguments. Since the arguments are key-value pairs, it should be
 	// a map[string]interface{}.
 	if len(m) > 1 {
 		return nil, errs.New("Function call has more than one argument mapping")
@@ -328,7 +323,7 @@ func isLegacyRequirementsList(value *Value) bool {
 	return len(*value.List) > 0 && (*value.List)[0].Object != nil
 }
 
-// transformRequirements transforms a buildexpression list of requirements in object form into a
+// transformRequirements transforms a build expression list of requirements in object form into a
 // list of requirements in function-call form, which is how requirements are represented in
 // buildscripts.
 func transformRequirements(reqs *Value) *Value {
@@ -341,7 +336,7 @@ func transformRequirements(reqs *Value) *Value {
 	return newReqs
 }
 
-// transformRequirement transforms a buildexpression requirement in object form into a requirement
+// transformRequirement transforms a build expression requirement in object form into a requirement
 // in function-call form.
 // For example, transform something like
 //
@@ -371,7 +366,7 @@ func transformRequirement(req *Value) *Value {
 	return newReq
 }
 
-// transformVersion transforms a buildexpression version_requirements list in object form into
+// transformVersion transforms a build expression version_requirements list in object form into
 // function-call form.
 // For example, transform something like
 //

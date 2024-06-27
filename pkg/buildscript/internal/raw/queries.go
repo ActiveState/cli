@@ -12,6 +12,7 @@ import (
 const (
 	solveFuncName       = "solve"
 	solveLegacyFuncName = "solve_legacy"
+	requirementsKey     = "requirements"
 	platformsKey        = "platforms"
 )
 
@@ -33,11 +34,11 @@ func (r *Raw) Requirements() ([]types.Requirement, error) {
 		var req types.Requirement
 		for _, arg := range r.FuncCall.Arguments {
 			switch arg.Assignment.Key {
-			case RequirementNameKey:
+			case requirementNameKey:
 				req.Name = strings.Trim(*arg.Assignment.Value.Str, `"`)
-			case RequirementNamespaceKey:
+			case requirementNamespaceKey:
 				req.Namespace = strings.Trim(*arg.Assignment.Value.Str, `"`)
-			case RequirementVersionKey:
+			case requirementVersionKey:
 				req.VersionRequirement = getVersionRequirements(arg.Assignment.Value)
 			}
 		}
@@ -66,12 +67,14 @@ func getVersionRequirements(v *Value) []types.VersionRequirement {
 	reqs := []types.VersionRequirement{}
 
 	switch v.FuncCall.Name {
+	// e.g. Eq(value = "1.0")
 	case eqFuncName, neFuncName, gtFuncName, gteFuncName, ltFuncName, lteFuncName:
 		reqs = append(reqs, types.VersionRequirement{
-			RequirementComparatorKey: strings.ToLower(v.FuncCall.Name),
-			RequirementVersionKey:    strings.Trim(*v.FuncCall.Arguments[0].Assignment.Value.Str, `"`),
+			requirementComparatorKey: strings.ToLower(v.FuncCall.Name),
+			requirementVersionKey:    strings.Trim(*v.FuncCall.Arguments[0].Assignment.Value.Str, `"`),
 		})
 
+	// e.g. And(left = Gte(value = "1.0"), right = Lt(value = "2.0"))
 	case andFuncName:
 		for _, arg := range v.FuncCall.Arguments {
 			if arg.Assignment != nil && arg.Assignment.Value.FuncCall != nil {
@@ -83,19 +86,6 @@ func getVersionRequirements(v *Value) []types.VersionRequirement {
 	return reqs
 }
 
-// getSolveNode returns the solve node from the build expression.
-// It returns an error if the solve node is not found.
-// Currently, the solve node can have the name of "solve" or "solve_legacy".
-// It expects the JSON representation of the build expression to be formatted as follows:
-//
-//	{
-//	  "let": {
-//	    "runtime": {
-//	      "solve": {
-//	      }
-//	    }
-//	  }
-//	}
 func (r *Raw) getSolveNode() (*Value, error) {
 	var search func([]*Assignment) *Value
 	search = func(assignments []*Assignment) *Value {
@@ -106,11 +96,7 @@ func (r *Raw) getSolveNode() (*Value, error) {
 				continue
 			}
 
-			if a.Value.FuncCall == nil {
-				continue
-			}
-
-			if a.Value.FuncCall.Name == solveFuncName || a.Value.FuncCall.Name == solveLegacyFuncName {
+			if f := a.Value.FuncCall; f != nil && (f.Name == solveFuncName || f.Name == solveLegacyFuncName) {
 				return a.Value
 			}
 		}
@@ -127,15 +113,6 @@ func (r *Raw) getSolveNode() (*Value, error) {
 	}
 
 	return nil, errNodeNotFound
-}
-
-func (r *Raw) getSolveNodeArguments() ([]*Value, error) {
-	node, err := r.getSolveNode()
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get solve node")
-	}
-
-	return node.FuncCall.Arguments, nil
 }
 
 func (r *Raw) getSolveAtTimeValue() (*Value, error) {
@@ -173,11 +150,7 @@ func (r *Raw) getPlatformsNode() (*Value, error) {
 	}
 
 	for _, arg := range node.FuncCall.Arguments {
-		if arg.Assignment == nil {
-			continue
-		}
-
-		if arg.Assignment.Key == platformsKey && arg.Assignment.Value != nil {
+		if arg.Assignment != nil && arg.Assignment.Key == platformsKey {
 			return arg.Assignment.Value, nil
 		}
 	}

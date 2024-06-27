@@ -47,22 +47,14 @@ main = runtime
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{
-										"name", &Value{Str: ptr.To(`"python"`)},
-									}},
-									{Assignment: &Assignment{
-										"namespace", &Value{Str: ptr.To(`"language"`)},
-									}},
+									{Assignment: &Assignment{"name", &Value{Str: ptr.To(`"python"`)}}},
+									{Assignment: &Assignment{"namespace", &Value{Str: ptr.To(`"language"`)}}},
 								}}},
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{
-										"name", &Value{Str: ptr.To(`"requests"`)},
-									}},
-									{Assignment: &Assignment{
-										"namespace", &Value{Str: ptr.To(`"language/python"`)},
-									}},
+									{Assignment: &Assignment{"name", &Value{Str: ptr.To(`"requests"`)}}},
+									{Assignment: &Assignment{"namespace", &Value{Str: ptr.To(`"language/python"`)}}},
 									{Assignment: &Assignment{
 										"version", &Value{FuncCall: &FuncCall{
 											Name: "Eq",
@@ -124,20 +116,14 @@ main = merge(
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{
-										"name", &Value{Str: ptr.To(`"python"`)},
-									}},
-									{Assignment: &Assignment{
-										"namespace", &Value{Str: ptr.To(`"language"`)},
-									}},
+									{Assignment: &Assignment{"name", &Value{Str: ptr.To(`"python"`)}}},
+									{Assignment: &Assignment{"namespace", &Value{Str: ptr.To(`"language"`)}}},
 								},
 							}},
 						}},
 					}},
 					{Assignment: &Assignment{
-						"platforms", &Value{List: &[]*Value{
-							{Str: ptr.To(`"67890"`)}},
-						},
+						"platforms", &Value{List: &[]*Value{{Str: ptr.To(`"67890"`)}}},
 					}},
 				}},
 			}},
@@ -149,20 +135,14 @@ main = merge(
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{
-										"name", &Value{Str: ptr.To(`"perl"`)},
-									}},
-									{Assignment: &Assignment{
-										"namespace", &Value{Str: ptr.To(`"language"`)},
-									}},
+									{Assignment: &Assignment{"name", &Value{Str: ptr.To(`"perl"`)}}},
+									{Assignment: &Assignment{"namespace", &Value{Str: ptr.To(`"language"`)}}},
 								},
 							}},
 						}},
 					}},
 					{Assignment: &Assignment{
-						"platforms", &Value{List: &[]*Value{
-							{Str: ptr.To(`"12345"`)}},
-						},
+						"platforms", &Value{List: &[]*Value{{Str: ptr.To(`"12345"`)}}},
 					}},
 				}},
 			}},
@@ -202,9 +182,7 @@ func TestComplexVersions(t *testing.T) {
 		[]*Assignment{
 			{"runtime", &Value{
 				FuncCall: &FuncCall{"solve", []*Value{
-					{Assignment: &Assignment{
-						"at_time", &Value{Ident: ptr.To(`at_time`)},
-					}},
+					{Assignment: &Assignment{"at_time", &Value{Ident: ptr.To(`at_time`)}}},
 					{Assignment: &Assignment{
 						"platforms", &Value{List: &[]*Value{
 							{Str: ptr.To(`"96b7e6f2-bebf-564c-bc1c-f04482398f38"`)},
@@ -216,23 +194,15 @@ func TestComplexVersions(t *testing.T) {
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{
-										"name", &Value{Str: ptr.To(`"python"`)},
-									}},
-									{Assignment: &Assignment{
-										"namespace", &Value{Str: ptr.To(`"language"`)},
-									}},
+									{Assignment: &Assignment{"name", &Value{Str: ptr.To(`"python"`)}}},
+									{Assignment: &Assignment{"namespace", &Value{Str: ptr.To(`"language"`)}}},
 								},
 							}},
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{
-										"name", &Value{Str: ptr.To(`"requests"`)},
-									}},
-									{Assignment: &Assignment{
-										"namespace", &Value{Str: ptr.To(`"language/python"`)},
-									}},
+									{Assignment: &Assignment{"name", &Value{Str: ptr.To(`"requests"`)}}},
+									{Assignment: &Assignment{"namespace", &Value{Str: ptr.To(`"language/python"`)}}},
 									{Assignment: &Assignment{
 										"version", &Value{FuncCall: &FuncCall{
 											Name: "Eq",
@@ -246,12 +216,8 @@ func TestComplexVersions(t *testing.T) {
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{
-										"name", &Value{Str: ptr.To(`"argparse"`)},
-									}},
-									{Assignment: &Assignment{
-										"namespace", &Value{Str: ptr.To(`"language/python"`)},
-									}},
+									{Assignment: &Assignment{"name", &Value{Str: ptr.To(`"argparse"`)}}},
+									{Assignment: &Assignment{"namespace", &Value{Str: ptr.To(`"language/python"`)}}},
 									{Assignment: &Assignment{
 										"version", &Value{FuncCall: &FuncCall{
 											Name: "And",
@@ -275,9 +241,7 @@ func TestComplexVersions(t *testing.T) {
 							}},
 						}},
 					}},
-					{Assignment: &Assignment{
-						"solver_version", &Value{Number: ptr.To(float64(0))},
-					}},
+					{Assignment: &Assignment{"solver_version", &Value{Number: ptr.To(float64(0))}}},
 				}},
 			}},
 			{"main", &Value{Ident: ptr.To("runtime")}},

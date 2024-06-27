@@ -12,14 +12,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 )
 
-const (
-	requirementNameKey                = "name"
-	requirementNamespaceKey           = "namespace"
-	requirementVersionRequirementsKey = "version_requirements"
-	requirementVersionKey             = "version"
-	requirementRevisionKey            = "revision"
-	requirementComparatorKey          = "comparator"
-)
+const requirementRevisionKey = "revision"
 
 func (r *Raw) UpdateRequirement(operation types.Operation, requirement types.Requirement) error {
 	var err error
@@ -40,7 +33,6 @@ func (r *Raw) UpdateRequirement(operation types.Operation, requirement types.Req
 	if err != nil {
 		return errs.Wrap(err, "Could not update Raw's requirements")
 	}
-
 	return nil
 }
 
@@ -59,8 +51,8 @@ func (r *Raw) addRequirement(requirement types.Requirement) error {
 		values := []*Value{}
 		for _, req := range requirement.VersionRequirement {
 			values = append(values, &Value{Object: &[]*Assignment{
-				{requirementComparatorKey, &Value{Str: ptr.To(strconv.Quote(req[RequirementComparatorKey]))}},
-				{requirementVersionKey, &Value{Str: ptr.To(strconv.Quote(req[RequirementVersionKey]))}},
+				{requirementComparatorKey, &Value{Str: ptr.To(strconv.Quote(req[requirementComparatorKey]))}},
+				{requirementVersionKey, &Value{Str: ptr.To(strconv.Quote(req[requirementVersionKey]))}},
 			}})
 		}
 		obj = append(obj, &Assignment{requirementVersionRequirementsKey, &Value{List: &values}})
@@ -104,6 +96,10 @@ func (r *Raw) removeRequirement(requirement types.Requirement) error {
 				break
 			}
 		}
+
+		if found {
+			break
+		}
 	}
 
 	if !found {
@@ -129,7 +125,6 @@ func (r *Raw) UpdatePlatform(operation types.Operation, platformID strfmt.UUID) 
 	if err != nil {
 		return errs.Wrap(err, "Could not update Raw's platform")
 	}
-
 	return nil
 }
 

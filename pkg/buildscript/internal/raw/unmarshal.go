@@ -33,15 +33,13 @@ func Unmarshal(data []byte) (*Raw, error) {
 	}
 
 	// Extract 'at_time' value from the list of assignments, if it exists.
-	for i := 0; i < len(r.Assignments); i++ {
-		assignment := r.Assignments[i]
+	for i, assignment := range r.Assignments {
 		key := assignment.Key
 		value := assignment.Value
 		if key != atTimeKey {
 			continue
 		}
 		r.Assignments = append(r.Assignments[:i], r.Assignments[i+1:]...)
-		i-- // do not skip next assignment after deleting the current one
 		if value.Str == nil {
 			break
 		}

@@ -591,13 +591,8 @@ func TestUpdateRequirements(t *testing.T) {
 			got, err := script.Requirements()
 			assert.NoError(t, err)
 
-			sort.Slice(got, func(i, j int) bool {
-				return got[i].Name < got[j].Name
-			})
-
-			sort.Slice(tt.want, func(i, j int) bool {
-				return tt.want[i].Name < tt.want[j].Name
-			})
+			sort.Slice(got, func(i, j int) bool { return got[i].Name < got[j].Name })
+			sort.Slice(tt.want, func(i, j int) bool { return tt.want[i].Name < tt.want[j].Name })
 
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("BuildExpression.Requirements() = %v, want %v", got, tt.want)
@@ -606,6 +601,9 @@ func TestUpdateRequirements(t *testing.T) {
 	}
 }
 
+// TestUpdatePlatform tests that build scripts can correctly read platforms from build
+// expressions, modify them (add/remove), and return them in a structured format external to the
+// internal, raw format.
 func TestUpdatePlatform(t *testing.T) {
 	type args struct {
 		platform  strfmt.UUID
@@ -668,13 +666,8 @@ func TestUpdatePlatform(t *testing.T) {
 			got, err := script.Platforms()
 			assert.NoError(t, err)
 
-			sort.Slice(got, func(i, j int) bool {
-				return got[i] < got[j]
-			})
-
-			sort.Slice(tt.want, func(i, j int) bool {
-				return tt.want[i] < tt.want[j]
-			})
+			sort.Slice(got, func(i, j int) bool { return got[i] < got[j] })
+			sort.Slice(tt.want, func(i, j int) bool { return tt.want[i] < tt.want[j] })
 
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("BuildExpression.Platforms() = %v, want %v", got, tt.want)
