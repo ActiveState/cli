@@ -46,11 +46,11 @@ func (r *Raw) MarshalJSON() ([]byte, error) {
 			r.AtTime = ptr.To(time.Time(atTime))
 			continue // do not include this custom assignment in the let block
 		case mainKey:
-			key = "in"
+			key = inKey
 		}
 		let[key] = value
 	}
-	m["let"] = let
+	m[letKey] = let
 	return json.Marshal(m)
 }
 

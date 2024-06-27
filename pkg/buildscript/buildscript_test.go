@@ -32,7 +32,8 @@ sources = solve(
 	],
 	requirements = [
 		Req(name = "python", namespace = "language", version = Eq(value = "3.10.10"))
-	]
+	],
+	solver_version = null
 )
 
 main = runtime`, atTime))
@@ -63,7 +64,8 @@ var basicBuildExpression = []byte(`{
               }
             ]
           }
-        ]
+        ],
+        "solver_version": null
       }
     }
   }
@@ -83,6 +85,9 @@ func TestRoundTripFromBuildScript(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, script, roundTripScript)
+	equal, err := script.Equals(roundTripScript)
+	require.NoError(t, err)
+	assert.True(t, equal)
 }
 
 // TestRoundTripFromBuildExpression tests that if we construct a buildscript from a Platform build
@@ -210,6 +215,8 @@ func TestUnmarshalBuildExpression(t *testing.T) {
 	}
 }
 
+// TestRequirements tests that build scripts can correctly read requirements from build expressions
+// and return them in a structured format external to the internal, raw format.
 func TestRequirements(t *testing.T) {
 	type args struct {
 		filename string
@@ -318,6 +325,9 @@ func TestRequirements(t *testing.T) {
 	}
 }
 
+// TestUpdateRequirements tests that build scripts can correctly read requirements from build
+// expressions, modify them (add/update/remove), and return them in a structured format external to
+// the internal, raw format.
 func TestUpdateRequirements(t *testing.T) {
 	type args struct {
 		requirement types.Requirement
@@ -596,37 +606,79 @@ func TestUpdateRequirements(t *testing.T) {
 	}
 }
 
-func TestNullValue(t *testing.T) {
-	script, err := UnmarshalBuildExpression([]byte(`
-{
-  "let": {
-    "in": "$runtime",
-    "runtime": {
-      "solve": {
-        "at_time": "$at_time",
-				"requirements": [],
-        "solver_version": null
-      }
-    }
-  }
-}
-`), nil)
-	require.NoError(t, err)
-
-	var null *string
-	nullHandled := false
-	for _, assignment := range script.raw.Assignments {
-		if assignment.Key == "runtime" {
-			args := assignment.Value.FuncCall.Arguments
-			require.NotNil(t, args)
-			for _, arg := range args {
-				if arg.Assignment != nil && arg.Assignment.Key == "solver_version" {
-					assert.Equal(t, null, arg.Assignment.Value.Str)
-					assert.NotNil(t, arg.Assignment.Value.Null)
-					nullHandled = true
-				}
-			}
-		}
+func TestUpdatePlatform(t *testing.T) {
+	type args struct {
+		platform  strfmt.UUID
+		operation types.Operation
+		filename  string
 	}
-	assert.True(t, nullHandled, "JSON null not encountered")
+	tests := []struct {
+		name    string
+		args    args
+		want    []strfmt.UUID
+		wantErr bool
+	}{
+		{
+			name: "add",
+			args: args{
+				platform:  strfmt.UUID("78977bc8-0f32-519d-80f3-9043f059398c"),
+				operation: types.OperationAdded,
+				filename:  "buildexpression.json",
+			},
+			want: []strfmt.UUID{
+				strfmt.UUID("78977bc8-0f32-519d-80f3-9043f059398c"),
+				strfmt.UUID("96b7e6f2-bebf-564c-bc1c-f04482398f38"),
+			},
+			wantErr: false,
+		},
+		{
+			name: "remove",
+			args: args{
+				platform:  strfmt.UUID("0fa42e8c-ac7b-5dd7-9407-8aa15f9b993a"),
+				operation: types.OperationRemoved,
+				filename:  "buildexpression-alternate.json",
+			},
+			want: []strfmt.UUID{
+				strfmt.UUID("46a5b48f-226a-4696-9746-ba4d50d661c2"),
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wd, err := environment.GetRootPath()
+			assert.NoError(t, err)
+
+			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "buildscript", "testdata", tt.args.filename))
+			assert.NoError(t, err)
+
+			script, err := UnmarshalBuildExpression(data, nil)
+			assert.NoError(t, err)
+
+			err = script.UpdatePlatform(tt.args.operation, tt.args.platform)
+			if err != nil {
+				if tt.wantErr {
+					return
+				}
+
+				t.Errorf("BuildExpression.Update() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			got, err := script.Platforms()
+			assert.NoError(t, err)
+
+			sort.Slice(got, func(i, j int) bool {
+				return got[i] < got[j]
+			})
+
+			sort.Slice(tt.want, func(i, j int) bool {
+				return tt.want[i] < tt.want[j]
+			})
+
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("BuildExpression.Platforms() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

@@ -74,9 +74,14 @@ func (b *BuildScript) Requirements() ([]types.Requirement, error) {
 }
 
 type RequirementNotFoundError = raw.RequirementNotFoundError // expose
+type PlatformNotFoundError = raw.PlatformNotFoundError       // expose
 
 func (b *BuildScript) UpdateRequirement(operation types.Operation, requirement types.Requirement) error {
 	return b.raw.UpdateRequirement(operation, requirement)
+}
+
+func (b *BuildScript) Platforms() ([]strfmt.UUID, error) {
+	return b.raw.Platforms()
 }
 
 func (b *BuildScript) UpdatePlatform(operation types.Operation, platformID strfmt.UUID) error {

@@ -19,7 +19,8 @@ runtime = solve(
 	requirements = [
 		Req(name = "python", namespace = "language"),
 		Req(name = "requests", namespace = "language/python", version = Eq(value = "3.10.10"))
-	]
+	],
+	solver_version = null
 )
 
 main = runtime
@@ -74,6 +75,7 @@ main = runtime
 							}},
 						}},
 					}},
+					{Assignment: &Assignment{"solver_version", &Value{Null: &Null{}}}},
 				}},
 			}},
 			{"main", &Value{Ident: ptr.To("runtime")}},

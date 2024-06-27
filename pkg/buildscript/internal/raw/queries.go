@@ -3,6 +3,8 @@ package raw
 import (
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 )
@@ -11,7 +13,6 @@ const (
 	solveFuncName       = "solve"
 	solveLegacyFuncName = "solve_legacy"
 	platformsKey        = "platforms"
-	letKey              = "let"
 )
 
 var errNodeNotFound = errs.New("Could not find node")
@@ -152,7 +153,20 @@ func (r *Raw) getSolveAtTimeValue() (*Value, error) {
 	return nil, errValueNotFound
 }
 
-func (r *Raw) getPlatformsNode() (*[]*Value, error) {
+func (r *Raw) Platforms() ([]strfmt.UUID, error) {
+	node, err := r.getPlatformsNode()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get platform node")
+	}
+
+	list := []strfmt.UUID{}
+	for _, value := range *node.List {
+		list = append(list, strfmt.UUID(strings.Trim(*value.Str, `"`)))
+	}
+	return list, nil
+}
+
+func (r *Raw) getPlatformsNode() (*Value, error) {
 	node, err := r.getSolveNode()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get solve node")
@@ -164,7 +178,7 @@ func (r *Raw) getPlatformsNode() (*[]*Value, error) {
 		}
 
 		if arg.Assignment.Key == platformsKey && arg.Assignment.Value != nil {
-			return arg.Assignment.Value.List, nil
+			return arg.Assignment.Value, nil
 		}
 	}
 

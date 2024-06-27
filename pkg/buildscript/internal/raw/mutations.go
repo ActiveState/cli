@@ -139,9 +139,16 @@ func (r *Raw) addPlatform(platformID strfmt.UUID) error {
 		return errs.Wrap(err, "Could not get platforms node")
 	}
 
-	*platformsNode = append(*platformsNode, &Value{Str: ptr.To(strconv.Quote(platformID.String()))})
+	list := *platformsNode.List
+	list = append(list, &Value{Str: ptr.To(strconv.Quote(platformID.String()))})
+	platformsNode.List = &list
 
 	return nil
+}
+
+type PlatformNotFoundError struct {
+	Id                     strfmt.UUID
+	*locale.LocalizedError // for legacy non-user-facing error usages
 }
 
 func (r *Raw) removePlatform(platformID strfmt.UUID) error {
@@ -151,20 +158,21 @@ func (r *Raw) removePlatform(platformID strfmt.UUID) error {
 	}
 
 	var found bool
-	for i, p := range *platformsNode {
-		if p.Str == nil {
-			continue
-		}
-
-		if strings.Trim(*p.Str, `"`) == platformID.String() {
-			*platformsNode = append((*platformsNode)[:i], (*platformsNode)[i+1:]...)
+	for i, value := range *platformsNode.List {
+		if value.Str != nil && strings.Trim(*value.Str, `"`) == platformID.String() {
+			list := *platformsNode.List
+			list = append(list[:i], list[i+1:]...)
+			platformsNode.List = &list
 			found = true
 			break
 		}
 	}
 
 	if !found {
-		return errs.New("Could not find platform")
+		return &PlatformNotFoundError{
+			platformID,
+			locale.NewInputError("err_remove_platform_not_found", "", platformID.String()),
+		}
 	}
 
 	return nil

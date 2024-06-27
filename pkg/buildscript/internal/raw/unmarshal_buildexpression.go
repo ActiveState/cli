@@ -19,8 +19,7 @@ import (
 )
 
 // At this time, there is no way to ask the Platform for an empty buildexpression.
-const emptyBuildExpression = `
-{
+const emptyBuildExpression = `{
 	"let": {
 		"sources": {
 				"solve": {
@@ -39,6 +38,11 @@ const emptyBuildExpression = `
 	}
 }`
 
+const (
+	letKey = "let"
+	inKey  = "in"
+)
+
 func New() (*Raw, error) {
 	return UnmarshalBuildExpression([]byte(emptyBuildExpression))
 }
@@ -50,7 +54,7 @@ func UnmarshalBuildExpression(data []byte) (*Raw, error) {
 		return nil, errs.Wrap(err, "Could not unmarshal buildexpression")
 	}
 
-	let, ok := expr["let"].(map[string]interface{})
+	let, ok := expr[letKey].(map[string]interface{})
 	if !ok {
 		return nil, errs.New("Invalid buildexpression: 'let' value is not an object")
 	}
@@ -79,7 +83,7 @@ func UnmarshalBuildExpression(data []byte) (*Raw, error) {
 
 	// If the requirements are in legacy object form, e.g.
 	//   requirements = [{"name": "<name>", "namespace": "<name>"}, {...}, ...]
-	// then transform them into function call form, which is what build scripts use, e.g.
+	// then transform them into function call form for the AScript format, e.g.
 	//   requirements = [Req(name = "<name>", namespace = "<name>"), Req(...), ...]
 	requirements, err := raw.getRequirementsNode()
 	if err != nil {
@@ -113,12 +117,12 @@ func newAssignments(path []string, m map[string]interface{}) ([]*Assignment, err
 	for key, valueInterface := range m {
 		var value *Value
 		var err error
-		if key != "in" {
+		if key != inKey {
 			value, err = newValue(path, valueInterface)
 		} else {
 			value, err = newIn(path, valueInterface)
 			if err == nil {
-				key = "main" // rename
+				key = mainKey // rename
 			}
 		}
 		if err != nil {
@@ -218,7 +222,7 @@ func isFuncCall(path []string, value map[string]interface{}) bool {
 		}
 	}()
 
-	_, hasIn := value["in"]
+	_, hasIn := value[inKey]
 	if hasIn && !sliceutils.Contains(path, ctxAssignments) {
 		return false
 	}
