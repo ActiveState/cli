@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -231,9 +232,9 @@ func (suite *InitIntegrationTestSuite) TestInit_ChangeSummary() {
 
 	ts.LoginAsPersistentUser()
 
-	project := "test-init-change-summary-" + sysinfo.OS().String()
+	project := "test-init-change-summary-" + hash.ShortHash(strutils.UUID().String())
 	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("init", "ActiveState-CLI/"+project, "--language", "python@3.10.10"),
+		e2e.OptArgs("init", e2e.PersistentUsername+"/"+project, "--language", "python@3.10.10"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
 	)
 	cp.Expect("Resolving Dependencies")
