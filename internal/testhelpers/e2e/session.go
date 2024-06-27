@@ -477,7 +477,15 @@ func (s *Session) DebugMessage(prefix string) string {
 		if spawn.opts.HideCmdArgs {
 			name = spawn.Cmd().Path
 		}
-		output[name] = strings.TrimSpace(spawn.Snapshot())
+		out := spawn.Output()
+		if strings.Contains(spawn.Output(), "panic") {
+			// If we encountered a panic it's unlikely the snapshot has enough information to be useful, so in this
+			// case we include the full output. Which we don't normally do as it is just the dump of pty data, and
+			// tends to be overly verbose and difficult to grok.
+			output[name] = strings.TrimSpace(out)
+		} else {
+			output[name] = strings.TrimSpace(spawn.Snapshot())
+		}
 	}
 
 	v, err := strutils.ParseTemplate(`
