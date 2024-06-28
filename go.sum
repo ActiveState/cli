@@ -347,8 +347,8 @@ github.com/ActiveState/graphql v0.0.0-20230719154233-6949037a6e48 h1:UCx/ObpVRgC
 github.com/ActiveState/graphql v0.0.0-20230719154233-6949037a6e48/go.mod h1:NhUbNQ8UpfnC6nZvZ8oThqYSCE/G8FQp9JUrK9jXJs0=
 github.com/ActiveState/pty v0.0.0-20230628221854-6fb90eb08a14 h1:RdhhSiwmgyUaaF2GBNrbqTwE5SM+MaVjwf91Ua+CK8c=
 github.com/ActiveState/pty v0.0.0-20230628221854-6fb90eb08a14/go.mod h1:5mM6vNRQwshCjlkOnVpwC//4ZpkiC6nmZr8lPOxJdXs=
-github.com/ActiveState/termtest v0.7.3-0.20240522153407-fcd066736664 h1:0W+6cvjhkhF7AtCQJDGooMpOhDF4wqZpZyO2loIqtgY=
-github.com/ActiveState/termtest v0.7.3-0.20240522153407-fcd066736664/go.mod h1:RyWp2NaaTrVAa+XjMHpKAqwBFWbL6wE12HQxiZNGAqU=
+github.com/ActiveState/termtest v0.7.3-0.20240628171015-3b5b4ea86dcb h1:cPLe2sL2YvpA3T1B9vzFhvjUW0ugxe49N77zf7SADxA=
+github.com/ActiveState/termtest v0.7.3-0.20240628171015-3b5b4ea86dcb/go.mod h1:RyWp2NaaTrVAa+XjMHpKAqwBFWbL6wE12HQxiZNGAqU=
 github.com/AlecAivazis/survey/v2 v2.0.5/go.mod h1:WYBhg6f0y/fNYUuesWQc0PKbJcEliGcYHB9sNT3Bg74=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 h1:w+iIsaOQNcT7OZ575w+acHgRric5iCyQh+xv+KJ4HB8=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78/go.mod h1:LmzpDX56iTiv29bbRTIsUNlaFfuhWRQBWjQdVyAevI8=

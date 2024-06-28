@@ -16,10 +16,10 @@ func syscallErrorCode(err error) int {
 	return 0
 }
 
-// WaitIndefinitely on Windows has to work around a Windows PTY bug where the PTY will NEVER exit by itself:
+// waitIndefinitely on Windows has to work around a Windows PTY bug where the PTY will NEVER exit by itself:
 // https://github.com/photostorm/pty/issues/3
 // Instead we wait for the process itself to exit, and after a grace period will shut down the pty.
-func (tt *TermTest) WaitIndefinitely() error {
+func (tt *TermTest) waitIndefinitely() error {
 	tt.opts.Logger.Println("WaitIndefinitely called")
 	defer tt.opts.Logger.Println("WaitIndefinitely closed")
 
