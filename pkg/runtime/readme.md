@@ -8,7 +8,7 @@ insights into that sourced runtime.
 A fundamental goal of the runtime package (and really any package) is that it is intuitive to maintain. Meaning when we
 don't touch this code for 6 months and then come back to it we can still easily tell what's going on.
 
-The main method of achieveing this goal is by minimizing the responsibilities of the runtime package. By having it no be
+The main method of achieving this goal is by minimizing the responsibilities of the runtime package. By having it no be
 aware of projects, buildscripts, analytics, etc. we facilitate a much cleaner boilerplate that is easier to grok than
 if it were dealing with all these concepts.
 

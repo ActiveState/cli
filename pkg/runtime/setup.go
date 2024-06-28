@@ -222,7 +222,7 @@ func (s *setup) update() error {
 
 	// Now we start modifying the runtime directory
 	// This happens AFTER all the download steps are finished, and should be very fast because installing is mostly just
-	// creating links to the depot. The
+	// creating links to the depot.
 	// We do this as a separate step so we don't leave the runtime dir in a half-installed state if issues happen earlier
 	// on in the process.
 
