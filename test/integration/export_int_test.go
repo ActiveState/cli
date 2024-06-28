@@ -54,7 +54,10 @@ func (suite *ExportIntegrationTestSuite) TestExport_Log() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.ClearCache()
 
-	cp := ts.Spawn("export", "log")
+	cp := ts.Spawn("--version")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("export", "log")
 	cp.Expect(filepath.Join(ts.Dirs.Config, "logs"))
 	cp.ExpectRe(`state-\d+`)
 	cp.Expect(".log")
