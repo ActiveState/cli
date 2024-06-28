@@ -1,4 +1,4 @@
-package raw
+package buildscript
 
 import (
 	"testing"
@@ -11,7 +11,7 @@ import (
 )
 
 func TestRawRepresentation(t *testing.T) {
-	raw, err := Unmarshal([]byte(
+	script, err := Unmarshal([]byte(
 		`at_time = "2000-01-01T00:00:00.000Z"
 runtime = solve(
 	at_time = at_time,
@@ -31,7 +31,7 @@ main = runtime
 	require.NoError(t, err)
 	atTime := time.Time(atTimeStrfmt)
 
-	assert.Equal(t, &Raw{
+	assert.Equal(t, &rawBuildScript{
 		[]*Assignment{
 			{"runtime", &Value{
 				FuncCall: &FuncCall{"solve", []*Value{
@@ -73,11 +73,11 @@ main = runtime
 			{"main", &Value{Ident: ptr.To("runtime")}},
 		},
 		&atTime,
-	}, raw)
+	}, script.raw)
 }
 
 func TestComplex(t *testing.T) {
-	raw, err := Unmarshal([]byte(
+	script, err := Unmarshal([]byte(
 		`at_time = "2000-01-01T00:00:00.000Z"
 linux_runtime = solve(
 		at_time = at_time,
@@ -106,7 +106,7 @@ main = merge(
 	require.NoError(t, err)
 	atTime := time.Time(atTimeStrfmt)
 
-	assert.Equal(t, &Raw{
+	assert.Equal(t, &rawBuildScript{
 		[]*Assignment{
 			{"linux_runtime", &Value{
 				FuncCall: &FuncCall{"solve", []*Value{
@@ -153,7 +153,7 @@ main = merge(
 				}}}},
 		},
 		&atTime,
-	}, raw)
+	}, script.raw)
 }
 
 const buildscriptWithComplexVersions = `at_time = "2023-04-27T17:30:05.999Z"
@@ -171,14 +171,14 @@ runtime = solve(
 main = runtime`
 
 func TestComplexVersions(t *testing.T) {
-	raw, err := Unmarshal([]byte(buildscriptWithComplexVersions))
+	script, err := Unmarshal([]byte(buildscriptWithComplexVersions))
 	require.NoError(t, err)
 
 	atTimeStrfmt, err := strfmt.ParseDateTime("2023-04-27T17:30:05.999Z")
 	require.NoError(t, err)
 	atTime := time.Time(atTimeStrfmt)
 
-	assert.Equal(t, &Raw{
+	assert.Equal(t, &rawBuildScript{
 		[]*Assignment{
 			{"runtime", &Value{
 				FuncCall: &FuncCall{"solve", []*Value{
@@ -247,5 +247,5 @@ func TestComplexVersions(t *testing.T) {
 			{"main", &Value{Ident: ptr.To("runtime")}},
 		},
 		&atTime,
-	}, raw)
+	}, script.raw)
 }

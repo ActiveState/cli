@@ -1,4 +1,4 @@
-package raw
+package buildscript
 
 import (
 	"bytes"
@@ -24,17 +24,17 @@ const (
 )
 
 // Marshal returns this structure in AScript, suitable for writing to disk.
-func (r *Raw) Marshal() ([]byte, error) {
+func (b *BuildScript) Marshal() ([]byte, error) {
 	buf := strings.Builder{}
 
-	if r.AtTime != nil {
+	if b.raw.AtTime != nil {
 		buf.WriteString(assignmentString(
-			&Assignment{atTimeKey, newString(r.AtTime.Format(strfmt.RFC3339Millis))}))
+			&Assignment{atTimeKey, newString(b.raw.AtTime.Format(strfmt.RFC3339Millis))}))
 		buf.WriteString("\n")
 	}
 
 	var main *Assignment
-	for _, assignment := range r.Assignments {
+	for _, assignment := range b.raw.Assignments {
 		if assignment.Key == mainKey {
 			main = assignment
 			continue // write at the end

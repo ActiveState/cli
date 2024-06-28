@@ -1,4 +1,4 @@
-package raw
+package buildscript
 
 import (
 	"github.com/go-openapi/strfmt"
@@ -11,29 +11,29 @@ import (
 
 const requirementRevisionKey = "revision"
 
-func (r *Raw) UpdateRequirement(operation types.Operation, requirement types.Requirement) error {
+func (b *BuildScript) UpdateRequirement(operation types.Operation, requirement types.Requirement) error {
 	var err error
 	switch operation {
 	case types.OperationAdded:
-		err = r.addRequirement(requirement)
+		err = b.addRequirement(requirement)
 	case types.OperationRemoved:
-		err = r.removeRequirement(requirement)
+		err = b.removeRequirement(requirement)
 	case types.OperationUpdated:
-		err = r.removeRequirement(requirement)
+		err = b.removeRequirement(requirement)
 		if err != nil {
 			break
 		}
-		err = r.addRequirement(requirement)
+		err = b.addRequirement(requirement)
 	default:
 		return errs.New("Unsupported operation")
 	}
 	if err != nil {
-		return errs.Wrap(err, "Could not update Raw's requirements")
+		return errs.Wrap(err, "Could not update BuildScript's requirements")
 	}
 	return nil
 }
 
-func (r *Raw) addRequirement(requirement types.Requirement) error {
+func (b *BuildScript) addRequirement(requirement types.Requirement) error {
 	// Use object form for now, and then transform it into function form later.
 	obj := []*Assignment{
 		{requirementNameKey, newString(requirement.Name)},
@@ -55,7 +55,7 @@ func (r *Raw) addRequirement(requirement types.Requirement) error {
 		obj = append(obj, &Assignment{requirementVersionRequirementsKey, &Value{List: &values}})
 	}
 
-	requirementsNode, err := r.getRequirementsNode()
+	requirementsNode, err := b.getRequirementsNode()
 	if err != nil {
 		return errs.Wrap(err, "Could not get requirements node")
 	}
@@ -72,19 +72,19 @@ type RequirementNotFoundError struct {
 	*locale.LocalizedError // for legacy non-user-facing error usages
 }
 
-func (r *Raw) removeRequirement(requirement types.Requirement) error {
-	requirementsNode, err := r.getRequirementsNode()
+func (b *BuildScript) removeRequirement(requirement types.Requirement) error {
+	requirementsNode, err := b.getRequirementsNode()
 	if err != nil {
 		return errs.Wrap(err, "Could not get requirements node")
 	}
 
 	var found bool
-	for i, r := range *requirementsNode.List {
-		if r.FuncCall == nil || r.FuncCall.Name != reqFuncName {
+	for i, req := range *requirementsNode.List {
+		if req.FuncCall == nil || req.FuncCall.Name != reqFuncName {
 			continue
 		}
 
-		for _, arg := range r.FuncCall.Arguments {
+		for _, arg := range req.FuncCall.Arguments {
 			if arg.Assignment.Key == requirementNameKey && strValue(arg.Assignment.Value) == requirement.Name {
 				list := *requirementsNode.List
 				list = append(list[:i], list[i+1:]...)
@@ -109,24 +109,24 @@ func (r *Raw) removeRequirement(requirement types.Requirement) error {
 	return nil
 }
 
-func (r *Raw) UpdatePlatform(operation types.Operation, platformID strfmt.UUID) error {
+func (b *BuildScript) UpdatePlatform(operation types.Operation, platformID strfmt.UUID) error {
 	var err error
 	switch operation {
 	case types.OperationAdded:
-		err = r.addPlatform(platformID)
+		err = b.addPlatform(platformID)
 	case types.OperationRemoved:
-		err = r.removePlatform(platformID)
+		err = b.removePlatform(platformID)
 	default:
 		return errs.New("Unsupported operation")
 	}
 	if err != nil {
-		return errs.Wrap(err, "Could not update Raw's platform")
+		return errs.Wrap(err, "Could not update BuildScript's platform")
 	}
 	return nil
 }
 
-func (r *Raw) addPlatform(platformID strfmt.UUID) error {
-	platformsNode, err := r.getPlatformsNode()
+func (b *BuildScript) addPlatform(platformID strfmt.UUID) error {
+	platformsNode, err := b.getPlatformsNode()
 	if err != nil {
 		return errs.Wrap(err, "Could not get platforms node")
 	}
@@ -143,8 +143,8 @@ type PlatformNotFoundError struct {
 	*locale.LocalizedError // for legacy non-user-facing error usages
 }
 
-func (r *Raw) removePlatform(platformID strfmt.UUID) error {
-	platformsNode, err := r.getPlatformsNode()
+func (b *BuildScript) removePlatform(platformID strfmt.UUID) error {
+	platformsNode, err := b.getPlatformsNode()
 	if err != nil {
 		return errs.Wrap(err, "Could not get platforms node")
 	}

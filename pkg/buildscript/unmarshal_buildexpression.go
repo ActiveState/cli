@@ -1,4 +1,4 @@
-package raw
+package buildscript
 
 import (
 	"encoding/json"
@@ -43,11 +43,13 @@ const (
 	inKey  = "in"
 )
 
-func New() (*Raw, error) {
-	return UnmarshalBuildExpression([]byte(emptyBuildExpression))
-}
-
-func UnmarshalBuildExpression(data []byte) (*Raw, error) {
+// UnmarshalBuildExpression returns a BuildScript constructed from the given build expression in
+// JSON format.
+// Build scripts and build expressions are almost identical, with the exception of the atTime field.
+// Build expressions ALWAYS set at_time to `$at_time`, which refers to the timestamp on the commit,
+// while buildscripts encode this timestamp as part of their definition. For this reason we have
+// to supply the timestamp as a separate argument.
+func UnmarshalBuildExpression(data []byte, atTime *time.Time) (*BuildScript, error) {
 	expr := make(map[string]interface{})
 	err := json.Unmarshal(data, &expr)
 	if err != nil {
@@ -65,27 +67,31 @@ func UnmarshalBuildExpression(data []byte) (*Raw, error) {
 		return nil, errs.Wrap(err, "Could not parse assignments")
 	}
 
-	raw := &Raw{Assignments: assignments}
+	script := &BuildScript{&rawBuildScript{Assignments: assignments}}
 
 	// Extract the 'at_time' from the solve node, if it exists, and change its value to be a
 	// reference to "$at_time", which is how we want to show it in AScript format.
-	if atTimeNode, err := raw.getSolveAtTimeValue(); err == nil && atTimeNode.Str != nil && !strings.HasPrefix(strValue(atTimeNode), `$`) {
+	if atTimeNode, err := script.getSolveAtTimeValue(); err == nil && atTimeNode.Str != nil && !strings.HasPrefix(strValue(atTimeNode), `$`) {
 		atTime, err := strfmt.ParseDateTime(strValue(atTimeNode))
 		if err != nil {
 			return nil, errs.Wrap(err, "Invalid timestamp: %s", strValue(atTimeNode))
 		}
 		atTimeNode.Str = nil
 		atTimeNode.Ident = ptr.To("at_time")
-		raw.AtTime = ptr.To(time.Time(atTime))
+		script.raw.AtTime = ptr.To(time.Time(atTime))
 	} else if err != nil {
 		return nil, errs.Wrap(err, "Could not get at_time node")
+	}
+
+	if atTime != nil {
+		script.raw.AtTime = atTime
 	}
 
 	// If the requirements are in legacy object form, e.g.
 	//   requirements = [{"name": "<name>", "namespace": "<name>"}, {...}, ...]
 	// then transform them into function call form for the AScript format, e.g.
 	//   requirements = [Req(name = "<name>", namespace = "<name>"), Req(...), ...]
-	requirements, err := raw.getRequirementsNode()
+	requirements, err := script.getRequirementsNode()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get requirements node")
 	}
@@ -93,7 +99,7 @@ func UnmarshalBuildExpression(data []byte) (*Raw, error) {
 		requirements.List = transformRequirements(requirements).List
 	}
 
-	return raw, nil
+	return script, nil
 }
 
 const (

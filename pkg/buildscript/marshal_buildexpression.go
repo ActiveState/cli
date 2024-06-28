@@ -1,4 +1,4 @@
-package raw
+package buildscript
 
 import (
 	"encoding/json"
@@ -22,8 +22,8 @@ const (
 
 // MarshalJSON returns this structure as a build expression in JSON format, suitable for sending to
 // the Platform.
-func (r *Raw) MarshalBuildExpression() ([]byte, error) {
-	return json.MarshalIndent(r, "", "  ")
+func (b *BuildScript) MarshalBuildExpression() ([]byte, error) {
+	return json.MarshalIndent(b, "", "  ")
 }
 
 // Note: all of the MarshalJSON functions are named the way they are because Go's JSON package
@@ -31,10 +31,10 @@ func (r *Raw) MarshalBuildExpression() ([]byte, error) {
 
 // MarshalJSON returns this structure as a build expression in JSON format, suitable for sending to
 // the Platform.
-func (r *Raw) MarshalJSON() ([]byte, error) {
+func (b *BuildScript) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
 	let := make(map[string]interface{})
-	for _, assignment := range r.Assignments {
+	for _, assignment := range b.raw.Assignments {
 		key := assignment.Key
 		value := assignment.Value
 		switch key {
@@ -46,7 +46,7 @@ func (r *Raw) MarshalJSON() ([]byte, error) {
 			if err != nil {
 				return nil, errs.Wrap(err, "Invalid timestamp: %s", strValue(value))
 			}
-			r.AtTime = ptr.To(time.Time(atTime))
+			b.raw.AtTime = ptr.To(time.Time(atTime))
 			continue // do not include this custom assignment in the let block
 		case mainKey:
 			key = inKey // rename

@@ -1,4 +1,4 @@
-package raw
+package buildscript
 
 import (
 	"strconv"
@@ -9,7 +9,7 @@ import (
 )
 
 // Tagged fields will be filled in by Participle.
-type Raw struct {
+type rawBuildScript struct {
 	Assignments []*Assignment `parser:"@@+"`
 
 	AtTime *time.Time // set after initial read

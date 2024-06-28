@@ -1,4 +1,4 @@
-package raw
+package buildscript
 
 import (
 	"strings"
@@ -19,37 +19,37 @@ const (
 var errNodeNotFound = errs.New("Could not find node")
 var errValueNotFound = errs.New("Could not find value")
 
-func (r *Raw) Requirements() ([]types.Requirement, error) {
-	requirementsNode, err := r.getRequirementsNode()
+func (b *BuildScript) Requirements() ([]types.Requirement, error) {
+	requirementsNode, err := b.getRequirementsNode()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get requirements node")
 	}
 
 	var requirements []types.Requirement
-	for _, r := range *requirementsNode.List {
-		if r.FuncCall == nil {
+	for _, req := range *requirementsNode.List {
+		if req.FuncCall == nil {
 			continue
 		}
 
-		var req types.Requirement
-		for _, arg := range r.FuncCall.Arguments {
+		var r types.Requirement
+		for _, arg := range req.FuncCall.Arguments {
 			switch arg.Assignment.Key {
 			case requirementNameKey:
-				req.Name = strValue(arg.Assignment.Value)
+				r.Name = strValue(arg.Assignment.Value)
 			case requirementNamespaceKey:
-				req.Namespace = strValue(arg.Assignment.Value)
+				r.Namespace = strValue(arg.Assignment.Value)
 			case requirementVersionKey:
-				req.VersionRequirement = getVersionRequirements(arg.Assignment.Value)
+				r.VersionRequirement = getVersionRequirements(arg.Assignment.Value)
 			}
 		}
-		requirements = append(requirements, req)
+		requirements = append(requirements, r)
 	}
 
 	return requirements, nil
 }
 
-func (r *Raw) getRequirementsNode() (*Value, error) {
-	node, err := r.getSolveNode()
+func (b *BuildScript) getRequirementsNode() (*Value, error) {
+	node, err := b.getSolveNode()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get solve node")
 	}
@@ -86,7 +86,7 @@ func getVersionRequirements(v *Value) []types.VersionRequirement {
 	return reqs
 }
 
-func (r *Raw) getSolveNode() (*Value, error) {
+func (b *BuildScript) getSolveNode() (*Value, error) {
 	var search func([]*Assignment) *Value
 	search = func(assignments []*Assignment) *Value {
 		var nextLet []*Assignment
@@ -108,15 +108,15 @@ func (r *Raw) getSolveNode() (*Value, error) {
 
 		return nil
 	}
-	if node := search(r.Assignments); node != nil {
+	if node := search(b.raw.Assignments); node != nil {
 		return node, nil
 	}
 
 	return nil, errNodeNotFound
 }
 
-func (r *Raw) getSolveAtTimeValue() (*Value, error) {
-	node, err := r.getSolveNode()
+func (b *BuildScript) getSolveAtTimeValue() (*Value, error) {
+	node, err := b.getSolveNode()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get solve node")
 	}
@@ -130,8 +130,8 @@ func (r *Raw) getSolveAtTimeValue() (*Value, error) {
 	return nil, errValueNotFound
 }
 
-func (r *Raw) Platforms() ([]strfmt.UUID, error) {
-	node, err := r.getPlatformsNode()
+func (b *BuildScript) Platforms() ([]strfmt.UUID, error) {
+	node, err := b.getPlatformsNode()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get platform node")
 	}
@@ -143,8 +143,8 @@ func (r *Raw) Platforms() ([]strfmt.UUID, error) {
 	return list, nil
 }
 
-func (r *Raw) getPlatformsNode() (*Value, error) {
-	node, err := r.getSolveNode()
+func (b *BuildScript) getPlatformsNode() (*Value, error) {
+	node, err := b.getSolveNode()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get solve node")
 	}
