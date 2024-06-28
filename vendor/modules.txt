@@ -22,7 +22,7 @@ github.com/ActiveState/graphql
 # github.com/ActiveState/pty v0.0.0-20230628221854-6fb90eb08a14
 ## explicit; go 1.13
 github.com/ActiveState/pty
-# github.com/ActiveState/termtest v0.7.3-0.20240628171015-3b5b4ea86dcb
+# github.com/ActiveState/termtest v0.7.3-0.20240628185344-ac3b1758edba
 ## explicit; go 1.18
 github.com/ActiveState/termtest
 # github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
