@@ -97,6 +97,4 @@ func init() {
 	SetHandler(handler)
 	handler.SetVerbose(os.Getenv("VERBOSE") != "")
 	log.SetOutput(&writer{})
-
-	Debug("Args: %v", os.Args)
 }
