@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/pkg/ascript"
 )
 
 const (
@@ -34,21 +35,21 @@ func (b *BuildScript) MarshalBuildExpression() ([]byte, error) {
 func (b *BuildScript) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
 	let := make(map[string]interface{})
-	for _, assignment := range b.raw.Assignments {
+	for _, assignment := range b.as.Assignments {
 		key := assignment.Key
 		value := assignment.Value
 		switch key {
-		case atTimeKey:
+		case ascript.AtTimeKey:
 			if value.Str == nil {
 				return nil, errs.New("String timestamp expected for '%s'", key)
 			}
-			atTime, err := strfmt.ParseDateTime(strValue(value))
+			atTime, err := strfmt.ParseDateTime(ascript.StrValue(value))
 			if err != nil {
-				return nil, errs.Wrap(err, "Invalid timestamp: %s", strValue(value))
+				return nil, errs.Wrap(err, "Invalid timestamp: %s", ascript.StrValue(value))
 			}
-			b.raw.AtTime = ptr.To(time.Time(atTime))
+			b.as.AtTime = ptr.To(time.Time(atTime))
 			continue // do not include this custom assignment in the let block
-		case mainKey:
+		case ascript.MainKey:
 			key = inKey // rename
 		}
 		let[key] = value
@@ -57,20 +58,20 @@ func (b *BuildScript) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m)
 }
 
-func (a *Assignment) MarshalJSON() ([]byte, error) {
+func (a *ascript.Assignment) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
 	m[a.Key] = a.Value
 	return json.Marshal(m)
 }
 
-func (v *Value) MarshalJSON() ([]byte, error) {
+func (v *ascript.Value) MarshalJSON() ([]byte, error) {
 	switch {
 	case v.FuncCall != nil:
 		return json.Marshal(v.FuncCall)
 	case v.List != nil:
 		return json.Marshal(v.List)
 	case v.Str != nil:
-		return json.Marshal(strValue(v))
+		return json.Marshal(ascript.StrValue(v))
 	case v.Number != nil:
 		return json.Marshal(*v.Number)
 	case v.Null != nil:
@@ -86,11 +87,11 @@ func (v *Value) MarshalJSON() ([]byte, error) {
 	case v.Ident != nil:
 		return json.Marshal("$" + *v.Ident)
 	}
-	return json.Marshal([]*Value{}) // participle does not create v.List if it's empty
+	return json.Marshal([]*ascript.Value{}) // participle does not create v.List if it's empty
 }
 
-func (f *FuncCall) MarshalJSON() ([]byte, error) {
-	if f.Name == reqFuncName {
+func (f *ascript.FuncCall) MarshalJSON() ([]byte, error) {
+	if f.Name == ascript.ReqFuncName {
 		return marshalReq(f.Arguments) // marshal into legacy object format for now
 	}
 
@@ -114,7 +115,7 @@ func (f *FuncCall) MarshalJSON() ([]byte, error) {
 // marshalReq translates a Req() function into its equivalent buildexpression requirement object.
 // This is needed until buildexpressions support functions as requirements. Once they do, we can
 // remove this method entirely.
-func marshalReq(args []*Value) ([]byte, error) {
+func marshalReq(args []*ascript.Value) ([]byte, error) {
 	requirement := make(map[string]interface{})
 
 	for _, arg := range args {
@@ -126,30 +127,30 @@ func marshalReq(args []*Value) ([]byte, error) {
 		switch {
 		// Marshal the name argument (e.g. name = "<name>") into {"name": "<name>"}
 		case assignment.Key == requirementNameKey && assignment.Value.Str != nil:
-			requirement[requirementNameKey] = strValue(assignment.Value)
+			requirement[requirementNameKey] = ascript.StrValue(assignment.Value)
 
 		// Marshal the namespace argument (e.g. namespace = "<namespace>") into
 		// {"namespace": "<namespace>"}
 		case assignment.Key == requirementNamespaceKey && assignment.Value.Str != nil:
-			requirement[requirementNamespaceKey] = strValue(assignment.Value)
+			requirement[requirementNamespaceKey] = ascript.StrValue(assignment.Value)
 
 		// Marshal the version argument (e.g. version = <op>(value = "<version>")) into
 		// {"version_requirements": [{"comparator": "<op>", "version": "<version>"}]}
 		case assignment.Key == requirementVersionKey && assignment.Value.FuncCall != nil:
 			requirements := make([]interface{}, 0)
-			var addRequirement func(*FuncCall) error // recursive function for adding to requirements list
-			addRequirement = func(funcCall *FuncCall) error {
+			var addRequirement func(*ascript.FuncCall) error // recursive function for adding to requirements list
+			addRequirement = func(funcCall *ascript.FuncCall) error {
 				switch name := funcCall.Name; name {
-				case eqFuncName, neFuncName, gtFuncName, gteFuncName, ltFuncName, lteFuncName:
+				case ascript.EqFuncName, ascript.NeFuncName, ascript.GtFuncName, ascript.GteFuncName, ascript.LtFuncName, ascript.LteFuncName:
 					req := make(map[string]string)
 					req[requirementComparatorKey] = strings.ToLower(name)
 					if len(funcCall.Arguments) == 0 || funcCall.Arguments[0].Assignment == nil ||
-						funcCall.Arguments[0].Assignment.Value.Str == nil || strValue(funcCall.Arguments[0].Assignment.Value) == "value" {
+						funcCall.Arguments[0].Assignment.Value.Str == nil || ascript.StrValue(funcCall.Arguments[0].Assignment.Value) == "value" {
 						return errs.New(`Illegal argument for version comparator '%s': 'value = "<version>"' expected`, name)
 					}
-					req[requirementVersionKey] = strValue(funcCall.Arguments[0].Assignment.Value)
+					req[requirementVersionKey] = ascript.StrValue(funcCall.Arguments[0].Assignment.Value)
 					requirements = append(requirements, req)
-				case andFuncName:
+				case ascript.AndFuncName:
 					if len(funcCall.Arguments) != 2 {
 						return errs.New("Illegal arguments for version comparator '%s': 2 arguments expected, got %d", name, len(funcCall.Arguments))
 					}

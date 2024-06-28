@@ -1,4 +1,4 @@
-package buildscript
+package ascript
 
 import (
 	"errors"
@@ -13,16 +13,16 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
-const atTimeKey = "at_time"
+const AtTimeKey = "at_time"
 
 // Unmarshal returns a structured form of the given AScript (on-disk format).
-func Unmarshal(data []byte) (*BuildScript, error) {
-	parser, err := participle.Build[rawBuildScript]()
+func Unmarshal(data []byte) (*AScript, error) {
+	parser, err := participle.Build[AScript]()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create parser for build script")
 	}
 
-	raw, err := parser.ParseBytes(constants.BuildScriptFileName, data)
+	script, err := parser.ParseBytes(constants.BuildScriptFileName, data)
 	if err != nil {
 		var parseError participle.Error
 		if errors.As(err, &parseError) {
@@ -32,23 +32,23 @@ func Unmarshal(data []byte) (*BuildScript, error) {
 	}
 
 	// Extract 'at_time' value from the list of assignments, if it exists.
-	for i, assignment := range raw.Assignments {
+	for i, assignment := range script.Assignments {
 		key := assignment.Key
 		value := assignment.Value
-		if key != atTimeKey {
+		if key != AtTimeKey {
 			continue
 		}
-		raw.Assignments = append(raw.Assignments[:i], raw.Assignments[i+1:]...)
+		script.Assignments = append(script.Assignments[:i], script.Assignments[i+1:]...)
 		if value.Str == nil {
 			break
 		}
-		atTime, err := strfmt.ParseDateTime(strValue(value))
+		atTime, err := strfmt.ParseDateTime(StrValue(value))
 		if err != nil {
-			return nil, errs.Wrap(err, "Invalid timestamp: %s", strValue(value))
+			return nil, errs.Wrap(err, "Invalid timestamp: %s", StrValue(value))
 		}
-		raw.AtTime = ptr.To(time.Time(atTime))
+		script.AtTime = ptr.To(time.Time(atTime))
 		break
 	}
 
-	return &BuildScript{raw}, nil
+	return script, nil
 }

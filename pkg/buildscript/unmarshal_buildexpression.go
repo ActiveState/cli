@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/sliceutils"
+	"github.com/ActiveState/cli/pkg/ascript"
 )
 
 // At this time, there is no way to ask the Platform for an empty build expression.
@@ -67,24 +68,24 @@ func UnmarshalBuildExpression(data []byte, atTime *time.Time) (*BuildScript, err
 		return nil, errs.Wrap(err, "Could not parse assignments")
 	}
 
-	script := &BuildScript{&rawBuildScript{Assignments: assignments}}
+	script := &BuildScript{&ascript.AScript{Assignments: assignments}}
 
 	// Extract the 'at_time' from the solve node, if it exists, and change its value to be a
 	// reference to "$at_time", which is how we want to show it in AScript format.
-	if atTimeNode, err := script.getSolveAtTimeValue(); err == nil && atTimeNode.Str != nil && !strings.HasPrefix(strValue(atTimeNode), `$`) {
-		atTime, err := strfmt.ParseDateTime(strValue(atTimeNode))
+	if atTimeNode, err := script.getSolveAtTimeValue(); err == nil && atTimeNode.Str != nil && !strings.HasPrefix(ascript.StrValue(atTimeNode), `$`) {
+		atTime, err := strfmt.ParseDateTime(ascript.StrValue(atTimeNode))
 		if err != nil {
-			return nil, errs.Wrap(err, "Invalid timestamp: %s", strValue(atTimeNode))
+			return nil, errs.Wrap(err, "Invalid timestamp: %s", ascript.StrValue(atTimeNode))
 		}
 		atTimeNode.Str = nil
 		atTimeNode.Ident = ptr.To("at_time")
-		script.raw.AtTime = ptr.To(time.Time(atTime))
+		script.as.AtTime = ptr.To(time.Time(atTime))
 	} else if err != nil {
 		return nil, errs.Wrap(err, "Could not get at_time node")
 	}
 
 	if atTime != nil {
-		script.raw.AtTime = atTime
+		script.as.AtTime = atTime
 	}
 
 	// If the requirements are in legacy object form, e.g.
@@ -110,7 +111,7 @@ const (
 	ctxIn          = "in"
 )
 
-func unmarshalAssignments(path []string, m map[string]interface{}) ([]*Assignment, error) {
+func unmarshalAssignments(path []string, m map[string]interface{}) ([]*ascript.Assignment, error) {
 	path = append(path, ctxAssignments)
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
@@ -119,21 +120,21 @@ func unmarshalAssignments(path []string, m map[string]interface{}) ([]*Assignmen
 		}
 	}()
 
-	assignments := []*Assignment{}
+	assignments := []*ascript.Assignment{}
 	for key, valueInterface := range m {
-		var value *Value
+		var value *ascript.Value
 		var err error
 		if key != inKey {
 			value, err = unmarshalValue(path, valueInterface)
 		} else {
 			if value, err = unmarshalIn(path, valueInterface); err == nil {
-				key = mainKey // rename
+				key = ascript.MainKey // rename
 			}
 		}
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not parse '%s' key's value: %v", key, valueInterface)
 		}
-		assignments = append(assignments, &Assignment{key, value})
+		assignments = append(assignments, &ascript.Assignment{key, value})
 	}
 
 	sort.SliceStable(assignments, func(i, j int) bool {
@@ -142,7 +143,7 @@ func unmarshalAssignments(path []string, m map[string]interface{}) ([]*Assignmen
 	return assignments, nil
 }
 
-func unmarshalValue(path []string, valueInterface interface{}) (*Value, error) {
+func unmarshalValue(path []string, valueInterface interface{}) (*ascript.Value, error) {
 	path = append(path, ctxValue)
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
@@ -151,7 +152,7 @@ func unmarshalValue(path []string, valueInterface interface{}) (*Value, error) {
 		}
 	}()
 
-	value := &Value{}
+	value := &ascript.Value{}
 
 	switch v := valueInterface.(type) {
 	case map[string]interface{}:
@@ -187,7 +188,7 @@ func unmarshalValue(path []string, valueInterface interface{}) (*Value, error) {
 		}
 
 	case []interface{}:
-		values := []*Value{}
+		values := []*ascript.Value{}
 		for _, item := range v {
 			value, err := unmarshalValue(path, item)
 			if err != nil {
@@ -208,11 +209,11 @@ func unmarshalValue(path []string, valueInterface interface{}) (*Value, error) {
 		value.Number = ptr.To(v)
 
 	case nil:
-		value.Null = &Null{}
+		value.Null = &ascript.Null{}
 
 	default:
 		logging.Debug("Unknown type: %T at path %s", v, strings.Join(path, "."))
-		value.Null = &Null{}
+		value.Null = &ascript.Null{}
 	}
 
 	return value, nil
@@ -231,7 +232,7 @@ func isAp(path []string, value map[string]interface{}) bool {
 	return !hasIn || sliceutils.Contains(path, ctxAssignments)
 }
 
-func unmarshalFuncCall(path []string, m map[string]interface{}) (*FuncCall, error) {
+func unmarshalFuncCall(path []string, m map[string]interface{}) (*ascript.FuncCall, error) {
 	path = append(path, ctxFuncCall)
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
@@ -260,7 +261,7 @@ func unmarshalFuncCall(path []string, m map[string]interface{}) (*FuncCall, erro
 		argsInterface = value
 	}
 
-	args := []*Value{}
+	args := []*ascript.Value{}
 
 	switch v := argsInterface.(type) {
 	case map[string]interface{}:
@@ -269,7 +270,7 @@ func unmarshalFuncCall(path []string, m map[string]interface{}) (*FuncCall, erro
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse '%s' function's argument '%s': %v", name, key, valueInterface)
 			}
-			args = append(args, &Value{Assignment: &Assignment{key, value}})
+			args = append(args, &ascript.Value{Assignment: &ascript.Assignment{key, value}})
 		}
 		sort.SliceStable(args, func(i, j int) bool { return args[i].Assignment.Key < args[j].Assignment.Key })
 
@@ -286,10 +287,10 @@ func unmarshalFuncCall(path []string, m map[string]interface{}) (*FuncCall, erro
 		return nil, errs.New("Function '%s' expected to be object or list", name)
 	}
 
-	return &FuncCall{Name: name, Arguments: args}, nil
+	return &ascript.FuncCall{Name: name, Arguments: args}, nil
 }
 
-func unmarshalIn(path []string, inValue interface{}) (*Value, error) {
+func unmarshalIn(path []string, inValue interface{}) (*ascript.Value, error) {
 	path = append(path, ctxIn)
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
@@ -298,7 +299,7 @@ func unmarshalIn(path []string, inValue interface{}) (*Value, error) {
 		}
 	}()
 
-	in := &Value{}
+	in := &ascript.Value{}
 
 	switch v := inValue.(type) {
 	case map[string]interface{}:
@@ -325,19 +326,19 @@ func unmarshalIn(path []string, inValue interface{}) (*Value, error) {
 //		{"name": "<name>", "namespace": "<namespace>"},
 //		...,
 //	]
-func isLegacyRequirementsList(value *Value) bool {
+func isLegacyRequirementsList(value *ascript.Value) bool {
 	return len(*value.List) > 0 && (*value.List)[0].Object != nil
 }
 
 // transformRequirements transforms a build expression list of requirements in object form into a
 // list of requirements in function-call form, which is how requirements are represented in
 // buildscripts.
-func transformRequirements(reqs *Value) *Value {
-	newReqs := []*Value{}
+func transformRequirements(reqs *ascript.Value) *ascript.Value {
+	newReqs := []*ascript.Value{}
 	for _, req := range *reqs.List {
 		newReqs = append(newReqs, transformRequirement(req))
 	}
-	return &Value{List: &newReqs}
+	return &ascript.Value{List: &newReqs}
 }
 
 // transformRequirement transforms a build expression requirement in object form into a requirement
@@ -350,8 +351,8 @@ func transformRequirements(reqs *Value) *Value {
 // into something like
 //
 //	Req(name = "<name>", namespace = "<namespace>", version = <op>(value = "<version>"))
-func transformRequirement(req *Value) *Value {
-	args := []*Value{}
+func transformRequirement(req *ascript.Value) *ascript.Value {
+	args := []*ascript.Value{}
 
 	for _, arg := range *req.Object {
 		key := arg.Key
@@ -360,14 +361,14 @@ func transformRequirement(req *Value) *Value {
 		// Transform the version value from the requirement object.
 		if key == requirementVersionRequirementsKey {
 			key = requirementVersionKey
-			value = &Value{FuncCall: transformVersion(arg)}
+			value = &ascript.Value{FuncCall: transformVersion(arg)}
 		}
 
 		// Add the argument to the function transformation.
-		args = append(args, &Value{Assignment: &Assignment{key, value}})
+		args = append(args, &ascript.Value{Assignment: &ascript.Assignment{key, value}})
 	}
 
-	return &Value{FuncCall: &FuncCall{reqFuncName, args}}
+	return &ascript.Value{FuncCall: &ascript.FuncCall{ascript.ReqFuncName, args}}
 }
 
 // transformVersion transforms a build expression version_requirements list in object form into
@@ -379,18 +380,18 @@ func transformRequirement(req *Value) *Value {
 // into something like
 //
 //	And(<op1>(value = "<version1>"), <op2>(value = "<version2>"))
-func transformVersion(requirements *Assignment) *FuncCall {
-	var funcs []*FuncCall
+func transformVersion(requirements *ascript.Assignment) *ascript.FuncCall {
+	var funcs []*ascript.FuncCall
 	for _, constraint := range *requirements.Value.List {
-		f := &FuncCall{}
+		f := &ascript.FuncCall{}
 		for _, o := range *constraint.Object {
 			switch o.Key {
 			case requirementVersionKey:
-				f.Arguments = []*Value{
-					{Assignment: &Assignment{"value", o.Value}},
+				f.Arguments = []*ascript.Value{
+					{Assignment: &ascript.Assignment{"value", o.Value}},
 				}
 			case requirementComparatorKey:
-				f.Name = cases.Title(language.English).String(strValue(o.Value))
+				f.Name = cases.Title(language.English).String(ascript.StrValue(o.Value))
 			}
 		}
 		funcs = append(funcs, f)
@@ -404,17 +405,17 @@ func transformVersion(requirements *Assignment) *FuncCall {
 	// Iterate backwards over the requirements array and construct a binary tree of 'And()' functions.
 	// For example, given [Gt(value = "1.0"), Ne(value = "2.0"), Lt(value = "3.0")], produce:
 	//   And(left = Gt(value = "1.0"), right = And(left = Ne(value = "2.0"), right = Lt(value = "3.0")))
-	var f *FuncCall
+	var f *ascript.FuncCall
 	for i := len(funcs) - 2; i >= 0; i-- {
-		right := &Value{FuncCall: funcs[i+1]}
+		right := &ascript.Value{FuncCall: funcs[i+1]}
 		if f != nil {
-			right = &Value{FuncCall: f}
+			right = &ascript.Value{FuncCall: f}
 		}
-		args := []*Value{
-			{Assignment: &Assignment{"left", &Value{FuncCall: funcs[i]}}},
-			{Assignment: &Assignment{"right", right}},
+		args := []*ascript.Value{
+			{Assignment: &ascript.Assignment{"left", &ascript.Value{FuncCall: funcs[i]}}},
+			{Assignment: &ascript.Assignment{"right", right}},
 		}
-		f = &FuncCall{andFuncName, args}
+		f = &ascript.FuncCall{ascript.AndFuncName, args}
 	}
 	return f
 }

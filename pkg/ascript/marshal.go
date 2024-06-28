@@ -1,4 +1,4 @@
-package buildscript
+package ascript
 
 import (
 	"bytes"
@@ -11,31 +11,31 @@ import (
 )
 
 const (
-	mainKey = "main"
+	MainKey = "main"
 
-	reqFuncName = "Req"
-	eqFuncName  = "Eq"
-	neFuncName  = "Ne"
-	gtFuncName  = "Gt"
-	gteFuncName = "Gte"
-	ltFuncName  = "Lt"
-	lteFuncName = "Lte"
-	andFuncName = "And"
+	ReqFuncName = "Req"
+	EqFuncName  = "Eq"
+	NeFuncName  = "Ne"
+	GtFuncName  = "Gt"
+	GteFuncName = "Gte"
+	LtFuncName  = "Lt"
+	LteFuncName = "Lte"
+	AndFuncName = "And"
 )
 
 // Marshal returns this structure in AScript, suitable for writing to disk.
-func (b *BuildScript) Marshal() ([]byte, error) {
+func (a *AScript) Marshal() ([]byte, error) {
 	buf := strings.Builder{}
 
-	if b.raw.AtTime != nil {
+	if a.AtTime != nil {
 		buf.WriteString(assignmentString(
-			&Assignment{atTimeKey, newString(b.raw.AtTime.Format(strfmt.RFC3339Millis))}))
+			&Assignment{AtTimeKey, NewString(a.AtTime.Format(strfmt.RFC3339Millis))}))
 		buf.WriteString("\n")
 	}
 
 	var main *Assignment
-	for _, assignment := range b.raw.Assignments {
-		if assignment.Key == mainKey {
+	for _, assignment := range a.Assignments {
+		if assignment.Key == MainKey {
 			main = assignment
 			continue // write at the end
 		}
@@ -110,11 +110,11 @@ func valueString(v *Value) string {
 // inlineFunctions contains build script function names whose arguments should all be written on a
 // single line. By default, function arguments are written one per line.
 var inlineFunctions = []string{
-	reqFuncName,
-	eqFuncName, neFuncName,
-	gtFuncName, gteFuncName,
-	ltFuncName, lteFuncName,
-	andFuncName,
+	ReqFuncName,
+	EqFuncName, NeFuncName,
+	GtFuncName, GteFuncName,
+	LtFuncName, LteFuncName,
+	AndFuncName,
 }
 
 func funcCallString(f *FuncCall) string {

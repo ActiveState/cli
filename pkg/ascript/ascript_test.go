@@ -1,4 +1,4 @@
-package buildscript
+package ascript
 
 import (
 	"testing"
@@ -10,9 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRawRepresentation(t *testing.T) {
-	script, err := Unmarshal([]byte(
-		`at_time = "2000-01-01T00:00:00.000Z"
+var basicBuildScript = `at_time = "2000-01-01T00:00:00.000Z"
 runtime = solve(
 	at_time = at_time,
 	platforms = ["linux", "windows"],
@@ -23,15 +21,17 @@ runtime = solve(
 	solver_version = null
 )
 
-main = runtime
-`))
+main = runtime`
+
+func TestBasic(t *testing.T) {
+	script, err := Unmarshal([]byte(basicBuildScript))
 	require.NoError(t, err)
 
 	atTimeStrfmt, err := strfmt.ParseDateTime("2000-01-01T00:00:00.000Z")
 	require.NoError(t, err)
 	atTime := time.Time(atTimeStrfmt)
 
-	assert.Equal(t, &rawBuildScript{
+	assert.Equal(t, &AScript{
 		[]*Assignment{
 			{"runtime", &Value{
 				FuncCall: &FuncCall{"solve", []*Value{
@@ -47,19 +47,19 @@ main = runtime
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{"name", newString("python")}},
-									{Assignment: &Assignment{"namespace", newString("language")}},
+									{Assignment: &Assignment{"name", NewString("python")}},
+									{Assignment: &Assignment{"namespace", NewString("language")}},
 								}}},
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{"name", newString("requests")}},
-									{Assignment: &Assignment{"namespace", newString("language/python")}},
+									{Assignment: &Assignment{"name", NewString("requests")}},
+									{Assignment: &Assignment{"namespace", NewString("language/python")}},
 									{Assignment: &Assignment{
 										"version", &Value{FuncCall: &FuncCall{
 											Name: "Eq",
 											Arguments: []*Value{
-												{Assignment: &Assignment{"value", newString("3.10.10")}},
+												{Assignment: &Assignment{"value", NewString("3.10.10")}},
 											},
 										}},
 									}},
@@ -73,7 +73,23 @@ main = runtime
 			{"main", &Value{Ident: ptr.To("runtime")}},
 		},
 		&atTime,
-	}, script.raw)
+	}, script)
+}
+
+// TestRoundTripFromBuildScript tests that if we read a build script from disk and then write it
+// again it produces the exact same value.
+func TestRoundTripFromBuildScript(t *testing.T) {
+	script, err := Unmarshal([]byte(basicBuildScript))
+	require.NoError(t, err)
+
+	data, err := script.Marshal()
+	require.NoError(t, err)
+	t.Logf("marshalled:\n%s\n---", string(data))
+
+	roundTripScript, err := Unmarshal(data)
+	require.NoError(t, err)
+
+	assert.Equal(t, script, roundTripScript)
 }
 
 func TestComplex(t *testing.T) {
@@ -106,7 +122,7 @@ main = merge(
 	require.NoError(t, err)
 	atTime := time.Time(atTimeStrfmt)
 
-	assert.Equal(t, &rawBuildScript{
+	assert.Equal(t, &AScript{
 		[]*Assignment{
 			{"linux_runtime", &Value{
 				FuncCall: &FuncCall{"solve", []*Value{
@@ -116,8 +132,8 @@ main = merge(
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{"name", newString("python")}},
-									{Assignment: &Assignment{"namespace", newString("language")}},
+									{Assignment: &Assignment{"name", NewString("python")}},
+									{Assignment: &Assignment{"namespace", NewString("language")}},
 								},
 							}},
 						}},
@@ -135,8 +151,8 @@ main = merge(
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{"name", newString("perl")}},
-									{Assignment: &Assignment{"namespace", newString("language")}},
+									{Assignment: &Assignment{"name", NewString("perl")}},
+									{Assignment: &Assignment{"namespace", NewString("language")}},
 								},
 							}},
 						}},
@@ -153,7 +169,7 @@ main = merge(
 				}}}},
 		},
 		&atTime,
-	}, script.raw)
+	}, script)
 }
 
 const buildscriptWithComplexVersions = `at_time = "2023-04-27T17:30:05.999Z"
@@ -178,7 +194,7 @@ func TestComplexVersions(t *testing.T) {
 	require.NoError(t, err)
 	atTime := time.Time(atTimeStrfmt)
 
-	assert.Equal(t, &rawBuildScript{
+	assert.Equal(t, &AScript{
 		[]*Assignment{
 			{"runtime", &Value{
 				FuncCall: &FuncCall{"solve", []*Value{
@@ -194,20 +210,20 @@ func TestComplexVersions(t *testing.T) {
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{"name", newString("python")}},
-									{Assignment: &Assignment{"namespace", newString("language")}},
+									{Assignment: &Assignment{"name", NewString("python")}},
+									{Assignment: &Assignment{"namespace", NewString("language")}},
 								},
 							}},
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{"name", newString("requests")}},
-									{Assignment: &Assignment{"namespace", newString("language/python")}},
+									{Assignment: &Assignment{"name", NewString("requests")}},
+									{Assignment: &Assignment{"namespace", NewString("language/python")}},
 									{Assignment: &Assignment{
 										"version", &Value{FuncCall: &FuncCall{
 											Name: "Eq",
 											Arguments: []*Value{
-												{Assignment: &Assignment{Key: "value", Value: newString("3.10.10")}},
+												{Assignment: &Assignment{Key: "value", Value: NewString("3.10.10")}},
 											},
 										}},
 									}},
@@ -216,8 +232,8 @@ func TestComplexVersions(t *testing.T) {
 							{FuncCall: &FuncCall{
 								Name: "Req",
 								Arguments: []*Value{
-									{Assignment: &Assignment{"name", newString("argparse")}},
-									{Assignment: &Assignment{"namespace", newString("language/python")}},
+									{Assignment: &Assignment{"name", NewString("argparse")}},
+									{Assignment: &Assignment{"namespace", NewString("language/python")}},
 									{Assignment: &Assignment{
 										"version", &Value{FuncCall: &FuncCall{
 											Name: "And",
@@ -225,13 +241,13 @@ func TestComplexVersions(t *testing.T) {
 												{Assignment: &Assignment{Key: "left", Value: &Value{FuncCall: &FuncCall{
 													Name: "Gt",
 													Arguments: []*Value{
-														{Assignment: &Assignment{Key: "value", Value: newString("1.0")}},
+														{Assignment: &Assignment{Key: "value", Value: NewString("1.0")}},
 													},
 												}}}},
 												{Assignment: &Assignment{Key: "right", Value: &Value{FuncCall: &FuncCall{
 													Name: "Lt",
 													Arguments: []*Value{
-														{Assignment: &Assignment{Key: "value", Value: newString("2.0")}},
+														{Assignment: &Assignment{Key: "value", Value: NewString("2.0")}},
 													},
 												}}}},
 											},
@@ -247,5 +263,5 @@ func TestComplexVersions(t *testing.T) {
 			{"main", &Value{Ident: ptr.To("runtime")}},
 		},
 		&atTime,
-	}, script.raw)
+	}, script)
 }

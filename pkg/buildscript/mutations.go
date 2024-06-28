@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/pkg/ascript"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 )
 
@@ -35,24 +36,24 @@ func (b *BuildScript) UpdateRequirement(operation types.Operation, requirement t
 
 func (b *BuildScript) addRequirement(requirement types.Requirement) error {
 	// Use object form for now, and then transform it into function form later.
-	obj := []*Assignment{
-		{requirementNameKey, newString(requirement.Name)},
-		{requirementNamespaceKey, newString(requirement.Namespace)},
+	obj := []*ascript.Assignment{
+		{requirementNameKey, ascript.NewString(requirement.Name)},
+		{requirementNamespaceKey, ascript.NewString(requirement.Namespace)},
 	}
 
 	if requirement.Revision != nil {
-		obj = append(obj, &Assignment{requirementRevisionKey, &Value{Number: ptr.To(float64(*requirement.Revision))}})
+		obj = append(obj, &ascript.Assignment{requirementRevisionKey, &ascript.Value{Number: ptr.To(float64(*requirement.Revision))}})
 	}
 
 	if requirement.VersionRequirement != nil {
-		values := []*Value{}
+		values := []*ascript.Value{}
 		for _, req := range requirement.VersionRequirement {
-			values = append(values, &Value{Object: &[]*Assignment{
-				{requirementComparatorKey, newString(req[requirementComparatorKey])},
-				{requirementVersionKey, newString(req[requirementVersionKey])},
+			values = append(values, &ascript.Value{Object: &[]*ascript.Assignment{
+				{requirementComparatorKey, ascript.NewString(req[requirementComparatorKey])},
+				{requirementVersionKey, ascript.NewString(req[requirementVersionKey])},
 			}})
 		}
-		obj = append(obj, &Assignment{requirementVersionRequirementsKey, &Value{List: &values}})
+		obj = append(obj, &ascript.Assignment{requirementVersionRequirementsKey, &ascript.Value{List: &values}})
 	}
 
 	requirementsNode, err := b.getRequirementsNode()
@@ -61,7 +62,7 @@ func (b *BuildScript) addRequirement(requirement types.Requirement) error {
 	}
 
 	list := *requirementsNode.List
-	list = append(list, transformRequirement(&Value{Object: &obj}))
+	list = append(list, transformRequirement(&ascript.Value{Object: &obj}))
 	requirementsNode.List = &list
 
 	return nil
@@ -80,12 +81,12 @@ func (b *BuildScript) removeRequirement(requirement types.Requirement) error {
 
 	var found bool
 	for i, req := range *requirementsNode.List {
-		if req.FuncCall == nil || req.FuncCall.Name != reqFuncName {
+		if req.FuncCall == nil || req.FuncCall.Name != ascript.ReqFuncName {
 			continue
 		}
 
 		for _, arg := range req.FuncCall.Arguments {
-			if arg.Assignment.Key == requirementNameKey && strValue(arg.Assignment.Value) == requirement.Name {
+			if arg.Assignment.Key == requirementNameKey && ascript.StrValue(arg.Assignment.Value) == requirement.Name {
 				list := *requirementsNode.List
 				list = append(list[:i], list[i+1:]...)
 				requirementsNode.List = &list
@@ -132,7 +133,7 @@ func (b *BuildScript) addPlatform(platformID strfmt.UUID) error {
 	}
 
 	list := *platformsNode.List
-	list = append(list, newString(platformID.String()))
+	list = append(list, ascript.NewString(platformID.String()))
 	platformsNode.List = &list
 
 	return nil
@@ -151,7 +152,7 @@ func (b *BuildScript) removePlatform(platformID strfmt.UUID) error {
 
 	var found bool
 	for i, value := range *platformsNode.List {
-		if value.Str != nil && strValue(value) == platformID.String() {
+		if value.Str != nil && ascript.StrValue(value) == platformID.String() {
 			list := *platformsNode.List
 			list = append(list[:i], list[i+1:]...)
 			platformsNode.List = &list
