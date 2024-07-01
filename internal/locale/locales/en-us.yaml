@@ -650,8 +650,12 @@ bundle_added:
   other: "[SUCCESS]✔ {{.V0}} Bundle successfully installed![/RESET]"
 bundle_version_added:
   other: "[SUCCESS]✔ {{.V0}} Bundle @ version {{.V1}} successfully installed![/RESET]"
+language_added:
+  other: "Language added: [NOTICE]{{.V0}}[/RESET]"
 language_updated:
   other: "Language updated: [NOTICE]{{.V0}}[/RESET]"
+language_version_added:
+  other: "Language added: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
 language_version_updated:
   other: "Language updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
 err_package_updated:

@@ -62,7 +62,7 @@ func newBundleInstallCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params, model.NamespaceBundle)
+			return runner.LegacyRun(params, model.NamespaceBundle)
 		},
 	).SetSupportsStructuredOutput()
 }

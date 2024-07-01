@@ -86,7 +86,7 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 					return locale.WrapInputError(err, "err_install_packages_args", "Invalid package install arguments")
 				}
 			}
-			return runner.Run(params, model.NamespacePackage)
+			return runner.Run(params)
 		},
 	)
 

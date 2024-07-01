@@ -28,7 +28,7 @@ func NewInstall(prime primeable) *Install {
 }
 
 // Run executes the install behavior.
-func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) (rerr error) {
+func (a *Install) LegacyRun(params InstallRunParams, nsType model.NamespaceType) (rerr error) {
 	defer rationalizeError(a.prime.Auth(), &rerr)
 
 	logging.Debug("ExecuteInstall")
@@ -57,4 +57,34 @@ func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) (rerr
 	}
 
 	return requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(ts, reqs...)
+}
+
+// Run executes the install behavior.
+func (a *Install) Run(params InstallRunParams) (rerr error) {
+	defer rationalizeError(a.prime.Auth(), &rerr)
+
+	logging.Debug("ExecuteInstall")
+	var reqs []*requirements.Requirement
+	for _, p := range params.Packages {
+		req := &requirements.Requirement{
+			Name:      p.Name,
+			Version:   p.Version,
+			Operation: types.OperationAdded,
+		}
+
+		if p.Namespace != "" {
+			req.Namespace = ptr.To(model.NewRawNamespace(p.Namespace))
+		}
+
+		req.Revision = params.Revision.Int
+
+		reqs = append(reqs, req)
+	}
+
+	ts, err := getTime(&params.Timestamp, a.prime.Auth(), a.prime.Project())
+	if err != nil {
+		return errs.Wrap(err, "Unable to get timestamp from params")
+	}
+
+	return requirements.NewRequirementOperation(a.prime).Install(ts, reqs...)
 }

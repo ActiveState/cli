@@ -242,7 +242,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 
 		// Get old buildplan
-		// We can't use the local store here; because it might not exist (ie. integrationt test, user cleaned cache, ..),
+		// We can't use the local store here; because it might not exist (ie. integration test, user cleaned cache, ..),
 		// but also there's no guarantee the old one is sequential to the current.
 		oldCommit, err := model.GetCommit(commitID, r.Auth)
 		if err != nil {
@@ -265,7 +265,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 
 		// Report CVEs
 		changedArtifacts := rtCommit.BuildPlan().DiffArtifacts(oldBuildPlan, false)
-		if err := r.cveReport(changedArtifacts, requirements...); err != nil {
+		if err := r.cveReport(changedArtifacts); err != nil {
 			return errs.Wrap(err, "Could not report CVEs")
 		}
 
@@ -473,7 +473,7 @@ func (r *RequirementOperation) validatePackage(requirement *Requirement) error {
 	}
 
 	if len(packages) == 0 {
-		suggestions, err := getSuggestions(*requirement.Namespace, requirement.Name, r.Auth)
+		suggestions, err := getSuggestions(requirement.Namespace, requirement.Name, nil, r.Auth)
 		if err != nil {
 			multilog.Error("Failed to retrieve suggestions: %v", err)
 		}
@@ -558,45 +558,43 @@ func (r *RequirementOperation) resolveRequirement(requirement *Requirement) erro
 	return nil
 }
 
-func (r *RequirementOperation) cveReport(artifactChangeset buildplan.ArtifactChangeset, requirements ...*Requirement) error {
-	if r.shouldSkipCVEs(requirements...) {
+func (r *RequirementOperation) cveReport(artifactChangeset buildplan.ArtifactChangeset) error {
+	if r.shouldSkipCVEs(artifactChangeset) {
 		logging.Debug("Skipping CVE reporting")
 		return nil
 	}
 
-	names := requirementNames(requirements...)
-	pg := output.StartSpinner(r.Output, locale.Tr("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
-
 	var ingredients []*request.Ingredient
-	for _, requirement := range requirements {
-		if requirement.Operation == types.OperationRemoved {
-			continue
-		}
-
-		for _, artifact := range artifactChangeset.Added {
-			for _, ing := range artifact.Ingredients {
-				ingredients = append(ingredients, &request.Ingredient{
-					Namespace: ing.Namespace,
-					Name:      ing.Name,
-					Version:   ing.Version,
-				})
-			}
-		}
-
-		for _, change := range artifactChangeset.Updated {
-			if !change.VersionsChanged() {
-				continue // For CVE reporting we only care about ingredient changes
-			}
-
-			for _, ing := range change.To.Ingredients {
-				ingredients = append(ingredients, &request.Ingredient{
-					Namespace: ing.Namespace,
-					Name:      ing.Name,
-					Version:   ing.Version,
-				})
-			}
+	for _, artifact := range artifactChangeset.Added {
+		for _, ing := range artifact.Ingredients {
+			ingredients = append(ingredients, &request.Ingredient{
+				Namespace: ing.Namespace,
+				Name:      ing.Name,
+				Version:   ing.Version,
+			})
 		}
 	}
+
+	for _, change := range artifactChangeset.Updated {
+		if !change.VersionsChanged() {
+			continue // For CVE reporting we only care about ingredient changes
+		}
+
+		for _, ing := range change.To.Ingredients {
+			ingredients = append(ingredients, &request.Ingredient{
+				Namespace: ing.Namespace,
+				Name:      ing.Name,
+				Version:   ing.Version,
+			})
+		}
+	}
+
+	names := make([]string, len(ingredients))
+	for i, ing := range ingredients {
+		names[i] = ing.Name
+	}
+
+	pg := output.StartSpinner(r.Output, locale.Tr("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
 
 	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(r.Auth, ingredients)
 	if err != nil {
@@ -637,18 +635,12 @@ func (r *RequirementOperation) cveReport(artifactChangeset buildplan.ArtifactCha
 	return nil
 }
 
-func (r *RequirementOperation) shouldSkipCVEs(requirements ...*Requirement) bool {
+func (r *RequirementOperation) shouldSkipCVEs(artifactChangeset buildplan.ArtifactChangeset) bool {
 	if !r.Auth.Authenticated() {
 		return true
 	}
 
-	for _, req := range requirements {
-		if req.Operation != types.OperationRemoved {
-			return false
-		}
-	}
-
-	return true
+	return len(artifactChangeset.Added) == 0 && len(artifactChangeset.Updated) == 0
 }
 
 func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
@@ -835,10 +827,27 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 	return values[choice][0], model.NewNamespacePkgOrBundle(language, nsType), &supportedLang, nil
 }
 
-func getSuggestions(ns model.Namespace, name string, auth *authentication.Auth) ([]string, error) {
-	results, err := model.SearchIngredients(ns.String(), name, false, nil, auth)
+func getSuggestions(namespace *model.Namespace, name string, filter []*model.Namespace, auth *authentication.Auth) ([]string, error) {
+	ns := ""
+	if namespace != nil {
+		ns = namespace.String()
+	}
+	results, err := model.SearchIngredients(ns, name, false, nil, auth)
 	if err != nil {
 		return []string{}, locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
+	}
+
+	// Remove any results that do not match the given list of namespaces.
+	// The ingredient API does not support searching in a set of specific namespaces. It's either one
+	// or all.
+	nsFilter := make(map[string]bool)
+	for _, ns := range filter {
+		nsFilter[ns.String()] = true
+	}
+	for i := len(results) - 1; i >= 0; i-- {
+		if _, exists := nsFilter[*results[i].Ingredient.PrimaryNamespace]; !exists {
+			results = append(results[:i], results[i+1:]...)
+		}
 	}
 
 	maxResults := 5

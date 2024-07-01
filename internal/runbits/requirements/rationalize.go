@@ -2,6 +2,11 @@ package requirements
 
 import (
 	"errors"
+	"fmt"
+	"strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -15,6 +20,7 @@ func (r *RequirementOperation) rationalizeError(err *error) {
 	var noMatchesErr *ErrNoMatches
 	var buildPlannerErr *bpResp.BuildPlannerError
 	var resolveNamespaceErr *ResolveNamespaceError
+	var multipleMatchesErr *ErrMultipleMatches
 
 	switch {
 	case err == nil:
@@ -70,6 +76,32 @@ func (r *RequirementOperation) rationalizeError(err *error) {
 			),
 			errs.SetInput(),
 		)
+
+	case errors.As(*err, &multipleMatchesErr):
+		messages := []string{
+			locale.Tl("err_package_multiple_matches",
+				"There are multiple matches for '[ACTIONABLE]{{.V0}}[/RESET]'. Please specify the requirement you want to install by typing its full namespace.",
+				multipleMatchesErr.Query),
+			"", // blank line
+			locale.Tl("err_package_multiple_matches_found", "Matches found:"),
+			"", // blank line
+			locale.Tl("err_package_multiple_matches_header", "  [HEADING]Name\t\t\tType\t\t\tNamespace[/RESET]"),
+			"", // blank line
+		}
+		for _, match := range multipleMatchesErr.Matches {
+			namespace := model.NamespaceFromIngredient(match)
+			typeString := namespace.Type().String()
+			if lang := model.LanguageFromNamespace(namespace.String()); lang != "" {
+				typeString = fmt.Sprintf("%s %s", cases.Title(language.English).String(lang), typeString)
+			}
+			messages = append(messages,
+				locale.Tl("err_package_multiple_matches_match",
+					"  {{.V0}}\t\t\t{{.V1}}\t\t[ACTIONABLE]{{.V2}}[/RESET]",
+					*match.Ingredient.Name,
+					typeString,
+					fmt.Sprintf("%s/%s", *match.Ingredient.PrimaryNamespace, *match.Ingredient.Name)))
+		}
+		*err = errs.WrapUserFacing(*err, strings.Join(messages, "\n"), errs.SetInput())
 
 	case errors.Is(*err, errInitialNoRequirement):
 		*err = errs.WrapUserFacing(*err,
