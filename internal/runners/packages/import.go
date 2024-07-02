@@ -4,13 +4,17 @@ import (
 	"os"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/cves"
+	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/buildscript"
@@ -28,10 +32,6 @@ import (
 const (
 	defaultImportFile = "requirements.txt"
 )
-
-type configurable interface {
-	keypairs.Configurable
-}
 
 // Confirmer describes the behavior required to prompt a user for confirmation.
 type Confirmer interface {
@@ -61,11 +61,11 @@ func NewImportRunParams() *ImportRunParams {
 
 // Import manages the importing execution context.
 type Import struct {
-	auth *authentication.Auth
-	out  output.Outputer
-	prompt.Prompter
+	auth      *authentication.Auth
+	out       output.Outputer
+	prompt    prompt.Prompter
 	proj      *project.Project
-	cfg       configurable
+	cfg       *config.Instance
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
 }
@@ -117,6 +117,13 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_import_language", "Unable to get language from project")
 	}
 
+	pg := output.StartSpinner(i.out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
+	defer func() {
+		if pg != nil {
+			pg.Stop(locale.T("progress_fail"))
+		}
+	}()
+
 	changeset, err := fetchImportChangeset(reqsimport.Init(), params.FileName, language.Name)
 	if err != nil {
 		return errs.Wrap(err, "Could not import changeset")
@@ -144,12 +151,51 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
 
+	pg.Stop(locale.T("progress_success"))
+	pg = nil
+
+	// Solve the runtime.
+	rt, rtCommit, err := runtime.Solve(i.auth, i.out, i.analytics, i.proj, &commitID, target.TriggerImport, i.svcModel, i.cfg, runtime.OptNone)
+	if err != nil {
+		return errs.Wrap(err, "Could not solve runtime")
+	}
+
+	// Output change summary.
+	previousCommit, err := bp.FetchCommit(latestCommit, i.proj.Owner(), i.proj.Name(), nil)
+	if err != nil {
+		return errs.Wrap(err, "Failed to fetch build result for previous commit")
+	}
+	oldBuildPlan := previousCommit.BuildPlan()
+	i.out.Notice("") // blank line
+	dependencies.OutputChangeSummary(i.out, rtCommit.BuildPlan(), oldBuildPlan)
+
+	// Report CVEs.
+	if err := cves.Report(i.out, rtCommit.BuildPlan(), oldBuildPlan, i.auth, i.prompt, i.cfg); err != nil {
+		return errs.Wrap(err, "Could not report CVEs")
+	}
+
+	// Update the runtime.
+	if !i.cfg.GetBool(constants.AsyncRuntimeConfig) {
+		i.out.Notice("")
+
+		// refresh or install runtime
+		err = runtime.UpdateByReference(rt, rtCommit, i.auth, i.proj, i.out, runtime.OptNone)
+		if err != nil {
+			if !runbits.IsBuildError(err) {
+				// If the error is not a build error we want to retain the changes
+				if err2 := localcommit.Set(i.proj.Dir(), commitID.String()); err2 != nil {
+					return errs.Pack(err, locale.WrapError(err2, "err_package_update_commit_id"))
+				}
+			}
+			return errs.Wrap(err, "Failed to refresh runtime")
+		}
+	}
+
 	if err := localcommit.Set(i.proj.Dir(), commitID.String()); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
-	_, err = runtime.SolveAndUpdate(i.auth, i.out, i.analytics, i.proj, &commitID, target.TriggerImport, i.svcModel, i.cfg, runtime.OptOrderChanged)
-	return err
+	return nil
 }
 
 func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model.Changeset, error) {
