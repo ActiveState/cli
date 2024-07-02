@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
@@ -200,9 +201,7 @@ func (r *RequirementOperation) Install(ts *time.Time, requirements ...*Requireme
 	dependencies.OutputChangeSummary(r.Output, rtCommit.BuildPlan(), oldBuildPlan)
 
 	// Report CVEs.
-	changedArtifacts := rtCommit.BuildPlan().DiffArtifacts(oldBuildPlan, false)
-	err = r.cveReport(changedArtifacts)
-	if err != nil {
+	if err := cves.Report(r.Output, rtCommit.BuildPlan(), oldBuildPlan, r.Auth, r.Prompt, r.Config); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
