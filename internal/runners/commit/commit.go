@@ -10,9 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
-	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
@@ -32,7 +30,6 @@ type primeable interface {
 	primer.Analyticer
 	primer.SvcModeler
 	primer.Configurer
-	primer.Prompter
 }
 
 type Commit struct {
@@ -42,7 +39,6 @@ type Commit struct {
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
 	cfg       *config.Instance
-	prompt    prompt.Prompter
 }
 
 func New(p primeable) *Commit {
@@ -53,7 +49,6 @@ func New(p primeable) *Commit {
 		analytics: p.Analytics(),
 		svcModel:  p.SvcModel(),
 		cfg:       p.Config(),
-		prompt:    p.Prompt(),
 	}
 }
 
@@ -178,11 +173,6 @@ func (c *Commit) Run() (rerr error) {
 
 	// Output dependency list.
 	dependencies.OutputChangeSummary(c.out, rtCommit.BuildPlan(), oldBuildPlan)
-
-	// Report CVEs.
-	if err := cves.Report(c.out, rtCommit.BuildPlan(), oldBuildPlan, c.auth, c.prompt, c.cfg); err != nil {
-		return errs.Wrap(err, "Could not report CVEs")
-	}
 
 	c.out.Print(output.Prepare(
 		locale.Tl(
