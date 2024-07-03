@@ -154,7 +154,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 	dependencies.OutputChangeSummary(out, rtCommit.BuildPlan(), oldBuildPlan)
 
 	// Report CVEs.
-	if err := cves.Report(rtCommit.BuildPlan(), oldBuildPlan, i.prime); err != nil {
+	if err := cves.NewCveReport(i.prime).Report(rtCommit.BuildPlan(), oldBuildPlan); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
