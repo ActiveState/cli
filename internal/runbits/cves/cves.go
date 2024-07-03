@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/buildplan"
@@ -26,9 +27,16 @@ func init() {
 	configMediator.RegisterOption(constants.SecurityPromptLevelConfig, configMediator.String, vulnModel.SeverityCritical)
 }
 
-func Report(out output.Outputer, newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan, auth *authentication.Auth, prmpt prompt.Prompter, cfg *config.Instance) error {
+type primeable interface {
+	primer.Outputer
+	primer.Prompter
+	primer.Auther
+	primer.Configurer
+}
+
+func Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan, prime primeable) error {
 	changeset := newBuildPlan.DiffArtifacts(oldBuildPlan, false)
-	if shouldSkipReporting(changeset, auth) {
+	if shouldSkipReporting(changeset, prime.Auth()) {
 		logging.Debug("Skipping CVE reporting")
 		return nil
 	}
@@ -63,9 +71,9 @@ func Report(out output.Outputer, newBuildPlan *buildplan.BuildPlan, oldBuildPlan
 		names[i] = ing.Name
 	}
 
-	pg := output.StartSpinner(out, locale.Tr("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
+	pg := output.StartSpinner(prime.Output(), locale.Tr("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
 
-	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(auth, ingredients)
+	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(prime.Auth(), ingredients)
 	if err != nil {
 		return errs.Wrap(err, "Failed to retrieve vulnerabilities")
 	}
@@ -82,16 +90,16 @@ func Report(out output.Outputer, newBuildPlan *buildplan.BuildPlan, oldBuildPlan
 	pg = nil
 
 	vulnerabilities := model.CombineVulnerabilities(ingredientVulnerabilities, names...)
-	summarizeCVEs(out, vulnerabilities)
+	summarizeCVEs(prime.Output(), vulnerabilities)
 
-	if prmpt != nil && shouldPromptForSecurity(cfg, vulnerabilities) {
-		cont, err := promptForSecurity(prmpt)
+	if prime.Prompt() != nil && shouldPromptForSecurity(prime.Config(), vulnerabilities) {
+		cont, err := promptForSecurity(prime.Prompt())
 		if err != nil {
 			return errs.Wrap(err, "Failed to prompt for security")
 		}
 
 		if !cont {
-			if !prmpt.IsInteractive() {
+			if !prime.Prompt().IsInteractive() {
 				return errs.AddTips(
 					locale.NewInputError("err_pkgop_security_prompt", "Operation aborted due to security prompt"),
 					locale.Tl("more_info_prompt", "To disable security prompting run: [ACTIONABLE]state config set security.prompt.enabled false[/RESET]"),

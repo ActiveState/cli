@@ -55,6 +55,10 @@ func (pv *PackageVersion) Set(arg string) error {
 }
 
 type RequirementOperation struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	Output    output.Outputer
 	Prompt    prompt.Prompter
 	Project   *project.Project
@@ -76,6 +80,7 @@ type primeable interface {
 
 func NewRequirementOperation(prime primeable) *RequirementOperation {
 	return &RequirementOperation{
+		prime,
 		prime.Output(),
 		prime.Prompt(),
 		prime.Project(),
@@ -257,7 +262,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		dependencies.OutputChangeSummary(r.Output, rtCommit.BuildPlan(), oldBuildPlan)
 
 		// Report CVEs
-		if err := cves.Report(r.Output, rtCommit.BuildPlan(), oldBuildPlan, r.Auth, r.Prompt, r.Config); err != nil {
+		if err := cves.Report(rtCommit.BuildPlan(), oldBuildPlan, r.prime); err != nil {
 			return errs.Wrap(err, "Could not report CVEs")
 		}
 
