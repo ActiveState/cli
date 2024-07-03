@@ -54,6 +54,8 @@ func (suite *ExportIntegrationTestSuite) TestExport_Log() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.ClearCache()
 
+	// Populate the log file directory as the log file created by
+	// the export command will be ignored.
 	cp := ts.Spawn("--version")
 	cp.ExpectExitCode(0)
 
