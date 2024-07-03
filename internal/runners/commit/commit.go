@@ -162,7 +162,7 @@ func (c *Commit) Run() (rerr error) {
 	dependencies.OutputChangeSummary(out, rtCommit.BuildPlan(), oldBuildPlan)
 
 	// Report CVEs.
-	if err := cves.Report(rtCommit.BuildPlan(), oldBuildPlan, c.prime); err != nil {
+	if err := cves.NewCveReport(c.prime).Report(rtCommit.BuildPlan(), oldBuildPlan); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
