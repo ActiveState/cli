@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -13,12 +12,10 @@ import (
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	vulnModel "github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -34,9 +31,17 @@ type primeable interface {
 	primer.Configurer
 }
 
-func Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan, prime primeable) error {
+type CveReport struct {
+	prime primeable
+}
+
+func NewCveReport(prime primeable) *CveReport {
+	return &CveReport{prime}
+}
+
+func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan) error {
 	changeset := newBuildPlan.DiffArtifacts(oldBuildPlan, false)
-	if shouldSkipReporting(changeset, prime.Auth()) {
+	if c.shouldSkipReporting(changeset) {
 		logging.Debug("Skipping CVE reporting")
 		return nil
 	}
@@ -71,9 +76,9 @@ func Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan
 		names[i] = ing.Name
 	}
 
-	pg := output.StartSpinner(prime.Output(), locale.Tr("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
+	pg := output.StartSpinner(c.prime.Output(), locale.Tr("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
 
-	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(prime.Auth(), ingredients)
+	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(c.prime.Auth(), ingredients)
 	if err != nil {
 		return errs.Wrap(err, "Failed to retrieve vulnerabilities")
 	}
@@ -90,16 +95,16 @@ func Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan
 	pg = nil
 
 	vulnerabilities := model.CombineVulnerabilities(ingredientVulnerabilities, names...)
-	summarizeCVEs(prime.Output(), vulnerabilities)
+	c.summarizeCVEs(vulnerabilities)
 
-	if prime.Prompt() != nil && shouldPromptForSecurity(prime.Config(), vulnerabilities) {
-		cont, err := promptForSecurity(prime.Prompt())
+	if c.prime.Prompt() != nil && c.shouldPromptForSecurity(vulnerabilities) {
+		cont, err := c.promptForSecurity()
 		if err != nil {
 			return errs.Wrap(err, "Failed to prompt for security")
 		}
 
 		if !cont {
-			if !prime.Prompt().IsInteractive() {
+			if !c.prime.Prompt().IsInteractive() {
 				return errs.AddTips(
 					locale.NewInputError("err_pkgop_security_prompt", "Operation aborted due to security prompt"),
 					locale.Tl("more_info_prompt", "To disable security prompting run: [ACTIONABLE]state config set security.prompt.enabled false[/RESET]"),
@@ -112,20 +117,20 @@ func Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan
 	return nil
 }
 
-func shouldSkipReporting(changeset buildplan.ArtifactChangeset, auth *authentication.Auth) bool {
-	if !auth.Authenticated() {
+func (c *CveReport) shouldSkipReporting(changeset buildplan.ArtifactChangeset) bool {
+	if !c.prime.Auth().Authenticated() {
 		return true
 	}
 
 	return len(changeset.Added) == 0 && len(changeset.Updated) == 0
 }
 
-func shouldPromptForSecurity(cfg *config.Instance, vulnerabilities model.VulnerableIngredientsByLevels) bool {
-	if !cfg.GetBool(constants.SecurityPromptConfig) || vulnerabilities.Count == 0 {
+func (c *CveReport) shouldPromptForSecurity(vulnerabilities model.VulnerableIngredientsByLevels) bool {
+	if !c.prime.Config().GetBool(constants.SecurityPromptConfig) || vulnerabilities.Count == 0 {
 		return false
 	}
 
-	promptLevel := cfg.GetString(constants.SecurityPromptLevelConfig)
+	promptLevel := c.prime.Config().GetString(constants.SecurityPromptLevelConfig)
 
 	logging.Debug("Prompt level: ", promptLevel)
 	switch promptLevel {
@@ -148,7 +153,8 @@ func shouldPromptForSecurity(cfg *config.Instance, vulnerabilities model.Vulnera
 	return false
 }
 
-func summarizeCVEs(out output.Outputer, vulnerabilities model.VulnerableIngredientsByLevels) {
+func (c *CveReport) summarizeCVEs(vulnerabilities model.VulnerableIngredientsByLevels) {
+	out := c.prime.Output()
 	out.Print("")
 
 	switch {
@@ -184,8 +190,8 @@ func summarizeCVEs(out output.Outputer, vulnerabilities model.VulnerableIngredie
 	out.Print("   " + locale.T("disable_prompting_vulnerabilities"))
 }
 
-func promptForSecurity(prmpt prompt.Prompter) (bool, error) {
-	confirm, err := prmpt.Confirm("", locale.Tr("prompt_continue_pkg_operation"), ptr.To(false))
+func (c *CveReport) promptForSecurity() (bool, error) {
+	confirm, err := c.prime.Prompt().Confirm("", locale.Tr("prompt_continue_pkg_operation"), ptr.To(false))
 	if err != nil {
 		return false, locale.WrapError(err, "err_pkgop_confirm", "Need a confirmation.")
 	}
