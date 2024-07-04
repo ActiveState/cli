@@ -57,7 +57,8 @@ func appendEscapeArg(b []byte, s string) []byte {
 		switch s[i] {
 		case '"', '\\':
 			needsBackslash = true
-		case ' ', '\t', '<', '>':
+		// Based on https://github.com/sebres/PoC/blob/master/SB-0D-001-win-exec/SOLUTION.md#definition
+		case ' ', '\t', '<', '>', '&', '|', '^', '!', '(', ')', '%':
 			needsQuotes = true
 		}
 	}
