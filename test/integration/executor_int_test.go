@@ -124,7 +124,15 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorBatArguments() {
 	suite.Require().NoError(err)
 	suite.Require().FileExists(targetExeFile)
 
-	cp := ts.SpawnCmd(targetExeFile, "a<b", "hello world")
+	cp := ts.SpawnCmdWithOpts(
+		targetExeFile,
+		e2e.OptArgs("a<b", "hello world"),
+
+		// Force override ACTIVESTATE_CI to false, because communicating with the svc will fail, and if this is true
+		// the executor will interrupt.
+		// For this test we don't care about the svc communication.
+		e2e.OptAppendEnv("ACTIVESTATE_CI=false"),
+	)
 	cp.Expect(`"a<b" "hello world"`, termtest.OptExpectTimeout(5*time.Second))
 	cp.ExpectExitCode(0)
 }
