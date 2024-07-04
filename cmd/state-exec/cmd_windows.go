@@ -1,22 +1,9 @@
-package osutils
+package main
 
 import (
-	"os"
 	"os/exec"
-	"strings"
 	"syscall"
-
-	"github.com/thoas/go-funk"
 )
-
-const ExeExtension = ".exe"
-
-var exts = []string{".exe"}
-
-func init() {
-	PATHEXT := os.Getenv("PATHEXT")
-	exts = funk.Uniq(funk.Map(strings.Split(PATHEXT, string(os.PathListSeparator)), strings.ToLower).([]string)).([]string)
-}
 
 func Command(name string, arg ...string) *exec.Cmd {
 	cmd := exec.Command(name, arg...)
