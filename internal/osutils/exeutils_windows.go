@@ -23,7 +23,7 @@ func Command(name string, arg ...string) *exec.Cmd {
 	cmd := exec.Command(name, arg...)
 
 	exeName := filepath.Base(strings.ToLower(name))
-	if exeName == "cmd" || strings.HasSuffix(exeName, ".bat") {
+	if exeName == "cmd" || strings.HasSuffix(exeName, ".bat") || strings.HasSuffix(exeName, ".cmd") {
 		// Go currently does not escape arguments properly on Windows, it account for spaces and tab characters, but not
 		// other characters that need escaping such as `<` and `>`.
 		// This can be dropped once we update to a Go version that fixes this bug: https://github.com/golang/go/issues/68313

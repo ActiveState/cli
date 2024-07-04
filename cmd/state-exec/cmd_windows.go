@@ -5,17 +5,20 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"github.com/ActiveState/cli/cmd/state-exec/internal/logr"
 )
 
 func Command(name string, arg ...string) *exec.Cmd {
 	cmd := exec.Command(name, arg...)
 
 	exeName := filepath.Base(strings.ToLower(name))
-	if exeName == "cmd" || strings.HasSuffix(exeName, ".bat") {
+	if exeName == "cmd" || strings.HasSuffix(exeName, ".bat") || strings.HasSuffix(exeName, ".cmd") {
 		// Go currently does not escape arguments properly on Windows, it account for spaces and tab characters, but not
 		// other characters that need escaping such as `<` and `>`.
 		// This can be dropped once we update to a Go version that fixes this bug: https://github.com/golang/go/issues/68313
 		cmd.SysProcAttr = &syscall.SysProcAttr{CmdLine: makeCmdLine(cmd.Args)}
+		logr.Debug("processed command line: %s", cmd.SysProcAttr.CmdLine)
 	}
 
 	return cmd
