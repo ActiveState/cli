@@ -3,6 +3,7 @@ package osutils
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -21,10 +22,13 @@ func init() {
 func Command(name string, arg ...string) *exec.Cmd {
 	cmd := exec.Command(name, arg...)
 
-	// Go currently does not escape arguments properly on Windows, it account for spaces and tab characters, but not
-	// other characters that need escaping such as `<` and `>`.
-	// This can be dropped once we update to a Go version that fixes this bug: https://github.com/golang/go/issues/68313
-	cmd.SysProcAttr = &syscall.SysProcAttr{CmdLine: makeCmdLine(cmd.Args)}
+	exeName := filepath.Base(strings.ToLower(name))
+	if exeName == "cmd" || strings.HasSuffix(exeName, ".bat") {
+		// Go currently does not escape arguments properly on Windows, it account for spaces and tab characters, but not
+		// other characters that need escaping such as `<` and `>`.
+		// This can be dropped once we update to a Go version that fixes this bug: https://github.com/golang/go/issues/68313
+		cmd.SysProcAttr = &syscall.SysProcAttr{CmdLine: makeCmdLine(cmd.Args)}
+	}
 
 	return cmd
 }
