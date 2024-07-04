@@ -99,7 +99,7 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorSizeOnDisk() {
 
 func (suite *ExecutorIntegrationTestSuite) TestExecutorBatArguments() {
 	suite.OnlyRunForTags(tagsuite.Executor)
-	
+
 	if runtime.GOOS != "windows" {
 		suite.T().Skip("This test is only for windows")
 	}
@@ -114,6 +114,7 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorBatArguments() {
 
 	t := target.NewCustomTarget("ActiveState-CLI", "test", constants.ValidZeroUUID, "", target.TriggerExecutor)
 	executors := executors.New(executorsPath)
+	executors.SetExecutorSrc(ts.ExecutorExe)
 	err := executors.Apply(
 		svcctl.NewIPCSockPathFromGlobals().String(),
 		t,
