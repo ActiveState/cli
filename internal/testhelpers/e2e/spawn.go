@@ -73,8 +73,13 @@ func (s *SpawnedCmd) ExpectInput(opts ...termtest.SetExpectOpt) error {
 	send := `echo $'expect\'input from posix shell'`
 	expect := `expect'input from posix shell`
 	if cmdName != "bash" && shellName != "bash" && runtime.GOOS == "windows" {
-		send = `echo ^<expect input from cmd prompt^>`
-		expect = `<expect input from cmd prompt>`
+		if strings.Contains(cmdName, "powershell") || strings.Contains(shellName, "powershell") {
+			send = "echo \"`<expect input from powershell`>\""
+			expect = `<expect input from powershell>`
+		} else {
+			send = `echo ^<expect input from cmd prompt^>`
+			expect = `<expect input from cmd prompt>`
+		}
 	}
 
 	// Termtest internal functions already implement error handling

@@ -1,11 +1,14 @@
 package subshell
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/shirou/gopsutil/v3/process"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -17,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/subshell/fish"
+	"github.com/ActiveState/cli/internal/subshell/pwsh"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/subshell/tcsh"
 	"github.com/ActiveState/cli/internal/subshell/zsh"
@@ -99,6 +103,8 @@ func New(cfg sscommon.Configurable) SubShell {
 		subs = &fish.SubShell{}
 	case cmd.Name:
 		subs = &cmd.SubShell{}
+	case pwsh.Name:
+		subs = &pwsh.SubShell{}
 	default:
 		rollbar.Error("subshell.DetectShell did not return a known name: %s", name)
 		switch runtime.GOOS {
@@ -113,7 +119,7 @@ func New(cfg sscommon.Configurable) SubShell {
 
 	logging.Debug("Using binary: %s", path)
 	subs.SetBinary(path)
-	
+
 	err := subs.SetEnv(osutils.EnvSliceToMap(os.Environ()))
 	if err != nil {
 		// We cannot error here, but this error will resurface when activating a runtime, so we can
@@ -177,7 +183,7 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 
 	binary = os.Getenv("SHELL")
 	if binary == "" && runtime.GOOS == "windows" {
-		binary = os.Getenv("ComSpec")
+		binary = detectShellWindows()
 	}
 
 	if binary == "" {
@@ -204,7 +210,7 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 	}
 
 	isKnownShell := false
-	for _, ssName := range []string{bash.Name, cmd.Name, fish.Name, tcsh.Name, zsh.Name} {
+	for _, ssName := range []string{bash.Name, cmd.Name, fish.Name, tcsh.Name, zsh.Name, pwsh.Name} {
 		if name == ssName {
 			isKnownShell = true
 			break
@@ -230,4 +236,26 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 	}
 
 	return name, path
+}
+
+func detectShellWindows() string {
+	// Windows does not provide a way of identifying which shell we are running in, so we have to look at the parent
+	// process.
+
+	p, err := process.NewProcess(int32(os.Getppid()))
+	if err != nil && !errors.As(err, &os.PathError{}) {
+		panic(err)
+	}
+
+	for p != nil {
+		name, err := p.Name()
+		if err == nil {
+			if strings.Contains(name, "cmd.exe") || strings.Contains(name, "powershell.exe") {
+				return name
+			}
+		}
+		p, _ = p.Parent()
+	}
+
+	return os.Getenv("ComSpec")
 }

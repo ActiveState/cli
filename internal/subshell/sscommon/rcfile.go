@@ -10,8 +10,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/mash/go-tempfile-suffix"
+
+	"github.com/ActiveState/cli/internal/installation/storage"
 
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/colorize"
@@ -252,6 +253,8 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 		return nil, errs.Wrap(err, "Failed to read asset")
 	}
 
+	logging.Debug("Env: %v", env)
+
 	userScripts := ""
 
 	// Yes this is awkward, issue here - https://www.pivotaltracker.com/story/show/175619373
@@ -332,6 +335,7 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	rcData := map[string]interface{}{
 		"Owner":       prj.Owner(),
 		"Name":        prj.Name(),
+		"Project":     prj.NamespaceString(),
 		"Env":         actualEnv,
 		"WD":          wd,
 		"UserScripts": userScripts,
@@ -368,6 +372,22 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	t := template.New("rcfile")
 	t.Funcs(map[string]interface{}{
 		"splitLines": func(v string) []string { return strings.Split(v, "\n") },
+		"escapePwsh": func(v string) string {
+			// Conver unicode characters
+			result := ""
+			for _, char := range v {
+				if char < 128 {
+					result += string(char)
+				} else {
+					result += fmt.Sprintf("$([char]0x%04x)", char)
+				}
+			}
+
+			// Escape special characters
+			result = strings.ReplaceAll(result, "`", "``")
+			result = strings.ReplaceAll(result, "\"", "`\"")
+			return result
+		},
 	})
 
 	t, err = t.Parse(string(tpl))
@@ -391,8 +411,6 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to write to output buffer.")
 	}
-
-	logging.Debug("Using project RC: (%s) %s", tmpFile.Name(), o.String())
 
 	return tmpFile, nil
 }
