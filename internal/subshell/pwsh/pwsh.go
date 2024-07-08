@@ -18,12 +18,6 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-var escaper *osutils.ShellEscape
-
-func init() {
-	escaper = osutils.NewBatchEscaper()
-}
-
 // SubShell covers the subshell.SubShell interface, reference that for documentation
 type SubShell struct {
 	binary string
@@ -109,7 +103,7 @@ func (v *SubShell) SetEnv(env map[string]string) error {
 
 // Quote - see subshell.Quote
 func (v *SubShell) Quote(value string) string {
-	return escaper.Quote(value)
+	return value // not implemented as Quote is no longer used, can get rid of this in the refactor.
 }
 
 // Activate - see subshell.SubShell
