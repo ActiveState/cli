@@ -253,8 +253,6 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 		return nil, errs.Wrap(err, "Failed to read asset")
 	}
 
-	logging.Debug("Env: %v", env)
-
 	userScripts := ""
 
 	// Yes this is awkward, issue here - https://www.pivotaltracker.com/story/show/175619373
