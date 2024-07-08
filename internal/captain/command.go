@@ -930,8 +930,7 @@ func (c *Command) LogArgs() {
 		cmdNames = append(cmdNames, c.Name())
 	}
 
-	args := []string{}
-	args = append(args, os.Args[0])
+	args := []string{os.Args[0]}
 	args = append(args, cmdNames...)
 
 	logging.Debug("Args: %s, Flags: %s", args, flags())
