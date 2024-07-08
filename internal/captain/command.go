@@ -509,7 +509,7 @@ func (c *Command) FindChildren(args []string) ([]*Command, error) {
 	for _, child := range result {
 		children, err := child.FindChildren(args[1:])
 		if err != nil && !errors.Is(err, &ErrNoChildren{}) {
-			return nil, err
+			return nil, errs.Wrap(err, "Could not find children")
 		}
 		result = append(result, children...)
 	}
