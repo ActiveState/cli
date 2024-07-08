@@ -29,5 +29,6 @@ function {{$K}} {
 {{end}}
 
 echo "{{ escapePwsh .ActivatedMessage}}"
+echo "Warning: PowerShell is not yet officially supported."
 
 {{.UserScripts}}
