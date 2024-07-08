@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
@@ -158,6 +157,10 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
+	if err := localcommit.Set(proj.Dir(), commitID.String()); err != nil {
+		return locale.WrapError(err, "err_package_update_commit_id")
+	}
+
 	// Update the runtime.
 	if !i.prime.Config().GetBool(constants.AsyncRuntimeConfig) {
 		out.Notice("")
@@ -165,18 +168,8 @@ func (i *Import) Run(params *ImportRunParams) error {
 		// refresh or install runtime
 		err = runtime.UpdateByReference(rt, rtCommit, auth, proj, out, runtime.OptNone)
 		if err != nil {
-			if !runbits.IsBuildError(err) {
-				// If the error is not a build error we want to retain the changes
-				if err2 := localcommit.Set(proj.Dir(), commitID.String()); err2 != nil {
-					return errs.Pack(err, locale.WrapError(err2, "err_package_update_commit_id"))
-				}
-			}
-			return errs.Wrap(err, "Failed to refresh runtime")
+			return errs.Wrap(err, "Failed to update runtime")
 		}
-	}
-
-	if err := localcommit.Set(proj.Dir(), commitID.String()); err != nil {
-		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
 	return nil
