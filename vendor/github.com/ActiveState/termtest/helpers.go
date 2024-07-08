@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 )
@@ -23,20 +22,10 @@ type cmdExit struct {
 	Err          error
 }
 
-// waitForCmdExit turns process.wait() into a channel so that it can be used within a select{} statement
-func waitForCmdExit(cmd *exec.Cmd) chan *cmdExit {
-	exit := make(chan *cmdExit, 1)
-	go func() {
-		err := cmd.Wait()
-		exit <- &cmdExit{ProcessState: cmd.ProcessState, Err: err}
-	}()
-	return exit
-}
-
 func waitChan[T any](wait func() T) chan T {
-	done := make(chan T)
+	done := make(chan T, 1)
 	go func() {
-		done <- wait()
+		wait()
 		close(done)
 	}()
 	return done

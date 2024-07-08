@@ -16,10 +16,10 @@ func syscallErrorCode(err error) int {
 	return 0
 }
 
-// WaitIndefinitely on Windows has to work around a Windows PTY bug where the PTY will NEVER exit by itself:
+// waitIndefinitely on Windows has to work around a Windows PTY bug where the PTY will NEVER exit by itself:
 // https://github.com/photostorm/pty/issues/3
 // Instead we wait for the process itself to exit, and after a grace period will shut down the pty.
-func (tt *TermTest) WaitIndefinitely() error {
+func (tt *TermTest) waitIndefinitely() error {
 	tt.opts.Logger.Println("WaitIndefinitely called")
 	defer tt.opts.Logger.Println("WaitIndefinitely closed")
 
@@ -27,11 +27,6 @@ func (tt *TermTest) WaitIndefinitely() error {
 
 	tt.opts.Logger.Printf("Waiting for PID %d to exit\n", tt.Cmd().Process.Pid)
 	for {
-		// There is a race condition here; which is that the pty could still be processing the last of the output
-		// when the process exits. This sleep tries to work around this, but on slow hosts this may not be sufficient.
-		// This also gives some time in between process lookups
-		time.Sleep(100 * time.Millisecond)
-
 		// For some reason os.Process will always return a process even when the process has exited.
 		// According to the docs this shouldn't happen, but here we are.
 		// Using gopsutil seems to correctly identify the (not) running process.
@@ -39,6 +34,14 @@ func (tt *TermTest) WaitIndefinitely() error {
 		if err != nil {
 			return fmt.Errorf("could not find process: %d: %w", tt.Cmd().Process.Pid, err)
 		}
+
+		// There is a race condition here; which is that the pty could still be processing the last of the output
+		// when the process exits. This sleep tries to work around this, but on slow hosts this may not be sufficient.
+		// We want this after the process state is asserted, but before we break out, to ensure we give at least the
+		// specified time AFTER the process has exited.
+		// This also povides time between process lookups.
+		time.Sleep(100 * time.Millisecond)
+
 		if !exists {
 			break
 		}
