@@ -45,11 +45,14 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	data = bytes.ReplaceAll(data, []byte("casestyle"), []byte("case"))
 	suite.Require().NoError(fileutils.WriteFile(scriptPath, data), "Update buildscript")
 
+	ts.LoginAsPersistentUser() // for CVE reporting
+
 	cp = ts.Spawn("commit")
 	cp.Expect("Operating on project")
 	cp.Expect("Creating commit")
 	cp.Expect("Resolving Dependencies")
 	cp.Expect("Installing case@")
+	cp.Expect("Checking for vulnerabilities")
 	cp.Expect("successfully created")
 	cp.ExpectExitCode(0)
 
