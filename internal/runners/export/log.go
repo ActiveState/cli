@@ -70,7 +70,8 @@ func (l *Log) Run(params *LogParams) (rerr error) {
 
 			ignore, err := ignoreLogFile(file)
 			if err != nil {
-				return errs.Wrap(err, "failed to validate log file")
+				logging.Error("failed to validate log file: %s", err.Error())
+				continue
 			}
 
 			if ignore {
