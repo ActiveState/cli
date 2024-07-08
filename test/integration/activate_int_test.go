@@ -492,6 +492,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	cp := ts.Spawn("activate", "ActiveState-CLI/langless", "--path", ts.Dirs.Work)
 	cp.Expect("Downloading")
 	cp.Expect("Installing")
+
 	cp.Expect("Activated")
 
 	suite.assertCompletedStatusBarReport(cp.Output())
