@@ -112,7 +112,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Could not checkout project")
 	}
 	dependencies.OutputSummary(u.out, commit.BuildPlan().RequestedArtifacts())
-	err = runtime.UpdateByReference(rti, commit, u.auth, proj, u.out, runtime.OptNone)
+	err = runtime.UpdateByReference(rti, commit, u.auth, proj, u.out, u.config, runtime.OptNone)
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime")
 	}
