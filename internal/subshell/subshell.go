@@ -220,6 +220,9 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 
 	if !isKnownShell {
 		logging.Debug("Unsupported shell: %s, defaulting to OS default.", name)
+		if name != "sh" {
+			rollbar.Error("Unsupported shell: %s", name) // we just want to know what this person is using
+		}
 		switch runtime.GOOS {
 		case "windows":
 			name = cmd.Name
