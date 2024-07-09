@@ -127,7 +127,7 @@ func runWithCmd(env []string, name string, args ...string) error {
 	case ".bat":
 		// No action required
 	case ".ps1":
-		args = append([]string{"-executionpolicy", "bypass", "-file", name}, args...)
+		args = append([]string{"-file", name}, args...)
 		name = "powershell"
 	case ".sh":
 		bashPath, err := osutils.BashifyPath(name)
