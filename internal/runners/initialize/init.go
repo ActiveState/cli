@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -292,7 +292,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return errs.Wrap(err, "Could not initialize runtime")
 	}
 	dependencies.OutputSummary(r.out, commit.BuildPlan().RequestedArtifacts())
-	err = runtime.UpdateByReference(rti, commit, r.auth, proj, r.out, runtime.OptNone)
+	err = runtime.UpdateByReference(rti, commit, r.auth, proj, r.out, r.config, runtime.OptNone)
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime after init")
 	}

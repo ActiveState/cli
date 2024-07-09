@@ -22,7 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
@@ -278,7 +278,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 			}
 
 			// refresh or install runtime
-			err = runbit.UpdateByReference(rt, rtCommit, r.Auth, r.Project, r.Output, runbit.OptMinimalUI)
+			err = runbit.UpdateByReference(rt, rtCommit, r.Auth, r.Project, r.Output, r.Config, runbit.OptMinimalUI)
 			if err != nil {
 				if !runbits.IsBuildError(err) {
 					// If the error is not a build error we want to retain the changes

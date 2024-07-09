@@ -166,7 +166,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		out.Notice("")
 
 		// refresh or install runtime
-		err = runtime.UpdateByReference(rt, rtCommit, auth, proj, out, runtime.OptNone)
+		err = runtime.UpdateByReference(rt, rtCommit, auth, proj, out, i.prime.Config(), runtime.OptNone)
 		if err != nil {
 			return errs.Wrap(err, "Failed to update runtime")
 		}
