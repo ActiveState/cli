@@ -176,9 +176,15 @@ func UpdateByReference(
 	auth *authentication.Auth,
 	proj *project.Project,
 	out output.Outputer,
+	cfg Configurable,
 	opts Opts,
 ) (rerr error) {
 	defer rationalizeError(auth, proj, &rerr)
+
+	if cfg.GetBool(constants.AsyncRuntimeConfig) {
+		logging.Debug("Skipping runtime update due to async runtime")
+		return nil
+	}
 
 	if rt.NeedsUpdate() {
 		if !bitflags.Has(opts, OptMinimalUI) {
