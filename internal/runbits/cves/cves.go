@@ -39,7 +39,7 @@ func NewCveReport(prime primeable) *CveReport {
 	return &CveReport{prime}
 }
 
-func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan) error {
+func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan, names ...string) error {
 	changeset := newBuildPlan.DiffArtifacts(oldBuildPlan, false)
 	if c.shouldSkipReporting(changeset) {
 		logging.Debug("Skipping CVE reporting")
@@ -71,11 +71,11 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 		}
 	}
 
-	names := make([]string, len(ingredients))
-	for i, ing := range ingredients {
-		names[i] = ing.Name
+	if len(names) == 0 {
+		for _, ing := range ingredients {
+			names = append(names, ing.Name)
+		}
 	}
-
 	pg := output.StartSpinner(c.prime.Output(), locale.Tr("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
 
 	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(c.prime.Auth(), ingredients)
