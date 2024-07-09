@@ -195,8 +195,8 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	lang := language.Bash
 	scriptArgs := fmt.Sprintf(`%q "$@"`, exeTarget)
 	if strings.Contains(s.subshell.Binary(), "cmd") {
-		lang = language.PowerShell
-		scriptArgs = fmt.Sprintf("& %q @args\nexit $LASTEXITCODE", exeTarget)
+		lang = language.Batch
+		scriptArgs = fmt.Sprintf("@ECHO OFF\n%q %%*", exeTarget)
 	}
 
 	sf, err := scriptfile.New(lang, "state-exec", scriptArgs)

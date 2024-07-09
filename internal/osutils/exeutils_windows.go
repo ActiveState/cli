@@ -8,6 +8,8 @@ import (
 	"syscall"
 
 	"github.com/thoas/go-funk"
+
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 const ExeExtension = ".exe"
@@ -28,6 +30,7 @@ func Command(name string, arg ...string) *exec.Cmd {
 		// other characters that need escaping such as `<` and `>`.
 		// This can be dropped once we update to a Go version that fixes this bug: https://github.com/golang/go/issues/68313
 		cmd.SysProcAttr = &syscall.SysProcAttr{CmdLine: makeCmdLine(cmd.Args)}
+		logging.Debug("Forcing command line: %s", cmd.SysProcAttr.CmdLine)
 	}
 
 	return cmd
