@@ -6,13 +6,17 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 	"testing"
+	"time"
 
-	"github.com/ActiveState/cli/internal/testhelpers/suite"
+	"github.com/ActiveState/termtest"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
 
@@ -195,6 +199,29 @@ func (suite *ExecIntegrationTestSuite) TestExecWithPath() {
 	cp.Expect("python3 --path doesNotExist -- extra")
 	cp.ExpectExitCode(0)
 
+}
+
+func (suite *ExecIntegrationTestSuite) TestExeBatArguments() {
+	suite.OnlyRunForTags(tagsuite.Exec)
+
+	if runtime.GOOS != "windows" {
+		suite.T().Skip("This test is only for windows")
+	}
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+
+	root := environment.GetRootPathUnsafe()
+	reportBat := filepath.Join(root, "test", "integration", "testdata", "batarguments", "report.bat")
+	suite.Require().FileExists(reportBat)
+
+	inputs := []string{"a<b", "b>a", "hello world", "&whoami", "imnot|apipe", "%NotAppData%", "^NotEscaped", "(NotAGroup)"}
+	outputs := `"` + strings.Join(inputs, `" "`) + `"`
+	cp := ts.SpawnWithOpts(e2e.OptArgs(append([]string{"exec", reportBat, "--"}, inputs...)...))
+	cp.Expect(outputs, termtest.OptExpectTimeout(5*time.Second))
+	cp.ExpectExitCode(0)
 }
 
 func TestExecIntegrationTestSuite(t *testing.T) {
