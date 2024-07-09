@@ -15,7 +15,7 @@ import (
 )
 
 func NewCommand(command string, args []string, env []string) *exec.Cmd {
-	cmd := exec.Command(command, args...)
+	cmd := osutils.Command(command, args...)
 	if env != nil {
 		cmd.Env = append(os.Environ(), env...)
 	}
@@ -127,7 +127,7 @@ func runWithCmd(env []string, name string, args ...string) error {
 	case ".bat":
 		// No action required
 	case ".ps1":
-		args = append([]string{"-executionpolicy", "bypass", "-file", name}, args...)
+		args = append([]string{"-file", name}, args...)
 		name = "powershell"
 	case ".sh":
 		bashPath, err := osutils.BashifyPath(name)
@@ -166,7 +166,7 @@ func binaryPathCmd(env []string, name string) (string, error) {
 func runDirect(env []string, name string, args ...string) (rerr error) {
 	logging.Debug("Running command: %s %s", name, strings.Join(args, " "))
 
-	runCmd := exec.Command(name, args...)
+	runCmd := osutils.Command(name, args...)
 	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	runCmd.Env = env
 
