@@ -121,8 +121,19 @@ func ignoreLogFile(logFile string) (bool, error) {
 		}
 	}
 
-	if strings.Contains(args, "export") && strings.Contains(args, "log") {
-		return true, nil
+	splitArgs := strings.Split(args, " ")
+	for i := range splitArgs {
+		if splitArgs[i] != "export" {
+			continue
+		}
+
+		if i+1 >= len(splitArgs) {
+			break
+		}
+
+		if splitArgs[i+1] == "log" {
+			return true, nil
+		}
 	}
 
 	return false, nil
