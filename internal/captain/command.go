@@ -892,7 +892,7 @@ func (c *Command) LogArgs() {
 
 	args := []string{os.Args[0]}
 	if child != nil {
-		args = append(args, child.JoinedSubCommandNames())
+		args = append(args, child.commandNames(false)...)
 	}
 
 	logging.Debug("Args: %s, Flags: %s", args, flags())
