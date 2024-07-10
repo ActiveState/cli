@@ -482,41 +482,6 @@ func (c *Command) FindChild(args []string) (*Command, error) {
 	return nil, &ErrNoChildren{locale.NewError("err_captain_cmd_find", "Could not find child Command with args: {{.V0}}", strings.Join(args, " "))}
 }
 
-func (c *Command) FindChildren(args []string) ([]*Command, error) {
-	var result []*Command
-
-	childCmds := make(map[string]*Command)
-	for _, child := range c.Children() {
-		childCmds[child.Name()] = child
-		for _, alias := range child.cobra.Aliases {
-			childCmds[alias] = child
-		}
-	}
-
-	for _, arg := range args {
-		child, ok := childCmds[arg]
-		if !ok {
-			continue
-		}
-		result = append(result, child)
-		break
-	}
-
-	if len(args) == 0 {
-		return result, nil
-	}
-
-	for _, child := range result {
-		children, err := child.FindChildren(args[1:])
-		if err != nil && !errors.Is(err, &ErrNoChildren{}) {
-			return nil, errs.Wrap(err, "Could not find children")
-		}
-		result = append(result, children...)
-	}
-
-	return result, nil
-}
-
 func (c *Command) GenBashCompletions() (string, error) {
 	buf := new(bytes.Buffer)
 	if err := c.topLevelCobra().GenBashCompletion(buf); err != nil {
@@ -920,18 +885,15 @@ func childCommands(cmd *Command) string {
 }
 
 func (c *Command) LogArgs() {
-	children, err := c.FindChildren(os.Args[1:])
+	child, err := c.FindChild(os.Args[1:])
 	if err != nil {
 		logging.Debug("Could not find child command, error: %v", err)
 	}
 
-	var cmdNames []string
-	for _, c := range children {
-		cmdNames = append(cmdNames, c.Name())
-	}
-
 	args := []string{os.Args[0]}
-	args = append(args, cmdNames...)
+	if child != nil {
+		args = append(args, child.JoinedSubCommandNames())
+	}
 
 	logging.Debug("Args: %s, Flags: %s", args, flags())
 }
