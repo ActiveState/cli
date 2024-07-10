@@ -107,7 +107,7 @@ func ignoreLogFile(logFile string) (bool, error) {
 	}
 	defer file.Close()
 
-	regex := regexp.MustCompile(`.*\] Args: \[(.*?)\], Flags: \[.*?\]`)
+	regex := regexp.MustCompile(`Args: \[(.*?)\], Flags: \[.*?\]`)
 	scanner := bufio.NewScanner(file)
 	var args string
 	for scanner.Scan() {
