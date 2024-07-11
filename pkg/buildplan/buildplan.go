@@ -140,12 +140,12 @@ func (b *BuildPlan) Engine() types.BuildEngine {
 	return buildEngine
 }
 
-// RecipeID extracts the recipe ID from the BuildLogIDs.
+// LegacyRecipeID extracts the recipe ID from the BuildLogIDs.
 // We do this because if the build is in progress we will need to reciepe ID to
 // initialize the build log streamer.
 // This information will only be populated if the build is an alternate build.
 // This is specified in the build planner queries.
-func (b *BuildPlan) RecipeID() strfmt.UUID {
+func (b *BuildPlan) LegacyRecipeID() strfmt.UUID {
 	return b.legacyRecipeID
 }
 

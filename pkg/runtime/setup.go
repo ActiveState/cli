@@ -169,7 +169,7 @@ func (s *setup) RunAndWait() (rerr error) {
 	}()
 
 	if err := s.fireEvent(events.Start{
-		RecipeID:            s.buildplan.RecipeID(),
+		RecipeID:            s.buildplan.LegacyRecipeID(),
 		RequiresBuild:       s.buildplan.IsBuildInProgress() && len(s.toDownload) > 0,
 		LogFilePath:         s.opts.BuildlogFilePath,
 		ArtifactsToBuild:    s.toBuild,
@@ -191,7 +191,7 @@ func (s *setup) update() error {
 		return errs.Wrap(err, "Could not create runtime config dir")
 	}
 
-	blog := buildlog.New(s.buildplan.RecipeID(), s.toBuild).
+	blog := buildlog.New(s.buildplan.LegacyRecipeID(), s.toBuild).
 		WithEventHandler(s.opts.EventHandlers...).
 		WithLogFile(filepath.Join(s.path, configDir, buildLogFile))
 
