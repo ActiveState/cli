@@ -70,6 +70,10 @@ func (es *Executors) ExecutorSrc() (string, error) {
 	return installation.ExecutorExec()
 }
 
+func (es *Executors) SetExecutorSrc(path string) {
+	es.altExecSrcPath = path
+}
+
 func (es *Executors) Apply(sockPath string, target Target, env map[string]string, exes []string) error {
 	logging.Debug("Creating executors at %s", es.executorPath)
 

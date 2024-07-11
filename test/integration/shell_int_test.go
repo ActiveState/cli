@@ -476,6 +476,34 @@ events:`, lang, splat), 1)
 	cp.ExpectExit() // exit code varies depending on shell; just assert the shell exited
 }
 
+func (suite *ShellIntegrationTestSuite) TestWindowsShells() {
+	if runtime.GOOS != "windows" {
+		suite.T().Skip("Windows only test")
+	}
+
+	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Shell)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI/Empty", "6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8")
+
+	hostname, err := os.Hostname()
+	suite.Require().NoError(err)
+	cp := ts.SpawnCmd("cmd", "/C", "state", "shell")
+	cp.ExpectInput()
+	cp.SendLine("hostname")
+	cp.Expect(hostname) // cmd.exe shows the actual hostname
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnCmd("powershell", "-Command", "state", "shell")
+	cp.ExpectInput()
+	cp.SendLine("$host.name")
+	cp.Expect("ConsoleHost") // powershell always shows ConsoleHost, go figure
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
 func TestShellIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ShellIntegrationTestSuite))
 }

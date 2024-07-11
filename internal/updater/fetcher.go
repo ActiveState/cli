@@ -26,7 +26,7 @@ type Fetcher struct {
 }
 
 func NewFetcher(an analytics.Dispatcher) *Fetcher {
-	return &Fetcher{retryhttp.DefaultClient, an}
+	return &Fetcher{retryhttp.NewClient(0, retryhttp.DefaultRetries), an}
 }
 
 func (f *Fetcher) Fetch(update *UpdateInstaller, targetDir string) error {

@@ -25,30 +25,30 @@ type InitIntegrationTestSuite struct {
 
 func (suite *InitIntegrationTestSuite) TestInit() {
 	suite.OnlyRunForTags(tagsuite.Init, tagsuite.Critical)
-	suite.runInitTest(false, "python", "python3")
+	suite.runInitTest(false, true, "python", "python3")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_Path() {
 	suite.OnlyRunForTags(tagsuite.Init)
-	suite.runInitTest(true, "python", "python3")
+	suite.runInitTest(true, false, "python", "python3")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_DisambiguatePython() {
 	suite.OnlyRunForTags(tagsuite.Init)
-	suite.runInitTest(false, "python", "python3")
-	suite.runInitTest(false, "python@3.10.0", "python3")
-	suite.runInitTest(false, "python@2.7.18", "python2")
+	suite.runInitTest(false, false, "python", "python3")
+	suite.runInitTest(false, false, "python@3.10.0", "python3")
+	suite.runInitTest(false, false, "python@2.7.18", "python2")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_PartialVersions() {
 	suite.OnlyRunForTags(tagsuite.Init)
-	suite.runInitTest(false, "python@3.10", "python3")
-	suite.runInitTest(false, "python@3.10.x", "python3")
-	suite.runInitTest(false, "python@>=3", "python3")
-	suite.runInitTest(false, "python@2", "python2")
+	suite.runInitTest(false, false, "python@3.10", "python3")
+	suite.runInitTest(false, false, "python@3.10.x", "python3")
+	suite.runInitTest(false, false, "python@>=3", "python3")
+	suite.runInitTest(false, false, "python@2", "python2")
 }
 
-func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, lang string, expectedConfigLanguage string, args ...string) {
+func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, sourceRuntime bool, lang string, expectedConfigLanguage string, args ...string) {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
@@ -61,14 +61,20 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, lang string, ex
 		computedArgs = append(computedArgs, ts.Dirs.Work)
 	}
 
+	env := []string{}
+	if !sourceRuntime {
+		env = append(env, constants.DisableRuntime+"=true")
+	}
 	// Run `state init`, creating the project.
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs(computedArgs...),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
+		e2e.OptAppendEnv(env...),
 	)
 	cp.Expect("Initializing Project")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect(fmt.Sprintf("Project '%s' has been successfully initialized", namespace))
+	if !sourceRuntime {
+		cp.Expect("Skipping runtime setup")
+	}
+	cp.Expect(fmt.Sprintf("Project '%s' has been successfully initialized", namespace), e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(e2e.PersistentUsername, pname.String())
 

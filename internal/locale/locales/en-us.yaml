@@ -668,6 +668,8 @@ err_package_removed:
   other: Failed to remove package
 err_remove_requirement_not_found:
   other: Could not remove requirement '[ACTIONABLE]{{.V0}}[/RESET]', because it does not exist.
+err_remove_platform_not_found:
+  other: Could not remove platform '[ACTIONABLE]{{.V0}}[/RESET]', because it does not exist.
 err_bundle_removed:
   other: Failed to remove bundle
 err_packages_removed:
@@ -1159,7 +1161,7 @@ package_ingredient_alternatives_nolang:
 progress_search:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalog"
 progress_cve_search:
-  other: " • Searching for new vulnerabilities (CVEs) on [ACTIONABLE]{{.V0}}[/RESET] and any dependencies"
+  other: " • Checking for vulnerabilities (CVEs) on [ACTIONABLE]{{.V0}}[/RESET] and its dependencies"
 setup_runtime:
   other: "Setting Up Runtime"
 progress_solve:
@@ -1529,8 +1531,8 @@ vulnerability_low:
   other: "[GREEN]{{.V0}} Low[/RESET]"
 err_main_jwt:
   other: |
-    State Tool could not obtain an authentication token from its internal service. 
-    Please try again or contact support if this issue persists. 
+    State Tool could not obtain an authentication token from its internal service.
+    Please try again or contact support if this issue persists.
     Error received: {{.V0}}
 err_runtime_needs_refresh:
   other: Your runtime needs to be updated, please run '[ACTIONABLE]state refresh[/RESET]' and then try again.

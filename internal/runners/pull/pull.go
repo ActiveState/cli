@@ -284,7 +284,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	}
 
 	// Attempt the merge.
-	mergedScript, err := scriptA.Merge(scriptB, strategies)
+	err = scriptA.Merge(scriptB, strategies)
 	if err != nil {
 		err := buildscript_runbit.GenerateAndWriteDiff(p.project, scriptA, scriptB)
 		if err != nil {
@@ -294,7 +294,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	}
 
 	// Write the merged build expression as a local build script.
-	return buildscript_runbit.Update(p.project, mergedScript)
+	return buildscript_runbit.Update(p.project, scriptA)
 }
 
 func resolveRemoteProject(prj *project.Project) (*project.Namespaced, error) {

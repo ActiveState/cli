@@ -16,13 +16,13 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
@@ -33,8 +33,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
-	vulnModel "github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
-	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -44,11 +42,6 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 )
-
-func init() {
-	configMediator.RegisterOption(constants.SecurityPromptConfig, configMediator.Bool, true)
-	configMediator.RegisterOption(constants.SecurityPromptLevelConfig, configMediator.String, vulnModel.SeverityCritical)
-}
 
 type PackageVersion struct {
 	captain.NameVersionValue
@@ -265,8 +258,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		dependencies.OutputChangeSummary(r.Output, rtCommit.BuildPlan(), oldBuildPlan)
 
 		// Report CVEs
-		changedArtifacts := rtCommit.BuildPlan().DiffArtifacts(oldBuildPlan, false)
-		if err := r.cveReport(changedArtifacts, requirements...); err != nil {
+		if err := cves.NewCveReport(r.prime).Report(rtCommit.BuildPlan(), oldBuildPlan); err != nil {
 			return errs.Wrap(err, "Could not report CVEs")
 		}
 
@@ -555,99 +547,6 @@ func (r *RequirementOperation) resolveRequirement(requirement *Requirement) erro
 	return nil
 }
 
-func (r *RequirementOperation) cveReport(artifactChangeset buildplan.ArtifactChangeset, requirements ...*Requirement) error {
-	if r.shouldSkipCVEs(requirements...) {
-		logging.Debug("Skipping CVE reporting")
-		return nil
-	}
-
-	names := requirementNames(requirements...)
-	pg := output.StartSpinner(r.Output, locale.Tr("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
-
-	var ingredients []*request.Ingredient
-	for _, requirement := range requirements {
-		if requirement.Operation == types.OperationRemoved {
-			continue
-		}
-
-		for _, artifact := range artifactChangeset.Added {
-			for _, ing := range artifact.Ingredients {
-				ingredients = append(ingredients, &request.Ingredient{
-					Namespace: ing.Namespace,
-					Name:      ing.Name,
-					Version:   ing.Version,
-				})
-			}
-		}
-
-		for _, change := range artifactChangeset.Updated {
-			if !change.VersionsChanged() {
-				continue // For CVE reporting we only care about ingredient changes
-			}
-
-			for _, ing := range change.To.Ingredients {
-				ingredients = append(ingredients, &request.Ingredient{
-					Namespace: ing.Namespace,
-					Name:      ing.Name,
-					Version:   ing.Version,
-				})
-			}
-		}
-	}
-
-	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(r.Auth, ingredients)
-	if err != nil {
-		return errs.Wrap(err, "Failed to retrieve vulnerabilities")
-	}
-
-	// No vulnerabilities, nothing further to do here
-	if len(ingredientVulnerabilities) == 0 {
-		logging.Debug("No vulnerabilities found for ingredients")
-		pg.Stop(locale.T("progress_safe"))
-		pg = nil
-		return nil
-	}
-
-	pg.Stop(locale.T("progress_unsafe"))
-	pg = nil
-
-	vulnerabilities := model.CombineVulnerabilities(ingredientVulnerabilities, names...)
-	r.summarizeCVEs(r.Output, vulnerabilities)
-
-	if r.shouldPromptForSecurity(vulnerabilities) {
-		cont, err := r.promptForSecurity()
-		if err != nil {
-			return errs.Wrap(err, "Failed to prompt for security")
-		}
-
-		if !cont {
-			if !r.Prompt.IsInteractive() {
-				return errs.AddTips(
-					locale.NewInputError("err_pkgop_security_prompt", "Operation aborted due to security prompt"),
-					locale.Tl("more_info_prompt", "To disable security prompting run: [ACTIONABLE]state config set security.prompt.enabled false[/RESET]"),
-				)
-			}
-			return locale.NewInputError("err_pkgop_security_prompt", "Operation aborted due to security prompt")
-		}
-	}
-
-	return nil
-}
-
-func (r *RequirementOperation) shouldSkipCVEs(requirements ...*Requirement) bool {
-	if !r.Auth.Authenticated() {
-		return true
-	}
-
-	for _, req := range requirements {
-		if req.Operation != types.OperationRemoved {
-			return false
-		}
-	}
-
-	return true
-}
-
 func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 	if err := localcommit.Set(r.Project.Dir(), commitID.String()); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
@@ -667,79 +566,6 @@ func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 	}
 
 	return nil
-}
-
-func (r *RequirementOperation) shouldPromptForSecurity(vulnerabilities model.VulnerableIngredientsByLevels) bool {
-	if !r.Config.GetBool(constants.SecurityPromptConfig) || vulnerabilities.Count == 0 {
-		return false
-	}
-
-	promptLevel := r.Config.GetString(constants.SecurityPromptLevelConfig)
-
-	logging.Debug("Prompt level: ", promptLevel)
-	switch promptLevel {
-	case vulnModel.SeverityCritical:
-		return vulnerabilities.Critical.Count > 0
-	case vulnModel.SeverityHigh:
-		return vulnerabilities.Critical.Count > 0 ||
-			vulnerabilities.High.Count > 0
-	case vulnModel.SeverityMedium:
-		return vulnerabilities.Critical.Count > 0 ||
-			vulnerabilities.High.Count > 0 ||
-			vulnerabilities.Medium.Count > 0
-	case vulnModel.SeverityLow:
-		return vulnerabilities.Critical.Count > 0 ||
-			vulnerabilities.High.Count > 0 ||
-			vulnerabilities.Medium.Count > 0 ||
-			vulnerabilities.Low.Count > 0
-	}
-
-	return false
-}
-
-func (r *RequirementOperation) summarizeCVEs(out output.Outputer, vulnerabilities model.VulnerableIngredientsByLevels) {
-	out.Print("")
-
-	switch {
-	case vulnerabilities.CountPrimary == 0:
-		out.Print("   " + locale.Tr("warning_vulnerable_indirectonly", strconv.Itoa(vulnerabilities.Count)))
-	case vulnerabilities.CountPrimary == vulnerabilities.Count:
-		out.Print("   " + locale.Tr("warning_vulnerable_directonly", strconv.Itoa(vulnerabilities.Count)))
-	default:
-		out.Print("   " + locale.Tr("warning_vulnerable", strconv.Itoa(vulnerabilities.CountPrimary), strconv.Itoa(vulnerabilities.Count-vulnerabilities.CountPrimary)))
-	}
-
-	printVulnerabilities := func(vulnerableIngredients model.VulnerableIngredientsByLevel, name, color string) {
-		if vulnerableIngredients.Count > 0 {
-			ings := []string{}
-			for _, vulns := range vulnerableIngredients.Ingredients {
-				prefix := ""
-				if vulnerabilities.Count > vulnerabilities.CountPrimary {
-					prefix = fmt.Sprintf("%s@%s: ", vulns.IngredientName, vulns.IngredientVersion)
-				}
-				ings = append(ings, fmt.Sprintf("%s[CYAN]%s[/RESET]", prefix, strings.Join(vulns.CVEIDs, ", ")))
-			}
-			out.Print(fmt.Sprintf("    • [%s]%d %s:[/RESET] %s", color, vulnerableIngredients.Count, name, strings.Join(ings, ", ")))
-		}
-	}
-
-	printVulnerabilities(vulnerabilities.Critical, locale.Tl("cve_critical", "Critical"), "RED")
-	printVulnerabilities(vulnerabilities.High, locale.Tl("cve_high", "High"), "ORANGE")
-	printVulnerabilities(vulnerabilities.Medium, locale.Tl("cve_medium", "Medium"), "YELLOW")
-	printVulnerabilities(vulnerabilities.Low, locale.Tl("cve_low", "Low"), "MAGENTA")
-
-	out.Print("")
-	out.Print("   " + locale.T("more_info_vulnerabilities"))
-	out.Print("   " + locale.T("disable_prompting_vulnerabilities"))
-}
-
-func (r *RequirementOperation) promptForSecurity() (bool, error) {
-	confirm, err := r.Prompt.Confirm("", locale.Tr("prompt_continue_pkg_operation"), ptr.To(false))
-	if err != nil {
-		return false, locale.WrapError(err, "err_pkgop_confirm", "Need a confirmation.")
-	}
-
-	return confirm, nil
 }
 
 func (r *RequirementOperation) outputResults(requirements ...*Requirement) {

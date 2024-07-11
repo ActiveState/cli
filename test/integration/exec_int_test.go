@@ -6,8 +6,12 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 	"testing"
+	"time"
 
+	"github.com/ActiveState/termtest"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
@@ -174,19 +178,26 @@ func (suite *ExecIntegrationTestSuite) TestExecWithPath() {
 
 }
 
-func (suite *ExecIntegrationTestSuite) TestExecPerlArgs() {
+func (suite *ExecIntegrationTestSuite) TestExeBatArguments() {
 	suite.OnlyRunForTags(tagsuite.Exec)
-	ts := e2e.New(suite.T(), false)
+
+	if runtime.GOOS != "windows" {
+		suite.T().Skip("This test is only for windows")
+	}
+
+	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/Perl-5.32", "a4762408-def6-41e4-b709-4cb548765005")
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
 
-	suite.NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "testargs.pl"), []byte(`
-printf "Argument: '%s'.\n", $ARGV[0];
-`)))
+	root := environment.GetRootPathUnsafe()
+	reportBat := filepath.Join(root, "test", "integration", "testdata", "batarguments", "report.bat")
+	suite.Require().FileExists(reportBat)
 
-	cp := ts.Spawn("exec", "perl", "testargs.pl", "<3")
-	cp.Expect("Argument: '<3'", e2e.RuntimeSourcingTimeoutOpt)
+	inputs := []string{"a<b", "b>a", "hello world", "&whoami", "imnot|apipe", "%NotAppData%", "^NotEscaped", "(NotAGroup)"}
+	outputs := `"` + strings.Join(inputs, `" "`) + `"`
+	cp := ts.SpawnWithOpts(e2e.OptArgs(append([]string{"exec", reportBat, "--"}, inputs...)...))
+	cp.Expect(outputs, termtest.OptExpectTimeout(5*time.Second))
 	cp.ExpectExitCode(0)
 }
 
