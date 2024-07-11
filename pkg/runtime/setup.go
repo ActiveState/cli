@@ -118,7 +118,7 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 	// Now that we know which artifacts we'll need to download we can use this as our basis for calculating which artifacts
 	// still need to be build. This encompasses the artifacts themselves, as well as any of their dependencies. And of
 	// course we only want to filter artifacts that actually require a build, as the build may be cached server side.
-	artifactsToBuild := append(artifactsToDownload, artifactsToDownload.Dependencies(true)...).Filter(buildplan.FilterNeedsBuild())
+	artifactsToBuild := append(artifactsToDownload, artifactsToDownload.Dependencies(true)...).Filter(buildplan.FilterNotBuild())
 	artifactsToBuild = sliceutils.UniqueByProperty(artifactsToBuild, func(a *buildplan.Artifact) any { return a.ArtifactID })
 
 	// Check for cached build failures

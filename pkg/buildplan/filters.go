@@ -71,7 +71,7 @@ func FilterFailedArtifacts() FilterArtifact {
 	}
 }
 
-func FilterNeedsBuild() FilterArtifact {
+func FilterNotBuild() FilterArtifact {
 	return func(a *Artifact) bool {
 		return a.Status != types.ArtifactSucceeded
 	}
