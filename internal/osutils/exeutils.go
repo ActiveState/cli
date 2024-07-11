@@ -19,9 +19,11 @@ import (
 func ExecutablePaths(env map[string]string) ([]string, error) {
 	// Retrieve artifact binary directory
 	var bins []string
-	if p, ok := env["PATH"]; ok {
-		bins = strings.Split(p, string(os.PathListSeparator))
+	p, ok := env["PATH"]
+	if !ok {
+		return []string{}, nil
 	}
+	bins = strings.Split(p, string(os.PathListSeparator))
 
 	exes, err := Executables(bins)
 	if err != nil {
