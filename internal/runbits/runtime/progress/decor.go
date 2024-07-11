@@ -126,7 +126,7 @@ func (p *ProgressDigester) artifactName(id strfmt.UUID, step step) string {
 		if a, ok := p.buildsExpected[id]; ok {
 			name = a.NameAndVersion()
 		}
-	case StepDownload:
+	case StepDownload, StepUnpack:
 		if a, ok := p.downloadsExpected[id]; ok {
 			name = a.NameAndVersion()
 		}
