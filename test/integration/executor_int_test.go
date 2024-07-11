@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/pkg/executors"
 	"github.com/ActiveState/termtest"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -18,8 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 )
 
 type ExecutorIntegrationTestSuite struct {
@@ -105,7 +104,7 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorBatArguments() {
 	srcExes := fileutils.ListFilesUnsafe(filepath.Join(root, "test", "integration", "testdata", "batarguments"))
 	reportExe := filepath.Join(executorsPath, "report.exe")
 
-	t := target.NewCustomTarget("ActiveState-CLI", "test", constants.ValidZeroUUID, "", target.TriggerExecutor)
+	t := executors.NewTarget(constants.ValidZeroUUID, "ActiveState-CLI", "test", "")
 	executors := executors.New(executorsPath)
 	executors.SetExecutorSrc(ts.ExecutorExe)
 	err := executors.Apply(

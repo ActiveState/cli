@@ -11,17 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/termtest"
-	"github.com/go-openapi/strfmt"
-	"github.com/google/uuid"
-	"github.com/phayes/permbits"
-	"github.com/stretchr/testify/require"
-
-	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/projectfile"
-
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -47,6 +36,11 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/termtest"
+	"github.com/go-openapi/strfmt"
+	"github.com/google/uuid"
+	"github.com/phayes/permbits"
+	"github.com/stretchr/testify/require"
 )
 
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
