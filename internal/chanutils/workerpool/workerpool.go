@@ -51,8 +51,8 @@ func (wp *WorkerPool) runQueue() {
 			err := fn()
 			if err != nil {
 				wp.errorsOccurred = true
+				wp.errors <- err
 			}
-			wp.errors <- err
 		})
 
 		// Give some breathing room for errors to bubble up so we're not running a bunch of jobs we know will
@@ -76,9 +76,6 @@ func (wp *WorkerPool) Wait() error {
 
 	var rerr error
 	for err := range wp.errors {
-		if err == nil {
-			continue
-		}
 		if rerr == nil {
 			rerr = errs.New("workerpool error")
 		}
