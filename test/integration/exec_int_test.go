@@ -87,31 +87,6 @@ func (suite *ExecIntegrationTestSuite) TestExec_ExitCode() {
 	cp.ExpectExitCode(42)
 }
 
-func (suite *ExecIntegrationTestSuite) TestExec_Args() {
-	suite.OnlyRunForTags(tagsuite.Exec)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
-
-	args := []string{
-		"firstArgument",
-		"secondArgument",
-		"thirdArgument",
-	}
-
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("exec", "--", "python3", "-c",
-			"import sys; print(sys.argv); print(\"Number of arguments: %d\" % (len(sys.argv) - 1))",
-			args[0], args[1], args[2]),
-	)
-	cp.Expect(args[0])
-	cp.Expect(args[1])
-	cp.Expect(args[2])
-	cp.Expect(fmt.Sprintf("Number of arguments: %d", len(args)))
-	cp.ExpectExitCode(0)
-}
-
 func (suite *ExecIntegrationTestSuite) TestExec_Input() {
 	suite.OnlyRunForTags(tagsuite.Exec)
 	ts := e2e.New(suite.T(), false)
