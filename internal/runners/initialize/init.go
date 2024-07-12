@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -287,31 +288,33 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
-	// Solve runtime
-	solveSpinner := output.StartSpinner(r.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
-	bpm := bpModel.NewBuildPlannerModel(r.auth)
-	commit, err := bpm.FetchCommit(commitID, r.prime.Project().Owner(), r.prime.Project().Name(), nil)
-	if err != nil {
-		solveSpinner.Stop(locale.T("progress_fail"))
-		logging.Debug("Deleting remotely created project due to runtime setup error")
-		err2 := model.DeleteProject(namespace.Owner, namespace.Project, r.auth)
-		if err2 != nil {
-			multilog.Error("Error deleting remotely created project after runtime setup error: %v", errs.JoinMessage(err2))
-			return locale.WrapError(err, "err_init_refresh_delete_project", "Could not setup runtime after init, and could not delete newly created Platform project. Please delete it manually before trying again")
+	var executorsPath string
+	if !condition.RuntimeDisabled() {
+		// Solve runtime
+		solveSpinner := output.StartSpinner(r.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
+		bpm := bpModel.NewBuildPlannerModel(r.auth)
+		commit, err := bpm.FetchCommit(commitID, r.prime.Project().Owner(), r.prime.Project().Name(), nil)
+		if err != nil {
+			solveSpinner.Stop(locale.T("progress_fail"))
+			logging.Debug("Deleting remotely created project due to runtime setup error")
+			err2 := model.DeleteProject(namespace.Owner, namespace.Project, r.auth)
+			if err2 != nil {
+				multilog.Error("Error deleting remotely created project after runtime setup error: %v", errs.JoinMessage(err2))
+				return locale.WrapError(err, "err_init_refresh_delete_project", "Could not setup runtime after init, and could not delete newly created Platform project. Please delete it manually before trying again")
+			}
+			return errs.Wrap(err, "Failed to fetch build result")
 		}
-		return errs.Wrap(err, "Failed to fetch build result")
-	}
-	solveSpinner.Stop(locale.T("progress_success"))
+		solveSpinner.Stop(locale.T("progress_success"))
 
-	dependencies.OutputSummary(r.out, commit.BuildPlan().RequestedArtifacts())
-	rti, err := runtime_runbit.Update(r.prime, trigger.TriggerInit, runtime_runbit.WithCommit(commit))
-	if err != nil {
-		return errs.Wrap(err, "Could not setup runtime after init")
+		dependencies.OutputSummary(r.out, commit.BuildPlan().RequestedArtifacts())
+		rti, err := runtime_runbit.Update(r.prime, trigger.TriggerInit, runtime_runbit.WithCommit(commit))
+		if err != nil {
+			return errs.Wrap(err, "Could not setup runtime after init")
+		}
+		executorsPath = rti.Env(false).ExecutorsPath
 	}
 
 	projectfile.StoreProjectMapping(r.config, namespace.String(), filepath.Dir(proj.Source().Path()))
-
-	executorsPath := rti.Env(false).ExecutorsPath
 
 	initSuccessMsg := locale.Tr("init_success", namespace.String(), path, executorsPath)
 	if !strings.EqualFold(paramOwner, resolvedOwner) {
