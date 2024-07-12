@@ -476,7 +476,7 @@ func (s *Session) DebugMessage(prefix string) string {
 			name = spawn.Cmd().Path
 		}
 		out := spawn.Output()
-		if strings.Contains(spawn.Output(), "panic") {
+		if strings.Contains(out, "panic") || strings.Contains(out, "goroutine") {
 			// If we encountered a panic it's unlikely the snapshot has enough information to be useful, so in this
 			// case we include the full output. Which we don't normally do as it is just the dump of pty data, and
 			// tends to be overly verbose and difficult to grok.
