@@ -37,7 +37,10 @@ func (suite *InitIntegrationTestSuite) TestInit_DisambiguatePython() {
 	suite.OnlyRunForTags(tagsuite.Init)
 	suite.runInitTest(false, false, "python", "python3")
 	suite.runInitTest(false, false, "python@3.10.0", "python3")
-	suite.runInitTest(false, false, "python@2.7.18", "python2")
+	if runtime.GOOS != "darwin" {
+		// Not supported on mac
+		suite.runInitTest(false, false, "python@2.7.18", "python2")
+	}
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_PartialVersions() {
