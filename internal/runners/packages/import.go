@@ -162,7 +162,13 @@ func (i *Import) Run(params *ImportRunParams) error {
 	}
 
 	_, err = runtime_runbit.Update(i.prime, trigger.TriggerImport, runtime_runbit.WithCommitID(commitID))
-	return err
+	if err != nil {
+		return errs.Wrap(err, "Runtime update failed")
+	}
+
+	out.Notice(locale.Tl("import_finished", "Import Finished"))
+
+	return nil
 }
 
 func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model.Changeset, error) {

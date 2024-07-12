@@ -1362,8 +1362,6 @@ shell_project_statement:
 checking_out:
   other: |
     Checking out project: [NOTICE]{{.V0}}[/RESET]
-installing_runtime_title:
-  other: Installing Runtime
 checkout_project_statement:
   other: |
     Checked out project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
@@ -1494,7 +1492,7 @@ err_packages_update_runtime_init:
 pkg_already_uptodate:
   other: Dependencies for your project are already configured and installed.
 install_runtime:
-  other: Installing Runtime
+  other: Sourcing Runtime
 install_runtime_info:
   other: "Installing your runtime and dependencies.\n"
 update_runtime:

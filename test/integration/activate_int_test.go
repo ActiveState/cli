@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/termtest"
 
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
@@ -459,7 +460,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation(
 
 	cp := ts.SpawnShellWithOpts("bash")
 	cp.SendLine("state deploy install ActiveState-CLI/Empty")
-	cp.Expect("Installing Runtime") // Ensure we don't send Ctrl+C too soon
+	cp.Expect(locale.T("install_runtime")) // Ensure we don't send Ctrl+C too soon
 	cp.SendCtrlC()
 	cp.Expect("User interrupted")
 	cp.SendLine("exit")

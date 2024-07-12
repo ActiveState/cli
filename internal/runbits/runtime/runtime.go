@@ -164,11 +164,7 @@ func Update(
 	}
 
 	if opts.PrintHeaders {
-		if !rt.HasCache() {
-			prime.Output().Notice(output.Title(locale.T("install_runtime")))
-		} else {
-			prime.Output().Notice(output.Title(locale.T("update_runtime")))
-		}
+		prime.Output().Notice(output.Title(locale.T("install_runtime")))
 	}
 
 	if rt.Hash() == rtHash {
