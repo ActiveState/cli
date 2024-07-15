@@ -667,6 +667,20 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 }
 
 func getSuggestions(namespace *model.Namespace, name string, filter []*model.Namespace, auth *authentication.Auth) ([]string, error) {
+	if namespace == nil {
+		// Do not suggest from more than one namespace; only suggest from a single namespace (e.g. the
+		// project's language).
+		languages := make(map[string]bool)
+		for _, ns := range filter {
+			if lang := model.LanguageFromNamespace(ns.String()); lang != "" {
+				languages[lang] = true
+			}
+		}
+		if len(languages) != 1 {
+			return []string{}, nil
+		}
+	}
+
 	ns := ""
 	if namespace != nil {
 		ns = namespace.String()
