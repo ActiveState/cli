@@ -3,25 +3,24 @@ package buildplan
 import (
 	"encoding/json"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildplan/raw"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
-	"github.com/go-openapi/strfmt"
 )
 
 type BuildPlan struct {
-	platforms    []strfmt.UUID
-	artifacts    Artifacts
-	requirements Requirements
-	ingredients  Ingredients
-	raw          *raw.Build
+	legacyRecipeID strfmt.UUID // still used for buildlog streamer
+	platforms      []strfmt.UUID
+	artifacts      Artifacts
+	requirements   Requirements
+	ingredients    Ingredients
+	raw            *raw.Build
 }
 
 func Unmarshal(data []byte) (*BuildPlan, error) {
-	logging.Debug("Unmarshalling buildplan")
-
 	b := &BuildPlan{}
 
 	var rawBuild raw.Build
@@ -52,8 +51,6 @@ func (b *BuildPlan) Marshal() ([]byte, error) {
 // cleanup empty targets
 // The type aliasing in the query populates the response with emtpy targets that we should remove
 func (b *BuildPlan) cleanup() {
-	logging.Debug("Cleaning up build plan")
-
 	b.raw.Steps = sliceutils.Filter(b.raw.Steps, func(s *raw.Step) bool {
 		return s.StepID != ""
 	})
@@ -143,20 +140,13 @@ func (b *BuildPlan) Engine() types.BuildEngine {
 	return buildEngine
 }
 
-// RecipeID extracts the recipe ID from the BuildLogIDs.
+// LegacyRecipeID extracts the recipe ID from the BuildLogIDs.
 // We do this because if the build is in progress we will need to reciepe ID to
 // initialize the build log streamer.
 // This information will only be populated if the build is an alternate build.
 // This is specified in the build planner queries.
-func (b *BuildPlan) RecipeID() (strfmt.UUID, error) {
-	var result strfmt.UUID
-	for _, id := range b.raw.BuildLogIDs {
-		if result != "" && result.String() != id.ID {
-			return result, errs.New("Build plan contains multiple recipe IDs")
-		}
-		result = strfmt.UUID(id.ID)
-	}
-	return result, nil
+func (b *BuildPlan) LegacyRecipeID() strfmt.UUID {
+	return b.legacyRecipeID
 }
 
 func (b *BuildPlan) IsBuildReady() bool {

@@ -66,7 +66,7 @@ func main() {
 			continue
 		}
 		fmt.Printf("Found %s\n", file.RelativePath())
-		bytes, err := fileutils.ReadFile(file.Path())
+		bytes, err := fileutils.ReadFile(file.AbsolutePath())
 		if err != nil {
 			log.Fatalf("Unable to read file: %s", err.Error())
 		}

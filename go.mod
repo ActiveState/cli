@@ -2,8 +2,6 @@ module github.com/ActiveState/cli
 
 go 1.22
 
-replace cloud.google.com/go => cloud.google.com/go v0.110.0
-
 require (
 	github.com/99designs/gqlgen v0.17.19
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
@@ -16,7 +14,6 @@ require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/creack/pty v1.1.11
 	github.com/dave/jennifer v0.18.0
-	github.com/faiface/mainthread v0.0.0-20171120011319-8b78f0a41ae3
 	github.com/fatih/color v1.10.0
 	github.com/felixge/fgprof v0.9.0
 	github.com/fsnotify/fsnotify v1.4.7
@@ -58,7 +55,6 @@ require (
 	github.com/thoas/go-funk v0.8.0
 	github.com/vbauerster/mpb/v7 v7.1.5
 	github.com/vektah/gqlparser/v2 v2.5.1
-	go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352
 	golang.org/x/crypto v0.23.0 // indirect
 	golang.org/x/net v0.25.0
 	golang.org/x/sys v0.20.0
@@ -76,7 +72,6 @@ require (
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/lipgloss v0.9.1
 	github.com/go-git/go-git/v5 v5.12.0
-	github.com/imacks/bitflags-go v1.0.0
 	github.com/klauspost/compress v1.11.4
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/zijiren233/yaml-comment v0.2.1

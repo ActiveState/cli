@@ -6,14 +6,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/ActiveState/cli/pkg/project"
+	rt "github.com/ActiveState/cli/pkg/runtime"
+	"github.com/ActiveState/cli/pkg/runtime_helpers"
 )
 
 // Disabled due to DX-1514
@@ -83,6 +83,11 @@ type RuntimeIntegrationTestSuite struct {
 }
 
 func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
+	if runtime.GOOS == "windows" {
+		// https://activestatef.atlassian.net/browse/DX-2926
+		suite.T().Skip("interrupting on windows is currently broken when ran via CI")
+	}
+
 	suite.OnlyRunForTags(tagsuite.Interrupt)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -90,18 +95,20 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 	cp := ts.Spawn("checkout", "ActiveState-CLI/test-interrupt-small-python#863c45e2-3626-49b6-893c-c15e85a17241", ".")
 	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 
-	targetDir := target.ProjectDirToTargetDir(ts.Dirs.Work, ts.Dirs.Cache)
-	pythonExe := filepath.Join(setup.ExecDir(targetDir), "python3"+osutils.ExeExtension)
+	proj, err := project.FromPath(ts.Dirs.Work)
+	suite.Require().NoError(err)
+
+	execPath := rt.ExecutorsPath(filepath.Join(ts.Dirs.Cache, runtime_helpers.DirNameFromProjectDir(proj.Dir())))
+	pythonExe := filepath.Join(execPath, "python3"+osutils.ExeExtension)
+
 	cp = ts.SpawnCmd(pythonExe, "-c", `print(__import__('sys').version)`)
 	cp.Expect("3.8.8")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("pull"),
-		e2e.OptAppendEnv(constants.RuntimeSetupWaitEnvVarName+"=true"),
-	)
-	time.Sleep(30 * time.Second)
+	cp = ts.Spawn("pull")
+	cp.Expect("Downloading")
 	cp.SendCtrlC() // cancel pull/update
+	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnCmd(pythonExe, "-c", `print(__import__('sys').version)`)
 	cp.Expect("3.8.8") // current runtime still works

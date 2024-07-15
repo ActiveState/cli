@@ -107,8 +107,6 @@ func WriteRcFile(rcTemplateName string, path string, data RcIdentification, env 
 		return errs.Wrap(err, "Templating failure")
 	}
 
-	logging.Debug("Writing to %s:\n%s", path, out.String())
-
 	return fileutils.AppendToFile(path, []byte(fileutils.LineEnd+out.String()))
 }
 
@@ -122,7 +120,6 @@ func WriteRcData(data string, path string, identification RcIdentification) erro
 	}
 
 	data = identification.Start + fileutils.LineEnd + data + fileutils.LineEnd + identification.Stop
-	logging.Debug("Writing to %s:\n%s", path, data)
 	return fileutils.AppendToFile(path, []byte(fileutils.LineEnd+data))
 }
 

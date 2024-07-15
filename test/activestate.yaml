@@ -25,3 +25,4 @@ scripts:
     value: pytest %projectDir%/tests
   - name: debug
     value: debug foo
+config_version: 1
