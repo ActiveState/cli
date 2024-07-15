@@ -74,9 +74,6 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, sourceRuntime b
 		e2e.OptAppendEnv(env...),
 	)
 	cp.Expect("Initializing Project")
-	if !sourceRuntime {
-		cp.Expect("Skipping runtime setup")
-	}
 	cp.Expect(fmt.Sprintf("Project '%s' has been successfully initialized", namespace), e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(e2e.PersistentUsername, pname.String())
@@ -143,7 +140,6 @@ func (suite *InitIntegrationTestSuite) TestInit_InferLanguageFromUse() {
 		e2e.OptArgs("init", namespace),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
 	)
-	cp.Expect("Skipping runtime setup")
 	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(e2e.PersistentUsername, pname.String())
@@ -241,10 +237,12 @@ func (suite *InitIntegrationTestSuite) TestInit_ChangeSummary() {
 
 	ts.LoginAsPersistentUser()
 
+	cp := ts.Spawn("config", "set", "optin.unstable.async_runtime", "true")
+	cp.ExpectExitCode(0)
+
 	project := "test-init-change-summary-" + hash.ShortHash(strutils.UUID().String())
-	cp := ts.SpawnWithOpts(
+	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("init", e2e.PersistentUsername+"/"+project, "--language", "python@3.10.10"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
 	)
 	cp.Expect("Resolving Dependencies")
 	cp.Expect("Done")
