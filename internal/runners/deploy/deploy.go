@@ -102,6 +102,13 @@ func (d *Deploy) Run(params *Params) error {
 		return locale.WrapError(err, "err_deploy_commitid", "Could not grab commit ID for project: {{.V0}}.", params.Namespace.String())
 	}
 
+	if params.Path == "" {
+		params.Path, err = os.Getwd()
+		if err != nil {
+			return errs.Wrap(err, "Could not get current working directory")
+		}
+	}
+
 	logging.Debug("runSteps: %s", d.step.String())
 
 	if d.step == UnsetStep || d.step == InstallStep {
