@@ -52,7 +52,7 @@ func (e *ErrProjectNotFound) Error() string {
 }
 
 func (e *Runtime) Run(params *RuntimeParams) (rerr error) {
-	defer rationalizeError(&rerr)
+	defer rationalizeError(&rerr, e.auth)
 
 	proj := e.project
 	if params.Path != "" {

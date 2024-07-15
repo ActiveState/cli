@@ -5,15 +5,16 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/runbits/buildplanner"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 func rationalizeCommonError(err *error, auth *authentication.Auth) {
-	var invalidCommitIdErr *errInvalidCommitId
+	var invalidCommitIdErr *buildplanner.ErrInvalidCommitId
 	var projectNotFoundErr *model.ErrProjectNotFound
-	var commitIdDoesNotExistInProject *errCommitDoesNotExistInProject
+	var commitIdDoesNotExistInProject *buildplanner.ErrCommitDoesNotExistInProject
 
 	switch {
 	case errors.Is(*err, rationalize.ErrNoProject):
@@ -23,7 +24,7 @@ func rationalizeCommonError(err *error, auth *authentication.Auth) {
 
 	case errors.As(*err, &invalidCommitIdErr):
 		*err = errs.WrapUserFacing(
-			*err, locale.Tr("err_commit_id_invalid_given", invalidCommitIdErr.id),
+			*err, locale.Tr("err_commit_id_invalid_given", invalidCommitIdErr.Id),
 			errs.SetInput())
 
 	case errors.As(*err, &projectNotFoundErr):
@@ -34,8 +35,7 @@ func rationalizeCommonError(err *error, auth *authentication.Auth) {
 
 	case errors.As(*err, &commitIdDoesNotExistInProject):
 		*err = errs.WrapUserFacing(*err,
-			locale.Tl("err_commit_id_not_in_history",
-				"The project '[ACTIONABLE]{{.V0}}[/RESET]' does not contain the provided commit: '[ACTIONABLE]{{.V1}}[/RESET]'.",
+			locale.Tr("err_commit_id_not_in_history",
 				commitIdDoesNotExistInProject.Project,
 				commitIdDoesNotExistInProject.CommitID,
 			),

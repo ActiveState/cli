@@ -81,6 +81,22 @@ func (suite *ExportIntegrationTestSuite) TestExport_Runtime() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *ExportIntegrationTestSuite) TestExport_BuildPlan() {
+	suite.OnlyRunForTags(tagsuite.Export)
+	ts := e2e.New(suite.T(), false)
+
+	ts.PrepareEmptyProject()
+	cp := ts.Spawn("export", "buildplan")
+	cp.Expect("Resolving Dependencies")
+	cp.Expect(`{`)
+	cp.Expect(`"let":`)
+	cp.Expect(`"in":`)
+	cp.Expect(`"runtime":`)
+	cp.Expect(`"sources":`)
+	cp.Expect(`}`)
+	cp.ExpectExitCode(0)
+}
+
 func (suite *ExportIntegrationTestSuite) TestJSON() {
 	suite.OnlyRunForTags(tagsuite.Export, tagsuite.JSON)
 	ts := e2e.New(suite.T(), false)
@@ -112,6 +128,12 @@ func (suite *ExportIntegrationTestSuite) TestJSON() {
 	cp = ts.Spawn("export", "runtime", "-o", "json")
 	cp.Expect(`{"project":"`)
 	cp.Expect(`"}}`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.Spawn("export", "buildplan", "-o", "json")
+	cp.Expect(`{"`)
+	cp.Expect(`}`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 }
