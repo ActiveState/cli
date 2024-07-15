@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
@@ -200,9 +201,7 @@ func (r *RequirementOperation) Install(ts *time.Time, requirements ...*Requireme
 	dependencies.OutputChangeSummary(r.Output, rtCommit.BuildPlan(), oldBuildPlan)
 
 	// Report CVEs.
-	changedArtifacts := rtCommit.BuildPlan().DiffArtifacts(oldBuildPlan, false)
-	err = r.cveReport(changedArtifacts)
-	if err != nil {
+	if err := cves.NewCveReport(r.prime).Report(rtCommit.BuildPlan(), oldBuildPlan); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
@@ -218,7 +217,7 @@ func (r *RequirementOperation) Install(ts *time.Time, requirements ...*Requireme
 		}
 
 		// refresh or install runtime
-		err = runtime.UpdateByReference(rt, rtCommit, r.Auth, r.Project, r.Output, runtime.OptMinimalUI)
+		err = runtime.UpdateByReference(rt, rtCommit, r.Auth, r.Project, r.Output, r.Config, runtime.OptMinimalUI)
 		if err != nil {
 			if !runbits.IsBuildError(err) {
 				// If the error is not a build error we want to retain the changes
