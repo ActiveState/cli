@@ -3,12 +3,11 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
 )
 
 func runCmd(meta *executorMeta) (int, error) {
 	userArgs := os.Args[1:]
-	cmd := exec.Command(meta.MatchingBin, userArgs...)
+	cmd := Command(meta.MatchingBin, userArgs...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

@@ -33,16 +33,18 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 			v := fmt.Sprintf("%s@%s", a.Name(), a.Version())
 			addedString = append(addedLocale, v)
 			addedLocale = append(addedLocale, fmt.Sprintf("[ACTIONABLE]%s[/RESET]", v))
-		}
-		for _, i := range a.Ingredients {
-			dependencies = append(dependencies, i.RuntimeDependencies(true)...)
-			directDependencies = append(dependencies, i.RuntimeDependencies(false)...)
+
+			for _, i := range a.Ingredients {
+				dependencies = append(dependencies, i.RuntimeDependencies(true)...)
+				directDependencies = append(directDependencies, i.RuntimeDependencies(false)...)
+			}
 		}
 	}
 
 	dependencies = sliceutils.UniqueByProperty(dependencies, func(i *buildplan.Ingredient) any { return i.IngredientID })
 	directDependencies = sliceutils.UniqueByProperty(directDependencies, func(i *buildplan.Ingredient) any { return i.IngredientID })
-	numIndirect := len(dependencies) - len(directDependencies)
+	commonDependencies := directDependencies.CommonRuntimeDependencies().ToIDMap()
+	numIndirect := len(dependencies) - len(directDependencies) - len(commonDependencies)
 
 	sort.SliceStable(directDependencies, func(i, j int) bool {
 		return directDependencies[i].Name < directDependencies[j].Name
@@ -79,8 +81,12 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 			prefix = " └─"
 		}
 
+		// Retrieve runtime dependencies, and then filter out any dependencies that are common between all added ingredients.
+		runtimeDeps := ingredient.RuntimeDependencies(true)
+		runtimeDeps = runtimeDeps.Filter(func(i *buildplan.Ingredient) bool { _, ok := commonDependencies[i.IngredientID]; return !ok })
+
 		subdependencies := ""
-		if numSubs := len(ingredient.RuntimeDependencies(true)); numSubs > 0 {
+		if numSubs := len(runtimeDeps); numSubs > 0 {
 			subdependencies = fmt.Sprintf(" ([ACTIONABLE]%s[/RESET] dependencies)", // intentional leading space
 				strconv.Itoa(numSubs))
 		}
