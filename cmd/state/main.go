@@ -233,7 +233,6 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 	// Run the actual command
 	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, ipcClient, svcmodel, an), args...)
-	cmds.Command().LogArgs()
 
 	childCmd, err := cmds.Command().FindChild(args[1:])
 	if err != nil {

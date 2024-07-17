@@ -218,6 +218,7 @@ func (c *Command) ShortDescription() string {
 
 func (c *Command) Execute(args []string) error {
 	defer profile.Measure("cobra:Execute", time.Now())
+	c.logArgs(args)
 	c.cobra.SetArgs(args)
 	err := c.cobra.Execute()
 	c.cobra.SetArgs(nil)
@@ -884,23 +885,23 @@ func childCommands(cmd *Command) string {
 	return fmt.Sprintf("\n\nAvailable Commands:\n%s", table.Render())
 }
 
-func (c *Command) LogArgs() {
-	child, err := c.FindChild(os.Args[1:])
+func (c *Command) logArgs(args []string) {
+	child, err := c.FindChild(args)
 	if err != nil {
 		logging.Debug("Could not find child command, error: %v", err)
 	}
 
-	args := []string{os.Args[0]}
+	logArgs := []string{args[0]}
 	if child != nil {
-		args = append(args, child.commandNames(false)...)
+		logArgs = append(logArgs, child.commandNames(false)...)
 	}
 
-	logging.Debug("Args: %s, Flags: %s", args, flags())
+	logging.Debug("Args: %s, Flags: %s", logArgs, flags(args))
 }
 
-func flags() []string {
+func flags(args []string) []string {
 	flags := []string{}
-	for _, arg := range os.Args {
+	for _, arg := range args {
 		if strings.HasPrefix(arg, "-") {
 			flags = append(flags, arg)
 		}
