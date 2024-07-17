@@ -96,9 +96,24 @@ func (m *Manifest) Run() (rerr error) {
 }
 
 func (m *Manifest) fetchRequirements() ([]buildscript.Requirement, error) {
-	script, err := buildscript_runbit.ScriptFromProject(m.project)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get remote build expr and time")
+	var script *buildscript.BuildScript
+	if m.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		var err error
+		script, err = buildscript_runbit.ScriptFromProject(m.project)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get buildscript")
+		}
+	} else {
+		commitID, err := localcommit.Get(m.project.Dir())
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get commit ID")
+		}
+
+		bp := bpModel.NewBuildPlannerModel(m.auth)
+		script, err = bp.GetBuildScript(commitID.String())
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get remote build expr and time")
+		}
 	}
 
 	reqs, err := script.Requirements()
