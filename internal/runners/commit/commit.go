@@ -3,24 +3,18 @@ package commit
 import (
 	"errors"
 
-	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 type primeable interface {
@@ -30,26 +24,15 @@ type primeable interface {
 	primer.Analyticer
 	primer.SvcModeler
 	primer.Configurer
+	primer.Prompter
 }
 
 type Commit struct {
-	out       output.Outputer
-	proj      *project.Project
-	auth      *authentication.Auth
-	analytics analytics.Dispatcher
-	svcModel  *model.SvcModel
-	cfg       *config.Instance
+	prime primeable
 }
 
 func New(p primeable) *Commit {
-	return &Commit{
-		out:       p.Output(),
-		proj:      p.Project(),
-		auth:      p.Auth(),
-		analytics: p.Analytics(),
-		svcModel:  p.SvcModel(),
-		cfg:       p.Config(),
-	}
+	return &Commit{p}
 }
 
 var ErrNoChanges = errors.New("buildscript has no changes")
@@ -81,24 +64,26 @@ func rationalizeError(err *error) {
 func (c *Commit) Run() (rerr error) {
 	defer rationalizeError(&rerr)
 
-	if c.proj == nil {
+	proj := c.prime.Project()
+	if proj == nil {
 		return rationalize.ErrNoProject
 	}
 
-	c.out.Notice(locale.Tr("operating_message", c.proj.NamespaceString(), c.proj.Dir()))
+	out := c.prime.Output()
+	out.Notice(locale.Tr("operating_message", proj.NamespaceString(), proj.Dir()))
 
 	// Get buildscript.as representation
-	script, err := buildscript_runbit.ScriptFromProject(c.proj)
+	script, err := buildscript_runbit.ScriptFromProject(proj)
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
 	}
 
 	// Get equivalent build script for current state of the project
-	localCommitID, err := localcommit.Get(c.proj.Dir())
+	localCommitID, err := localcommit.Get(proj.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit ID")
 	}
-	bp := buildplanner.NewBuildPlannerModel(c.auth)
+	bp := buildplanner.NewBuildPlannerModel(c.prime.Auth())
 	remoteScript, err := bp.GetBuildScript(localCommitID.String())
 	if err != nil {
 		return errs.Wrap(err, "Could not get remote build expr and time for provided commit")
@@ -114,7 +99,7 @@ func (c *Commit) Run() (rerr error) {
 		return ErrNoChanges
 	}
 
-	pg := output.StartSpinner(c.out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
+	pg := output.StartSpinner(out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
 	defer func() {
 		if pg != nil {
 			pg.Stop(locale.T("progress_fail"))
@@ -122,8 +107,8 @@ func (c *Commit) Run() (rerr error) {
 	}()
 
 	stagedCommitID, err := bp.StageCommit(buildplanner.StageCommitParams{
-		Owner:        c.proj.Owner(),
-		Project:      c.proj.Name(),
+		Owner:        proj.Owner(),
+		Project:      proj.Name(),
 		ParentCommit: localCommitID.String(),
 		Script:       script,
 	})
@@ -132,7 +117,7 @@ func (c *Commit) Run() (rerr error) {
 	}
 
 	// Update local commit ID
-	if err := localcommit.Set(c.proj.Dir(), stagedCommitID.String()); err != nil {
+	if err := localcommit.Set(proj.Dir(), stagedCommitID.String()); err != nil {
 		return errs.Wrap(err, "Could not set local commit ID")
 	}
 
@@ -141,14 +126,14 @@ func (c *Commit) Run() (rerr error) {
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the remote build script")
 	}
-	if err := buildscript_runbit.Update(c.proj, newScript); err != nil {
+	if err := buildscript_runbit.Update(proj, newScript); err != nil {
 		return errs.Wrap(err, "Could not update local build script")
 	}
 
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
 
-	pgSolve := output.StartSpinner(c.out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+	pgSolve := output.StartSpinner(out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
 	defer func() {
 		if pgSolve != nil {
 			pgSolve.Stop(locale.T("progress_fail"))
@@ -156,15 +141,15 @@ func (c *Commit) Run() (rerr error) {
 	}()
 
 	// Solve runtime
-	_, rtCommit, err := runtime.Solve(c.auth, c.out, c.analytics, c.proj, &stagedCommitID, target.TriggerCommit, c.svcModel, c.cfg, runtime.OptMinimalUI)
+	rtCommit, err := bp.FetchCommit(stagedCommitID, proj.Owner(), proj.Name(), nil)
 	if err != nil {
-		return errs.Wrap(err, "Could not solve runtime")
+		return errs.Wrap(err, "Could not fetch staged commit")
 	}
 
 	// Get old buildplan.
-	commit, err := bp.FetchCommit(localCommitID, c.proj.Owner(), c.proj.Name(), nil)
+	commit, err := bp.FetchCommit(localCommitID, proj.Owner(), proj.Name(), nil)
 	if err != nil {
-		return errs.Wrap(err, "Failed to fetch build result")
+		return errs.Wrap(err, "Failed to fetch old commit")
 	}
 	oldBuildPlan := commit.BuildPlan()
 
@@ -172,20 +157,25 @@ func (c *Commit) Run() (rerr error) {
 	pgSolve = nil
 
 	// Output dependency list.
-	dependencies.OutputChangeSummary(c.out, rtCommit.BuildPlan(), oldBuildPlan)
+	dependencies.OutputChangeSummary(out, rtCommit.BuildPlan(), oldBuildPlan)
 
-	c.out.Print(output.Prepare(
+	// Report CVEs.
+	if err := cves.NewCveReport(c.prime).Report(rtCommit.BuildPlan(), oldBuildPlan); err != nil {
+		return errs.Wrap(err, "Could not report CVEs")
+	}
+
+	out.Print(output.Prepare(
 		locale.Tl(
 			"commit_success",
-			"", stagedCommitID.String(), c.proj.NamespaceString(),
+			"", stagedCommitID.String(), proj.NamespaceString(),
 		),
 		&struct {
 			Namespace string `json:"namespace"`
 			Path      string `json:"path"`
 			CommitID  string `json:"commit_id"`
 		}{
-			c.proj.NamespaceString(),
-			c.proj.Dir(),
+			proj.NamespaceString(),
+			proj.Dir(),
 			stagedCommitID.String(),
 		},
 	))

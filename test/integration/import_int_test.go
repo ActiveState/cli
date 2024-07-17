@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -19,17 +18,12 @@ type ImportIntegrationTestSuite struct {
 }
 
 func (suite *ImportIntegrationTestSuite) TestImport_detached() {
-	suite.T().Skip("Skipping import test until DX-2444 is resolved: https://activestatef.atlassian.net/browse/DX-2444")
 	suite.OnlyRunForTags(tagsuite.Import)
-	if runtime.GOOS == "darwin" {
-		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
-		return
-	}
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/Python3-Import", "ecc61737-f598-4ca4-aa4e-52403aabb76c")
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
 
 	contents := `requests
 	urllib3`
@@ -38,12 +32,20 @@ func (suite *ImportIntegrationTestSuite) TestImport_detached() {
 	err := os.WriteFile(importPath, []byte(strings.TrimSpace(contents)), 0644)
 	suite.Require().NoError(err)
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("import", importPath),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
-	)
+	ts.LoginAsPersistentUser() // for CVE reporting
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "set", constants.SecurityPromptConfig, "false")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("import", importPath)
 	cp.Expect("Operating on project")
-	cp.Expect("ActiveState-CLI/Python3-Import")
+	cp.Expect("ActiveState-CLI/small-python")
+	cp.Expect("Creating commit")
+	cp.Expect("Resolving Dependencies")
+	cp.Expect("Import Finished")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("packages")
@@ -79,7 +81,6 @@ urllib3>=1.21.1,<=1.26.5
 )
 
 func (suite *ImportIntegrationTestSuite) TestImport() {
-	suite.T().Skip("Skipping import test until DX-2444 is resolved: https://activestatef.atlassian.net/browse/DX-2444")
 	suite.OnlyRunForTags(tagsuite.Import)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -88,7 +89,7 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 	namespace := fmt.Sprintf("%s/%s", user.Username, "Python3")
 
 	cp := ts.Spawn("init", "--language", "python", namespace, ts.Dirs.Work)
-	cp.Expect("successfully initialized")
+	cp.Expect("successfully initialized", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	reqsFilePath := filepath.Join(cp.WorkDirectory(), reqsFileName)
@@ -97,10 +98,7 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 		ts.SetT(suite.T())
 		ts.PrepareFile(reqsFilePath, badReqsData)
 
-		cp := ts.SpawnWithOpts(
-			e2e.OptArgs("import", "requirements.txt"),
-			e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
-		)
+		cp = ts.Spawn("import", "requirements.txt")
 		cp.ExpectNotExitCode(0)
 	})
 
@@ -108,12 +106,13 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 		ts.SetT(suite.T())
 		ts.PrepareFile(reqsFilePath, reqsData)
 
-		cp := ts.SpawnWithOpts(
-			e2e.OptArgs("import", "requirements.txt"),
-			e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
-		)
+		cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+		cp.ExpectExitCode(0)
 
-		cp = ts.Spawn("push")
+		cp = ts.Spawn("config", "set", constants.SecurityPromptConfig, "false")
+		cp.ExpectExitCode(0)
+
+		cp = ts.Spawn("import", "requirements.txt")
 		cp.ExpectExitCode(0)
 
 		cp = ts.Spawn("import", "requirements.txt")
@@ -125,19 +124,25 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 		ts.SetT(suite.T())
 		ts.PrepareFile(reqsFilePath, complexReqsData)
 
-		cp := ts.SpawnWithOpts(
-			e2e.OptArgs("import", "requirements.txt"),
-			e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
-		)
+		cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+		cp.ExpectExitCode(0)
+
+		cp = ts.Spawn("config", "set", constants.SecurityPromptConfig, "false")
+		cp.ExpectExitCode(0)
+
+		cp = ts.Spawn("import", "requirements.txt")
+		cp.ExpectExitCode(0)
 
 		cp = ts.Spawn("packages")
 		cp.Expect("coverage")
+		cp.Expect("!3.5 → ")
 		cp.Expect("docopt")
+		cp.Expect(">=0.6.1 →")
 		cp.Expect("Mopidy-Dirble")
 		cp.Expect("requests")
-		cp.Expect("Auto") // DX-2272 will change this to 2.30.0
+		cp.Expect(">=2.2,<2.31.0 → 2.30.0")
 		cp.Expect("urllib3")
-		cp.Expect("Auto") // DX-2272 will change this to 1.26.5
+		cp.Expect(">=1.21.1,<=1.26.5 → 1.26.5")
 		cp.ExpectExitCode(0)
 	})
 	ts.IgnoreLogErrors()

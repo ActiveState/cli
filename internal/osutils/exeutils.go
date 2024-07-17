@@ -16,7 +16,30 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-// Executables will return all the Executables that need to be symlinked in the various provided bin directories
+func ExecutablePaths(env map[string]string) ([]string, error) {
+	// Retrieve artifact binary directory
+	var bins []string
+	p, ok := env["PATH"]
+	if !ok {
+		return []string{}, nil
+	}
+	bins = strings.Split(p, string(os.PathListSeparator))
+
+	exes, err := Executables(bins)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not detect executables")
+	}
+
+	// Remove duplicate executables as per PATH and PATHEXT
+	exes, err = UniqueExes(exes, os.Getenv("PATHEXT"))
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
+	}
+
+	return exes, nil
+}
+
+// Executables will find all directories that contain executables from the provided list of paths
 func Executables(bins []string) ([]string, error) {
 	exes := []string{}
 
@@ -97,7 +120,7 @@ func ExecSimple(bin string, args []string, env []string) (string, string, error)
 
 func ExecSimpleFromDir(dir, bin string, args []string, env []string) (string, string, error) {
 	logging.Debug("ExecSimpleFromDir: dir: %s, bin: %s, args: %#v, env: %#v", dir, bin, args, env)
-	c := exec.Command(bin, args...)
+	c := Command(bin, args...)
 	if dir != "" {
 		c.Dir = dir
 	}
@@ -117,7 +140,7 @@ func ExecSimpleFromDir(dir, bin string, args []string, env []string) (string, st
 
 // Execute will run the given command and with optional settings for the exec.Cmd struct
 func Execute(command string, arg []string, optSetter func(cmd *exec.Cmd) error) (int, *exec.Cmd, error) {
-	cmd := exec.Command(command, arg...)
+	cmd := Command(command, arg...)
 	logging.Debug("Executing command: %s, with args: %s", cmd, arg)
 	if optSetter != nil {
 		if err := optSetter(cmd); err != nil {
@@ -145,7 +168,7 @@ func ExecuteAndPipeStd(command string, arg []string, env []string) (int, *exec.C
 // ExecuteAndForget will run the given command in the background, returning immediately.
 func ExecuteAndForget(command string, args []string, opts ...func(cmd *exec.Cmd) error) (*os.Process, error) {
 	logging.Debug("Executing: %s %v", command, args)
-	cmd := exec.Command(command, args...)
+	cmd := Command(command, args...)
 
 	for _, optSetter := range opts {
 		if err := optSetter(cmd); err != nil {
@@ -172,7 +195,7 @@ func ExecuteAndForget(command string, args []string, opts ...func(cmd *exec.Cmd)
 func ExecuteInBackground(command string, args []string, opts ...func(cmd *exec.Cmd) error) (*exec.Cmd, *bytes.Buffer, *bytes.Buffer, error) {
 	logging.Debug("Executing: %s %v", command, args)
 
-	cmd := exec.Command(command, args...)
+	cmd := Command(command, args...)
 	var stdoutBuf, stderrBuf bytes.Buffer
 
 	for _, optSetter := range opts {

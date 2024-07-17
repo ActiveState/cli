@@ -25,6 +25,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
 // nullByte represents the null-terminator byte
@@ -765,6 +766,14 @@ func CopyFiles(src, dst string) error {
 	return copyFiles(src, dst, false)
 }
 
+type ErrAlreadyExist struct {
+	Path string
+}
+
+func (e *ErrAlreadyExist) Error() string {
+	return fmt.Sprintf("file already exists: %s", e.Path)
+}
+
 func copyFiles(src, dest string, remove bool) error {
 	if !DirExists(src) {
 		return locale.NewError("err_os_not_a_directory", "", src)
@@ -778,6 +787,7 @@ func copyFiles(src, dest string, remove bool) error {
 		return errs.Wrap(err, "os.ReadDir %s failed", src)
 	}
 
+	var errAlreadyExist error
 	for _, entry := range entries {
 		srcPath := filepath.Join(src, entry.Name())
 		destPath := filepath.Join(dest, entry.Name())
@@ -787,15 +797,24 @@ func copyFiles(src, dest string, remove bool) error {
 			return errs.Wrap(err, "os.Lstat %s failed", srcPath)
 		}
 
+		if !fileInfo.IsDir() && TargetExists(destPath) {
+			errAlreadyExist = errs.Pack(errAlreadyExist, &ErrAlreadyExist{destPath})
+			continue
+		}
+
 		switch fileInfo.Mode() & os.ModeType {
 		case os.ModeDir:
 			err := MkdirUnlessExists(destPath)
 			if err != nil {
 				return errs.Wrap(err, "MkdirUnlessExists %s failed", destPath)
 			}
-			err = CopyFiles(srcPath, destPath)
+			err = copyFiles(srcPath, destPath, remove)
 			if err != nil {
-				return errs.Wrap(err, "CopyFiles %s:%s failed", srcPath, destPath)
+				if errors.As(err, ptr.To(&ErrAlreadyExist{})) {
+					errAlreadyExist = errs.Pack(errAlreadyExist, err)
+				} else {
+					return errs.Wrap(err, "CopyFiles %s:%s failed", srcPath, destPath)
+				}
 			}
 		case os.ModeSymlink:
 			err := CopySymlink(srcPath, destPath)
@@ -814,6 +833,12 @@ func copyFiles(src, dest string, remove bool) error {
 		if err := os.RemoveAll(src); err != nil {
 			return errs.Wrap(err, "os.RemovaAll %s failed", src)
 		}
+	}
+
+	// If some files already exist we want to error on this, but only after all other remaining files have been copied.
+	// If ANY other type of error occurs then we don't bubble this up as this is the only error we handle that's non-critical.
+	if errAlreadyExist != nil {
+		return errAlreadyExist
 	}
 
 	return nil
@@ -959,6 +984,13 @@ func ResolvePath(path string) (string, error) {
 	return evalPath, nil
 }
 
+func ResolvePathIfPossible(path string) string {
+	if resolvedPath, err := ResolveUniquePath(path); err == nil {
+		return resolvedPath
+	}
+	return path
+}
+
 // PathsEqual checks whether the paths given all resolve to the same path
 func PathsEqual(paths ...string) (bool, error) {
 	if len(paths) < 2 {
@@ -1075,7 +1107,7 @@ type DirEntry struct {
 	rootPath     string
 }
 
-func (d DirEntry) Path() string {
+func (d DirEntry) AbsolutePath() string {
 	return d.absolutePath
 }
 
@@ -1084,9 +1116,19 @@ func (d DirEntry) RelativePath() string {
 	return strings.TrimPrefix(d.absolutePath, d.rootPath)
 }
 
+type DirEntries []DirEntry
+
+func (d DirEntries) RelativePaths() []string {
+	result := []string{}
+	for _, de := range d {
+		result = append(result, de.RelativePath())
+	}
+	return result
+}
+
 // ListDir recursively lists filepaths under the given sourcePath
 // This does not follow symlinks
-func ListDir(sourcePath string, includeDirs bool) ([]DirEntry, error) {
+func ListDir(sourcePath string, includeDirs bool) (DirEntries, error) {
 	result := []DirEntry{}
 	sourcePath = filepath.Clean(sourcePath)
 	if err := filepath.WalkDir(sourcePath, func(path string, f fs.DirEntry, err error) error {

@@ -26,12 +26,23 @@ func (suite *ErrorsIntegrationTestSuite) TestTips() {
 	ts.IgnoreLogErrors()
 }
 
-func (suite *ErrorsIntegrationTestSuite) TestMultiError() {
+func (suite *ErrorsIntegrationTestSuite) TestMultiErrorWithInput() {
 	suite.OnlyRunForTags(tagsuite.Errors, tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("__test", "multierror")
+	cp := ts.Spawn("__test", "multierror-input")
+	cp.ExpectRe(`\s+x error1.\s+\s+x error2.\s+x error3.\s+x error4.\s+█\s+Need More Help`)
+	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
+}
+
+func (suite *ErrorsIntegrationTestSuite) TestMultiErrorWithoutInput() {
+	suite.OnlyRunForTags(tagsuite.Errors, tagsuite.Critical)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("__test", "multierror-noinput")
 	cp.ExpectRe(`\s+x error1.\s+\s+x error2.\s+x error3.\s+x error4.\s+█\s+Need More Help`)
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()

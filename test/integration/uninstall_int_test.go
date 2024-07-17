@@ -68,7 +68,7 @@ func (suite *UninstallIntegrationTestSuite) install(ts *e2e.Session) string {
 }
 
 func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	appInstallDir := suite.install(ts)

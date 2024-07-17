@@ -2,12 +2,10 @@ module github.com/ActiveState/cli
 
 go 1.22
 
-replace cloud.google.com/go => cloud.google.com/go v0.110.0
-
 require (
 	github.com/99designs/gqlgen v0.17.19
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
-	github.com/ActiveState/termtest v0.7.3-0.20240522153407-fcd066736664
+	github.com/ActiveState/termtest v0.7.3-0.20240703202616-34f7899287a4
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 	github.com/alecthomas/participle/v2 v2.0.0
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
@@ -16,7 +14,6 @@ require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/creack/pty v1.1.11
 	github.com/dave/jennifer v0.18.0
-	github.com/faiface/mainthread v0.0.0-20171120011319-8b78f0a41ae3
 	github.com/fatih/color v1.10.0
 	github.com/felixge/fgprof v0.9.0
 	github.com/fsnotify/fsnotify v1.4.7
@@ -49,7 +46,7 @@ require (
 	github.com/posener/wstest v0.0.0-20180216222922-04b166ca0bf1
 	github.com/rollbar/rollbar-go v1.1.0
 	github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0
-	github.com/shirou/gopsutil/v3 v3.23.8
+	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/skratchdot/open-golang v0.0.0-20190104022628-a2dfa6d0dab6
 	github.com/spf13/cast v1.3.0
 	github.com/spf13/cobra v1.1.1
@@ -58,7 +55,6 @@ require (
 	github.com/thoas/go-funk v0.8.0
 	github.com/vbauerster/mpb/v7 v7.1.5
 	github.com/vektah/gqlparser/v2 v2.5.1
-	go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352
 	golang.org/x/crypto v0.23.0 // indirect
 	golang.org/x/net v0.25.0
 	golang.org/x/sys v0.20.0
@@ -76,7 +72,6 @@ require (
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/lipgloss v0.9.1
 	github.com/go-git/go-git/v5 v5.12.0
-	github.com/imacks/bitflags-go v1.0.0
 	github.com/klauspost/compress v1.11.4
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/zijiren233/yaml-comment v0.2.1
@@ -172,7 +167,7 @@ require (
 	github.com/valyala/fasttemplate v1.2.1 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	github.com/yusufpapurcu/wmi v1.2.3 // indirect
+	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.mongodb.org/mongo-driver v1.5.3 // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/time v0.1.0 // indirect

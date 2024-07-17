@@ -37,6 +37,10 @@ type Commit struct {
 	buildscript *buildscript.BuildScript
 }
 
+func (c *Commit) CommitUUID() strfmt.UUID {
+	return c.Commit.CommitID
+}
+
 func (c *Commit) BuildPlan() *buildplan.BuildPlan {
 	return c.buildplan
 }

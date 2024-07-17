@@ -20,17 +20,21 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/commit"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
 
 type Pull struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	prompt    prompt.Prompter
 	project   *project.Project
 	auth      *authentication.Auth
@@ -62,6 +66,7 @@ type primeable interface {
 
 func New(prime primeable) *Pull {
 	return &Pull{
+		prime,
 		prime.Prompt(),
 		prime.Project(),
 		prime.Auth(),
@@ -210,7 +215,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		})
 	}
 
-	_, err = runtime.SolveAndUpdate(p.auth, p.out, p.analytics, p.project, resultingCommit, target.TriggerPull, p.svcModel, p.cfg, runtime.OptOrderChanged)
+	_, err = runtime_runbit.Update(p.prime, trigger.TriggerPull)
 	if err != nil {
 		return locale.WrapError(err, "err_pull_refresh", "Could not refresh runtime after pull")
 	}
@@ -279,7 +284,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	}
 
 	// Attempt the merge.
-	mergedScript, err := scriptA.Merge(scriptB, strategies)
+	err = scriptA.Merge(scriptB, strategies)
 	if err != nil {
 		err := buildscript_runbit.GenerateAndWriteDiff(p.project, scriptA, scriptB)
 		if err != nil {
@@ -289,7 +294,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	}
 
 	// Write the merged build expression as a local build script.
-	return buildscript_runbit.Update(p.project, mergedScript)
+	return buildscript_runbit.Update(p.project, scriptA)
 }
 
 func resolveRemoteProject(prj *project.Project) (*project.Namespaced, error) {

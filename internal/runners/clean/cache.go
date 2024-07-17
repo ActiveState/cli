@@ -10,8 +10,8 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/svcctl"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/runtime_helpers"
 )
 
 type Cache struct {
@@ -97,10 +97,13 @@ func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) err
 		}
 	}
 
-	projectInstallPath := target.ProjectDirToTargetDir(projectDir, storage.CachePath())
-	logging.Debug("Remove project path: %s", projectInstallPath)
-	err := os.RemoveAll(projectInstallPath)
+	projectInstallPath, err := runtime_helpers.TargetDirFromProjectDir(projectDir)
 	if err != nil {
+		return errs.Wrap(err, "Failed to determine project install path")
+	}
+
+	logging.Debug("Remove project path: %s", projectInstallPath)
+	if err := os.RemoveAll(projectInstallPath); err != nil {
 		return locale.WrapError(err, "err_clean_remove_artifact", "Could not remove cached runtime environment for project: {{.V0}}", namespace)
 	}
 
