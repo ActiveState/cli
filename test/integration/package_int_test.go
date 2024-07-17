@@ -658,7 +658,7 @@ func (suite *PackageIntegrationTestSuite) TestResolved() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "requests")
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.Spawn("packages")
 	cp.Expect("Auto →")
@@ -678,7 +678,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_NoPrompt() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "urllib3@2.0.2")
-	cp.Expect("Warning: Dependency has 2 known vulnerabilities")
+	cp.Expect("Warning: Dependency has 2 known vulnerabilities", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 

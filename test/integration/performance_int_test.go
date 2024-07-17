@@ -55,7 +55,11 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 	for x := 0; x < samples+1; x++ {
 		opts := []e2e.SpawnOptSetter{
 			e2e.OptArgs(commands...),
-			e2e.OptAppendEnv(constants.DisableUpdates+"=true", constants.ProfileEnvVarName+"=true"),
+			e2e.OptAppendEnv(
+				constants.DisableUpdates+"=true",
+				constants.ProfileEnvVarName+"=true",
+				constants.DisableRuntime+"=true",
+			),
 		}
 		termtestLogs := &bytes.Buffer{}
 		if verbose {

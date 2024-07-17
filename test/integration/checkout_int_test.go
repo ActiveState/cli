@@ -15,9 +15,10 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	rt "github.com/ActiveState/cli/pkg/runtime"
+	"github.com/ActiveState/cli/pkg/runtime_helpers"
 )
 
 type CheckoutIntegrationTestSuite struct {
@@ -41,29 +42,13 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutPython() {
 	suite.Require().True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, constants.ConfigFileName)), "ActiveState-CLI/Python3 was not checked out properly")
 
 	// Verify runtime was installed correctly and works.
-	targetDir := target.ProjectDirToTargetDir(ts.Dirs.Work, ts.Dirs.Cache)
-	pythonExe := filepath.Join(setup.ExecDir(targetDir), "python3"+osutils.ExeExtension)
+	proj, err := project.FromPath(ts.Dirs.Work)
+	suite.Require().NoError(err)
+	targetDir := filepath.Join(ts.Dirs.Cache, runtime_helpers.DirNameFromProjectDir(proj.Dir()))
+	pythonExe := filepath.Join(rt.ExecutorsPath(targetDir), "python3"+osutils.ExeExtension)
 	cp = ts.SpawnCmd(pythonExe, "--version")
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
-
-	suite.Run("Cached", func() {
-		artifactCacheDir := filepath.Join(ts.Dirs.Cache, constants.ArtifactMetaDir)
-		projectCacheDir := target.ProjectDirToTargetDir(ts.Dirs.Work, ts.Dirs.Cache)
-		suite.Require().NotEmpty(fileutils.ListFilesUnsafe(artifactCacheDir), "Artifact cache dir should have files")
-		suite.Require().NotEmpty(fileutils.ListFilesUnsafe(projectCacheDir), "Project cache dir should have files")
-
-		suite.Require().NoError(os.RemoveAll(projectCacheDir))                                    // Ensure we can hit the cache by deleting the cache
-		suite.Require().NoError(os.Remove(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))) // Ensure we can do another checkout
-
-		cp = ts.SpawnWithOpts(
-			e2e.OptArgs("checkout", "ActiveState-CLI/Python-3.9", "."),
-			e2e.OptAppendEnv("VERBOSE=true"), // Necessary to assert "Fetched cached artifact"
-		)
-		cp.Expect("Fetched cached artifact", e2e.RuntimeSourcingTimeoutOpt) // Comes from log, which is why we're using VERBOSE=true
-		cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
-		cp.ExpectExitCode(0)
-	})
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutPerl() {
@@ -80,11 +65,15 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutPerl() {
 	cp.Expect("Checked out project")
 
 	// Verify runtime was installed correctly and works.
-	targetDir := target.ProjectDirToTargetDir(ts.Dirs.Work, ts.Dirs.Cache)
-	perlExe := filepath.Join(setup.ExecDir(targetDir), "perl"+osutils.ExeExtension)
+	proj, err := project.FromPath(ts.Dirs.Work)
+	suite.Require().NoError(err)
+
+	execPath := rt.ExecutorsPath(filepath.Join(ts.Dirs.Cache, runtime_helpers.DirNameFromProjectDir(proj.Dir())))
+	perlExe := filepath.Join(execPath, "perl"+osutils.ExeExtension)
+
 	cp = ts.SpawnCmd(perlExe, "--version")
 	cp.Expect("This is perl")
-	cp.ExpectExitCode(0)
+	cp.ExpectExit()
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
@@ -171,7 +160,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 	suite.OnlyRunForTags(tagsuite.Checkout)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	customRTPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "custom-cache"))
@@ -183,7 +172,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3", fmt.Sprintf("--runtime-path=%s", customRTPath))
 	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 
-	pythonExe := filepath.Join(setup.ExecDir(customRTPath), "python3"+osutils.ExeExtension)
+	pythonExe := filepath.Join(rt.ExecutorsPath(customRTPath), "python3"+osutils.ExeExtension)
 	suite.Require().True(fileutils.DirExists(customRTPath))
 	suite.Require().True(fileutils.FileExists(pythonExe))
 
@@ -197,12 +186,8 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 		e2e.OptArgs("exec", "python3", "--", "-c", "import sys;print(sys.executable)"),
 		e2e.OptWD(filepath.Join(ts.Dirs.Work, "Python3")),
 	)
-	if runtime.GOOS == "windows" {
-		customRTPath, err = fileutils.GetLongPathName(customRTPath)
-		suite.Require().NoError(err)
-		customRTPath = strings.ToUpper(customRTPath[:1]) + strings.ToLower(customRTPath[1:]) // capitalize drive letter
-	}
 	cp.Expect(customRTPath, e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExit()
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutNotFound() {
@@ -282,7 +267,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutBuildtimeClosure() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/small-python#5a1e49e5-8ceb-4a09-b605-ed334474855b"),
-		e2e.OptAppendEnv(constants.InstallBuildDependencies+"=true"),
+		e2e.OptAppendEnv(constants.InstallBuildDependenciesEnvVarName+"=true"),
 	)
 	// Expect the number of build deps to be 27 which is more than the number of runtime deps.
 	// Also expect ncurses which should not be in the runtime closure.

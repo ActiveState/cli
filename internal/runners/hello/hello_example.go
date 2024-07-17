@@ -14,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/example"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -70,7 +70,7 @@ func rationalizeError(err *error) {
 	switch {
 	case err == nil:
 		return
-	case errs.Matches(*err, &runbits.NoNameProvidedError{}):
+	case errs.Matches(*err, &example.NoNameProvidedError{}):
 		// Errors that we are looking for should be wrapped in a user-facing error.
 		// Ensure we wrap the top-level error returned from the runner and not
 		// the unpacked error that we are inspecting.
@@ -100,7 +100,7 @@ func (h *Hello) Run(params *Params) (rerr error) {
 	// Reusable runner logic is contained within the runbits package.
 	// You should only use this if you intend to share logic between
 	// runners. Runners should NEVER invoke other runners.
-	if err := runbits.SayHello(h.out, params.Name); err != nil {
+	if err := example.SayHello(h.out, params.Name); err != nil {
 		// Errors should nearly always be localized.
 		return errs.Wrap(
 			err, "Cannot say hello.",

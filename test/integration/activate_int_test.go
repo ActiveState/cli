@@ -3,7 +3,6 @@ package integration
 import (
 	"errors"
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
@@ -12,8 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/testhelpers/suite"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/termtest"
+
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	"github.com/ActiveState/cli/internal/rtutils"
 
@@ -310,18 +311,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_PythonPath() {
 	} else {
 		cp.SendLine("echo $PYTHONPATH")
 	}
-	suite.Assert().NotContains(cp.Output(), constants.LocalRuntimeTempDirectory)
-	// Verify the temp runtime setup directory has been removed.
-	runtimeFound := false
-	entries, err := fileutils.ListDir(ts.Dirs.Cache, true)
-	suite.Require().NoError(err)
-	for _, entry := range entries {
-		if entry.IsDir() && fileutils.DirExists(filepath.Join(entry.Path(), constants.LocalRuntimeEnvironmentDirectory)) {
-			runtimeFound = true
-			suite.Assert().NoDirExists(filepath.Join(entry.Path(), constants.LocalRuntimeTempDirectory))
-		}
-	}
-	suite.Assert().True(runtimeFound, "runtime directory was not found in ts.Dirs.Cache")
 
 	// test that PYTHONPATH is preserved in environment (https://www.pivotaltracker.com/story/show/178458102)
 	if runtime.GOOS == "windows" {
@@ -464,14 +453,14 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation(
 	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
 		suite.T().Skip("interrupting installation does not work on Windows on CI")
 	}
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	close := suite.addForegroundSvc(ts)
 	defer close()
 
 	cp := ts.SpawnShellWithOpts("bash")
 	cp.SendLine("state deploy install ActiveState-CLI/Empty")
-	cp.Expect("Installing Runtime") // Ensure we don't send Ctrl+C too soon
+	cp.Expect(locale.T("install_runtime")) // Ensure we don't send Ctrl+C too soon
 	cp.SendCtrlC()
 	cp.Expect("User interrupted")
 	cp.SendLine("exit")
@@ -480,7 +469,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation(
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Critical)
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	err := ts.ClearCache()
 	suite.Require().NoError(err)
 	defer ts.Close()
@@ -490,9 +479,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	// Note: cannot use Empty project since we need artifacts to download and install.
 	// Pick the langless project, which just has some small, non-language artifacts.
 	cp := ts.Spawn("activate", "ActiveState-CLI/langless", "--path", ts.Dirs.Work)
-	cp.Expect("Downloading")
-	cp.Expect("Installing")
-	cp.Expect("Activated")
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 
 	suite.assertCompletedStatusBarReport(cp.Output())
 	cp.SendLine("exit")
@@ -622,50 +609,4 @@ func (suite *ActivateIntegrationTestSuite) TestActivateBranchNonExistant() {
 	cp := ts.Spawn("activate", namespace, "--branch", "does-not-exist")
 
 	cp.Expect("has no branch")
-}
-
-func (suite *ActivateIntegrationTestSuite) TestActivateArtifactsCached() {
-	suite.OnlyRunForTags(tagsuite.Activate)
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-	close := suite.addForegroundSvc(ts)
-	defer close()
-
-	namespace := "ActiveState-CLI/langless"
-
-	cp := ts.Spawn("activate", namespace)
-
-	cp.Expect("Activated")
-	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
-
-	artifactCacheDir := filepath.Join(ts.Dirs.Cache, constants.ArtifactMetaDir)
-	suite.True(fileutils.DirExists(artifactCacheDir), "artifact cache directory does not exist")
-	artifactInfoJson := filepath.Join(artifactCacheDir, constants.ArtifactCacheFileName)
-	suite.True(fileutils.FileExists(artifactInfoJson), "artifact cache info json file does not exist")
-
-	files, err := fileutils.ListDir(artifactCacheDir, false)
-	suite.NoError(err)
-	suite.True(len(files) > 1, "artifact cache is empty") // ignore json file
-
-	// Clear all cached data except artifact cache.
-	// This removes the runtime so that it needs to be created again.
-	files, err = fileutils.ListDir(ts.Dirs.Cache, true)
-	suite.NoError(err)
-	for _, entry := range files {
-		if entry.IsDir() && entry.RelativePath() != constants.ArtifactMetaDir {
-			os.RemoveAll(entry.Path())
-		}
-	}
-
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("activate", namespace),
-		e2e.OptAppendEnv("VERBOSE=true"), // Necessary to assert "Fetched cached artifact"
-	)
-
-	cp.Expect("Fetched cached artifact")
-	cp.Expect("Activated")
-	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
 }

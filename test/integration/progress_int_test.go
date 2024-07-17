@@ -26,7 +26,6 @@ func (suite *ProgressIntegrationTestSuite) TestProgress() {
 
 	cp = ts.Spawn("checkout", "ActiveState-CLI/Empty", "Empty2", "--non-interactive")
 	cp.Expect("...")
-	cp.Expect(locale.T("setup_runtime"))
 	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 

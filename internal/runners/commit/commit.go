@@ -12,11 +12,9 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 )
 
 type primeable interface {
@@ -143,15 +141,15 @@ func (c *Commit) Run() (rerr error) {
 	}()
 
 	// Solve runtime
-	_, rtCommit, err := runtime.Solve(c.prime.Auth(), out, c.prime.Analytics(), proj, &stagedCommitID, target.TriggerCommit, c.prime.SvcModel(), c.prime.Config(), runtime.OptMinimalUI)
+	rtCommit, err := bp.FetchCommit(stagedCommitID, proj.Owner(), proj.Name(), nil)
 	if err != nil {
-		return errs.Wrap(err, "Could not solve runtime")
+		return errs.Wrap(err, "Could not fetch staged commit")
 	}
 
 	// Get old buildplan.
 	commit, err := bp.FetchCommit(localCommitID, proj.Owner(), proj.Name(), nil)
 	if err != nil {
-		return errs.Wrap(err, "Failed to fetch build result")
+		return errs.Wrap(err, "Failed to fetch old commit")
 	}
 	oldBuildPlan := commit.BuildPlan()
 

@@ -14,10 +14,10 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
@@ -30,6 +30,10 @@ type Params struct {
 }
 
 type Reset struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	out       output.Outputer
 	auth      *authentication.Auth
 	prompt    prompt.Prompter
@@ -51,6 +55,7 @@ type primeable interface {
 
 func New(prime primeable) *Reset {
 	return &Reset{
+		prime,
 		prime.Output(),
 		prime.Auth(),
 		prime.Prompt(),
@@ -131,7 +136,7 @@ func (r *Reset) Run(params *Params) error {
 		}
 	}
 
-	_, err = runtime.SolveAndUpdate(r.auth, r.out, r.analytics, r.project, &commitID, target.TriggerReset, r.svcModel, r.cfg, runtime.OptOrderChanged)
+	_, err = runtime_runbit.Update(r.prime, trigger.TriggerReset)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

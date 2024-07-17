@@ -353,7 +353,7 @@ type scriptPerformanceOptions struct {
 
 func (suite *PerformanceExpansionIntegrationTestSuite) testScriptPerformance(opts scriptPerformanceOptions) time.Duration {
 	suite.OnlyRunForTags(tagsuite.Performance)
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	suite.startSvc(ts)
