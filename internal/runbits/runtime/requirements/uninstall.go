@@ -209,7 +209,8 @@ func (r *RequirementOperation) getRequirementNamespace(requirement *Requirement,
 	}
 
 	for _, platID := range platforms {
-		if strfmt.UUID(platformID) == platID {
+		if platformID == platID.String() {
+			requirement.Name = platID.String()
 			return ptr.To(model.NewNamespacePlatform()), nil
 		}
 	}
