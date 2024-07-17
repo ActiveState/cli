@@ -236,7 +236,7 @@ func newExportBuildPlanCommand(prime *primer.Values) *captain.Command {
 
 	cmd := captain.NewCommand(
 		"buildplan",
-		locale.Tl("export_buildplan_title", "Build Plan"),
+		locale.Tl("export_buildplan_title", "Exporting Build Plan"),
 		locale.Tl("export_buildplan_description", "Export the build plan for your project"),
 		prime,
 		[]*captain.Flag{
