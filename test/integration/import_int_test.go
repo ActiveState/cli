@@ -45,10 +45,7 @@ func (suite *ImportIntegrationTestSuite) TestImport_detached() {
 	cp.Expect("ActiveState-CLI/small-python")
 	cp.Expect("Creating commit")
 	cp.Expect("Resolving Dependencies")
-	cp.Expect("Installing") // note: cannot assert the order of requests, urllib3 in summary
-	cp.Expect("includes")
-	cp.Expect("dependencies")
-	cp.Expect("Checking for vulnerabilities")
+	cp.Expect("Import Finished")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("packages")

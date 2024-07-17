@@ -7,12 +7,14 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runbits/buildplanner"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
-func rationalizeCommonError(err *error, auth *authentication.Auth) {
-	var invalidCommitIdErr *buildplanner.ErrInvalidCommitId
+func rationalizeCommonError(proj *project.Project, auth *authentication.Auth, err *error) {
+	var invalidCommitIdErr *errInvalidCommitId
 	var projectNotFoundErr *model.ErrProjectNotFound
 	var commitIdDoesNotExistInProject *buildplanner.ErrCommitDoesNotExistInProject
 
@@ -40,6 +42,11 @@ func rationalizeCommonError(err *error, auth *authentication.Auth) {
 				commitIdDoesNotExistInProject.CommitID,
 			),
 			errs.SetInput())
+
+	default:
+		runtime_runbit.RationalizeSolveError(proj, auth, err)
+		return
+
 	}
 
 }

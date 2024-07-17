@@ -84,7 +84,7 @@ scripts:
     language: bash
     description: Generates graph server and client files
     value: |
-      go install github.com/99designs/gqlgen@v0.17.24
+      go install github.com/99designs/gqlgen@v0.17.46
       cd ./cmd/state-svc && gqlgen --verbose
   - name: generate-test-update
     language: bash

@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/pkg/runtime_helpers"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constraints"
@@ -21,8 +22,6 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -147,7 +146,6 @@ func (s *Show) Run(params Params) error {
 	)
 
 	var projectDir string
-	var projectTarget string
 	if params.Remote != "" {
 		namespaced, err := project.ParseNamespace(params.Remote)
 		if err != nil {
@@ -202,8 +200,6 @@ func (s *Show) Run(params Params) error {
 				return locale.WrapError(err, "err_show_projectdir", "Could not resolve project directory symlink")
 			}
 		}
-
-		projectTarget = target.NewProjectTarget(s.project, nil, "").Dir()
 	}
 
 	remoteProject, err := model.LegacyFetchProjectByName(owner, projectName)
@@ -249,8 +245,8 @@ func (s *Show) Run(params Params) error {
 		rd.Location = projectDir
 	}
 
-	if projectTarget != "" {
-		rd.Executables = setup.ExecDir(projectTarget)
+	if params.Remote == "" {
+		rd.Executables = runtime_helpers.ExecutorPathFromProject(s.project)
 	}
 
 	outputData := outputData{

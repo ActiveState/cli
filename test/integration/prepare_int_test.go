@@ -8,8 +8,6 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/testhelpers/suite"
-
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	"github.com/ActiveState/cli/internal/config"
@@ -21,9 +19,10 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	rt "github.com/ActiveState/cli/pkg/platform/runtime/target"
+	rt "github.com/ActiveState/cli/pkg/runtime"
+	"github.com/ActiveState/cli/pkg/runtime_helpers"
 )
 
 type PrepareIntegrationTestSuite struct {
@@ -144,20 +143,19 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	suite.Assert().NoError(err, "should have removed executor directory, to ensure that it gets re-created")
 
 	// check existens of exec dir
-	targetDir := rt.ProjectDirToTargetDir(ts.Dirs.Work, ts.Dirs.Cache)
-	projectExecDir := setup.ExecDir(targetDir)
+	targetDir := filepath.Join(ts.Dirs.Cache, runtime_helpers.DirNameFromProjectDir(ts.Dirs.Work))
+	projectExecDir := rt.ExecutorsPath(targetDir)
 	suite.DirExists(projectExecDir)
 
-	// remove complete marker to force re-creation of executors
-	err = os.Remove(filepath.Join(targetDir, constants.LocalRuntimeEnvironmentDirectory, constants.RuntimeInstallationCompleteMarker))
-	suite.Assert().NoError(err, "removal of complete marker should have worked")
+	// Invalidate hash
+	hashPath := filepath.Join(targetDir, ".activestate", "hash.txt")
+	suite.Require().NoError(fileutils.WriteFile(hashPath, []byte("bogus")))
 
 	cp = ts.Spawn("_prepare")
 	cp.ExpectExitCode(0)
 
-	suite.FileExists(filepath.Join(globalExecDir, "python3"+osutils.ExeExtension))
-	err = os.RemoveAll(projectExecDir)
-	suite.Assert().NoError(err, "should have removed executor directory, to ensure that it gets re-created")
+	suite.Require().FileExists(filepath.Join(globalExecDir, "python3"+osutils.ExeExtension), ts.DebugMessage(""))
+	suite.Require().NoError(os.RemoveAll(projectExecDir), "should have removed executor directory, to ensure that it gets re-created")
 
 	cp = ts.Spawn("activate")
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
