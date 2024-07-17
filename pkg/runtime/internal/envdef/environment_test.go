@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/pkg/runtime/internal/envdef"
 	"github.com/stretchr/testify/require"
@@ -157,10 +158,18 @@ func (suite *EnvironmentTestSuite) TestGetEnv() {
 		}`), &ed1)
 	require.NoError(suite.T(), err)
 
-	res := ed1.GetEnv(true)
+	res := ed1.GetEnv(false)
 	suite.Assert().Equal(map[string]string{
 		"V": "a:b",
 	}, res)
+
+	res = ed1.GetEnv(true)
+	suite.Require().Contains(res, "V")
+	suite.Assert().Equal(res["V"], "a:b")
+	for k, v := range osutils.EnvSliceToMap(os.Environ()) {
+		suite.Require().Contains(res, k)
+		suite.Assert().Equal(res[k], v)
+	}
 }
 
 func (suite *EnvironmentTestSuite) TestFindBinPathFor() {
