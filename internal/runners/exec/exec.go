@@ -3,11 +3,12 @@ package exec
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 
-	rtrunbit "github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/pkg/executors"
 	"github.com/shirou/gopsutil/v3/process"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -15,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
-	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -23,16 +23,15 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/internal/scriptfile"
+	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/runtime"
 )
 
 type Configurable interface {
@@ -41,6 +40,10 @@ type Configurable interface {
 }
 
 type Exec struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	subshell  subshell.SubShell
 	proj      *project.Project
 	auth      *authentication.Auth
@@ -66,6 +69,7 @@ type Params struct {
 
 func New(prime primeable) *Exec {
 	return &Exec{
+		prime,
 		prime.Subshell(),
 		prime.Project(),
 		prime.Auth(),
@@ -88,7 +92,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		return nil
 	}
 
-	trigger := target.NewExecTrigger(args[0])
+	trigger := trigger.NewExecTrigger(args[0])
 
 	// Detect target and project dir
 	// If the path passed resolves to a runtime dir (ie. has a runtime marker) then the project is not used
@@ -117,18 +121,13 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		projectNamespace = proj.NamespaceString()
 	}
 
+	s.prime.SetProject(proj)
+
 	s.out.Notice(locale.Tr("operating_message", projectNamespace, projectDir))
 
-	rt, commit, err := rtrunbit.Solve(s.auth, s.out, s.analytics, proj, nil, trigger, s.svcModel, s.cfg, rtrunbit.OptMinimalUI)
+	rt, err := runtime_runbit.Update(s.prime, trigger, runtime_runbit.WithoutHeaders())
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize runtime")
-	}
-
-	if !s.cfg.GetBool(constants.AsyncRuntimeConfig) {
-		err = rtrunbit.UpdateByReference(rt, commit, s.auth, proj, s.out, s.cfg, rtrunbit.OptMinimalUI)
-		if err != nil {
-			return errs.Wrap(err, "Could not setup runtime")
-		}
 	}
 
 	venv := virtualenvironment.New(rt)
@@ -137,23 +136,16 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	if err != nil {
 		return locale.WrapError(err, "err_exec_env", "Could not retrieve environment information for your runtime")
 	}
-	logging.Debug("Trying to exec %s on PATH=%s", args[0], env["PATH"])
+
+	exeTarget := args[0]
 
 	if err := handleRecursion(env, args); err != nil {
 		return errs.Wrap(err, "Could not handle recursion")
 	}
 
-	exeTarget := args[0]
 	if !fileutils.TargetExists(exeTarget) {
-		rtDirs, err := rt.ExecutableDirs()
-		if err != nil {
-			return errs.Wrap(err, "Could not detect runtime executable paths")
-		}
-
-		RTPATH := strings.Join(rtDirs, string(os.PathListSeparator))
-
 		// Report recursive execution of executor: The path for the executable should be different from the default bin dir
-		exesOnPath := osutils.FilterExesOnPATH(args[0], RTPATH, func(exe string) bool {
+		exesOnPath := osutils.FilterExesOnPATH(exeTarget, env["PATH"], func(exe string) bool {
 			v, err := executors.IsExecutor(exe)
 			if err != nil {
 				logging.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
@@ -164,7 +156,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 
 		if len(exesOnPath) > 0 {
 			exeTarget = exesOnPath[0]
-		} else if osutils.FindExeOnPATH(exeTarget) == "" {
+		} else {
 			return errs.AddTips(locale.NewInputError(
 				"err_exec_not_found",
 				"The executable '{{.V0}}' was not found in your PATH or in your project runtime.",
@@ -187,25 +179,15 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		}
 	}
 
-	err = s.subshell.SetEnv(env)
+	_, _, err = osutils.ExecuteAndPipeStd(exeTarget, args[1:], osutils.EnvMapToSlice(env))
+	if eerr, ok := err.(*exec.ExitError); ok {
+		return errs.Silence(errs.WrapExitCode(eerr, eerr.ExitCode()))
+	}
 	if err != nil {
-		return locale.WrapError(err, "err_subshell_setenv")
+		return errs.Wrap(err, "Could not execute command")
 	}
 
-	lang := language.Bash
-	scriptArgs := fmt.Sprintf(`%q "$@"`, exeTarget)
-	if strings.Contains(s.subshell.Binary(), "cmd") {
-		lang = language.PowerShell
-		scriptArgs = fmt.Sprintf("& %q @args\nexit $LASTEXITCODE", exeTarget)
-	}
-
-	sf, err := scriptfile.New(lang, "state-exec", scriptArgs)
-	if err != nil {
-		return locale.WrapError(err, "err_exec_create_scriptfile", "Could not generate script")
-	}
-	defer sf.Clean()
-
-	return s.subshell.Run(sf.Filename(), args[1:]...)
+	return nil
 }
 
 func projectFromRuntimeDir(cfg projectfile.ConfigGetter, runtimeDir string) string {

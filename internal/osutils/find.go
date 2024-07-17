@@ -6,12 +6,13 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/fileutils"
+
 	"github.com/thoas/go-funk"
 )
 
 // FindExeOnPATH returns the first path from the PATH env var for which the executable exists
-func FindExeOnPATH(executable string) string {
-	exes := findExes(executable, os.Getenv("PATH"), exts, fileutils.TargetExists, nil)
+func FindExeOnPATH(executable string, PATH string) string {
+	exes := findExes(executable, PATH, exts, fileutils.TargetExists, nil)
 	if len(exes) == 0 {
 		return ""
 	}

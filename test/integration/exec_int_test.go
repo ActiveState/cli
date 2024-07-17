@@ -6,12 +6,17 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 	"testing"
+	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/termtest"
 )
 
 type ExecIntegrationTestSuite struct {
@@ -39,7 +44,13 @@ func (suite *ExecIntegrationTestSuite) TestExec_Environment() {
 	err = os.Chmod(testScript, 0777)
 	suite.Require().NoError(err)
 
-	cp := ts.Spawn("exec", testScript)
+	args := []string{"exec", "--", "bash", "-c", testScript}
+	if runtime.GOOS == "windows" {
+		args = []string{"exec", "--", "cmd", "/c", testScript}
+	}
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs(args...),
+	)
 	cp.ExpectExitCode(0)
 	output := cp.Output()
 	suite.Contains(output, ts.Dirs.Bin, "PATH was not updated to contain cache directory, original PATH:", os.Getenv("PATH"))
@@ -66,55 +77,14 @@ func (suite *ExecIntegrationTestSuite) TestExec_ExitCode() {
 	err = os.Chmod(testScript, 0777)
 	suite.Require().NoError(err)
 
-	cp := ts.Spawn("exec", "--", testScript)
-	cp.ExpectExitCode(42)
-}
-
-func (suite *ExecIntegrationTestSuite) TestExec_Args() {
-	suite.OnlyRunForTags(tagsuite.Exec)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	ts.PrepareEmptyProject()
-
-	scriptBlock := `
-for i; do
-    echo $i
-done
-echo "Number of arguments: $#"
-`
-
-	filename := fmt.Sprintf("%s/%s.sh", ts.Dirs.Work, suite.T().Name())
+	args := []string{"exec", "--", "bash", "-c", testScript}
 	if runtime.GOOS == "windows" {
-		scriptBlock = `
-		set argCount=0
-		for %%a in (%*) do (
-			echo %%a
-			set /A argCount+=1
-		)
-		echo Number of arguments: %argCount%`
-		filename = fmt.Sprintf("%s/%s.bat", ts.Dirs.Work, suite.T().Name())
+		args = []string{"exec", "--", "cmd", "/c", testScript}
 	}
-
-	testScript := filepath.Join(filename)
-	err := fileutils.WriteFile(testScript, []byte(scriptBlock))
-	suite.Require().NoError(err)
-
-	err = os.Chmod(testScript, 0777)
-	suite.Require().NoError(err)
-
-	args := []string{
-		"firstArgument",
-		"secondArgument",
-		"thirdArgument",
-	}
-
-	cp := ts.Spawn("exec", "--", testScript, args[0], args[1], args[2])
-	cp.Expect(args[0])
-	cp.Expect(args[1])
-	cp.Expect(args[2])
-	cp.Expect(fmt.Sprintf("Number of arguments: %d", len(args)))
-	cp.ExpectExitCode(0)
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs(args...),
+	)
+	cp.ExpectExitCode(42)
 }
 
 func (suite *ExecIntegrationTestSuite) TestExec_Input() {
@@ -144,7 +114,13 @@ echo "Hello $name!"
 	err = os.Chmod(testScript, 0777)
 	suite.Require().NoError(err)
 
-	cp := ts.Spawn("exec", "--", testScript)
+	args := []string{"exec", "--", "bash", "-c", testScript}
+	if runtime.GOOS == "windows" {
+		args = []string{"exec", "--", "cmd", "/c", testScript}
+	}
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs(args...),
+	)
 	cp.SendLine("ActiveState")
 	cp.Expect("Hello ActiveState!")
 	cp.ExpectExitCode(0)
@@ -165,8 +141,10 @@ func (suite *ExecIntegrationTestSuite) TestExecWithPath() {
 	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("exec", "--path", pythonDir, "which", "python3")
-	cp.Expect("Operating on project ActiveState-CLI/Python-3.9")
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("exec", "--path", pythonDir, "--", "bash", "-c", "which python3"),
+	)
+	cp.Expect("Operating on project ActiveState-CLI/Python-3.9", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectRe(regexp.MustCompile("cache/[0-9A-Fa-f]+/usr/bin/python3").String())
 	cp.ExpectExitCode(0)
 
@@ -176,19 +154,29 @@ func (suite *ExecIntegrationTestSuite) TestExecWithPath() {
 
 }
 
-func (suite *ExecIntegrationTestSuite) TestExecPerlArgs() {
+func (suite *ExecIntegrationTestSuite) TestExeBatArguments() {
 	suite.OnlyRunForTags(tagsuite.Exec)
-	ts := e2e.New(suite.T(), false)
+
+	if runtime.GOOS != "windows" {
+		suite.T().Skip("This test is only for windows")
+	}
+
+	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/Perl-5.32", "a4762408-def6-41e4-b709-4cb548765005")
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
 
-	suite.NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "testargs.pl"), []byte(`
-printf "Argument: '%s'.\n", $ARGV[0];
-`)))
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
 
-	cp := ts.Spawn("exec", "perl", "testargs.pl", "<3")
-	cp.Expect("Argument: '<3'", e2e.RuntimeSourcingTimeoutOpt)
+	root := environment.GetRootPathUnsafe()
+	reportBat := filepath.Join(root, "test", "integration", "testdata", "batarguments", "report.bat")
+	suite.Require().FileExists(reportBat)
+
+	inputs := []string{"a<b", "b>a", "hello world", "&whoami", "imnot|apipe", "%NotAppData%", "^NotEscaped", "(NotAGroup)"}
+	outputs := `"` + strings.Join(inputs, `" "`) + `"`
+	cp = ts.SpawnWithOpts(e2e.OptArgs(append([]string{"exec", reportBat, "--"}, inputs...)...))
+	cp.Expect(outputs, termtest.OptExpectTimeout(5*time.Second))
 	cp.ExpectExitCode(0)
 }
 

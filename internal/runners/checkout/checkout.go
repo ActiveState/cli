@@ -18,11 +18,12 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -43,9 +44,14 @@ type primeable interface {
 	primer.Configurer
 	primer.SvcModeler
 	primer.Analyticer
+	primer.Projecter
 }
 
 type Checkout struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	auth      *authentication.Auth
 	out       output.Outputer
 	checkout  *checkout.Checkout
@@ -57,6 +63,7 @@ type Checkout struct {
 
 func NewCheckout(prime primeable) *Checkout {
 	return &Checkout{
+		prime,
 		prime.Auth(),
 		prime.Output(),
 		checkout.New(git.NewRepo(), prime),
@@ -68,6 +75,8 @@ func NewCheckout(prime primeable) *Checkout {
 }
 
 func (u *Checkout) Run(params *Params) (rerr error) {
+	defer func() { runtime_runbit.RationalizeSolveError(u.prime.Project(), u.auth, &rerr) }()
+
 	logging.Debug("Checkout %v", params.Namespace)
 
 	logging.Debug("Checking out %s to %s", params.Namespace.String(), params.PreferredPath)
@@ -84,6 +93,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 	if err != nil {
 		return locale.WrapError(err, "err_project_frompath")
 	}
+	u.prime.SetProject(proj)
 
 	// If an error occurs, remove the created activestate.yaml file and/or directory.
 	if !params.Force {
@@ -107,19 +117,33 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		}()
 	}
 
-	rti, commit, err := runtime.Solve(u.auth, u.out, u.analytics, proj, nil, target.TriggerCheckout, u.svcModel, u.config, runtime.OptNoIndent)
+	commitID, err := localcommit.Get(proj.Path())
 	if err != nil {
-		return errs.Wrap(err, "Could not checkout project")
+		return errs.Wrap(err, "Could not get local commit")
 	}
+
+	// Solve runtime
+	solveSpinner := output.StartSpinner(u.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
+	bpm := bpModel.NewBuildPlannerModel(u.auth)
+	commit, err := bpm.FetchCommit(commitID, proj.Owner(), proj.Name(), nil)
+	if err != nil {
+		solveSpinner.Stop(locale.T("progress_fail"))
+		return errs.Wrap(err, "Failed to fetch build result")
+	}
+	solveSpinner.Stop(locale.T("progress_success"))
+
 	dependencies.OutputSummary(u.out, commit.BuildPlan().RequestedArtifacts())
-	err = runtime.UpdateByReference(rti, commit, u.auth, proj, u.out, u.config, runtime.OptNone)
+	rti, err := runtime_runbit.Update(u.prime, trigger.TriggerCheckout,
+		runtime_runbit.WithCommit(commit),
+	)
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime")
 	}
 
+	var execDir string
 	var checkoutStatement string
-	execDir := setup.ExecDir(rti.Target().Dir())
 	if !u.config.GetBool(constants.AsyncRuntimeConfig) {
+		execDir = rti.Env(false).ExecutorsPath
 		checkoutStatement = locale.Tr("checkout_project_statement", proj.NamespaceString(), proj.Dir(), execDir)
 	} else {
 		checkoutStatement = locale.Tr("checkout_project_statement_async", proj.NamespaceString(), proj.Dir())

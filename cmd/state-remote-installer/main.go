@@ -123,7 +123,7 @@ func main() {
 		"state-installer",
 		"",
 		"Installs or updates the State Tool",
-		primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an),
+		primer.New(out, cfg, an),
 		[]*captain.Flag{ // The naming of these flags is slightly inconsistent due to backwards compatibility requirements
 			{
 				Name:        "channel",

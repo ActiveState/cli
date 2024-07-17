@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -20,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 )
 
 const (
@@ -138,9 +138,9 @@ func (i *Import) Run(params *ImportRunParams) error {
 	pg = nil
 
 	// Solve the runtime.
-	rt, rtCommit, err := runtime.Solve(auth, out, i.prime.Analytics(), proj, &commitID, target.TriggerImport, i.prime.SvcModel(), i.prime.Config(), runtime.OptNone)
+	rtCommit, err := bp.FetchCommit(latestCommit, proj.Owner(), proj.Name(), nil)
 	if err != nil {
-		return errs.Wrap(err, "Could not solve runtime")
+		return errs.Wrap(err, "Failed to fetch build result for previous commit")
 	}
 
 	// Output change summary.
@@ -161,16 +161,12 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
-	// Update the runtime.
-	if !i.prime.Config().GetBool(constants.AsyncRuntimeConfig) {
-		out.Notice("")
-
-		// refresh or install runtime
-		err = runtime.UpdateByReference(rt, rtCommit, auth, proj, out, i.prime.Config(), runtime.OptNone)
-		if err != nil {
-			return errs.Wrap(err, "Failed to update runtime")
-		}
+	_, err = runtime_runbit.Update(i.prime, trigger.TriggerImport, runtime_runbit.WithCommitID(commitID))
+	if err != nil {
+		return errs.Wrap(err, "Runtime update failed")
 	}
+
+	out.Notice(locale.Tl("import_finished", "Import Finished"))
 
 	return nil
 }

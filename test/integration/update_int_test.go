@@ -132,7 +132,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	suite.testUpdate(ts, filepath.Dir(ts.Dirs.Bin))
@@ -175,7 +175,7 @@ func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir str
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
 	suite.OnlyRunForTags(tagsuite.Update)
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
@@ -290,7 +290,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 	// suite.T().Skip("Test will not work until v0.34.0")
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	suite.testAutoUpdate(ts, filepath.Dir(ts.Dirs.Bin))
@@ -359,7 +359,7 @@ func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Ses
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdateToCurrent() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	installDir := filepath.Join(ts.Dirs.Work, "install")
@@ -378,7 +378,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateToCurrent() {
 	}
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	installDir := filepath.Join(ts.Dirs.Work, "install")

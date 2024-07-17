@@ -21,7 +21,6 @@ func (suite *RefreshIntegrationTestSuite) TestRefresh() {
 	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI/Branches", "main", "35af7414-b44b-4fd7-aa93-2ecad337ed2b")
 
 	cp := ts.Spawn("refresh")
-	cp.Expect("Setting Up Runtime")
 	cp.Expect("Runtime updated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
@@ -32,7 +31,6 @@ func (suite *RefreshIntegrationTestSuite) TestRefresh() {
 
 	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI/Branches", "secondbranch", "46c83477-d580-43e2-a0c6-f5d3677517f1")
 	cp = ts.Spawn("refresh")
-	cp.Expect("Setting Up Runtime")
 	cp.Expect("Runtime updated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
@@ -40,9 +38,8 @@ func (suite *RefreshIntegrationTestSuite) TestRefresh() {
 	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.Spawn("refresh")
-	suite.Assert().NotContains(cp.Output(), "Setting Up Runtime", "Unchanged runtime should not refresh")
-	cp.Expect("Runtime updated")
-	cp.ExpectExitCode(0)
+	cp.Expect("already up to date")
+	cp.ExpectExitCode(1)
 }
 
 func (suite *RefreshIntegrationTestSuite) TestJSON() {

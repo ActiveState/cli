@@ -8,8 +8,9 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/google/uuid"
+
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -51,7 +52,7 @@ func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string, tar
 	}
 
 	cp.Expect("Installing", e2e.RuntimeSourcingTimeoutOpt)
-	cp.Expect("Configuring")
+	cp.Expect("Configuring", e2e.RuntimeSourcingTimeoutOpt)
 	if runtime.GOOS != "windows" {
 		cp.Expect("Symlinking")
 	}
