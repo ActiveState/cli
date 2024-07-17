@@ -151,6 +151,8 @@ building:
   other: Building
 downloading:
   other: Downloading
+unpacking:
+  other: Unpacking
 installing:
   other: Installing
 unknown_value:
@@ -390,10 +392,6 @@ installer_err_runtime_no_executable:
   other: Expected runtime installer '[NOTICE]{{.V0}}[/RESET]' to include '[ACTIONABLE]{{.V1}}[/RESET]' or '[ACTIONABLE]{{.V2}}[/RESET]'
 installer_err_runtime_no_file:
   other: Expected runtime installer '[NOTICE]{{.V0}}[/RESET]' to include '[ACTIONABLE]{{.V1}}[/RESET]'
-installer_err_runtime_executable_not_exec:
-  other: Executable '[NOTICE]{{.V1}}[/RESET]' does not have execute permissions for runtime '[NOTICE]{{.V0}}[/RESET]'
-installer_err_fail_obtain_prefixes:
-  other: Unable to obtain relocation prefixes for runtime '[NOTICE]{{.V0}}[/RESET]'
 build_status_in_progress:
   other: "Your changes are currently being built remotely on the ActiveState Platform. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress."
 err_no_default_branch:
@@ -936,18 +934,6 @@ deploy_uninstall_success:
     Successfully removed deployment.
 
     Please restart your terminal or start a new terminal session in order to clear any residual Runtime Environment variables and settings.
-envdef_file_not_found:
-  other: |
-    Your installation seems to be corrupted.
-
-    Cannot find runtime definition file at [NOTICE]{{.V0}}[/RESET].
-    You can try to manually delete the cache directory and re-activating the project.
-envdef_unmarshal_error:
-  other: |
-    Your installation seems to be corrupted.
-
-    Cannot not parse runtime definition file at [NOTICE]{{.V0}}[/RESET]
-    This indicates a problem with the build. You can try updating your project
 err_arg_required:
   other: "The following argument is required:\n  Name: [NOTICE]{{.V0}}[/RESET]\n  Description: [NOTICE]{{.V1}}[/RESET]"
 err_init_no_language:
@@ -1378,8 +1364,6 @@ shell_project_statement:
 checking_out:
   other: |
     Checking out project: [NOTICE]{{.V0}}[/RESET]
-installing_runtime_title:
-  other: Installing Runtime
 checkout_project_statement:
   other: |
     Checked out project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
@@ -1508,9 +1492,9 @@ err_build_artifact_failed:
 err_packages_update_runtime_init:
   other: Could not initialize runtime.
 pkg_already_uptodate:
-  other: Requested dependencies are already configured and installed.
+  other: Dependencies for your project are already configured and installed.
 install_runtime:
-  other: Installing Runtime
+  other: Sourcing Runtime
 install_runtime_info:
   other: "Installing your runtime and dependencies.\n"
 update_runtime:
@@ -1545,20 +1529,14 @@ vulnerability_medium:
   other: "[YELLOW]{{.V0}} Medium[/RESET]"
 vulnerability_low:
   other: "[GREEN]{{.V0}} Low[/RESET]"
-err_runtime_needs_refresh:
-  other: Your runtime needs to be updated, please run '[ACTIONABLE]state refresh[/RESET]' and then try again.
-err_pull_no_common_parent:
-  other: |
-    The local commit ID [NOTICE]{{.V0}}[/RESET] and latest remote commit ID [NOTICE]{{.V1}}[/RESET] have no common parent.
-    To review your project history run '[ACTIONABLE]state history[/RESET]'.
-warn_package_list_runtime:
-  other: |
-    [WARNING]WARNING:[/RESET] Could not initialize runtime. Resolved version information will not be available. Run '[ACTIONABLE]state refresh[/RESET]' for more information.
 err_main_jwt:
   other: |
     State Tool could not obtain an authentication token from its internal service.
     Please try again or contact support if this issue persists.
     Error received: {{.V0}}
+refresh_runtime_uptodate:
+  other: Your runtime is already up to date.
+    [WARNING]WARNING:[/RESET] This project has additional build criteria that cannot be managed through the State Tool, please edit your [ACTIONABLE]buildscript.as[/RESET] file manually to modify these:
 warn_additional_requirements:
   other: |
-    [WARNING]WARNING:[/RESET] This project has additional build criteria that cannot be managed through the State Tool, please edit your [ACTIONABLE]buildscript.as[/RESET] file manually to modify these:
+    [WARNING]WARNING:[/RESET] Could not initialize runtime. Resolved version information will not be available. Run '[ACTIONABLE]state refresh[/RESET]' for more information.

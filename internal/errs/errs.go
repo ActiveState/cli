@@ -106,8 +106,21 @@ func Wrap(wrapTarget error, message string, args ...interface{}) *WrapperError {
 }
 
 // Pack creates a new error that packs the given errors together, allowing for multiple errors to be returned
-func Pack(err error, errs ...error) error {
-	return &PackedErrors{append([]error{err}, errs...)}
+// This accepts nil errors, and will return nil if all errors passed in are also nil.
+func Pack(errs ...error) error {
+	var errsNonNil []error
+	for _, err := range errs {
+		if err != nil {
+			errsNonNil = append(errsNonNil, err)
+		}
+	}
+	if len(errsNonNil) == 0 {
+		return nil
+	}
+	if len(errsNonNil) == 1 {
+		return errsNonNil[0]
+	}
+	return &PackedErrors{errsNonNil}
 }
 
 // encodeErrorForJoin will recursively encode an error into a format that can be marshalled in a way that is easily

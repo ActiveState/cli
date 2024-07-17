@@ -8,19 +8,22 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
 
 type Switch struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	auth      *authentication.Auth
 	out       output.Outputer
 	project   *project.Project
@@ -73,6 +76,7 @@ func (b branchIdentifier) Locale() string {
 
 func New(prime primeable) *Switch {
 	return &Switch{
+		prime:     prime,
 		auth:      prime.Auth(),
 		out:       prime.Output(),
 		project:   prime.Project(),
@@ -120,7 +124,7 @@ func (s *Switch) Run(params SwitchParams) error {
 		return errs.Wrap(err, "Unable to set local commit")
 	}
 
-	_, err = runtime.SolveAndUpdate(s.auth, s.out, s.analytics, s.project, ptr.To(identifier.CommitID()), target.TriggerSwitch, s.svcModel, s.cfg, runtime.OptNone)
+	_, err = runtime_runbit.Update(s.prime, trigger.TriggerSwitch)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

@@ -11,17 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/termtest"
-	"github.com/go-openapi/strfmt"
-	"github.com/google/uuid"
-	"github.com/phayes/permbits"
-	"github.com/stretchr/testify/require"
-
-	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/projectfile"
-
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -34,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/strutils"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -42,7 +32,15 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/termtest"
+	"github.com/go-openapi/strfmt"
+	"github.com/google/uuid"
+	"github.com/phayes/permbits"
+	"github.com/stretchr/testify/require"
 )
 
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
@@ -461,6 +459,7 @@ func (s *Session) DeleteUUIDProjects(org string) {
 func (s *Session) DebugMessage(prefix string) string {
 	var sectionStart, sectionEnd string
 	sectionStart = "\n=== "
+	sectionEnd = "\n/==\n"
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		sectionStart = "##[group]"
 		sectionEnd = "##[endgroup]"
@@ -476,7 +475,15 @@ func (s *Session) DebugMessage(prefix string) string {
 		if spawn.opts.HideCmdArgs {
 			name = spawn.Cmd().Path
 		}
-		output[name] = strings.TrimSpace(spawn.Snapshot())
+		out := spawn.Output()
+		if strings.Contains(out, "panic") || strings.Contains(out, "goroutine") {
+			// If we encountered a panic it's unlikely the snapshot has enough information to be useful, so in this
+			// case we include the full output. Which we don't normally do as it is just the dump of pty data, and
+			// tends to be overly verbose and difficult to grok.
+			output[name] = strings.TrimSpace(out)
+		} else {
+			output[name] = strings.TrimSpace(spawn.Snapshot())
+		}
 	}
 
 	v, err := strutils.ParseTemplate(`
@@ -735,8 +742,8 @@ func (s *Session) detectLogErrors() {
 			continue
 		}
 		if contents := string(fileutils.ReadFileUnsafe(path)); errorOrPanicRegex.MatchString(contents) {
-			s.T.Errorf("%sFound error and/or panic in log file %s\nIf this was expected, call session.IgnoreLogErrors() to avoid this check\nLog contents:\n%s%s",
-				sectionStart, path, contents, sectionEnd)
+			s.T.Errorf(s.DebugMessage(fmt.Sprintf("%sFound error and/or panic in log file %s\nIf this was expected, call session.IgnoreLogErrors() to avoid this check\nLog contents:\n%s%s",
+				sectionStart, path, contents, sectionEnd)))
 		}
 	}
 }

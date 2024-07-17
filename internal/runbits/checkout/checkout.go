@@ -146,28 +146,8 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	}
 	owner := owners[0].URLName
 
-	// Create the config file, if the repo clone didn't already create it
-	configFile := filepath.Join(path, constants.ConfigFileName)
-	if !fileutils.FileExists(configFile) {
-		_, err = projectfile.Create(&projectfile.CreateParams{
-			Owner:      owner,
-			Project:    pj.Name, // match case on the Platform
-			BranchName: branch.Label,
-			Directory:  path,
-			Language:   language.String(),
-			Cache:      cachePath,
-		})
-		if err != nil {
-			if osutils.IsAccessDeniedError(err) {
-				return "", &ErrNoPermission{err, path}
-			}
-			return "", errs.Wrap(err, "Could not create projectfile")
-		}
-	}
-
-	err = localcommit.Set(path, commitID.String())
-	if err != nil {
-		return "", errs.Wrap(err, "Could not create local commit file")
+	if err := CreateProjectFiles(path, cachePath, owner, pj.Name, branch.Label, commitID.String(), language.String()); err != nil {
+		return "", errs.Wrap(err, "Could not create project files")
 	}
 
 	if r.config.GetBool(constants.OptinBuildscriptsConfig) {
@@ -177,6 +157,32 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	}
 
 	return path, nil
+}
+
+func CreateProjectFiles(checkoutPath, cachePath, owner, name, branch, commitID, language string) error {
+	configFile := filepath.Join(checkoutPath, constants.ConfigFileName)
+	if !fileutils.FileExists(configFile) {
+		_, err := projectfile.Create(&projectfile.CreateParams{
+			Owner:      owner,
+			Project:    name, // match case on the Platform
+			BranchName: branch,
+			Directory:  checkoutPath,
+			Language:   language,
+			Cache:      cachePath,
+		})
+		if err != nil {
+			if osutils.IsAccessDeniedError(err) {
+				return &ErrNoPermission{err, checkoutPath}
+			}
+			return errs.Wrap(err, "Could not create projectfile")
+		}
+	}
+
+	if err := localcommit.Set(checkoutPath, commitID); err != nil {
+		return errs.Wrap(err, "Could not create local commit file")
+	}
+
+	return nil
 }
 
 func getLanguage(commitID strfmt.UUID, auth *authentication.Auth) (language.Language, error) {

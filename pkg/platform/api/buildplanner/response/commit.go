@@ -143,6 +143,7 @@ type Commit struct {
 	AtTime     strfmt.DateTime `json:"atTime"`
 	Expression json.RawMessage `json:"expr"`
 	CommitID   strfmt.UUID     `json:"commitId"`
+	ParentID   strfmt.UUID     `json:"parentId"`
 	Build      *BuildResponse  `json:"build"`
 	*Error
 	*ParseError

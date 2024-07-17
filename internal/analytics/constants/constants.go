@@ -70,6 +70,18 @@ const ActRuntimeBuild = "build"
 // ActRuntimeDownload is the event action sent before starting the download of artifacts for a runtime
 const ActRuntimeDownload = "download"
 
+// ActRuntimeUnpack is the event action sent before starting the unpack of artifacts for a runtime
+const ActRuntimeUnpack = "unpack"
+
+// ActRuntimeInstall is the event action sent before starting the install of artifacts for a runtime
+const ActRuntimeInstall = "install"
+
+// ActRuntimeUninstall is the event action sent before starting the uninstall of artifacts for a runtime
+const ActRuntimeUninstall = "uninstall"
+
+// ActRuntimePostprocess is the event action sent before starting the postprocess of artifacts for a runtime
+const ActRuntimePostprocess = "postprocess"
+
 // ActRuntimeSuccess is the event action sent when a runtime's environment has been successfully computed (for the first time)
 const ActRuntimeSuccess = "success"
 

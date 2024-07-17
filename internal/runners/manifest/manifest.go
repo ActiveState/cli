@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/buildscript"
@@ -19,19 +20,24 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 type primeable interface {
-	Output() output.Outputer
-	Project() *project.Project
-	Auth() *authentication.Auth
-	Analytics() analytics.Dispatcher
-	SvcModel() *model.SvcModel
-	Config() *config.Instance
+	primer.Outputer
+	primer.Projecter
+	primer.Auther
+	primer.Analyticer
+	primer.SvcModeler
+	primer.Configurer
 }
 
 type Manifest struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	out       output.Outputer
 	project   *project.Project
 	auth      *authentication.Auth
@@ -42,17 +48,18 @@ type Manifest struct {
 
 func NewManifest(prime primeable) *Manifest {
 	return &Manifest{
-		out:       prime.Output(),
-		project:   prime.Project(),
-		auth:      prime.Auth(),
-		analytics: prime.Analytics(),
-		svcModel:  prime.SvcModel(),
-		cfg:       prime.Config(),
+		prime,
+		prime.Output(),
+		prime.Project(),
+		prime.Auth(),
+		prime.Analytics(),
+		prime.SvcModel(),
+		prime.Config(),
 	}
 }
 
 func (m *Manifest) Run() (rerr error) {
-	defer rationalizeError(&rerr)
+	defer rationalizeError(m.project, m.auth, &rerr)
 
 	if m.project == nil {
 		return rationalize.ErrNoProject
@@ -108,22 +115,22 @@ func (m *Manifest) fetchBuildplanRequirements() (buildplan.Ingredients, error) {
 		return nil, nil
 	}
 
-	target := target.NewProjectTarget(m.project, nil, target.TriggerManifest)
-	rt, err := runtime.New(target, m.analytics, m.svcModel, m.auth, m.cfg, m.out)
+	commitID, err := localcommit.Get(m.project.Dir())
 	if err != nil {
-		return nil, locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+		return nil, errs.Wrap(err, "Failed to get local commit")
 	}
 
-	if rt.NeedsUpdate() {
-		m.out.Notice(locale.T("manifest_runtime_needs_update"))
-	}
-
-	bp, err := rt.BuildPlan()
+	// Solve runtime
+	solveSpinner := output.StartSpinner(m.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
+	bpm := bpModel.NewBuildPlannerModel(m.auth)
+	commit, err := bpm.FetchCommit(commitID, m.project.Owner(), m.project.Name(), nil)
 	if err != nil {
-		return nil, errs.Wrap(err, "could not get build plan")
+		solveSpinner.Stop(locale.T("progress_fail"))
+		return nil, errs.Wrap(err, "Failed to fetch build result")
 	}
+	solveSpinner.Stop(locale.T("progress_success"))
 
-	return bp.RequestedIngredients(), nil
+	return commit.BuildPlan().RequestedIngredients(), nil
 }
 
 func (m *Manifest) fetchVulnerabilities(reqs []buildscript.Requirement) (vulnerabilities, error) {

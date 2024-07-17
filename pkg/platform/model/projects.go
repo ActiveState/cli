@@ -40,10 +40,10 @@ func LegacyFetchProjectByName(orgName string, projectName string) (*mono_models.
 	}
 	if !auth.Authenticated() {
 		return nil, errs.AddTips(
-			locale.NewExternalError("err_api_project_not_found", "", orgName, projectName),
+			locale.NewInputError("err_api_project_not_found", "", orgName, projectName),
 			locale.T("tip_private_project_auth"))
 	}
-	return nil, errs.Pack(err, locale.NewExternalError("err_api_project_not_found", "", orgName, projectName))
+	return nil, errs.Pack(err, locale.NewInputError("err_api_project_not_found", "", orgName, projectName))
 }
 
 // FetchProjectByName fetches a project for an organization.
