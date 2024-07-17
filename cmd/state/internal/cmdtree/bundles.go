@@ -45,7 +45,7 @@ func newBundlesCommand(prime *primer.Values) *captain.Command {
 func newBundleInstallCommand(prime *primer.Values) *captain.Command {
 	runner := packages.NewInstall(prime)
 
-	params := packages.InstallRunParams{}
+	params := &packages.InstallRunParams{NamespaceType: &model.NamespaceBundle}
 
 	return captain.NewCommand(
 		"install",
@@ -62,7 +62,7 @@ func newBundleInstallCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.LegacyRun(params, model.NamespaceBundle)
+			return runner.Run(params)
 		},
 	).SetSupportsStructuredOutput()
 }
@@ -70,7 +70,7 @@ func newBundleInstallCommand(prime *primer.Values) *captain.Command {
 func newBundleUninstallCommand(prime *primer.Values) *captain.Command {
 	runner := packages.NewUninstall(prime)
 
-	params := packages.UninstallRunParams{}
+	params := packages.UninstallRunParams{NamespaceType: &model.NamespaceBundle}
 
 	return captain.NewCommand(
 		"uninstall",
@@ -87,7 +87,7 @@ func newBundleUninstallCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params, model.NamespaceBundle)
+			return runner.Run(params)
 		},
 	).SetSupportsStructuredOutput()
 }

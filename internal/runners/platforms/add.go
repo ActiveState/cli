@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
-	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 // AddRunParams tracks the info required for running Add.
@@ -50,14 +49,14 @@ func (a *Add) Run(ps AddRunParams) error {
 		return rationalize.ErrNoProject
 	}
 
-	if err := requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(
-		nil,
-		&requirements.Requirement{
-			Name:          params.name,
-			Version:       params.version,
-			Operation:     types.OperationAdded,
-			BitWidth:      params.BitWidth,
-			NamespaceType: &model.NamespacePlatform,
+	if err := requirements.NewRequirementOperation(a.prime).InstallPlatform(
+		[]*requirements.Requirement{
+			{
+				Name:      params.name,
+				Version:   params.version,
+				Operation: types.OperationAdded,
+				BitWidth:  params.BitWidth,
+			},
 		},
 	); err != nil {
 		return locale.WrapError(err, "err_add_platform", "Could not add platform.")

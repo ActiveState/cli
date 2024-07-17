@@ -2,7 +2,6 @@ package packages
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
@@ -13,7 +12,8 @@ import (
 
 // UninstallRunParams tracks the info required for running Uninstall.
 type UninstallRunParams struct {
-	Packages captain.PackagesValueNoVersion
+	Packages      captain.PackagesValueNoVersion
+	NamespaceType *model.NamespaceType
 }
 
 // Uninstall manages the uninstalling execution context.
@@ -27,7 +27,7 @@ func NewUninstall(prime primeable) *Uninstall {
 }
 
 // Run executes the uninstall behavior.
-func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) (rerr error) {
+func (u *Uninstall) Run(params UninstallRunParams) (rerr error) {
 	defer rationalizeError(u.prime.Auth(), &rerr)
 	logging.Debug("ExecuteUninstall")
 	if u.prime.Project() == nil {
@@ -42,18 +42,16 @@ func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) (
 		}
 
 		if p.Namespace != "" {
+			if params.NamespaceType != nil {
+				// Specifying a namespace in a deprecated command like `languages uninstall` or `bundles
+				// uninstall` is an input error.
+				return &errNamespaceMismatch{ptr.To(p.PackageValue)}
+			}
 			req.Namespace = ptr.To(model.NewRawNamespace(p.Namespace))
-		} else {
-			req.NamespaceType = &nsType
 		}
 
 		reqs = append(reqs, req)
 	}
 
-	ts, err := getTime(&captain.TimeValue{}, u.prime.Auth(), u.prime.Project())
-	if err != nil {
-		return errs.Wrap(err, "Unable to get timestamp from params")
-	}
-
-	return requirements.NewRequirementOperation(u.prime).ExecuteRequirementOperation(ts, reqs...)
+	return requirements.NewRequirementOperation(u.prime).Uninstall(reqs)
 }

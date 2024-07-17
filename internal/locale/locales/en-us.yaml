@@ -658,6 +658,10 @@ language_version_added:
   other: "Language added: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
 language_version_updated:
   other: "Language updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
+platform_added:
+  other: "Platform added: [NOTICE]{{.V0}}[/RESET]"
+platform_version_added:
+  other: "Platform added: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
 err_package_updated:
   other: Failed to update package
 err_bundle_updated:
@@ -1180,6 +1184,8 @@ progress_search:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalog"
 progress_cve_search:
   other: " • Checking for vulnerabilities (CVEs) on [ACTIONABLE]{{.V0}}[/RESET] and its dependencies"
+commit_message_multiple:
+  other: "Committing changes to multiple requirements: {{.V0}}"
 setup_runtime:
   other: "Setting Up Runtime"
 progress_solve:

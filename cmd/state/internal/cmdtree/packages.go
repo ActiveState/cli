@@ -51,7 +51,7 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 func newInstallCommand(prime *primer.Values) *captain.Command {
 	runner := packages.NewInstall(prime)
 
-	params := packages.InstallRunParams{}
+	params := &packages.InstallRunParams{}
 
 	var packagesRaw string
 	cmd := captain.NewCommand(
@@ -123,7 +123,7 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 					return locale.WrapInputError(err, "err_uninstall_packages_args", "Invalid package uninstall arguments")
 				}
 			}
-			return runner.Run(params, model.NamespacePackage)
+			return runner.Run(params)
 		},
 	)
 

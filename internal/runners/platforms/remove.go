@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
-	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 // RemoveRunParams tracks the info required for running Remove.
@@ -40,14 +39,14 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 		return errs.Wrap(err, "Could not prepare parameters.")
 	}
 
-	if err := requirements.NewRequirementOperation(r.prime).ExecuteRequirementOperation(
-		nil,
-		&requirements.Requirement{
-			Name:          params.name,
-			Version:       params.version,
-			Operation:     types.OperationRemoved,
-			BitWidth:      params.BitWidth,
-			NamespaceType: &model.NamespacePlatform,
+	if err := requirements.NewRequirementOperation(r.prime).Uninstall(
+		[]*requirements.Requirement{
+			{
+				Name:      params.name,
+				Version:   params.version,
+				Operation: types.OperationRemoved,
+				BitWidth:  params.BitWidth,
+			},
 		},
 	); err != nil {
 		return locale.WrapError(err, "err_remove_platform", "Could not remove platform.")
