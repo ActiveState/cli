@@ -258,7 +258,8 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		dependencies.OutputChangeSummary(r.Output, rtCommit.BuildPlan(), oldBuildPlan)
 
 		// Report CVEs
-		if err := cves.NewCveReport(r.prime).Report(rtCommit.BuildPlan(), oldBuildPlan); err != nil {
+		names := requirementNames(requirements...)
+		if err := cves.NewCveReport(r.prime).Report(rtCommit.BuildPlan(), oldBuildPlan, names...); err != nil {
 			return errs.Wrap(err, "Could not report CVEs")
 		}
 
