@@ -115,8 +115,14 @@ func TestRequirements(t *testing.T) {
 
 			got, err := script.Requirements()
 			assert.NoError(t, err)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("BuildExpression.Requirements() = %v, want %v", got, tt.want)
+
+			gotReqs := []types.Requirement{}
+			for _, g := range got {
+				gotReqs = append(gotReqs, g.(DependencyRequirement).Requirement)
+			}
+
+			if !reflect.DeepEqual(gotReqs, tt.want) {
+				t.Errorf("BuildExpression.Requirements() = %v, want %v", gotReqs, tt.want)
 			}
 		})
 	}
