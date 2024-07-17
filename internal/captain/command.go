@@ -891,7 +891,7 @@ func (c *Command) logArgs(args []string) {
 		logging.Debug("Could not find child command, error: %v", err)
 	}
 
-	logArgs := []string{args[0]}
+	var logArgs []string
 	if child != nil {
 		logArgs = append(logArgs, child.commandNames(false)...)
 	}
