@@ -191,8 +191,7 @@ func (r *RequirementOperation) Install(ts *time.Time, requirements []*Requiremen
 
 	// Solve the runtime.
 	solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
-	bpm := bpModel.NewBuildPlannerModel(r.Auth)
-	rtCommit, err := bpm.FetchCommit(commitID, r.Project.Owner(), r.Project.Name(), nil)
+	rtCommit, err := bp.FetchCommit(stagedCommitID, r.Project.Owner(), r.Project.Name(), nil)
 	if err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))
 		return errs.Wrap(err, "Failed to fetch build result")
@@ -446,8 +445,7 @@ func (r *RequirementOperation) InstallPlatform(requirements []*Requirement) (rer
 
 	// Solve the runtime.
 	solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
-	bpm := bpModel.NewBuildPlannerModel(r.Auth)
-	rtCommit, err := bpm.FetchCommit(commitID, r.Project.Owner(), r.Project.Name(), nil)
+	rtCommit, err := bp.FetchCommit(stagedCommitID, r.Project.Owner(), r.Project.Name(), nil)
 	if err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))
 		return errs.Wrap(err, "Failed to fetch build result")
