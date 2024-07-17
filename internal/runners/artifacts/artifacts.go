@@ -92,23 +92,6 @@ func New(p primeable) *Artifacts {
 	}
 }
 
-type errInvalidCommitId struct {
-	id string
-}
-
-func (e *errInvalidCommitId) Error() string {
-	return "Invalid commit ID"
-}
-
-type errCommitDoesNotExistInProject struct {
-	Project  string
-	CommitID string
-}
-
-func (e *errCommitDoesNotExistInProject) Error() string {
-	return "Commit does not exist in project"
-}
-
 func rationalizeArtifactsError(proj *project.Project, auth *authentication.Auth, rerr *error) {
 	if rerr == nil {
 		return

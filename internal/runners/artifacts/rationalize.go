@@ -14,7 +14,7 @@ import (
 )
 
 func rationalizeCommonError(proj *project.Project, auth *authentication.Auth, err *error) {
-	var invalidCommitIdErr *errInvalidCommitId
+	var invalidCommitIdErr *buildplanner.ErrInvalidCommitId
 	var projectNotFoundErr *model.ErrProjectNotFound
 	var commitIdDoesNotExistInProject *buildplanner.ErrCommitDoesNotExistInProject
 
