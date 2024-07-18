@@ -408,8 +408,6 @@ type Job struct {
 // Jobs is a slice of jobs
 type Jobs []Job
 
-var persistentProject *Project
-
 // Parse the given filepath, which should be the full path to an activestate.yaml file
 func Parse(configFilepath string) (_ *Project, rerr error) {
 	projectDir := filepath.Dir(configFilepath)
@@ -540,7 +538,7 @@ func parseData(dat []byte, configFilepath string) (*Project, error) {
 	project.path = configFilepath
 
 	if err2 != nil {
-		return nil, &ErrorParseProject{locale.NewInputError(
+		return nil, &ErrorParseProject{locale.NewExternalError(
 			"err_project_parsed",
 			"Project file `{{.V1}}` could not be parsed, the parser produced the following error: {{.V0}}", err2.Error(), configFilepath),
 		}
@@ -559,7 +557,7 @@ func detectDeprecations(dat []byte, configFilepath string) error {
 		dep := strings.TrimSpace(strings.TrimSuffix(string(dat[depIdxs[0]:depIdxs[1]]), ":"))
 		deplist = append(deplist, locale.Tr("pjfile_deprecation_entry", dep, strconv.Itoa(depIdxs[0])))
 	}
-	return &ErrorParseProject{locale.NewInputError(
+	return &ErrorParseProject{locale.NewExternalError(
 		"pjfile_deprecation_msg",
 		"", configFilepath, strings.Join(deplist, "\n"), constants.DocumentationURL+"config/#deprecation"),
 	}
@@ -819,8 +817,6 @@ func getProjectFilePathFromEnv() (string, error) {
 
 	if activatedProjectDirPath := os.Getenv(constants.ActivatedStateEnvVarName); activatedProjectDirPath != "" {
 		projectFilePath = filepath.Join(activatedProjectDirPath, constants.ConfigFileName)
-	} else {
-		projectFilePath = os.Getenv(constants.ProjectEnvVarName)
 	}
 
 	if projectFilePath != "" {
@@ -869,30 +865,8 @@ func getProjectFilePathFromDefault() (_ string, rerr error) {
 	return path, nil
 }
 
-// GetPersisted gets the persisted project, if any
-func GetPersisted() *Project {
-	return persistentProject
-}
-
-func Get() (*Project, error) {
-	if persistentProject != nil {
-		return persistentProject, nil
-	}
-
-	project, err := GetOnce()
-	if err != nil {
-		return nil, err
-	}
-
-	err = project.Persist()
-	if err != nil {
-		return nil, err
-	}
-	return project, nil
-}
-
-// GetOnce returns the project configuration in a safe manner (returns error), the same as GetSafe, but it avoids persisting the project
-func GetOnce() (*Project, error) {
+// FromEnv returns the project configuration based on environment information (env vars, cwd, etc)
+func FromEnv() (*Project, error) {
 	// we do not want to use a path provided by state if we're running tests
 	projectFilePath, err := GetProjectFilePath()
 	if err != nil {
@@ -1219,24 +1193,6 @@ func cleanVersionInfo(projectFilePath string) ([]byte, error) {
 	}
 
 	return clean, nil
-}
-
-// Reset the current state, which unsets the persistent project
-func Reset() {
-	persistentProject = nil
-	os.Unsetenv(constants.ProjectEnvVarName)
-}
-
-// Persist "activates" the given project and makes it such that subsequent calls
-// to Get() return this project.
-// Only one project can persist at a time.
-func (p *Project) Persist() error {
-	if p.Project == "" {
-		return locale.NewError(locale.T("err_invalid_project"))
-	}
-	persistentProject = p
-	os.Setenv(constants.ProjectEnvVarName, p.Path())
-	return nil
 }
 
 type ConfigGetter interface {

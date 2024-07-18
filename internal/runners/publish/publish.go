@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -29,7 +30,6 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/graphql"
 	"github.com/go-openapi/strfmt"
-	"github.com/skratchdot/open-golang/open"
 	"gopkg.in/yaml.v3"
 )
 
@@ -113,11 +113,11 @@ func (r *Runner) Run(params *Params) error {
 
 		b, err := fileutils.ReadFile(params.MetaFilepath)
 		if err != nil {
-			return locale.WrapInputError(err, "err_uploadingredient_file_read", "Could not read file: {{.V0}}", params.MetaFilepath)
+			return locale.WrapExternalError(err, "err_uploadingredient_file_read", "Could not read file: {{.V0}}", params.MetaFilepath)
 		}
 
 		if err := yaml.Unmarshal(b, &reqVars); err != nil {
-			return locale.WrapInputError(err, "err_uploadingredient_file_read", "Failed to unmarshal meta file, error received: {{.V0}}", err.Error())
+			return locale.WrapExternalError(err, "err_uploadingredient_file_read", "Failed to unmarshal meta file, error received: {{.V0}}", err.Error())
 		}
 	}
 
@@ -450,7 +450,7 @@ func (r *Runner) OpenInEditor(pr *request.PublishVariables) error {
 	r.out.Notice(locale.Tr("uploadingredient_editor_opening", fn))
 
 	// Open file
-	if err := open.Start(fn); err != nil {
+	if err := osutils.OpenEditor(fn); err != nil {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not open publish request file")
 	}
 

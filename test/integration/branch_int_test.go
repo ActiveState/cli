@@ -6,7 +6,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/termtest"
-	"github.com/google/uuid"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -33,31 +32,6 @@ func (suite *BranchIntegrationTestSuite) TestBranch_List() {
 	cp = ts.Spawn("branch")
 	cp.Expect("main")
 	suite.Assert().NotContains(cp.Snapshot(), "To switch to another branch,") // only shows when multiple branches are listed
-	cp.ExpectExitCode(0)
-}
-
-func (suite *BranchIntegrationTestSuite) TestBranch_Add() {
-	suite.OnlyRunForTags(tagsuite.Branches)
-	suite.T().Skip("Skip test as state branch add functionality is currently disabled")
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	ts.PrepareProject("ActiveState-CLI/Branch", e2e.CommitIDNotChecked)
-
-	ts.LoginAsPersistentUser()
-
-	cp := ts.Spawn("pull")
-	cp.Expect("Your project in the activestate.yaml has been updated")
-	cp.ExpectExitCode(0)
-
-	branchName, err := uuid.NewRandom()
-	suite.Require().NoError(err)
-
-	cp = ts.Spawn("branch", "add", branchName.String())
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("branch")
-	cp.Expect(branchName.String())
 	cp.ExpectExitCode(0)
 }
 

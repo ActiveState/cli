@@ -1,6 +1,8 @@
 package request
 
-import "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+import (
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
+)
 
 func RevertCommit(organization, project, targetVcsRef, commitID string) *revertCommit {
 	return &revertCommit{map[string]interface{}{
@@ -12,7 +14,7 @@ func RevertCommit(organization, project, targetVcsRef, commitID string) *revertC
 		// This is because we don't have a way to show the user the conflicts
 		// and let them resolve them yet.
 		// https://activestatef.atlassian.net/browse/AR-80?focusedCommentId=46998
-		"strategy": model.RevertCommitStrategyForce,
+		"strategy": types.RevertCommitStrategyForce,
 	}}
 }
 

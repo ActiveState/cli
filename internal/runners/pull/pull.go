@@ -3,7 +3,6 @@ package pull
 import (
 	"errors"
 	"strings"
-	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
@@ -17,16 +16,15 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	buildscriptRunbits "github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/commit"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression/merge"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
@@ -40,6 +38,12 @@ type Pull struct {
 	analytics analytics.Dispatcher
 	cfg       *config.Instance
 	svcModel  *model.SvcModel
+}
+
+type errNoCommonParent struct {
+	error
+	localCommitID  strfmt.UUID
+	remoteCommitID strfmt.UUID
 }
 
 type PullParams struct {
@@ -124,15 +128,28 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 	resultingCommit := remoteCommit // resultingCommit is the commit we want to update the local project file with
 
 	if localCommit != nil {
+		commonParent, err := model.CommonParent(localCommit, remoteCommit, p.auth)
+		if err != nil {
+			return errs.Wrap(err, "Unable to determine common parent")
+		}
+
+		if commonParent == nil {
+			return &errNoCommonParent{
+				errs.New("no common parent"),
+				*localCommit,
+				*remoteCommit,
+			}
+		}
+
 		// Attempt to fast-forward merge. This will succeed if the commits are
 		// compatible, meaning that we can simply update the local commit ID to
 		// the remoteCommit ID. The commitID returned from MergeCommit with this
 		// strategy should just be the remote commit ID.
 		// If this call fails then we will try a recursive merge.
-		strategy := bpModel.MergeCommitStrategyFastForward
+		strategy := types.MergeCommitStrategyFastForward
 
-		bp := model.NewBuildPlannerModel(p.auth)
-		params := &model.MergeCommitParams{
+		bp := buildplanner.NewBuildPlannerModel(p.auth)
+		params := &buildplanner.MergeCommitParams{
 			Owner:     remoteProject.Owner,
 			Project:   remoteProject.Project,
 			TargetRef: localCommit.String(),
@@ -143,7 +160,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		resultCommit, mergeErr := bp.MergeCommit(params)
 		if mergeErr != nil {
 			logging.Debug("Merge with fast-forward failed with error: %s, trying recursive overwrite", mergeErr.Error())
-			strategy = bpModel.MergeCommitStrategyRecursiveKeepOnConflict
+			strategy = types.MergeCommitStrategyRecursiveKeepOnConflict
 			c, err := p.performMerge(*remoteCommit, *localCommit, remoteProject, p.project.BranchName(), strategy)
 			if err != nil {
 				p.notifyMergeStrategy(anaConst.LabelVcsConflictMergeStrategyFailed, *localCommit, remoteProject)
@@ -201,15 +218,15 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 	return nil
 }
 
-func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *project.Namespaced, branchName string, strategy bpModel.MergeStrategy) (strfmt.UUID, error) {
+func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *project.Namespaced, branchName string, strategy types.MergeStrategy) (strfmt.UUID, error) {
 	p.out.Notice(output.Title(locale.Tl("pull_diverged", "Merging history")))
 	p.out.Notice(locale.Tr(
 		"pull_diverged_message",
 		namespace.String(), branchName, localCommit.String(), remoteCommit.String()),
 	)
 
-	bp := model.NewBuildPlannerModel(p.auth)
-	params := &model.MergeCommitParams{
+	bp := buildplanner.NewBuildPlannerModel(p.auth)
+	params := &buildplanner.MergeCommitParams{
 		Owner:     namespace.Owner,
 		Project:   namespace.Project,
 		TargetRef: localCommit.String(),
@@ -235,24 +252,19 @@ func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *pr
 	return resultCommit, nil
 }
 
-// mergeBuildScript merges the local build script with the remote buildexpression (not script).
+// mergeBuildScript merges the local build script with the remote buildscript.
 func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	// Get the build script to merge.
-	scriptA, err := buildscript.ScriptFromProject(p.project)
+	scriptA, err := buildscript_runbit.ScriptFromProject(p.project)
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
 	}
 
 	// Get the local and remote build expressions to merge.
-	exprA := scriptA.Expr
-	bp := model.NewBuildPlannerModel(p.auth)
-	exprB, atTimeB, err := bp.GetBuildExpressionAndTime(remoteCommit.String())
+	bp := buildplanner.NewBuildPlannerModel(p.auth)
+	scriptB, err := bp.GetBuildScript(remoteCommit.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get buildexpression and time for remote commit")
-	}
-	scriptB, err := buildscript.NewFromBuildExpression(atTimeB, exprB)
-	if err != nil {
-		return errs.Wrap(err, "Could not convert build expression to build script")
 	}
 
 	// Compute the merge strategy.
@@ -260,31 +272,24 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	if err != nil {
 		switch {
 		case errors.Is(err, model.ErrMergeFastForward):
-			return buildscript.Update(p.project, atTimeB, exprB)
+			return buildscript_runbit.Update(p.project, scriptB)
 		case !errors.Is(err, model.ErrMergeCommitInHistory):
 			return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
 		}
 	}
 
 	// Attempt the merge.
-	mergedExpr, err := merge.Merge(exprA, exprB, strategies)
+	mergedScript, err := scriptA.Merge(scriptB, strategies)
 	if err != nil {
-		err := buildscriptRunbits.GenerateAndWriteDiff(p.project, scriptA, scriptB)
+		err := buildscript_runbit.GenerateAndWriteDiff(p.project, scriptA, scriptB)
 		if err != nil {
 			return locale.WrapError(err, "err_diff_build_script", "Unable to generate differences between local and remote build script")
 		}
 		return &ErrBuildScriptMergeConflict{p.project.Dir()}
 	}
 
-	// For now, pick the later of the script AtTimes.
-	atTime := scriptA.AtTime
-	atTimeA := time.Time(*scriptA.AtTime)
-	if atTimeB := time.Time(*scriptB.AtTime); atTimeA.Before(atTimeB) {
-		atTime = scriptB.AtTime
-	}
-
 	// Write the merged build expression as a local build script.
-	return buildscript.Update(p.project, atTime, mergedExpr)
+	return buildscript_runbit.Update(p.project, mergedScript)
 }
 
 func resolveRemoteProject(prj *project.Project) (*project.Namespaced, error) {

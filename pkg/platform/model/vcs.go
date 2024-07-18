@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
@@ -19,6 +19,7 @@ import (
 	vcsClient "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -491,7 +492,7 @@ func updateBranch(branchID strfmt.UUID, changeset *mono_models.BranchEditable, a
 	_, err = authClient.VersionControl.UpdateBranch(params, auth.ClientAuth())
 	if err != nil {
 		if _, ok := err.(*version_control.UpdateBranchForbidden); ok {
-			return &ErrUpdateBranchAuth{locale.NewInputError("err_branch_update_auth", "Branch update failed with authentication error")}
+			return &ErrUpdateBranchAuth{locale.NewExternalError("err_branch_update_auth", "Branch update failed with authentication error")}
 		}
 		return locale.NewError("err_update_branch", "", api.ErrorMessageFromPayload(err))
 	}
@@ -585,7 +586,7 @@ func CommitInitial(hostPlatform string, langName, langVersion string, auth *auth
 }
 
 func versionStringToConstraints(version string) ([]*mono_models.Constraint, error) {
-	requirements, err := VersionStringToRequirements(version)
+	requirements, err := bpModel.VersionStringToRequirements(version)
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to process version string into requirements")
 	}
@@ -593,8 +594,8 @@ func versionStringToConstraints(version string) ([]*mono_models.Constraint, erro
 	constraints := make([]*mono_models.Constraint, len(requirements))
 	for i, constraint := range requirements {
 		constraints[i] = &mono_models.Constraint{
-			Comparator: constraint[bpModel.VersionRequirementComparatorKey],
-			Version:    constraint[bpModel.VersionRequirementVersionKey],
+			Comparator: constraint[types.VersionRequirementComparatorKey],
+			Version:    constraint[types.VersionRequirementVersionKey],
 		}
 	}
 	return constraints, nil
@@ -877,6 +878,37 @@ func GetCommitWithinCommitHistory(currentCommitID, targetCommitID strfmt.UUID, a
 	}
 
 	return commit, nil
+}
+
+// GetCommitWithinProjectHistory searches for the a commit with the given commit ID in the given
+// project (including all of its branch history) and returns it if found. Otherwise, it returns
+// ErrCommitNotInHistory.
+// It doesn't matter if the commit exists in multiple branches, as commits do not belong to
+// branches.
+// This function exists primarily as an existence check because the buildplanner API currently
+// accepts a query for a org/project#commitID even if commitID does not belong to org/project.
+// See DS-1705 (yes, DS, not DX).
+func GetCommitWithinProjectHistory(commitID strfmt.UUID, owner, name string, auth *authentication.Auth) (*mono_models.Commit, error) {
+	commit, err := GetCommit(commitID, auth)
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to get commit")
+	}
+
+	branches, err := BranchesForProject(owner, name)
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to get branches for project")
+	}
+	for _, branch := range branches {
+		ok, err := CommitWithinCommitHistory(*branch.CommitID, commitID, auth)
+		if err != nil {
+			return nil, errs.Wrap(err, "Unable to determine if commit exists in branch history")
+		}
+		if ok {
+			return commit, nil
+		}
+	}
+
+	return nil, ErrCommitNotInHistory
 }
 
 func AddRevertCommit(commit *mono_models.Commit, auth *authentication.Auth) (*mono_models.Commit, error) {

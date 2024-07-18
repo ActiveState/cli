@@ -6,6 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -14,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/checkout"
+	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -105,20 +107,30 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		}()
 	}
 
-	u.out.Notice(output.Title(locale.T("installing_runtime_title")))
-
-	rti, err := runtime.SolveAndUpdate(u.auth, u.out, u.analytics, proj, nil, target.TriggerCheckout, u.svcModel, u.config, runtime.OptMinimalUI)
+	rti, commit, err := runtime.Solve(u.auth, u.out, u.analytics, proj, nil, target.TriggerCheckout, u.svcModel, u.config, runtime.OptNoIndent)
 	if err != nil {
-		return locale.WrapError(err, "err_checkout_runtime_new", "Could not checkout this project.")
+		return errs.Wrap(err, "Could not checkout project")
+	}
+	dependencies.OutputSummary(u.out, commit.BuildPlan().RequestedArtifacts())
+	err = runtime.UpdateByReference(rti, commit, u.auth, proj, u.out, u.config, runtime.OptNone)
+	if err != nil {
+		return errs.Wrap(err, "Could not setup runtime")
 	}
 
+	var checkoutStatement string
 	execDir := setup.ExecDir(rti.Target().Dir())
+	if !u.config.GetBool(constants.AsyncRuntimeConfig) {
+		checkoutStatement = locale.Tr("checkout_project_statement", proj.NamespaceString(), proj.Dir(), execDir)
+	} else {
+		checkoutStatement = locale.Tr("checkout_project_statement_async", proj.NamespaceString(), proj.Dir())
+	}
+
 	u.out.Print(output.Prepare(
-		locale.Tr("checkout_project_statement", proj.NamespaceString(), proj.Dir(), execDir),
+		checkoutStatement,
 		&struct {
 			Namespace   string `json:"namespace"`
 			Path        string `json:"path"`
-			Executables string `json:"executables"`
+			Executables string `json:"executables,omitempty"`
 		}{
 			proj.NamespaceString(),
 			proj.Dir(),

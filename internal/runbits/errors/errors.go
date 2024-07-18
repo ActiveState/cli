@@ -196,7 +196,7 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 	// Log error if this isn't a user input error
 	var action string
 	errorMsg := err.Error()
-	if !locale.IsInputError(err) {
+	if IsReportableError(err) {
 		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.JoinMessage(err), stack)
 		action = anaConst.ActCommandError
 	} else {
@@ -222,4 +222,8 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 			panic(fmt.Sprintf("Errors must be localized! Please localize: %s, called at: %s\n", errs.JoinMessage(err), stack))
 		}
 	}
+}
+
+func IsReportableError(err error) bool {
+	return !locale.IsInputError(err) && !errs.IsExternalError(err) && !errs.IsSilent(err)
 }

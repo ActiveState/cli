@@ -1,11 +1,11 @@
 package condition
 
 import (
+	"errors"
 	"os"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/thoas/go-funk"
 )
 
@@ -13,12 +13,18 @@ type Configurable interface {
 	GetBool(s string) bool
 }
 
-var inTest = strings.HasSuffix(strings.TrimSuffix(os.Args[0], ".exe"), ".test") ||
+var osArgStr = strings.Join(os.Args, " ")
+
+var isTestInvocation = strings.HasSuffix(strings.TrimSuffix(os.Args[0], ".exe"), ".test") ||
 	strings.Contains(os.Args[0], "/_test/") || funk.Contains(os.Args, "-test.v")
+
+var inUnitTest = !strings.Contains(osArgStr, "IntegrationTestSuite") &&
+	!strings.Contains(osArgStr, "integration.test") &&
+	isTestInvocation
 
 // InUnitTest returns true when the app is being tested
 func InUnitTest() bool {
-	return inTest
+	return inUnitTest
 }
 
 func InTest() bool {
@@ -53,12 +59,25 @@ func OptInUnstable(cfg Configurable) bool {
 }
 
 func IsNetworkingError(err error) bool {
-	msg := errs.JoinMessage(err)
 	switch {
-	case strings.Contains(msg, "no such host"):
+	case strings.Contains(err.Error(), "no such host"):
 		return true
-	case strings.Contains(msg, "no route to host"):
+	case strings.Contains(err.Error(), "no route to host"):
 		return true
+	}
+	if subErr := errors.Unwrap(err); subErr != nil {
+		return IsNetworkingError(subErr)
+	}
+	unwrapped, ok := err.(interface{ Unwrap() []error })
+	if ok {
+		subErrs := unwrapped.Unwrap()
+		if len(subErrs) > 0 {
+			for _, subErr := range subErrs {
+				if IsNetworkingError(subErr) {
+					return true
+				}
+			}
+		}
 	}
 	return false
 }

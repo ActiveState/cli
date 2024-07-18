@@ -3,66 +3,25 @@ package project_test
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v2"
-
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
-
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func loadProject(t *testing.T) *project.Project {
-	projectfile.Reset()
-
-	pjFile := &projectfile.Project{}
-	contents := strings.TrimSpace(`
-project: "https://platform.activestate.com/Expander/general?branch=main"
-lock: branchname@0.0.0-SHA123abcd
-constants:
-  - name: constant
-    value: value
-  - name: recursive
-    value: recursive $constants.constant
-secrets:
-  project:
-    - name: proj-secret
-  user:
-    - name: user-proj-secret
-scripts:
-  - name: test
-    value: make test
-  - name: recursive
-    value: echo $scripts.recursive
-  - name: pythonScript
-    language: python3
-    value: scriptValue
-  - name: scriptPath
-    value: $scripts.pythonScript.path()
-  - name: scriptRecursive
-    value: $scripts.scriptRecursive.path()
-  - name: bashScriptPath
-    language: bash
-    value: ${scripts.pythonScript.path()}
-`)
-
-	err := yaml.Unmarshal([]byte(contents), pjFile)
-	assert.Nil(t, err, "Unmarshalled YAML")
-
-	require.NoError(t, pjFile.Init())
-
-	require.NoError(t, pjFile.Persist())
-
-	proj, err := project.Get()
+	root, err := environment.GetRootPath()
 	require.NoError(t, err)
-
+	proj, err := project.FromPath(filepath.Join(root, "pkg", "project", "testdata", "expander"))
+	require.NoError(t, err)
 	return proj
 }
 
@@ -184,24 +143,11 @@ func TestExpandProjectInfiniteRecursion(t *testing.T) {
 }
 
 func TestExpandDashed(t *testing.T) {
-	projectFile := &projectfile.Project{}
-	contents := strings.TrimSpace(`
-project: "https://platform.activestate.com/Expander/Dashed"
-scripts:
-  - name: foo-bar
-    value: bar
-`)
-
-	err := yaml.Unmarshal([]byte(contents), projectFile)
-	assert.Nil(t, err, "Unmarshalled YAML")
-	require.NoError(t, projectFile.Persist())
-	prj, err := project.Get()
-	require.NoError(t, err)
+	prj := loadProject(t)
 
 	expanded, err := project.ExpandFromProject("- $scripts.foo-bar -", prj)
 	assert.NoError(t, err, "Ran without failure")
 	assert.Equal(t, "- bar -", expanded)
-	projectfile.Reset()
 }
 
 func TestExpandScriptPath(t *testing.T) {
@@ -230,7 +176,8 @@ func TestExpandScriptPathRecursive(t *testing.T) {
 
 func TestExpandBashScriptPath(t *testing.T) {
 	prj := loadProject(t)
-	script := prj.ScriptByName("bashScriptPath")
+	script, err := prj.ScriptByName("bashScriptPath")
+	require.NoError(t, err)
 	require.NotNil(t, script, "bashScriptPath script does not exist")
 	value, err := script.Value()
 	require.NoError(t, err)

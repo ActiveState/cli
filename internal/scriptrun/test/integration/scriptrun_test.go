@@ -68,7 +68,6 @@ scripts:
 	}
 	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -77,7 +76,9 @@ scripts:
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
 	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
-	err = scriptRun.Run(proj.ScriptByName("run"), []string{})
+	script, err := proj.ScriptByName("run")
+	require.NoError(t, err)
+	err = scriptRun.Run(script, []string{})
 	assert.NoError(t, err, "No error occurred")
 }
 
@@ -101,7 +102,6 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 
 	pjfile, err := projectfile.Parse(prjPath)
 	require.NoError(t, err, "parsing pjfile file")
-	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -119,7 +119,9 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 
 	out := capturer.CaptureOutput(func() {
 		scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
-		err = scriptRun.Run(proj.ScriptByName("run"), nil)
+		script, err := proj.ScriptByName("run")
+		require.NoError(t, err, "Error: "+errs.JoinMessage(err))
+		err = scriptRun.Run(script, nil)
 		assert.NoError(t, err, "Error: "+errs.JoinMessage(err))
 	})
 
@@ -141,7 +143,7 @@ func (suite *ScriptRunSuite) TestRunNoProjectInheritance() {
 project: "https://platform.activestate.com/ActiveState/pjfile"
 scripts:
   - name: run
-    value: echo $ACTIVESTATE_PROJECT
+    value: echo $ACTIVESTATE_ACTIVATED
     standalone: true
 `)
 	} else {
@@ -149,13 +151,12 @@ scripts:
 project: "https://platform.activestate.com/ActiveState/pjfile"
 scripts:
   - name: run
-    value: echo %ACTIVESTATE_PROJECT%
+    value: echo %ACTIVESTATE_ACTIVATED%
     standalone: true
 `)
 	}
 	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -166,8 +167,10 @@ scripts:
 
 	out := outputhelper.NewCatcher()
 	scriptRun := scriptrun.New(auth, out, subshell.New(cfg), proj, cfg, blackhole.New(), nil)
-	fmt.Println(proj.ScriptByName("run"))
-	err = scriptRun.Run(proj.ScriptByName("run"), nil)
+	script, err := proj.ScriptByName("run")
+	fmt.Println(script)
+	require.NoError(t, err)
+	err = scriptRun.Run(script, nil)
 	assert.NoError(t, err, "No error occurred")
 }
 
@@ -187,7 +190,6 @@ scripts:
   `)
 	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -198,7 +200,7 @@ scripts:
 
 	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
 	err = scriptRun.Run(nil, nil)
-	assert.Error(t, err, "Error occurred")
+	assert.Error(t, err, "No error occurred")
 }
 
 func (suite *ScriptRunSuite) TestRunUnknownCommand() {
@@ -218,7 +220,6 @@ scripts:
   `)
 	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -228,8 +229,10 @@ scripts:
 	defer func() { require.NoError(t, cfg.Close()) }()
 
 	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
-	err = scriptRun.Run(proj.ScriptByName("run"), nil)
-	assert.Error(t, err, "Error occurred")
+	script, err := proj.ScriptByName("run")
+	require.NoError(t, err)
+	err = scriptRun.Run(script, nil)
+	assert.Error(t, err, "No error occurred")
 }
 
 func (suite *ScriptRunSuite) TestRunActivatedCommand() {
@@ -275,18 +278,16 @@ scripts:
 	}
 	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	require.NoError(t, pjfile.Persist())
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
 
 	// Run the command.
 	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
-	err = scriptRun.Run(proj.ScriptByName("run"), nil)
+	script, err := proj.ScriptByName("run")
+	require.NoError(t, err)
+	err = scriptRun.Run(script, nil)
 	assert.NoError(t, err, "No error occurred")
-
-	// Reset.
-	projectfile.Reset()
 }
 
 func (suite *ScriptRunSuite) TestPathProvidesLang() {
@@ -366,8 +367,6 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 	require.NoError(t, err)
 
 	pjfile := setupProjectWithScriptsExpectingArgs(t, tmplCmdName)
-	require.NoError(t, pjfile.Persist())
-	defer projectfile.Reset()
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
@@ -378,7 +377,10 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 
 	outStr, outErr := osutil.CaptureStdout(func() {
 		scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
-		err = scriptRun.Run(proj.ScriptByName(cmdName), cmdArgs)
+		var script *project.Script
+		if script, err = proj.ScriptByName(cmdName); err == nil {
+			err = scriptRun.Run(script, cmdArgs)
+		}
 	})
 	require.NoError(t, outErr, "error capturing stdout")
 

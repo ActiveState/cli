@@ -52,7 +52,7 @@ function download([string] $url, [string] $out)
     {
         try
         {
-            $downloader = new-object System.Net.WebClient
+            $downloader = New-Object System.Net.WebClient
             if ($out -eq "")
             {
                 return $downloader.DownloadString($url)
@@ -66,13 +66,47 @@ function download([string] $url, [string] $out)
         {
             if ($Retrycount -gt 5)
             {
-                Write-Error "Could not download after 5 retries."
-                throw $_
+                $exception = $_.Exception
+                $errorMessage = ""
+
+                if ($exception -is [System.Management.Automation.MethodInvocationException] -and $exception.InnerException -is [System.Net.WebException])
+                {
+                    $webException = [System.Net.WebException]$exception.InnerException
+                    $response = $webException.Response
+
+                    if ($response -ne $null)
+                    {
+                        $responseStream = $response.GetResponseStream()
+                        $reader = New-Object System.IO.StreamReader($responseStream)
+                        $responseBody = $reader.ReadToEnd()
+                        $reader.Close()
+                        $responseStream.Close()
+
+                        try
+                        {
+                            $errorMessage = (ConvertFrom-Json $responseBody).message
+                        }
+                        catch
+                        {
+                            $errorMessage = $responseBody
+                        }
+                    }
+                    else
+                    {
+                        $errorMessage = $webException.Message
+                    }
+                }
+                else
+                {
+                    $errorMessage = $exception.Message
+                }
+
+                Write-Error "Could not download after 5 retries. Received error: $errorMessage"
+                throw $exception
             }
             else
             {
                 Write-Host "Could not download, retrying..."
-                Write-Host $_
                 $Retrycount = $Retrycount + 1
             }
         }

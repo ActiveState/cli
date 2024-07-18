@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -41,7 +41,7 @@ func NewAdd(prime primeable) *Add {
 func (a *Add) Run(ps AddRunParams) error {
 	logging.Debug("Execute platforms add")
 
-	params, err := prepareParams(ps.Params, a.prime.Auth())
+	params, err := prepareParams(ps.Params)
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func (a *Add) Run(ps AddRunParams) error {
 		&requirements.Requirement{
 			Name:          params.name,
 			Version:       params.version,
-			Operation:     bpModel.OperationAdded,
+			Operation:     types.OperationAdded,
 			BitWidth:      params.BitWidth,
 			NamespaceType: &model.NamespacePlatform,
 		},

@@ -123,7 +123,7 @@ func (c *Conditional) RegisterParam(name string, value interface{}) {
 }
 
 func (c *Conditional) Eval(conditional string) (bool, error) {
-	tpl, err := template.New("letter").Funcs(c.funcs).Parse(fmt.Sprintf(`{{if %s}}1{{end}}`, conditional))
+	tpl, err := template.New("").Funcs(c.funcs).Parse(fmt.Sprintf(`{{if %s}}1{{end}}`, conditional))
 	if err != nil {
 		return false, locale.WrapInputError(err, "err_conditional", "Invalid 'if' condition: '{{.V0}}', error: '{{.V1}}'.", conditional, err.Error())
 	}
@@ -154,7 +154,7 @@ func FilterUnconstrained(conditional *Conditional, items []projectfile.Constrain
 		if conditional != nil && item.ConditionalFilter() != "" {
 			isTrue, err := conditional.Eval(string(item.ConditionalFilter()))
 			if err != nil {
-				return nil, err
+				return nil, locale.WrapInputError(err, "err_conditional_eval", "There was an error with the conditional in your activestate.yaml's '{{.V0}}' script", item.ID())
 			}
 
 			if isTrue {

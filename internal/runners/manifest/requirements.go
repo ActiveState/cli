@@ -3,9 +3,9 @@ package manifest
 import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	platformModel "github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
 type requirement struct {
@@ -19,13 +19,13 @@ type requirements struct {
 	Requirements []*requirement `json:"requirements"`
 }
 
-func newRequirements(reqs []model.Requirement, artifacts []*artifact.Artifact, vulns vulnerabilities) requirements {
+func newRequirements(reqs []types.Requirement, bpReqs buildplan.Ingredients, vulns vulnerabilities) requirements {
 	var result []*requirement
 	for _, req := range reqs {
 		result = append(result, &requirement{
 			Name:            req.Name,
 			Namespace:       processNamespace(req.Namespace),
-			ResolvedVersion: resolveVersion(req, artifacts),
+			ResolvedVersion: resolveVersion(req, bpReqs),
 			Vulnerabilities: vulns.getVulnerability(req.Name, req.Namespace),
 		})
 	}

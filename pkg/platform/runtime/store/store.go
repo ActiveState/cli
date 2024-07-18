@@ -11,12 +11,13 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/buildscript"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
+	"github.com/go-openapi/strfmt"
 )
 
 // Store manages the storing and loading of persistable information about the runtime
@@ -26,13 +27,13 @@ type Store struct {
 }
 
 type StoredArtifact struct {
-	ArtifactID artifact.ArtifactID           `json:"artifactID"`
+	ArtifactID strfmt.UUID                   `json:"artifactID"`
 	Files      []string                      `json:"files"`
 	Dirs       []string                      `json:"dirs"`
 	EnvDef     *envdef.EnvironmentDefinition `json:"envdef"`
 }
 
-func NewStoredArtifact(artifactID artifact.ArtifactID, files []string, dirs []string, envDef *envdef.EnvironmentDefinition) StoredArtifact {
+func NewStoredArtifact(artifactID strfmt.UUID, files []string, dirs []string, envDef *envdef.EnvironmentDefinition) StoredArtifact {
 	return StoredArtifact{
 		ArtifactID: artifactID,
 		Files:      files,
@@ -41,7 +42,7 @@ func NewStoredArtifact(artifactID artifact.ArtifactID, files []string, dirs []st
 	}
 }
 
-type StoredArtifactMap = map[artifact.ArtifactID]StoredArtifact
+type StoredArtifactMap = map[strfmt.UUID]StoredArtifact
 
 func New(installPath string) *Store {
 	return &Store{
@@ -67,19 +68,19 @@ func (s *Store) buildScriptFile() string {
 }
 
 // BuildEngine returns the runtime build engine value stored in the runtime directory
-func (s *Store) BuildEngine() (model.BuildEngine, error) {
+func (s *Store) BuildEngine() (types.BuildEngine, error) {
 	storeFile := s.buildEngineFile()
 
 	data, err := fileutils.ReadFile(storeFile)
 	if err != nil {
-		return model.UnknownEngine, errs.Wrap(err, "Could not read build engine cache store.")
+		return types.UnknownEngine, errs.Wrap(err, "Could not read build engine cache store.")
 	}
 
-	return model.ParseBuildEngine(string(data)), nil
+	return buildplanner.ParseBuildEngine(string(data)), nil
 }
 
 // StoreBuildEngine stores the build engine value in the runtime directory
-func (s *Store) StoreBuildEngine(buildEngine model.BuildEngine) error {
+func (s *Store) StoreBuildEngine(buildEngine types.BuildEngine) error {
 	storeFile := s.buildEngineFile()
 	storeDir := filepath.Dir(storeFile)
 	logging.Debug("Storing build engine %s at %s", buildEngine.String(), storeFile)
@@ -157,7 +158,7 @@ func (s *Store) Artifacts() (StoredArtifactMap, error) {
 }
 
 // DeleteArtifactStore deletes the stored information for a specific artifact from the store
-func (s *Store) DeleteArtifactStore(id artifact.ArtifactID) error {
+func (s *Store) DeleteArtifactStore(id strfmt.UUID) error {
 	jsonFile := filepath.Join(s.storagePath, constants.ArtifactMetaDir, id.String()+".json")
 	if !fileutils.FileExists(jsonFile) {
 		return nil
@@ -199,7 +200,7 @@ func (s *Store) Environ(inherit bool) (map[string]string, error) {
 	return envDef.GetEnv(inherit), nil
 }
 
-func (s *Store) UpdateEnviron(orderedArtifacts []artifact.ArtifactID) (*envdef.EnvironmentDefinition, error) {
+func (s *Store) UpdateEnviron(orderedArtifacts []strfmt.UUID) (*envdef.EnvironmentDefinition, error) {
 	artifacts, err := s.Artifacts()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not retrieve stored artifacts")
@@ -213,7 +214,7 @@ func (s *Store) UpdateEnviron(orderedArtifacts []artifact.ArtifactID) (*envdef.E
 	return rtGlobal, rtGlobal.WriteFile(filepath.Join(s.storagePath, constants.RuntimeDefinitionFilename))
 }
 
-func (s *Store) updateEnviron(orderedArtifacts []artifact.ArtifactID, artifacts StoredArtifactMap) (*envdef.EnvironmentDefinition, error) {
+func (s *Store) updateEnviron(orderedArtifacts []strfmt.UUID, artifacts StoredArtifactMap) (*envdef.EnvironmentDefinition, error) {
 	if len(orderedArtifacts) == 0 {
 		return nil, errs.New("Environment cannot be updated if no artifacts were installed")
 	}
@@ -267,22 +268,25 @@ func (s *Store) BuildPlanRaw() ([]byte, error) {
 	return data, nil
 }
 
-func (s *Store) BuildPlan() (*bpModel.Build, error) {
+type ErrVersionMarker struct {
+	*locale.LocalizedError
+}
+
+func (s *Store) BuildPlan() (*buildplan.BuildPlan, error) {
+	if !s.VersionMarkerIsValid() {
+		return nil, &ErrVersionMarker{locale.NewInputError("err_runtime_needs_refresh")}
+	}
+
 	data, err := s.BuildPlanRaw()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get build plan file.")
 	}
 
-	var buildPlan bpModel.Build
-	err = json.Unmarshal(data, &buildPlan)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not parse build plan file.")
-	}
-	return &buildPlan, err
+	return buildplan.Unmarshal(data)
 }
 
-func (s *Store) StoreBuildPlan(build *bpModel.Build) error {
-	data, err := json.Marshal(build)
+func (s *Store) StoreBuildPlan(bp *buildplan.BuildPlan) error {
+	data, err := bp.Marshal()
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal buildPlan.")
 	}
@@ -295,7 +299,7 @@ func (s *Store) StoreBuildPlan(build *bpModel.Build) error {
 
 var ErrNoBuildScriptFile = errs.New("no buildscript file")
 
-func (s *Store) BuildScript() (*buildscript.Script, error) {
+func (s *Store) BuildScript() (*buildscript.BuildScript, error) {
 	if !fileutils.FileExists(s.buildScriptFile()) {
 		return nil, ErrNoBuildScriptFile
 	}
@@ -303,9 +307,13 @@ func (s *Store) BuildScript() (*buildscript.Script, error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not read buildscript file")
 	}
-	return buildscript.New(bytes)
+	return buildscript.Unmarshal(bytes)
 }
 
-func (s *Store) StoreBuildScript(script *buildscript.Script) error {
-	return fileutils.WriteFile(s.buildScriptFile(), []byte(script.String()))
+func (s *Store) StoreBuildScript(script *buildscript.BuildScript) error {
+	scriptBytes, err := script.Marshal()
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal buildscript")
+	}
+	return fileutils.WriteFile(s.buildScriptFile(), scriptBytes)
 }

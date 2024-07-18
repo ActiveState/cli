@@ -7,8 +7,11 @@ import (
 	"regexp"
 	"strings"
 
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -22,6 +25,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -74,8 +78,11 @@ var errNoOwner = errs.New("Could not find organization")
 var errNoLanguage = errs.New("No language specified")
 
 type errUnrecognizedLanguage struct {
-	error
 	Name string
+}
+
+func (e errUnrecognizedLanguage) Error() string {
+	return fmt.Sprintf("unrecognized language: %s", e.Name)
 }
 
 // New returns a prepared ptr to Initialize instance.
@@ -158,7 +165,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	path, err = filepath.Abs(params.Path)
 	if err != nil {
-		return locale.WrapInputError(err, "err_init_abs_path", "Could not determine absolute path to [NOTICE]{{.V0}}[/RESET]. Error: {{.V1}}", path, err.Error())
+		return locale.WrapExternalError(err, "err_init_abs_path", "Could not determine absolute path to [NOTICE]{{.V0}}[/RESET]. Error: {{.V1}}", path, err.Error())
 	}
 
 	var languageName, languageVersion string
@@ -179,20 +186,20 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	// Require 'python', 'python@3', or 'python@2' instead of 'python3' or 'python2'.
 	if languageName == language.Python3.String() || languageName == language.Python2.String() {
-		return &errUnrecognizedLanguage{Name: languageName}
+		return &errUnrecognizedLanguage{languageName}
 	}
 
 	lang := language.MakeByNameAndVersion(languageName, languageVersion)
 	if !lang.Recognized() {
-		return &errUnrecognizedLanguage{Name: languageName}
+		return &errUnrecognizedLanguage{languageName}
 	}
 
 	version, err := deriveVersion(lang, languageVersion, r.auth)
 	if err != nil {
-		if inferred || !locale.IsInputError(err) {
+		if inferred || errors.IsReportableError(err) {
 			return locale.WrapError(err, "err_init_lang", "", languageName, languageVersion)
 		} else {
-			return locale.WrapInputError(err, "err_init_lang", "", languageName, languageVersion)
+			return locale.WrapExternalError(err, "err_init_lang", "", languageName, languageVersion)
 		}
 	}
 
@@ -245,13 +252,13 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	logging.Debug("Creating Platform project")
 
-	platformID, err := model.PlatformNameToPlatformID(model.HostPlatform)
+	platformID, err := model.PlatformNameToPlatformID(sysinfo.OS().String())
 	if err != nil {
-		return errs.Wrap(err, "Unable to determine Platform ID from %s", model.HostPlatform)
+		return errs.Wrap(err, "Unable to determine Platform ID from %s", sysinfo.OS().String())
 	}
 
-	bp := model.NewBuildPlannerModel(r.auth)
-	commitID, err := bp.CreateProject(&model.CreateProjectParams{
+	bp := buildplanner.NewBuildPlannerModel(r.auth)
+	commitID, err := bp.CreateProject(&buildplanner.CreateProjectParams{
 		Owner:       namespace.Owner,
 		Project:     namespace.Project,
 		PlatformID:  strfmt.UUID(platformID),
@@ -269,12 +276,12 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	}
 
 	if r.config.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript.Initialize(proj.Dir(), r.auth); err != nil {
+		if err := buildscript_runbit.Initialize(proj.Dir(), r.auth); err != nil {
 			return errs.Wrap(err, "Unable to initialize buildscript")
 		}
 	}
 
-	_, err = runtime.SolveAndUpdate(r.auth, r.out, r.analytics, proj, &commitID, target.TriggerInit, r.svcModel, r.config, runtime.OptOrderChanged)
+	rti, commit, err := runtime.Solve(r.auth, r.out, r.analytics, proj, &commitID, target.TriggerInit, r.svcModel, r.config, runtime.OptNoIndent)
 	if err != nil {
 		logging.Debug("Deleting remotely created project due to runtime setup error")
 		err2 := model.DeleteProject(namespace.Owner, namespace.Project, r.auth)
@@ -282,7 +289,12 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 			multilog.Error("Error deleting remotely created project after runtime setup error: %v", errs.JoinMessage(err2))
 			return locale.WrapError(err, "err_init_refresh_delete_project", "Could not setup runtime after init, and could not delete newly created Platform project. Please delete it manually before trying again")
 		}
-		return locale.WrapError(err, "err_init_refresh", "Could not setup runtime after init")
+		return errs.Wrap(err, "Could not initialize runtime")
+	}
+	dependencies.OutputSummary(r.out, commit.BuildPlan().RequestedArtifacts())
+	err = runtime.UpdateByReference(rti, commit, r.auth, proj, r.out, r.config, runtime.OptNone)
+	if err != nil {
+		return errs.Wrap(err, "Could not setup runtime after init")
 	}
 
 	projectfile.StoreProjectMapping(r.config, namespace.String(), filepath.Dir(proj.Source().Path()))
@@ -318,7 +330,7 @@ func getKnownVersions(lang language.Language, auth *authentication.Auth) ([]stri
 	}
 
 	if len(pkgs) == 0 {
-		return nil, &errUnrecognizedLanguage{Name: lang.Requirement()}
+		return nil, &errUnrecognizedLanguage{lang.Requirement()}
 	}
 
 	knownVersions := make([]string, len(pkgs))
@@ -338,7 +350,7 @@ func deriveVersion(lang language.Language, version string, auth *authentication.
 
 	if version == "" {
 		// Return default language.
-		langs, err := model.FetchSupportedLanguages(model.HostPlatform)
+		langs, err := model.FetchSupportedLanguages(sysinfo.OS().String())
 		if err != nil {
 			multilog.Error("Failed to fetch supported languages (using hardcoded default version): %s", errs.JoinMessage(err))
 			return lang.RecommendedVersion(), nil
@@ -426,5 +438,5 @@ func (i *Initialize) getProjectName(desiredProject string, lang string) string {
 		return desiredProject
 	}
 
-	return fmt.Sprintf("%s-%s", lang, model.HostPlatform)
+	return fmt.Sprintf("%s-%s", lang, sysinfo.OS().String())
 }

@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -14,13 +13,13 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/go-openapi/strfmt"
 )
 
 type configGetter interface {
@@ -147,7 +146,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		}
 	}
 
-	bp := model.NewBuildPlannerModel(r.auth)
+	bp := buildplanner.NewBuildPlannerModel(r.auth)
 	var branch *mono_models.Branch // the branch to write to as.yaml if it changed
 
 	// Create remote project
@@ -173,17 +172,17 @@ func (r *Push) Run(params PushParams) (rerr error) {
 
 		r.out.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", targetNamespace.Owner, targetNamespace.Project))
 
-		// Create a new project with the current project's buildexpression.
-		expr, err := bp.GetBuildExpression(commitID.String())
+		// Create a new project with the current project's buildscript.
+		script, err := bp.GetBuildScript(commitID.String())
 		if err != nil {
-			return errs.Wrap(err, "Could not get buildexpression")
+			return errs.Wrap(err, "Could not get buildscript")
 		}
-		commitID, err = bp.CreateProject(&model.CreateProjectParams{
+		commitID, err = bp.CreateProject(&buildplanner.CreateProjectParams{
 			Owner:       targetNamespace.Owner,
 			Project:     targetNamespace.Project,
 			Private:     r.project.Private(),
 			Description: locale.T("commit_message_add_initial"),
-			Expr:        expr,
+			Script:      script,
 		})
 		if err != nil {
 			return locale.WrapError(err, "err_push_create_project", "Could not create new project")
@@ -230,12 +229,12 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		}
 
 		// Perform the (fast-forward) push.
-		_, err = bp.MergeCommit(&model.MergeCommitParams{
+		_, err = bp.MergeCommit(&buildplanner.MergeCommitParams{
 			Owner:     targetNamespace.Owner,
 			Project:   targetNamespace.Project,
 			TargetRef: branch.Label, // using branch name will fast-forward
 			OtherRef:  commitID.String(),
-			Strategy:  bpModel.MergeCommitStrategyFastForward,
+			Strategy:  types.MergeCommitStrategyFastForward,
 		})
 		if err != nil {
 			return errs.Wrap(err, "Could not push")
@@ -319,9 +318,10 @@ func (r *Push) promptNamespace() (*project.Namespaced, error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get local commit")
 	}
-	lang, _, err := fetchLanguage(commitID, r.auth)
-	if err == nil {
-		name = lang.String()
+	if lang, err := model.FetchLanguageForCommit(commitID, r.auth); err == nil {
+		name = lang.Name
+	} else {
+		logging.Debug("Error fetching language for commit: %v", err)
 	}
 
 	name, err = r.prompt.Input("", locale.Tl("push_prompt_name", "What would you like the name of this project to be?"), &name)
@@ -330,18 +330,4 @@ func (r *Push) promptNamespace() (*project.Namespaced, error) {
 	}
 
 	return project.NewNamespace(owner, name, ""), nil
-}
-
-func fetchLanguage(commitID strfmt.UUID, auth *authentication.Auth) (*language.Supported, string, error) {
-	lang, err := model.FetchLanguageForCommit(commitID, auth)
-	if err != nil {
-		return nil, "", errs.Wrap(err, "Failed to retrieve language information for headless commit")
-	}
-
-	ls := language.Supported{Language: language.MakeByNameAndVersion(lang.Name, lang.Version)}
-	if !ls.Recognized() {
-		return nil, "", locale.NewError("err_push_invalid_language", lang.Name)
-	}
-
-	return &ls, lang.Version, nil
 }

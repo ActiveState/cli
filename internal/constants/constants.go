@@ -73,9 +73,6 @@ const AutoUpdateTimeoutEnvVarName = "ACTIVESTATE_CLI_UPDATE_TIMEOUT"
 // EnvironmentEnvVarName is the name of the environment variable that specifies the current environment (dev, qa, prod, etc.)
 const EnvironmentEnvVarName = "ACTIVESTATE_ENVIRONMENT"
 
-// ProjectEnvVarName is the name of the environment variable that specifies the path of the activestate.yaml config file.
-const ProjectEnvVarName = "ACTIVESTATE_PROJECT"
-
 // ActivatedStateEnvVarName is the name of the environment variable that is set when in an activated state, its value will be the path of the project
 const ActivatedStateEnvVarName = "ACTIVESTATE_ACTIVATED"
 
@@ -132,9 +129,6 @@ const OverwriteDefaultInstallationPathEnvVarName = "ACTIVESTATE_TEST_INSTALL_PAT
 
 // OverwriteDefaultSystemPathEnvVarName is the environment variable name to overwrite the system app installation directory updates FOR TESTING PURPOSES ONLY
 const OverwriteDefaultSystemPathEnvVarName = "ACTIVESTATE_TEST_SYSTEM_PATH"
-
-// OverrideOSNameEnvVarName is used to override the OS name used when initializing projects
-const OverrideOSNameEnvVarName = "ACTIVESTATE_OVERRIDE_OS_NAME"
 
 // TestAutoUpdateEnvVarName is used to test auto updates, when set to true will always attempt to auto update
 const TestAutoUpdateEnvVarName = "ACTIVESTATE_TEST_AUTO_UPDATE"
@@ -384,9 +378,6 @@ const RuntimeRecipeStore = "recipe"
 // RuntimeBuildPlanStore containts a serialization of the build plan used to create this build
 const RuntimeBuildPlanStore = "build_plan"
 
-// BuildExpressionStore holds the cached build expression for the current commit ID.
-const BuildExpressionStore = "build_expression"
-
 // BuildScriptStore holds the cached buildscript for the current project.
 const BuildScriptStore = "build_script"
 
@@ -443,6 +434,9 @@ const DefaultBranchName = "main"
 
 // UnstableConfig is the config key used to determine whether the user has opted in to unstable commands
 const UnstableConfig = "optin.unstable"
+
+// AsyncRuntimeConfig is the config key used to determine whether the user has opted in to async runtimes
+const AsyncRuntimeConfig = "optin.unstable.async_runtime"
 
 // OptinBuildscriptsConfig is the config key used to determine whether the user has opted in to buildscripts
 const OptinBuildscriptsConfig = "optin.buildscripts"
@@ -516,9 +510,6 @@ const InstallerNoSubshell = "ACTIVESTATE_CLI_INSTALLER_NO_SUBSHELL"
 
 // InstallSourceFile is the file we use to record what installed the state tool
 const InstallSourceFile = "installsource.txt"
-
-// PpmShim is the name of the ppm shim
-const PpmShim = "ppm"
 
 // PipShim is the name of the pip shim
 const PipShim = "pip"

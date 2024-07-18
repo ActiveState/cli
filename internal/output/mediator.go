@@ -3,6 +3,7 @@ package output
 import (
 	"io"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 )
 
@@ -56,7 +57,7 @@ func mediatorValue(v interface{}, format Format) interface{} {
 		if vt, ok := v.(StructuredMarshaller); ok {
 			return vt.MarshalStructured(format)
 		}
-		return StructuredError{Error: locale.Tr("err_no_structured_output", string(format))}
+		return StructuredError{Message: locale.Tr("err_unsupported_structured_output", constants.ForumsURL)}
 	}
 	if vt, ok := v.(Marshaller); ok {
 		return vt.MarshalOutput(format)

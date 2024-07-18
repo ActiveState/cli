@@ -22,7 +22,7 @@ type commitOutput struct {
 	Date              string               `locale:"date,[HEADING]Date[/RESET]" json:"date"`
 	Revision          string               `locale:"revision,[HEADING]Revision[/RESET]" json:"revision"`
 	Message           string               `locale:"message,[HEADING]Message[/RESET]" json:"message"`
-	PlainChanges      []string             `locale:"changes,[HEADING]Changes[/RESET]" json:"-"`
+	PlainChanges      []string             `locale:"changes,[HEADING]Changes[/RESET]" json:"-" opts:"hideDash"`
 	StructuredChanges []*requirementChange `opts:"hidePlain" json:"changes"`
 }
 

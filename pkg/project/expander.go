@@ -31,7 +31,7 @@ func NewExpansion(p *Project) *Expansion {
 // ApplyWithMaxDepth limits the depth of an expansion to avoid infinite expansion of a value.
 func (ctx *Expansion) ApplyWithMaxDepth(s string, depth int) (string, error) {
 	if depth > constants.ExpanderMaxDepth {
-		return "", locale.NewInputError("err_expand_recursion", "Infinite recursion trying to expand variable '{{.V0}}'", s)
+		return "", locale.NewExternalError("err_expand_recursion", "Infinite recursion trying to expand variable '{{.V0}}'", s)
 	}
 
 	regex := regexp.MustCompile(`\${?(\w+)\.?([\w-]+)?\.?([\w\.-]+)?(\(\))?}?`)
@@ -126,7 +126,10 @@ func EventExpander(_ string, name string, meta string, isFunction bool, ctx *Exp
 
 // ScriptExpander expands scripts defined in the project-file.
 func ScriptExpander(_ string, name string, meta string, isFunction bool, ctx *Expansion) (string, error) {
-	script := ctx.Project.ScriptByName(name)
+	script, err := ctx.Project.ScriptByName(name)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not get script")
+	}
 	if script == nil {
 		return "", nil
 	}

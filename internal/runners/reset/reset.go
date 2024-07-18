@@ -1,6 +1,8 @@
 package reset
 
 import (
+	"strings"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -9,12 +11,12 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
@@ -81,7 +83,7 @@ func (r *Reset) Run(params *Params) error {
 		}
 		commitID = *latestCommit
 
-	case params.CommitID == local:
+	case strings.EqualFold(params.CommitID, local):
 		localCommitID, err := localcommit.Get(r.project.Dir())
 		if err != nil {
 			return errs.Wrap(err, "Unable to get local commit")
@@ -96,7 +98,7 @@ func (r *Reset) Run(params *Params) error {
 
 		history, err := model.CommitHistoryFromID(commitID, r.auth)
 		if err != nil || len(history) == 0 {
-			return locale.WrapInputError(err, "err_reset_commitid", "The given commit ID does not exist")
+			return locale.WrapExternalError(err, "err_reset_commitid", "The given commit ID does not exist")
 		}
 	}
 
@@ -124,7 +126,7 @@ func (r *Reset) Run(params *Params) error {
 	// Ensure the buildscript exists. Normally we should never do this, but reset is used for resetting from a corrupted
 	// state, so it is appropriate.
 	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript.Initialize(r.project.Dir(), r.auth); err != nil {
+		if err := buildscript_runbit.Initialize(r.project.Dir(), r.auth); err != nil {
 			return errs.Wrap(err, "Unable to initialize buildscript")
 		}
 	}

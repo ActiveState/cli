@@ -86,7 +86,7 @@ func (u *Shell) Run(params *Params) error {
 
 	rti, err := runtime.SolveAndUpdate(u.auth, u.out, u.analytics, proj, nil, target.TriggerShell, u.svcModel, u.config, runtime.OptMinimalUI)
 	if err != nil {
-		return locale.WrapInputError(err, "err_shell_runtime_new", "Could not start a shell/prompt for this project.")
+		return locale.WrapExternalError(err, "err_shell_runtime_new", "Could not start a shell/prompt for this project.")
 	}
 
 	if process.IsActivated(u.config) {

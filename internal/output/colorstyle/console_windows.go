@@ -20,11 +20,13 @@ var consoleStyleMap = map[Style]uint16{
 	Black:   0,
 	Red:     consoleRed,
 	Green:   consoleGreen,
-	Yellow:  consoleRed | consoleGreen,
+	Yellow:  consoleRed | consoleGreen | consoleIntensity,
 	Blue:    consoleBlue,
 	Magenta: consoleRed | consoleBlue,
 	Cyan:    consoleGreen | consoleBlue,
-	White:   consoleRed | consoleGreen | consoleBlue}
+	White:   consoleRed | consoleGreen | consoleBlue,
+	Orange:  consoleRed | consoleGreen,
+}
 
 const (
 	consoleBlue      = uint16(0x0001)

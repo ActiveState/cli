@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -12,13 +11,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
 	"github.com/phayes/permbits"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
+	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
@@ -40,7 +42,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -297,7 +298,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 		args = spawnOpts.Args
 	}
 
-	cmd := exec.Command(shell, args...)
+	cmd := osutils.Command(shell, args...)
 
 	cmd.Env = spawnOpts.Env
 	if spawnOpts.Dir != "" {
@@ -348,6 +349,17 @@ func (s *Session) PrepareProject(namespace, commitID string) {
 	if commitID != "" {
 		s.PrepareCommitIdFile(commitID)
 	}
+}
+
+func (s *Session) PrepareProjectAndBuildScript(namespace, commitID string) {
+	s.PrepareProject(namespace, commitID)
+	bp := buildplanner.NewBuildPlannerModel(nil)
+	script, err := bp.GetBuildScript(commitID)
+	require.NoError(s.T, err)
+	b, err := script.Marshal()
+	require.NoError(s.T, err)
+	err = fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.BuildScriptFileName), b)
+	require.NoError(s.T, err)
 }
 
 // PrepareFile writes a file to path with contents, expecting no error
@@ -705,12 +717,19 @@ func (s *Session) IgnoreLogErrors() {
 var errorOrPanicRegex = regexp.MustCompile(`(?:\[ERR |\[CRT |Panic:)`)
 
 func (s *Session) detectLogErrors() {
+	var sectionStart, sectionEnd string
+	sectionStart = "\n=== "
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		sectionStart = "##[group]"
+		sectionEnd = "##[endgroup]"
+	}
 	for _, path := range s.LogFiles() {
 		if !strings.HasPrefix(filepath.Base(path), "state-") {
 			continue
 		}
 		if contents := string(fileutils.ReadFileUnsafe(path)); errorOrPanicRegex.MatchString(contents) {
-			s.T.Errorf("Found error and/or panic in log file %s\nIf this was expected, call session.IgnoreLogErrors() to avoid this check\nLog contents:\n%s", path, contents)
+			s.T.Errorf("%sFound error and/or panic in log file %s\nIf this was expected, call session.IgnoreLogErrors() to avoid this check\nLog contents:\n%s%s",
+				sectionStart, path, contents, sectionEnd)
 		}
 	}
 }

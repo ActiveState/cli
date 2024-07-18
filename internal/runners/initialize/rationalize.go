@@ -9,12 +9,13 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 )
 
 func rationalizeError(owner, project string, rerr *error) {
-	var pcErr *bpModel.ProjectCreatedError
+	var pcErr *bpResp.ProjectCreatedError
 	var errArtifactSetup *setup.ArtifactSetupErrors
 	var projectExistsErr *errProjectExists
 	var unrecognizedLanguageErr *errUnrecognizedLanguage
@@ -58,18 +59,18 @@ func rationalizeError(owner, project string, rerr *error) {
 	// Error creating project.
 	case errors.As(*rerr, &pcErr):
 		switch pcErr.Type {
-		case bpModel.AlreadyExistsErrorType:
+		case types.AlreadyExistsErrorType:
 			*rerr = errs.WrapUserFacing(
 				pcErr,
 				locale.Tl("err_create_project_exists", "The project '{{.V0}}' already exists under '{{.V1}}'", project, owner),
 				errs.SetInput(),
 			)
-		case bpModel.ForbiddenErrorType:
+		case types.ForbiddenErrorType:
 			*rerr = errs.NewUserFacing(
 				locale.Tl("err_create_project_forbidden", "You do not have permission to create that project"),
 				errs.SetInput(),
 				errs.SetTips(locale.T("err_init_authenticated")))
-		case bpModel.NotFoundErrorType:
+		case types.NotFoundErrorType:
 			*rerr = errs.WrapUserFacing(
 				pcErr,
 				locale.Tl("err_create_project_not_found", "Could not create project because the organization '{{.V0}}' was not found.", owner),

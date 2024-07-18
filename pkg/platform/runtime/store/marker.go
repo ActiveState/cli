@@ -47,6 +47,22 @@ func (s *Store) MarkerIsValid(commitID strfmt.UUID) bool {
 	return true
 }
 
+// VersionMarkerIsValid checks if stored runtime was installed with the current state tool version
+func (s *Store) VersionMarkerIsValid() bool {
+	marker, err := s.parseMarker()
+	if err != nil {
+		logging.Debug("Unable to parse marker file %s: %v", marker, err)
+		return false
+	}
+
+	if marker.Version != constants.Version {
+		logging.Debug("Could not match State Tool version in %s, expected: %s, got: %s", marker, constants.Version, marker.Version)
+		return false
+	}
+
+	return true
+}
+
 func (s *Store) parseMarker() (*Marker, error) {
 	if !s.HasMarker() {
 		return nil, errs.New(`Marker file "%s" does not exist`, s.markerFile())

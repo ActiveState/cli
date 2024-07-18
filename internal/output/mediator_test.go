@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 )
 
@@ -67,7 +68,7 @@ func Test_mediatorValue(t *testing.T) {
 				"unstructured",
 				JSONFormatName,
 			},
-			StructuredError{Error: locale.Tr("err_no_structured_output", string(JSONFormatName))},
+			StructuredError{Message: locale.Tr("err_unsupported_structured_output", constants.ForumsURL)},
 		},
 	}
 	for _, tt := range tests {

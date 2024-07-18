@@ -67,11 +67,6 @@ func (f *JSON) Fprint(writer io.Writer, value interface{}) {
 	}
 }
 
-type StructuredError struct {
-	Error string   `json:"error"`
-	Tips  []string `json:"tips,omitempty"`
-}
-
 // Error will marshal and print the given value to the error writer
 // NOTE that JSON always prints to the output writer, the error writer is unused.
 func (f *JSON) Error(value interface{}) {
@@ -119,6 +114,16 @@ func prepareJSONValue(v interface{}) interface{} {
 	return v
 }
 
+// StructuredError communicates that an error happened due to output that was meant to be structured but wasn't.
+type StructuredError struct {
+	Message string   `json:"error"`
+	Tips    []string `json:"tips,omitempty"`
+}
+
+func (s StructuredError) Error() string {
+	return s.Message
+}
+
 // toStructuredError attempts to convert the given interface into a StructuredError struct.
 // It accepts an error object or a single string error message.
 // If it cannot perform the conversion, it returns a StructuredError indicating so.
@@ -127,11 +132,11 @@ func toStructuredError(v interface{}) StructuredError {
 	case StructuredError:
 		return vv
 	case error:
-		return StructuredError{Error: locale.JoinedErrorMessage(vv)}
+		return StructuredError{Message: locale.JoinedErrorMessage(vv)}
 	case string:
-		return StructuredError{Error: vv}
+		return StructuredError{Message: vv}
 	}
 	message := fmt.Sprintf("Not a recognized error format: %v", v)
 	multilog.Error(message)
-	return StructuredError{Error: message}
+	return StructuredError{Message: message}
 }
