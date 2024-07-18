@@ -866,10 +866,6 @@ languages_install_cmd_description:
   other: Update the language of a project
 arg_languages_install_description:
   other: The language to update in the form of <language>@<version>
-err_language_format:
-  other: The language and version provided is not formatting correctly, must be in the form of <language>@<version>
-err_language_mismatch:
-  other: Cannot change languages, only changes to the current project's language is allowed
 err_no_recipes:
   other: No build recipes could be generated for the current project
 err_order_unknown:

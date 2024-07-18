@@ -130,8 +130,17 @@ func (r *RequirementOperation) Uninstall(requirements []*Requirement) (rerr erro
 	if !r.Config.GetBool(constants.AsyncRuntimeConfig) {
 		r.Output.Notice("")
 
+		// For deprecated commands like `platforms remove`, change the trigger.
+		trig := trigger.TriggerPackage
+		if len(requirements) == 1 && requirements[0].Namespace != nil {
+			switch requirements[0].Namespace.Type() {
+			case model.NamespacePlatform:
+				trig = trigger.TriggerPlatform
+			}
+		}
+
 		// refresh or install runtime
-		_, err = runtime_runbit.Update(r.prime, trigger.TriggerPackage,
+		_, err = runtime_runbit.Update(r.prime, trig,
 			runtime_runbit.WithCommit(rtCommit),
 			runtime_runbit.WithoutBuildscriptValidation(),
 		)

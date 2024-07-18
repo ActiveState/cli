@@ -183,12 +183,6 @@ func (r *RequirementOperation) Install(ts *time.Time, requirements []*Requiremen
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
 
-	// For deprecated commands like `languages install`, change the trigger.
-	trig := trigger.TriggerPackage
-	if len(namespaces) == 1 && namespaces[0].Type() == model.NamespaceLanguage {
-		trig = trigger.TriggerLanguage
-	}
-
 	// Solve the runtime.
 	solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
 	rtCommit, err := bp.FetchCommit(stagedCommitID, r.Project.Owner(), r.Project.Name(), nil)
@@ -216,6 +210,12 @@ func (r *RequirementOperation) Install(ts *time.Time, requirements []*Requiremen
 	// Update the runtime.
 	if !r.Config.GetBool(constants.AsyncRuntimeConfig) {
 		r.Output.Notice("")
+
+		// For deprecated commands like `languages install`, change the trigger.
+		trig := trigger.TriggerPackage
+		if len(namespaces) == 1 && namespaces[0].Type() == model.NamespaceLanguage {
+			trig = trigger.TriggerLanguage
+		}
 
 		// refresh or install runtime
 		_, err = runtime_runbit.Update(r.prime, trig,
