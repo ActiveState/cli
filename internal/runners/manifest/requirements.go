@@ -20,7 +20,7 @@ type requirements struct {
 	UnknownRequirements []buildscript.UnknownRequirement `json:"unknown_requirements,omitempty"`
 }
 
-func newRequirements(reqs []buildscript.Requirement, bpReqs buildplan.Ingredients, vulns vulnerabilities) requirements {
+func newRequirements(reqs []buildscript.Requirement, bpReqs buildplan.Ingredients, vulns vulnerabilities, shortRevIDs bool) requirements {
 	var knownReqs []requirement
 	var unknownReqs []buildscript.UnknownRequirement
 	for _, req := range reqs {
@@ -33,9 +33,13 @@ func newRequirements(reqs []buildscript.Requirement, bpReqs buildplan.Ingredient
 				Vulnerabilities: vulns.get(r.Name, r.Namespace),
 			})
 		case buildscript.RevisionRequirement:
+			revID := r.RevisionID.String()
+			if shortRevIDs && len(revID) > 8 {
+				revID = revID[0:8]
+			}
 			knownReqs = append(knownReqs, requirement{
 				Name:            r.Name,
-				ResolvedVersion: &resolvedVersion{Requested: r.RevisionID.String()},
+				ResolvedVersion: &resolvedVersion{Requested: revID},
 			})
 		case buildscript.UnknownRequirement:
 			unknownReqs = append(unknownReqs, r)

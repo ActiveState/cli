@@ -84,7 +84,7 @@ main = runtime
 		e2e.OptArgs("manifest"),
 		e2e.OptAppendEnv(constants.DisableBuildscriptDirtyCheck+"=true"), // Don't want to commit buildscript
 	)
-	cp.ExpectRe(`IngWithRevision\s+` + e2e.CommitIDNotChecked)
+	cp.ExpectRe(`IngWithRevision\s+` + e2e.CommitIDNotChecked[0:8] + " ")
 	cp.Expect("WARNING")
 	cp.Expect("project has additional build criteria")
 	cp.Expect("Unrecognized")

@@ -81,7 +81,7 @@ func (m *Manifest) Run() (rerr error) {
 		return errs.Wrap(err, "Could not fetch vulnerabilities")
 	}
 
-	reqOut := newRequirements(reqs, bpReqs, vulns)
+	reqOut := newRequirements(reqs, bpReqs, vulns, !m.out.Type().IsStructured())
 	if m.out.Type().IsStructured() {
 		m.out.Print(reqOut)
 	} else {
