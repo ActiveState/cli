@@ -1539,3 +1539,5 @@ refresh_runtime_uptodate:
 warn_additional_requirements:
   other: |
     [WARNING]WARNING:[/RESET] This project has additional build criteria that cannot be managed through the State Tool, please edit your [ACTIONABLE]buildscript.as[/RESET] file manually to modify these:
+migrate_project_error:
+  other: Could not migrate your project files. Please address any errors and try again. For full detail view your log file with '[ACTIONABLE]state export log -i 0[/RESET]'.
