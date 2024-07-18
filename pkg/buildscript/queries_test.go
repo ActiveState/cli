@@ -127,3 +127,57 @@ func TestRequirements(t *testing.T) {
 		})
 	}
 }
+
+const ValidZeroUUID = "00000000-0000-0000-0000-000000000000"
+
+// TestRevision tests that build scripts can correctly read revisions from build expressions
+// and return them in a structured format external to the internal, raw format.
+func TestRevision(t *testing.T) {
+	type args struct {
+		filename string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []RevisionRequirement
+		wantErr bool
+	}{
+		{
+			name: "basic",
+			args: args{
+				filename: "buildexpression_rev.json",
+			},
+			want: []RevisionRequirement{
+				{
+					Name:       "revision-pkg",
+					RevisionID: ValidZeroUUID,
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wd, err := environment.GetRootPath()
+			assert.NoError(t, err)
+
+			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "buildscript", "testdata", tt.args.filename))
+			assert.NoError(t, err)
+
+			script, err := UnmarshalBuildExpression(data, nil)
+			assert.NoError(t, err)
+
+			got, err := script.Requirements()
+			assert.NoError(t, err)
+
+			gotReqs := []RevisionRequirement{}
+			for _, g := range got {
+				gotReqs = append(gotReqs, g.(RevisionRequirement))
+			}
+
+			if !reflect.DeepEqual(gotReqs, tt.want) {
+				t.Errorf("BuildExpression.Requirements() = %v, want %v", gotReqs, tt.want)
+			}
+		})
+	}
+}
