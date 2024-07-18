@@ -51,7 +51,7 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 func newInstallCommand(prime *primer.Values) *captain.Command {
 	runner := packages.NewInstall(prime)
 
-	params := &packages.InstallRunParams{}
+	params := &packages.InstallRunParams{NamespaceType: &model.NamespacePackage}
 
 	var packagesRaw string
 	cmd := captain.NewCommand(

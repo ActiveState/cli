@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
@@ -26,16 +25,7 @@ import (
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 )
 
-type ErrMultipleMatches struct {
-	Query   string
-	Matches []*model.IngredientAndVersion
-}
-
-func (e ErrMultipleMatches) Error() string {
-	return "multiple matches"
-}
-
-func (r *RequirementOperation) Install(ts *time.Time, requirements []*Requirement, namespaces []*model.Namespace) (rerr error) {
+func (r *RequirementOperation) Install(ts *time.Time, requirements []*Requirement) (rerr error) {
 	defer r.rationalizeError(&rerr)
 
 	if len(requirements) == 0 {
@@ -55,23 +45,8 @@ func (r *RequirementOperation) Install(ts *time.Time, requirements []*Requiremen
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 
-	// Construct a list of namespaces to search for ingredients in (if unspecified).
-	// This consists of the language namespace as well as namespaces for each of a project's
-	// language(s).
-	if len(namespaces) == 0 {
-		namespaces = append(namespaces, ptr.To(model.NewNamespaceLanguage()))
-		if languages, err := model.FetchLanguagesForCommit(commitID, r.Auth); err == nil {
-			for _, lang := range languages {
-				namespaces = append(namespaces, ptr.To(model.NewNamespacePackage(lang.Name)))
-				namespaces = append(namespaces, ptr.To(model.NewNamespaceBundle(lang.Name)))
-			}
-		} else {
-			logging.Debug("Could not get languages from project: %v", err)
-		}
-	}
-
 	// Search for the requested requirements.
-	ingredients, err := r.searchForRequirements(requirements, namespaces)
+	ingredients, err := r.searchForRequirements(requirements)
 	if err != nil {
 		return errs.Wrap(err, "Failed to search for requirements")
 	}
@@ -213,8 +188,11 @@ func (r *RequirementOperation) Install(ts *time.Time, requirements []*Requiremen
 
 		// For deprecated commands like `languages install`, change the trigger.
 		trig := trigger.TriggerPackage
-		if len(namespaces) == 1 && namespaces[0].Type() == model.NamespaceLanguage {
-			trig = trigger.TriggerLanguage
+		if len(requirements) == 1 && requirements[0].Namespace != nil {
+			switch requirements[0].Namespace.Type() {
+			case model.NamespaceLanguage:
+				trig = trigger.TriggerLanguage
+			}
 		}
 
 		// refresh or install runtime
@@ -279,9 +257,7 @@ func (r *RequirementOperation) Install(ts *time.Time, requirements []*Requiremen
 	return nil
 }
 
-// searchForRequirements searches for the given requirements in the given namespaces and returns
-// the associated list of found ingredients.
-func (r *RequirementOperation) searchForRequirements(requirements []*Requirement, namespaces []*model.Namespace) (results []*model.IngredientAndVersion, rerr error) {
+func (r *RequirementOperation) searchForRequirements(requirements []*Requirement) (results []*model.IngredientAndVersion, rerr error) {
 	results = make([]*model.IngredientAndVersion, len(requirements))
 
 	names := make([]string, len(requirements))
@@ -302,28 +278,16 @@ func (r *RequirementOperation) searchForRequirements(requirements []*Requirement
 			return nil, errs.Wrap(err, "Unable to search for requirement '%s'", req.Name)
 		}
 
-		// Collect all ingredients into a unique list of requirement names and namespaces.
+		// Collect all ingredients into a unique list of requirement names.
 		unique := make([]*model.IngredientAndVersion, 0)
 		for _, i := range ingredients {
-			// If the ingredient's requirement did not specify a namespace, verify that ingredient is in
-			// one of the requested namespaces. The ingredient API does not support searching in a set of
-			// specific namespaces. It's either one or all.
-			isValidNamespace := req.Namespace != nil
-			if !isValidNamespace {
-				for _, ns := range namespaces {
-					if ns.String() == *i.Ingredient.PrimaryNamespace {
-						isValidNamespace = true
-						break
-					}
-				}
-			}
-			if isValidNamespace && !funk.Contains(unique, i) {
+			if !funk.Contains(unique, i) {
 				unique = append(unique, i)
 			}
 		}
 
 		if len(unique) == 0 {
-			suggestions, err := getSuggestions(req.Namespace, req.Name, namespaces, r.Auth)
+			suggestions, err := getSuggestions(req.Namespace, req.Name, r.Auth)
 			if err != nil {
 				multilog.Error("Failed to retrieve suggestions: %v", err)
 			}
@@ -337,10 +301,6 @@ func (r *RequirementOperation) searchForRequirements(requirements []*Requirement
 			return nil, &ErrNoMatches{
 				locale.WrapExternalError(err, "package_ingredient_alternatives", "", req.Name, strings.Join(suggestions, "\n")),
 				req.Name, ptr.To(strings.Join(suggestions, "\n"))}
-		}
-
-		if len(unique) > 1 {
-			return nil, &ErrMultipleMatches{req.Name, unique}
 		}
 
 		results[i] = unique[0]

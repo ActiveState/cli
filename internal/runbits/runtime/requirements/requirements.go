@@ -128,21 +128,7 @@ func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 	return nil
 }
 
-func getSuggestions(namespace *model.Namespace, name string, filter []*model.Namespace, auth *authentication.Auth) ([]string, error) {
-	if namespace == nil {
-		// Do not suggest from more than one namespace; only suggest from a single namespace (e.g. the
-		// project's language).
-		languages := make(map[string]bool)
-		for _, ns := range filter {
-			if lang := model.LanguageFromNamespace(ns.String()); lang != "" {
-				languages[lang] = true
-			}
-		}
-		if len(languages) != 1 {
-			return []string{}, nil
-		}
-	}
-
+func getSuggestions(namespace *model.Namespace, name string, auth *authentication.Auth) ([]string, error) {
 	ns := ""
 	if namespace != nil {
 		ns = namespace.String()
@@ -150,19 +136,6 @@ func getSuggestions(namespace *model.Namespace, name string, filter []*model.Nam
 	results, err := model.SearchIngredients(ns, name, false, nil, auth)
 	if err != nil {
 		return []string{}, locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
-	}
-
-	// Remove any results that do not match the given list of namespaces.
-	// The ingredient API does not support searching in a set of specific namespaces. It's either one
-	// or all.
-	nsFilter := make(map[string]bool)
-	for _, ns := range filter {
-		nsFilter[ns.String()] = true
-	}
-	for i := len(results) - 1; i >= 0; i-- {
-		if _, exists := nsFilter[*results[i].Ingredient.PrimaryNamespace]; !exists {
-			results = append(results[:i], results[i+1:]...)
-		}
 	}
 
 	maxResults := 5

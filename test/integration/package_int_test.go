@@ -278,9 +278,9 @@ func (suite *PackageIntegrationTestSuite) TestPackage_detached_operation() {
 	cp.ExpectExitCode(0)
 
 	suite.Run("install non-existing", func() {
-		cp := ts.Spawn("install", "argpars")
+		cp := ts.Spawn("install", "json")
 		cp.Expect("No results found for search term")
-		cp.Expect("argparse")
+		cp.Expect("json2")
 		cp.Wait()
 	})
 
@@ -512,14 +512,14 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "Charset-normalizer"),
+		e2e.OptArgs("install", "Charset_normalizer"),
 		e2e.OptWD(dir),
 	)
 	// Even though we are not sourcing a runtime it can still take time to resolve
 	// the dependencies and create the commit
 	cp.Expect("charset-normalizer", e2e.RuntimeSourcingTimeoutOpt)
 	cp.Expect("is different")
-	cp.Expect("Charset-normalizer")
+	cp.Expect("Charset_normalizer")
 	cp.ExpectExitCode(0)
 
 	anotherDir := filepath.Join(ts.Dirs.Work, "not-normalized")

@@ -64,7 +64,7 @@ func (suite *InstallIntegrationTestSuite) TestInstall_NoMatches_Alternatives() {
 	defer ts.Close()
 
 	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
-	cp := ts.Spawn("install", "dataa")
+	cp := ts.Spawn("install", "database")
 	cp.Expect("No results found for search term")
 	cp.Expect("did you mean") // This verifies alternatives were found
 	cp.ExpectExitCode(1)
@@ -111,56 +111,6 @@ func (suite *InstallIntegrationTestSuite) TestInstall_Resolved() {
 	cp.Expect("requests")
 	cp.Expect("Auto → 2.") // note: the patch version is variable, so just expect that it exists
 	cp.ExpectExitCode(0)
-}
-
-func (suite *InstallIntegrationTestSuite) TestInstall_Language() {
-	suite.OnlyRunForTags(tagsuite.Install)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	ts.PrepareEmptyProject()
-
-	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("install", "python")
-	cp.Expect("Language added")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("languages")
-	cp.Expect("python")
-	cp.Expect("Auto → 3.") // note: the minor version is variable, so just expect that it exists
-	cp.ExpectExitCode(0)
-}
-
-func (suite *InstallIntegrationTestSuite) TestInstall_Multiple_Matches() {
-	suite.OnlyRunForTags(tagsuite.Install)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	ts.PrepareEmptyProject()
-
-	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("install", "python", "perl")
-	cp.Expect("Language added: python")
-	cp.Expect("Language added: perl")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("install", "datetime")
-	cp.Expect("multiple matches")
-	cp.Expect("Matches found:")
-	cp.Expect("Name")
-	cp.Expect("Type")
-	cp.Expect("Namespace")
-	cp.Expect("DateTime")
-	cp.Expect("Perl package")
-	cp.Expect("language/perl/DateTime")
-	cp.Expect("DateTime")
-	cp.Expect("Python package")
-	cp.Expect("language/python/DateTime")
-	cp.ExpectExitCode(1)
 }
 
 func TestInstallIntegrationTestSuite(t *testing.T) {

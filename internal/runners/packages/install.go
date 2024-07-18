@@ -44,7 +44,6 @@ func (a *Install) Run(params *InstallRunParams) (rerr error) {
 	logging.Debug("ExecuteInstall")
 
 	var reqs []*requirements.Requirement
-	var namespaces []*model.Namespace
 
 	for _, p := range params.Packages {
 		req := &requirements.Requirement{
@@ -53,8 +52,31 @@ func (a *Install) Run(params *InstallRunParams) (rerr error) {
 			Operation: types.OperationAdded,
 		}
 
-		if p.Namespace != "" {
-			if params.NamespaceType != nil {
+		if p.Namespace == "" {
+			switch *params.NamespaceType {
+			case model.NamespacePackage, model.NamespaceBundle:
+				commitID, err := localcommit.Get(a.prime.Project().Dir())
+				if err != nil {
+					return errs.Wrap(err, "Unable to get local commit")
+				}
+
+				if languages, err := model.FetchLanguagesForCommit(commitID, a.prime.Auth()); err == nil {
+					for _, lang := range languages {
+						ns := model.NewNamespacePackage(lang.Name)
+						if *params.NamespaceType == model.NamespaceBundle {
+							ns = model.NewNamespaceBundle(lang.Name)
+						}
+						req.Namespace = &ns
+					}
+				} else {
+					return errs.Wrap(err, "Could not get language(s) from project")
+				}
+
+			case model.NamespaceLanguage:
+				req.Namespace = ptr.To(model.NewNamespaceLanguage())
+			}
+		} else {
+			if *params.NamespaceType != model.NamespacePackage {
 				// Specifying a namespace in a deprecated command like `languages install` or `bundles
 				// install` is an input error.
 				return &errNamespaceMismatch{&p}
@@ -67,31 +89,10 @@ func (a *Install) Run(params *InstallRunParams) (rerr error) {
 		reqs = append(reqs, req)
 	}
 
-	// For deprecated commands like `bundles install` and `languages install`, manually construct the
-	// namespace to search in.
-	switch params.NamespaceType {
-	case &model.NamespaceBundle:
-		commitID, err := localcommit.Get(a.prime.Project().Dir())
-		if err != nil {
-			return errs.Wrap(err, "Unable to get local commit")
-		}
-
-		if languages, err := model.FetchLanguagesForCommit(commitID, a.prime.Auth()); err == nil {
-			for _, lang := range languages {
-				namespaces = append(namespaces, ptr.To(model.NewNamespaceBundle(lang.Name)))
-			}
-		} else {
-			return errs.Wrap(err, "Could not get language(s) from project")
-		}
-
-	case &model.NamespaceLanguage:
-		namespaces = append(namespaces, ptr.To(model.NewNamespaceLanguage()))
-	}
-
 	ts, err := getTime(&params.Timestamp, a.prime.Auth(), a.prime.Project())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get timestamp from params")
 	}
 
-	return requirements.NewRequirementOperation(a.prime).Install(ts, reqs, namespaces)
+	return requirements.NewRequirementOperation(a.prime).Install(ts, reqs)
 }
