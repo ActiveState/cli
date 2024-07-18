@@ -17,6 +17,7 @@ const (
 	requirementNamespaceKey           = "namespace"
 	requirementVersionRequirementsKey = "version_requirements"
 	requirementVersionKey             = "version"
+	requirementRevisionIDKey          = "revision_id"
 	requirementComparatorKey          = "comparator"
 )
 

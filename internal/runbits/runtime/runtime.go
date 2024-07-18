@@ -188,7 +188,7 @@ func Update(
 	}
 
 	// Validate buildscript
-	if prime.Config().GetBool(constants.OptinBuildscriptsConfig) && opts.ValidateBuildscript {
+	if prime.Config().GetBool(constants.OptinBuildscriptsConfig) && opts.ValidateBuildscript && os.Getenv(constants.DisableBuildscriptDirtyCheck) != "true" {
 		bs, err := buildscript_runbit.ScriptFromProject(proj)
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to get buildscript")
