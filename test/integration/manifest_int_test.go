@@ -64,7 +64,7 @@ func (suite *ManifestIntegrationTestSuite) TestManifest_Advanced_Reqs() {
 	cp := ts.Spawn("config", "set", constants.OptinBuildscriptsConfig, "true")
 	cp.ExpectExitCode(0)
 
-	ts.PrepareProject("ActiveState/cli", e2e.CommitIDNotChecked)
+	ts.PrepareProject("ActiveState-CLI-Testing/Python-With-Custom-Reqs", "92ac7df2-0b0c-42f5-9b25-75b0cb4063f7")
 	bsf := filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName)
 	fileutils.WriteFile(bsf, []byte(fmt.Sprintf(`
 at_time = "2022-07-07T19:51:01.140Z"
@@ -73,8 +73,8 @@ sources = solve(
 	at_time = at_time,
 	requirements = [
 		Req(name = "python", namespace = "language", version = Eq(value = "3.9.13")),
-		Revision(name = "IngWithRevision", revision_id = %s),
-		BuildFlag(name = "SomeOpt", value = "SomeValue")
+		Revision(name = "IngWithRevision", revision_id = "%s"),
+		Unrecognized(name = "SomeOpt", value = "SomeValue")
 	]
 )
 main = runtime
@@ -82,24 +82,23 @@ main = runtime
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("manifest"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"), // Don't want to commit buildscript
+		e2e.OptAppendEnv(constants.DisableBuildscriptDirtyCheck+"=true"), // Don't want to commit buildscript
 	)
-	cp.Expect("Operating on project: ActiveState/cli")
 	cp.ExpectRe(`IngWithRevision\s+` + e2e.CommitIDNotChecked)
 	cp.Expect("WARNING")
 	cp.Expect("project has additional build criteria")
-	cp.Expect("BuildFlag")
+	cp.Expect("Unrecognized")
 	cp.Expect(`name = "SomeOpt", value = "SomeValue"`)
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("manifest", "--output", "json"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"), // Don't want to commit buildscript
+		e2e.OptAppendEnv(constants.DisableBuildscriptDirtyCheck+"=true"), // Don't want to commit buildscript
 	)
 	cp.ExpectExitCode(0)
 	out := cp.Output()
 	suite.Require().Contains(out, `{"name":"IngWithRevision","version":{"requested":"00000000-0000-0000-0000-000000000000","resolved":"00000000-0000-0000-0000-000000000000"}}`)
-	suite.Require().Contains(out, `"unknown_requirements":[{"name":"BuildFlag","value":"name = \"SomeOpt\", value = \"SomeValue\""}]`)
+	suite.Require().Contains(out, `"unknown_requirements":[{"name":"Unrecognized","value":"name = \"SomeOpt\", value = \"SomeValue\""}]`)
 }
 
 func TestManifestIntegrationTestSuite(t *testing.T) {
