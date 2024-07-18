@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -63,28 +64,28 @@ func (suite *ManifestIntegrationTestSuite) TestManifest_Advanced_Reqs() {
 	cp := ts.Spawn("config", "set", constants.OptinBuildscriptsConfig, "true")
 	cp.ExpectExitCode(0)
 
-	ts.PrepareProject("ActiveState/cli", "00000000-0000-0000-0000-000000000000")
+	ts.PrepareProject("ActiveState/cli", e2e.CommitIDNotChecked)
 	bsf := filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName)
-	fileutils.WriteFile(bsf, []byte(`
+	fileutils.WriteFile(bsf, []byte(fmt.Sprintf(`
 at_time = "2022-07-07T19:51:01.140Z"
 runtime = state_tool_artifacts_v1(src = sources)
 sources = solve(
 	at_time = at_time,
 	requirements = [
 		Req(name = "python", namespace = "language", version = Eq(value = "3.9.13")),
-		Revision(name = "IngWithRevision", revision_id = "00000000-0000-0000-0000-000000000000"),
+		Revision(name = "IngWithRevision", revision_id = %s),
 		BuildFlag(name = "SomeOpt", value = "SomeValue")
 	]
 )
 main = runtime
-`))
+`, e2e.CommitIDNotChecked)))
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("manifest"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=true"), // Don't want to commit buildscript
 	)
 	cp.Expect("Operating on project: ActiveState/cli")
-	cp.ExpectRe(`IngWithRevision\s+00000000-0000-0000-0000-000000000000`)
+	cp.ExpectRe(`IngWithRevision\s+` + e2e.CommitIDNotChecked)
 	cp.Expect("WARNING")
 	cp.Expect("project has additional build criteria")
 	cp.Expect("BuildFlag")
