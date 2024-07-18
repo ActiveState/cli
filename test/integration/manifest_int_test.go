@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -97,6 +98,7 @@ main = runtime
 	)
 	cp.ExpectExitCode(0)
 	out := cp.Output()
+	out = strings.Replace(out, "\n", "", -1) // Work around words being wrapped on Windows
 	suite.Require().Contains(out, `{"name":"IngWithRevision","version":{"requested":"00000000-0000-0000-0000-000000000000","resolved":"00000000-0000-0000-0000-000000000000"}}`)
 	suite.Require().Contains(out, `"unknown_requirements":[{"name":"Unrecognized","value":"name = \"SomeOpt\", value = \"SomeValue\""}]`)
 }
