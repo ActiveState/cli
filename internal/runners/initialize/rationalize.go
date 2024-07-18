@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/runbits/org"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
@@ -40,7 +41,7 @@ func rationalizeError(owner, project string, rerr *error) {
 			errs.SetInput(),
 		)
 
-	case errors.Is(*rerr, errNoOwner):
+	case errors.Is(*rerr, org.ErrNoOwner):
 		*rerr = errs.WrapUserFacing(*rerr,
 			locale.Tr("err_init_invalid_org", owner),
 			errs.SetInput(),

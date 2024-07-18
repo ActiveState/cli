@@ -1,6 +1,7 @@
 package packages
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -11,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
+	"github.com/ActiveState/cli/internal/runbits/org"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
@@ -74,7 +76,8 @@ func NewImport(prime primeable) *Import {
 }
 
 // Run executes the import behavior.
-func (i *Import) Run(params *ImportRunParams) error {
+func (i *Import) Run(params *ImportRunParams) (rerr error) {
+	defer rationalizeError(i.prime.Auth(), &rerr)
 	logging.Debug("ExecuteImport")
 
 	proj := i.prime.Project()
@@ -118,7 +121,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_cannot_get_build_expression", "Could not get build expression")
 	}
 
-	if err := applyChangeset(changeset, bs); err != nil {
+	if err := i.applyChangeset(changeset, bs); err != nil {
 		return locale.WrapError(err, "err_cannot_apply_changeset", "Could not apply changeset")
 	}
 
@@ -185,7 +188,7 @@ func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model
 	return changeset, err
 }
 
-func applyChangeset(changeset model.Changeset, bs *buildscript.BuildScript) error {
+func (i *Import) applyChangeset(changeset model.Changeset, bs *buildscript.BuildScript) error {
 	for _, change := range changeset {
 		var expressionOperation types.Operation
 		switch change.Operation {
@@ -197,9 +200,21 @@ func applyChangeset(changeset model.Changeset, bs *buildscript.BuildScript) erro
 			expressionOperation = types.OperationUpdated
 		}
 
+		namespace := change.Namespace
+		if namespace == "" {
+			if !i.prime.Auth().Authenticated() {
+				return rationalize.ErrNotAuthenticated
+			}
+			name, err := org.Get("", i.prime.Auth(), i.prime.Config())
+			if err != nil {
+				return errs.Wrap(err, "Unable to get an org for the user")
+			}
+			namespace = fmt.Sprintf("%s/%s", constants.PlatformPrivateNamespace, name)
+		}
+
 		req := types.Requirement{
 			Name:      change.Requirement,
-			Namespace: change.Namespace,
+			Namespace: namespace,
 		}
 
 		for _, constraint := range change.VersionConstraints {
