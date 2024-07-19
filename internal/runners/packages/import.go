@@ -123,7 +123,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 	}
 
 	msg := locale.T("commit_reqstext_message")
-	commitID, err := bp.StageCommit(buildplanner.StageCommitParams{
+	rtCommit, err := bp.StageCommit(buildplanner.StageCommitParams{
 		Owner:        proj.Owner(),
 		Project:      proj.Name(),
 		ParentCommit: latestCommit.String(),
@@ -133,15 +133,10 @@ func (i *Import) Run(params *ImportRunParams) error {
 	if err != nil {
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
+	commitID := rtCommit.CommitID
 
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
-
-	// Solve the runtime.
-	rtCommit, err := bp.FetchCommit(latestCommit, proj.Owner(), proj.Name(), nil)
-	if err != nil {
-		return errs.Wrap(err, "Failed to fetch build result for previous commit")
-	}
 
 	// Output change summary.
 	previousCommit, err := bp.FetchCommit(latestCommit, proj.Owner(), proj.Name(), nil)

@@ -106,7 +106,7 @@ func (c *Commit) Run() (rerr error) {
 		}
 	}()
 
-	stagedCommitID, err := bp.StageCommit(buildplanner.StageCommitParams{
+	rtCommit, err := bp.StageCommit(buildplanner.StageCommitParams{
 		Owner:        proj.Owner(),
 		Project:      proj.Name(),
 		ParentCommit: localCommitID.String(),
@@ -115,6 +115,7 @@ func (c *Commit) Run() (rerr error) {
 	if err != nil {
 		return errs.Wrap(err, "Could not update project to reflect build script changes.")
 	}
+	stagedCommitID := rtCommit.CommitID
 
 	// Update local commit ID
 	if err := localcommit.Set(proj.Dir(), stagedCommitID.String()); err != nil {
@@ -139,12 +140,6 @@ func (c *Commit) Run() (rerr error) {
 			pgSolve.Stop(locale.T("progress_fail"))
 		}
 	}()
-
-	// Solve runtime
-	rtCommit, err := bp.FetchCommit(stagedCommitID, proj.Owner(), proj.Name(), nil)
-	if err != nil {
-		return errs.Wrap(err, "Could not fetch staged commit")
-	}
 
 	// Get old buildplan.
 	commit, err := bp.FetchCommit(localCommitID, proj.Owner(), proj.Name(), nil)

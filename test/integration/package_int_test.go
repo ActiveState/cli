@@ -741,7 +741,7 @@ func (suite *PackageIntegrationTestSuite) TestChangeSummary() {
 	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
 
 	cp = ts.Spawn("install", "requests@2.31.0")
-	cp.Expect("Resolving Dependencies")
+	cp.Expect("Creating commit")
 	cp.Expect("Done")
 	cp.Expect("Installing requests@2.31.0 includes 4 direct dependencies")
 	cp.Expect("├─ ")

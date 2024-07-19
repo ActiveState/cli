@@ -44,7 +44,6 @@ func (suite *ImportIntegrationTestSuite) TestImport_detached() {
 	cp.Expect("Operating on project")
 	cp.Expect("ActiveState-CLI/small-python")
 	cp.Expect("Creating commit")
-	cp.Expect("Resolving Dependencies")
 	cp.Expect("Import Finished")
 	cp.ExpectExitCode(0)
 

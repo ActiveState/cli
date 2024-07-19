@@ -214,10 +214,11 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		Script:       script,
 	}
 
-	commitID, err := bp.StageCommit(params)
+	rtCommit, err := bp.StageCommit(params)
 	if err != nil {
 		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")
 	}
+	commitID := rtCommit.CommitID
 
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
@@ -233,16 +234,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		default:
 			trig = trigger.TriggerPackage
 		}
-
-		// Solve runtime
-		solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
-		bpm := bpModel.NewBuildPlannerModel(r.Auth)
-		rtCommit, err := bpm.FetchCommit(commitID, r.Project.Owner(), r.Project.Name(), nil)
-		if err != nil {
-			solveSpinner.Stop(locale.T("progress_fail"))
-			return errs.Wrap(err, "Failed to fetch build result")
-		}
-		solveSpinner.Stop(locale.T("progress_success"))
 
 		var oldBuildPlan *buildplan.BuildPlan
 		if rtCommit.ParentID != "" {
