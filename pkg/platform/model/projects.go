@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -35,7 +36,8 @@ func LegacyFetchProjectByName(orgName string, projectName string) (*mono_models.
 		return nil, errs.Wrap(err, "Could not get auth")
 	}
 	project, err := FetchProjectByName(orgName, projectName, auth)
-	if err == nil || !errs.Matches(err, &ErrProjectNotFound{}) {
+	var errProjectNotFound *ErrProjectNotFound
+	if err == nil || !errors.As(err, &errProjectNotFound) {
 		return project, err
 	}
 	if !auth.Authenticated() {
@@ -197,8 +199,11 @@ func CreateEmptyProject(owner, name string, private bool, auth *authentication.A
 	addParams.SetProject(&mono_models.Project{Name: name, Private: private})
 	pj, err := authClient.Projects.AddProject(addParams, auth.ClientAuth())
 	if err != nil {
+		var errAddProjectConflict *projects.AddProjectConflict
+		var errAddProjectNotFound *projects.AddProjectNotFound
+
 		msg := api.ErrorMessageFromPayload(err)
-		if errs.Matches(err, &projects.AddProjectConflict{}) || errs.Matches(err, &projects.AddProjectNotFound{}) {
+		if errors.As(err, &errAddProjectConflict) || errors.As(err, &errAddProjectNotFound) {
 			return nil, locale.WrapInputError(err, msg)
 		}
 		return nil, locale.WrapError(err, msg)
@@ -275,8 +280,10 @@ func MakeProjectPrivate(owner, name string, auth *authentication.Auth) error {
 
 	_, err = authClient.Projects.EditProject(editParams, auth.ClientAuth())
 	if err != nil {
+		var errEditProjectBadRequest *projects.EditProjectBadRequest
+
 		msg := api.ErrorMessageFromPayload(err)
-		if errs.Matches(err, &projects.EditProjectBadRequest{}) {
+		if errors.As(err, &errEditProjectBadRequest) {
 			return locale.WrapExternalError(err, msg) // user does not have permission
 		}
 		return locale.WrapError(err, msg)

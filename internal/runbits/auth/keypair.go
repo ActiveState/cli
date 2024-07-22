@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"errors"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
@@ -16,9 +18,10 @@ import (
 // and saved.
 func ensureUserKeypair(passphrase string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
 	keypairRes, err := keypairs.FetchRaw(secretsapi.Get(auth), cfg, auth)
+	var errKeypairNotFound *keypairs.ErrKeypairNotFound
 	if err == nil {
 		err = processExistingKeypairForUser(keypairRes, passphrase, cfg, out, prompt, auth)
-	} else if errs.Matches(err, &keypairs.ErrKeypairNotFound{}) {
+	} else if errors.As(err, &errKeypairNotFound) {
 		err = generateKeypairForUser(cfg, passphrase, auth)
 	}
 
@@ -52,10 +55,11 @@ func generateKeypairForUser(cfg keypairs.Configurable, passphrase string, auth *
 // provided passphrase and then uploaded; unless the user declines, which results in err.
 func processExistingKeypairForUser(keypairRes *secretsModels.Keypair, passphrase string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
 	keypair, err := keypairs.ParseEncryptedRSA(*keypairRes.EncryptedPrivateKey, passphrase)
+	var errKeypairPassphrase *keypairs.ErrKeypairPassphrase
 	if err == nil {
 		// yay, store keypair locally just in case it isn't
 		return keypairs.SaveWithDefaults(cfg, keypair)
-	} else if !errs.Matches(err, &keypairs.ErrKeypairPassphrase{}) {
+	} else if !errors.As(err, &errKeypairPassphrase) {
 		// err did not involve an unmatched passphrase
 		return err
 	}
@@ -74,7 +78,7 @@ func processExistingKeypairForUser(keypairRes *secretsModels.Keypair, passphrase
 
 	// failed to validate with local private-key, try using previous passphrase
 	err = recoverKeypairFromPreviousPassphrase(keypairRes, passphrase, cfg, out, prompt, auth)
-	if err != nil && errs.Matches(err, &keypairs.ErrKeypairPassphrase{}) {
+	if err != nil && errors.As(err, &errKeypairPassphrase) {
 		// that failed, see if they want to regenerate their passphrase
 		err = promptUserToRegenerateKeypair(passphrase, cfg, out, prompt, auth)
 	}

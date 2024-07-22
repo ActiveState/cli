@@ -1,6 +1,7 @@
 package findproject
 
 import (
+	"errors"
 	"sort"
 	"strings"
 
@@ -18,7 +19,8 @@ type LocalProjectDoesNotExist struct{ *locale.LocalizedError }
 
 // IsLocalProjectDoesNotExistError checks if the error is a LocalProjectDoesNotExist.
 func IsLocalProjectDoesNotExistError(err error) bool {
-	return errs.Matches(err, &LocalProjectDoesNotExist{})
+	var errLocalProjectDoesNotExist *LocalProjectDoesNotExist
+	return errors.As(err, &errLocalProjectDoesNotExist)
 }
 
 func FromInputByPriority(path string, ns *project.Namespaced, cfg projectfile.ConfigGetter, prompt prompt.Prompter) (*project.Project, error) {
