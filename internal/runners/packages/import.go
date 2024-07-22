@@ -138,7 +138,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 	pg = nil
 
 	// Solve the runtime.
-	rtCommit, err := bp.FetchCommit(latestCommit, proj.Owner(), proj.Name(), nil)
+	rtCommit, err := bp.FetchCommit(commitID, proj.Owner(), proj.Name(), nil)
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch build result for previous commit")
 	}
