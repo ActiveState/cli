@@ -24,10 +24,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 
 	// Revert the commit that added urllib3.
 	commitID := "1f4f4f7d-7883-400e-b2ad-a5803c018ecd"
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("revert", commitID),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
-	)
+	cp := ts.Spawn("revert", commitID)
 	cp.Expect(fmt.Sprintf("Operating on project %s", namespace))
 	cp.Expect("You are about to revert the following commit:")
 	cp.Expect(commitID)
@@ -71,10 +68,7 @@ func (suite *RevertIntegrationTestSuite) TestRevertRemote() {
 	cp.Expect("Package added")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("revert", "REMOTE", "--non-interactive"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
-	)
+	cp = ts.Spawn("revert", "REMOTE", "--non-interactive")
 	cp.Expect("Successfully reverted")
 	cp.ExpectExitCode(0)
 
@@ -110,12 +104,12 @@ func (suite *RevertIntegrationTestSuite) TestRevertTo() {
 	namespace := "ActiveState-CLI/Revert"
 	ts.PrepareProject(namespace, "903bf49a-6719-47f0-ae70-450d69532ece")
 
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
 	// Revert the commit that added urllib3.
 	commitID := "1f4f4f7d-7883-400e-b2ad-a5803c018ecd"
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("revert", "--to", commitID),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
-	)
+	cp = ts.Spawn("revert", "--to", commitID)
 	cp.Expect(fmt.Sprintf("Operating on project %s", namespace))
 	cp.Expect("You are about to revert to the following commit:")
 	cp.Expect(commitID)
@@ -157,10 +151,10 @@ func (suite *RevertIntegrationTestSuite) TestJSON() {
 
 	ts.PrepareProject("ActiveState-CLI/Revert", "903bf49a-6719-47f0-ae70-450d69532ece")
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("revert", "--to", "1f4f4f7d-7883-400e-b2ad-a5803c018ecd", "-o", "json"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
-	)
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("revert", "--to", "1f4f4f7d-7883-400e-b2ad-a5803c018ecd", "-o", "json")
 	cp.Expect(`{"current_commit_id":`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)

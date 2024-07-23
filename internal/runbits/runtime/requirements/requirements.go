@@ -2,7 +2,6 @@ package requirements
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -222,65 +221,63 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
 
-	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
-		ns := requirements[0].Namespace
-		var trig trigger.Trigger
-		switch ns.Type() {
-		case model.NamespaceLanguage:
-			trig = trigger.TriggerLanguage
-		case model.NamespacePlatform:
-			trig = trigger.TriggerPlatform
-		default:
-			trig = trigger.TriggerPackage
-		}
+	ns := requirements[0].Namespace
+	var trig trigger.Trigger
+	switch ns.Type() {
+	case model.NamespaceLanguage:
+		trig = trigger.TriggerLanguage
+	case model.NamespacePlatform:
+		trig = trigger.TriggerPlatform
+	default:
+		trig = trigger.TriggerPackage
+	}
 
-		// Solve runtime
-		solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+	// Solve runtime
+	solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+	bpm := bpModel.NewBuildPlannerModel(r.Auth)
+	rtCommit, err := bpm.FetchCommit(commitID, r.Project.Owner(), r.Project.Name(), nil)
+	if err != nil {
+		solveSpinner.Stop(locale.T("progress_fail"))
+		return errs.Wrap(err, "Failed to fetch build result")
+	}
+	solveSpinner.Stop(locale.T("progress_success"))
+
+	var oldBuildPlan *buildplan.BuildPlan
+	if rtCommit.ParentID != "" {
 		bpm := bpModel.NewBuildPlannerModel(r.Auth)
-		rtCommit, err := bpm.FetchCommit(commitID, r.Project.Owner(), r.Project.Name(), nil)
+		commit, err := bpm.FetchCommit(rtCommit.ParentID, r.Project.Owner(), r.Project.Name(), nil)
 		if err != nil {
-			solveSpinner.Stop(locale.T("progress_fail"))
 			return errs.Wrap(err, "Failed to fetch build result")
 		}
-		solveSpinner.Stop(locale.T("progress_success"))
+		oldBuildPlan = commit.BuildPlan()
+	}
 
-		var oldBuildPlan *buildplan.BuildPlan
-		if rtCommit.ParentID != "" {
-			bpm := bpModel.NewBuildPlannerModel(r.Auth)
-			commit, err := bpm.FetchCommit(rtCommit.ParentID, r.Project.Owner(), r.Project.Name(), nil)
-			if err != nil {
-				return errs.Wrap(err, "Failed to fetch build result")
-			}
-			oldBuildPlan = commit.BuildPlan()
-		}
+	r.Output.Notice("") // blank line
+	dependencies.OutputChangeSummary(r.Output, rtCommit.BuildPlan(), oldBuildPlan)
 
-		r.Output.Notice("") // blank line
-		dependencies.OutputChangeSummary(r.Output, rtCommit.BuildPlan(), oldBuildPlan)
+	// Report CVEs
+	names := requirementNames(requirements...)
+	if err := cves.NewCveReport(r.prime).Report(rtCommit.BuildPlan(), oldBuildPlan, names...); err != nil {
+		return errs.Wrap(err, "Could not report CVEs")
+	}
 
-		// Report CVEs
-		names := requirementNames(requirements...)
-		if err := cves.NewCveReport(r.prime).Report(rtCommit.BuildPlan(), oldBuildPlan, names...); err != nil {
-			return errs.Wrap(err, "Could not report CVEs")
-		}
+	// Start runtime update UI
+	if !r.Config.GetBool(constants.AsyncRuntimeConfig) {
+		out.Notice("")
 
-		// Start runtime update UI
-		if !r.Config.GetBool(constants.AsyncRuntimeConfig) {
-			out.Notice("")
-
-			// refresh or install runtime
-			_, err = runtime_runbit.Update(r.prime, trig,
-				runtime_runbit.WithCommit(rtCommit),
-				runtime_runbit.WithoutBuildscriptValidation(),
-			)
-			if err != nil {
-				if !IsBuildError(err) {
-					// If the error is not a build error we want to retain the changes
-					if err2 := r.updateCommitID(commitID); err2 != nil {
-						return errs.Pack(err, locale.WrapError(err2, "err_package_update_commit_id"))
-					}
+		// refresh or install runtime
+		_, err = runtime_runbit.Update(r.prime, trig,
+			runtime_runbit.WithCommit(rtCommit),
+			runtime_runbit.WithoutBuildscriptValidation(),
+		)
+		if err != nil {
+			if !IsBuildError(err) {
+				// If the error is not a build error we want to retain the changes
+				if err2 := r.updateCommitID(commitID); err2 != nil {
+					return errs.Pack(err, locale.WrapError(err2, "err_package_update_commit_id"))
 				}
-				return errs.Wrap(err, "Failed to refresh runtime")
 			}
+			return errs.Wrap(err, "Failed to refresh runtime")
 		}
 	}
 

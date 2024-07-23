@@ -8,7 +8,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -49,7 +48,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 			}
 
 			// Run the checkout in a particular shell.
-			cp = ts.SpawnShellWithOpts(shell, e2e.OptAppendEnv(constants.DisableRuntime+"=true"))
+			cp = ts.SpawnShellWithOpts(shell)
 			cp.SendLine(e2e.QuoteCommand(shell, ts.ExecutablePath(), "checkout", "ActiveState-CLI/small-python", string(shell)))
 			cp.Expect("Checked out project")
 			cp.SendLine("exit")
