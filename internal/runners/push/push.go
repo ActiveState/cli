@@ -97,7 +97,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		var err error
 		targetNamespace, err = r.namespaceFromProject()
 		if err != nil {
-			return errs.Wrap(err, "Could not get a valid namespace, is your activestate.yaml malformed?")
+			return errs.Wrap(err, "Could not get a valid namespace. Is your activestate.yaml malformed?")
 		}
 	}
 
@@ -160,7 +160,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		if intend&intendCreateProject == 0 {
 			createProject, err := r.prompt.Confirm(
 				locale.Tl("create_project", "Create Project"),
-				locale.Tl("push_confirm_create_project", "You are about to create the project [NOTICE]{{.V0}}[/RESET], continue?", targetNamespace.String()),
+				locale.Tl("push_confirm_create_project", "You are about to create the project [NOTICE]{{.V0}}[/RESET]. Continue?", targetNamespace.String()),
 				ptr.To(true))
 			if err != nil {
 				return errs.Wrap(err, "Confirmation failed")

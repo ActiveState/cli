@@ -38,7 +38,7 @@ func link(fpath, symlink string) error {
 	if err != nil {
 		return locale.WrapExternalError(
 			err, "err_deploy_symlink",
-			"Cannot create symlink at {{.V0}}, ensure you have permission to write to {{.V1}}.", symlink, filepath.Dir(symlink))
+			"Cannot create symlink at {{.V0}}. Please ensure you have permission to write to {{.V1}}.", symlink, filepath.Dir(symlink))
 	}
 	return nil
 }

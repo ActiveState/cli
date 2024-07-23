@@ -26,7 +26,7 @@ func stopServices(cfg configurable, out output.Outputer, ipComm svcctl.IPCommuni
 		if err != nil {
 			if !ignoreErrors {
 				return errs.AddTips(
-					locale.WrapError(err, "clean_stop_svc_failure", "Cleanup interrupted, because a running {{.V0}} process could not be stopped.", constants.SvcAppName),
+					locale.WrapError(err, "clean_stop_svc_failure", "Cleanup interrupted because a running {{.V0}} process could not be stopped.", constants.SvcAppName),
 					cleanForceTip)
 			}
 			out.Error(locale.Tl("clean_stop_svc_warning", "Failed to stop running {{.V0}} process. Continuing anyway because --force flag was provided.", constants.SvcAppName))
@@ -34,7 +34,7 @@ func stopServices(cfg configurable, out output.Outputer, ipComm svcctl.IPCommuni
 		if code != 0 {
 			if !ignoreErrors {
 				return errs.AddTips(
-					locale.WrapError(err, "clean_stop_svc_failure_code", "Cleanup interrupted, because a running {{.V0}} process could not be stopped (invalid exit code).", constants.SvcAppName),
+					locale.WrapError(err, "clean_stop_svc_failure_code", "Cleanup interrupted because a running {{.V0}} process could not be stopped (invalid exit code).", constants.SvcAppName),
 					cleanForceTip)
 			}
 			out.Error(locale.Tl("clean_stop_svc_warning_code", "Failed to stop running {{.V0}} process (invalid exit code). Continuing anyway because --force flag was provided.", constants.SvcAppName))
@@ -43,7 +43,7 @@ func stopServices(cfg configurable, out output.Outputer, ipComm svcctl.IPCommuni
 		if err := svcctl.StopServer(ipComm); err != nil {
 			if !ignoreErrors {
 				return errs.AddTips(
-					locale.WrapError(err, "clean_stop_svc_failure_wait", "Cleanup interrupted, because a running {{.V0}} process failed to stop due to a timeout.", constants.SvcAppName),
+					locale.WrapError(err, "clean_stop_svc_failure_wait", "Cleanup interrupted because a running {{.V0}} process failed to stop due to a timeout.", constants.SvcAppName),
 					cleanForceTip)
 			}
 			out.Error(locale.Tl("clean_stop_svc_warning_code", "Failed to stop running {{.V0}} process due to a timeout. Continuing anyway because --force flag was provided.", constants.SvcAppName))
