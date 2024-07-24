@@ -176,7 +176,7 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		}
 	}
 
-	rt, err := runtime_runbit.Update(r.prime, trigger.TriggerActivate, runtime_runbit.WithoutHeaders())
+	rt, err := runtime_runbit.Update(r.prime, trigger.TriggerActivate, runtime_runbit.WithoutHeaders(), runtime_runbit.WithoutAsync())
 	if err != nil {
 		return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
 	}

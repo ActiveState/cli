@@ -91,7 +91,7 @@ func (u *Shell) Run(params *Params) error {
 		return locale.NewInputError("err_shell_commit_id_mismatch")
 	}
 
-	rti, err := runtime_runbit.Update(u.prime, trigger.TriggerShell, runtime_runbit.WithoutHeaders())
+	rti, err := runtime_runbit.Update(u.prime, trigger.TriggerShell, runtime_runbit.WithoutHeaders(), runtime_runbit.WithoutAsync())
 	if err != nil {
 		return locale.WrapExternalError(err, "err_shell_runtime_new", "Could not start a shell/prompt for this project.")
 	}

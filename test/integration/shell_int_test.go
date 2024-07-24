@@ -504,6 +504,28 @@ func (suite *ShellIntegrationTestSuite) TestWindowsShells() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *ShellIntegrationTestSuite) TestAsync() {
+	suite.OnlyRunForTags(tagsuite.Shell)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("shell")
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.SendLine("python3 --version")
+	cp.Expect("Python 3.10")
+	cp.SendLine("exit")
+	cp.Expect("Deactivated")
+	cp.ExpectExit() // exit code varies depending on shell; just assert the shell exited
+}
+
 func TestShellIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ShellIntegrationTestSuite))
 }

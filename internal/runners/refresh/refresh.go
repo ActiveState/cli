@@ -83,7 +83,7 @@ func (r *Refresh) Run(params *Params) error {
 		return locale.NewInputError("refresh_runtime_uptodate")
 	}
 
-	rti, err := runtime_runbit.Update(r.prime, trigger.TriggerRefresh, runtime_runbit.WithoutHeaders())
+	rti, err := runtime_runbit.Update(r.prime, trigger.TriggerRefresh, runtime_runbit.WithoutHeaders(), runtime_runbit.WithoutAsync())
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime_new", "Could not update runtime for this project.")
 	}

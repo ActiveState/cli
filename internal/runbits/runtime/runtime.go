@@ -44,6 +44,7 @@ type Opts struct {
 	CommitID            strfmt.UUID
 	Commit              *bpModel.Commit
 	ValidateBuildscript bool
+	NoAsync             bool
 }
 
 type SetOpt func(*Opts)
@@ -77,6 +78,12 @@ func WithCommitID(commitID strfmt.UUID) SetOpt {
 func WithoutBuildscriptValidation() SetOpt {
 	return func(opts *Opts) {
 		opts.ValidateBuildscript = false
+	}
+}
+
+func WithoutAsync() SetOpt {
+	return func(opts *Opts) {
+		opts.NoAsync = true
 	}
 }
 
@@ -204,7 +211,7 @@ func Update(
 
 	// Async runtimes should still do everything up to the actual update itself, because we still want to raise
 	// any errors regarding solves, buildscripts, etc.
-	if prime.Config().GetBool(constants.AsyncRuntimeConfig) {
+	if prime.Config().GetBool(constants.AsyncRuntimeConfig) && !opts.NoAsync {
 		logging.Debug("Skipping runtime update due to async runtime")
 		return rt, nil
 	}
