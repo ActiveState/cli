@@ -235,6 +235,10 @@ func installedOnPath(installRoot, channel string) (bool, string, error) {
 		return false, "", nil
 	}
 
+	if !fileutils.FileExists(filepath.Join(installRoot, installation.InstallDirMarker)) {
+		return false, "", nil
+	}
+
 	// This is not using appinfo on purpose because we want to deal with legacy installation formats, which appinfo does not
 	stateCmd := constants.StateCmd + osutils.ExeExtension
 
