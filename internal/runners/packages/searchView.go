@@ -203,7 +203,7 @@ func (v *view) processContent() string {
 func (v *view) footerView() string {
 	var footerText string
 	scrollValue := v.viewport.ScrollPercent() * 100
-	footerText += locale.Tl("search_more_matches", "... {{.V0}}% scrolled, use arrow and page keys to scroll. Press Q to quit.", strconv.Itoa(int(scrollValue)))
+	footerText += locale.Tl("search_more_matches", "... {{.V0}}% scrolled. Use arrow and page keys to scroll. Press Q to quit.", strconv.Itoa(int(scrollValue)))
 	footerText += fmt.Sprintf("\n\n%s '%s'", colorize.StyleBold.Render(locale.Tl("search_more_info", "For more info run")), colorize.StyleActionable.Render(locale.Tl("search_more_info_command", "state info <name>")))
 	return lipgloss.NewStyle().Render(footerText)
 }

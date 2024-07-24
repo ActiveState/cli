@@ -117,7 +117,7 @@ func (r *Runner) Run(params *Params) error {
 		}
 
 		if err := yaml.Unmarshal(b, &reqVars); err != nil {
-			return locale.WrapExternalError(err, "err_uploadingredient_file_read", "Failed to unmarshal meta file, error received: {{.V0}}", err.Error())
+			return locale.WrapExternalError(err, "err_uploadingredient_file_read", "Failed to unmarshal meta file. Error received: {{.V0}}", err.Error())
 		}
 	}
 

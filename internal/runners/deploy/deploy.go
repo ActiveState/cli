@@ -150,7 +150,7 @@ func (d *Deploy) commitID(namespace project.Namespaced) (strfmt.UUID, error) {
 		if branch.CommitID == nil {
 			return "", locale.NewInputError(
 				"err_deploy_no_commits",
-				"The project '{{.V0}}' does not have any packages configured, please add add some packages first.", namespace.String())
+				"The project '{{.V0}}' does not have any packages configured. Please add add some packages first.", namespace.String())
 		}
 
 		commitID = branch.CommitID
@@ -279,7 +279,7 @@ func (d *Deploy) symlink(params *Params) error {
 	// Remove duplicate executables as per PATH and PATHEXT
 	exes, err = osutils.UniqueExes(exes, os.Getenv("PATHEXT"))
 	if err != nil {
-		return locale.WrapError(err, "err_unique_exes", "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
+		return locale.WrapError(err, "err_unique_exes", "Could not detect unique executables. Please make sure your PATH and PATHEXT environment variables are properly configured.")
 	}
 
 	if rt.GOOS != "windows" {
@@ -317,7 +317,7 @@ func symlinkWithTarget(overwrite bool, symlinkPath string, exePaths []string, ou
 	if err := fileutils.MkdirUnlessExists(symlinkPath); err != nil {
 		return locale.WrapExternalError(
 			err, "err_deploy_mkdir",
-			"Could not create directory at {{.V0}}, make sure you have permissions to write to {{.V1}}.", symlinkPath, filepath.Dir(symlinkPath))
+			"Could not create directory at {{.V0}}. Please make sure you have permissions to write to {{.V1}}.", symlinkPath, filepath.Dir(symlinkPath))
 	}
 
 	for _, exePath := range exePaths {
@@ -348,7 +348,7 @@ func symlinkWithTarget(overwrite bool, symlinkPath string, exePaths []string, ou
 			if err := os.Remove(symlink); err != nil {
 				return locale.WrapExternalError(
 					err, "err_deploy_overwrite",
-					"Could not overwrite {{.V0}}, make sure you have permissions to write to this file.", symlink)
+					"Could not overwrite {{.V0}}. Please make sure you have permissions to write to this file.", symlink)
 			}
 		}
 
