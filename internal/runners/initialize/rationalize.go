@@ -17,6 +17,7 @@ func rationalizeError(owner, project string, rerr *error) {
 	var pcErr *bpResp.ProjectCreatedError
 	var projectExistsErr *errProjectExists
 	var unrecognizedLanguageErr *errUnrecognizedLanguage
+	var ownerNotFoundErr *org.ErrOwnerNotFound
 
 	switch {
 	case rerr == nil:
@@ -41,9 +42,15 @@ func rationalizeError(owner, project string, rerr *error) {
 			errs.SetInput(),
 		)
 
+	case errors.As(*rerr, &ownerNotFoundErr):
+		*rerr = errs.WrapUserFacing(*rerr,
+			locale.Tr("err_init_invalid_org", ownerNotFoundErr.DesiredOwner),
+			errs.SetInput(),
+		)
+
 	case errors.Is(*rerr, org.ErrNoOwner):
 		*rerr = errs.WrapUserFacing(*rerr,
-			locale.Tr("err_init_invalid_org", owner),
+			locale.Tl("err_init_cannot_find_org", "Please specify an owner for the project to initialize."),
 			errs.SetInput(),
 		)
 
