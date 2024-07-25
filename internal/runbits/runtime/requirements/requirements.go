@@ -50,7 +50,7 @@ type PackageVersion struct {
 func (pv *PackageVersion) Set(arg string) error {
 	err := pv.NameVersionValue.Set(arg)
 	if err != nil {
-		return locale.WrapInputError(err, "err_package_format", "The package and version provided is not formatting correctly, must be in the form of <package>@<version>")
+		return locale.WrapInputError(err, "err_package_format", "The package and version provided is not formatting correctly. It must be in the form of <package>@<version>")
 	}
 	return nil
 }
@@ -258,7 +258,8 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		dependencies.OutputChangeSummary(r.Output, rtCommit.BuildPlan(), oldBuildPlan)
 
 		// Report CVEs
-		if err := cves.NewCveReport(r.prime).Report(rtCommit.BuildPlan(), oldBuildPlan); err != nil {
+		names := requirementNames(requirements...)
+		if err := cves.NewCveReport(r.prime).Report(rtCommit.BuildPlan(), oldBuildPlan, names...); err != nil {
 			return errs.Wrap(err, "Could not report CVEs")
 		}
 
@@ -645,7 +646,7 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 	// Prompt the user with the ingredient choices
 	choice, err := prompt.Select(
 		locale.Tl("prompt_pkgop_ingredient", "Multiple Matches"),
-		locale.Tl("prompt_pkgop_ingredient_msg", "Your query has multiple matches, which one would you like to use?"),
+		locale.Tl("prompt_pkgop_ingredient_msg", "Your query has multiple matches. Which one would you like to use?"),
 		choices, &choices[0],
 	)
 	if err != nil {

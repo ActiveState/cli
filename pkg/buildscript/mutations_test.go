@@ -19,36 +19,36 @@ import (
 // the internal, raw format.
 func TestUpdateRequirements(t *testing.T) {
 	type args struct {
-		requirement types.Requirement
+		requirement DependencyRequirement
 		operation   types.Operation
 		filename    string
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    []types.Requirement
+		want    []DependencyRequirement
 		wantErr bool
 	}{
 		{
 			name: "add",
 			args: args{
-				requirement: types.Requirement{
+				requirement: DependencyRequirement{types.Requirement{
 					Name:      "requests",
 					Namespace: "language/python",
-				},
+				}},
 				operation: types.OperationAdded,
 				filename:  "buildexpression.json",
 			},
-			want: []types.Requirement{
-				{
+			want: []DependencyRequirement{
+				{types.Requirement{
 					Name:      "jinja2-time",
 					Namespace: "language/python",
-				},
-				{
+				}},
+				{types.Requirement{
 					Name:      "jupyter-contrib-nbextensions",
 					Namespace: "language/python",
-				},
-				{
+				}},
+				{types.Requirement{
 					Name:      "python",
 					Namespace: "language",
 					VersionRequirement: []types.VersionRequirement{
@@ -57,42 +57,42 @@ func TestUpdateRequirements(t *testing.T) {
 							"version":    "3.10.10",
 						},
 					},
-				},
-				{
+				}},
+				{types.Requirement{
 					Name:      "copier",
 					Namespace: "language/python",
-				},
-				{
+				}},
+				{types.Requirement{
 					Name:      "jupyterlab",
 					Namespace: "language/python",
-				},
-				{
+				}},
+				{types.Requirement{
 					Name:      "requests",
 					Namespace: "language/python",
-				},
+				}},
 			},
 			wantErr: false,
 		},
 		{
 			name: "remove",
 			args: args{
-				requirement: types.Requirement{
+				requirement: DependencyRequirement{types.Requirement{
 					Name:      "jupyterlab",
 					Namespace: "language/python",
-				},
+				}},
 				operation: types.OperationRemoved,
 				filename:  "buildexpression.json",
 			},
-			want: []types.Requirement{
-				{
+			want: []DependencyRequirement{
+				{types.Requirement{
 					Name:      "jinja2-time",
 					Namespace: "language/python",
-				},
-				{
+				}},
+				{types.Requirement{
 					Name:      "jupyter-contrib-nbextensions",
 					Namespace: "language/python",
-				},
-				{
+				}},
+				{types.Requirement{
 					Name:      "python",
 					Namespace: "language",
 					VersionRequirement: []types.VersionRequirement{
@@ -101,18 +101,18 @@ func TestUpdateRequirements(t *testing.T) {
 							"version":    "3.10.10",
 						},
 					},
-				},
-				{
+				}},
+				{types.Requirement{
 					Name:      "copier",
 					Namespace: "language/python",
-				},
+				}},
 			},
 			wantErr: false,
 		},
 		{
 			name: "update",
 			args: args{
-				requirement: types.Requirement{
+				requirement: DependencyRequirement{types.Requirement{
 					Name:      "python",
 					Namespace: "language",
 					VersionRequirement: []types.VersionRequirement{
@@ -121,20 +121,20 @@ func TestUpdateRequirements(t *testing.T) {
 							"version":    "3.11.0",
 						},
 					},
-				},
+				}},
 				operation: types.OperationUpdated,
 				filename:  "buildexpression.json",
 			},
-			want: []types.Requirement{
-				{
+			want: []DependencyRequirement{
+				{types.Requirement{
 					Name:      "jinja2-time",
 					Namespace: "language/python",
-				},
-				{
+				}},
+				{types.Requirement{
 					Name:      "jupyter-contrib-nbextensions",
 					Namespace: "language/python",
-				},
-				{
+				}},
+				{types.Requirement{
 					Name:      "python",
 					Namespace: "language",
 					VersionRequirement: []types.VersionRequirement{
@@ -143,38 +143,38 @@ func TestUpdateRequirements(t *testing.T) {
 							"version":    "3.11.0",
 						},
 					},
-				},
-				{
+				}},
+				{types.Requirement{
 					Name:      "copier",
 					Namespace: "language/python",
-				},
-				{
+				}},
+				{types.Requirement{
 					Name:      "jupyterlab",
 					Namespace: "language/python",
-				},
+				}},
 			},
 			wantErr: false,
 		},
 		{
 			name: "remove not existing",
 			args: args{
-				requirement: types.Requirement{
+				requirement: DependencyRequirement{types.Requirement{
 					Name:      "requests",
 					Namespace: "language/python",
-				},
+				}},
 				operation: types.OperationRemoved,
 				filename:  "buildexpression.json",
 			},
-			want: []types.Requirement{
-				{
+			want: []DependencyRequirement{
+				{types.Requirement{
 					Name:      "jinja2-time",
 					Namespace: "language/python",
-				},
-				{
+				}},
+				{types.Requirement{
 					Name:      "jupyter-contrib-nbextensions",
 					Namespace: "language/python",
-				},
-				{
+				}},
+				{types.Requirement{
 					Name:      "python",
 					Namespace: "language",
 					VersionRequirement: []types.VersionRequirement{
@@ -183,30 +183,30 @@ func TestUpdateRequirements(t *testing.T) {
 							"version":    "3.10.10",
 						},
 					},
-				},
-				{
+				}},
+				{types.Requirement{
 					Name:      "copier",
 					Namespace: "language/python",
-				},
-				{
+				}},
+				{types.Requirement{
 					Name:      "jupyterlab",
 					Namespace: "language/python",
-				},
+				}},
 			},
 			wantErr: true,
 		},
 		{
 			name: "add-installer-complex",
 			args: args{
-				requirement: types.Requirement{
+				requirement: DependencyRequirement{types.Requirement{
 					Name:      "JSON",
 					Namespace: "language/perl",
-				},
+				}},
 				operation: types.OperationAdded,
 				filename:  "buildexpression-installer-complex.json",
 			},
-			want: []types.Requirement{
-				{
+			want: []DependencyRequirement{
+				{types.Requirement{
 					Name:      "perl",
 					Namespace: "language",
 					VersionRequirement: []types.VersionRequirement{
@@ -215,30 +215,30 @@ func TestUpdateRequirements(t *testing.T) {
 							"version":    "5.36.0",
 						},
 					},
-				},
-				{
+				}},
+				{types.Requirement{
 					Name:      "JSON",
 					Namespace: "language/perl",
-				},
+				}},
 			},
 			wantErr: false,
 		},
 		{
 			name: "add-alternate",
 			args: args{
-				requirement: types.Requirement{
+				requirement: DependencyRequirement{types.Requirement{
 					Name:      "JSON",
 					Namespace: "language/perl",
-				},
+				}},
 				operation: types.OperationAdded,
 				filename:  "buildexpression-alternate.json",
 			},
-			want: []types.Requirement{
-				{
+			want: []DependencyRequirement{
+				{types.Requirement{
 					Name:      "Path-Tiny",
 					Namespace: "language/perl",
-				},
-				{
+				}},
+				{types.Requirement{
 					Name:      "perl",
 					Namespace: "language",
 					VersionRequirement: []types.VersionRequirement{
@@ -247,11 +247,11 @@ func TestUpdateRequirements(t *testing.T) {
 							"version":    "5.36.1",
 						},
 					},
-				},
-				{
+				}},
+				{types.Requirement{
 					Name:      "JSON",
 					Namespace: "language/perl",
-				},
+				}},
 			},
 			wantErr: false,
 		},
@@ -267,7 +267,7 @@ func TestUpdateRequirements(t *testing.T) {
 			script, err := UnmarshalBuildExpression(data, nil)
 			assert.NoError(t, err)
 
-			err = script.UpdateRequirement(tt.args.operation, tt.args.requirement)
+			err = script.UpdateRequirement(tt.args.operation, tt.args.requirement.Requirement)
 			if err != nil {
 				if tt.wantErr {
 					return
@@ -280,11 +280,16 @@ func TestUpdateRequirements(t *testing.T) {
 			got, err := script.Requirements()
 			assert.NoError(t, err)
 
-			sort.Slice(got, func(i, j int) bool { return got[i].Name < got[j].Name })
+			gotReqs := []DependencyRequirement{}
+			for _, g := range got {
+				gotReqs = append(gotReqs, g.(DependencyRequirement))
+			}
+
+			sort.Slice(gotReqs, func(i, j int) bool { return gotReqs[i].Name < gotReqs[j].Name })
 			sort.Slice(tt.want, func(i, j int) bool { return tt.want[i].Name < tt.want[j].Name })
 
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("BuildExpression.Requirements() = %v, want %v", got, tt.want)
+			if !reflect.DeepEqual(gotReqs, tt.want) {
+				t.Errorf("BuildExpression.Requirements() = %v, want %v", gotReqs, tt.want)
 			}
 		})
 	}

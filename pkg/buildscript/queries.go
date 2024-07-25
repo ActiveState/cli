@@ -19,30 +19,74 @@ const (
 var errNodeNotFound = errs.New("Could not find node")
 var errValueNotFound = errs.New("Could not find value")
 
-func (b *BuildScript) Requirements() ([]types.Requirement, error) {
+type Requirement interface {
+	IsRequirement()
+}
+
+type DependencyRequirement struct {
+	types.Requirement
+}
+
+func (r DependencyRequirement) IsRequirement() {}
+
+type RevisionRequirement struct {
+	Name       string      `json:"name"`
+	RevisionID strfmt.UUID `json:"revision_id"`
+}
+
+func (r RevisionRequirement) IsRequirement() {}
+
+type UnknownRequirement struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+func (r UnknownRequirement) IsRequirement() {}
+
+func (b *BuildScript) Requirements() ([]Requirement, error) {
 	requirementsNode, err := b.getRequirementsNode()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get requirements node")
 	}
 
-	var requirements []types.Requirement
+	var requirements []Requirement
 	for _, req := range *requirementsNode.List {
 		if req.FuncCall == nil {
 			continue
 		}
 
-		var r types.Requirement
-		for _, arg := range req.FuncCall.Arguments {
-			switch arg.Assignment.Key {
-			case requirementNameKey:
-				r.Name = strValue(arg.Assignment.Value)
-			case requirementNamespaceKey:
-				r.Namespace = strValue(arg.Assignment.Value)
-			case requirementVersionKey:
-				r.VersionRequirement = getVersionRequirements(arg.Assignment.Value)
+		switch req.FuncCall.Name {
+		case reqFuncName:
+			var r DependencyRequirement
+			for _, arg := range req.FuncCall.Arguments {
+				switch arg.Assignment.Key {
+				case requirementNameKey:
+					r.Name = strValue(arg.Assignment.Value)
+				case requirementNamespaceKey:
+					r.Namespace = strValue(arg.Assignment.Value)
+				case requirementVersionKey:
+					r.VersionRequirement = getVersionRequirements(arg.Assignment.Value)
+				}
 			}
+			requirements = append(requirements, r)
+		case revFuncName:
+			var r RevisionRequirement
+			for _, arg := range req.FuncCall.Arguments {
+				switch arg.Assignment.Key {
+				case requirementNameKey:
+					r.Name = strValue(arg.Assignment.Value)
+				case requirementRevisionIDKey:
+					r.RevisionID = strfmt.UUID(strValue(arg.Assignment.Value))
+				}
+			}
+			requirements = append(requirements, r)
+		default:
+			requirements = append(requirements, UnknownRequirement{
+				Name:  req.FuncCall.Name,
+				Value: argsToString(req.FuncCall.Arguments, "", ", ", func(v string) string { return v }),
+			})
 		}
-		requirements = append(requirements, r)
+
 	}
 
 	return requirements, nil

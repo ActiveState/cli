@@ -149,7 +149,7 @@ func (s *Show) Run(params Params) error {
 	if params.Remote != "" {
 		namespaced, err := project.ParseNamespace(params.Remote)
 		if err != nil {
-			return locale.WrapError(err, "err_show_parse_namespace", "Invalid remote argument, must be of the form <org/project>")
+			return locale.WrapError(err, "err_show_parse_namespace", "Invalid remote argument. It must be of the form <org/project>")
 		}
 
 		owner = namespaced.Owner
@@ -402,7 +402,7 @@ func secretsData(owner, project string, auth *authentication.Auth) (*secretOutpu
 	sec, err := secrets.DefsByProject(client, owner, project)
 	if err != nil {
 		logging.Debug("Could not get secret definitions, got failure: %s", err)
-		return nil, locale.WrapError(err, "err_show_get_secrets", "Could not get secret definitions, you may not be authorized to view secrets on this project")
+		return nil, locale.WrapError(err, "err_show_get_secrets", "Could not get secret definitions. You may not be authorized to view secrets on this project")
 	}
 
 	var userSecrets []string

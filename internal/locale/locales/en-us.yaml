@@ -20,7 +20,7 @@ flag_state_verbose_description:
 flag_state_monochrome_output_description:
   other: Force monochrome text output
 flag_state_output_description:
-  other: "Set the output method, possible values: plain, simple, json, editor"
+  other: "Set the output method. Possible values: plain, simple, json, editor"
 flag_state_non_interactive_description:
   other: Run the State Tool without any prompts
 flag_state_version_description:
@@ -87,7 +87,7 @@ secret_prompt_user:
 secret_prompt_project:
   other: Organization members can access the value
 secret_no_description:
-  other: "- (This secret has no description, you can set one via the web dashboard)"
+  other: "- (This secret has no description. You can set one via the web dashboard.)"
 totp_prompt:
   other: "Enter your two-factor authentication code:"
 survey_error_template:
@@ -106,15 +106,15 @@ tos_disclaimer_prompt:
 err_auth_failed:
   other: Authentication failed
 err_auth_failed_unknown_cause:
-  other: "Authentication failed due to an unknown cause, error received: {{.V0}}"
+  other: "Authentication failed due to an unknown cause. Error received: {{.V0}}"
 err_auth_token:
-  other: "Failed to create authentication token, please try again or run '[ACTIONABLE]state clean config[/RESET]' if the issue persists."
+  other: "Failed to create authentication token. Please try again or run '[ACTIONABLE]state clean config[/RESET]' if the issue persists."
 auth_err_password_prompt:
   other: The provided password is invalid
 signup_description:
   other: Signup a new account
 login_success_welcome_back:
-  other: You have successfully authenticated, hello [NOTICE]{{.Name}}[/RESET]!
+  other: You have successfully authenticated. Hello [NOTICE]{{.Name}}[/RESET]!
 logged_in_as:
   other: You are logged in as [NOTICE]{{.Name}}[/RESET]
 logout_description:
@@ -162,7 +162,7 @@ total:
 projects_description:
   other: List your projects
 err_api_not_authenticated:
-  other: You are not authenticated, authenticate with '[ACTIONABLE]state auth[/RESET]'.
+  other: You are not authenticated. Authenticate with '[ACTIONABLE]state auth[/RESET]'.
 err_api_forbidden:
   other: You are not allowed to access or modify the requested resource
 err_api_org_not_found:
@@ -204,7 +204,7 @@ edit_script_cmd_expand_flag:
 edit_scripts_no_name:
   other: Could not find script with the given name [NOTICE]{{.V0}}[/RESET]
 edit_scripts_project_file_saved:
-  other: "\nScript changes detected, updating activestate.yaml"
+  other: "\nScript changes detected. Updating activestate.yaml"
 error_open_not_installed_lin:
   other: Please install '[ACTIONABLE]{{.V0}}[/RESET]' to edit scripts
 error_edit_script:
@@ -253,6 +253,8 @@ field_localcheckouts:
   other: Local Checkouts
 field_platforms:
   other: Platforms
+field_value:
+  other: Value
 err_conflicting_branch_while_checkedout:
   other: |
     Cannot activate branch [NOTICE]{{.V0}}[/RESET]. Branch [NOTICE]{{.V1}}[/RESET] is already checked out.
@@ -300,7 +302,7 @@ secrets_expand_err_not_found:
 secrets_expand_err_no_access:
   other: You are not a member of organization '[NOTICE]{{.V0}}[/RESET]' and therefore cannot access secrets belonging to its projects
 secrets_err_invalid_namespace:
-  other: "Invalid namespace given for secret: [NOTICE]{{.V0}}[/RESET], namespace must be in format of 'scope.secretName', eg. 'user.mySecret' or 'project.ourSecret'."
+  other: "Invalid namespace given for secret: [NOTICE]{{.V0}}[/RESET]. Namespace must be in format of 'scope.secretName', eg. 'user.mySecret' or 'project.ourSecret'."
 secrets_warn_deprecated_var:
   other: "DEPRECATION WARNING: 'state variables' (or 'state vars') has been retired in favour of secrets and constants. Please use 'state secrets' instead."
 secrets_err_user_not_defined:
@@ -308,7 +310,7 @@ secrets_err_user_not_defined:
 secrets_err_project_not_defined:
   other: "Secret has not been defined: [NOTICE]{{.V0}}[/RESET]. Either define it by running 'state secrets set [NOTICE]{{.V0}}[/RESET]' or have someone in your organization sync with you by having them run 'state secrets sync'."
 secrets_err_not_authenticated:
-  other: You are running a command that requires access to secrets, please authenticate by running 'state auth'.
+  other: You are running a command that requires access to secrets. Please authenticate by running 'state auth'.
 secrets_row_value_set:
   other: "[SUCCESS]✔ Defined[/RESET]"
 secrets_row_value_unset:
@@ -334,7 +336,7 @@ keypairs_err_invalid_rsa_publickey:
 keypairs_err_load_not_found:
   other: 'Authorized keypair not found. Please refer to the docs for more info: https://docs.activestate.com/platform/state/advanced-topics/secrets/#setting-up-a-key-pair'
 keypairs_err_load_requires_mode:
-  other: 'Keypair [NOTICE]"{{.V0}}"[/RESET] file is too permissive, expects no more than [NOTICE]"{{.V1}}"[/RESET] permissions'
+  other: 'Keypair [NOTICE]"{{.V0}}"[/RESET] file is too permissive. It expects no more than [NOTICE]"{{.V1}}"[/RESET] permissions'
 keypairs_err_base64_decoding:
   other: Message is not base-64 encoded
 keypairs_err_override_with_save:
@@ -352,7 +354,7 @@ err_file_not_found_in_path:
 secrets_err_expand_noproject:
   other: Expanding of variable failed because a project was not passed along. This indicates a problem in the underlying code, and is unlikely to be something an end-user can address.
 err_invalid_lock:
-  other: "Invalid lock specified in your activestate.yaml: '{{.V0}}', should be in the format of: [NOTICE]channel@{number}.{number}.{number}-{hash}[/RESET]"
+  other: "Invalid lock specified in your activestate.yaml: '{{.V0}}'. It should be in the format of: [NOTICE]channel@{number}.{number}.{number}-{hash}[/RESET]"
 update_available_header:
   other: "[ACTIONABLE]Update Available[/RESET]"
 update_available:
@@ -393,7 +395,7 @@ installer_err_runtime_no_file:
 build_status_in_progress:
   other: "Your changes are currently being built remotely on the ActiveState Platform. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress."
 err_no_default_branch:
-  other: This project has no default branch. This indicates malformed data, please contact support!
+  other: This project has no default branch. This indicates malformed data. Please contact support!
 err_no_commit:
   other: Project branch has no commits
 err_order_marshal:
@@ -419,9 +421,9 @@ err_no_platform_data_remains:
 err_runtime_setup:
   other: Error setting up runtime
 err_signs3_invalid_url:
-  other: API Responded with an invalid S3 URL, please contact support
+  other: API Responded with an invalid S3 URL. Please contact support
 err_invalid_namespace:
-  other: "Invalid namespace: [NOTICE]{{.V0}}[/RESET]. Should be in the format of [NOTICE]org/project[/RESET], and can optionally contain a [NOTICE]#COMMIT_ID[/RESET] suffix. Names should be alphanumeric and may contain dashes and periods."
+  other: "Invalid namespace: [NOTICE]{{.V0}}[/RESET]. It should be in the format of [NOTICE]org/project[/RESET], and can optionally contain a [NOTICE]#COMMIT_ID[/RESET] suffix. Names should be alphanumeric and may contain dashes and periods."
 err_invalid_commit_id:
   other: "Invalid commit ID: [NOTICE]{{.V0}}[/RESET]. It should be a valid UUID."
 err_invalid_project_name:
@@ -429,9 +431,9 @@ err_invalid_project_name:
 err_could_not_get_commit_behind_count:
   other: Could not obtain commit history properly
 err_auth_required:
-  other: Authentication is required, please authenticate by running 'state auth'
+  other: Authentication is required. Please authenticate by running 'state auth'
 err_auth_needinput:
-  other: You are logged out, in order to log in either run this command in interactive mode or provide your credentials via flags (see '[ACTIONABLE]state auth --help[/RESET]').
+  other: You are logged out. In order to log in either run this command in interactive mode or provide your credentials via flags (see '[ACTIONABLE]state auth --help[/RESET]').
 prompt_login_or_signup:
   other: Would you like to login to an existing ActiveState Platform account, or create a new account?
 prompt_login_browser_action:
@@ -441,7 +443,7 @@ prompt_login_action:
 prompt_signup_browser_action:
   other: Signup for a new account using the ActiveState Platform website
 err_browser_open:
-  other: "Could not open your browser, please manually open the following URL above."
+  other: "Could not open your browser. Please manually open the following URL above."
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
 export_cmd_description:
@@ -523,17 +525,17 @@ auth_device_timeout:
 auth_device_success:
   other: Successfully authorized this device
 err_prompt_bad_flag:
-  other: Could not validate input due to an unexpected flag, please contact support if this problem persists
+  other: Could not validate input due to an unexpected flag. Please contact support if this problem persists
 err_invalid_project:
   other: Your activestate.yaml is missing the 'project' field.
 err_bad_project_url:
-  other: "Invalid value for 'project' field in your activestate.yaml, please ensure it is in the format of: 'https://platform.activestate.com/org/project'."
+  other: "Invalid value for 'project' field in your activestate.yaml. Please ensure it is in the format of: 'https://platform.activestate.com/org/project'."
 err_set_commit_id:
   other: "Could not update your activestate.yaml with the latest commit ID. Please ensure you have your project defined in the format of '[ACTIONABLE]project: https://platform.activestate.com/org/project[/RESET]'"
 err_set_project:
   other: "Could not update the project field in your activestate.yaml. Please ensure you have your project defined in the format of '[ACTIONABLE]project: https://platform.activestate.com/org/project[/RESET]'"
 err_unauthorized:
-  other: You are not authorized, did you provide valid login credentials?
+  other: You are not authorized. Did you provide valid login credentials?
 err_projectfile_exists:
   other: A project already exists in the specified directory
 err_projectfile_invalid_url:
@@ -595,7 +597,7 @@ package_search_flag_ns_description:
 package_flag_ts_description:
   other: The timestamp at which you want to query. Can be either 'now' or RFC3339 formatted timestamp.
 package_flag_rev_description:
-  other: The revision you want to use, this ensures you get this exact revision and nothing else.
+  other: The revision you want to use. This ensures you get this exact revision and nothing else.
 package_search_flag_language_description:
   other: The language used to constrain search results
 package_search_flag_exact-term_description:
@@ -750,7 +752,7 @@ push_prompt_not_authorized:
     Either get the project owner to invite you, or create a new project with these changes.
     Would you like to create a new project with your changes now?
 export_privkey_cmd_description:
-  other: Exports the private key, useful if you want to set it via environment variable (ACTIVESTATE_PRIVATE_KEY)
+  other: Exports the private key. This is useful if you want to set it via environment variable (ACTIVESTATE_PRIVATE_KEY)
 err_unknown_format:
   other: "Unknown format: [NOTICE]{{.V0}}[/RESET]"
 err_sprint:
@@ -758,13 +760,13 @@ err_sprint:
 field_localized_field:
   other: "Localized Field"
 err_could_not_marshal_print:
-  other: "Could not marshal the value being printed, please check the error log for more information."
+  other: "Could not marshal the value being printed. Please check the error log for more information."
 err_no_structured_output:
   other: "This command does not support the '{{.V0}}' output format. Please try again without that output flag."
 err_unsupported_structured_output:
   other: "Failed to structure output in the requested format. Please consider reporting this on our forums: {{.V0}}."
 err_main_outputer:
-  other: "Could not create output writer, please contact developers if this problem persists. Error: {{.V0}}"
+  other: "Could not create output writer. Please contact developers if this problem persists. Error: {{.V0}}"
 field_name:
   other: Name
 field_description:
@@ -859,9 +861,9 @@ languages_install_cmd_description:
 arg_languages_install_description:
   other: The language to update in the form of <language>@<version>
 err_language_format:
-  other: The language and version provided is not formatting correctly, must be in the form of <language>@<version>
+  other: The language and version provided is not formatting correctly. It must be in the form of <language>@<version>
 err_language_mismatch:
-  other: Cannot change languages, only changes to the current project's language is allowed
+  other: Cannot change languages. Only changes to the current project's language version are allowed
 err_no_recipes:
   other: No build recipes could be generated for the current project
 err_order_unknown:
@@ -882,7 +884,7 @@ arg_state_deploy_namespace:
 arg_state_deploy_namespace_description:
   other: The namespace of the project that you wish to deploy
 err_deploy_no_commits:
-  other: "The project '[NOTICE]{{.V0}}[/RESET]' does not have any packages configured, please add add some packages first."
+  other: "The project '[NOTICE]{{.V0}}[/RESET]' does not have any packages configured. Please add add some packages first."
 err_windows_registry:
   other: Error while interacting with Windows registry
 err_deploy_run_install:
@@ -913,7 +915,7 @@ deploy_configure_cmd_description:
 deploy_symlink_cmd_description:
   other: Symlink the executables to your PATH and to the target directory (must have run install first or this will error)
 deploy_report_cmd_description:
-  other: Reports information about the deployed runtime environment, useful for further manual setup (must have run install first or this will error)
+  other: Reports information about the deployed runtime environment. This is useful for further manual setup (you must have run install first or this will error)
 deploy_restart_shell:
   other: |
     Please restart your terminal or start a new terminal session in order to start using the newly configured Runtime Environment.
@@ -1007,7 +1009,7 @@ err_non_interactive_mode:
   other: You are running the State Tool in non-interactive mode, but interactive input was needed. Please re-run the State Tool in interactive mode. If you are using a non-interactive terminal like Git Bash on Windows, prefix your command with '[ACTIONABLE]winpty[/RESET]'. (See https://github.com/git-for-windows/git/wiki/FAQ#some-native-console-programs-dont-work-when-run-from-git-bash-how-to-fix-it for more information.)
 err_alternate_branches:
   other: |
-    Your current platform ([ACTIONABLE]{{.V0}}/{{.V1}}[/RESET]) does not appear to be configured in your branch: '[ACTIONABLE]{{.V2}}[/RESET]', perhaps you could try one of the alternate branches on your project:
+    Your current platform ([ACTIONABLE]{{.V0}}/{{.V1}}[/RESET]) does not appear to be configured in your branch: '[ACTIONABLE]{{.V2}}[/RESET]'. Perhaps you could try one of the alternate branches on your project:
 
      - {{.V3}}
 
@@ -1015,13 +1017,13 @@ err_alternate_branches:
 err_fetch_project:
   other: "Could not fetch details for project: {{.V0}}"
 err_set_default_branch:
-  other: Could not update project field with branch, please manually set the `branch={{.V0}}` query parameter on the project field in your activestate.yaml.
+  other: Could not update project field with branch. Please manually set the `branch={{.V0}}` query parameter on the project field in your activestate.yaml.
 artifact_download_failed:
   other: Failed to download artifact '{{.V0}}' ({{.V1}})
 artifact_setup_failed:
   other: Failed to install artifact '{{.V0}}' ({{.V1}})
 err_stored_artifacts:
-  other: Could not unmarshal stored artifacts, your install may be corrupted.
+  other: Could not unmarshal stored artifacts. Your install may be corrupted.
 err_fetch_branch:
   other: "Could not get branch [NOTICE]{{.V0}}[/RESET] for project"
 err_refresh_runtime:
@@ -1035,7 +1037,7 @@ err_user_network_solution:
 err_user_network_timeout:
   other: "Request failed due to timeout. {{.V0}}"
 err_user_libc_solution:
-  other: If you specified a glibc version, please check it is configured → [ACTIONABLE]{{.V0}}[/RESET].
+  other: If you specified a glibc version. Please check it is configured → [ACTIONABLE]{{.V0}}[/RESET].
 warn_revert_head:
   other: |
     [NOTICE]DEPRECATION WARNING[/RESET]: 'state revert HEAD' has been deprecated in favor of '[ACTIONABLE]state revert REMOTE[/RESET]'. Please use '[ACTIONABLE]state revert REMOTE[/RESET]' instead.
@@ -1057,9 +1059,9 @@ err_push_outdated:
 err_tip_push_outdated:
   other: Run '[ACTIONABLE]state pull[/RESET]'.
 err_push_not_authenticated:
-  other: In order to update your project you need to be authenticated, please run '[ACTIONABLE]state auth[/RESET]' to authenticate.
+  other: In order to update your project you need to be authenticated. Please run '[ACTIONABLE]state auth[/RESET]' to authenticate.
 err_push_no_project:
-  other: No project found, you may need to create one first.
+  other: No project found. You may need to create one first.
 err_push_headless:
   other: Cannot push a headless project. To convert your project please visit {{.V0}}
 push_push_tip_headless_init:
@@ -1067,7 +1069,7 @@ push_push_tip_headless_init:
 push_push_tip_headless_cwd:
   other: Navigate to a directory with an activestate.yaml.
 err_push_nocommit:
-  other: You have nothing to push, make some changes first with '[ACTIONABLE]state install[/RESET]'.
+  other: You have nothing to push. Make some changes first with '[ACTIONABLE]state install[/RESET]'.
 push_no_changes:
   other: You have no local changes to push. To pull in remote changes run '[ACTIONABLE]state pull[/RESET]'.
 err_push_create_nonunique:
@@ -1086,11 +1088,11 @@ operation_success_local:
     Your local project has been updated.
     Run [ACTIONABLE]state push[/RESET] to save changes to the platform.
 buildplan_err:
-  other: "Could not plan build, platform responded with:\n{{.V0}}"
+  other: "Could not plan build. Platform responded with:\n{{.V0}}"
 buildplan_err_cropped:
-  other: "Could not plan build, platform responded with:\n{{.V0}}\n{{.V1}}"
+  other: "Could not plan build. Platform responded with:\n{{.V0}}\n{{.V1}}"
 err_buildplanner_head_on_branch_moved:
-  other: The branch you're trying to update has changed remotely, please run '[ACTIONABLE]state pull[/RESET]'.
+  other: The branch you're trying to update has changed remotely. Please run '[ACTIONABLE]state pull[/RESET]'.
 transient_solver_tip:
   other: You may want to retry this command if the failure was related to a resourcing or networking issue.
 warning_git_project_mismatch:
@@ -1143,7 +1145,7 @@ err_exec_recursion:
     To allow recursion, set [ACTIONABLE]{{.V1}}=true[/RESET]
 package_ingredient_alternatives:
   other: |
-    No results found for search term "[NOTICE]{{.V0}}[/RESET]", did you mean:
+    No results found for search term "[NOTICE]{{.V0}}[/RESET]". Did you mean:
 
     {{.V1}}
 
@@ -1257,7 +1259,7 @@ err_project_frompath_notexist:
 err_project_namespace_missmatch:
   other: Project at [ACTIONABLE]{{.V0}}[/RESET] does not match namespace [ACTIONABLE]{{.V1}}[/RESET]
 err_project_fromenv:
-  other: Could not detect an appropriate project to use, please provide a valid path or namespace.
+  other: Could not detect an appropriate project to use. Please provide a valid path or namespace.
 err_local_project_not_checked_out:
   other: "Cannot find the [ACTIONABLE]{{.V0}}[/RESET] project. Please either check it out using '[ACTIONABLE]state checkout[/RESET]' or run this command again from the project directory."
 err_findproject_notfound:
@@ -1390,7 +1392,7 @@ err_rtprogress_outofsync:
     Please report this issue on [ACTIONABLE]{{.V0}}[/RESET] and include your log file at [ACTIONABLE]{{.V1}}[/RESET].
 warning_macos_bash:
   other: |
-    You are running bash on macOS, which is no longer supported by Apple. To update your account to use zsh, please run 'chsh -s /bin/zsh'. If you continue to use bash you may run into issues finding binaries on your PATH, in order to work around these issues please read: https://scriptingosx.com/2017/04/about-bash_profile-and-bashrc-on-macos/
+    You are running bash on macOS, which is no longer supported by Apple. To update your account to use zsh, please run 'chsh -s /bin/zsh'. If you continue to use bash you may run into issues finding binaries on your PATH. In order to work around these issues please read: https://scriptingosx.com/2017/04/about-bash_profile-and-bashrc-on-macos/
 operating_message:
   other: |
     Operating on project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
@@ -1412,6 +1414,8 @@ err_commit_id_invalid:
   other: "Your activestate.yaml contains an invalid commit ID: '{{.V0}}'. Please run '[ACTIONABLE]state reset[/RESET]' to fix it."
 err_commit_id_invalid_given:
   other: "Invalid commit ID: '{{.V0}}'."
+err_commit_id_not_in_history:
+  other: "The project '[ACTIONABLE]{{.V0}}[/RESET]' does not contain the provided commit: '[ACTIONABLE]{{.V1}}[/RESET]'."
 err_shortcutdir_writable:
   other: Could not continue as we don't have permission to create [ACTIONABLE]{{.V0}}[/RESET].
 move_prompt:
@@ -1429,7 +1433,7 @@ err_edit_project_mapping:
 notice_runtime_disabled:
   other: Skipping runtime setup because it was disabled by an environment variable
 err_searchingredient_toomany:
-  other: Too many ingredients match the query '[ACTIONABLE]{{.V0}}[/RESET]', please try to be more specific.
+  other: Too many ingredients match the query '[ACTIONABLE]{{.V0}}[/RESET]'. Please try to be more specific.
 alternative_unknown_pkg_name:
   other: unknown
 err_uploadingredient_publish:
@@ -1451,7 +1455,7 @@ uploadingredient_success:
 
     You can install this package by running `[ACTIONABLE]state install {{.V1}}/{{.V0}} --ts now`[/RESET].
 err_runtime_cache_invalid:
-  other: Your runtime needs to be updated, please run '[ACTIONABLE]state refresh[/RESET]'.
+  other: Your runtime needs to be updated. Please run '[ACTIONABLE]state refresh[/RESET]'.
 err_buildscript_not_exist:
   other: Your project does not have a buildscript.as file. Please refer to the documentation on how to create one.
 commit_success:
@@ -1477,7 +1481,7 @@ warn_build_not_complete:
   other: "[WARNING]Some artifacts are still being built. Try running this command again in a few minutes.[/RESET]"
 err_build_artifacts_failed:
   other: |
-    The following artifacts failed to build, please refer to their logs for more information:
+    The following artifacts failed to build. Please refer to their logs for more information:
 
     {{.V0}}
 err_build_artifact_failed_msg:
@@ -1508,7 +1512,7 @@ err_projectfile_version_too_high:
 err_headless:
   other: Cannot operate on a headless project. Please visit {{.V0}} to convert your project and try again.
 notice_needs_buildscript_reset:
-  other: Your project is missing its buildscript file, please run '[ACTIONABLE]state reset LOCAL[/RESET]' to recreate it.
+  other: Your project is missing its buildscript file. Please run '[ACTIONABLE]state reset LOCAL[/RESET]' to recreate it.
 
 err_initial_no_requirement:
   other: |
@@ -1516,9 +1520,9 @@ err_initial_no_requirement:
     To check for available packages run '[ACTIONABLE]state search <package_name>[/RESET]'.
 manifest_deprecation_warning:
   other: |
-    [WARNING]Warning:[/RESET] This command is deprecated, please use '[ACTIONABLE]state manifest[/RESET]' instead.
+    [WARNING]Warning:[/RESET] This command is deprecated. Please use '[ACTIONABLE]state manifest[/RESET]' instead.
 manifest_runtime_needs_update:
-  other: "[WARNING]WARNING:[/RESET] Your runtime is out of date, in order to ensure an accurate manifest please run [ACTIONABLE]state refresh[/RESET].\n"
+  other: "[WARNING]WARNING:[/RESET] Your runtime is out of date. In order to ensure an accurate manifest please run [ACTIONABLE]state refresh[/RESET].\n"
 vulnerability_critical:
   other: "[RED]{{.V0}} Critical[/RESET]"
 vulnerability_high:
@@ -1532,14 +1536,10 @@ err_main_jwt:
     State Tool could not obtain an authentication token from its internal service.
     Please try again or contact support if this issue persists.
     Error received: {{.V0}}
-err_runtime_needs_refresh:
-  other: Your runtime needs to be updated, please run '[ACTIONABLE]state refresh[/RESET]' and then try again.
-err_pull_no_common_parent:
-  other: |
-    The local commit ID [NOTICE]{{.V0}}[/RESET] and latest remote commit ID [NOTICE]{{.V1}}[/RESET] have no common parent.
-    To review your project history run '[ACTIONABLE]state history[/RESET]'.
-warn_package_list_runtime:
-  other: |
-    [WARNING]WARNING:[/RESET] Could not initialize runtime. Resolved version information will not be available. Run '[ACTIONABLE]state refresh[/RESET]' for more information.
 refresh_runtime_uptodate:
   other: Your runtime is already up to date.
+warn_additional_requirements:
+  other: |
+    [WARNING]WARNING:[/RESET] This project has additional build criteria that cannot be managed through the State Tool. Please edit your [ACTIONABLE]buildscript.as[/RESET] file manually to modify these:
+migrate_project_error:
+  other: Could not migrate your project files. Please address any errors and try again. For full detail view your log file with '[ACTIONABLE]state export log -i 0[/RESET]'.

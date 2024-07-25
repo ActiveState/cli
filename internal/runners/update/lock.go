@@ -30,7 +30,7 @@ func (stv *StateToolChannelVersion) Set(arg string) error {
 		return locale.WrapInputError(
 			err,
 			"err_channel_format",
-			"The State Tool channel and version provided is not formatting correctly, must be in the form of <channel>@<version>",
+			"The State Tool channel and version provided is not formatting correctly. It must be in the form of <channel>@<version>",
 		)
 	}
 	return nil
@@ -146,7 +146,7 @@ func confirmLock(prom prompt.Prompter) error {
 func fetchExactVersion(svc *model.SvcModel, channel, version string) (string, error) {
 	upd, err := svc.CheckUpdate(context.Background(), channel, version)
 	if err != nil {
-		return "", locale.WrapExternalError(err, "err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
+		return "", locale.WrapExternalError(err, "err_update_fetch", "Could not retrieve update information. Please verify that '{{.V0}}' is a valid channel.", channel)
 	}
 
 	return upd.Version, nil

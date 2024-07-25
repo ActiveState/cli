@@ -201,7 +201,7 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 	if commitID == "" {
-		err := locale.NewInputError("err_project_no_commit", "Your project does not have a commit ID, please run [ACTIONIABLE]'state push'[/RESET] first.", model.ProjectURL(proj.Owner(), proj.Name(), ""))
+		err := locale.NewInputError("err_project_no_commit", "Your project does not have a commit ID. Please run [ACTIONIABLE]'state push'[/RESET] first.", model.ProjectURL(proj.Owner(), proj.Name(), ""))
 		return errs.AddTips(err, "Run → [ACTIONABLE]state push[/RESET] to create your project")
 	}
 

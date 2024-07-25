@@ -103,7 +103,7 @@ func processPlanningError(message string, subErrors []*BuildExprError) error {
 func ProcessProjectError(project *ProjectResponse, fallbackMessage string) error {
 	if project.Type == types.NotFoundErrorType {
 		return errs.AddTips(
-			locale.NewInputError("err_buildplanner_project_not_found", "Unable to find project, received message: {{.V0}}", project.Message),
+			locale.NewInputError("err_buildplanner_project_not_found", "Unable to find project. Received message: {{.V0}}", project.Message),
 			locale.T("tip_private_project_auth"),
 		)
 	}

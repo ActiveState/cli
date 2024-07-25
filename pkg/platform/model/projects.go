@@ -245,7 +245,7 @@ func CreateCopy(sourceOwner, sourceName, targetOwner, targetName string, makePri
 				if _, err3 := authClient.Projects.DeleteProject(deleteParams, auth.ClientAuth()); err3 != nil {
 					err = errs.Pack(err, locale.WrapError(
 						err3, "err_fork_private_but_project_created",
-						"Your project was created but could not be made private, please head over to {{.V0}} to manually update your privacy settings.",
+						"Your project was created but could not be made private. Please head over to {{.V0}} to manually update your privacy settings.",
 						api.GetPlatformURL(fmt.Sprintf("%s/%s", targetOwner, targetName)).String()))
 				}
 			} else {
