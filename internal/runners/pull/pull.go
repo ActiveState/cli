@@ -189,7 +189,8 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		if p.cfg.GetBool(constants.OptinBuildscriptsConfig) {
 			err := p.mergeBuildScript(*remoteCommit, *localCommit)
 			if err != nil {
-				if errs.Matches(err, &ErrBuildScriptMergeConflict{}) {
+				var errBuildScriptMergeConflict *ErrBuildScriptMergeConflict
+				if errors.As(err, &errBuildScriptMergeConflict) {
 					err2 := localcommit.Set(p.project.Dir(), remoteCommit.String())
 					if err2 != nil {
 						err = errs.Pack(err, errs.Wrap(err2, "Could not set local commit to remote commit after build script merge conflict"))

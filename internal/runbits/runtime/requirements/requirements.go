@@ -1,6 +1,7 @@
 package requirements
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -761,6 +762,8 @@ func requirementNames(requirements ...*Requirement) []string {
 }
 
 func IsBuildError(err error) bool {
-	return errs.Matches(err, &runtime.BuildError{}) ||
-		errs.Matches(err, &response.BuildPlannerError{})
+	var errBuild *runtime.BuildError
+	var errBuildPlanner *response.BuildPlannerError
+
+	return errors.As(err, &errBuild) || errors.As(err, &errBuildPlanner)
 }

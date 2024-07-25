@@ -1,6 +1,7 @@
 package prepare
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"runtime"
@@ -105,7 +106,8 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 	}
 
 	if err := prepareCompletions(cmd, r.subshell); err != nil {
-		if !errs.Matches(err, &ErrorNotSupported{}) && !os.IsPermission(err) {
+		var errNotSupported *ErrorNotSupported
+		if !errors.As(err, &errNotSupported) && !os.IsPermission(err) {
 			r.reportError(locale.Tl("err_prepare_generate_completions", "Could not generate completions script. Error received: {{.V0}}.", err.Error()), err)
 		}
 	}

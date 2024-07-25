@@ -141,7 +141,8 @@ func (r *Push) Run(params PushParams) (rerr error) {
 	var targetPjm *mono_models.Project
 	targetPjm, err = model.LegacyFetchProjectByName(targetNamespace.Owner, targetNamespace.Project)
 	if err != nil {
-		if !errs.Matches(err, &model.ErrProjectNotFound{}) {
+		var errProjectNotFound *model.ErrProjectNotFound
+		if !errors.As(err, &errProjectNotFound) {
 			return errs.Wrap(err, "Failed to check for existence of project")
 		}
 	}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -73,7 +74,8 @@ func autoUpdate(svc *model.SvcModel, args []string, childCmd *captain.Command, c
 
 	err = up.InstallBlocking("")
 	if err != nil {
-		if errs.Matches(err, &updater.ErrorInProgress{}) {
+		var errInProgress *updater.ErrorInProgress
+		if errors.As(err, &errInProgress) {
 			return false, nil // ignore
 		}
 		if os.IsPermission(err) {
@@ -87,10 +89,14 @@ func autoUpdate(svc *model.SvcModel, args []string, childCmd *captain.Command, c
 
 	code, err := relaunch(args)
 	if err != nil {
+		var errStateExe *ErrStateExe
+		var errExecuteRelaunch *ErrExecuteRelaunch
+
 		var msg string
-		if errs.Matches(err, &ErrStateExe{}) {
+		switch {
+		case errors.As(err, &errStateExe):
 			msg = anaConst.UpdateErrorExecutable
-		} else if errs.Matches(err, &ErrExecuteRelaunch{}) {
+		case errors.As(err, &errExecuteRelaunch):
 			msg = anaConst.UpdateErrorRelaunch
 		}
 		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.UpdateLabelFailed, &dimensions.Values{

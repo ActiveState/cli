@@ -1,6 +1,8 @@
 package refresh
 
 import (
+	"errors"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
@@ -64,7 +66,8 @@ func (r *Refresh) Run(params *Params) error {
 
 	proj, err := findproject.FromInputByPriority("", params.Namespace, r.config, r.prompt)
 	if err != nil {
-		if errs.Matches(err, &projectfile.ErrorNoDefaultProject{}) {
+		var errNoDefaultProject *projectfile.ErrorNoDefaultProject
+		if errors.As(err, &errNoDefaultProject) {
 			return locale.WrapError(err, "err_use_default_project_does_not_exist")
 		}
 		return rationalize.ErrNoProject

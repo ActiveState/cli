@@ -1,6 +1,8 @@
 package model
 
 import (
+	"errors"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -31,9 +33,11 @@ func CheckDeviceAuthorization(deviceCode strfmt.UUID) (jwt *mms.JWT, apiKey *mms
 
 	response, err := mono.Get().Oauth.AuthDeviceGet(getParams)
 	if err != nil {
+		var errAuthDeviceGetBadRequest *oauth.AuthDeviceGetBadRequest
+
 		// Identify input or benign errors
-		if errs.Matches(err, &oauth.AuthDeviceGetBadRequest{}) {
-			errorToken := err.(*oauth.AuthDeviceGetBadRequest).Payload.Error
+		if errors.As(err, &errAuthDeviceGetBadRequest) {
+			errorToken := errAuthDeviceGetBadRequest.Payload.Error
 			switch *errorToken {
 			case oauth.AuthDeviceGetBadRequestBodyErrorAuthorizationPending, oauth.AuthDeviceGetBadRequestBodyErrorSlowDown:
 				logging.Debug("Authorization still pending")
