@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/runbits/org"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
@@ -16,6 +17,7 @@ func rationalizeError(owner, project string, rerr *error) {
 	var pcErr *bpResp.ProjectCreatedError
 	var projectExistsErr *errProjectExists
 	var unrecognizedLanguageErr *errUnrecognizedLanguage
+	var ownerNotFoundErr *org.ErrOwnerNotFound
 
 	switch {
 	case rerr == nil:
@@ -40,9 +42,15 @@ func rationalizeError(owner, project string, rerr *error) {
 			errs.SetInput(),
 		)
 
-	case errors.Is(*rerr, errNoOwner):
+	case errors.As(*rerr, &ownerNotFoundErr):
 		*rerr = errs.WrapUserFacing(*rerr,
-			locale.Tr("err_init_invalid_org", owner),
+			locale.Tr("err_init_invalid_org", ownerNotFoundErr.DesiredOwner),
+			errs.SetInput(),
+		)
+
+	case errors.Is(*rerr, org.ErrNoOwner):
+		*rerr = errs.WrapUserFacing(*rerr,
+			locale.Tl("err_init_cannot_find_org", "Please specify an owner for the project to initialize."),
 			errs.SetInput(),
 		)
 

@@ -21,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/errors"
+	"github.com/ActiveState/cli/internal/runbits/org"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
@@ -75,8 +76,6 @@ type errProjectExists struct {
 	error
 	path string
 }
-
-var errNoOwner = errs.New("Could not find organization")
 
 var errNoLanguage = errs.New("No language specified")
 
@@ -208,7 +207,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
-	resolvedOwner, err = r.getOwner(paramOwner)
+	resolvedOwner, err = org.Get(paramOwner, r.auth, r.config)
 	if err != nil {
 		return errs.Wrap(err, "Unable to determine owner")
 	}
@@ -399,48 +398,6 @@ func deriveVersion(lang language.Language, version string, auth *authentication.
 	}
 
 	return version, nil
-}
-
-func (i *Initialize) getOwner(desiredOwner string) (string, error) {
-	orgs, err := model.FetchOrganizations(i.auth)
-	if err != nil {
-		return "", errs.Wrap(err, "Unable to get the user's writable orgs")
-	}
-
-	// Prefer the desired owner if it's valid
-	if desiredOwner != "" {
-		// Match the case of the organization.
-		// Otherwise the incorrect case will be written to the project file.
-		for _, org := range orgs {
-			if strings.EqualFold(org.URLname, desiredOwner) {
-				return org.URLname, nil
-			}
-		}
-		// Return desiredOwner for error reporting
-		return desiredOwner, errNoOwner
-	}
-
-	// Use the last used namespace if it's valid
-	lastUsed := i.config.GetString(constants.LastUsedNamespacePrefname)
-	if lastUsed != "" {
-		ns, err := project.ParseNamespace(lastUsed)
-		if err != nil {
-			return "", errs.Wrap(err, "Unable to parse last used namespace")
-		}
-
-		for _, org := range orgs {
-			if strings.EqualFold(org.URLname, ns.Owner) {
-				return org.URLname, nil
-			}
-		}
-	}
-
-	// Use the first org if there is one
-	if len(orgs) > 0 {
-		return orgs[0].URLname, nil
-	}
-
-	return "", errNoOwner
 }
 
 func (i *Initialize) getProjectName(desiredProject string, lang string) string {

@@ -487,3 +487,6 @@ const ActiveStateCIEnvVarName = "ACTIVESTATE_CI"
 
 // OverrideSandbox is the environment variable to set when overriding the sandbox for integration tests.
 const OverrideSandbox = "ACTIVESTATE_TEST_OVERRIDE_SANDBOX"
+
+// PlatformPrivateNamespace is the namespace for private packages.
+const PlatformPrivateNamespace = "private"
