@@ -136,7 +136,7 @@ func (r *Reset) Run(params *Params) error {
 		}
 	}
 
-	_, err = runtime_runbit.Update(r.prime, trigger.TriggerReset)
+	_, err = runtime_runbit.Update(r.prime, trigger.TriggerReset, runtime_runbit.WithoutBuildscriptValidation())
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
