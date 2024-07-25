@@ -54,11 +54,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	close := suite.addForegroundSvc(ts)
 	defer close()
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("activate", "ActiveState-CLI/Empty"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
-	)
-	cp.Expect("Skipping runtime setup")
+	cp := ts.Spawn("activate", "ActiveState-CLI/Empty")
 	cp.Expect("Activated")
 	cp.ExpectInput()
 
@@ -586,11 +582,10 @@ func (suite *ActivateIntegrationTestSuite) TestActivateBranch() {
 
 	namespace := "ActiveState-CLI/Branches"
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("activate", namespace, "--branch", "firstbranch"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
-	)
-	cp.Expect("Skipping runtime setup")
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("activate", namespace, "--branch", "firstbranch")
 	cp.Expect("Activated")
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)

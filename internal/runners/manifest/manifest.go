@@ -1,9 +1,6 @@
 package manifest
 
 import (
-	"os"
-	"strings"
-
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -125,10 +122,6 @@ func (m *Manifest) fetchRequirements() ([]buildscript.Requirement, error) {
 }
 
 func (m *Manifest) fetchBuildplanRequirements() (buildplan.Ingredients, error) {
-	if strings.EqualFold(os.Getenv(constants.DisableRuntime), "true") {
-		return nil, nil
-	}
-
 	commitID, err := localcommit.Get(m.project.Dir())
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to get local commit")

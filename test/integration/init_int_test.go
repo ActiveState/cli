@@ -64,15 +64,13 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, sourceRuntime b
 		computedArgs = append(computedArgs, ts.Dirs.Work)
 	}
 
-	env := []string{}
 	if !sourceRuntime {
-		env = append(env, constants.DisableRuntime+"=true")
+		cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+		cp.ExpectExitCode(0)
 	}
+
 	// Run `state init`, creating the project.
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs(computedArgs...),
-		e2e.OptAppendEnv(env...),
-	)
+	cp := ts.SpawnWithOpts(e2e.OptArgs(computedArgs...))
 	cp.Expect("Initializing Project")
 	cp.Expect(fmt.Sprintf("Project '%s' has been successfully initialized", namespace), e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
@@ -122,11 +120,10 @@ func (suite *InitIntegrationTestSuite) TestInit_InferLanguageFromUse() {
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/Python3"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
-	)
-	cp.Expect("Skipping runtime setup")
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("checkout", "ActiveState-CLI/Python3")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
@@ -136,10 +133,7 @@ func (suite *InitIntegrationTestSuite) TestInit_InferLanguageFromUse() {
 
 	pname := strutils.UUID()
 	namespace := fmt.Sprintf("%s/%s", e2e.PersistentUsername, pname)
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("init", namespace),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
-	)
+	cp = ts.Spawn("init", namespace)
 	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(e2e.PersistentUsername, pname.String())
@@ -215,11 +209,11 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrg() {
 	cp := ts.Spawn("checkout", fmt.Sprintf("%s/Empty", org))
 	cp.Expect("Checked out project")
 
+	cp = ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
 	// Now, run `state init` without specifying the org.
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("init", projectName, "--language", "python@3"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
-	)
+	cp = ts.Spawn("init", projectName, "--language", "python@3")
 	cp.Expect(fmt.Sprintf("%s/%s", org, projectName))
 	cp.Expect("to track changes for this environment")
 	cp.Expect("successfully initialized")
