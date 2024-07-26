@@ -1,4 +1,4 @@
-project: https://platform.activestate.com/ActiveState/project?branch=main
+project: https://platform.activestate.com/ActiveState-CLI/Empty?branch=main&commitID=6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8
 scripts:
   - name: run
     value: printenv
