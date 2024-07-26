@@ -1,9 +1,10 @@
 package use
 
 import (
+	"errors"
+
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/project"
@@ -31,7 +32,8 @@ func (s *Show) Run() error {
 
 	proj, err := project.FromPath(projectDir)
 	if err != nil {
-		if errs.Matches(err, &projectfile.ErrorNoProject{}) {
+		var errNoProject *projectfile.ErrorNoProject
+		if errors.As(err, &errNoProject) {
 			return locale.WrapError(err, "err_use_default_project_does_not_exist")
 		}
 		return locale.WrapError(err, "err_use_show_get_project", "Could not get your project.")

@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -22,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/errors"
+	"github.com/ActiveState/cli/internal/runbits/org"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
@@ -76,8 +76,6 @@ type errProjectExists struct {
 	error
 	path string
 }
-
-var errNoOwner = errs.New("Could not find organization")
 
 var errNoLanguage = errs.New("No language specified")
 
@@ -209,7 +207,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
-	resolvedOwner, err = r.getOwner(paramOwner)
+	resolvedOwner, err = org.Get(paramOwner, r.auth, r.config)
 	if err != nil {
 		return errs.Wrap(err, "Unable to determine owner")
 	}
@@ -288,31 +286,28 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
-	var executorsPath string
-	if !condition.RuntimeDisabled() {
-		// Solve runtime
-		solveSpinner := output.StartSpinner(r.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
-		bpm := bpModel.NewBuildPlannerModel(r.auth)
-		commit, err := bpm.FetchCommit(commitID, r.prime.Project().Owner(), r.prime.Project().Name(), nil)
-		if err != nil {
-			solveSpinner.Stop(locale.T("progress_fail"))
-			logging.Debug("Deleting remotely created project due to runtime setup error")
-			err2 := model.DeleteProject(namespace.Owner, namespace.Project, r.auth)
-			if err2 != nil {
-				multilog.Error("Error deleting remotely created project after runtime setup error: %v", errs.JoinMessage(err2))
-				return locale.WrapError(err, "err_init_refresh_delete_project", "Could not setup runtime after init, and could not delete newly created Platform project. Please delete it manually before trying again")
-			}
-			return errs.Wrap(err, "Failed to fetch build result")
+	// Solve runtime
+	solveSpinner := output.StartSpinner(r.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
+	bpm := bpModel.NewBuildPlannerModel(r.auth)
+	commit, err := bpm.FetchCommit(commitID, r.prime.Project().Owner(), r.prime.Project().Name(), nil)
+	if err != nil {
+		solveSpinner.Stop(locale.T("progress_fail"))
+		logging.Debug("Deleting remotely created project due to runtime setup error")
+		err2 := model.DeleteProject(namespace.Owner, namespace.Project, r.auth)
+		if err2 != nil {
+			multilog.Error("Error deleting remotely created project after runtime setup error: %v", errs.JoinMessage(err2))
+			return locale.WrapError(err, "err_init_refresh_delete_project", "Could not setup runtime after init, and could not delete newly created Platform project. Please delete it manually before trying again")
 		}
-		solveSpinner.Stop(locale.T("progress_success"))
-
-		dependencies.OutputSummary(r.out, commit.BuildPlan().RequestedArtifacts())
-		rti, err := runtime_runbit.Update(r.prime, trigger.TriggerInit, runtime_runbit.WithCommit(commit))
-		if err != nil {
-			return errs.Wrap(err, "Could not setup runtime after init")
-		}
-		executorsPath = rti.Env(false).ExecutorsPath
+		return errs.Wrap(err, "Failed to fetch build result")
 	}
+	solveSpinner.Stop(locale.T("progress_success"))
+
+	dependencies.OutputSummary(r.out, commit.BuildPlan().RequestedArtifacts())
+	rti, err := runtime_runbit.Update(r.prime, trigger.TriggerInit, runtime_runbit.WithCommit(commit))
+	if err != nil {
+		return errs.Wrap(err, "Could not setup runtime after init")
+	}
+	executorsPath := rti.Env(false).ExecutorsPath
 
 	projectfile.StoreProjectMapping(r.config, namespace.String(), filepath.Dir(proj.Source().Path()))
 
@@ -403,48 +398,6 @@ func deriveVersion(lang language.Language, version string, auth *authentication.
 	}
 
 	return version, nil
-}
-
-func (i *Initialize) getOwner(desiredOwner string) (string, error) {
-	orgs, err := model.FetchOrganizations(i.auth)
-	if err != nil {
-		return "", errs.Wrap(err, "Unable to get the user's writable orgs")
-	}
-
-	// Prefer the desired owner if it's valid
-	if desiredOwner != "" {
-		// Match the case of the organization.
-		// Otherwise the incorrect case will be written to the project file.
-		for _, org := range orgs {
-			if strings.EqualFold(org.URLname, desiredOwner) {
-				return org.URLname, nil
-			}
-		}
-		// Return desiredOwner for error reporting
-		return desiredOwner, errNoOwner
-	}
-
-	// Use the last used namespace if it's valid
-	lastUsed := i.config.GetString(constants.LastUsedNamespacePrefname)
-	if lastUsed != "" {
-		ns, err := project.ParseNamespace(lastUsed)
-		if err != nil {
-			return "", errs.Wrap(err, "Unable to parse last used namespace")
-		}
-
-		for _, org := range orgs {
-			if strings.EqualFold(org.URLname, ns.Owner) {
-				return org.URLname, nil
-			}
-		}
-	}
-
-	// Use the first org if there is one
-	if len(orgs) > 0 {
-		return orgs[0].URLname, nil
-	}
-
-	return "", errNoOwner
 }
 
 func (i *Initialize) getProjectName(desiredProject string, lang string) string {

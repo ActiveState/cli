@@ -110,7 +110,7 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NonExistentArgValues_
 	// Non existent Role test
 	cp := ts.Spawn("invite", "qatesting+3@activestate.com", "--role", "first")
 	cp.Expect("Invalid value for \"--role\" flag")
-	cp.Expect("Invalid role: first, should be one of: owner, member")
+	cp.Expect("Invalid role: 'first'. Should be one of: owner, member")
 	cp.ExpectExitCode(1)
 
 	// Non existent Organization test
@@ -141,7 +141,7 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NonExistentArgValues_
 	// Non existent Role test
 	cp := ts.Spawn("invite", "qatesting+3@activestate.com", "--role", "first")
 	cp.Expect("Invalid value for \"--role\" flag")
-	cp.Expect("Invalid role: first, should be one of: owner, member")
+	cp.Expect("Invalid role: 'first'. Should be one of: owner, member")
 	cp.ExpectExitCode(1)
 
 	// Non existent Organization test

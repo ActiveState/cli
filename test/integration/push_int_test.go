@@ -50,10 +50,15 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	suite.OnlyRunForTags(tagsuite.Push)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
+
 	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
 	pname := strutils.UUID()
 	namespace := fmt.Sprintf("%s/%s", suite.username, pname)
-	cp := ts.SpawnWithOpts(
+	cp = ts.SpawnWithOpts(
 		e2e.OptArgs(
 			"init",
 			"--language",
@@ -61,7 +66,6 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 			namespace,
 			".",
 		),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
 	)
 	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
@@ -78,9 +82,6 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 
 	// ensure that we are logged out
 	cp = ts.Spawn("auth", "logout")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", suite.extraPackage)
@@ -118,15 +119,11 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	user := ts.CreateNewUser()
 	pname := strutils.UUID()
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", suite.baseProject, "."),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
-	)
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out project")
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp = ts.Spawn("checkout", suite.baseProject, ".")
+	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", suite.extraPackage)
@@ -209,7 +206,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	ts.LoginAsPersistentUser()
 
 	cp = ts.SpawnWithOpts(e2e.OptArgs("push", namespace), e2e.OptWD(wd))
-	cp.Expect("continue? (Y/n)")
+	cp.Expect("Continue? (Y/n)")
 	cp.SendLine("y")
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)

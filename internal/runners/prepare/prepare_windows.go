@@ -25,7 +25,7 @@ func (r *Prepare) prepareOS() error {
 	}
 
 	if err := r.prepareStartShortcut(); err != nil {
-		r.reportError(locale.Tl("err_prepare_shortcut", "Could not create start menu shortcut, error received: {{.V0}}.", err.Error()), err)
+		r.reportError(locale.Tl("err_prepare_shortcut", "Could not create start menu shortcut. Error received: {{.V0}}.", err.Error()), err)
 	}
 
 	a, err := svcApp.New()
@@ -34,7 +34,7 @@ func (r *Prepare) prepareOS() error {
 	}
 
 	if err = autostart.Enable(a.Path(), svcAutostart.Options); err != nil {
-		r.reportError(locale.Tl("err_prepare_service_autostart", "Could not setup service autostart, error recieved: {{.V0}}", err.Error()), err)
+		r.reportError(locale.Tl("err_prepare_service_autostart", "Could not setup service autostart. Error recieved: {{.V0}}", err.Error()), err)
 	}
 
 	return nil

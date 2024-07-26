@@ -9,6 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
@@ -115,7 +116,7 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 		cp.ExpectExitCode(0)
 
 		cp = ts.Spawn("import", "requirements.txt")
-		cp.Expect("No new changes")
+		cp.Expect("already installed")
 		cp.ExpectNotExitCode(0)
 	})
 
@@ -144,6 +145,41 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 		cp.Expect(">=1.21.1,<=1.26.5 → 1.26.5")
 		cp.ExpectExitCode(0)
 	})
+	ts.IgnoreLogErrors()
+}
+
+func (suite *ImportIntegrationTestSuite) TestImportCycloneDx() {
+	suite.OnlyRunForTags(tagsuite.Import)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser() // needed to read orgs for private namespace
+
+	ts.PrepareEmptyProject()
+
+	jsonSbom := filepath.Join(osutil.GetTestDataDir(), "import", "cyclonedx", "bom.json")
+	xmlSbom := filepath.Join(osutil.GetTestDataDir(), "import", "cyclonedx", "bom.xml")
+
+	for _, sbom := range []string{jsonSbom, xmlSbom} {
+		suite.Run("import "+sbom, func() {
+			cp := ts.Spawn("import", sbom)
+			cp.Expect("Creating commit")
+			cp.Expect("Done")
+			cp.ExpectNotExitCode(0) // solve should fail due to private namespace
+
+			cp = ts.Spawn("history")
+			cp.Expect("Import from requirements file")
+			cp.Expect("+ body-parser 1.19.0")
+			cp.Expect("namespace: private/")
+			cp.Expect("+ bytes 3.1.0")
+			cp.Expect("namespace: private/")
+			cp.ExpectExitCode(0)
+
+			cp = ts.Spawn("reset", "-n")
+			cp.ExpectExitCode(0)
+		})
+	}
+
 	ts.IgnoreLogErrors()
 }
 

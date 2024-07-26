@@ -318,18 +318,14 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	cp := ts.Spawn("fork", "ActiveState-CLI/Packages", "--org", user.Username, "--name", "python3-pkgtest")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", namespace, "."),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
-	)
-	cp.Expect("Skipping runtime setup")
+	cp = ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("checkout", namespace, ".")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("history", "--output=json")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
 	suite.Run("install", func() {
@@ -369,18 +365,14 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation_multiple() {
 	cp := ts.Spawn("fork", "ActiveState-CLI/Packages", "--org", user.Username, "--name", "python3-pkgtest")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", namespace, "."),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
-	)
-	cp.Expect("Skipping runtime setup")
+	cp = ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("checkout", namespace, ".")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("history", "--output=json")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
 	suite.Run("install", func() {
@@ -497,18 +489,16 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	dir := filepath.Join(ts.Dirs.Work, "normalized")
-	suite.Require().NoError(fileutils.Mkdir(dir))
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "."),
-		e2e.OptWD(dir),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
-	)
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out project")
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	dir := filepath.Join(ts.Dirs.Work, "normalized")
+	suite.Require().NoError(fileutils.Mkdir(dir))
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "."),
+		e2e.OptWD(dir),
+	)
+	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
@@ -527,9 +517,7 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "."),
 		e2e.OptWD(anotherDir),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
 	)
-	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 

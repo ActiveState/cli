@@ -133,10 +133,7 @@ func (suite *LanguagesIntegrationTestSuite) TestWildcards() {
 	cp.Expect("→ >=3.9,<3.10")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("reset", "-n"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
-	)
+	cp = ts.Spawn("reset", "-n")
 	cp.Expect("Successfully reset")
 	cp.ExpectExitCode(0)
 

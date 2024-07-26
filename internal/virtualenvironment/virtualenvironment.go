@@ -1,13 +1,11 @@
 package virtualenvironment
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/google/uuid"
 
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/pkg/runtime"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -34,15 +32,12 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, useExecutors bool, projectDir,
 	envMap := make(map[string]string)
 
 	// Source runtime environment information
-	if !condition.RuntimeDisabled() {
-		env := v.runtime.Env(inherit)
-		if useExecutors {
-			envMap = env.VariablesWithExecutors
-		} else {
-			envMap = env.Variables
-		}
+
+	env := v.runtime.Env(inherit)
+	if useExecutors {
+		envMap = env.VariablesWithExecutors
 	} else {
-		envMap = osutils.EnvSliceToMap(os.Environ())
+		envMap = env.Variables
 	}
 
 	if projectDir != "" {

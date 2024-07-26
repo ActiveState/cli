@@ -482,12 +482,11 @@ const AnalyticsPixelOverrideEnv = "ACTIVESTATE_CLI_ANALYTICS_PIXEL"
 // TerminalAnimationInterval is the interval we use for terminal animations
 const TerminalAnimationInterval = 150 * time.Millisecond
 
-// PlatformApiRequestRequestsEnvVarName is only used for an integration test to print some Platform
-// API request info.
-const PlatformApiPrintRequestsEnvVarName = "ACTIVESTATE_CLI_PLATFORM_API_PRINT_REQUESTS"
-
 // ActiveStateCIEnvVarName is the environment variable set when running in an ActiveState CI environment.
 const ActiveStateCIEnvVarName = "ACTIVESTATE_CI"
 
 // OverrideSandbox is the environment variable to set when overriding the sandbox for integration tests.
 const OverrideSandbox = "ACTIVESTATE_TEST_OVERRIDE_SANDBOX"
+
+// PlatformPrivateNamespace is the namespace for private packages.
+const PlatformPrivateNamespace = "private"

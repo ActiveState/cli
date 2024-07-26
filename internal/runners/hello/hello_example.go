@@ -67,10 +67,12 @@ func New(p primeable) *Hello {
 // This is so that end-users always get errors that clearly relate to what they were doing, with a good sense on what
 // they can do to address it.
 func rationalizeError(err *error) {
+	var errNoNameProvided *example.NoNameProvidedError
+
 	switch {
 	case err == nil:
 		return
-	case errs.Matches(*err, &example.NoNameProvidedError{}):
+	case errors.As(*err, &errNoNameProvided):
 		// Errors that we are looking for should be wrapped in a user-facing error.
 		// Ensure we wrap the top-level error returned from the runner and not
 		// the unpacked error that we are inspecting.

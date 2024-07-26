@@ -50,7 +50,7 @@ func (r *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 
 	// This code block is for integration testing purposes only.
-	if os.Getenv(constants.PlatformApiPrintRequestsEnvVarName) != "" &&
+	if os.Getenv(constants.DebugServiceRequestsEnvVarName) != "" &&
 		(condition.OnCI() || condition.BuiltOnDevMachine()) {
 		logging.Debug("URL: %s\n", req.URL)
 		logging.Debug("User-Agent: %s\n", resp.Request.Header.Get("User-Agent"))

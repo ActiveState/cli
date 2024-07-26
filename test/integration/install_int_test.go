@@ -66,7 +66,7 @@ func (suite *InstallIntegrationTestSuite) TestInstall_NoMatches_Alternatives() {
 	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
 	cp := ts.Spawn("install", "database")
 	cp.Expect("No results found for search term")
-	cp.Expect("did you mean") // This verifies alternatives were found
+	cp.Expect("Did you mean") // This verifies alternatives were found
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 
@@ -83,7 +83,7 @@ func (suite *InstallIntegrationTestSuite) TestInstall_BuildPlannerError() {
 	ts.PrepareProject("ActiveState-CLI/small-python", "d8f26b91-899c-4d50-8310-2c338786aa0f")
 
 	cp := ts.Spawn("install", "trender@999.0")
-	cp.Expect("Could not plan build, platform responded with")
+	cp.Expect("Could not plan build. Platform responded with")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 

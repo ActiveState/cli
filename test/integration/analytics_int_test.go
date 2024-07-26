@@ -226,7 +226,6 @@ func (suite *AnalyticsIntegrationTestSuite) TestExecEvents() {
 	sleepTime = sleepTime + (sleepTime / 2)
 
 	env := []string{
-		constants.DisableRuntime + "=false",
 		fmt.Sprintf("%s=%d", constants.HeartbeatIntervalEnvVarName, heartbeatInterval),
 	}
 
