@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"gopkg.in/yaml.v3"
@@ -193,39 +192,6 @@ func AddTips(err error, tips ...string) error {
 }
 
 var errorType = reflect.TypeOf((*error)(nil)).Elem()
-
-// Matches is an analog for errors.As that just checks whether err matches the given type, so you can do:
-// errs.Matches(err, &ErrStruct{})
-// Without having to first assign it to a variable
-// This is useful if you ONLY care about the bool return value and not about setting the variable
-func Matches(err error, target interface{}) bool {
-	if target == nil {
-		panic("errors: target cannot be nil")
-	}
-
-	// Guard against miss-use of this function
-	if _, ok := target.(*WrapperError); ok {
-		if condition.BuiltOnDevMachine() || condition.InActiveStateCI() {
-			panic("target cannot be a WrapperError, you probably want errors.Is")
-		}
-	}
-
-	val := reflect.ValueOf(target)
-	targetType := val.Type()
-	if targetType.Kind() != reflect.Interface && !targetType.Implements(errorType) {
-		panic("errors: *target must be interface or implement error")
-	}
-	errs := Unpack(err)
-	for _, err := range errs {
-		if reflect.TypeOf(err).AssignableTo(targetType) {
-			return true
-		}
-		if x, ok := err.(interface{ As(interface{}) bool }); ok && x.As(&target) {
-			return true
-		}
-	}
-	return false
-}
 
 func IsAny(err error, errs ...error) bool {
 	for _, e := range errs {

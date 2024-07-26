@@ -58,7 +58,6 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 			e2e.OptAppendEnv(
 				constants.DisableUpdates+"=true",
 				constants.ProfileEnvVarName+"=true",
-				constants.DisableRuntime+"=true",
 			),
 		}
 		termtestLogs := &bytes.Buffer{}

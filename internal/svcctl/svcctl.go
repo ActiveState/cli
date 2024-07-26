@@ -70,7 +70,8 @@ func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec, argText string,
 	if err != nil {
 		logging.Debug("Could not locate state-svc, attempting to start it..")
 
-		if !errs.Matches(err, &ipc.ServerDownError{}) {
+		var errServerDown *ipc.ServerDownError
+		if !errors.As(err, &errServerDown) {
 			return "", errs.Wrap(err, "Cannot locate HTTP port of service")
 		}
 
@@ -137,7 +138,8 @@ func StopServer(ipComm IPCommunicator) error {
 	defer cancel()
 
 	err := stopAndWait(ctx, ipComm)
-	if err != nil && !errs.Matches(err, &ipc.ServerDownError{}) {
+	var errServerDown *ipc.ServerDownError
+	if err != nil && !errors.As(err, &errServerDown) {
 		return errs.Wrap(err, "Cannot stop service")
 	}
 

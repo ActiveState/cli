@@ -5,7 +5,6 @@ import (
 	"net"
 	"os"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/ipc"
 )
 
@@ -31,7 +30,8 @@ func asTempNotUpCtlErr(err error) error {
 }
 
 func asNotUpCtlErr(err error) error {
-	if errs.Matches(err, &ipc.ServerDownError{}) {
+	var errServerDown *ipc.ServerDownError
+	if errors.As(err, &errServerDown) {
 		return ctlErrNotUp
 	}
 	return err

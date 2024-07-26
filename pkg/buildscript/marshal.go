@@ -14,6 +14,7 @@ const (
 	mainKey = "main"
 
 	reqFuncName = "Req"
+	revFuncName = "Revision"
 	eqFuncName  = "Eq"
 	neFuncName  = "Ne"
 	gtFuncName  = "Gt"
@@ -53,7 +54,7 @@ func assignmentString(a *Assignment) string {
 	return fmt.Sprintf("%s = %s", a.Key, valueString(a.Value))
 }
 
-func indent(s string) string {
+func indentByTab(s string) string {
 	return fmt.Sprintf("\t%s", strings.ReplaceAll(s, "\n", "\n\t"))
 }
 
@@ -66,7 +67,7 @@ func valueString(v *Value) string {
 		buf := bytes.Buffer{}
 		buf.WriteString("[\n")
 		for i, item := range *v.List {
-			buf.WriteString(indent(valueString(item)))
+			buf.WriteString(indentByTab(valueString(item)))
 			if i+1 < len(*v.List) {
 				buf.WriteString(",")
 			}
@@ -91,7 +92,7 @@ func valueString(v *Value) string {
 		buf := bytes.Buffer{}
 		buf.WriteString("{\n")
 		for i, pair := range *v.Object {
-			buf.WriteString(indent(assignmentString(pair)))
+			buf.WriteString(indentByTab(assignmentString(pair)))
 			if i+1 < len(*v.Object) {
 				buf.WriteString(",")
 			}
@@ -121,7 +122,7 @@ func funcCallString(f *FuncCall) string {
 	var (
 		newline = "\n"
 		comma   = ","
-		indent  = indent
+		indent  = indentByTab
 	)
 
 	if funk.Contains(inlineFunctions, f.Name) {
@@ -135,16 +136,22 @@ func funcCallString(f *FuncCall) string {
 	buf := bytes.Buffer{}
 	buf.WriteString(fmt.Sprintf("%s(%s", f.Name, newline))
 
-	for i, argument := range f.Arguments {
+	buf.WriteString(argsToString(f.Arguments, newline, comma, indent))
+
+	buf.WriteString(")")
+	return buf.String()
+}
+
+func argsToString(args []*Value, newline, comma string, indent func(string) string) string {
+	buf := bytes.Buffer{}
+	for i, argument := range args {
 		buf.WriteString(indent(valueString(argument)))
 
-		if i+1 < len(f.Arguments) {
+		if i+1 < len(args) {
 			buf.WriteString(comma)
 		}
 
 		buf.WriteString(newline)
 	}
-
-	buf.WriteString(")")
 	return buf.String()
 }

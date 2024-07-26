@@ -1,9 +1,6 @@
 package manifest
 
 import (
-	"os"
-	"strings"
-
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -11,10 +8,11 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -80,7 +78,12 @@ func (m *Manifest) Run() (rerr error) {
 		return errs.Wrap(err, "Could not fetch vulnerabilities")
 	}
 
-	m.out.Print(newRequirements(reqs, bpReqs, vulns))
+	reqOut := newRequirements(reqs, bpReqs, vulns, !m.out.Type().IsStructured())
+	if m.out.Type().IsStructured() {
+		m.out.Print(reqOut)
+	} else {
+		reqOut.Print(m.out)
+	}
 
 	if len(vulns) > 0 {
 		m.out.Notice(locale.Tl("manifest_vulnerabilities_info", "\nFor CVE info run '[ACTIONABLE]state security[/RESET]'"))
@@ -89,16 +92,25 @@ func (m *Manifest) Run() (rerr error) {
 	return nil
 }
 
-func (m *Manifest) fetchRequirements() ([]types.Requirement, error) {
-	commitID, err := localcommit.Get(m.project.Dir())
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get commit ID")
-	}
+func (m *Manifest) fetchRequirements() ([]buildscript.Requirement, error) {
+	var script *buildscript.BuildScript
+	if m.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		var err error
+		script, err = buildscript_runbit.ScriptFromProject(m.project)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get buildscript")
+		}
+	} else {
+		commitID, err := localcommit.Get(m.project.Dir())
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get commit ID")
+		}
 
-	bp := bpModel.NewBuildPlannerModel(m.auth)
-	script, err := bp.GetBuildScript(commitID.String())
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get remote build expr and time")
+		bp := bpModel.NewBuildPlannerModel(m.auth)
+		script, err = bp.GetBuildScript(commitID.String())
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get remote build expr and time")
+		}
 	}
 
 	reqs, err := script.Requirements()
@@ -110,10 +122,6 @@ func (m *Manifest) fetchRequirements() ([]types.Requirement, error) {
 }
 
 func (m *Manifest) fetchBuildplanRequirements() (buildplan.Ingredients, error) {
-	if strings.EqualFold(os.Getenv(constants.DisableRuntime), "true") {
-		return nil, nil
-	}
-
 	commitID, err := localcommit.Get(m.project.Dir())
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to get local commit")
@@ -132,12 +140,16 @@ func (m *Manifest) fetchBuildplanRequirements() (buildplan.Ingredients, error) {
 	return commit.BuildPlan().RequestedIngredients(), nil
 }
 
-func (m *Manifest) fetchVulnerabilities(reqs []types.Requirement) (vulnerabilities, error) {
+func (m *Manifest) fetchVulnerabilities(reqs []buildscript.Requirement) (vulnerabilities, error) {
 	vulns := make(vulnerabilities)
 
 	if !m.auth.Authenticated() {
 		for _, req := range reqs {
-			vulns.addVulnerability(req.Name, req.Namespace, &requirementVulnerabilities{
+			r, ok := req.(buildscript.DependencyRequirement)
+			if !ok {
+				continue
+			}
+			vulns.add(r.Name, r.Namespace, &requirementVulnerabilities{
 				authenticated: false,
 			})
 		}
@@ -147,13 +159,19 @@ func (m *Manifest) fetchVulnerabilities(reqs []types.Requirement) (vulnerabiliti
 	var ingredients []*request.Ingredient
 	for _, req := range reqs {
 		var version string
-		if req.VersionRequirement != nil {
-			version = model.BuildPlannerVersionConstraintsToString(req.VersionRequirement)
+		r, ok := req.(buildscript.DependencyRequirement)
+		if !ok {
+			// We can't report vulnerabilities on revisions because they don't supply a namespace.
+			// https://activestatef.atlassian.net/browse/PB-5165
+			continue
+		}
+		if r.VersionRequirement != nil {
+			version = model.BuildPlannerVersionConstraintsToString(r.VersionRequirement)
 		}
 
 		ingredients = append(ingredients, &request.Ingredient{
-			Name:      req.Name,
-			Namespace: req.Namespace,
+			Name:      r.Name,
+			Namespace: r.Namespace,
 			Version:   version,
 		})
 	}
@@ -164,7 +182,7 @@ func (m *Manifest) fetchVulnerabilities(reqs []types.Requirement) (vulnerabiliti
 	}
 
 	for _, vuln := range ingredientVulnerabilities {
-		vulns.addVulnerability(vuln.Name, vuln.PrimaryNamespace, &requirementVulnerabilities{
+		vulns.add(vuln.Name, vuln.PrimaryNamespace, &requirementVulnerabilities{
 			Count:         vuln.Vulnerabilities.Count(),
 			authenticated: true,
 		})

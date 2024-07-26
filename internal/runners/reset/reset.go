@@ -1,6 +1,7 @@
 package reset
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -80,7 +81,8 @@ func (r *Reset) Run(params *Params) error {
 			return locale.WrapError(err, "err_reset_latest_commit", "Could not get latest commit ID")
 		}
 		localCommitID, err := localcommit.Get(r.project.Dir())
-		if err != nil && !errs.Matches(err, &localcommit.ErrInvalidCommitID{}) {
+		var errInvalidCommitID *localcommit.ErrInvalidCommitID
+		if err != nil && !errors.As(err, &errInvalidCommitID) {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
 		if *latestCommit == localCommitID {
@@ -108,13 +110,14 @@ func (r *Reset) Run(params *Params) error {
 	}
 
 	localCommitID, err := localcommit.Get(r.project.Dir())
-	if err != nil && !errs.Matches(err, &localcommit.ErrInvalidCommitID{}) {
+	var errInvalidCommitID *localcommit.ErrInvalidCommitID
+	if err != nil && !errors.As(err, &errInvalidCommitID) {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 	r.out.Notice(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", commitID.String()))
 	if commitID != localCommitID {
 		defaultChoice := params.Force || !r.out.Config().Interactive
-		confirm, err := r.prompt.Confirm("", locale.Tl("reset_confim", "Resetting is destructive, you will lose any changes that were not pushed. Are you sure you want to do this?"), &defaultChoice)
+		confirm, err := r.prompt.Confirm("", locale.Tl("reset_confim", "Resetting is destructive. You will lose any changes that were not pushed. Are you sure you want to do this?"), &defaultChoice)
 		if err != nil {
 			return locale.WrapError(err, "err_reset_confirm", "Could not confirm reset choice")
 		}

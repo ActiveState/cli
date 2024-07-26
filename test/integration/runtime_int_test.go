@@ -50,11 +50,6 @@ import (
 	suite.Require().NoError(err)
 	eventHandler := events.NewRuntimeEventHandler(mockProgress, nil, logfile)
 
-	if value, set := os.LookupEnv(constants.DisableRuntime); set {
-		os.Setenv(constants.DisableRuntime, "false")
-		defer os.Setenv(constants.DisableRuntime, value)
-	}
-
 	rt, err := runtime.New(offlineTarget, analytics, nil, nil)
 	suite.Require().Error(err)
 	err = rt.Update(eventHandler)

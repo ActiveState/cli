@@ -12,6 +12,14 @@ import (
 
 var ErrNoOwner = errs.New("Could not find organization")
 
+type ErrOwnerNotFound struct {
+	DesiredOwner string
+}
+
+func (e ErrOwnerNotFound) Error() string {
+	return "could not find this organization"
+}
+
 type configurer interface {
 	GetString(string) string
 }
@@ -35,8 +43,7 @@ func Get(desiredOrg string, auth *authentication.Auth, cfg configurer) (string, 
 				return org.URLname, nil
 			}
 		}
-		// Return desiredOrg for error reporting
-		return desiredOrg, ErrNoOwner
+		return "", &ErrOwnerNotFound{desiredOrg}
 	}
 
 	// Use the last used namespace if it's valid

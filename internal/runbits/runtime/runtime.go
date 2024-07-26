@@ -124,12 +124,6 @@ func Update(
 		return nil, errs.Wrap(err, "Could not initialize runtime")
 	}
 
-	// Check if runtime is disabled by env var
-	if os.Getenv(constants.DisableRuntime) == "true" {
-		prime.Output().Notice(locale.T("notice_runtime_disabled"))
-		return rt, nil
-	}
-
 	commitID := opts.CommitID
 	if opts.Commit != nil {
 		commitID = opts.Commit.CommitID
@@ -188,7 +182,7 @@ func Update(
 	}
 
 	// Validate buildscript
-	if prime.Config().GetBool(constants.OptinBuildscriptsConfig) && opts.ValidateBuildscript {
+	if prime.Config().GetBool(constants.OptinBuildscriptsConfig) && opts.ValidateBuildscript && os.Getenv(constants.DisableBuildscriptDirtyCheck) != "true" {
 		bs, err := buildscript_runbit.ScriptFromProject(proj)
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to get buildscript")

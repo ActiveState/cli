@@ -49,6 +49,9 @@ const LogBuildVerboseEnvVarName = "ACTIVESTATE_CLI_BUILD_VERBOSE"
 // DisableRuntime is the env var used to disable downloading of runtimes, useful for CI or testing
 const DisableRuntime = "ACTIVESTATE_CLI_DISABLE_RUNTIME"
 
+// DisableBuildscriptDirtyCheck is the env var used to disable the check for dirty buildscripts
+const DisableBuildscriptDirtyCheck = "ACTIVESTATE_CLI_DISABLE_BS_DIRTY_CHECK"
+
 // DisableUpdates is the env var used to disable automatic updates
 const DisableUpdates = "ACTIVESTATE_CLI_DISABLE_UPDATES"
 
@@ -478,10 +481,6 @@ const AnalyticsPixelOverrideEnv = "ACTIVESTATE_CLI_ANALYTICS_PIXEL"
 
 // TerminalAnimationInterval is the interval we use for terminal animations
 const TerminalAnimationInterval = 150 * time.Millisecond
-
-// PlatformApiRequestRequestsEnvVarName is only used for an integration test to print some Platform
-// API request info.
-const PlatformApiPrintRequestsEnvVarName = "ACTIVESTATE_CLI_PLATFORM_API_PRINT_REQUESTS"
 
 // ActiveStateCIEnvVarName is the environment variable set when running in an ActiveState CI environment.
 const ActiveStateCIEnvVarName = "ACTIVESTATE_CI"

@@ -19,7 +19,6 @@ func TestExample(t *testing.T) {
 	errt := &MyError{}
 	var errx error = &MyError{errs.New("test1")}
 	errors.As(errx, &errt)
-	errs.Matches(errx, &MyError{})
 
 	// Regular error
 	var err error = errs.New("Regular error message on %s", runtime.GOOS)
@@ -38,8 +37,6 @@ func TestExample(t *testing.T) {
 	err = errs.Wrap(myError, "My WrappedErr!")
 	assert.Error(t, err)
 	assert.True(t, errors.As(err, &myErrorCopy), "Error can be accessed as myErrorCopy")
-	assert.True(t, errs.Matches(err, &MyError{}), "Error Matches")
-	assert.False(t, errs.Matches(errs.New("foo"), &MyError{}), "Error doesn't match")
 	assert.True(t, errors.Is(err, myError), "err is equivalent to myError") // ptrs same addr, non-ptrs struct equality
 
 	// Create user input error

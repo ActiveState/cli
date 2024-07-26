@@ -40,14 +40,6 @@ func rationalizeUpdateError(prime primeable, rerr *error) {
 	var runtimeInUseErr *RuntimeInUseError
 
 	switch {
-	// User has modified the buildscript and needs to run `state commit`
-	case errors.Is(*rerr, ErrBuildScriptNeedsCommit):
-		*rerr = errs.WrapUserFacing(*rerr, locale.T("notice_commit_build_script"), errs.SetInput())
-
-	// Buildscript is missing and needs to be recreated
-	case errors.Is(*rerr, ErrBuildscriptNotExist):
-		*rerr = errs.WrapUserFacing(*rerr, locale.T("notice_needs_buildscript_reset"), errs.SetInput())
-
 	// Artifact cached build errors
 	case errors.As(*rerr, &artifactCachedBuildErr):
 		errMsg := locale.Tr("err_build_artifact_failed_msg", artifactCachedBuildErr.Artifact.Name())
@@ -100,6 +92,14 @@ func RationalizeSolveError(proj *project.Project, auth *auth.Auth, rerr *error) 
 	var buildPlannerErr *bpResp.BuildPlannerError
 
 	switch {
+	// User has modified the buildscript and needs to run `state commit`
+	case errors.Is(*rerr, ErrBuildScriptNeedsCommit):
+		*rerr = errs.WrapUserFacing(*rerr, locale.T("notice_commit_build_script"), errs.SetInput())
+
+	// Buildscript is missing and needs to be recreated
+	case errors.Is(*rerr, ErrBuildscriptNotExist):
+		*rerr = errs.WrapUserFacing(*rerr, locale.T("notice_needs_buildscript_reset"), errs.SetInput())
+
 	// Could not find a platform that matches on the given branch, so suggest alternate branches if ones exist
 	case errors.As(*rerr, &noMatchingPlatformErr):
 		if proj != nil {
