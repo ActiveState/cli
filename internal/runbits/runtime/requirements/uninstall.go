@@ -198,8 +198,8 @@ func (r *RequirementOperation) getRequirementNamespace(requirement *Requirement,
 	}
 
 	for _, req := range reqs {
-		if req.Name == requirement.Name {
-			if lang := model.LanguageFromNamespace(req.Namespace); lang != "" {
+		if depReq, ok := req.(buildscript.DependencyRequirement); ok && depReq.Name == requirement.Name {
+			if lang := model.LanguageFromNamespace(depReq.Namespace); lang != "" {
 				return ptr.To(model.NewNamespacePackage(lang)), nil
 			}
 			return ptr.To(model.NewNamespaceLanguage()), nil
