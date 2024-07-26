@@ -1,7 +1,12 @@
 package integration
 
 import (
+	"bufio"
+	"encoding/json"
+	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -70,6 +75,59 @@ func (suite *ExportIntegrationTestSuite) TestExport_Log() {
 	cp.ExpectRe(`state-svc-\d+`)
 	cp.Expect(".log")
 	cp.ExpectExitCode(0)
+}
+
+func (suite *ExportIntegrationTestSuite) TestExport_LogIgnore() {
+	suite.OnlyRunForTags(tagsuite.Export)
+	ts := e2e.New(suite.T(), false)
+	defer ts.ClearCache()
+
+	cp := ts.Spawn("config", "--help")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "set", "--help")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("projects")
+	cp.ExpectExitCode(0)
+
+	suite.verifyLogIndex(ts, 0, "projects")
+	suite.verifyLogIndex(ts, 1, "config", "set")
+	suite.verifyLogIndex(ts, 2, "config")
+}
+
+func (suite *ExportIntegrationTestSuite) verifyLogIndex(ts *e2e.Session, index int, args ...string) {
+	cp := ts.Spawn("export", "log", "-i", strconv.Itoa(index), "--output", "json")
+	cp.ExpectExitCode(0)
+	data := cp.StrippedSnapshot()
+
+	type log struct {
+		LogFile string `json:"logFile"`
+	}
+
+	var l log
+	err := json.Unmarshal([]byte(data), &l)
+	suite.Require().NoError(err)
+
+	suite.verifyLogFile(l.LogFile, args...)
+}
+
+func (suite *ExportIntegrationTestSuite) verifyLogFile(logFile string, expectedArgs ...string) {
+	f, err := os.Open(logFile)
+	suite.Require().NoError(err)
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		if !strings.Contains(scanner.Text(), "Args: ") {
+			continue
+		}
+
+		for _, arg := range expectedArgs {
+			if !strings.Contains(scanner.Text(), arg) {
+				suite.Fail("Log file does not contain expected command: %s", arg)
+			}
+		}
+	}
 }
 
 func (suite *ExportIntegrationTestSuite) TestExport_Runtime() {
