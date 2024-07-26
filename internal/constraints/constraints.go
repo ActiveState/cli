@@ -125,12 +125,12 @@ func (c *Conditional) RegisterParam(name string, value interface{}) {
 func (c *Conditional) Eval(conditional string) (bool, error) {
 	tpl, err := template.New("").Funcs(c.funcs).Parse(fmt.Sprintf(`{{if %s}}1{{end}}`, conditional))
 	if err != nil {
-		return false, locale.WrapInputError(err, "err_conditional", "Invalid 'if' condition: '{{.V0}}', error: '{{.V1}}'.", conditional, err.Error())
+		return false, locale.WrapInputError(err, "err_conditional", "Invalid 'if' condition: '{{.V0}}'. Error: '{{.V1}}'.", conditional, err.Error())
 	}
 
 	result := bytes.Buffer{}
 	if err := tpl.Execute(&result, c.params); err != nil {
-		return false, locale.WrapInputError(err, "err_conditional", "Invalid 'if' condition: '{{.V0}}', error: '{{.V1}}'.", conditional, err.Error())
+		return false, locale.WrapInputError(err, "err_conditional", "Invalid 'if' condition: '{{.V0}}'. Error: '{{.V1}}'.", conditional, err.Error())
 	}
 
 	return result.String() == "1", nil

@@ -1,6 +1,7 @@
 package requirements
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -34,7 +35,7 @@ type PackageVersion struct {
 func (pv *PackageVersion) Set(arg string) error {
 	err := pv.NameVersionValue.Set(arg)
 	if err != nil {
-		return locale.WrapInputError(err, "err_package_format", "The package and version provided is not formatting correctly, must be in the form of <package>@<version>")
+		return locale.WrapInputError(err, "err_package_format", "The package and version provided is not formatting correctly. It must be in the form of <package>@<version>")
 	}
 	return nil
 }
@@ -237,6 +238,8 @@ func requirementNames(requirements ...*Requirement) []string {
 }
 
 func IsBuildError(err error) bool {
-	return errs.Matches(err, &runtime.BuildError{}) ||
-		errs.Matches(err, &response.BuildPlannerError{})
+	var errBuild *runtime.BuildError
+	var errBuildPlanner *response.BuildPlannerError
+
+	return errors.As(err, &errBuild) || errors.As(err, &errBuildPlanner)
 }

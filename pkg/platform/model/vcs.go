@@ -268,7 +268,7 @@ func BranchCommitID(ownerName, projectName, branchName string) (*strfmt.UUID, er
 	if branch.CommitID == nil {
 		return nil, locale.NewInputError(
 			"err_project_no_commit",
-			"Your project does not have any commits yet, head over to {{.V0}} to set up your project.", api.GetPlatformURL(fmt.Sprintf("%s/%s", ownerName, projectName)).String())
+			"Your project does not have any commits yet. Head over to {{.V0}} to set up your project.", api.GetPlatformURL(fmt.Sprintf("%s/%s", ownerName, projectName)).String())
 	}
 
 	return branch.CommitID, nil

@@ -58,7 +58,7 @@ func (s *Set) Run(params SetParams) error {
 
 	value, err := option.SetEvent(value)
 	if err != nil {
-		return locale.WrapError(err, "err_config_set_event", "Could not store config value, if this continues to happen please contact support.")
+		return locale.WrapError(err, "err_config_set_event", "Could not store config value. If this continues to happen please contact support.")
 	}
 
 	key := params.Key.String()

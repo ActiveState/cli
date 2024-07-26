@@ -1,6 +1,7 @@
 package prepare
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"runtime"
@@ -105,14 +106,15 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 	}
 
 	if err := prepareCompletions(cmd, r.subshell); err != nil {
-		if !errs.Matches(err, &ErrorNotSupported{}) && !os.IsPermission(err) {
-			r.reportError(locale.Tl("err_prepare_generate_completions", "Could not generate completions script, error received: {{.V0}}.", err.Error()), err)
+		var errNotSupported *ErrorNotSupported
+		if !errors.As(err, &errNotSupported) && !os.IsPermission(err) {
+			r.reportError(locale.Tl("err_prepare_generate_completions", "Could not generate completions script. Error received: {{.V0}}.", err.Error()), err)
 		}
 	}
 
 	logging.Debug("Reset global executors")
 	if err := r.resetExecutors(); err != nil {
-		r.reportError(locale.Tl("err_reset_executor", "Could not reset global executors, error received: {{.V0}}", errs.JoinMessage(err)), err)
+		r.reportError(locale.Tl("err_reset_executor", "Could not reset global executors. Error received: {{.V0}}", errs.JoinMessage(err)), err)
 	}
 
 	// OS specific preparations
@@ -125,7 +127,7 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 	}
 
 	if err := updateConfigKey(r.cfg, oldGlobalDefaultPrefname, constants.GlobalDefaultPrefname); err != nil {
-		r.reportError(locale.Tl("err_prepare_config", "Could not update stale config keys, error recieved: {{.V0}}", errs.JoinMessage(err)), err)
+		r.reportError(locale.Tl("err_prepare_config", "Could not update stale config keys. Error recieved: {{.V0}}", errs.JoinMessage(err)), err)
 	}
 
 	return nil

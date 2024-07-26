@@ -108,10 +108,8 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 	require.NoError(t, err)
 
 	os.Setenv("TEST_KEY_EXISTS", "true")
-	os.Setenv(constants.DisableRuntime, "true")
 	defer func() {
 		os.Unsetenv("TEST_KEY_EXISTS")
-		os.Unsetenv(constants.DisableRuntime)
 	}()
 
 	cfg, err := config.New()

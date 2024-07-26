@@ -6,6 +6,56 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.45.0
+
+### Added
+
+* On Linux we will now automatically detect the most appropriate platform based on the system glibc version.
+    * This only applies if your project has multiple linux platforms defined.
+    * If you were using the `runtime.preferred.glibc` config option it will still be respected, but you likely won't
+      need it anymore.
+* We now show failed builds when running `state artifacts`. You can still instrument the artifacts that did not fail.
+
+### Changed
+
+* We no longer support running shell-builtins through `state exec`, instead we require that the executable passed in
+  exists on the system. Running shell-builtins was never the intended behavior, but was a side-effect. You can still
+  access shell built-ins by running it through a shell, eg. `state exec -- cmd /C "where python3"`.
+* Our installers now give slightly better indication that a download is happening, avoiding confusion about the process
+  hanging.
+* We will now produce an error if you have an invalid `if` conditional in your activestate.yaml. Previously these
+  conditionals were simply assumed to be `false`.
+* We will now inform you there is nothing new to commit when running `state commit` with no changes to commit.
+* The `LOCAL` and `REMOTE` targets for `state reset` are now case-insensitive.
+* You can now `state checkout` a project without a language defined in its configuration.
+    * Note making changes to such a project in the State Tool is not yet fully supported.
+* When the State Tool encounters an unexpected internal we now relay this internal error to the user. Previously you
+  only received a generic "execute failed" error, which is far less helpful than an internal error.
+* Running `state pull` will now fail if the configured commit does not belong to the configured project.
+    * This is a corrupted state that the user can encounter by manually editing their activestate.yaml (eg. by resolving
+      a git conflict).
+
+### Fixed
+
+* Updates would retry and eventually timeout if it took longer than 30 seconds to download.
+* On Windows, arguments were not always escaped properly when using commands like `state exec`, or runtime executors.
+* Sometimes row/column text was not aligned properly.
+* Build progress and an empty build log would sometimes be produced when the build was already done.
+* The "Platforms" command group was shown twice on `state --help`, one of these should have been the "Authors" group.
+* When running `state artifacts` with the `--commit` flag; it was not respected when `--namespace` was also supplied.
+* Running `state publish` with a custom `EDITOR` environment variable would not respect the configured editor.
+* Sometimes `state pull` would produce conflicts when there shouldn't have been any.
+* Our service process now has a longer timeout window, eliminating state-svc errors when the system is under heavy load
+  and the service hasn't started yet (eg. when booting up).
+* We no longer show redundant bullets for each change under `state history`.
+* Running `state publish --edit` will no longer require you to supply a file (eg. you just want to change the
+  description).
+
+### Security
+
+* Addressed several CVEs, packages in question [have been updated](https://github.com/ActiveState/cli/pull/3306/files)
+  to more recent appropriate versions.
+
 ## 0.44.1
 
 ### Changed

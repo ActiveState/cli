@@ -1,0 +1,117 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.2",
+  "serialNumber": "urn:uuid:1f860713-54b9-4253-ba5a-9554851904af",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2020-08-03T03:20:53.771Z",
+    "tools": [
+      {
+        "vendor": "CycloneDX",
+        "name": "Node.js module",
+        "version": "2.0.0"
+      }
+    ],
+    "component": {
+      "type": "library",
+      "bom-ref": "pkg:npm/juice-shop@11.1.2",
+      "name": "juice-shop",
+      "version": "11.1.2",
+      "description": "Probably the most modern and sophisticated insecure web application",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/juice-shop@11.1.2",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://owasp-juice.shop"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/bkimminich/juice-shop/issues"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/bkimminich/juice-shop.git"
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/body-parser@1.19.0",
+      "name": "body-parser",
+      "version": "1.19.0",
+      "description": "Node.js body parsing middleware",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "96b2709e57c9c4e09a6fd66a8fd979844f69f08a"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/body-parser@1.19.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/expressjs/body-parser#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/expressjs/body-parser/issues"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/expressjs/body-parser.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/bytes@3.1.0",
+      "name": "bytes",
+      "version": "3.1.0",
+      "description": "Utility to parse a string bytes to bytes and vice-versa",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "f6cf7933a360e0588fa9fde85651cdc7f805d1f6"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/bytes@3.1.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/visionmedia/bytes.js#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/visionmedia/bytes.js/issues"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/visionmedia/bytes.js.git"
+        }
+      ]
+    }
+  ]
+}

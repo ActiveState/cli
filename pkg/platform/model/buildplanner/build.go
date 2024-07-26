@@ -127,6 +127,12 @@ func processBuildPlannerError(bpErr error, fallbackMessage string) error {
 			return &response.BuildPlannerError{Err: locale.NewExternalError("err_buildplanner_deprecated", "Encountered deprecation error: {{.V0}}", graphqlErr.Message)}
 		}
 	}
+	if locale.IsInputError(bpErr) {
+		// If this is an input error then we shouldn't wrap it in a vague buildplanner error that's "unexpected",
+		// because evidently we expected it or we wouldn't mark it an input error.
+		// https://activestatef.atlassian.net/browse/DX-2957
+		return bpErr
+	}
 	return &response.BuildPlannerError{Err: locale.NewExternalError("err_buildplanner", "{{.V0}}: Encountered unexpected error: {{.V1}}", fallbackMessage, bpErr.Error())}
 }
 

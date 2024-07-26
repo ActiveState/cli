@@ -35,7 +35,7 @@ var ErrInvalidLogPrefix = errs.New("invalid log prefix")
 var ErrLogNotFound = errs.New("log not found")
 
 func (l *Log) Run(params *LogParams) (rerr error) {
-	defer rationalizeError(&rerr)
+	defer rationalizeError(&rerr, nil)
 
 	if params.Index < 0 {
 		return ErrInvalidLogIndex

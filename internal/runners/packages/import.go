@@ -1,6 +1,7 @@
 package packages
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -11,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
+	"github.com/ActiveState/cli/internal/runbits/org"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
@@ -74,7 +76,8 @@ func NewImport(prime primeable) *Import {
 }
 
 // Run executes the import behavior.
-func (i *Import) Run(params *ImportRunParams) error {
+func (i *Import) Run(params *ImportRunParams) (rerr error) {
+	defer rationalizeError(i.prime.Auth(), &rerr)
 	logging.Debug("ExecuteImport")
 
 	proj := i.prime.Project()
@@ -89,13 +92,13 @@ func (i *Import) Run(params *ImportRunParams) error {
 		params.FileName = defaultImportFile
 	}
 
-	latestCommit, err := localcommit.Get(proj.Dir())
+	localCommitId, err := localcommit.Get(proj.Dir())
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_commit")
 	}
 
 	auth := i.prime.Auth()
-	language, err := model.LanguageByCommit(latestCommit, auth)
+	language, err := model.LanguageByCommit(localCommitId, auth)
 	if err != nil {
 		return locale.WrapError(err, "err_import_language", "Unable to get language from project")
 	}
@@ -113,20 +116,20 @@ func (i *Import) Run(params *ImportRunParams) error {
 	}
 
 	bp := buildplanner.NewBuildPlannerModel(auth)
-	bs, err := bp.GetBuildScript(latestCommit.String())
+	bs, err := bp.GetBuildScript(localCommitId.String())
 	if err != nil {
 		return locale.WrapError(err, "err_cannot_get_build_expression", "Could not get build expression")
 	}
 
-	if err := applyChangeset(changeset, bs); err != nil {
+	if err := i.applyChangeset(changeset, bs); err != nil {
 		return locale.WrapError(err, "err_cannot_apply_changeset", "Could not apply changeset")
 	}
 
 	msg := locale.T("commit_reqstext_message")
-	commitID, err := bp.StageCommit(buildplanner.StageCommitParams{
+	stagedCommitId, err := bp.StageCommit(buildplanner.StageCommitParams{
 		Owner:        proj.Owner(),
 		Project:      proj.Name(),
-		ParentCommit: latestCommit.String(),
+		ParentCommit: localCommitId.String(),
 		Description:  msg,
 		Script:       bs,
 	})
@@ -138,13 +141,13 @@ func (i *Import) Run(params *ImportRunParams) error {
 	pg = nil
 
 	// Solve the runtime.
-	rtCommit, err := bp.FetchCommit(latestCommit, proj.Owner(), proj.Name(), nil)
+	rtCommit, err := bp.FetchCommit(stagedCommitId, proj.Owner(), proj.Name(), nil)
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch build result for previous commit")
 	}
 
 	// Output change summary.
-	previousCommit, err := bp.FetchCommit(latestCommit, proj.Owner(), proj.Name(), nil)
+	previousCommit, err := bp.FetchCommit(localCommitId, proj.Owner(), proj.Name(), nil)
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch build result for previous commit")
 	}
@@ -157,11 +160,11 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
-	if err := localcommit.Set(proj.Dir(), commitID.String()); err != nil {
+	if err := localcommit.Set(proj.Dir(), stagedCommitId.String()); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
-	_, err = runtime_runbit.Update(i.prime, trigger.TriggerImport, runtime_runbit.WithCommitID(commitID))
+	_, err = runtime_runbit.Update(i.prime, trigger.TriggerImport, runtime_runbit.WithCommitID(stagedCommitId))
 	if err != nil {
 		return errs.Wrap(err, "Runtime update failed")
 	}
@@ -185,7 +188,7 @@ func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model
 	return changeset, err
 }
 
-func applyChangeset(changeset model.Changeset, bs *buildscript.BuildScript) error {
+func (i *Import) applyChangeset(changeset model.Changeset, bs *buildscript.BuildScript) error {
 	for _, change := range changeset {
 		var expressionOperation types.Operation
 		switch change.Operation {
@@ -197,9 +200,21 @@ func applyChangeset(changeset model.Changeset, bs *buildscript.BuildScript) erro
 			expressionOperation = types.OperationUpdated
 		}
 
+		namespace := change.Namespace
+		if namespace == "" {
+			if !i.prime.Auth().Authenticated() {
+				return rationalize.ErrNotAuthenticated
+			}
+			name, err := org.Get("", i.prime.Auth(), i.prime.Config())
+			if err != nil {
+				return errs.Wrap(err, "Unable to get an org for the user")
+			}
+			namespace = fmt.Sprintf("%s/%s", constants.PlatformPrivateNamespace, name)
+		}
+
 		req := types.Requirement{
 			Name:      change.Requirement,
-			Namespace: change.Namespace,
+			Namespace: namespace,
 		}
 
 		for _, constraint := range change.VersionConstraints {

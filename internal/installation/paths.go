@@ -1,6 +1,7 @@
 package installation
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,14 +23,15 @@ const (
 )
 
 type InstallMarkerMeta struct {
-	Channel  string `json:"channel"`
+	Channel string `json:"channel"`
 	Version string `json:"version"`
 }
 
 type StateExeDoesNotExistError struct{ *errs.WrapperError }
 
 func IsStateExeDoesNotExistError(err error) bool {
-	return errs.Matches(err, &StateExeDoesNotExistError{})
+	var errStateExeDoesNotExist *StateExeDoesNotExistError
+	return errors.As(err, &errStateExeDoesNotExist)
 }
 
 func DefaultInstallPath() (string, error) {

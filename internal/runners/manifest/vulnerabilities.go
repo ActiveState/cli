@@ -48,10 +48,10 @@ func (v *requirementVulnerabilities) String() string {
 
 type vulnerabilities map[string]*requirementVulnerabilities
 
-func (v vulnerabilities) getVulnerability(name, namespace string) *requirementVulnerabilities {
+func (v vulnerabilities) get(name, namespace string) *requirementVulnerabilities {
 	return v[fmt.Sprintf("%s/%s", namespace, name)]
 }
 
-func (v vulnerabilities) addVulnerability(name, namespace string, vulns *requirementVulnerabilities) {
+func (v vulnerabilities) add(name, namespace string, vulns *requirementVulnerabilities) {
 	v[fmt.Sprintf("%s/%s", namespace, name)] = vulns
 }

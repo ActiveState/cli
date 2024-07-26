@@ -51,7 +51,6 @@ func (suite *UninstallIntegrationTestSuite) install(ts *e2e.Session) string {
 	cmd := "bash"
 	opts := []e2e.SpawnOptSetter{
 		e2e.OptArgs(script, appInstallDir, "-n"),
-		e2e.OptAppendEnv(constants.DisableRuntime + "=false"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=FOO", constants.OverrideSessionTokenEnvVarName)),
 	}

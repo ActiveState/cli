@@ -50,7 +50,7 @@ func rationalizeError(err *error) {
 			"Your buildscript contains no new changes. No commit necessary.",
 		), errs.SetInput())
 
-	case errs.Matches(*err, buildscript_runbit.ErrBuildscriptNotExist):
+	case errors.Is(*err, buildscript_runbit.ErrBuildscriptNotExist):
 		*err = errs.WrapUserFacing(*err, locale.T("err_buildscript_not_exist"))
 
 	// We communicate buildplanner errors verbatim as the intend is that these are curated by the buildplanner
