@@ -157,7 +157,7 @@ func (c *Commit) Run() (rerr error) {
 	pgSolve = nil
 
 	// Output dependency list.
-	dependencies.OutputChangeSummary(out, rtCommit.BuildPlan(), oldBuildPlan)
+	dependencies.OutputChangeSummary(c.prime, rtCommit, oldBuildPlan)
 
 	// Report CVEs.
 	if err := cves.NewCveReport(c.prime).Report(rtCommit.BuildPlan(), oldBuildPlan); err != nil {

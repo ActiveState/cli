@@ -1,26 +1,60 @@
 package dependencies
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 )
+
+type primeable interface {
+	primer.Outputer
+	primer.Auther
+	primer.Projecter
+}
 
 // showUpdatedPackages specifies whether or not to include updated dependencies in the direct
 // dependencies list, and whether or not to include updated dependencies when calculating indirect
 // dependency numbers.
 const showUpdatedPackages = true
 
-// OutputChangeSummary looks over the given build plans, and computes and lists the additional
-// dependencies being installed for the requested packages, if any.
-func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan) {
+func OutputChangeSummary(prime primeable, rtCommit *buildplanner.Commit, oldBuildPlan *buildplan.BuildPlan) {
+	if expr, err := json.Marshal(rtCommit.BuildScript()); err == nil {
+		bpm := buildplanner.NewBuildPlannerModel(prime.Auth())
+		params := &buildplanner.ImpactReportParams{
+			Owner:          prime.Project().Owner(),
+			Project:        prime.Project().Name(),
+			BeforeCommitId: rtCommit.ParentID,
+			AfterExpr:      expr,
+		}
+		if impactReport, err := bpm.ImpactReport(params); err == nil {
+			outputChangeSummaryFromImpactReport(prime.Output(), rtCommit.BuildPlan(), impactReport)
+			return
+		} else {
+			multilog.Error("Failed to fetch impact report: %v", err)
+		}
+	} else {
+		multilog.Error("Failed to marshal buildexpression: %v", err)
+	}
+	outputChangeSummaryFromBuildPlans(prime.Output(), rtCommit.BuildPlan(), oldBuildPlan)
+}
+
+// outputChangeSummaryFromBuildPlans looks over the given build plans, and computes and lists the
+// additional dependencies being installed for the requested packages, if any.
+func outputChangeSummaryFromBuildPlans(out output.Outputer, newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan) {
 	requested := newBuildPlan.RequestedArtifacts().ToIDMap()
 
 	addedString := []string{}
@@ -41,6 +75,57 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 		}
 	}
 
+	alreadyInstalledVersions := map[strfmt.UUID]string{}
+	if oldBuildPlan != nil {
+		for _, a := range oldBuildPlan.Artifacts() {
+			alreadyInstalledVersions[a.ArtifactID] = a.Version()
+		}
+	}
+
+	outputChangeSummary(out, addedString, addedLocale, dependencies, directDependencies, alreadyInstalledVersions)
+}
+
+func outputChangeSummaryFromImpactReport(out output.Outputer, buildPlan *buildplan.BuildPlan, report *response.ImpactReportResult) {
+	alreadyInstalledVersions := map[strfmt.UUID]string{}
+	addedString := []string{}
+	addedLocale := []string{}
+	dependencies := buildplan.Ingredients{}
+	directDependencies := buildplan.Ingredients{}
+	for _, i := range report.Ingredients {
+		if i.Before != nil {
+			alreadyInstalledVersions[strfmt.UUID(i.Before.IngredientID)] = i.Before.Version
+		}
+
+		if i.After == nil || !i.After.IsRequirement {
+			continue
+		}
+
+		if i.Before == nil {
+			v := fmt.Sprintf("%s@%s", i.Name, i.After.Version)
+			addedString = append(addedLocale, v)
+			addedLocale = append(addedLocale, fmt.Sprintf("[ACTIONABLE]%s[/RESET]", v))
+		}
+
+		for _, bpi := range buildPlan.Ingredients() {
+			if bpi.IngredientID != strfmt.UUID(i.After.IngredientID) {
+				continue
+			}
+			dependencies = append(dependencies, bpi.RuntimeDependencies(true)...)
+			directDependencies = append(directDependencies, bpi.RuntimeDependencies(false)...)
+		}
+	}
+
+	outputChangeSummary(out, addedString, addedLocale, dependencies, directDependencies, alreadyInstalledVersions)
+}
+
+func outputChangeSummary(
+	out output.Outputer,
+	addedString []string,
+	addedLocale []string,
+	dependencies buildplan.Ingredients,
+	directDependencies buildplan.Ingredients,
+	alreadyInstalledVersions map[strfmt.UUID]string,
+) {
 	dependencies = sliceutils.UniqueByProperty(dependencies, func(i *buildplan.Ingredient) any { return i.IngredientID })
 	directDependencies = sliceutils.UniqueByProperty(directDependencies, func(i *buildplan.Ingredient) any { return i.IngredientID })
 	commonDependencies := directDependencies.CommonRuntimeDependencies().ToIDMap()
@@ -55,13 +140,6 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 	if len(directDependencies) == 0 {
 		return
 	}
-
-	// Process the existing runtime requirements into something we can easily compare against.
-	alreadyInstalled := buildplan.Artifacts{}
-	if oldBuildPlan != nil {
-		alreadyInstalled = oldBuildPlan.Artifacts()
-	}
-	oldRequirements := alreadyInstalled.Ingredients().ToIDMap()
 
 	localeKey := "additional_dependencies"
 	if numIndirect > 0 {
@@ -93,9 +171,9 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 
 		item := fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET]%s", // intentional omission of space before last %s
 			ingredient.Name, ingredient.Version, subdependencies)
-		oldVersion, exists := oldRequirements[ingredient.IngredientID]
-		if exists && ingredient.Version != "" && oldVersion.Version != ingredient.Version {
-			item = fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET] → %s (%s)", oldVersion.Name, oldVersion.Version, item, locale.Tl("updated", "updated"))
+		oldVersion, exists := alreadyInstalledVersions[ingredient.IngredientID]
+		if exists && ingredient.Version != "" && oldVersion != ingredient.Version {
+			item = fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET] → %s (%s)", ingredient.Name, oldVersion, item, locale.Tl("updated", "updated"))
 		}
 
 		out.Notice(fmt.Sprintf("  [DISABLED]%s[/RESET] %s", prefix, item))

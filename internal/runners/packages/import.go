@@ -153,7 +153,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	}
 	oldBuildPlan := previousCommit.BuildPlan()
 	out.Notice("") // blank line
-	dependencies.OutputChangeSummary(out, rtCommit.BuildPlan(), oldBuildPlan)
+	dependencies.OutputChangeSummary(i.prime, rtCommit, oldBuildPlan)
 
 	// Report CVEs.
 	if err := cves.NewCveReport(i.prime).Report(rtCommit.BuildPlan(), oldBuildPlan); err != nil {

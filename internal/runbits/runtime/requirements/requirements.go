@@ -254,7 +254,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 	}
 
 	r.Output.Notice("") // blank line
-	dependencies.OutputChangeSummary(r.Output, rtCommit.BuildPlan(), oldBuildPlan)
+	dependencies.OutputChangeSummary(r.prime, rtCommit, oldBuildPlan)
 
 	// Report CVEs
 	names := requirementNames(requirements...)
