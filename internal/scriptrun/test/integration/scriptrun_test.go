@@ -116,6 +116,8 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
 
+	cfg.Set(constants.AsyncRuntimeConfig, true)
+
 	out := capturer.CaptureOutput(func() {
 		scriptRun := scriptrun.New(primer.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New()))
 		script, err := proj.ScriptByName("run")
