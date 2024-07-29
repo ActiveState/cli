@@ -140,10 +140,14 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
 
+	if err := localcommit.Set(proj.Dir(), stagedCommitId.String()); err != nil {
+		return locale.WrapError(err, "err_package_update_commit_id")
+	}
+
 	// Solve the runtime.
 	rtCommit, err := bp.FetchCommit(stagedCommitId, proj.Owner(), proj.Name(), nil)
 	if err != nil {
-		return errs.Wrap(err, "Failed to fetch build result for previous commit")
+		return errs.Wrap(err, "Failed to fetch build result for staged commit")
 	}
 
 	// Output change summary.
@@ -158,10 +162,6 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	// Report CVEs.
 	if err := cves.NewCveReport(i.prime).Report(rtCommit.BuildPlan(), oldBuildPlan); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
-	}
-
-	if err := localcommit.Set(proj.Dir(), stagedCommitId.String()); err != nil {
-		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
 	_, err = runtime_runbit.Update(i.prime, trigger.TriggerImport, runtime_runbit.WithCommitID(stagedCommitId))
