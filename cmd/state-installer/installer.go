@@ -235,20 +235,18 @@ func installedOnPath(installRoot, channel string) (bool, string, error) {
 		return false, "", nil
 	}
 
-	if !fileutils.FileExists(filepath.Join(installRoot, installation.InstallDirMarker)) {
-		return false, "", nil
-	}
-
 	// This is not using appinfo on purpose because we want to deal with legacy installation formats, which appinfo does not
 	stateCmd := constants.StateCmd + osutils.ExeExtension
 
 	// Check for state.exe in channel, root and bin dir
 	// This is to handle older state tool versions that gave incompatible input paths
+	// Also, fall back on checking for the install dir marker in case of a failed uninstall attempt.
 	candidates := []string{
 		filepath.Join(installRoot, channel, installation.BinDirName, stateCmd),
 		filepath.Join(installRoot, channel, stateCmd),
 		filepath.Join(installRoot, installation.BinDirName, stateCmd),
 		filepath.Join(installRoot, stateCmd),
+		filepath.Join(installRoot, installation.InstallDirMarker),
 	}
 	for _, candidate := range candidates {
 		if fileutils.TargetExists(candidate) {
