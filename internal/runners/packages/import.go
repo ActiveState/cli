@@ -1,8 +1,10 @@
 package packages
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -19,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -28,6 +31,8 @@ import (
 const (
 	defaultImportFile = "requirements.txt"
 )
+
+var errImportSbomSolve = errs.New("failed to solve SBOM")
 
 // Confirmer describes the behavior required to prompt a user for confirmation.
 type Confirmer interface {
@@ -143,7 +148,24 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	// Solve the runtime.
 	rtCommit, err := bp.FetchCommit(stagedCommitId, proj.Owner(), proj.Name(), nil)
 	if err != nil {
-		return errs.Wrap(err, "Failed to fetch build result for previous commit")
+		var buildplannerErr *response.BuildPlannerError
+		if errors.As(err, &buildplannerErr) {
+			// When importing CycloneDX and SPDX SBOMs, we put all packages in the 'private/<org>'
+			// namespace, which will fail to solve. That is expected. However, we still want to update the
+			// local commit so the user can see what was imported, even if the runtime is not viable.
+			for _, verr := range buildplannerErr.ValidationErrors {
+				if strings.Contains(verr, "non-existent namespace: private/") {
+					if err := localcommit.Set(proj.Dir(), stagedCommitId.String()); err != nil {
+						return locale.WrapError(err, "err_package_update_commit_id")
+					}
+					return errImportSbomSolve
+				}
+			}
+		}
+
+		if err != nil {
+			return errs.Wrap(err, "Failed to fetch build result for staged commit")
+		}
 	}
 
 	// Output change summary.

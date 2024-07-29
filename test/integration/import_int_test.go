@@ -158,6 +158,9 @@ func (suite *ImportIntegrationTestSuite) TestImportCycloneDx() {
 
 	ts.PrepareEmptyProject()
 
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
 	jsonSbom := filepath.Join(osutil.GetTestDataDir(), "import", "cyclonedx", "bom.json")
 	xmlSbom := filepath.Join(osutil.GetTestDataDir(), "import", "cyclonedx", "bom.xml")
 
@@ -193,9 +196,12 @@ func (suite *ImportIntegrationTestSuite) TestImportSpdx() {
 
 	ts.PrepareEmptyProject()
 
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
 	jsonSbom := filepath.Join(osutil.GetTestDataDir(), "import", "spdx", "appbomination.spdx.json")
 
-	cp := ts.Spawn("import", jsonSbom)
+	cp = ts.Spawn("import", jsonSbom)
 	cp.Expect("Creating commit")
 	cp.Expect("Done")
 	cp.ExpectNotExitCode(0) // solve should fail due to private namespace
