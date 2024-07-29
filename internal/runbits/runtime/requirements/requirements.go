@@ -21,11 +21,11 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
+	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/buildscript"
@@ -214,10 +214,14 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		Script:       script,
 	}
 
-	commitID, err := bp.StageCommit(params)
+	// Solve runtime
+	solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+	commit, err := bp.StageCommit(params)
 	if err != nil {
+		solveSpinner.Stop(locale.T("progress_fail"))
 		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")
 	}
+	solveSpinner.Stop(locale.T("progress_success"))
 
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
@@ -233,32 +237,22 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		trig = trigger.TriggerPackage
 	}
 
-	// Solve runtime
-	solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
-	bpm := bpModel.NewBuildPlannerModel(r.Auth)
-	rtCommit, err := bpm.FetchCommit(commitID, r.Project.Owner(), r.Project.Name(), nil)
-	if err != nil {
-		solveSpinner.Stop(locale.T("progress_fail"))
-		return errs.Wrap(err, "Failed to fetch build result")
-	}
-	solveSpinner.Stop(locale.T("progress_success"))
-
 	var oldBuildPlan *buildplan.BuildPlan
-	if rtCommit.ParentID != "" {
+	if commit.ParentID != "" {
 		bpm := bpModel.NewBuildPlannerModel(r.Auth)
-		commit, err := bpm.FetchCommit(rtCommit.ParentID, r.Project.Owner(), r.Project.Name(), nil)
+		oldCommit, err := bpm.FetchCommit(commit.ParentID, r.Project.Owner(), r.Project.Name(), nil)
 		if err != nil {
 			return errs.Wrap(err, "Failed to fetch build result")
 		}
-		oldBuildPlan = commit.BuildPlan()
+		oldBuildPlan = oldCommit.BuildPlan()
 	}
 
 	r.Output.Notice("") // blank line
-	dependencies.OutputChangeSummary(r.Output, rtCommit.BuildPlan(), oldBuildPlan)
+	dependencies.OutputChangeSummary(r.Output, commit.BuildPlan(), oldBuildPlan)
 
 	// Report CVEs
 	names := requirementNames(requirements...)
-	if err := cves.NewCveReport(r.prime).Report(rtCommit.BuildPlan(), oldBuildPlan, names...); err != nil {
+	if err := cves.NewCveReport(r.prime).Report(commit.BuildPlan(), oldBuildPlan, names...); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
@@ -268,13 +262,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 
 		// refresh or install runtime
 		_, err = runtime_runbit.Update(r.prime, trig,
-			runtime_runbit.WithCommit(rtCommit),
+			runtime_runbit.WithCommit(commit),
 			runtime_runbit.WithoutBuildscriptValidation(),
 		)
 		if err != nil {
 			if !IsBuildError(err) {
 				// If the error is not a build error we want to retain the changes
-				if err2 := r.updateCommitID(commitID); err2 != nil {
+				if err2 := r.updateCommitID(commit.CommitID); err2 != nil {
 					return errs.Pack(err, locale.WrapError(err2, "err_package_update_commit_id"))
 				}
 			}
@@ -282,7 +276,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 	}
 
-	if err := r.updateCommitID(commitID); err != nil {
+	if err := r.updateCommitID(commit.CommitID); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
