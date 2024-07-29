@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -32,6 +33,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
+
+type ErrNoChildren struct{ *locale.LocalizedError }
 
 func init() {
 	configMediator.RegisterOption(constants.UnstableConfig, configMediator.Bool, false)
@@ -215,6 +218,7 @@ func (c *Command) ShortDescription() string {
 
 func (c *Command) Execute(args []string) error {
 	defer profile.Measure("cobra:Execute", time.Now())
+	c.logArgs(args)
 	c.cobra.SetArgs(args)
 	err := c.cobra.Execute()
 	c.cobra.SetArgs(nil)
@@ -476,7 +480,7 @@ func (c *Command) FindChild(args []string) (*Command, error) {
 		}
 		return cmd, nil
 	}
-	return nil, locale.NewError("err_captain_cmd_find", "Could not find child Command with args: {{.V0}}", strings.Join(args, " "))
+	return nil, &ErrNoChildren{locale.NewError("err_captain_cmd_find", "Could not find child Command with args: {{.V0}}", strings.Join(args, " "))}
 }
 
 func (c *Command) GenBashCompletions() (string, error) {
@@ -879,4 +883,28 @@ func childCommands(cmd *Command) string {
 	}
 
 	return fmt.Sprintf("\n\nAvailable Commands:\n%s", table.Render())
+}
+
+func (c *Command) logArgs(args []string) {
+	child, err := c.FindChild(args)
+	if err != nil {
+		logging.Debug("Could not find child command, error: %v", err)
+	}
+
+	var logArgs []string
+	if child != nil {
+		logArgs = append(logArgs, child.commandNames(false)...)
+	}
+
+	logging.Debug("Args: %s, Flags: %s", logArgs, flags(args))
+}
+
+func flags(args []string) []string {
+	flags := []string{}
+	for _, arg := range args {
+		if strings.HasPrefix(arg, "-") {
+			flags = append(flags, arg)
+		}
+	}
+	return flags
 }
