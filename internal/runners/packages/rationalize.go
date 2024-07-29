@@ -71,11 +71,5 @@ func rationalizeError(auth *authentication.Auth, err *error) {
 			locale.Tl("err_import_unauthenticated", "Could not import requirements into a private namespace because you are not authenticated. Please authenticate using '[ACTIONABLE]state auth[/RESET]' and try again."),
 			errs.SetInput(),
 		)
-
-	case errors.Is(*err, errImportSbomSolve):
-		*err = errs.WrapUserFacing(*err,
-			locale.Tl("err_import_sbom_solve", "Import finished, but your runtime could not be created because the SBOM's requirements do not exist on the Platform."),
-			errs.SetInput(),
-		)
 	}
 }
