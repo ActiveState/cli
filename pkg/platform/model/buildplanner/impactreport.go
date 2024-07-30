@@ -1,22 +1,39 @@
 package buildplanner
 
 import (
+	"encoding/json"
+
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 )
 
+type buildScripter interface {
+	BuildScript() *buildscript.BuildScript
+}
+
 type ImpactReportParams struct {
-	Owner      string
-	Project    string
-	BeforeExpr []byte
-	AfterExpr  []byte
+	Owner   string
+	Project string
+	Before  buildScripter
+	After   buildScripter
 }
 
 func (b *BuildPlanner) ImpactReport(params *ImpactReportParams) (*response.ImpactReportResult, error) {
-	request := request.ImpactReport(params.Owner, params.Project, params.BeforeExpr, params.AfterExpr)
+	beforeExpr, err := json.Marshal(params.Before.BuildScript())
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to marshal old buildexpression")
+	}
+
+	afterExpr, err := json.Marshal(params.After.BuildScript())
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to marshal buildexpression")
+	}
+
+	request := request.ImpactReport(params.Owner, params.Project, beforeExpr, afterExpr)
 	resp := &response.ImpactReportResponse{}
-	err := b.client.Run(request, resp)
+	err = b.client.Run(request, resp)
 	if err != nil {
 		return nil, processBuildPlannerError(err, "failed to get impact report")
 	}

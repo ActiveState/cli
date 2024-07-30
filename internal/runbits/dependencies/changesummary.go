@@ -1,7 +1,6 @@
 package dependencies
 
 import (
-	"encoding/json"
 	"fmt"
 	"sort"
 	"strconv"
@@ -9,51 +8,21 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 )
-
-type primeable interface {
-	primer.Outputer
-	primer.Auther
-	primer.Projecter
-}
 
 // showUpdatedPackages specifies whether or not to include updated dependencies in the direct
 // dependencies list, and whether or not to include updated dependencies when calculating indirect
 // dependency numbers.
 const showUpdatedPackages = true
 
-func OutputChangeSummary(prime primeable, newCommit *buildplanner.Commit, oldCommit *buildplanner.Commit) error {
-	// Fetch the impact report.
-	beforeExpr, err := json.Marshal(oldCommit.BuildScript())
-	if err != nil {
-		return errs.Wrap(err, "Unable to marshal old buildexpression")
-	}
-
-	afterExpr, err := json.Marshal(newCommit.BuildScript())
-	if err != nil {
-		return errs.Wrap(err, "Unable to marshal buildexpression")
-	}
-	bpm := buildplanner.NewBuildPlannerModel(prime.Auth())
-	params := &buildplanner.ImpactReportParams{
-		Owner:      prime.Project().Owner(),
-		Project:    prime.Project().Name(),
-		BeforeExpr: beforeExpr,
-		AfterExpr:  afterExpr,
-	}
-	report, err := bpm.ImpactReport(params)
-	if err != nil {
-		return errs.Wrap(err, "Failed to fetch impact report")
-	}
-
-	buildPlan := newCommit.BuildPlan()
-
+func OutputChangeSummary(out output.Outputer, report *response.ImpactReportResult, rtCommit *buildplanner.Commit) {
 	// Process the impact report, looking for package additions or updates.
 	alreadyInstalledVersions := map[strfmt.UUID]string{}
 	addedString := []string{}
@@ -75,7 +44,7 @@ func OutputChangeSummary(prime primeable, newCommit *buildplanner.Commit, oldCom
 			addedLocale = append(addedLocale, fmt.Sprintf("[ACTIONABLE]%s[/RESET]", v))
 		}
 
-		for _, bpi := range buildPlan.Ingredients() {
+		for _, bpi := range rtCommit.BuildPlan().Ingredients() {
 			if bpi.IngredientID != strfmt.UUID(i.After.IngredientID) {
 				continue
 			}
@@ -96,7 +65,7 @@ func OutputChangeSummary(prime primeable, newCommit *buildplanner.Commit, oldCom
 	logging.Debug("packages %s have %d direct dependencies and %d indirect dependencies",
 		strings.Join(addedString, ", "), len(directDependencies), numIndirect)
 	if len(directDependencies) == 0 {
-		return nil
+		return
 	}
 
 	// Output a summary of changes.
@@ -104,7 +73,6 @@ func OutputChangeSummary(prime primeable, newCommit *buildplanner.Commit, oldCom
 	if numIndirect > 0 {
 		localeKey = "additional_total_dependencies"
 	}
-	out := prime.Output()
 	out.Notice("   " + locale.Tr(localeKey, strings.Join(addedLocale, ", "), strconv.Itoa(len(directDependencies)), strconv.Itoa(numIndirect)))
 
 	// A direct dependency list item is of the form:
@@ -140,6 +108,4 @@ func OutputChangeSummary(prime primeable, newCommit *buildplanner.Commit, oldCom
 	}
 
 	out.Notice("") // blank line
-
-	return nil
 }

@@ -157,14 +157,25 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		solveSpinner.Stop(locale.T("progress_fail"))
 		return errs.Wrap(err, "Failed to fetch build result for previous commit")
 	}
+
+	// Fetch the impact report.
+	impactReport, err := bp.ImpactReport(&buildplanner.ImpactReportParams{
+		Owner:   i.prime.Project().Owner(),
+		Project: i.prime.Project().Name(),
+		Before:  previousCommit,
+		After:   rtCommit,
+	})
+	if err != nil {
+		return errs.Wrap(err, "Failed to fetch impact report")
+	}
 	solveSpinner.Stop(locale.T("progress_success"))
 
 	// Output change summary.
 	out.Notice("") // blank line
-	dependencies.OutputChangeSummary(i.prime, rtCommit, previousCommit)
+	dependencies.OutputChangeSummary(i.prime.Output(), impactReport, rtCommit)
 
 	// Report CVEs.
-	if err := cves.NewCveReport(i.prime).Report(rtCommit.BuildPlan(), previousCommit.BuildPlan()); err != nil {
+	if err := cves.NewCveReport(i.prime).Report(impactReport); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
