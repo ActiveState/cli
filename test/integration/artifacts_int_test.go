@@ -86,7 +86,7 @@ func (suite *ArtifactsIntegrationTestSuite) TestArtifacts() {
 	})
 
 	suite.Run("json with --all flag", func() {
-		cp = ts.SpawnWithOpts(e2e.OptArgs("artifacts", "--output=json", "--all"), e2e.OptTermTest(termtest.OptRows(100)))
+		cp = ts.SpawnWithOpts(e2e.OptArgs("artifacts", "--output=json", "--all"), e2e.OptTermTest(termtest.OptRows(500)))
 		cp.ExpectExitCode(0)
 
 		output := artifacts.StructuredOutput{}
@@ -183,7 +183,7 @@ func (suite *ArtifactsIntegrationTestSuite) TestArtifacts_Download() {
 	cp.Expect("Operating on project ActiveState-CLI/Python-With-Custom-Builds, located at")
 	cp.Expect("Downloaded bzip2", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
-	require.FileExists(suite.T(), filepath.Join(ts.Dirs.Work, "bzip2-1.0.8.tar.gz"))
+	require.FileExists(suite.T(), filepath.Join(ts.Dirs.Work, "bzip2-1.0.8.tar.gz"), ts.DebugMessage(""))
 }
 
 func (suite *ArtifactsIntegrationTestSuite) TestArtifacts_Download_Remote() {

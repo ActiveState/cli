@@ -26,8 +26,6 @@ type ProjectTestSuite struct {
 }
 
 func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
-	projectfile.Reset()
-
 	// support test projectfile access
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err, "Should detect root path")
@@ -35,13 +33,11 @@ func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
 	suite.testdataDir = filepath.Join(root, "pkg", "project", "testdata")
 	err = os.Chdir(suite.testdataDir)
 	suite.Require().NoError(err, "Should change dir without issue.")
-	projectFile, err := projectfile.Get()
+	projectFile, err := projectfile.FromEnv()
 	suite.Require().NoError(err, errs.JoinMessage(err))
-	err = projectFile.Persist()
-	suite.Require().NoError(err, "Should persist projectfile without issue.")
 	suite.projectFile = projectFile
 	suite.Require().Nil(err, "Should retrieve projectfile without issue.")
-	suite.project, err = project.Get()
+	suite.project, err = project.FromWD()
 	suite.Require().Nil(err, "Should retrieve project without issue.")
 
 	cfg, err := config.New()
@@ -50,13 +46,13 @@ func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (suite *ProjectTestSuite) TestGet() {
-	config, err := project.Get()
+	config, err := project.FromWD()
 	suite.NoError(err, "Run without failure")
 	suite.NotNil(config, "Config should be set")
 }
 
 func (suite *ProjectTestSuite) TestGetSafe() {
-	val, err := project.Get()
+	val, err := project.FromWD()
 	suite.NoError(err, "Run without failure")
 	suite.NotNil(val, "Config should be set")
 }
@@ -123,7 +119,8 @@ func (suite *ProjectTestSuite) TestEventByName() {
 }
 
 func (suite *ProjectTestSuite) TestScripts() {
-	scripts := suite.project.Scripts()
+	scripts, err := suite.project.Scripts()
+	suite.Require().NoError(err)
 	var name string
 	switch runtime.GOOS {
 	case "linux":
@@ -153,11 +150,13 @@ func (suite *ProjectTestSuite) TestScripts() {
 }
 
 func (suite *ProjectTestSuite) TestScriptByName() {
-	script := suite.project.ScriptByName("noop")
+	script, err := suite.project.ScriptByName("noop")
+	suite.Require().NoError(err)
 	suite.Nil(script)
 
 	if runtime.GOOS == "linux" {
-		script = suite.project.ScriptByName("foo")
+		script, err = suite.project.ScriptByName("foo")
+		suite.Require().NoError(err)
 		suite.Require().NotNil(script)
 		suite.Equal("foo", script.Name(), "Names should match (Linux)")
 		v, err := script.Value()
@@ -165,7 +164,8 @@ func (suite *ProjectTestSuite) TestScriptByName() {
 		suite.Equal("foo project", v, "Value should match (Linux)")
 		suite.True(script.Standalone(), "Standalone value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
-		script = suite.project.ScriptByName("bar")
+		script, err = suite.project.ScriptByName("bar")
+		suite.Require().NoError(err)
 		suite.Require().NotNil(script)
 		suite.Equal("bar", script.Name(), "Name should match (Windows)")
 		v, err := script.Value()
@@ -173,7 +173,8 @@ func (suite *ProjectTestSuite) TestScriptByName() {
 		suite.Equal("bar project", v, "Value should match (Windows)")
 		suite.True(script.Standalone(), "Standalone value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
-		script = suite.project.ScriptByName("baz")
+		script, err = suite.project.ScriptByName("baz")
+		suite.Require().NoError(err)
 		suite.Require().NotNil(script)
 		suite.Equal("baz", script.Name(), "Names should match (OSX)")
 		v, err := script.Value()
@@ -205,7 +206,7 @@ func (suite *ProjectTestSuite) TestConstants() {
 }
 
 func (suite *ProjectTestSuite) TestSecrets() {
-	prj, err := project.Get()
+	prj, err := project.FromWD()
 	suite.NoError(err, "Run without failure")
 	cfg, err := config.New()
 	suite.Require().NoError(err)

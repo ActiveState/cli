@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/multilog"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -40,14 +40,14 @@ func GqlReqVersionConstraintsString(requirement *gqlModel.Requirement) string {
 	return versionConstraintsToString(constraints)
 }
 
-func BuildPlannerVersionConstraintsToString(requirements []bpModel.VersionRequirement) string {
+func BuildPlannerVersionConstraintsToString(requirements []types.VersionRequirement) string {
 	if requirements == nil {
 		return ""
 	}
 
 	var constraints []*versionConstraints
 	for _, constraint := range requirements {
-		constraints = append(constraints, &versionConstraints{constraint[bpModel.VersionRequirementComparatorKey], constraint[bpModel.VersionRequirementVersionKey]})
+		constraints = append(constraints, &versionConstraints{constraint[types.VersionRequirementComparatorKey], constraint[types.VersionRequirementVersionKey]})
 	}
 
 	return versionConstraintsToString(constraints)

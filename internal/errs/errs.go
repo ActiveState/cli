@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"gopkg.in/yaml.v3"
@@ -189,6 +190,13 @@ func Matches(err error, target interface{}) bool {
 		panic("errors: target cannot be nil")
 	}
 
+	// Guard against miss-use of this function
+	if _, ok := target.(*WrapperError); ok {
+		if condition.BuiltOnDevMachine() || condition.InActiveStateCI() {
+			panic("target cannot be a WrapperError, you probably want errors.Is")
+		}
+	}
+
 	val := reflect.ValueOf(target)
 	targetType := val.Type()
 	if targetType.Kind() != reflect.Interface && !targetType.Implements(errorType) {
@@ -257,4 +265,23 @@ func Unpack(err error) []error {
 		}
 	}
 	return result
+}
+
+type ExternalError interface {
+	ExternalError() bool
+}
+
+func IsExternalError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	for _, err := range Unpack(err) {
+		errExternal, ok := err.(ExternalError)
+		if ok && errExternal.ExternalError() {
+			return true
+		}
+	}
+
+	return false
 }

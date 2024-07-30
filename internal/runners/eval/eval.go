@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -62,13 +62,13 @@ func (e *Eval) Run(params *Params) (rerr error) {
 		}
 	}()
 
-	bp := model.NewBuildPlannerModel(e.auth)
+	bp := buildplanner.NewBuildPlannerModel(e.auth)
 	if err := bp.BuildTarget(e.project.Owner(), e.project.Name(), commitID.String(), params.Target); err != nil {
 		return locale.WrapError(err, "err_eval", "Failed to evaluate target '{{.V0}}'", params.Target)
 	}
 
-	if err := bp.PollBuildStatus(commitID.String(), e.project.Owner(), e.project.Name(), params.Target); err != nil {
-		return locale.WrapError(err, "err_eval", "Failed to build target '{{.V0}}'", params.Target)
+	if err := bp.WaitForBuild(commitID, e.project.Owner(), e.project.Name(), &params.Target); err != nil {
+		return locale.WrapError(err, "err_eval_wait_for_build", "Failed to build target: '{{.V)}}'", params.Target)
 	}
 
 	pg.Stop("OK")

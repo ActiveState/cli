@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/go-openapi/strfmt"
 	"github.com/vbauerster/mpb/v7"
 	"golang.org/x/net/context"
@@ -16,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 )
 
@@ -39,7 +39,7 @@ var (
 type artifactStepID string
 
 type artifactStep struct {
-	artifactID artifact.ArtifactID
+	artifactID strfmt.UUID
 	step       step
 }
 
@@ -60,16 +60,16 @@ type ProgressDigester struct {
 	artifactBars map[artifactStepID]*bar
 
 	// Artifact name lookup map
-	artifactNames artifact.Named
+	artifacts map[strfmt.UUID]string
 
 	// Recipe that we're performing progress for
 	recipeID strfmt.UUID
 
 	// Track the totals required as the bars for these are only initialized for the first artifact received, at which
 	// time we won't have the totals unless we previously recorded them.
-	buildsExpected    map[artifact.ArtifactID]struct{}
-	downloadsExpected map[artifact.ArtifactID]struct{}
-	installsExpected  map[artifact.ArtifactID]struct{}
+	buildsExpected    map[strfmt.UUID]struct{}
+	downloadsExpected map[strfmt.UUID]struct{}
+	installsExpected  map[strfmt.UUID]struct{}
 
 	// Debug properties used to reduce the number of log entries generated
 	dbgEventLog []string
@@ -98,8 +98,8 @@ func NewProgressIndicator(w io.Writer, out output.Outputer) *ProgressDigester {
 			mpb.WithRefreshRate(refreshRate),
 		),
 
-		artifactNames: map[artifact.ArtifactID]string{},
-		artifactBars:  map[artifactStepID]*bar{},
+		artifacts:    map[strfmt.UUID]string{},
+		artifactBars: map[artifactStepID]*bar{},
 
 		cancelMpb:    cancel,
 		maxNameWidth: MaxNameWidth(),
@@ -140,11 +140,11 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		}
 
 		p.recipeID = v.RecipeID
-		p.artifactNames = v.ArtifactNames
+		p.artifacts = v.Artifacts
 
-		p.buildsExpected = artifact.ArtifactIDsToMap(v.ArtifactsToBuild)
-		p.downloadsExpected = artifact.ArtifactIDsToMap(v.ArtifactsToDownload)
-		p.installsExpected = artifact.ArtifactIDsToMap(v.ArtifactsToInstall)
+		p.buildsExpected = sliceutils.ToLookupMap(v.ArtifactsToBuild)
+		p.downloadsExpected = sliceutils.ToLookupMap(v.ArtifactsToDownload)
+		p.installsExpected = sliceutils.ToLookupMap(v.ArtifactsToInstall)
 
 		if len(v.ArtifactsToBuild)+len(v.ArtifactsToDownload)+len(v.ArtifactsToInstall) == 0 {
 			p.out.Notice(locale.T("progress_nothing_to_do"))

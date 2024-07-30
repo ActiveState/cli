@@ -130,7 +130,12 @@ fi
 # Fetch version info.
 $FETCH $INSTALLERTMPDIR/info.json $JSONURL
 if [ $? -ne 0 -o ! -z "`grep -o Invalid $INSTALLERTMPDIR/info.json`" ]; then
-	error "Could not download a State Tool installer for the given command line arguments"
+  error_message=$(grep -o '"message":"[^"]*"' $INSTALLERTMPDIR/info.json | cut -d':' -f2 | sed 's/"//g')
+  if [ -n "$error_message" ]; then
+    error "Could not download a State Tool installer, recieved error message: $error_message"
+  else
+      error "Could not download a State Tool installer for the given command line arguments"
+  fi
 	exit 1
 fi
 

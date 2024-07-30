@@ -8,6 +8,8 @@ import (
 )
 
 func rationalizeError(err *error) {
+	var errProjectNotFound *ErrProjectNotFound
+
 	switch {
 	// export log with invalid --index.
 	case errors.Is(*err, ErrInvalidLogIndex):
@@ -32,5 +34,10 @@ func rationalizeError(err *error) {
 			locale.Tl("err_export_log_out_of_bounds", "Log file not found"),
 			errs.SetInput(),
 		)
+
+	case errors.As(*err, &errProjectNotFound):
+		*err = errs.WrapUserFacing(*err,
+			locale.Tl("export_runtime_project_not_found", "Could not find project file in '[ACTIONABLE]{{.V0}}[/RESET]'", errProjectNotFound.Path),
+			errs.SetInput())
 	}
 }

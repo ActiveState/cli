@@ -79,6 +79,8 @@ func main() {
 		errMsg := errs.JoinMessage(runErr)
 		if locale.IsInputError(runErr) {
 			logging.Debug("state-svc errored out due to input: %s", errMsg)
+		} else if errs.IsExternalError(runErr) {
+			logging.Debug("state-svc errored out due to external error: %s", errMsg)
 		} else {
 			multilog.Critical("state-svc errored out: %s", errMsg)
 		}
@@ -275,7 +277,7 @@ func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authenticatio
 }
 
 func runStart(out output.Outputer, argText string) error {
-	if _, err := svcctl.EnsureStartedAndLocateHTTP(argText); err != nil {
+	if _, err := svcctl.EnsureStartedAndLocateHTTP(argText, out); err != nil {
 		if errors.Is(err, ipc.ErrInUse) {
 			out.Print("A State Service instance is already running in the background.")
 			return nil

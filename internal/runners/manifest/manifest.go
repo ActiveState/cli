@@ -11,13 +11,14 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/localcommit"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -65,7 +66,7 @@ func (m *Manifest) Run() (rerr error) {
 		return errs.Wrap(err, "Could not fetch requirements")
 	}
 
-	artifacts, err := m.fetchArtifacts()
+	bpReqs, err := m.fetchBuildplanRequirements()
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch artifacts")
 	}
@@ -75,7 +76,7 @@ func (m *Manifest) Run() (rerr error) {
 		return errs.Wrap(err, "Could not fetch vulnerabilities")
 	}
 
-	m.out.Print(newRequirements(reqs, artifacts, vulns))
+	m.out.Print(newRequirements(reqs, bpReqs, vulns))
 
 	if len(vulns) > 0 {
 		m.out.Notice(locale.Tl("manifest_vulnerabilities_info", "\nFor CVE info run '[ACTIONABLE]state security[/RESET]'"))
@@ -84,19 +85,19 @@ func (m *Manifest) Run() (rerr error) {
 	return nil
 }
 
-func (m *Manifest) fetchRequirements() ([]bpModel.Requirement, error) {
+func (m *Manifest) fetchRequirements() ([]types.Requirement, error) {
 	commitID, err := localcommit.Get(m.project.Dir())
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get commit ID")
 	}
 
-	bp := model.NewBuildPlannerModel(m.auth)
-	expr, _, err := bp.GetBuildExpressionAndTime(commitID.String())
+	bp := buildplanner.NewBuildPlannerModel(m.auth)
+	script, err := bp.GetBuildScript(commitID.String())
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get remote build expr and time")
 	}
 
-	reqs, err := expr.Requirements()
+	reqs, err := script.Requirements()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get requirements")
 	}
@@ -104,7 +105,7 @@ func (m *Manifest) fetchRequirements() ([]bpModel.Requirement, error) {
 	return reqs, nil
 }
 
-func (m *Manifest) fetchArtifacts() ([]*artifact.Artifact, error) {
+func (m *Manifest) fetchBuildplanRequirements() (buildplan.Ingredients, error) {
 	if strings.EqualFold(os.Getenv(constants.DisableRuntime), "true") {
 		return nil, nil
 	}
@@ -119,10 +120,15 @@ func (m *Manifest) fetchArtifacts() ([]*artifact.Artifact, error) {
 		m.out.Notice(locale.T("manifest_runtime_needs_update"))
 	}
 
-	return rt.ResolvedArtifacts()
+	bp, err := rt.BuildPlan()
+	if err != nil {
+		return nil, errs.Wrap(err, "could not get build plan")
+	}
+
+	return bp.RequestedIngredients(), nil
 }
 
-func (m *Manifest) fetchVulnerabilities(reqs []bpModel.Requirement) (vulnerabilities, error) {
+func (m *Manifest) fetchVulnerabilities(reqs []types.Requirement) (vulnerabilities, error) {
 	vulns := make(vulnerabilities)
 
 	if !m.auth.Authenticated() {

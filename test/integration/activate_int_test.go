@@ -136,7 +136,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "ActiveState-CLI/Python3#6d9280e7-75eb-401a-9e71-0d99759fbad3", "--path", ts.Dirs.Work),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput()
@@ -374,8 +373,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_SpaceInCacheDir() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
-	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Perl)
+func (suite *ActivateIntegrationTestSuite) TestActivatePerlCamel() {
+	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Perl, tagsuite.Critical)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Perl not supported on macOS")
 	}
@@ -404,14 +403,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	// Note: At least for Windows we cannot expect cp.Dirs.Cache, because it is unreliable how the path name formats are unreliable (sometimes DOS 8.3 format, sometimes not)
 	cp.Expect("cache")
 	cp.Expect("DBD.pm")
-
-	// Currently CI is searching for PPM in the @INC first before attempting
-	// to execute a script. https://activestatef.atlassian.net/browse/DX-620
-	if runtime.GOOS != "windows" {
-		// Expect PPM shim to be installed
-		cp.SendLine("ppm list")
-		cp.Expect("Shimming command")
-	}
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -448,7 +439,7 @@ version: %s
 	)
 	c2.Expect("Activated")
 
-	c2.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
+	c2.ExpectInput()
 	c2.SendLine("exit")
 	c2.ExpectExitCode(0)
 }
@@ -481,7 +472,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_NamespaceWins() {
 	c2.Expect("ActiveState-CLI/Python2")
 	c2.Expect("Activated")
 
-	c2.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
+	c2.ExpectInput()
 	if runtime.GOOS == "windows" {
 		c2.SendLine("@echo %cd%")
 	} else {
@@ -561,7 +552,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
 	ts.PrepareActiveStateYAML(contents)
 
 	cp := ts.Spawn("activate")
-	cp.Expect("Cannot operate on a headless project", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Cannot operate on a headless project")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 }

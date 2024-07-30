@@ -1,6 +1,7 @@
 package scripts
 
 import (
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -44,8 +45,12 @@ func (s *Scripts) Run() error {
 	name, owner := s.project.Name(), s.project.Owner()
 	logging.Debug("listing scripts for org=%s, project=%s", owner, name)
 
-	scripts := make([]scriptLine, len(s.project.Scripts()))
-	for i, s := range s.project.Scripts() {
+	projectScripts, err := s.project.Scripts()
+	if err != nil {
+		return errs.Wrap(err, "Could not get scripts")
+	}
+	scripts := make([]scriptLine, len(projectScripts))
+	for i, s := range projectScripts {
 		scripts[i] = scriptLine{s.Name(), s.Description()}
 	}
 

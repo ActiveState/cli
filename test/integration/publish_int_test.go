@@ -7,6 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+	"gopkg.in/yaml.v2"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
@@ -15,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
-	"gopkg.in/yaml.v2"
 )
 
 var editorFileRx = regexp.MustCompile(`file:\s*?(.*?)\.\s`)
@@ -29,11 +31,6 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 
 	// For development convenience, should not be committed without commenting out..
 	// os.Setenv(constants.APIHostEnvVarName, "pr13375.activestate.build")
-
-	if v := os.Getenv(constants.APIHostEnvVarName); v == "" || v == constants.DefaultAPIHost {
-		suite.T().Skipf("Skipping test as %s is not set, this test can only be run against non-production envs.", constants.APIHostEnvVarName)
-		return
-	}
 
 	type input struct {
 		args          []string
@@ -64,12 +61,15 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.Env = append(ts.Env,
-		// Publish tests shouldn't run against staging as they pollute the inventory db and artifact cache
-		constants.APIHostEnvVarName+"="+os.Getenv(constants.APIHostEnvVarName),
-	)
+	if apiHost := os.Getenv(constants.APIHostEnvVarName); apiHost != "" {
+		ts.Env = append(ts.Env, constants.APIHostEnvVarName+"="+apiHost)
+	}
 
-	user := ts.CreateNewUser()
+	ts.LoginAsPersistentUser()
+
+	namespaceUUID, err := uuid.NewRandom()
+	suite.Require().NoError(err, "unable generate new random UUID")
+	namespace := "private/ActiveState-CLI-Testing/" + namespaceUUID.String()
 
 	tests := []struct {
 		name                string
@@ -81,15 +81,15 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 		{
 			"New ingredient with file arg and flags",
 			"im-a-name-test1",
-			fmt.Sprintf("org/%s", user.Username),
+			namespace,
 			"2.3.4",
 			[]invocation{
 				{
 					input{
 						[]string{
 							tempFile,
-							"--name", "im-a-name-test1",
-							"--namespace", "org/{{.Username}}",
+							"--name", "{{.Name}}",
+							"--namespace", "{{.Namespace}}",
 							"--version", "2.3.4",
 							"--description", "im-a-description",
 							"--author", "author-name <author-email@domain.tld>",
@@ -105,13 +105,13 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 					},
 					expect{
 						[]string{
-							`Publish following ingredient?`,
-							`name: im-a-name-test1`,
-							`namespace: org/{{.Username}}`,
+							`name: {{.Name}}`,
+							`namespace: {{.Namespace}}`,
 							`version: 2.3.4`,
 							`description: im-a-description`,
 							`name: author-name`,
 							`email: author-email@domain.tld`,
+							`publish this ingredient?`,
 						},
 						"",
 						false,
@@ -145,14 +145,14 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 		{
 			"New ingredient with meta file",
 			"im-a-name-test2",
-			fmt.Sprintf("org/%s", user.Username),
+			namespace,
 			"2.3.4",
 			[]invocation{{
 				input{
 					[]string{"--meta", "{{.MetaFile}}", tempFile},
 					ptr.To(`
-name: im-a-name-test2
-namespace: org/{{.Username}}
+name: {{.Name}}
+namespace: {{.Namespace}}
 version: 2.3.4
 description: im-a-description
 authors:
@@ -164,13 +164,13 @@ authors:
 				},
 				expect{
 					[]string{
-						`Publish following ingredient?`,
-						`name: im-a-name-test2`,
-						`namespace: org/{{.Username}}`,
+						`name: {{.Name}}`,
+						`namespace: {{.Namespace}}`,
 						`version: 2.3.4`,
 						`description: im-a-description`,
 						`name: author-name`,
 						`email: author-email@domain.tld`,
+						`publish this ingredient?`,
 					},
 					"",
 					false,
@@ -182,14 +182,14 @@ authors:
 		{
 			"New ingredient with meta file and flags",
 			"im-a-name-from-flag",
-			fmt.Sprintf("org/%s", user.Username),
+			namespace,
 			"2.3.4",
 			[]invocation{{
 				input{
-					[]string{"--meta", "{{.MetaFile}}", tempFile, "--name", "im-a-name-from-flag", "--author", "author-name-from-flag <author-email-from-flag@domain.tld>"},
+					[]string{"--meta", "{{.MetaFile}}", tempFile, "--name", "{{.Name}}", "--author", "author-name-from-flag <author-email-from-flag@domain.tld>"},
 					ptr.To(`
-name: im-a-name
-namespace: org/{{.Username}}
+name: {{.Name}}
+namespace: {{.Namespace}}
 version: 2.3.4
 description: im-a-description
 authors:
@@ -201,13 +201,13 @@ authors:
 				},
 				expect{
 					[]string{
-						`Publish following ingredient?`,
-						`name: im-a-name-from-flag`,
-						`namespace: org/{{.Username}}`,
+						`name: {{.Name}}`,
+						`namespace: {{.Namespace}}`,
 						`version: 2.3.4`,
 						`description: im-a-description`,
 						`name: author-name-from-flag`,
 						`email: author-email-from-flag@domain.tld`,
+						`publish this ingredient?`,
 					},
 					"",
 					false,
@@ -219,15 +219,15 @@ authors:
 		{
 			"New ingredient with editor flag",
 			"im-a-name-test3",
-			fmt.Sprintf("org/%s", user.Username),
+			namespace,
 			"2.3.4",
 			[]invocation{{
 				input{
 					[]string{tempFile, "--editor"},
 					nil,
 					ptr.To(`
-name: im-a-name-test3
-namespace: org/{{.Username}}
+name: {{.Name}}
+namespace: {{.Namespace}}
 version: 2.3.4
 description: im-a-description
 authors:
@@ -238,13 +238,13 @@ authors:
 				},
 				expect{
 					[]string{
-						`Publish following ingredient?`,
-						`name: im-a-name-test3`,
-						`namespace: org/{{.Username}}`,
+						`name: {{.Name}}`,
+						`namespace: {{.Namespace}}`,
 						`version: 2.3.4`,
 						`description: im-a-description`,
 						`name: author-name`,
 						`email: author-email@domain.tld`,
+						`publish this ingredient?`,
 					},
 					"",
 					false,
@@ -256,17 +256,17 @@ authors:
 		{
 			"Cancel Publish",
 			"bogus",
-			fmt.Sprintf("org/%s", user.Username),
+			namespace,
 			"2.3.4",
 			[]invocation{{
 				input{
-					[]string{tempFile, "--name", "bogus", "--namespace", "org/{{.Username}}"},
+					[]string{tempFile, "--name", "{{.Name}}", "--namespace", "{{.Namespace}}"},
 					nil,
 					nil,
 					false,
 				},
 				expect{
-					[]string{`name: bogus`},
+					[]string{`name: {{.Name}}`},
 					"",
 					false,
 					0,
@@ -277,14 +277,14 @@ authors:
 		{
 			"Edit ingredient without file arg and with flags",
 			"editable",
-			fmt.Sprintf("org/%s", user.Username),
+			namespace,
 			"1.0.1",
 			[]invocation{
 				{ // Create ingredient
 					input{
 						[]string{tempFile,
-							"--name", "editable",
-							"--namespace", "org/{{.Username}}",
+							"--name", "{{.Name}}",
+							"--namespace", "{{.Namespace}}",
 							"--version", "1.0.0",
 						},
 						nil,
@@ -293,8 +293,8 @@ authors:
 					},
 					expect{
 						[]string{
-							`Publish following ingredient?`,
-							`name: editable`,
+							`name: {{.Name}}`,
+							`publish this ingredient?`,
 						},
 						"",
 						false,
@@ -307,8 +307,8 @@ authors:
 						[]string{
 							tempFile,
 							"--edit",
-							"--name", "editable",
-							"--namespace", "org/{{.Username}}",
+							"--name", "{{.Name}}",
+							"--namespace", "{{.Namespace}}",
 							"--version", "1.0.1",
 							"--author", "author-name-edited <author-email-edited@domain.tld>",
 						},
@@ -318,12 +318,12 @@ authors:
 					},
 					expect{
 						[]string{
-							`Publish following ingredient?`,
-							`name: editable`,
-							`namespace: org/{{.Username}}`,
+							`name: {{.Name}}`,
+							`namespace: {{.Namespace}}`,
 							`version: 1.0.1`,
 							`name: author-name-edited`,
 							`email: author-email-edited@domain.tld`,
+							`publish this ingredient?`,
 						},
 						"",
 						false,
@@ -335,7 +335,7 @@ authors:
 					input{
 						[]string{
 							"--edit",
-							"--name", "editable",
+							"--name", "{{.Name}}",
 							"--description", "foo",
 						},
 						nil,
@@ -358,8 +358,8 @@ authors:
 	for n, tt := range tests {
 		suite.Run(tt.name, func() {
 			templateVars := map[string]interface{}{
-				"Username": user.Username,
-				"Email":    user.Email,
+				"Name":      tt.ingredientName,
+				"Namespace": tt.ingredientNamespace,
 			}
 
 			for _, inv := range tt.invocations {
@@ -402,6 +402,7 @@ authors:
 						inputEditorValue, err := strutils.ParseTemplate(*inv.input.editorValue, templateVars, nil)
 						suite.Require().NoError(err)
 						suite.Require().NoError(fileutils.WriteFile(string(fpath), []byte(inputEditorValue)))
+						time.Sleep(100 * time.Millisecond) // wait for disk write to happen
 						cp.SendLine("")
 					}
 
@@ -426,7 +427,7 @@ authors:
 
 					if inv.expect.parseMeta {
 						snapshot := cp.Snapshot()
-						rx := regexp.MustCompile(`(?s)Publish following ingredient\?(.*)\(Y/n`)
+						rx := regexp.MustCompile(`(?s)Prepared the following ingredient:(.*)Do you want to publish this ingredient\?`)
 						match := rx.FindSubmatch([]byte(snapshot))
 						suite.Require().NotNil(match, fmt.Sprintf("Could not match '%s' against: %s", rx.String(), snapshot))
 
@@ -448,9 +449,12 @@ authors:
 					}
 
 					cp.Expect("Successfully published")
-					cp.Expect("Name: " + name)
-					cp.Expect("Namespace: " + namespace)
-					cp.Expect("Version: " + version)
+					cp.Expect("Name:")
+					cp.Expect(name)
+					cp.Expect("Namespace:")
+					cp.Expect(namespace)
+					cp.Expect("Version:")
+					cp.Expect(version)
 					cp.ExpectExitCode(inv.expect.exitCode)
 
 					cp = ts.Spawn("search", namespace+"/"+name, "--ts=now")
@@ -462,6 +466,8 @@ authors:
 			}
 		})
 	}
+
+	ts.IgnoreLogErrors() // ignore intentional failures like omitted filename, cannot edit description, etc.
 }
 
 func TestPublishIntegrationTestSuite(t *testing.T) {

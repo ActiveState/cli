@@ -16,7 +16,7 @@ func removeCache(cachePath string) error {
 	err := os.RemoveAll(cachePath)
 	if err != nil {
 		if osutils.IsAccessDeniedError(err) {
-			return locale.WrapInputError(err, "err_remove_cache")
+			return locale.WrapExternalError(err, "err_remove_cache")
 		}
 		return locale.WrapError(err, "err_remove_cache")
 	}

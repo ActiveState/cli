@@ -5,14 +5,14 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/store"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -77,15 +77,13 @@ func (l *Languages) Run() error {
 		return locale.WrapError(err, "err_fetching_languages", "Cannot obtain languages")
 	}
 
-	// Fetch resolved artifacts list for showing full version numbers.
-	rt, err := runtime.SolveAndUpdate(l.auth, l.out, l.analytics, l.project, nil, target.TriggerLanguage, l.svcModel, l.cfg, runtime.OptMinimalUI)
+	// Fetch commit and buildplan, which will give us access to ingredients, and ingredients can be languages..
+	bpm := bpModel.NewBuildPlannerModel(l.auth)
+	commit, err := bpm.FetchCommit(commitID, l.project.Owner(), l.project.Name(), nil)
 	if err != nil {
-		return locale.WrapError(err, "err_languages_runtime", "Could not initialize runtime")
+		return errs.Wrap(err, "could not fetch commit")
 	}
-	artifacts, err := rt.ResolvedArtifacts()
-	if err != nil && !errs.Matches(err, store.ErrNoBuildPlanFile) {
-		return locale.WrapError(err, "err_language_resolved_artifacts", "Unable to resolve language version(s)")
-	}
+	bp := commit.BuildPlan()
 	ns := model.NewNamespaceLanguage()
 
 	langsPlainOutput := []languagePlainOutput{}
@@ -98,11 +96,14 @@ func (l *Languages) Run() error {
 		}
 
 		resolvedVersion := ""
-		for _, a := range artifacts {
-			if a.Namespace == ns.String() && a.Name == lang.Name {
-				// e.g. python@3.10, but resolved artifact version is 3.10.0
-				resolvedVersion = *a.Version
-				break
+		if bp != nil {
+			ingredients := bp.Ingredients(func(i *buildplan.Ingredient) bool {
+				return i.Name == lang.Name && i.Namespace == ns.String()
+			})
+			if len(ingredients) == 1 {
+				resolvedVersion = ingredients[0].Version
+			} else {
+				logging.Warning("Expected 1 matching language, got %d. Searched for %s:%s", len(ingredients), ns.String(), lang.Name)
 			}
 		}
 
@@ -122,6 +123,14 @@ func (l *Languages) Run() error {
 		})
 	}
 
-	l.out.Print(output.Prepare(langsPlainOutput, langsOutput))
+	if len(langs) == 0 {
+		l.out.Print(output.Prepare(
+			locale.Tl("no_languages_installed", "Your project has no language configured for it."),
+			langsOutput,
+		))
+	} else {
+		l.out.Print(output.Prepare(langsPlainOutput, langsOutput))
+	}
+
 	return nil
 }

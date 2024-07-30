@@ -246,15 +246,15 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 
 		switch err.(type) {
 		case *apiAuth.PostLoginUnauthorized:
-			return errs.AddTips(&ErrUnauthorized{locale.WrapInputError(err, "err_unauthorized")}, tips...)
+			return errs.AddTips(&ErrUnauthorized{locale.WrapExternalError(err, "err_unauthorized")}, tips...)
 		case *apiAuth.PostLoginRetryWith:
-			return errs.AddTips(&ErrTokenRequired{locale.WrapInputError(err, "err_auth_fail_totp")}, tips...)
+			return errs.AddTips(&ErrTokenRequired{locale.WrapExternalError(err, "err_auth_fail_totp")}, tips...)
 		default:
 			if os.IsTimeout(err) {
-				return locale.NewInputError("err_api_auth_timeout", "Timed out waiting for authentication response. Please try again.")
+				return locale.NewExternalError("err_api_auth_timeout", "Timed out waiting for authentication response. Please try again.")
 			}
 			if api.ErrorCode(err) == 403 {
-				return locale.NewInputError("err_auth_forbidden", "You are not allowed to login now. Please try again later.")
+				return locale.NewExternalError("err_auth_forbidden", "You are not allowed to login now. Please try again later.")
 			}
 			if !condition.IsNetworkingError(err) {
 				multilog.Error("Authentication API returned %v", err)
@@ -297,7 +297,7 @@ func (s *Auth) AuthenticateWithDevicePolling(deviceCode strfmt.UUID, interval ti
 		time.Sleep(interval) // then try again
 	}
 
-	return "", locale.NewInputError("err_auth_device_timeout")
+	return "", locale.NewExternalError("err_auth_device_timeout")
 }
 
 // AuthenticateWithToken will try to authenticate using the given token

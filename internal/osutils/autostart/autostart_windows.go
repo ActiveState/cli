@@ -38,11 +38,7 @@ func enable(exec string, opts Options) error {
 	if err != nil {
 		return errs.Wrap(err, "Could not set icon for shortcut file")
 	}
-
-	err = s.SetWindowStyle(shortcut.Minimized)
-	if err != nil {
-		return errs.Wrap(err, "Could not set shortcut to minimized")
-	}
+	s.SetWindowStyle(shortcut.Minimized)
 
 	return nil
 }

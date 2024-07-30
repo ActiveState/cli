@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,6 +22,6 @@ func TestArtifactProgressMessage(t *testing.T) {
 	assert.Equal(t, "artifact_progress", apm.Type)
 	assert.Equal(t, "message", apm.Body.Message)
 	assert.Equal(t, "INFO", apm.Body.Facility)
-	assert.Equal(t, artifact.ArtifactID("00000000-0000-0000-0000-000000000001"), apm.ArtifactID)
+	assert.Equal(t, strfmt.UUID("00000000-0000-0000-0000-000000000001"), apm.ArtifactID)
 	assert.Equal(t, "2021-06-24T21:27:31.487131", apm.Timestamp)
 }

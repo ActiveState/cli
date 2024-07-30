@@ -1,0 +1,29 @@
+project: "https://platform.activestate.com/Expander/general?branch=main"
+lock: branchname@0.0.0-SHA123abcd
+constants:
+  - name: constant
+    value: value
+  - name: recursive
+    value: recursive $constants.constant
+secrets:
+  project:
+    - name: proj-secret
+  user:
+    - name: user-proj-secret
+scripts:
+  - name: test
+    value: make test
+  - name: recursive
+    value: echo $scripts.recursive
+  - name: pythonScript
+    language: python3
+    value: scriptValue
+  - name: scriptPath
+    value: $scripts.pythonScript.path()
+  - name: scriptRecursive
+    value: $scripts.scriptRecursive.path()
+  - name: bashScriptPath
+    language: bash
+    value: ${scripts.pythonScript.path()}
+  - name: foo-bar
+    value: bar

@@ -3,12 +3,8 @@ package scripts
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"os/signal"
-	"path/filepath"
 	"reflect"
-	"runtime"
-	"strings"
 
 	"github.com/fsnotify/fsnotify"
 
@@ -16,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
@@ -60,12 +57,15 @@ func (e *Edit) Run(params *EditParams) error {
 		return rationalize.ErrNoProject
 	}
 
-	script := e.project.ScriptByName(params.Name)
+	script, err := e.project.ScriptByName(params.Name)
+	if err != nil {
+		return errs.Wrap(err, "Could not get script")
+	}
 	if script == nil {
 		return locale.NewInputError("edit_scripts_no_name", "Could not find script with the given name {{.V0}}", params.Name)
 	}
 
-	err := e.editScript(script, params)
+	err = e.editScript(script, params)
 	if err != nil {
 		return locale.WrapError(err, "error_edit_script", "Failed to edit script.")
 	}
@@ -87,7 +87,7 @@ func (e *Edit) editScript(script *project.Script, params *EditParams) error {
 	}
 	defer watcher.close()
 
-	err = openEditor(scriptFile.Filename())
+	err = osutils.OpenEditor(scriptFile.Filename())
 	if err != nil {
 		return locale.WrapError(
 			err, "error_edit_open_scriptfile",
@@ -188,91 +188,6 @@ func (sw *scriptWatcher) close() {
 	close(sw.errs)
 }
 
-func openEditor(filename string) error {
-	editorCmd, err := getOpenCmd()
-	if err != nil {
-		return err
-	}
-
-	subCmd := exec.Command(editorCmd, filename)
-
-	// Command line editors like vim will detect if the input/output
-	// is not from a proper terminal. Hence we have to redirect here
-	subCmd.Stdin = os.Stdin
-	subCmd.Stdout = os.Stdout
-	subCmd.Stderr = os.Stderr
-
-	if runtime.GOOS == "windows" && strings.Contains(editorCmd, defaultEditorWin) {
-		err := subCmd.Start()
-		if err != nil {
-			return errs.Wrap(err, "Failed to start editor command.")
-		}
-	} else {
-		err := subCmd.Run()
-		if err != nil {
-			return errs.Wrap(err, "Failed to run editor command.")
-		}
-	}
-
-	return nil
-}
-
-func getOpenCmd() (string, error) {
-	editor := os.Getenv("EDITOR")
-	if editor != "" {
-		return verifyEditor(editor)
-	}
-
-	switch runtime.GOOS {
-	case "linux":
-		_, err := exec.LookPath(openCmdLin)
-		if err != nil {
-			return "", locale.NewInputError(
-				"error_open_not_installed_lin",
-				"Please install '{{.V0}}' to edit scripts.",
-				openCmdLin)
-		}
-		return openCmdLin, nil
-	case "darwin":
-		return openCmdMac, nil
-	case "windows":
-		return defaultEditorWin, nil
-	default:
-		return "", locale.NewError(
-			"error_edit_unrecognized_platform",
-			"Could not open script file on this platform {{.V0}}",
-			runtime.GOOS)
-	}
-}
-
-func verifyEditor(editor string) (string, error) {
-	if strings.Contains(editor, string(os.PathSeparator)) {
-		return verifyPathEditor(editor)
-	}
-
-	_, err := exec.LookPath(editor)
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to find a suite-able editor.")
-	}
-
-	return editor, nil
-}
-
-func verifyPathEditor(editor string) (string, error) {
-	if runtime.GOOS == "windows" && filepath.Ext(editor) == "" {
-		return "", locale.NewInputError(
-			"error_edit_windows_invalid_editor",
-			"Editor path must contain a file extension")
-	}
-
-	_, err := os.Stat(editor)
-	if err != nil {
-		return "", locale.WrapInputError(err, "error_edit_stat_editor", "Failed to find editor '{{.V0}}' on file system.", editor)
-	}
-
-	return editor, nil
-}
-
 func start(prompt prompt.Prompter, sw *scriptWatcher, scriptName string, output output.Outputer, cfg projectfile.ConfigGetter, proj *project.Project) (err error) {
 	output.Notice(locale.Tr("script_watcher_watch_file", sw.scriptFile.Filename()))
 	if prompt.IsInteractive() {
@@ -347,7 +262,10 @@ func updateProjectFile(cfg projectfile.ConfigGetter, pj *project.Project, script
 	}
 
 	pjf := pj.Source()
-	script := pj.ScriptByName(name)
+	script, err := pj.ScriptByName(name)
+	if err != nil {
+		return errs.Wrap(err, "Could not get script")
+	}
 	if script == nil {
 		return locale.NewError("err_update_script_cannot_find", "Could not find the source script to update.")
 	}

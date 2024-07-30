@@ -10,5 +10,6 @@ import (
 )
 
 var (
-	RuntimeSourcingTimeoutOpt = termtest.OptExpectTimeout(3 * time.Minute)
+	RuntimeSourcingTimeoutOpt      = termtest.OptExpectTimeout(3 * time.Minute)
+	RuntimeBuildSourcingTimeoutOpt = termtest.OptExpectTimeout(6 * time.Minute)
 )

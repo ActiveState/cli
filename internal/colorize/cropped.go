@@ -1,5 +1,10 @@
 package colorize
 
+import (
+	"regexp"
+	"strings"
+)
+
 type CroppedLines []CroppedLine
 
 type CroppedLine struct {
@@ -16,7 +21,17 @@ func (c CroppedLines) String() string {
 	return result
 }
 
+var indentRegexp = regexp.MustCompile(`^([ ]+)`)
+
 func GetCroppedText(text string, maxLen int, includeLineEnds bool) CroppedLines {
+	indent := ""
+	if indentMatch := indentRegexp.FindStringSubmatch(text); indentMatch != nil {
+		indent = indentMatch[0]
+		if len(text) > len(indent) && strings.HasPrefix(text[len(indent):], "• ") {
+			indent += "  "
+		}
+	}
+
 	entries := make([]CroppedLine, 0)
 	colorCodes := colorRx.FindAllStringSubmatchIndex(text, -1)
 
@@ -37,7 +52,7 @@ func GetCroppedText(text string, maxLen int, includeLineEnds bool) CroppedLines 
 		// Ensure the next position is not within a color tag and check conditions that would end this entry
 		if isLineEnd || (!inRange(pos+1, colorCodes) && (entry.Length == maxLen || pos == len(text)-1)) {
 			wrapped := ""
-			wrappedLength := 0
+			wrappedLength := len(indent)
 			nextCharIsSpace := pos+1 < len(text) && isSpace(text[pos+1])
 			if !isLineEnd && entry.Length == maxLen && !nextCharIsSpace && pos < len(text)-1 {
 				// Put the current word on the next line, if possible.
@@ -55,12 +70,12 @@ func GetCroppedText(text string, maxLen int, includeLineEnds bool) CroppedLines 
 				}
 				// Extract the word from the current line if it doesn't start the line.
 				if i > 0 && i < len(entry.Line)-1 {
-					wrapped = entry.Line[i:]
+					wrapped = indent + entry.Line[i:]
 					entry.Line = entry.Line[:i]
 					entry.Length -= wrappedLength
 					isLineEnd = true // emulate for wrapping purposes
 				} else {
-					wrappedLength = 0 // reset
+					wrappedLength = len(indent) // reset
 				}
 			}
 			entries = append(entries, entry)

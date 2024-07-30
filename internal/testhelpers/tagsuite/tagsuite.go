@@ -19,6 +19,7 @@ const (
 	Branches        = "branches"
 	Bundle          = "bundle"
 	BuildScripts    = "buildscripts"
+	BuildInProgress = "buildinprogress"
 	Carlisle        = "carlisle"
 	Checkout        = "checkout"
 	CLIDeploy       = "cli-deploy"

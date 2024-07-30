@@ -138,7 +138,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 	ipcClient := svcctl.NewDefaultIPCClient()
 	argText := strings.Join(args, " ")
-	svcPort, err := svcctl.EnsureExecStartedAndLocateHTTP(ipcClient, svcExec, argText)
+	svcPort, err := svcctl.EnsureExecStartedAndLocateHTTP(ipcClient, svcExec, argText, out)
 	if err != nil {
 		return locale.WrapError(err, "start_svc_failed", "Failed to start state-svc at state tool invocation")
 	}
@@ -181,6 +181,9 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	projectfile.RegisterMigrator(migrator.NewMigrator(auth, cfg))
 
 	// Retrieve project file
+	if os.Getenv("ACTIVESTATE_PROJECT") != "" {
+		out.Notice(locale.T("warning_activestate_project_env_var"))
+	}
 	pjPath, err := projectfile.GetProjectFilePath()
 	if err != nil && errs.Matches(err, &projectfile.ErrorNoProjectFromEnv{}) {
 		// Fail if we are meant to inherit the projectfile from the environment, but the file doesn't exist
@@ -261,7 +264,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	}
 
 	err = cmds.Execute(args[1:])
-	if err != nil && !errs.IsSilent(err) {
+	if err != nil {
 		cmdName := ""
 		if childCmd != nil {
 			cmdName = childCmd.JoinedSubCommandNames() + " "

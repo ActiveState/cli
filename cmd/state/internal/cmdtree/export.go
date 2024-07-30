@@ -166,7 +166,7 @@ func newExportEnvCommand(prime *primer.Values) *captain.Command {
 	return cmd
 }
 
-func newLogCommand(prime *primer.Values) *captain.Command {
+func newExportLogCommand(prime *primer.Values) *captain.Command {
 	runner := export.NewLog(prime)
 	params := &export.LogParams{}
 
@@ -189,6 +189,34 @@ func newLogCommand(prime *primer.Values) *captain.Command {
 				Description: locale.Tl("arg_export_log_prefix", "The prefix of the log file to show (e.g. state or state-svc). The default is 'state'"),
 				Required:    false,
 				Value:       &params.Prefix,
+			},
+		},
+		func(ccmd *captain.Command, _ []string) error {
+			return runner.Run(params)
+		})
+
+	cmd.SetSupportsStructuredOutput()
+	cmd.SetUnstable(true)
+
+	return cmd
+}
+
+func newExportRuntimeCommand(prime *primer.Values) *captain.Command {
+	runner := export.NewRuntime(prime)
+	params := &export.RuntimeParams{}
+
+	cmd := captain.NewCommand(
+		"runtime",
+		locale.Tl("export_runtime_title", "Exporting runtime"),
+		locale.Tl("export_runtime_description", "Export the runtime associated with your runtime."),
+		prime,
+		[]*captain.Flag{},
+		[]*captain.Argument{
+			{
+				Name:        "path",
+				Description: locale.Tl("arg_export_runtime_path", "Optional path to your project's runtime if not inside your project"),
+				Required:    false,
+				Value:       &params.Path,
 			},
 		},
 		func(ccmd *captain.Command, _ []string) error {

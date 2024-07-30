@@ -131,6 +131,9 @@ func targetedLanguage(languageOpt string, proj *project.Project, auth *authentic
 	if err != nil {
 		return "", errs.Wrap(err, "LanguageByCommit failed")
 	}
+	if lang.Name == "" {
+		return "", locale.NewInputError("err_need_language_flag", "Language must be provided by flag")
+	}
 	return lang.Name, nil
 }
 

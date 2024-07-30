@@ -15,7 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 )
 
 type InitIntegrationTestSuite struct {
@@ -24,30 +24,30 @@ type InitIntegrationTestSuite struct {
 
 func (suite *InitIntegrationTestSuite) TestInit() {
 	suite.OnlyRunForTags(tagsuite.Init, tagsuite.Critical)
-	suite.runInitTest(false, "python", "python3")
+	suite.runInitTest(false, true, "python", "python3")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_Path() {
 	suite.OnlyRunForTags(tagsuite.Init)
-	suite.runInitTest(true, "python", "python3")
+	suite.runInitTest(true, false, "python", "python3")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_DisambiguatePython() {
 	suite.OnlyRunForTags(tagsuite.Init)
-	suite.runInitTest(false, "python", "python3")
-	suite.runInitTest(false, "python@3.10.0", "python3")
-	suite.runInitTest(false, "python@2.7.18", "python2")
+	suite.runInitTest(false, false, "python", "python3")
+	suite.runInitTest(false, false, "python@3.10.0", "python3")
+	suite.runInitTest(false, false, "python@2.7.18", "python2")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_PartialVersions() {
 	suite.OnlyRunForTags(tagsuite.Init)
-	suite.runInitTest(false, "python@3.10", "python3")
-	suite.runInitTest(false, "python@3.10.x", "python3")
-	suite.runInitTest(false, "python@>=3", "python3")
-	suite.runInitTest(false, "python@2", "python2")
+	suite.runInitTest(false, false, "python@3.10", "python3")
+	suite.runInitTest(false, false, "python@3.10.x", "python3")
+	suite.runInitTest(false, false, "python@>=3", "python3")
+	suite.runInitTest(false, false, "python@2", "python2")
 }
 
-func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, lang string, expectedConfigLanguage string, args ...string) {
+func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, sourceRuntime bool, lang string, expectedConfigLanguage string, args ...string) {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
@@ -60,11 +60,20 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, lang string, ex
 		computedArgs = append(computedArgs, ts.Dirs.Work)
 	}
 
+	env := []string{}
+	if sourceRuntime {
+		env = append(env, constants.DisableRuntime+"=false")
+	}
 	// Run `state init`, creating the project.
-	cp := ts.Spawn(computedArgs...)
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs(computedArgs...),
+		e2e.OptAppendEnv(env...),
+	)
 	cp.Expect("Initializing Project")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect(fmt.Sprintf("Project '%s' has been successfully initialized", namespace))
+	if !sourceRuntime {
+		cp.Expect("Skipping runtime setup")
+	}
+	cp.Expect(fmt.Sprintf("Project '%s' has been successfully initialized", namespace), e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(e2e.PersistentUsername, pname.String())
 
@@ -200,7 +209,7 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrg() {
 	ts.IgnoreLogErrors()
 
 	org := "ActiveState-CLI"
-	projectName := fmt.Sprintf("test-project-%s", model.HostPlatform)
+	projectName := fmt.Sprintf("test-project-%s", sysinfo.OS().String())
 
 	// First, checkout project to set last used org.
 	cp := ts.Spawn("checkout", fmt.Sprintf("%s/Python3", org))
@@ -217,6 +226,28 @@ func (suite *InitIntegrationTestSuite) TestInit_InferredOrg() {
 
 	// Verify the config file has the correct project owner.
 	suite.Contains(string(fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))), "ActiveState-CLI")
+}
+
+func (suite *InitIntegrationTestSuite) TestInit_ChangeSummary() {
+	suite.OnlyRunForTags(tagsuite.Init)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.Expect("Successfully set")
+	cp.ExpectExitCode(0)
+
+	project := "test-init-change-summary-" + sysinfo.OS().String()
+	cp = ts.Spawn("init", "ActiveState-CLI/"+project, "--language", "python@3.10.10")
+	cp.Expect("Resolving Dependencies")
+	cp.Expect("Done")
+	ts.NotifyProjectCreated("ActiveState-CLI", project)
+	cp.Expect("Setting up the following dependencies:")
+	cp.Expect("└─ python@3.10.10")
+	suite.Assert().NotContains(cp.Snapshot(), "├─", "more than one dependency was printed")
+	cp.ExpectExitCode(0)
 }
 
 func TestInitIntegrationTestSuite(t *testing.T) {

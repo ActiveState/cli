@@ -6,13 +6,17 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 	"testing"
+	"time"
 
-	"github.com/ActiveState/cli/internal/testhelpers/suite"
+	"github.com/ActiveState/termtest"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
 
@@ -197,25 +201,26 @@ func (suite *ExecIntegrationTestSuite) TestExecWithPath() {
 
 }
 
-func (suite *ExecIntegrationTestSuite) TestExecPerlArgs() {
+func (suite *ExecIntegrationTestSuite) TestExeBatArguments() {
 	suite.OnlyRunForTags(tagsuite.Exec)
-	ts := e2e.New(suite.T(), false)
+
+	if runtime.GOOS != "windows" {
+		suite.T().Skip("This test is only for windows")
+	}
+
+	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl-5.32", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out")
-	cp.ExpectExitCode(0)
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
 
-	suite.NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "testargs.pl"), []byte(`
-printf "Argument: '%s'.\n", $ARGV[0];
-`)))
+	root := environment.GetRootPathUnsafe()
+	reportBat := filepath.Join(root, "test", "integration", "testdata", "batarguments", "report.bat")
+	suite.Require().FileExists(reportBat)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("exec", "perl", "testargs.pl", "<3"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect("Argument: '<3'", e2e.RuntimeSourcingTimeoutOpt)
+	inputs := []string{"a<b", "b>a", "hello world", "&whoami", "imnot|apipe", "%NotAppData%", "^NotEscaped", "(NotAGroup)"}
+	outputs := `"` + strings.Join(inputs, `" "`) + `"`
+	cp := ts.SpawnWithOpts(e2e.OptArgs(append([]string{"exec", reportBat, "--"}, inputs...)...))
+	cp.Expect(outputs, termtest.OptExpectTimeout(5*time.Second))
 	cp.ExpectExitCode(0)
 }
 

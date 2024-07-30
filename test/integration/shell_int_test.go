@@ -215,7 +215,6 @@ func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
 	defer ts.Close()
 
 	suite.SetupRCFile(ts)
-	suite.T().Setenv("ACTIVESTATE_HOME", ts.Dirs.HomeDir)
 
 	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3")
 	cp.Expect("Checked out project")
@@ -255,8 +254,8 @@ func (suite *ShellIntegrationTestSuite) TestJSON() {
 	defer ts.Close()
 
 	cp := ts.Spawn("shell", "--output", "json")
-	cp.Expect(`"error":"This command does not support the 'json' output format`)
-	cp.ExpectExitCode(0)
+	cp.Expect(`"error":"This command does not support the 'json' output format`, termtest.OptExpectTimeout(5*time.Second))
+	cp.ExpectExitCode(1)
 	AssertValidJSON(suite.T(), cp)
 }
 
@@ -270,25 +269,21 @@ func (suite *ShellIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {
 }
 
 func (suite *ShellIntegrationTestSuite) TestRuby() {
-	if runtime.GOOS == "darwin" {
-		return // Ruby support for macOS is not yet enabled on the Platform
-	}
 	suite.OnlyRunForTags(tagsuite.Shell)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Ruby-3.2.2")
+	cp := ts.Spawn("checkout", "ActiveState-CLI-Testing/Ruby", ".")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("shell", "Ruby-3.2.2"),
+		e2e.OptArgs("shell"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput()
 	cp.SendLine("ruby -v")
-	cp.Expect("3.2.2")
 	cp.Expect("ActiveState")
 }
 
@@ -353,7 +348,6 @@ func (suite *ShellIntegrationTestSuite) TestPs1() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("shell", "small-python"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Activated")
 	cp.Expect("[ActiveState-CLI/small-python]")

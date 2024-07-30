@@ -10,12 +10,12 @@ import (
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/localcommit"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -36,7 +36,7 @@ func (suite *PullIntegrationTestSuite) TestPull() {
 	cp.Expect("activestate.yaml has been updated")
 	cp.ExpectExitCode(0)
 
-	suite.assertMergeStrategyNotification(ts, string(bpModel.MergeCommitStrategyFastForward))
+	suite.assertMergeStrategyNotification(ts, string(types.MergeCommitStrategyFastForward))
 
 	cp = ts.Spawn("pull")
 	cp.Expect("already up to date")
@@ -71,7 +71,7 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	cp.Expect("Merged")
 	cp.ExpectExitCode(0)
 
-	suite.assertMergeStrategyNotification(ts, string(bpModel.MergeCommitStrategyRecursiveKeepOnConflict))
+	suite.assertMergeStrategyNotification(ts, string(types.MergeCommitStrategyRecursiveKeepOnConflict))
 }
 
 func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
@@ -97,7 +97,7 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.NoError(err, "Error loading project")
 
-	_, err = buildscript.ScriptFromProject(proj)
+	_, err = buildscript_runbit.ScriptFromProject(proj)
 	suite.Require().NoError(err) // just verify it's a valid build script
 
 	cp = ts.Spawn("pull")
@@ -107,7 +107,7 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	cp.ExpectNotExitCode(0)
 	ts.IgnoreLogErrors()
 
-	_, err = buildscript.ScriptFromProject(proj)
+	_, err = buildscript_runbit.ScriptFromProject(proj)
 	suite.Assert().Error(err)
 	bytes := fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName))
 	suite.Assert().Contains(string(bytes), "<<<<<<<", "No merge conflict markers are in build script")
@@ -130,6 +130,22 @@ func (suite *PullIntegrationTestSuite) assertMergeStrategyNotification(ts *e2e.S
 	})
 	suite.Assert().Equal(1, len(conflictEvents), "Should have a single VCS Conflict event report")
 	suite.Assert().Equal(strategy, conflictEvents[0].Label)
+}
+
+func (suite *PullIntegrationTestSuite) TestPullNoCommonParent() {
+	suite.OnlyRunForTags(tagsuite.Pull)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI/Python3", "19c5a165-167d-48f1-b5e0-826c2fed6ab7")
+
+	cp := ts.Spawn("pull")
+	cp.Expect("Operating on project")
+	cp.Expect("ActiveState-CLI/Python3")
+	cp.Expect("no common")
+	cp.Expect("To review your project history")
+	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func TestPullIntegrationTestSuite(t *testing.T) {

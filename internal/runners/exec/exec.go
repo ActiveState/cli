@@ -119,9 +119,16 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 
 	s.out.Notice(locale.Tr("operating_message", projectNamespace, projectDir))
 
-	rt, err := rtrunbit.SolveAndUpdate(s.auth, s.out, s.analytics, proj, nil, trigger, s.svcModel, s.cfg, rtrunbit.OptMinimalUI)
+	rt, commit, err := rtrunbit.Solve(s.auth, s.out, s.analytics, proj, nil, trigger, s.svcModel, s.cfg, rtrunbit.OptMinimalUI)
 	if err != nil {
-		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
+		return errs.Wrap(err, "Could not initialize runtime")
+	}
+
+	if !s.cfg.GetBool(constants.AsyncRuntimeConfig) {
+		err = rtrunbit.UpdateByReference(rt, commit, s.auth, proj, s.out, s.cfg, rtrunbit.OptMinimalUI)
+		if err != nil {
+			return errs.Wrap(err, "Could not setup runtime")
+		}
 	}
 
 	venv := virtualenvironment.New(rt)
@@ -157,6 +164,12 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 
 		if len(exesOnPath) > 0 {
 			exeTarget = exesOnPath[0]
+		} else if osutils.FindExeOnPATH(exeTarget) == "" {
+			return errs.AddTips(locale.NewInputError(
+				"err_exec_not_found",
+				"The executable '{{.V0}}' was not found in your PATH or in your project runtime.",
+				exeTarget),
+				locale.Tl("err_exec_not_found_tip", "Run '[ACTIONABLE]state export env[/RESET]' to check project runtime paths"))
 		}
 	}
 
@@ -182,8 +195,8 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	lang := language.Bash
 	scriptArgs := fmt.Sprintf(`%q "$@"`, exeTarget)
 	if strings.Contains(s.subshell.Binary(), "cmd") {
-		lang = language.PowerShell
-		scriptArgs = fmt.Sprintf("& %q @args\nexit $LASTEXITCODE", exeTarget)
+		lang = language.Batch
+		scriptArgs = fmt.Sprintf("@ECHO OFF\n%q %%*", exeTarget)
 	}
 
 	sf, err := scriptfile.New(lang, "state-exec", scriptArgs)

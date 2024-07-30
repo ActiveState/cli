@@ -6,6 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/pkg/buildplan"
+	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"golang.org/x/net/context"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -22,11 +26,8 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
@@ -41,16 +42,15 @@ type Configurable interface {
 }
 
 type Runtime struct {
-	disabled          bool
-	target            setup.Targeter
-	store             *store.Store
-	analytics         analytics.Dispatcher
-	svcm              *model.SvcModel
-	auth              *authentication.Auth
-	completed         bool
-	cfg               Configurable
-	out               output.Outputer
-	resolvedArtifacts []*artifact.Artifact
+	disabled  bool
+	target    setup.Targeter
+	store     *store.Store
+	analytics analytics.Dispatcher
+	svcm      *model.SvcModel
+	auth      *authentication.Auth
+	completed bool
+	cfg       Configurable
+	out       output.Outputer
 }
 
 // NeedsCommitError is an error returned when the local runtime's build script has changes that need
@@ -140,9 +140,9 @@ func (r *Runtime) validateBuildScript() error {
 		return nil
 	}
 
-	script, err := buildscript.ScriptFromProject(r.target)
+	script, err := buildscript_runbit.ScriptFromProject(r.target)
 	if err != nil {
-		if errs.Matches(err, buildscript.ErrBuildscriptNotExist) {
+		if errors.Is(err, buildscript_runbit.ErrBuildscriptNotExist) {
 			return errs.Pack(err, NeedsBuildscriptResetError)
 		}
 		return errs.Wrap(err, "Could not get buildscript from project")
@@ -169,7 +169,12 @@ func (r *Runtime) validateBuildScript() error {
 	}
 
 	if cachedScript != nil {
-		if script != nil && !script.Equals(cachedScript) {
+		equals, err := script.Equals(cachedScript)
+		if err != nil {
+			return errs.Wrap(err, "Could not compare buildscript")
+		}
+
+		if script != nil && !equals {
 			return NeedsCommitError
 		}
 	}
@@ -189,7 +194,7 @@ func (r *Runtime) Setup(eventHandler events.Handler) *setup.Setup {
 	return setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg, r.out, r.svcm)
 }
 
-func (r *Runtime) Update(setup *setup.Setup, buildResult *model.BuildResult, commit *bpModel.Commit) (rerr error) {
+func (r *Runtime) Update(setup *setup.Setup, commit *bpModel.Commit) (rerr error) {
 	if r.disabled {
 		logging.Debug("Skipping update as it is disabled")
 		return nil // nothing to do
@@ -201,7 +206,7 @@ func (r *Runtime) Update(setup *setup.Setup, buildResult *model.BuildResult, com
 		r.recordCompletion(rerr)
 	}()
 
-	if err := setup.Update(buildResult, commit); err != nil {
+	if err := setup.Update(commit); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}
 
@@ -223,12 +228,16 @@ func (r *Runtime) SolveAndUpdate(eventHandler events.Handler) error {
 	}
 
 	setup := r.Setup(eventHandler)
-	br, commit, err := setup.Solve()
+	commit, err := setup.Solve()
 	if err != nil {
 		return errs.Wrap(err, "Could not solve")
 	}
 
-	return r.Update(setup, br, commit)
+	if err := r.Update(setup, commit); err != nil {
+		return errs.Wrap(err, "Could not update")
+	}
+
+	return nil
 }
 
 // HasCache tells us whether this runtime has any cached files. Note this does NOT tell you whether the cache is valid.
@@ -293,11 +302,9 @@ func (r *Runtime) recordCompletion(err error) {
 	// download error to be cause by an input error.
 	case locale.IsInputError(err):
 		errorType = "input"
-	case errs.Matches(err, &model.SolverError{}):
-		errorType = "solve"
 	case errs.Matches(err, &setup.BuildError{}), errs.Matches(err, &buildlog.BuildError{}):
 		errorType = "build"
-	case errs.Matches(err, &bpModel.BuildPlannerError{}):
+	case errs.Matches(err, &bpResp.BuildPlannerError{}):
 		errorType = "buildplan"
 	case errs.Matches(err, &setup.ArtifactSetupErrors{}):
 		if setupErrors := (&setup.ArtifactSetupErrors{}); errors.As(err, &setupErrors) {
@@ -408,7 +415,7 @@ func IsRuntimeDir(dir string) bool {
 	return store.New(dir).HasMarker()
 }
 
-func (r *Runtime) BuildPlan() (*bpModel.Build, error) {
+func (r *Runtime) BuildPlan() (*buildplan.BuildPlan, error) {
 	runtimeStore := r.store
 	if runtimeStore == nil {
 		runtimeStore = store.New(r.target.Dir())
@@ -418,30 +425,4 @@ func (r *Runtime) BuildPlan() (*bpModel.Build, error) {
 		return nil, errs.Wrap(err, "Unable to fetch build plan")
 	}
 	return plan, nil
-}
-
-func (r *Runtime) ResolvedArtifacts() ([]*artifact.Artifact, error) {
-	if r.resolvedArtifacts == nil {
-		runtimeStore := r.store
-		if runtimeStore == nil {
-			runtimeStore = store.New(r.target.Dir())
-		}
-
-		plan, err := runtimeStore.BuildPlan()
-		if err != nil {
-			return nil, errs.Wrap(err, "Unable to fetch build plan")
-		}
-
-		r.resolvedArtifacts = make([]*artifact.Artifact, len(plan.Sources))
-		for i, source := range plan.Sources {
-			r.resolvedArtifacts[i] = &artifact.Artifact{
-				ArtifactID: source.NodeID,
-				Name:       source.Name,
-				Namespace:  source.Namespace,
-				Version:    &source.Version,
-			}
-		}
-	}
-
-	return r.resolvedArtifacts, nil
 }

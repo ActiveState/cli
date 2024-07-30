@@ -20,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type RunIntegrationTestSuite struct {
@@ -83,10 +82,6 @@ func (suite *RunIntegrationTestSuite) SetupTest() {
 			suite.T().Skip("This test requires a bash shell in your PATH")
 		}
 	}
-}
-
-func (suite *RunIntegrationTestSuite) TearDownTest() {
-	projectfile.Reset()
 }
 
 func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *e2e.SpawnedCmd) {
@@ -192,7 +187,6 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 	suite.createProjectFile(ts, 3)
 
 	ts.LoginAsPersistentUser()
-	defer ts.LogoutUser()
 
 	cp := ts.Spawn("run", "test-interrupt")
 	cp.Expect("Start of script")

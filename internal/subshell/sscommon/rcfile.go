@@ -286,7 +286,11 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	globalBinDir := filepath.Clean(storage.GlobalBinDir())
 
 	// Prepare script map to be parsed by template
-	for _, cmd := range prj.Scripts() {
+	projectScripts, err := prj.Scripts()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get project scripts")
+	}
+	for _, cmd := range projectScripts {
 		explicitName = fmt.Sprintf("%s_%s", prj.NormalizedName(), cmd.Name())
 
 		path, err := exec.LookPath(cmd.Name())

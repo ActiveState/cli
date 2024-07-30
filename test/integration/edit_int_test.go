@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type EditIntegrationTestSuite struct {
@@ -56,10 +55,6 @@ scripts:
 
 	suite.Require().FileExists(filepath.Join(editorScriptDir, "editor"+extension))
 	return ts, e2e.OptAppendEnv(fmt.Sprintf("EDITOR=%s", filepath.Join(editorScriptDir, "editor"+extension)))
-}
-
-func (suite *EditIntegrationTestSuite) TearDownTest() {
-	projectfile.Reset()
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit() {
@@ -112,7 +107,8 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 	pj, err := project.FromPath(ts.Dirs.Work)
 	suite.Require().NoError(err)
 
-	s := pj.ScriptByName("test-script")
+	s, err := pj.ScriptByName("test-script")
+	suite.Require().NoError(err)
 	suite.Require().NotNil(s, "test-script should not be empty")
 	v, err := s.Value()
 	suite.Require().NoError(err)
