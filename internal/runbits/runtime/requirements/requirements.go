@@ -27,7 +27,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
-	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
@@ -235,30 +234,25 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 
 	// Solve runtime
 	solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
-	bpm := bpModel.NewBuildPlannerModel(r.Auth)
-	rtCommit, err := bpm.FetchCommit(commitID, r.Project.Owner(), r.Project.Name(), nil)
+	rtCommit, err := bp.FetchCommit(commitID, r.Project.Owner(), r.Project.Name(), nil)
 	if err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))
 		return errs.Wrap(err, "Failed to fetch build result")
 	}
+
+	oldCommit, err := bp.FetchCommit(parentCommitID, r.Project.Owner(), r.Project.Name(), nil)
+	if err != nil {
+		solveSpinner.Stop(locale.T("progress_fail"))
+		return errs.Wrap(err, "Failed to fetch old build result")
+	}
 	solveSpinner.Stop(locale.T("progress_success"))
 
-	var oldBuildPlan *buildplan.BuildPlan
-	if rtCommit.ParentID != "" {
-		bpm := bpModel.NewBuildPlannerModel(r.Auth)
-		commit, err := bpm.FetchCommit(rtCommit.ParentID, r.Project.Owner(), r.Project.Name(), nil)
-		if err != nil {
-			return errs.Wrap(err, "Failed to fetch build result")
-		}
-		oldBuildPlan = commit.BuildPlan()
-	}
-
 	r.Output.Notice("") // blank line
-	dependencies.OutputChangeSummary(r.prime, rtCommit, oldBuildPlan)
+	dependencies.OutputChangeSummary(r.prime, rtCommit, oldCommit)
 
 	// Report CVEs
 	names := requirementNames(requirements...)
-	if err := cves.NewCveReport(r.prime).Report(rtCommit.BuildPlan(), oldBuildPlan, names...); err != nil {
+	if err := cves.NewCveReport(r.prime).Report(rtCommit.BuildPlan(), oldCommit.BuildPlan(), names...); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 

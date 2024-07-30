@@ -1,15 +1,11 @@
 package request
 
-import (
-	"github.com/go-openapi/strfmt"
-)
-
-func ImpactReport(organization, project string, beforeCommitId strfmt.UUID, afterExpr []byte) *impactReport {
+func ImpactReport(organization, project string, beforeExpr, afterExpr []byte) *impactReport {
 	bp := &impactReport{map[string]interface{}{
-		"organization":   organization,
-		"project":        project,
-		"beforeCommitId": beforeCommitId.String(),
-		"afterExpr":      string(afterExpr),
+		"organization": organization,
+		"project":      project,
+		"beforeExpr":   string(beforeExpr),
+		"afterExpr":    string(afterExpr),
 	}}
 
 	return bp
@@ -21,9 +17,9 @@ type impactReport struct {
 
 func (b *impactReport) Query() string {
 	return `
-query ($organization: String!, $project: String!, $beforeCommitId: ID!, $afterExpr: BuildExpr!) {
+query ($organization: String!, $project: String!, $beforeExpr: BuildExpr!, $afterExpr: BuildExpr!) {
   impactReport(
-    before: {organization: $organization, project: $project, buildExprOrCommit: {commitId: $beforeCommitId}}
+    before: {organization: $organization, project: $project, buildExprOrCommit: {buildExpr: $beforeExpr}}
     after: {organization: $organization, project: $project, buildExprOrCommit: {buildExpr: $afterExpr}}
   ) {
     __typename

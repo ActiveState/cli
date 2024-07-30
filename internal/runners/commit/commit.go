@@ -147,20 +147,19 @@ func (c *Commit) Run() (rerr error) {
 	}
 
 	// Get old buildplan.
-	commit, err := bp.FetchCommit(localCommitID, proj.Owner(), proj.Name(), nil)
+	oldCommit, err := bp.FetchCommit(localCommitID, proj.Owner(), proj.Name(), nil)
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch old commit")
 	}
-	oldBuildPlan := commit.BuildPlan()
 
 	pgSolve.Stop(locale.T("progress_success"))
 	pgSolve = nil
 
 	// Output dependency list.
-	dependencies.OutputChangeSummary(c.prime, rtCommit, oldBuildPlan)
+	dependencies.OutputChangeSummary(c.prime, rtCommit, oldCommit)
 
 	// Report CVEs.
-	if err := cves.NewCveReport(c.prime).Report(rtCommit.BuildPlan(), oldBuildPlan); err != nil {
+	if err := cves.NewCveReport(c.prime).Report(rtCommit.BuildPlan(), oldCommit.BuildPlan()); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
