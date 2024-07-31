@@ -172,7 +172,7 @@ func CreateProjectFiles(checkoutPath, cachePath, owner, name, branch, commitID, 
 		})
 		if err != nil {
 			if osutils.IsAccessDeniedError(err) {
-				return &ErrNoPermission{err, checkoutPath}
+				return &ErrNoPermission{checkoutPath}
 			}
 			return errs.Wrap(err, "Could not create projectfile")
 		}

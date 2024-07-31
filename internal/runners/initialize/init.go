@@ -73,8 +73,11 @@ type primeable interface {
 }
 
 type errProjectExists struct {
-	error
 	path string
+}
+
+func (e errProjectExists) Error() string {
+	return "project file already exists"
 }
 
 var errNoLanguage = errs.New("No language specified")
@@ -156,10 +159,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	}
 
 	if fileutils.TargetExists(filepath.Join(path, constants.ConfigFileName)) {
-		return &errProjectExists{
-			error: errs.New("Project file already exists"),
-			path:  path,
-		}
+		return &errProjectExists{path}
 	}
 
 	err := fileutils.MkdirUnlessExists(path)
