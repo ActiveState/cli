@@ -259,7 +259,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 	solveSpinner.Stop(locale.T("progress_success"))
 
 	r.Output.Notice("") // blank line
-	dependencies.OutputChangeSummary(r.prime.Output(), impactReport, rtCommit)
+	dependencies.OutputChangeSummary(r.prime.Output(), impactReport, rtCommit.BuildPlan())
 
 	// Report CVEs
 	names := requirementNames(requirements...)

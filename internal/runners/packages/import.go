@@ -172,7 +172,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 
 	// Output change summary.
 	out.Notice("") // blank line
-	dependencies.OutputChangeSummary(i.prime.Output(), impactReport, rtCommit)
+	dependencies.OutputChangeSummary(i.prime.Output(), impactReport, rtCommit.BuildPlan())
 
 	// Report CVEs.
 	if err := cves.NewCveReport(i.prime).Report(impactReport); err != nil {

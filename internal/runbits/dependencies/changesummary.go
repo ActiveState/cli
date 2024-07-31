@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
-	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 )
 
 // showUpdatedPackages specifies whether or not to include updated dependencies in the direct
@@ -22,7 +21,7 @@ import (
 // dependency numbers.
 const showUpdatedPackages = true
 
-func OutputChangeSummary(out output.Outputer, report *response.ImpactReportResult, rtCommit *buildplanner.Commit) {
+func OutputChangeSummary(out output.Outputer, report *response.ImpactReportResult, buildPlan *buildplan.BuildPlan) {
 	// Process the impact report, looking for package additions or updates.
 	alreadyInstalledVersions := map[strfmt.UUID]string{}
 	addedString := []string{}
@@ -44,7 +43,7 @@ func OutputChangeSummary(out output.Outputer, report *response.ImpactReportResul
 			addedLocale = append(addedLocale, fmt.Sprintf("[ACTIONABLE]%s[/RESET]", v))
 		}
 
-		for _, bpi := range rtCommit.BuildPlan().Ingredients() {
+		for _, bpi := range buildPlan.Ingredients() {
 			if bpi.IngredientID != strfmt.UUID(i.After.IngredientID) {
 				continue
 			}
