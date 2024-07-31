@@ -61,7 +61,7 @@ func (s *Shortcut) Enable() error {
 		}
 	}
 
-	args := []string{"-File", sf.Filename(), "-dir", s.dir, "-name", s.name, "-target", s.target, "-shortcutArgs", s.args}
+	args := []string{"-File", sf.Filename(), "-executionpolicy", "bypass", "-dir", s.dir, "-name", s.name, "-target", s.target, "-shortcutArgs", s.args}
 
 	if s.windowStyle != 0 {
 		args = append(args, "-windowStyle", fmt.Sprintf("%d", s.windowStyle))
