@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.45.1
+
+### Fixed
+
+* Fixed issue where installation on Windows would fail with a message from powershell saying script running is disabled.
+    * Context: We use a powershell script to create start menu shortcuts for the State Tool, as there are no solutions
+      in Golang to do this through system APIs.
+
 ## 0.45.0
 
 ### Added
