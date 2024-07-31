@@ -143,7 +143,11 @@ func GetCommit(
 		name = pj.Name()
 		nsString = pj.NamespaceString()
 	}
-	_, err = model.GetCommitWithinProjectHistory(commit.CommitID, owner, name, auth)
+	localCommitID, err := localcommit.Get(pj.Path())
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get local commit")
+	}
+	_, err = model.GetCommitWithinProjectHistory(commit.CommitID, owner, name, localCommitID, auth)
 	if err != nil {
 		if err == model.ErrCommitNotInHistory {
 			return nil, errs.Pack(err, &ErrCommitDoesNotExistInProject{nsString, commit.CommitID.String()})
