@@ -44,6 +44,14 @@ and this project adheres to
     * This only affects UI/UX. It does not imply any build or runtime functionality.
 * Many localization and error message improvements and additions to help guide users to solutions.
 
+## 0.45.1
+
+### Fixed
+
+* Fixed issue where installation on Windows would fail with a message from powershell saying script running is disabled.
+    * Context: We use a powershell script to create start menu shortcuts for the State Tool, as there are no solutions
+      in Golang to do this through system APIs.
+
 ## 0.45.0
 
 ### Added
