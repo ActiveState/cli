@@ -349,15 +349,18 @@ func (r *RequirementOperation) prepareBuildScript(bp *bpModel.BuildPlanner, pare
 }
 
 type ResolveNamespaceError struct {
-	error
 	Name string
+}
+
+func (e ResolveNamespaceError) Error() string {
+	return "unable to resolve namespace"
 }
 
 func (r *RequirementOperation) resolveNamespaces(ts *time.Time, requirements ...*Requirement) error {
 	for _, requirement := range requirements {
 		if err := r.resolveNamespace(ts, requirement); err != nil {
 			if err != errNoLanguage {
-				err = &ResolveNamespaceError{err, requirement.Name}
+				err = errs.Pack(err, &ResolveNamespaceError{requirement.Name})
 			}
 			return errs.Wrap(err, "Unable to resolve namespace")
 		}

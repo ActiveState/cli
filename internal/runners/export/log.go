@@ -1,10 +1,13 @@
 package export
 
 import (
+	"bufio"
+	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -57,12 +60,23 @@ func (l *Log) Run(params *LogParams) (rerr error) {
 	if err != nil {
 		return ErrInvalidLogPrefix
 	}
+
 	for _, file := range logFiles {
 		if regex.MatchString(file) {
 			timestamp, err := strconv.Atoi(regex.FindStringSubmatch(file)[1])
 			if err != nil {
 				continue
 			}
+
+			ignore, err := ignoreLogFile(file)
+			if err != nil {
+				return errs.Wrap(err, "failed to ignore log file")
+			}
+
+			if ignore {
+				continue
+			}
+
 			filteredLogFiles = append(filteredLogFiles, &logFile{file, timestamp})
 		}
 	}
@@ -84,4 +98,32 @@ func (l *Log) Run(params *LogParams) (rerr error) {
 	))
 
 	return nil
+}
+
+func ignoreLogFile(logFile string) (bool, error) {
+	file, err := os.Open(logFile)
+	if err != nil {
+		return false, errs.Wrap(err, "failed to open log file")
+	}
+	defer file.Close()
+
+	regex := regexp.MustCompile(`Args: \[(.*?)\], Flags: \[.*?\]`)
+	scanner := bufio.NewScanner(file)
+	var args string
+	for scanner.Scan() {
+		logLine := scanner.Text()
+		if regex.MatchString(logLine) {
+			match := regex.FindStringSubmatch(logLine)
+			if len(match) > 1 {
+				args = match[1]
+			}
+			break
+		}
+	}
+
+	if strings.HasPrefix(args, "export log") {
+		return true, nil
+	}
+
+	return false, nil
 }

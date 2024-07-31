@@ -188,7 +188,7 @@ const DisableActivateEventsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ACTIVATE_EVENTS
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
 
 // APIUpdateURL is the URL for our update files
-const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/state"
+const APIUpdateURL = "https://state-tool.activestate.com/update/state"
 
 // APIArtifactURL is the URL for downloading artifacts
 const APIArtifactURL = "https://s3.ca-central-1.amazonaws.com/cli-artifacts/"
