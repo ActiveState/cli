@@ -41,6 +41,11 @@ func NewCveReport(prime primeable) *CveReport {
 }
 
 func (c *CveReport) Report(report *response.ImpactReportResult, names ...string) error {
+	if !c.prime.Auth().Authenticated() {
+		logging.Debug("Skipping CVE reporting")
+		return nil
+	}
+
 	var ingredients []*request.Ingredient
 	for _, i := range report.Ingredients {
 		if i.After == nil {
@@ -58,8 +63,7 @@ func (c *CveReport) Report(report *response.ImpactReportResult, names ...string)
 		})
 	}
 
-	if !c.prime.Auth().Authenticated() || len(ingredients) == 0 {
-		logging.Debug("Skipping CVE reporting")
+	if len(ingredients) == 0 {
 		return nil
 	}
 
