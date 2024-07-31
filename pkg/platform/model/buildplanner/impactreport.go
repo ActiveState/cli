@@ -9,24 +9,20 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 )
 
-type buildScripter interface {
-	BuildScript() *buildscript.BuildScript
-}
-
 type ImpactReportParams struct {
 	Owner   string
 	Project string
-	Before  buildScripter
-	After   buildScripter
+	Before  *buildscript.BuildScript
+	After   *buildscript.BuildScript
 }
 
 func (b *BuildPlanner) ImpactReport(params *ImpactReportParams) (*response.ImpactReportResult, error) {
-	beforeExpr, err := json.Marshal(params.Before.BuildScript())
+	beforeExpr, err := json.Marshal(params.Before)
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to marshal old buildexpression")
 	}
 
-	afterExpr, err := json.Marshal(params.After.BuildScript())
+	afterExpr, err := json.Marshal(params.After)
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to marshal buildexpression")
 	}

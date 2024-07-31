@@ -162,8 +162,8 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	impactReport, err := bp.ImpactReport(&buildplanner.ImpactReportParams{
 		Owner:   i.prime.Project().Owner(),
 		Project: i.prime.Project().Name(),
-		Before:  previousCommit,
-		After:   rtCommit,
+		Before:  previousCommit.BuildScript(),
+		After:   rtCommit.BuildScript(),
 	})
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch impact report")

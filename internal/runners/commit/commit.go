@@ -156,8 +156,8 @@ func (c *Commit) Run() (rerr error) {
 	impactReport, err := bp.ImpactReport(&buildplanner.ImpactReportParams{
 		Owner:   c.prime.Project().Owner(),
 		Project: c.prime.Project().Name(),
-		Before:  oldCommit,
-		After:   rtCommit,
+		Before:  oldCommit.BuildScript(),
+		After:   rtCommit.BuildScript(),
 	})
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch impact report")
