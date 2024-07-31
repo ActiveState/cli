@@ -55,8 +55,11 @@ func NewDownload(prime primeable) *Download {
 }
 
 type errArtifactExists struct {
-	error
 	Path string
+}
+
+func (e errArtifactExists) Error() string {
+	return "artifact exists"
 }
 
 func rationalizeDownloadError(proj *project.Project, auth *authentication.Auth, err *error) {
@@ -137,7 +140,7 @@ func (d *Download) downloadArtifact(artifact *buildplan.Artifact, targetDir stri
 
 	downloadPath := filepath.Join(targetDir, basename)
 	if fileutils.TargetExists(downloadPath) {
-		return &errArtifactExists{Path: downloadPath}
+		return &errArtifactExists{downloadPath}
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

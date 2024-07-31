@@ -45,9 +45,12 @@ type Pull struct {
 }
 
 type errNoCommonParent struct {
-	error
 	localCommitID  strfmt.UUID
 	remoteCommitID strfmt.UUID
+}
+
+func (e errNoCommonParent) Error() string {
+	return "no common parent"
 }
 
 type PullParams struct {
@@ -140,7 +143,6 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 
 		if commonParent == nil {
 			return &errNoCommonParent{
-				errs.New("no common parent"),
 				*localCommit,
 				*remoteCommit,
 			}
