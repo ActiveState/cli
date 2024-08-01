@@ -220,7 +220,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		solveSpinner.Stop(locale.T("progress_fail"))
 		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")
 	}
-	solveSpinner.Stop(locale.T("progress_success"))
 
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
@@ -238,6 +237,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 
 	oldCommit, err := bp.FetchCommit(parentCommitID, r.Project.Owner(), r.Project.Name(), nil)
 	if err != nil {
+		solveSpinner.Stop(locale.T("progress_fail"))
 		return errs.Wrap(err, "Failed to fetch old build result")
 	}
 
@@ -249,6 +249,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		After:   commit.BuildScript(),
 	})
 	if err != nil {
+		solveSpinner.Stop(locale.T("progress_fail"))
 		return errs.Wrap(err, "Failed to fetch impact report")
 	}
 	solveSpinner.Stop(locale.T("progress_success"))
