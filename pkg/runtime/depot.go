@@ -45,8 +45,11 @@ type depot struct {
 	fsMutex   *sync.Mutex
 }
 
-func newDepot() (*depot, error) {
+func newDepot(volume string) (*depot, error) {
 	depotPath := filepath.Join(storage.CachePath(), depotName)
+	if volume != "" { // Windows volume label for this depot
+		depotPath = filepath.Join(volume+"\\", "activestate", depotName)
+	}
 
 	result := &depot{
 		config: depotConfig{
