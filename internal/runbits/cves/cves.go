@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	vulnModel "github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -39,36 +40,31 @@ func NewCveReport(prime primeable) *CveReport {
 	return &CveReport{prime}
 }
 
-func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan, names ...string) error {
-	changeset := newBuildPlan.DiffArtifacts(oldBuildPlan, false)
-	if c.shouldSkipReporting(changeset) {
+func (c *CveReport) Report(report *response.ImpactReportResult, names ...string) error {
+	if !c.prime.Auth().Authenticated() {
 		logging.Debug("Skipping CVE reporting")
 		return nil
 	}
 
 	var ingredients []*request.Ingredient
-	for _, artifact := range changeset.Added {
-		for _, ing := range artifact.Ingredients {
-			ingredients = append(ingredients, &request.Ingredient{
-				Namespace: ing.Namespace,
-				Name:      ing.Name,
-				Version:   ing.Version,
-			})
+	for _, i := range report.Ingredients {
+		if i.After == nil {
+			continue // only care about additions or changes
 		}
+
+		if i.Before != nil && i.Before.Version == i.After.Version {
+			continue // only care about changes
+		}
+
+		ingredients = append(ingredients, &request.Ingredient{
+			Namespace: i.Namespace,
+			Name:      i.Name,
+			Version:   i.After.Version,
+		})
 	}
 
-	for _, change := range changeset.Updated {
-		if !change.VersionsChanged() {
-			continue // For CVE reporting we only care about ingredient changes
-		}
-
-		for _, ing := range change.To.Ingredients {
-			ingredients = append(ingredients, &request.Ingredient{
-				Namespace: ing.Namespace,
-				Name:      ing.Name,
-				Version:   ing.Version,
-			})
-		}
+	if len(ingredients) == 0 {
+		return nil
 	}
 
 	if len(names) == 0 {

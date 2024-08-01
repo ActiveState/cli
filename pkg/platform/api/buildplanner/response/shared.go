@@ -90,7 +90,8 @@ func IsErrorResponse(errorType string) bool {
 		errorType == types.MergeConflictErrorType ||
 		errorType == types.RevertConflictErrorType ||
 		errorType == types.CommitNotInTargetHistoryErrorType ||
-		errorType == types.ComitHasNoParentErrorType
+		errorType == types.CommitHasNoParentErrorType ||
+		errorType == types.ImpactReportErrorType
 }
 
 // NotFoundError represents an error that occurred because a resource was not found.
