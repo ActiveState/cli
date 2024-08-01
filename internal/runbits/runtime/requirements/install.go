@@ -165,20 +165,32 @@ func (r *RequirementOperation) Install(ts *time.Time, requirements []*Requiremen
 		solveSpinner.Stop(locale.T("progress_fail"))
 		return errs.Wrap(err, "Failed to fetch build result")
 	}
+
+	previousCommit, err := bp.FetchCommit(commitID, r.Project.Owner(), r.Project.Name(), nil)
+	if err != nil {
+		solveSpinner.Stop(locale.T("progress_fail"))
+		return errs.Wrap(err, "Failed to fetch build result for previous commit")
+	}
+
+	// Fetch the impact report.
+	impactReport, err := bp.ImpactReport(&bpModel.ImpactReportParams{
+		Owner:   r.prime.Project().Owner(),
+		Project: r.prime.Project().Name(),
+		Before:  previousCommit.BuildScript(),
+		After:   rtCommit.BuildScript(),
+	})
+	if err != nil {
+		return errs.Wrap(err, "Failed to fetch impact report")
+	}
 	solveSpinner.Stop(locale.T("progress_success"))
 
 	// Output change summary.
-	previousCommit, err := bp.FetchCommit(commitID, r.Project.Owner(), r.Project.Name(), nil)
-	if err != nil {
-		return errs.Wrap(err, "Failed to fetch build result for previous commit")
-	}
-	oldBuildPlan := previousCommit.BuildPlan()
 	r.Output.Notice("") // blank line
-	dependencies.OutputChangeSummary(r.Output, rtCommit.BuildPlan(), oldBuildPlan)
+	dependencies.OutputChangeSummary(r.Output, impactReport, rtCommit.BuildPlan())
 
 	// Report CVEs.
 	names := requirementNames(requirements...)
-	if err := cves.NewCveReport(r.prime).Report(rtCommit.BuildPlan(), oldBuildPlan, names...); err != nil {
+	if err := cves.NewCveReport(r.prime).Report(impactReport, names...); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 

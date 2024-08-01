@@ -15,7 +15,6 @@ func (r *RequirementOperation) rationalizeError(err *error) {
 	var tooManyMatchesErr *model.ErrTooManyMatches
 	var noMatchesErr *ErrNoMatches
 	var buildPlannerErr *bpResp.BuildPlannerError
-	var resolveNamespaceErr *ResolveNamespaceError
 
 	switch {
 	case err == nil:
@@ -59,15 +58,6 @@ func (r *RequirementOperation) rationalizeError(err *error) {
 		*err = errs.WrapUserFacing(*err,
 			locale.Tl("err_no_requirements",
 				"No requirements have been provided for this operation.",
-			),
-			errs.SetInput(),
-		)
-
-	case errors.As(*err, &resolveNamespaceErr):
-		*err = errs.WrapUserFacing(*err,
-			locale.Tl("err_resolve_namespace",
-				"Could not resolve namespace for requirement '{{.V0}}'.",
-				resolveNamespaceErr.Name,
 			),
 			errs.SetInput(),
 		)
