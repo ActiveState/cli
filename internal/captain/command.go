@@ -209,7 +209,7 @@ func (c *Command) UsageText() string {
 }
 
 func (c *Command) Help() string {
-	return fmt.Sprintf("%s\n\n%s", c.cobra.Short, c.UsageText())
+	return strings.TrimRightFunc(fmt.Sprintf("%s\n\n%s", c.cobra.Short, c.UsageText()), unicode.IsSpace)
 }
 
 func (c *Command) ShortDescription() string {
@@ -852,7 +852,7 @@ func (cmd *Command) Usage() error {
 			return errs.Wrap(err, "Unable to write to cobra outWriter")
 		}
 	} else {
-		cmd.out.Print(out.String())
+		cmd.out.Print(strings.TrimRightFunc(out.String(), unicode.IsSpace))
 	}
 
 	return nil

@@ -27,7 +27,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
-	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
@@ -237,22 +236,29 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		trig = trigger.TriggerPackage
 	}
 
-	var oldBuildPlan *buildplan.BuildPlan
-	if commit.ParentID != "" {
-		bpm := bpModel.NewBuildPlannerModel(r.Auth)
-		oldCommit, err := bpm.FetchCommit(commit.ParentID, r.Project.Owner(), r.Project.Name(), nil)
-		if err != nil {
-			return errs.Wrap(err, "Failed to fetch build result")
-		}
-		oldBuildPlan = oldCommit.BuildPlan()
+	oldCommit, err := bp.FetchCommit(parentCommitID, r.Project.Owner(), r.Project.Name(), nil)
+	if err != nil {
+		return errs.Wrap(err, "Failed to fetch old build result")
 	}
 
+	// Fetch the impact report.
+	impactReport, err := bp.ImpactReport(&bpModel.ImpactReportParams{
+		Owner:   r.prime.Project().Owner(),
+		Project: r.prime.Project().Name(),
+		Before:  oldCommit.BuildScript(),
+		After:   commit.BuildScript(),
+	})
+	if err != nil {
+		return errs.Wrap(err, "Failed to fetch impact report")
+	}
+	solveSpinner.Stop(locale.T("progress_success"))
+
 	r.Output.Notice("") // blank line
-	dependencies.OutputChangeSummary(r.Output, commit.BuildPlan(), oldBuildPlan)
+	dependencies.OutputChangeSummary(r.prime.Output(), impactReport, commit.BuildPlan())
 
 	// Report CVEs
 	names := requirementNames(requirements...)
-	if err := cves.NewCveReport(r.prime).Report(commit.BuildPlan(), oldBuildPlan, names...); err != nil {
+	if err := cves.NewCveReport(r.prime).Report(impactReport, names...); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
@@ -338,15 +344,18 @@ func (r *RequirementOperation) prepareBuildScript(bp *bpModel.BuildPlanner, pare
 }
 
 type ResolveNamespaceError struct {
-	error
 	Name string
+}
+
+func (e ResolveNamespaceError) Error() string {
+	return "unable to resolve namespace"
 }
 
 func (r *RequirementOperation) resolveNamespaces(ts *time.Time, requirements ...*Requirement) error {
 	for _, requirement := range requirements {
 		if err := r.resolveNamespace(ts, requirement); err != nil {
 			if err != errNoLanguage {
-				err = &ResolveNamespaceError{err, requirement.Name}
+				err = errs.Pack(err, &ResolveNamespaceError{requirement.Name})
 			}
 			return errs.Wrap(err, "Unable to resolve namespace")
 		}

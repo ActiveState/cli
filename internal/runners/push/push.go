@@ -68,13 +68,19 @@ var (
 )
 
 type errProjectNameInUse struct {
-	error
 	Namespace *project.Namespaced
 }
 
+func (e errProjectNameInUse) Error() string {
+	return "project name in use"
+}
+
 type errHeadless struct {
-	error
 	ProjectURL string
+}
+
+func (e errHeadless) Error() string {
+	return "headless project"
 }
 
 func (r *Push) Run(params PushParams) (rerr error) {
@@ -106,7 +112,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 	}
 
 	if r.project.IsHeadless() {
-		return &errHeadless{err, r.project.URL()}
+		return &errHeadless{r.project.URL()}
 	}
 
 	// Capture the primary intend of the user
@@ -154,7 +160,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 	var projectCreated bool
 	if intend&intendCreateProject > 0 || targetPjm == nil {
 		if targetPjm != nil {
-			return &errProjectNameInUse{errs.New("project name in use"), targetNamespace}
+			return &errProjectNameInUse{targetNamespace}
 		}
 
 		// If the user didn't necessarily intend to create the project we should ask them for confirmation

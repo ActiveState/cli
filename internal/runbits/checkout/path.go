@@ -37,13 +37,19 @@ func (r *Checkout) pathToUse(namespace *project.Namespaced, preferredPath string
 }
 
 type ErrAlreadyCheckedOut struct {
-	error
 	Path string
 }
 
+func (e ErrAlreadyCheckedOut) Error() string {
+	return "already checked out"
+}
+
 type ErrNoPermission struct {
-	error
 	Path string
+}
+
+func (e ErrNoPermission) Error() string {
+	return "no permission"
 }
 
 func validatePath(ns *project.Namespaced, path string) error {
@@ -61,7 +67,7 @@ func validatePath(ns *project.Namespaced, path string) error {
 
 	configFile := filepath.Join(path, constants.ConfigFileName)
 	if fileutils.FileExists(configFile) {
-		return &ErrAlreadyCheckedOut{errs.New("already checked out at %s", path), path}
+		return &ErrAlreadyCheckedOut{path}
 	}
 
 	return nil

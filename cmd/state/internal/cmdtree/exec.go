@@ -27,7 +27,7 @@ func newExecCommand(prime *primer.Values, args ...string) *captain.Command {
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
 			if len(args) > 0 && (args[0] == "-h" || args[0] == "--help") {
-				prime.Output().Print(ccmd.UsageText())
+				prime.Output().Print(ccmd.Help())
 				return nil
 			} else if len(args) > 0 && (args[0] == "-v" || args[0] == "--verbose" || args[0] == "--") {
 				if len(args) > 1 {
