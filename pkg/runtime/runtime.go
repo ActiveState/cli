@@ -7,7 +7,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/runtime/internal/envdef"
@@ -47,16 +46,8 @@ func New(path string) (*Runtime, error) {
 		return nil, errs.Wrap(err, "Could not create runtime directory")
 	}
 
-	// Windows does not support hard-linking across drives, so determine if the runtime path is on a
-	// separate drive than the default depot path. If so, use a drive-specific depot path when
-	// initializing the depot.
-	runtimeVolume := filepath.VolumeName(path)
-	storageVolume := filepath.VolumeName(storage.CachePath())
-	if runtimeVolume == storageVolume {
-		runtimeVolume = ""
-	}
-
-	depot, err := newDepot(runtimeVolume)
+	runtimePath := path
+	depot, err := newDepot(runtimePath)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create depot")
 	}

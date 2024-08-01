@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 
 	"github.com/go-openapi/strfmt"
@@ -45,10 +46,17 @@ type depot struct {
 	fsMutex   *sync.Mutex
 }
 
-func newDepot(volume string) (*depot, error) {
+func newDepot(runtimePath string) (*depot, error) {
 	depotPath := filepath.Join(storage.CachePath(), depotName)
-	if volume != "" { // Windows volume label for this depot
-		depotPath = filepath.Join(volume+"\\", "activestate", depotName)
+
+	// Windows does not support hard-linking across drives, so determine if the runtime path is on a
+	// separate drive than the default depot path. If so, use a drive-specific depot path.
+	if runtime.GOOS == "windows" {
+		runtimeVolume := filepath.VolumeName(runtimePath)
+		storageVolume := filepath.VolumeName(storage.CachePath())
+		if runtimeVolume != storageVolume {
+			depotPath = filepath.Join(runtimeVolume+"\\", "activestate", depotName)
+		}
 	}
 
 	result := &depot{
