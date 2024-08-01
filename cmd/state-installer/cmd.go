@@ -251,6 +251,8 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 
 	an.Event(anaConst.CatInstallerFunnel, "exec")
 
+	usingDefaultInstallPath := params.path == ""
+
 	if params.path == "" {
 		var err error
 		params.path, err = installation.InstallPathForChannel(constants.ChannelName)
@@ -296,6 +298,17 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 			return errs.Wrap(err, "Could not check if install path is empty")
 		}
 		if !empty {
+			if usingDefaultInstallPath {
+				// We're having trouble pinning down why these errors are occurring, so report the list of
+				// existing files to Rollbar to help diagnose.
+				if files, err := os.ReadDir(params.path); err == nil {
+					fileList := []string{}
+					for _, file := range files {
+						fileList = append(fileList, filepath.Join(params.path, file.Name()))
+					}
+					rollbar.Critical("Installation path must be an empty directory: %s\nExisting files:\n%s", params.path, strings.Join(fileList, "\n"))
+				}
+			}
 			return locale.NewInputError("err_install_nonempty_dir", "Installation path must be an empty directory: {{.V0}}", params.path)
 		}
 	}

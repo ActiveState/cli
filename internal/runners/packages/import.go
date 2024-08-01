@@ -140,28 +140,43 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
 
-	// Solve the runtime.
-	rtCommit, err := bp.FetchCommit(stagedCommitId, proj.Owner(), proj.Name(), nil)
-	if err != nil {
-		return errs.Wrap(err, "Failed to fetch build result for previous commit")
-	}
-
-	// Output change summary.
-	previousCommit, err := bp.FetchCommit(localCommitId, proj.Owner(), proj.Name(), nil)
-	if err != nil {
-		return errs.Wrap(err, "Failed to fetch build result for previous commit")
-	}
-	oldBuildPlan := previousCommit.BuildPlan()
-	out.Notice("") // blank line
-	dependencies.OutputChangeSummary(out, rtCommit.BuildPlan(), oldBuildPlan)
-
-	// Report CVEs.
-	if err := cves.NewCveReport(i.prime).Report(rtCommit.BuildPlan(), oldBuildPlan); err != nil {
-		return errs.Wrap(err, "Could not report CVEs")
-	}
-
 	if err := localcommit.Set(proj.Dir(), stagedCommitId.String()); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
+	}
+
+	// Solve the runtime.
+	solveSpinner := output.StartSpinner(i.prime.Output(), locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+	rtCommit, err := bp.FetchCommit(stagedCommitId, proj.Owner(), proj.Name(), nil)
+	if err != nil {
+		solveSpinner.Stop(locale.T("progress_fail"))
+		return errs.Wrap(err, "Failed to fetch build result for staged commit")
+	}
+
+	previousCommit, err := bp.FetchCommit(localCommitId, proj.Owner(), proj.Name(), nil)
+	if err != nil {
+		solveSpinner.Stop(locale.T("progress_fail"))
+		return errs.Wrap(err, "Failed to fetch build result for previous commit")
+	}
+
+	// Fetch the impact report.
+	impactReport, err := bp.ImpactReport(&buildplanner.ImpactReportParams{
+		Owner:   i.prime.Project().Owner(),
+		Project: i.prime.Project().Name(),
+		Before:  previousCommit.BuildScript(),
+		After:   rtCommit.BuildScript(),
+	})
+	if err != nil {
+		return errs.Wrap(err, "Failed to fetch impact report")
+	}
+	solveSpinner.Stop(locale.T("progress_success"))
+
+	// Output change summary.
+	out.Notice("") // blank line
+	dependencies.OutputChangeSummary(i.prime.Output(), impactReport, rtCommit.BuildPlan())
+
+	// Report CVEs.
+	if err := cves.NewCveReport(i.prime).Report(impactReport); err != nil {
+		return errs.Wrap(err, "Could not report CVEs")
 	}
 
 	_, err = runtime_runbit.Update(i.prime, trigger.TriggerImport, runtime_runbit.WithCommitID(stagedCommitId))

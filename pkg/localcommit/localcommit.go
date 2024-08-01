@@ -15,8 +15,11 @@ import (
 var proj *project.Project
 
 type ErrInvalidCommitID struct {
-	error
 	CommitID string
+}
+
+func (e ErrInvalidCommitID) Error() string {
+	return "invalid commit ID"
 }
 
 func setupProject(pjpath string) error {
@@ -38,7 +41,7 @@ func Get(pjpath string) (strfmt.UUID, error) {
 
 	commitID := proj.LegacyCommitID()
 	if !strfmt.IsUUID(commitID) {
-		return "", &ErrInvalidCommitID{errs.New("Invalid commit ID"), commitID}
+		return "", &ErrInvalidCommitID{commitID}
 	}
 
 	return strfmt.UUID(commitID), nil

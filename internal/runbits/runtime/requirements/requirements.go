@@ -103,11 +103,6 @@ type Requirement struct {
 	Operation types.Operation
 }
 
-type ResolveNamespaceError struct {
-	error
-	Name string
-}
-
 func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 	if err := localcommit.Set(r.Project.Dir(), commitID.String()); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")

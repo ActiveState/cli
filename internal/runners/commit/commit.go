@@ -147,20 +147,30 @@ func (c *Commit) Run() (rerr error) {
 	}
 
 	// Get old buildplan.
-	commit, err := bp.FetchCommit(localCommitID, proj.Owner(), proj.Name(), nil)
+	oldCommit, err := bp.FetchCommit(localCommitID, proj.Owner(), proj.Name(), nil)
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch old commit")
 	}
-	oldBuildPlan := commit.BuildPlan()
+
+	// Fetch the impact report.
+	impactReport, err := bp.ImpactReport(&buildplanner.ImpactReportParams{
+		Owner:   c.prime.Project().Owner(),
+		Project: c.prime.Project().Name(),
+		Before:  oldCommit.BuildScript(),
+		After:   rtCommit.BuildScript(),
+	})
+	if err != nil {
+		return errs.Wrap(err, "Failed to fetch impact report")
+	}
 
 	pgSolve.Stop(locale.T("progress_success"))
 	pgSolve = nil
 
 	// Output dependency list.
-	dependencies.OutputChangeSummary(out, rtCommit.BuildPlan(), oldBuildPlan)
+	dependencies.OutputChangeSummary(c.prime.Output(), impactReport, rtCommit.BuildPlan())
 
 	// Report CVEs.
-	if err := cves.NewCveReport(c.prime).Report(rtCommit.BuildPlan(), oldBuildPlan); err != nil {
+	if err := cves.NewCveReport(c.prime).Report(impactReport); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 

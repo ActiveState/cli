@@ -1540,6 +1540,10 @@ err_main_jwt:
     State Tool could not obtain an authentication token from its internal service.
     Please try again or contact support if this issue persists.
     Error received: {{.V0}}
+err_pull_no_common_parent:
+  other: |
+    The local commit ID [NOTICE]{{.V0}}[/RESET] and latest remote commit ID [NOTICE]{{.V1}}[/RESET] have no common parent.
+    To review your project history run '[ACTIONABLE]state history[/RESET]'.
 refresh_runtime_uptodate:
   other: Your runtime is already up to date.
 warn_additional_requirements:
