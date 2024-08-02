@@ -315,7 +315,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Args() {
 	cmd := `if [ "$1" = "<3" ]; then echo heart; fi`
 	if runtime.GOOS == "windows" {
 		cmd = `@echo off
-      if "%1"=="<3" (echo heart)` // need to match indent of YAML below
+      if %1=="<3" (echo heart)` // need to match indent of YAML below
 	}
 	_, err = asyFile.WriteString(strings.TrimPrefix(fmt.Sprintf(`
   - name: args
@@ -326,12 +326,6 @@ func (suite *RunIntegrationTestSuite) TestRun_Args() {
 	suite.Require().NoError(err, "extra config is appended")
 
 	arg := "<3"
-	if runtime.GOOS == "windows" {
-		// The '<' needs to be escaped with '^', and I don't know why. There is no way around it.
-		// The other exec and shell integration tests that test arg passing do not need this escape.
-		// Only this batch test does.
-		arg = "^<3"
-	}
 	cp := ts.Spawn("run", "args", arg)
 	cp.Expect("heart", termtest.OptExpectTimeout(5*time.Second))
 }
