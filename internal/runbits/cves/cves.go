@@ -184,6 +184,7 @@ func (c *CveReport) summarizeCVEs(vulnerabilities model.VulnerableIngredientsByL
 	out.Print("")
 	out.Print("   " + locale.T("more_info_vulnerabilities"))
 	out.Print("   " + locale.T("disable_prompting_vulnerabilities"))
+	out.Print("")
 }
 
 func (c *CveReport) promptForSecurity() (bool, error) {
