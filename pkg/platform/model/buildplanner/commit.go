@@ -51,6 +51,16 @@ func (b *BuildPlanner) StageCommit(params StageCommitParams) (*Commit, error) {
 		return nil, processBuildPlannerError(err, "failed to stage commit")
 	}
 
+	// The BuildPlanner will return a build plan with a status of
+	// "planning" if the build plan is not ready yet. We need to
+	// poll the BuildPlanner until the build is ready.
+	if resp.Commit.Build.Status == raw.Planning {
+		resp.Commit.Build, err = b.pollBuildPlanned(resp.Commit.CommitID.String(), params.Owner, params.Project, nil)
+		if err != nil {
+			return nil, errs.Wrap(err, "failed to poll build plan")
+		}
+	}
+
 	if resp.Commit == nil {
 		return nil, errs.New("Staged commit is nil")
 	}
@@ -63,14 +73,8 @@ func (b *BuildPlanner) StageCommit(params StageCommitParams) (*Commit, error) {
 		return nil, errs.New("Staged commit does not contain commitID")
 	}
 
-	// The BuildPlanner will return a build plan with a status of
-	// "planning" if the build plan is not ready yet. We need to
-	// poll the BuildPlanner until the build is ready.
-	if resp.Commit.Build.Status == raw.Planning {
-		resp.Commit.Build, err = b.pollBuildPlanned(resp.Commit.CommitID.String(), params.Owner, params.Project, nil)
-		if err != nil {
-			return nil, errs.Wrap(err, "failed to poll build plan")
-		}
+	if response.IsErrorResponse(resp.Commit.Build.Type) {
+		return nil, response.ProcessBuildError(resp.Commit.Build, "Could not process error response from stage commit")
 	}
 
 	commit := resp.Commit

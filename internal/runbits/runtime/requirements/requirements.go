@@ -218,7 +218,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 	commit, err := bp.StageCommit(params)
 	if err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))
-		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")
+		return errs.Wrap(err, "Could not stage commit")
 	}
 
 	pg.Stop(locale.T("progress_success"))
