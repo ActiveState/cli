@@ -46,7 +46,7 @@ func New(path string) (*Runtime, error) {
 		return nil, errs.Wrap(err, "Could not create runtime directory")
 	}
 
-	runtimePath := path
+	runtimePath := path // for readability; if we need to pass more info to the depot, use a struct
 	depot, err := newDepot(runtimePath)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create depot")
