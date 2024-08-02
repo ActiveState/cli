@@ -3,6 +3,7 @@ package runtime
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -38,6 +39,15 @@ const (
 	deploymentTypeLink deploymentType = "link"
 	deploymentTypeCopy                = "copy"
 )
+
+type ErrVolumeMismatch struct {
+	DepotVolume string
+	PathVolume  string
+}
+
+func (e ErrVolumeMismatch) Error() string {
+	return fmt.Sprintf("volume mismatch: path volume is '%s', but depot volume is '%s'", e.PathVolume, e.DepotVolume)
+}
 
 type depot struct {
 	config    depotConfig
@@ -140,6 +150,10 @@ func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) 
 
 	if !d.Exists(id) {
 		return errs.New("artifact not found in depot")
+	}
+
+	if err := d.validateVolume(absoluteDest); err != nil {
+		return errs.Wrap(err, "volume validation failed")
 	}
 
 	// Collect artifact meta info
@@ -264,6 +278,20 @@ func (d *depot) Undeploy(id strfmt.UUID, relativeSrc, path string) error {
 
 	// Write changes to config
 	d.config.Deployments[id] = sliceutils.Filter(d.config.Deployments[id], func(d deployment) bool { return d.Path != path })
+
+	return nil
+}
+
+func (d *depot) validateVolume(absoluteDest string) error {
+	if runtime.GOOS != "windows" {
+		return nil
+	}
+
+	depotVolume := filepath.VolumeName(d.depotPath)
+	pathVolume := filepath.VolumeName(absoluteDest)
+	if pathVolume != depotVolume {
+		return &ErrVolumeMismatch{depotVolume, pathVolume}
+	}
 
 	return nil
 }
