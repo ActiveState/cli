@@ -185,7 +185,6 @@ func (r *RequirementOperation) Install(ts *time.Time, requirements []*Requiremen
 	solveSpinner.Stop(locale.T("progress_success"))
 
 	// Output change summary.
-	r.Output.Notice("") // blank line
 	dependencies.OutputChangeSummary(r.Output, impactReport, rtCommit.BuildPlan())
 
 	// Report CVEs.
