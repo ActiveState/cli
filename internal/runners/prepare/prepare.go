@@ -177,6 +177,8 @@ func InstalledPreparedFiles() ([]string, error) {
 		files = append(files, path)
 	}
 
+	files = append(files, extraInstalledPreparedFiles()...)
+
 	return files, nil
 }
 
