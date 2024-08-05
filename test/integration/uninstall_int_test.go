@@ -7,9 +7,11 @@ import (
 	"testing"
 	"time"
 
+	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/httputil"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
@@ -125,18 +127,22 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 		suite.Fail("State service executable should not exist after uninstall")
 	}
 
-	if runtime.GOOS == "linux" {
-		// When installed in a non-desktop environment (i.e. on a server), verify the user's ~/.profile was reverted.
-		homeDir, err := user.HomeDir()
-		suite.Require().NoError(err)
-		profile := filepath.Join(homeDir, ".profile")
-		suite.NotContains(string(fileutils.ReadFileUnsafe(profile)), svcExe, "autostart should not be configured for Linux server environment anymore")
-	}
+	// Verify state-svc autostart files are no longer present.
+	enabled, err := autostart.IsEnabled(svcExe, svcAutostart.Options)
+	suite.Require().NoError(err)
+	suite.Assert().False(enabled, "svc autostart is still enabled")
 
 	if runtime.GOOS == "darwin" {
 		if fileutils.DirExists(filepath.Join(binDir, "system")) {
 			suite.Fail("system directory should not exist after uninstall")
 		}
+	}
+
+	if runtime.GOOS == "windows" {
+		homeDir, err := user.HomeDir()
+		suite.Require().NoError(err)
+		shortcutDir := filepath.Join(homeDir, "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")
+		suite.NoDirExists(shortcutDir, "shortcut dir should not exist after uninstall")
 	}
 
 	if fileutils.DirExists(binDir) {

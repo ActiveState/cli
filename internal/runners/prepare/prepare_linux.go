@@ -31,7 +31,7 @@ func cleanOS() error {
 	}
 	// cleans ~/.profile if necessary
 	if err = autostart.Disable(svcApp.Path(), svcAutostart.Options); err != nil {
-		return errs.Wrap(err, "Failed to enable autostart for service app.")
+		return errs.Wrap(err, "Failed to disable autostart for service app.")
 	}
 
 	return nil

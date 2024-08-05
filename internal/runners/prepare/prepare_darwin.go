@@ -22,5 +22,14 @@ func (r *Prepare) prepareOS() error {
 }
 
 func cleanOS() error {
+	svcShortcut, err := svcApp.New()
+	if err != nil {
+		return locale.WrapError(err, "Could not get svc autostart shortcut")
+	}
+
+	if err = autostart.Disable(svcShortcut.Path(), svcAutostart.Options); err != nil {
+		return errs.Wrap(err, "Failed to disable autostart for service app.")
+	}
+
 	return nil
 }
