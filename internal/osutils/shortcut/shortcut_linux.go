@@ -105,3 +105,7 @@ StartupNotify=false
 Icon={{ .IconName }}
 Name[en_US]={{ .Name }}
 `, "\n")
+
+func Dir() (string, error) {
+	return "", nil // only applicable on Windows
+}

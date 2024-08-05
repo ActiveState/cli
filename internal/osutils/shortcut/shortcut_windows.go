@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/scriptfile"
 )
 
@@ -105,4 +106,12 @@ func (s *Shortcut) SetIconBlob(blob []byte) error {
 
 func (s *Shortcut) Path() string {
 	return filepath.Join(s.dir, s.name+".lnk")
+}
+
+func Dir() (string, error) {
+	home, err := user.HomeDir()
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to get home directory")
+	}
+	return filepath.Join(home, "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState"), nil
 }

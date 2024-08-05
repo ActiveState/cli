@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/httputil"
+	"github.com/ActiveState/cli/internal/osutils/shortcut"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
@@ -137,6 +138,12 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 		if fileutils.DirExists(filepath.Join(binDir, "system")) {
 			suite.Fail("system directory should not exist after uninstall")
 		}
+	}
+
+	if runtime.GOOS == "windows" {
+		shortcutDir, err := shortcut.Dir()
+		suite.Require().NoError(err)
+		suite.NoDirExists(shortcutDir, "shortcut dir should not exist after uninstall")
 	}
 
 	if fileutils.DirExists(binDir) {

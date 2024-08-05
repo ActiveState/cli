@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 	"os/user"
-	"path/filepath"
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -15,8 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
 )
-
-var shortcutDir = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")
 
 func (r *Prepare) prepareOS() error {
 	err := setStateProtocol()
@@ -41,12 +39,17 @@ func (r *Prepare) prepareOS() error {
 }
 
 func (r *Prepare) prepareStartShortcut() error {
+	shortcutDir, err := shortcut.Dir()
+	if err != nil {
+		return errs.Wrap(err, "Unable to determine shortcut directory")
+	}
+
 	if err := fileutils.MkdirUnlessExists(shortcutDir); err != nil {
 		return locale.WrapInputError(err, "err_preparestart_mkdir", "Could not create start menu entry: %s", shortcutDir)
 	}
 
 	sc := shortcut.New(shortcutDir, "Uninstall State Tool", r.subshell.Binary(), "/C \"state clean uninstall --prompt\"")
-	err := sc.Enable()
+	err = sc.Enable()
 	if err != nil {
 		return locale.WrapError(err, "err_preparestart_shortcut", "", sc.Path())
 	}

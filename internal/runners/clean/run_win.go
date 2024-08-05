@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/shortcut"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/scriptfile"
@@ -123,11 +124,16 @@ func removeInstall(logFile string, params *UninstallParams, cfg *config.Instance
 	if err != nil {
 		return errs.Wrap(err, "Could not get installation path")
 	}
+	shortcutDir, err := shortcut.Dir()
+	if err != nil {
+		return errs.Wrap(err, "Could not get shortcut directory")
+	}
 	paths := []string{
 		stateExec,
 		filepath.Join(installDir, installation.BinDirName),
 		filepath.Join(installDir, installation.InstallDirMarker), // should be after bin
 		installDir,
+		shortcutDir,
 	}
 	if params.All {
 		paths = append(paths, cfg.ConfigPath()) // also remove the config directory
