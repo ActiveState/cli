@@ -134,6 +134,7 @@ func GetCommit(
 	// Note: the Platform does not raise an error when requesting a commit ID that does not exist in
 	// a given project, so we have verify existence client-side. See DS-1705 (yes, DS, not DX).
 	var owner, name, nsString string
+	var localCommitID *strfmt.UUID
 	if namespaceProvided {
 		owner = namespace.Owner
 		name = namespace.Project
@@ -142,10 +143,11 @@ func GetCommit(
 		owner = pj.Owner()
 		name = pj.Name()
 		nsString = pj.NamespaceString()
-	}
-	localCommitID, err := localcommit.Get(pj.Path())
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get local commit")
+		commitID, err := localcommit.Get(pj.Path())
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get local commit")
+		}
+		localCommitID = &commitID
 	}
 	_, err = model.GetCommitWithinProjectHistory(commit.CommitID, owner, name, localCommitID, auth)
 	if err != nil {

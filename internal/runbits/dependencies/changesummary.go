@@ -68,6 +68,7 @@ func OutputChangeSummary(out output.Outputer, report *response.ImpactReportResul
 	}
 
 	// Output a summary of changes.
+	out.Notice("") // blank line
 	localeKey := "additional_dependencies"
 	if numIndirect > 0 {
 		localeKey = "additional_total_dependencies"
