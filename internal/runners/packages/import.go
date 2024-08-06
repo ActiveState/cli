@@ -174,7 +174,6 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	solveSpinner.Stop(locale.T("progress_success"))
 
 	// Output change summary.
-	out.Notice("") // blank line
 	dependencies.OutputChangeSummary(i.prime.Output(), impactReport, rtCommit.BuildPlan())
 
 	// Report CVEs.

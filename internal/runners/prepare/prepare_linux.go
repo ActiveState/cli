@@ -24,6 +24,10 @@ func (r *Prepare) prepareOS() error {
 	return nil
 }
 
+func extraInstalledPreparedFiles() []string {
+	return nil
+}
+
 func cleanOS() error {
 	svcApp, err := svcApp.New()
 	if err != nil {

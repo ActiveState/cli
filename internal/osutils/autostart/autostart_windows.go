@@ -59,8 +59,8 @@ func isEnabled(_ string, opts Options) (bool, error) {
 	return fileutils.FileExists(shortcutFilename(opts.Name)), nil
 }
 
-func autostartPath(name string, _ Options) (string, error) {
-	return shortcutFilename(name), nil
+func autostartPath(_ string, opts Options) (string, error) {
+	return shortcutFilename(opts.Name), nil
 }
 
 func upgrade(exec string, opts Options) error {
