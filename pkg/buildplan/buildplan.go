@@ -3,25 +3,24 @@ package buildplan
 import (
 	"encoding/json"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildplan/raw"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
-	"github.com/go-openapi/strfmt"
 )
 
 type BuildPlan struct {
-	platforms    []strfmt.UUID
-	artifacts    Artifacts
-	requirements Requirements
-	ingredients  Ingredients
-	raw          *raw.Build
+	legacyRecipeID strfmt.UUID // still used for buildlog streamer
+	platforms      []strfmt.UUID
+	artifacts      Artifacts
+	requirements   Requirements
+	ingredients    Ingredients
+	raw            *raw.Build
 }
 
 func Unmarshal(data []byte) (*BuildPlan, error) {
-	logging.Debug("Unmarshalling buildplan")
-
 	b := &BuildPlan{}
 
 	var rawBuild raw.Build
@@ -52,8 +51,6 @@ func (b *BuildPlan) Marshal() ([]byte, error) {
 // cleanup empty targets
 // The type aliasing in the query populates the response with emtpy targets that we should remove
 func (b *BuildPlan) cleanup() {
-	logging.Debug("Cleaning up build plan")
-
 	b.raw.Steps = sliceutils.Filter(b.raw.Steps, func(s *raw.Step) bool {
 		return s.StepID != ""
 	})
@@ -81,57 +78,6 @@ func (b *BuildPlan) Ingredients(filters ...filterIngredient) Ingredients {
 	return b.ingredients.Filter(filters...)
 }
 
-func (b *BuildPlan) DiffArtifacts(oldBp *BuildPlan, requestedOnly bool) ArtifactChangeset {
-	// Basic outline of what needs to happen here:
-	//   - add ArtifactID to the `Added` field if artifactID only appears in the the `new` buildplan
-	//   - add ArtifactID to the `Removed` field if artifactID only appears in the the `old` buildplan
-	//   - add ArtifactID to the `Updated` field if `ResolvedRequirements.feature` appears in both buildplans, but the resolved version has changed.
-
-	var new ArtifactNameMap
-	var old ArtifactNameMap
-
-	if requestedOnly {
-		new = b.RequestedArtifacts().ToNameMap()
-		old = oldBp.RequestedArtifacts().ToNameMap()
-	} else {
-		new = b.Artifacts().ToNameMap()
-		old = oldBp.Artifacts().ToNameMap()
-	}
-
-	var updated []ArtifactUpdate
-	var added []*Artifact
-	for name, artf := range new {
-		if artfOld, notNew := old[name]; notNew {
-			// The artifact name exists in both the old and new recipe, maybe it was updated though
-			if artfOld.ArtifactID == artf.ArtifactID {
-				continue
-			}
-			updated = append(updated, ArtifactUpdate{
-				From: artfOld,
-				To:   artf,
-			})
-
-		} else {
-			// If it's not an update it is a new artifact
-			added = append(added, artf)
-		}
-	}
-
-	var removed []*Artifact
-	for name, artf := range old {
-		if _, noDiff := new[name]; noDiff {
-			continue
-		}
-		removed = append(removed, artf)
-	}
-
-	return ArtifactChangeset{
-		Added:   added,
-		Removed: removed,
-		Updated: updated,
-	}
-}
-
 func (b *BuildPlan) Engine() types.BuildEngine {
 	buildEngine := types.Alternative
 	for _, s := range b.raw.Sources {
@@ -143,20 +89,13 @@ func (b *BuildPlan) Engine() types.BuildEngine {
 	return buildEngine
 }
 
-// RecipeID extracts the recipe ID from the BuildLogIDs.
+// LegacyRecipeID extracts the recipe ID from the BuildLogIDs.
 // We do this because if the build is in progress we will need to reciepe ID to
 // initialize the build log streamer.
 // This information will only be populated if the build is an alternate build.
 // This is specified in the build planner queries.
-func (b *BuildPlan) RecipeID() (strfmt.UUID, error) {
-	var result strfmt.UUID
-	for _, id := range b.raw.BuildLogIDs {
-		if result != "" && result.String() != id.ID {
-			return result, errs.New("Build plan contains multiple recipe IDs")
-		}
-		result = strfmt.UUID(id.ID)
-	}
-	return result, nil
+func (b *BuildPlan) LegacyRecipeID() strfmt.UUID {
+	return b.legacyRecipeID
 }
 
 func (b *BuildPlan) IsBuildReady() bool {

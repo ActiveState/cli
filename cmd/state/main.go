@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"runtime/debug"
@@ -32,7 +33,7 @@ import (
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/ActiveState/cli/internal/runbits/errors"
+	runbits_errors "github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcctl"
@@ -107,7 +108,7 @@ func main() {
 	// Run our main command logic, which is logic that defers to the error handling logic below
 	err = run(os.Args, isInteractive, cfg, out)
 	if err != nil {
-		exitCode, err = errors.ParseUserFacing(err)
+		exitCode, err = runbits_errors.ParseUserFacing(err)
 		if err != nil {
 			out.Error(err)
 		}
@@ -185,7 +186,8 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		out.Notice(locale.T("warning_activestate_project_env_var"))
 	}
 	pjPath, err := projectfile.GetProjectFilePath()
-	if err != nil && errs.Matches(err, &projectfile.ErrorNoProjectFromEnv{}) {
+	var errNoProjectFromEnv *projectfile.ErrorNoProjectFromEnv
+	if err != nil && errors.As(err, &errNoProjectFromEnv) {
 		// Fail if we are meant to inherit the projectfile from the environment, but the file doesn't exist
 		return err
 	}
@@ -234,7 +236,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	// Run the actual command
 	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, ipcClient, svcmodel, an), args...)
 
-	childCmd, err := cmds.Command().Find(args[1:])
+	childCmd, err := cmds.Command().FindChild(args[1:])
 	if err != nil {
 		logging.Debug("Could not find child command, error: %v", err)
 	}
@@ -243,23 +245,22 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	cmds.OnExecStart(msger.OnExecStart)
 	cmds.OnExecStop(msger.OnExecStop)
 
-	if childCmd != nil && !childCmd.SkipChecks() && !out.Type().IsStructured() {
-		// Auto update to latest state tool version
-		if updated, err := autoUpdate(svcmodel, args, cfg, an, out); err == nil && updated {
-			return nil // command will be run by updated exe
-		} else if err != nil {
-			multilog.Error("Failed to autoupdate: %v", err)
-		}
+	// Auto update to latest state tool version if possible.
+	if updated, err := autoUpdate(svcmodel, args, childCmd, cfg, an, out); err == nil && updated {
+		return nil // command will be run by updated exe
+	} else if err != nil {
+		multilog.Error("Failed to autoupdate: %v", err)
+	}
 
-		if childCmd.Name() != "update" && pj != nil && pj.IsLocked() {
-			if (pj.Version() != "" && pj.Version() != constants.Version) ||
-				(pj.Channel() != "" && pj.Channel() != constants.ChannelName) {
-				return errs.AddTips(
-					locale.NewInputError("lock_version_mismatch", "", pj.Source().Lock, constants.ChannelName, constants.Version),
-					locale.Tr("lock_update_legacy_version", constants.DocumentationURLLocking),
-					locale.T("lock_update_lock"),
-				)
-			}
+	// Check to see if this state tool version is different from the lock version.
+	if (childCmd == nil || !childCmd.SkipChecks()) && pj != nil && pj.IsLocked() {
+		if (pj.Version() != "" && pj.Version() != constants.Version) ||
+			(pj.Channel() != "" && pj.Channel() != constants.ChannelName) {
+			return errs.AddTips(
+				locale.NewInputError("lock_version_mismatch", "", pj.Source().Lock, constants.ChannelName, constants.Version),
+				locale.Tr("lock_update_legacy_version", constants.DocumentationURLLocking),
+				locale.T("lock_update_lock"),
+			)
 		}
 	}
 
@@ -272,7 +273,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		if !out.Type().IsStructured() {
 			err = errs.AddTips(err, locale.Tl("err_tip_run_help", "Run → '[ACTIONABLE]state {{.V0}}--help[/RESET]' for general help", cmdName))
 		}
-		errors.ReportError(err, cmds.Command(), an)
+		runbits_errors.ReportError(err, cmds.Command(), an)
 	}
 
 	return err

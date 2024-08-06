@@ -21,25 +21,12 @@ func (suite *ProjectsIntegrationTestSuite) TestProjects() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/small-python"))
-	cp.ExpectExitCode(0)
-	cp = ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/Python3"))
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Empty")
 	cp.ExpectExitCode(0)
 
 	// Verify local checkouts and executables are grouped together under projects.
-	cp = ts.SpawnWithOpts(e2e.OptArgs("projects"))
-	cp.Expect("Python3")
-	cp.Expect("Local Checkout")
-	if runtime.GOOS != "windows" {
-		cp.Expect(ts.Dirs.Work)
-	} else {
-		// Windows uses the long path here.
-		longPath, _ := fileutils.GetLongPathName(ts.Dirs.Work)
-		cp.Expect(longPath)
-	}
-	cp.Expect("Executables")
-	cp.Expect(ts.Dirs.Cache)
-	cp.Expect("small-python")
+	cp = ts.Spawn("projects")
+	cp.Expect("Empty")
 	cp.Expect("Local Checkout")
 	if runtime.GOOS != "windows" {
 		cp.Expect(ts.Dirs.Work)
@@ -58,9 +45,7 @@ func (suite *ProjectsIntegrationTestSuite) TestJSON() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python")
-	cp.ExpectExitCode(0)
-	cp = ts.Spawn("checkout", "ActiveState-CLI/Python3")
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Empty")
 	cp.ExpectExitCode(0)
 	cp = ts.Spawn("projects", "-o", "json")
 	cp.Expect(`[{"name":`)
@@ -87,8 +72,8 @@ func (suite *ProjectsIntegrationTestSuite) TestEdit_Name() {
 	// What we expect the project name to be and what we want to change it to.
 	// This can change if the test failed previously.
 	var (
-		originalName = fmt.Sprintf("Edit-Test-%s", runtime.GOOS)
-		newName      = fmt.Sprintf("Edit-Rename-%s", runtime.GOOS)
+		originalName = fmt.Sprintf("Edit-Test2-%s", runtime.GOOS)
+		newName      = fmt.Sprintf("Edit-Rename2-%s", runtime.GOOS)
 	)
 
 	cp := ts.Spawn("checkout", fmt.Sprintf("ActiveState-CLI/%s", originalName))
@@ -169,9 +154,9 @@ func (suite *ProjectsIntegrationTestSuite) TestMove() {
 	ts.LoginAsPersistentUser()
 
 	// Just test interactivity, since we only have one integration test org.
-	cp := ts.Spawn("projects", "move", "ActiveState-CLI/small-python", "ActiveState-CLI")
+	cp := ts.Spawn("projects", "move", "ActiveState-CLI/Empty", "ActiveState-CLI")
 	cp.Expect("You are about to move")
-	cp.Expect("ActiveState-CLI/small-python")
+	cp.Expect("ActiveState-CLI/Empty")
 	cp.Expect("ActiveState-CLI")
 	cp.Expect("Continue? (y/N)")
 	cp.SendLine("n")

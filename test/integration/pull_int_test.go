@@ -28,11 +28,11 @@ func (suite *PullIntegrationTestSuite) TestPull() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/Python3", "59404293-e5a9-4fd0-8843-77cd4761b5b5")
+	ts.PrepareProject("ActiveState-CLI/Empty", "265f9914-ad4d-4e0a-a128-9d4e8c5db820")
 
 	cp := ts.Spawn("pull")
 	cp.Expect("Operating on project")
-	cp.Expect("ActiveState-CLI/Python3")
+	cp.Expect("ActiveState-CLI/Empty")
 	cp.Expect("activestate.yaml has been updated")
 	cp.ExpectExitCode(0)
 
@@ -45,21 +45,21 @@ func (suite *PullIntegrationTestSuite) TestPull() {
 
 func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	suite.OnlyRunForTags(tagsuite.Pull)
-	unPulledCommit := "882ae76e-fbb7-4989-acc9-9a8b87d49388"
+	unPulledCommit := "8c2537cc-0f49-4fdf-86d4-f7ed8df6a0ae"
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/cli", unPulledCommit)
+	ts.PrepareProject("ActiveState-CLI/Empty", unPulledCommit)
 
 	ts.LoginAsPersistentUser()
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
+	cp := ts.Spawn("push")
 	cp.Expect("Your project has new changes available")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 
-	cp = ts.SpawnWithOpts(e2e.OptArgs("pull"))
+	cp = ts.Spawn("pull")
 	cp.Expect("Merging history")
 	cp.ExpectExitCode(0)
 
@@ -82,15 +82,14 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	cp := ts.Spawn("config", "set", constants.OptinBuildscriptsConfig, "true")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("checkout", "ActiveState-CLI/Merge#447b8363-024c-4143-bf4e-c96989314fdf", ".")
-	cp.Expect("Skipping runtime setup")
+	cp = ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("checkout", "ActiveState-CLI/Merge2#6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8", ".")
 	cp.Expect("Checked out")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "requests"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp = ts.Spawn("install", "shared/zlib")
 	cp.Expect("Package added", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
@@ -102,7 +101,7 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 
 	cp = ts.Spawn("pull")
 	cp.Expect("The following changes will be merged")
-	cp.Expect("requests (2.30.0 → Auto)")
+	cp.Expect("zlib (1.3.1 → Auto)")
 	cp.Expect("Unable to automatically merge build scripts")
 	cp.ExpectNotExitCode(0)
 	ts.IgnoreLogErrors()
@@ -118,7 +117,7 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	// Note: even though the buildscript merge failed, a merge commit was still created (we just
 	// ignore it). After resolving buildscript conflicts, `state commit` should always have something
 	// new to commit.
-	remoteHeadCommit := "d908a758-6a81-40d4-b0eb-87069cd7f07d"
+	remoteHeadCommit := "2c461e7c-43d2-4e43-b169-a255c305becd"
 	commit, err := localcommit.Get(ts.Dirs.Work)
 	suite.Require().NoError(err)
 	suite.Assert().Equal(remoteHeadCommit, commit.String(), "localcommit should have been updated to remote commit")

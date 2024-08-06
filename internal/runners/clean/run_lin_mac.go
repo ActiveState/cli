@@ -205,14 +205,13 @@ func cleanInstallDir(dir string, cfg *config.Instance) error {
 	}
 
 	var asFiles = []string{
-		installation.InstallDirMarker,
 		constants.StateInstallerCmd + osutils.ExeExtension,
 	}
 
-	// Remove all of the state tool executables and finally the
-	// bin directory
+	// Remove all of the state tool executables, bin directory, and finally the install marker.
 	asFiles = append(asFiles, execs...)
 	asFiles = append(asFiles, installation.BinDirName)
+	asFiles = append(asFiles, installation.InstallDirMarker)
 
 	for _, file := range asFiles {
 		f := filepath.Join(dir, file)

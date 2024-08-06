@@ -8,8 +8,6 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/testhelpers/suite"
-
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	"github.com/ActiveState/cli/internal/config"
@@ -21,9 +19,10 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	rt "github.com/ActiveState/cli/pkg/platform/runtime/target"
+	rt "github.com/ActiveState/cli/pkg/runtime"
+	"github.com/ActiveState/cli/pkg/runtime_helpers"
 )
 
 type PrepareIntegrationTestSuite struct {
@@ -93,6 +92,12 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 		profileContents := fileutils.ReadFileUnsafe(profile)
 		suite.NotContains(profileContents, app.Exec, "autostart should not be configured for Linux server environment anymore")
 	}
+
+	// Verify the Windows shortcuts were installed.
+	if runtime.GOOS == "windows" {
+		shortcutDir := filepath.Join(ts.Dirs.HomeDir, "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")
+		suite.DirExists(shortcutDir, "shortcut dir should exist after prepare")
+	}
 }
 
 func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
@@ -119,14 +124,12 @@ func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
 
 func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	suite.OnlyRunForTags(tagsuite.Prepare)
-	ts := e2e.New(suite.T(), true, constants.DisableRuntime+"=false")
+	ts := e2e.New(suite.T(), true)
 	err := ts.ClearCache()
 	suite.Require().NoError(err)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work, "--default"),
-	)
+	cp := ts.Spawn("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work, "--default")
 	cp.Expect("This project will always be available for use")
 	cp.Expect("Downloading")
 	cp.Expect("Installing")
@@ -146,20 +149,19 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	suite.Assert().NoError(err, "should have removed executor directory, to ensure that it gets re-created")
 
 	// check existens of exec dir
-	targetDir := rt.ProjectDirToTargetDir(ts.Dirs.Work, ts.Dirs.Cache)
-	projectExecDir := setup.ExecDir(targetDir)
+	targetDir := filepath.Join(ts.Dirs.Cache, runtime_helpers.DirNameFromProjectDir(ts.Dirs.Work))
+	projectExecDir := rt.ExecutorsPath(targetDir)
 	suite.DirExists(projectExecDir)
 
-	// remove complete marker to force re-creation of executors
-	err = os.Remove(filepath.Join(targetDir, constants.LocalRuntimeEnvironmentDirectory, constants.RuntimeInstallationCompleteMarker))
-	suite.Assert().NoError(err, "removal of complete marker should have worked")
+	// Invalidate hash
+	hashPath := filepath.Join(targetDir, ".activestate", "hash.txt")
+	suite.Require().NoError(fileutils.WriteFile(hashPath, []byte("bogus")))
 
 	cp = ts.Spawn("_prepare")
 	cp.ExpectExitCode(0)
 
-	suite.FileExists(filepath.Join(globalExecDir, "python3"+osutils.ExeExtension))
-	err = os.RemoveAll(projectExecDir)
-	suite.Assert().NoError(err, "should have removed executor directory, to ensure that it gets re-created")
+	suite.Require().FileExists(filepath.Join(globalExecDir, "python3"+osutils.ExeExtension), ts.DebugMessage(""))
+	suite.Require().NoError(os.RemoveAll(projectExecDir), "should have removed executor directory, to ensure that it gets re-created")
 
 	cp = ts.Spawn("activate")
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)

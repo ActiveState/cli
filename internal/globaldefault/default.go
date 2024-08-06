@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
@@ -13,10 +14,9 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/svcctl"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/ActiveState/cli/pkg/executors"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/runtime"
 )
 
 type DefaultConfigurer interface {
@@ -69,19 +69,16 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_globaldefault_prepare", "Could not prepare environment.")
 	}
 
-	exes, err := runtime.ExecutablePaths()
+	env := runtime.Env(false)
+	exes, err := osutils.ExecutablePaths(env.Variables)
 	if err != nil {
-		return locale.WrapError(err, "err_globaldefault_rtexes", "Could not retrieve runtime executables")
+		return errs.Wrap(err, "Could not get executable paths")
 	}
 
-	env, err := runtime.Env(false, false)
-	if err != nil {
-		return locale.WrapError(err, "err_globaldefault_rtenv", "Could not construct runtime environment variables")
-	}
-
-	target := target.NewProjectTargetCache(proj, storage.GlobalBinDir(), nil, target.TriggerActivate)
 	execInit := executors.New(BinDir())
-	if err := execInit.Apply(svcctl.NewIPCSockPathFromGlobals().String(), target, env, exes); err != nil {
+	if err := execInit.Apply(svcctl.NewIPCSockPathFromGlobals().String(),
+		executors.NewTarget("", proj.Owner(), proj.Name(), storage.GlobalBinDir()),
+		env.Variables, exes); err != nil {
 		return locale.WrapError(err, "err_globaldefault_fw", "Could not set up forwarders")
 	}
 

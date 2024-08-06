@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/termutils"
 	"github.com/go-openapi/strfmt"
 	"github.com/vbauerster/mpb/v7"
 	"github.com/vbauerster/mpb/v7/decor"
+
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/termutils"
 )
 
 const progressBarWidth = 40
@@ -45,21 +45,30 @@ func (p *ProgressDigester) trimName(name string) string {
 
 // addTotalBar adds a bar counting a number of sub-events adding up to total
 func (p *ProgressDigester) addTotalBar(name string, total int64, options ...mpb.BarOption) *bar {
-	logging.Debug("Adding total bar: %s", name)
 	return p.addBar(name, total, false, append(options, mpb.BarFillerClearOnComplete())...)
 }
 
 // addArtifactBar adds a bar counting the progress in a specific artifact setup step
 func (p *ProgressDigester) addArtifactBar(id strfmt.UUID, step step, total int64, countsBytes bool) error {
 	name := locale.T("artifact_unknown_name")
-	if aname, ok := p.artifacts[id]; ok {
-		name = aname
+	switch step {
+	case StepBuild:
+		if a, ok := p.buildsExpected[id]; ok {
+			name = a.NameAndVersion()
+		}
+	case StepDownload, StepUnpack:
+		if a, ok := p.downloadsExpected[id]; ok {
+			name = a.NameAndVersion()
+		}
+	case StepInstall:
+		if a, ok := p.installsExpected[id]; ok {
+			name = a.NameAndVersion()
+		}
 	}
-	logging.Debug("Adding %s artifact bar: %s", step.verb, name)
 
 	aStep := artifactStep{id, step}
 	if _, ok := p.artifactBars[aStep.ID()]; ok {
-		return errs.New("Artifact bar already exists")
+		return errs.New("Artifact bar %s for step %s already exists", id, step.name)
 	}
 	p.artifactBars[aStep.ID()] = p.addBar(fmt.Sprintf("  - %s %s", step.verb, name), total, countsBytes, mpb.BarRemoveOnComplete(), mpb.BarPriority(step.priority+len(p.artifactBars)))
 	return nil
@@ -73,25 +82,11 @@ func (p *ProgressDigester) updateArtifactBar(id strfmt.UUID, step step, inc int)
 	}
 	p.artifactBars[aStep.ID()].IncrBy(inc)
 
-	name := locale.T("artifact_unknown_name")
-	if aname, ok := p.artifacts[id]; ok {
-		name = aname
-	}
-	if p.artifactBars[aStep.ID()].Current() >= p.artifactBars[aStep.ID()].total {
-		logging.Debug("%s Artifact bar reached total: %s", step.verb, name)
-	}
-
 	return nil
 }
 
 // dropArtifactBar removes an artifact bar from the progress display
 func (p *ProgressDigester) dropArtifactBar(id strfmt.UUID, step step) error {
-	name := locale.T("artifact_unknown_name")
-	if aname, ok := p.artifacts[id]; ok {
-		name = aname
-	}
-	logging.Debug("Dropping %s artifact bar: %s", step.verb, name)
-
 	aStep := artifactStep{id, step}
 	if _, ok := p.artifactBars[aStep.ID()]; !ok {
 		return errs.New("Artifact bar doesn't exists")
@@ -122,6 +117,25 @@ func (p *ProgressDigester) addBar(name string, total int64, countsBytes bool, op
 	)
 
 	return &bar{p.mainProgress.AddBar(total, options...), time.Now(), total}
+}
+
+func (p *ProgressDigester) artifactName(id strfmt.UUID, step step) string {
+	name := locale.T("artifact_unknown_name")
+	switch step {
+	case StepBuild:
+		if a, ok := p.buildsExpected[id]; ok {
+			name = a.NameAndVersion()
+		}
+	case StepDownload, StepUnpack:
+		if a, ok := p.downloadsExpected[id]; ok {
+			name = a.NameAndVersion()
+		}
+	case StepInstall:
+		if a, ok := p.installsExpected[id]; ok {
+			name = a.NameAndVersion()
+		}
+	}
+	return name
 }
 
 // MaxNameWidth returns the maximum width to be used for a name in a progress bar

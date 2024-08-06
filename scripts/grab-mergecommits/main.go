@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -96,7 +97,8 @@ func orderCommits(hashes []string) []string {
 		handled := false
 		for oidx, ohash := range ordered {
 			code, _, err := osutils.Execute("git", []string{"merge-base", "--is-ancestor", hash, ohash}, nil)
-			if err != nil && !errs.Matches(err, &exec.ExitError{}) {
+			var errExit *exec.ExitError
+			if err != nil && !errors.As(err, &errExit) {
 				panic(err)
 			}
 			if code == 0 {

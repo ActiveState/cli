@@ -32,17 +32,19 @@ echo "Waiting for process %exe% with PID %pid% to end..." >> %logfile%
 echo "Process %exe% has ended" >> %logfile%
 set success=true
 for %%i in (%paths%) do (
-    echo "Attempting to remove path %%i" >> %logfile%
-    if exist "%%i\" (
-        rmdir /s /q %%i 2>>&1 >> %logfile%
-    ) else if exist "%%i" (
-        del /f /q %%i 2>>&1 >> %logfile%
-    )
-    if exist "%%i" (
-        echo "Could not remove path: %%i" >> %logfile%
-        set success=false
-    ) else (
-        echo "Successfully removed path %%i" >> %logfile%
+    if "%success%"=="true" (
+        echo "Attempting to remove path %%i" >> %logfile%
+        if exist "%%i\" (
+            rmdir /s /q %%i 2>>&1 >> %logfile%
+        ) else if exist "%%i" (
+            del /f /q %%i 2>>&1 >> %logfile%
+        )
+        if exist "%%i" (
+            echo "Could not remove path: %%i" >> %logfile%
+            set success=false
+        ) else (
+            echo "Successfully removed path %%i" >> %logfile%
+        )
     )
 )
 

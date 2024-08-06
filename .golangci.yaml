@@ -32,7 +32,6 @@ linters-settings:
       - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).Wait
       - (*github.com/ActiveState/cli/internal/testhelpers/e2e.Session).ClearCache
       - (*github.com/ActiveState/cli/internal/testhelpers/e2e.Dirs).Close
-      - (*github.com/ActiveState/cli/pkg/platform/runtime/artifactcache.testArtifactCache).Store
       - github.com/ActiveState/cli/internal/testhelpers/osutil.RemoveConfigFile
       - (*github.com/ActiveState/cli/internal/logging.standardHandler).Emit
       - (*github.com/ActiveState/cli/internal/logging.fileHandler).Emit

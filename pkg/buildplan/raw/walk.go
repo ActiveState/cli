@@ -1,10 +1,10 @@
 package raw
 
 import (
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/go-openapi/strfmt"
+
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 )
 
 type walkFunc func(node interface{}, parent *Artifact) error
@@ -140,10 +140,11 @@ func (b *Build) walkNodeViaRuntimeDeps(node interface{}, parent *Artifact, walk 
 
 	ar, ok := node.(*Artifact)
 	if !ok {
-		// Technically this should never happen, but because we allow evaluating any part of a buildscript we can
-		// encounter scenarios where we have top level sources. In this case we can simply skip them, because the
-		// remaining top level nodes still cover our use-cases.
-		logging.Debug("node '%#v' is not an artifact, skipping", node)
+		// This can only happen in two scenarios that we're aware of:
+		// 1. Because we allow evaluating any part of a buildscript we can encounter scenarios where we have top level
+		// sources.
+		// 2. We are dealing with an old camel build.
+		// In these cases we can simply skip them, because the remaining top level nodes still cover our use-cases.
 		return nil
 	}
 

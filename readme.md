@@ -8,6 +8,7 @@ State Tool has a stated goal of "Replacing the Makefile". We're making progress,
 ## Installation
 
 ### Linux & macOS
+
 In your favourite terminal:
 
 ```
@@ -15,6 +16,7 @@ sh <(curl -q https://platform.activestate.com/dl/cli/install.sh)
 ```
 
 ### Windows
+
 In Powershell with Administrator privileges:
 
 ```
@@ -22,11 +24,13 @@ IEX(New-Object Net.WebClient).downloadString('https://platform.activestate.com/d
 ```
 
 ## Usage
+
 For usage information please refer to the [State Tool Documentation](http://docs.activestate.com/platform/state/).
 
 ## Development
 
 ### Requirements
+
 * Go 1.16 or above
 
 ### Building & Testing

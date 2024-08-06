@@ -22,6 +22,10 @@ import (
 
 // Run contains the run execution context.
 type Run struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	auth      *authentication.Auth
 	out       output.Outputer
 	proj      *project.Project
@@ -44,6 +48,7 @@ type primeable interface {
 // New constructs a new instance of Run.
 func New(prime primeable) *Run {
 	return &Run{
+		prime,
 		prime.Auth(),
 		prime.Output(),
 		prime.Project(),
@@ -82,7 +87,7 @@ func (r *Run) Run(name string, args []string) error {
 		return locale.NewInputError("error_state_run_unknown_name", "", name)
 	}
 
-	scriptrunner := scriptrun.New(r.auth, r.out, r.subshell, r.proj, r.cfg, r.analytics, r.svcModel)
+	scriptrunner := scriptrun.New(r.prime)
 	if !script.Standalone() && scriptrunner.NeedsActivation() {
 		if err := scriptrunner.PrepareVirtualEnv(); err != nil {
 			return locale.WrapError(err, "err_script_run_preparevenv", "Could not prepare virtual environment.")

@@ -4,21 +4,20 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/runbits/org"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 )
 
 func rationalizeError(owner, project string, rerr *error) {
 	var pcErr *bpResp.ProjectCreatedError
-	var errArtifactSetup *setup.ArtifactSetupErrors
 	var projectExistsErr *errProjectExists
 	var unrecognizedLanguageErr *errUnrecognizedLanguage
+	var ownerNotFoundErr *org.ErrOwnerNotFound
 
 	switch {
 	case rerr == nil:
@@ -43,9 +42,15 @@ func rationalizeError(owner, project string, rerr *error) {
 			errs.SetInput(),
 		)
 
-	case errors.Is(*rerr, errNoOwner):
+	case errors.As(*rerr, &ownerNotFoundErr):
 		*rerr = errs.WrapUserFacing(*rerr,
-			locale.Tr("err_init_invalid_org", owner),
+			locale.Tr("err_init_invalid_org", ownerNotFoundErr.DesiredOwner),
+			errs.SetInput(),
+		)
+
+	case errors.Is(*rerr, org.ErrNoOwner):
+		*rerr = errs.WrapUserFacing(*rerr,
+			locale.Tl("err_init_cannot_find_org", "Please specify an owner for the project to initialize."),
 			errs.SetInput(),
 		)
 
@@ -76,21 +81,6 @@ func rationalizeError(owner, project string, rerr *error) {
 				locale.Tl("err_create_project_not_found", "Could not create project because the organization '{{.V0}}' was not found.", owner),
 				errs.SetInput(),
 				errs.SetTips(locale.T("err_init_authenticated")))
-		}
-
-	// If there was an artifact download error, say so, rather than reporting a generic "could not
-	// update runtime" error.
-	case errors.As(*rerr, &errArtifactSetup):
-		for _, serr := range errArtifactSetup.Errors() {
-			if !errs.Matches(serr, &setup.ArtifactDownloadError{}) {
-				continue
-			}
-			*rerr = errs.WrapUserFacing(*rerr,
-				locale.Tl("err_init_download", "Your project could not be created because one or more artifacts failed to download."),
-				errs.SetInput(),
-				errs.SetTips(locale.Tr("err_user_network_solution", constants.ForumsURL)),
-			)
-			break // it only takes one download failure to report the runtime failure as due to download error
 		}
 
 	}

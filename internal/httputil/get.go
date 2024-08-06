@@ -17,7 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/retryhttp"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events/progress"
+	"github.com/ActiveState/cli/pkg/runtime/events/progress"
 )
 
 // Get takes a URL and returns the contents as bytes
@@ -81,7 +81,7 @@ func httpGetWithProgressRetry(url string, prg progress.Reporter, attempt int, re
 	var src io.Reader = resp.Body
 	defer resp.Body.Close()
 
-	if prg != nil {
+	if prg != nil && attempt == 1 {
 		if err := prg.ReportSize(total); err != nil {
 			return nil, errs.Wrap(err, "Could not report size")
 		}

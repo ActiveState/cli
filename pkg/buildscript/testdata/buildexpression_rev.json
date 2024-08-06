@@ -1,0 +1,24 @@
+{
+  "let": {
+    "runtime": {
+      "solve_legacy": {
+        "at_time": "$at_time",
+        "build_flags": [],
+        "camel_flags": [],
+        "platforms": [
+          "96b7e6f2-bebf-564c-bc1c-f04482398f38"
+        ],
+        "requirements": [
+          {
+            "Revision": {
+              "name": "revision-pkg",
+              "revision_id": "00000000-0000-0000-0000-000000000000"
+            }
+          }
+        ],
+        "solver_version": null
+      }
+    },
+    "in": "$runtime"
+  }
+}

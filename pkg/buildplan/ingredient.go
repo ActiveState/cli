@@ -58,6 +58,31 @@ func (i Ingredients) ToNameMap() IngredientNameMap {
 	return result
 }
 
+// CommonRuntimeDependencies returns the set of runtime dependencies that are common between all ingredients.
+// For example, given a set of python ingredients this will return at the very least the python language ingredient.
+func (i Ingredients) CommonRuntimeDependencies() Ingredients {
+	counts := map[strfmt.UUID]int{}
+
+	for _, ig := range i {
+		runtimeDeps := ig.RuntimeDependencies(true)
+		for _, rd := range runtimeDeps {
+			if _, ok := counts[rd.IngredientID]; !ok {
+				counts[rd.IngredientID] = 0
+			}
+			counts[rd.IngredientID]++
+		}
+	}
+
+	common := Ingredients{}
+	for _, ig := range i {
+		if counts[ig.IngredientID] == len(i) {
+			common = append(common, ig)
+		}
+	}
+
+	return common
+}
+
 func (i *Ingredient) RuntimeDependencies(recursive bool) Ingredients {
 	dependencies := i.runtimeDependencies(recursive, make(map[strfmt.UUID]struct{}))
 	return sliceutils.UniqueByProperty(dependencies, func(i *Ingredient) any { return i.IngredientID })

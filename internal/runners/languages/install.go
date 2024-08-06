@@ -3,12 +3,12 @@ package languages
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/internal/runbits/runtime/requirements"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/internal/runbits/requirements"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"

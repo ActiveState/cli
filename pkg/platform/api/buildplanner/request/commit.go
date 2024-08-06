@@ -29,6 +29,7 @@ query ($commitID: String!, $organization: String!, $project: String!, $target: S
           __typename
           expr
           commitId
+          parentId
           atTime
           build(target: $target) {
             __typename

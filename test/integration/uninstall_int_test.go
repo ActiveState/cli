@@ -51,7 +51,6 @@ func (suite *UninstallIntegrationTestSuite) install(ts *e2e.Session) string {
 	cmd := "bash"
 	opts := []e2e.SpawnOptSetter{
 		e2e.OptArgs(script, appInstallDir, "-n"),
-		e2e.OptAppendEnv(constants.DisableRuntime + "=false"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=FOO", constants.OverrideSessionTokenEnvVarName)),
 	}
@@ -68,7 +67,7 @@ func (suite *UninstallIntegrationTestSuite) install(ts *e2e.Session) string {
 }
 
 func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	appInstallDir := suite.install(ts)
@@ -138,6 +137,11 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 		if fileutils.DirExists(filepath.Join(binDir, "system")) {
 			suite.Fail("system directory should not exist after uninstall")
 		}
+	}
+
+	if runtime.GOOS == "windows" {
+		shortcutDir := filepath.Join(ts.Dirs.HomeDir, "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")
+		suite.NoDirExists(shortcutDir, "shortcut dir should not exist after uninstall")
 	}
 
 	if fileutils.DirExists(binDir) {

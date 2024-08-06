@@ -175,7 +175,7 @@ func (p *PackageValueNoVersion) Set(s string) error {
 		return errs.Wrap(err, "PackageValue.Set failed")
 	}
 	if p.Version != "" {
-		return locale.NewInputError("err_package_value_no_version", "Specifying a version is not supported, package format should be '[<namespace>/]<name>'")
+		return locale.NewInputError("err_package_value_no_version", "Specifying a version is not supported. Package format should be '[<namespace>/]<name>'")
 	}
 	return nil
 }

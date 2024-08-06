@@ -10,14 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/testhelpers/suite"
-
 	"github.com/ActiveState/termtest"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -26,15 +24,14 @@ type RunIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *RunIntegrationTestSuite) createProjectFile(ts *e2e.Session, pythonVersion int) {
+func (suite *RunIntegrationTestSuite) createProjectFile(ts *e2e.Session, name, commitID string) {
 	root := environment.GetRootPathUnsafe()
 	interruptScript := filepath.Join(root, "test", "integration", "assets", "run", "interrupt.go")
 	err := fileutils.CopyFile(interruptScript, filepath.Join(ts.Dirs.Work, "interrupt.go"))
 	suite.Require().NoError(err)
 
-	// ActiveState-CLI/Python3 is just a place-holder that is never used
 	configFileContent := strings.TrimPrefix(fmt.Sprintf(`
-project: https://platform.activestate.com/ActiveState-CLI/Python%d
+project: https://platform.activestate.com/%s
 scripts:
   - name: test-interrupt
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
@@ -70,10 +67,10 @@ scripts:
       exit 123
     standalone: true
     language: bash
-`, pythonVersion), "\n")
+`, name), "\n")
 
 	ts.PrepareActiveStateYAML(configFileContent)
-	ts.PrepareCommitIdFile("fbc613d6-b0b1-4f84-b26e-4aa5869c4e54")
+	ts.PrepareCommitIdFile(commitID)
 }
 
 func (suite *RunIntegrationTestSuite) SetupTest() {
@@ -105,15 +102,17 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.createProjectFile(ts, 3)
+	suite.createProjectFile(ts, "ActiveState-CLI/Empty", "6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8")
 
 	cp := ts.Spawn("activate")
-	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
-	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
+	cp.Expect("Activated")
+	cp.ExpectInput()
 
+	// We're on Linux CI, so it's okay to use the OS's installed Python for this test.
+	// It's costly to source our own for this test.
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", ts.Exe))
 	cp.Expect("Operating on project")
-	cp.Expect("ActiveState-CLI/Python3")
+	cp.Expect("ActiveState-CLI/Empty")
 	cp.Expect("3")
 
 	cp.SendLine(fmt.Sprintf("%s run test-interrupt", cp.Executable()))
@@ -142,11 +141,11 @@ func (suite *RunIntegrationTestSuite) TestScriptBashSubshell() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.createProjectFile(ts, 3)
+	suite.createProjectFile(ts, "ActiveState-CLI/Empty", "6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8")
 
 	cp := ts.SpawnWithOpts(e2e.OptArgs("activate"), e2e.OptAppendEnv("SHELL=bash"))
-	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
-	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
+	cp.Expect("Activated")
+	cp.ExpectInput()
 
 	cp.SendLine("helloWorld")
 	cp.Expect("Hello World!")
@@ -163,7 +162,7 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 	}
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	suite.createProjectFile(ts, 3)
+	suite.createProjectFile(ts, "ActiveState-CLI/Empty", "6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8")
 
 	cp := ts.Spawn("run", "test-interrupt")
 	cp.Expect("Start of script")
@@ -184,9 +183,7 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 	}
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	suite.createProjectFile(ts, 3)
-
-	ts.LoginAsPersistentUser()
+	suite.createProjectFile(ts, "ActiveState-CLI/Empty", "6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8")
 
 	cp := ts.Spawn("run", "test-interrupt")
 	cp.Expect("Start of script")
@@ -206,7 +203,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Help() {
 	suite.OnlyRunForTags(tagsuite.Run)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	suite.createProjectFile(ts, 3)
+	suite.createProjectFile(ts, "ActiveState-CLI/Empty", "6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8")
 
 	cp := ts.Spawn("run", "-h")
 	cp.Expect("Usage")
@@ -218,7 +215,7 @@ func (suite *RunIntegrationTestSuite) TestRun_ExitCode() {
 	suite.OnlyRunForTags(tagsuite.Run, tagsuite.ExitCode)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	suite.createProjectFile(ts, 3)
+	suite.createProjectFile(ts, "ActiveState-CLI/Empty", "6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8")
 
 	cp := ts.Spawn("run", "nonZeroExit")
 	cp.ExpectExitCode(123)
@@ -229,12 +226,9 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.createProjectFile(ts, 2)
+	suite.createProjectFile(ts, "ActiveState-CLI/Python2", "fbc613d6-b0b1-4f84-b26e-4aa5869c4e54")
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("activate"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp := ts.Spawn("activate")
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
 
@@ -251,7 +245,7 @@ func (suite *RunIntegrationTestSuite) TestRun_DeprecatedLackingLanguage() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.createProjectFile(ts, 3)
+	suite.createProjectFile(ts, "ActiveState-CLI/Empty", "6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8")
 
 	cp := ts.Spawn("run", "helloWorld")
 	cp.Expect("Deprecation Warning", termtest.OptExpectTimeout(5*time.Second))
@@ -263,7 +257,7 @@ func (suite *RunIntegrationTestSuite) TestRun_BadLanguage() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.createProjectFile(ts, 3)
+	suite.createProjectFile(ts, "ActiveState-CLI/Empty", "6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8")
 
 	asyFilename := filepath.Join(ts.Dirs.Work, "activestate.yaml")
 	asyFile, err := os.OpenFile(asyFilename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -294,10 +288,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Perl_Variable() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate"),
-		e2e.OptAppendEnv(
-			constants.DisableRuntime+"=false",
-			"PERL_VERSION=does_not_exist",
-		),
+		e2e.OptAppendEnv("PERL_VERSION=does_not_exist"),
 	)
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
@@ -313,7 +304,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Args() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.createProjectFile(ts, 3)
+	suite.createProjectFile(ts, "ActiveState-CLI/Empty", "6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8")
 
 	asyFilename := filepath.Join(ts.Dirs.Work, "activestate.yaml")
 	asyFile, err := os.OpenFile(asyFilename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -324,7 +315,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Args() {
 	cmd := `if [ "$1" = "<3" ]; then echo heart; fi`
 	if runtime.GOOS == "windows" {
 		cmd = `@echo off
-      if "%1"=="<3" (echo heart)` // need to match indent of YAML below
+      if %1=="<3" (echo heart)` // need to match indent of YAML below
 	}
 	_, err = asyFile.WriteString(strings.TrimPrefix(fmt.Sprintf(`
   - name: args
@@ -335,12 +326,6 @@ func (suite *RunIntegrationTestSuite) TestRun_Args() {
 	suite.Require().NoError(err, "extra config is appended")
 
 	arg := "<3"
-	if runtime.GOOS == "windows" {
-		// The '<' needs to be escaped with '^', and I don't know why. There is no way around it.
-		// The other exec and shell integration tests that test arg passing do not need this escape.
-		// Only this batch test does.
-		arg = "^<3"
-	}
 	cp := ts.Spawn("run", "args", arg)
 	cp.Expect("heart", termtest.OptExpectTimeout(5*time.Second))
 }

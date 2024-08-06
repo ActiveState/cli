@@ -23,10 +23,10 @@ func (e *BuildPlannerError) InputError() bool {
 	return true
 }
 
-// LocalizedError returns the error message to be displayed to the user.
+// LocaleError returns the error message to be displayed to the user.
 // This function is added so that BuildPlannerErrors will be displayed
 // to the user
-func (e *BuildPlannerError) LocalizedError() string {
+func (e *BuildPlannerError) LocaleError() string {
 	return e.Error()
 }
 
@@ -90,7 +90,8 @@ func IsErrorResponse(errorType string) bool {
 		errorType == types.MergeConflictErrorType ||
 		errorType == types.RevertConflictErrorType ||
 		errorType == types.CommitNotInTargetHistoryErrorType ||
-		errorType == types.ComitHasNoParentErrorType
+		errorType == types.CommitHasNoParentErrorType ||
+		errorType == types.ImpactReportErrorType
 }
 
 // NotFoundError represents an error that occurred because a resource was not found.

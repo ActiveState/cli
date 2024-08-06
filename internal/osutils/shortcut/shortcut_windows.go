@@ -74,7 +74,7 @@ func (s *Shortcut) Enable() error {
 	cmd := exec.Command("powershell.exe", args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return locale.WrapError(err, "err_clean_start", "Could not create shortcut, received error: {{.V0}}", string(out))
+		return locale.WrapError(err, "err_clean_start", "Could not create shortcut. Received error: {{.V0}}", string(out))
 	}
 
 	return nil

@@ -6,11 +6,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 )
 
 // showUpdatedPackages specifies whether or not to include updated dependencies in the direct
@@ -18,31 +21,41 @@ import (
 // dependency numbers.
 const showUpdatedPackages = true
 
-// OutputChangeSummary looks over the given build plans, and computes and lists the additional
-// dependencies being installed for the requested packages, if any.
-func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan) {
-	requested := newBuildPlan.RequestedArtifacts().ToIDMap()
-
+func OutputChangeSummary(out output.Outputer, report *response.ImpactReportResult, buildPlan *buildplan.BuildPlan) {
+	// Process the impact report, looking for package additions or updates.
+	alreadyInstalledVersions := map[strfmt.UUID]string{}
 	addedString := []string{}
 	addedLocale := []string{}
 	dependencies := buildplan.Ingredients{}
 	directDependencies := buildplan.Ingredients{}
-	changeset := newBuildPlan.DiffArtifacts(oldBuildPlan, false)
-	for _, a := range changeset.Added {
-		if _, exists := requested[a.ArtifactID]; exists {
-			v := fmt.Sprintf("%s@%s", a.Name(), a.Version())
+	for _, i := range report.Ingredients {
+		if i.Before != nil {
+			alreadyInstalledVersions[strfmt.UUID(i.Before.IngredientID)] = i.Before.Version
+		}
+
+		if i.After == nil || !i.After.IsRequirement {
+			continue
+		}
+
+		if i.Before == nil {
+			v := fmt.Sprintf("%s@%s", i.Name, i.After.Version)
 			addedString = append(addedLocale, v)
 			addedLocale = append(addedLocale, fmt.Sprintf("[ACTIONABLE]%s[/RESET]", v))
 		}
-		for _, i := range a.Ingredients {
-			dependencies = append(dependencies, i.RuntimeDependencies(true)...)
-			directDependencies = append(dependencies, i.RuntimeDependencies(false)...)
+
+		for _, bpi := range buildPlan.Ingredients() {
+			if bpi.IngredientID != strfmt.UUID(i.After.IngredientID) {
+				continue
+			}
+			dependencies = append(dependencies, bpi.RuntimeDependencies(true)...)
+			directDependencies = append(directDependencies, bpi.RuntimeDependencies(false)...)
 		}
 	}
 
 	dependencies = sliceutils.UniqueByProperty(dependencies, func(i *buildplan.Ingredient) any { return i.IngredientID })
 	directDependencies = sliceutils.UniqueByProperty(directDependencies, func(i *buildplan.Ingredient) any { return i.IngredientID })
-	numIndirect := len(dependencies) - len(directDependencies)
+	commonDependencies := directDependencies.CommonRuntimeDependencies().ToIDMap()
+	numIndirect := len(dependencies) - len(directDependencies) - len(commonDependencies)
 
 	sort.SliceStable(directDependencies, func(i, j int) bool {
 		return directDependencies[i].Name < directDependencies[j].Name
@@ -54,13 +67,8 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 		return
 	}
 
-	// Process the existing runtime requirements into something we can easily compare against.
-	alreadyInstalled := buildplan.Artifacts{}
-	if oldBuildPlan != nil {
-		alreadyInstalled = oldBuildPlan.Artifacts()
-	}
-	oldRequirements := alreadyInstalled.Ingredients().ToIDMap()
-
+	// Output a summary of changes.
+	out.Notice("") // blank line
 	localeKey := "additional_dependencies"
 	if numIndirect > 0 {
 		localeKey = "additional_total_dependencies"
@@ -79,17 +87,21 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 			prefix = " └─"
 		}
 
+		// Retrieve runtime dependencies, and then filter out any dependencies that are common between all added ingredients.
+		runtimeDeps := ingredient.RuntimeDependencies(true)
+		runtimeDeps = runtimeDeps.Filter(func(i *buildplan.Ingredient) bool { _, ok := commonDependencies[i.IngredientID]; return !ok })
+
 		subdependencies := ""
-		if numSubs := len(ingredient.RuntimeDependencies(true)); numSubs > 0 {
+		if numSubs := len(runtimeDeps); numSubs > 0 {
 			subdependencies = fmt.Sprintf(" ([ACTIONABLE]%s[/RESET] dependencies)", // intentional leading space
 				strconv.Itoa(numSubs))
 		}
 
 		item := fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET]%s", // intentional omission of space before last %s
 			ingredient.Name, ingredient.Version, subdependencies)
-		oldVersion, exists := oldRequirements[ingredient.IngredientID]
-		if exists && ingredient.Version != "" && oldVersion.Version != ingredient.Version {
-			item = fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET] → %s (%s)", oldVersion.Name, oldVersion.Version, item, locale.Tl("updated", "updated"))
+		oldVersion, exists := alreadyInstalledVersions[ingredient.IngredientID]
+		if exists && ingredient.Version != "" && oldVersion != ingredient.Version {
+			item = fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET] → %s (%s)", ingredient.Name, oldVersion, item, locale.Tl("updated", "updated"))
 		}
 
 		out.Notice(fmt.Sprintf("  [DISABLED]%s[/RESET] %s", prefix, item))

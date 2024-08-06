@@ -22,9 +22,9 @@ func (suite *MigratorIntegrationTestSuite) TestMigrator() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+	ts.PrepareEmptyProject()
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("refresh"))
+	cp := ts.Spawn("refresh")
 	cp.ExpectExitCode(0)
 
 	suite.Require().Contains(string(fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))),
@@ -39,11 +39,11 @@ func (suite *MigratorIntegrationTestSuite) TestMigrator_Buildscripts() {
 	cp := ts.Spawn("config", "set", constants.OptinBuildscriptsConfig, "true")
 	cp.ExpectExitCode(0)
 
-	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+	ts.PrepareEmptyProject()
 
 	suite.Require().NoFileExists(filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName))
 
-	cp = ts.SpawnWithOpts(e2e.OptArgs("refresh"), e2e.OptAppendEnv(constants.DisableRuntime+"=false"))
+	cp = ts.Spawn("refresh")
 	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	suite.Require().FileExists(filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName), ts.DebugMessage(""))
