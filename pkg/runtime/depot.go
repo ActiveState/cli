@@ -210,6 +210,10 @@ func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) 
 		return errs.Wrap(err, "failed to resolve path")
 	}
 
+	if err := d.validateVolume(absoluteDest); err != nil {
+		return errs.Wrap(err, "volume validation failed")
+	}
+
 	if err := fileutils.MkdirUnlessExists(absoluteDest); err != nil {
 		return errs.Wrap(err, "failed to create path")
 	}
