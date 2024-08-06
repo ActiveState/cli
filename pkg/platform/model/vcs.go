@@ -211,6 +211,20 @@ func NewOrgNamespace(orgName string) Namespace {
 	}
 }
 
+func NamespaceFromIngredient(ing *IngredientAndVersion) Namespace {
+	namespace := *ing.Ingredient.PrimaryNamespace
+	switch {
+	case NamespaceMatch(namespace, NamespacePackageMatch):
+		return Namespace{NamespacePackage, namespace}
+	case NamespaceMatch(namespace, NamespaceBundlesMatch):
+		return Namespace{NamespaceBundle, namespace}
+	case NamespaceMatch(namespace, NamespaceLanguageMatch):
+		return Namespace{NamespaceLanguage, namespace}
+	default:
+		return NewBlankNamespace()
+	}
+}
+
 func LanguageFromNamespace(ns string) string {
 	values := strings.Split(ns, "/")
 	if len(values) != 2 {

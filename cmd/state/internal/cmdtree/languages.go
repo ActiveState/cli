@@ -5,6 +5,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/languages"
+	"github.com/ActiveState/cli/internal/runners/packages"
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 func newLanguagesCommand(prime *primer.Values) *captain.Command {
@@ -24,9 +26,9 @@ func newLanguagesCommand(prime *primer.Values) *captain.Command {
 }
 
 func newLanguageInstallCommand(prime *primer.Values) *captain.Command {
-	runner := languages.NewUpdate(prime)
+	runner := packages.NewInstall(prime)
 
-	params := languages.UpdateParams{}
+	params := packages.InstallRunParams{NamespaceType: &model.NamespaceLanguage}
 
 	return captain.NewCommand(
 		"install",
@@ -39,7 +41,7 @@ func newLanguageInstallCommand(prime *primer.Values) *captain.Command {
 				Name:        "language",
 				Description: locale.T("arg_languages_install_description"),
 				Required:    true,
-				Value:       &params.Language,
+				Value:       &params.Packages,
 			},
 		},
 		func(ccmd *captain.Command, _ []string) error {

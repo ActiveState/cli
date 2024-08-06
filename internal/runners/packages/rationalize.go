@@ -15,6 +15,7 @@ import (
 func rationalizeError(auth *authentication.Auth, err *error) {
 	var commitError *bpResp.CommitError
 	var requirementNotFoundErr *buildscript.RequirementNotFoundError
+	var namespaceMismatchErr *errNamespaceMismatch
 
 	switch {
 	case err == nil:
@@ -24,6 +25,13 @@ func rationalizeError(auth *authentication.Auth, err *error) {
 	case errors.Is(*err, rationalize.ErrNoProject):
 		*err = errs.WrapUserFacing(*err,
 			locale.T("err_no_project"),
+			errs.SetInput(),
+		)
+
+	// User specified a namespace for deprecated commands like `install language` or `install bundle`.
+	case errors.As(*err, &namespaceMismatchErr):
+		*err = errs.WrapUserFacing(*err,
+			locale.Tl("err_namespace_mismatch", "You cannot specify a namespace for '{{.V0}}' with this command. Please remove it and try again.", namespaceMismatchErr.pkg.Name),
 			errs.SetInput(),
 		)
 
