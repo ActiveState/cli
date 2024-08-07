@@ -40,6 +40,12 @@ query ($organization: String!, $project: String!, $beforeExpr: BuildExpr!, $afte
       }
     }
     ... on ImpactReportError {
+      buildBefore {
+        __typename
+      }
+      buildAfter {
+        __typename
+      }
       message
     }
   }
