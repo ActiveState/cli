@@ -147,13 +147,6 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
-	// Solve the runtime.
-	rtCommit, err := bp.FetchCommit(stagedCommit.CommitID, proj.Owner(), proj.Name(), nil)
-	if err != nil {
-		solveSpinner.Stop(locale.T("progress_fail"))
-		return errs.Wrap(err, "Failed to fetch build result for staged commit")
-	}
-
 	previousCommit, err := bp.FetchCommit(localCommitId, proj.Owner(), proj.Name(), nil)
 	if err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))
@@ -165,7 +158,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		Owner:   i.prime.Project().Owner(),
 		Project: i.prime.Project().Name(),
 		Before:  previousCommit.BuildScript(),
-		After:   rtCommit.BuildScript(),
+		After:   stagedCommit.BuildScript(),
 	})
 	if err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))
@@ -174,7 +167,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	solveSpinner.Stop(locale.T("progress_success"))
 
 	// Output change summary.
-	dependencies.OutputChangeSummary(i.prime.Output(), impactReport, rtCommit.BuildPlan())
+	dependencies.OutputChangeSummary(i.prime.Output(), impactReport, stagedCommit.BuildPlan())
 
 	// Report CVEs.
 	if err := cves.NewCveReport(i.prime).Report(impactReport); err != nil {
