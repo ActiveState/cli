@@ -77,19 +77,17 @@ func (b *BuildPlanner) StageCommit(params StageCommitParams) (*Commit, error) {
 		return nil, response.ProcessBuildError(resp.Commit.Build, "Could not process error response from stage commit")
 	}
 
-	commit := resp.Commit
-
-	bp, err := buildplan.Unmarshal(commit.Build.RawMessage)
+	bp, err := buildplan.Unmarshal(resp.Commit.Build.RawMessage)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to unmarshal build plan")
 	}
 
-	stagedScript, err := buildscript.UnmarshalBuildExpression(commit.Expression, ptr.To(time.Time(commit.AtTime)))
+	stagedScript, err := buildscript.UnmarshalBuildExpression(resp.Commit.Expression, ptr.To(time.Time(resp.Commit.AtTime)))
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}
 
-	return &Commit{commit, bp, stagedScript}, nil
+	return &Commit{resp.Commit, bp, stagedScript}, nil
 }
 
 func (b *BuildPlanner) RevertCommit(organization, project, parentCommitID, commitID string) (strfmt.UUID, error) {
