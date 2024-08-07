@@ -29,7 +29,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	cp.Expect("You are about to revert the following commit:")
 	cp.Expect(commitID)
 	cp.SendLine("y")
-	cp.Expect("Successfully reverted commit:")
+	cp.Expect("Successfully reverted commit:", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	// Verify the commit history has both the new revert commit and all prior history.

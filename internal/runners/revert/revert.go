@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/commit"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
+	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	gqlmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
@@ -208,10 +208,10 @@ func (r *Revert) revertToCommit(params revertParams, bp *buildplanner.BuildPlann
 		Script:       bs,
 	}
 
-	newCommitID, err := bp.StageCommit(stageCommitParams)
+	newCommit, err := bp.StageCommit(stageCommitParams)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not stage commit")
 	}
 
-	return newCommitID, nil
+	return newCommit.CommitID, nil
 }
