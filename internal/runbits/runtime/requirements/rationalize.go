@@ -9,6 +9,7 @@ import (
 	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 )
 
 func (r *RequirementOperation) rationalizeError(err *error) {
@@ -83,6 +84,9 @@ func (r *RequirementOperation) rationalizeError(err *error) {
 			locale.Tl("err_no_language", "Could not determine which language namespace to search for packages in. Please supply the language flag."),
 			errs.SetInput(),
 		)
+
+	case errors.Is(*err, bpModel.ErrImpactReport):
+		*err = errs.WrapUserFacing(*err, locale.T("err_impact_report"))
 
 	default:
 		runtime_runbit.RationalizeSolveError(r.Project, r.Auth, err)

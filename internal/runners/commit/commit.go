@@ -58,6 +58,9 @@ func rationalizeError(err *error) {
 		*err = errs.WrapUserFacing(*err,
 			buildPlannerErr.LocaleError(),
 			errs.SetIf(buildPlannerErr.InputError(), errs.SetInput()))
+
+	case errors.Is(*err, buildplanner.ErrImpactReport):
+		*err = errs.WrapUserFacing(*err, locale.T("err_impact_report"))
 	}
 }
 
