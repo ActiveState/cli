@@ -14,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/org"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
+	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
@@ -125,8 +125,9 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		return locale.WrapError(err, "err_cannot_apply_changeset", "Could not apply changeset")
 	}
 
+	solveSpinner := output.StartSpinner(i.prime.Output(), locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
 	msg := locale.T("commit_reqstext_message")
-	stagedCommitId, err := bp.StageCommit(buildplanner.StageCommitParams{
+	stagedCommit, err := bp.StageCommit(buildplanner.StageCommitParams{
 		Owner:        proj.Owner(),
 		Project:      proj.Name(),
 		ParentCommit: localCommitId.String(),
@@ -134,22 +135,16 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		Script:       bs,
 	})
 	if err != nil {
+		solveSpinner.Stop(locale.T("progress_fail"))
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
 
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
 
-	if err := localcommit.Set(proj.Dir(), stagedCommitId.String()); err != nil {
-		return locale.WrapError(err, "err_package_update_commit_id")
-	}
-
-	// Solve the runtime.
-	solveSpinner := output.StartSpinner(i.prime.Output(), locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
-	rtCommit, err := bp.FetchCommit(stagedCommitId, proj.Owner(), proj.Name(), nil)
-	if err != nil {
+	if err := localcommit.Set(proj.Dir(), stagedCommit.CommitID.String()); err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))
-		return errs.Wrap(err, "Failed to fetch build result for staged commit")
+		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
 	previousCommit, err := bp.FetchCommit(localCommitId, proj.Owner(), proj.Name(), nil)
@@ -163,22 +158,23 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		Owner:   i.prime.Project().Owner(),
 		Project: i.prime.Project().Name(),
 		Before:  previousCommit.BuildScript(),
-		After:   rtCommit.BuildScript(),
+		After:   stagedCommit.BuildScript(),
 	})
 	if err != nil {
+		solveSpinner.Stop(locale.T("progress_fail"))
 		return errs.Wrap(err, "Failed to fetch impact report")
 	}
 	solveSpinner.Stop(locale.T("progress_success"))
 
 	// Output change summary.
-	dependencies.OutputChangeSummary(i.prime.Output(), impactReport, rtCommit.BuildPlan())
+	dependencies.OutputChangeSummary(i.prime.Output(), impactReport, stagedCommit.BuildPlan())
 
 	// Report CVEs.
 	if err := cves.NewCveReport(i.prime).Report(impactReport); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
-	_, err = runtime_runbit.Update(i.prime, trigger.TriggerImport, runtime_runbit.WithCommitID(stagedCommitId))
+	_, err = runtime_runbit.Update(i.prime, trigger.TriggerImport, runtime_runbit.WithCommitID(stagedCommit.CommitID))
 	if err != nil {
 		return errs.Wrap(err, "Runtime update failed")
 	}

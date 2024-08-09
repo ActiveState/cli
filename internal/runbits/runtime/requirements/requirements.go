@@ -21,11 +21,11 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
+	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
@@ -213,9 +213,12 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		Script:       script,
 	}
 
-	commitID, err := bp.StageCommit(params)
+	// Solve runtime
+	solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+	commit, err := bp.StageCommit(params)
 	if err != nil {
-		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")
+		solveSpinner.Stop(locale.T("progress_fail"))
+		return errs.Wrap(err, "Could not stage commit")
 	}
 
 	pg.Stop(locale.T("progress_success"))
@@ -232,14 +235,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		trig = trigger.TriggerPackage
 	}
 
-	// Solve runtime
-	solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
-	rtCommit, err := bp.FetchCommit(commitID, r.Project.Owner(), r.Project.Name(), nil)
-	if err != nil {
-		solveSpinner.Stop(locale.T("progress_fail"))
-		return errs.Wrap(err, "Failed to fetch build result")
-	}
-
 	oldCommit, err := bp.FetchCommit(parentCommitID, r.Project.Owner(), r.Project.Name(), nil)
 	if err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))
@@ -251,14 +246,15 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		Owner:   r.prime.Project().Owner(),
 		Project: r.prime.Project().Name(),
 		Before:  oldCommit.BuildScript(),
-		After:   rtCommit.BuildScript(),
+		After:   commit.BuildScript(),
 	})
 	if err != nil {
+		solveSpinner.Stop(locale.T("progress_fail"))
 		return errs.Wrap(err, "Failed to fetch impact report")
 	}
 	solveSpinner.Stop(locale.T("progress_success"))
 
-	dependencies.OutputChangeSummary(r.prime.Output(), impactReport, rtCommit.BuildPlan())
+	dependencies.OutputChangeSummary(r.prime.Output(), impactReport, commit.BuildPlan())
 
 	// Report CVEs
 	names := requirementNames(requirements...)
@@ -272,13 +268,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 
 		// refresh or install runtime
 		_, err = runtime_runbit.Update(r.prime, trig,
-			runtime_runbit.WithCommit(rtCommit),
+			runtime_runbit.WithCommit(commit),
 			runtime_runbit.WithoutBuildscriptValidation(),
 		)
 		if err != nil {
 			if !IsBuildError(err) {
 				// If the error is not a build error we want to retain the changes
-				if err2 := r.updateCommitID(commitID); err2 != nil {
+				if err2 := r.updateCommitID(commit.CommitID); err2 != nil {
 					return errs.Pack(err, locale.WrapError(err2, "err_package_update_commit_id"))
 				}
 			}
@@ -286,7 +282,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 	}
 
-	if err := r.updateCommitID(commitID); err != nil {
+	if err := r.updateCommitID(commit.CommitID); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 

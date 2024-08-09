@@ -1,8 +1,13 @@
 package buildplanner
 
 import (
+	"time"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/buildplan/raw"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
@@ -26,39 +31,63 @@ type StageCommitParams struct {
 	Script       *buildscript.BuildScript
 }
 
-func (b *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {
+func (b *BuildPlanner) StageCommit(params StageCommitParams) (*Commit, error) {
 	logging.Debug("StageCommit, params: %+v", params)
 	script := params.Script
 
 	if script == nil {
-		return "", errs.New("Script is nil")
+		return nil, errs.New("Script is nil")
 	}
 
 	expression, err := script.MarshalBuildExpression()
 	if err != nil {
-		return "", errs.Wrap(err, "Failed to marshal build expression")
+		return nil, errs.Wrap(err, "Failed to marshal build expression")
 	}
 
 	// With the updated build expression call the stage commit mutation
 	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, params.Description, script.AtTime(), expression)
 	resp := &response.StageCommitResult{}
 	if err := b.client.Run(request, resp); err != nil {
-		return "", processBuildPlannerError(err, "failed to stage commit")
+		return nil, processBuildPlannerError(err, "failed to stage commit")
+	}
+
+	// The BuildPlanner will return a build plan with a status of
+	// "planning" if the build plan is not ready yet. We need to
+	// poll the BuildPlanner until the build is ready.
+	if resp.Commit.Build.Status == raw.Planning {
+		resp.Commit.Build, err = b.pollBuildPlanned(resp.Commit.CommitID.String(), params.Owner, params.Project, nil)
+		if err != nil {
+			return nil, errs.Wrap(err, "failed to poll build plan")
+		}
 	}
 
 	if resp.Commit == nil {
-		return "", errs.New("Staged commit is nil")
+		return nil, errs.New("Staged commit is nil")
 	}
 
 	if response.IsErrorResponse(resp.Commit.Type) {
-		return "", response.ProcessCommitError(resp.Commit, "Could not process error response from stage commit")
+		return nil, response.ProcessCommitError(resp.Commit, "Could not process error response from stage commit")
 	}
 
 	if resp.Commit.CommitID == "" {
-		return "", errs.New("Staged commit does not contain commitID")
+		return nil, errs.New("Staged commit does not contain commitID")
 	}
 
-	return resp.Commit.CommitID, nil
+	if response.IsErrorResponse(resp.Commit.Build.Type) {
+		return nil, response.ProcessBuildError(resp.Commit.Build, "Could not process error response from stage commit")
+	}
+
+	bp, err := buildplan.Unmarshal(resp.Commit.Build.RawMessage)
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to unmarshal build plan")
+	}
+
+	stagedScript, err := buildscript.UnmarshalBuildExpression(resp.Commit.Expression, ptr.To(time.Time(resp.Commit.AtTime)))
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to parse build expression")
+	}
+
+	return &Commit{resp.Commit, bp, stagedScript}, nil
 }
 
 func (b *BuildPlanner) RevertCommit(organization, project, parentCommitID, commitID string) (strfmt.UUID, error) {
