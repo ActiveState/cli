@@ -18,9 +18,11 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/internal/runbits/checkout"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
+	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -41,8 +43,11 @@ type Opts struct {
 	TargetDir    string
 
 	// Note CommitID and Commit are mutually exclusive. If Commit is provided then CommitID is disregarded.
-	CommitID            strfmt.UUID
-	Commit              *bpModel.Commit
+	// Also, Archive and Commit are mutually exclusive, as both contain a BuildPlan.
+	CommitID strfmt.UUID
+	Commit   *bpModel.Commit
+	Archive  *checkout.Archive
+
 	ValidateBuildscript bool
 }
 
@@ -77,6 +82,12 @@ func WithCommitID(commitID strfmt.UUID) SetOpt {
 func WithoutBuildscriptValidation() SetOpt {
 	return func(opts *Opts) {
 		opts.ValidateBuildscript = false
+	}
+}
+
+func WithArchive(archive *checkout.Archive) SetOpt {
+	return func(opts *Opts) {
+		opts.Archive = archive
 	}
 }
 
@@ -166,8 +177,14 @@ func Update(
 		return rt, nil
 	}
 
+	var buildPlan *buildplan.BuildPlan
+	if opts.Archive != nil {
+		buildPlan = opts.Archive.BuildPlan
+	} else if opts.Commit != nil {
+		buildPlan = opts.Commit.BuildPlan()
+	}
 	commit := opts.Commit
-	if commit == nil {
+	if commit == nil && buildPlan == nil {
 		// Solve
 		solveSpinner := output.StartSpinner(prime.Output(), locale.T("progress_solve"), constants.TerminalAnimationInterval)
 
@@ -177,6 +194,7 @@ func Update(
 			solveSpinner.Stop(locale.T("progress_fail"))
 			return nil, errs.Wrap(err, "Failed to fetch build result")
 		}
+		buildPlan = commit.BuildPlan()
 
 		solveSpinner.Stop(locale.T("progress_success"))
 	}
@@ -216,11 +234,17 @@ func Update(
 
 	pg := progress.NewRuntimeProgressIndicator(prime.Output())
 	defer rtutils.Closer(pg.Close, &rerr)
-	if err := rt.Update(commit.BuildPlan(), rtHash,
+
+	rtOpts := []runtime.SetOpt{
 		runtime.WithAnnotations(proj.Owner(), proj.Name(), commitID),
 		runtime.WithEventHandlers(pg.Handle, ah.handle),
 		runtime.WithPreferredLibcVersion(prime.Config().GetString(constants.PreferredGlibcVersionConfig)),
-	); err != nil {
+	}
+	if opts.Archive != nil {
+		rtOpts = append(rtOpts, runtime.WithFromArchive(opts.Archive.Dir, opts.Archive.PlatformID, checkout.ArtifactExt))
+	}
+
+	if err := rt.Update(buildPlan, rtHash, rtOpts...); err != nil {
 		return nil, locale.WrapError(err, "err_packages_update_runtime_install")
 	}
 

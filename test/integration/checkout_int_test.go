@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -345,6 +346,26 @@ func (suite *CheckoutIntegrationTestSuite) TestChangeSummary() {
 	cp.Expect("Setting up the following dependencies:")
 	cp.Expect("└─ python@3.10.10")
 	suite.Assert().NotContains(cp.Snapshot(), "├─", "more than one dependency was printed")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutFromArchive() {
+	suite.OnlyRunForTags(tagsuite.Checkout)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	root := environment.GetRootPathUnsafe()
+	archive := filepath.Join(root, "test", "integration", "testdata", "checkout-from-archive", runtime.GOOS+".tar.gz")
+
+	cp := ts.Spawn("checkout", "org/project", "--from-archive", archive)
+	cp.Expect("Checking out project: ActiveState-CLI/AlmostEmpty")
+	cp.Expect("Setting up the following dependencies:")
+	cp.Expect("└─ zlib@1.3.1")
+	cp.Expect("Sourcing Runtime")
+	cp.Expect("Unpacking")
+	cp.Expect("Installing")
+	cp.Expect("All dependencies have been installed and verified")
+	cp.Expect("Checked out project ActiveState-CLI/AlmostEmpty")
 	cp.ExpectExitCode(0)
 }
 

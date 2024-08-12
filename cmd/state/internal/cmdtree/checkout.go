@@ -40,6 +40,11 @@ func newCheckoutCommand(prime *primer.Values) *captain.Command {
 				Description: locale.Tl("flag_state_checkout_force", "Leave a failed project checkout on disk; do not delete it"),
 				Value:       &params.Force,
 			},
+			{
+				Name:        "from-archive",
+				Description: locale.Tl("flag_state_checkout_from_archive", "Checkout from the given .tar.gz archive"),
+				Value:       &params.FromArchive,
+			},
 		},
 		[]*captain.Argument{
 			{

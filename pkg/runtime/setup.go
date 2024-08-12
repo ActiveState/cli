@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/sliceutils"
@@ -39,6 +40,11 @@ type Opts struct {
 	PreferredLibcVersion string
 	EventHandlers        []events.HandlerFunc
 	BuildlogFilePath     string
+
+	// Options for setting up a runtime from an archive.
+	FromArchiveDir string
+	PlatformID     *strfmt.UUID
+	ArtifactExt    string
 
 	// Annotations are used strictly to pass information for the purposes of analytics
 	// These should never be used for business logic. If the need to use them for business logic arises either we are
@@ -77,13 +83,17 @@ type setup struct {
 func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depot *depot, opts *Opts) (*setup, error) {
 	installedArtifacts := depot.List(path)
 
-	platformID, err := model.FilterCurrentPlatform(sysinfo.OS().String(), bp.Platforms(), opts.PreferredLibcVersion)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get platform ID")
+	platformID := opts.PlatformID
+	if platformID == nil {
+		platID, err := model.FilterCurrentPlatform(sysinfo.OS().String(), bp.Platforms(), opts.PreferredLibcVersion)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get platform ID")
+		}
+		platformID = &platID
 	}
 
 	filterInstallable := []buildplan.FilterArtifact{
-		buildplan.FilterPlatformArtifacts(platformID),
+		buildplan.FilterPlatformArtifacts(*platformID),
 		buildplan.FilterStateArtifacts(),
 	}
 	if os.Getenv(constants.InstallBuildDependenciesEnvVarName) != "true" {
@@ -267,10 +277,24 @@ func (s *setup) onArtifactBuildReady(blog *buildlog.BuildLog, artifact *buildpla
 }
 
 func (s *setup) obtain(artifact *buildplan.Artifact) (rerr error) {
-	// Download artifact
-	b, err := s.download(artifact)
-	if err != nil {
-		return errs.Wrap(err, "download failed")
+	var b []byte
+	if s.opts.FromArchiveDir == "" {
+		// Download artifact
+		var err error
+		b, err = s.download(artifact)
+		if err != nil {
+			return errs.Wrap(err, "download failed")
+		}
+	} else {
+		// Read the artifact from the archive.
+		var err error
+		name := artifact.ArtifactID.String() + s.opts.ArtifactExt
+		artifactFile := filepath.Join(s.opts.FromArchiveDir, name)
+		logging.Debug("Reading file '%s' for '%s'", artifactFile, artifact.DisplayName)
+		b, err = fileutils.ReadFile(artifactFile)
+		if err != nil {
+			return errs.Wrap(err, "read from archive failed")
+		}
 	}
 
 	// Unpack artifact

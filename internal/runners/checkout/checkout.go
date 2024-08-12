@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -34,6 +35,7 @@ type Params struct {
 	RuntimePath   string
 	NoClone       bool
 	Force         bool
+	FromArchive   string
 }
 
 type primeable interface {
@@ -75,6 +77,18 @@ func NewCheckout(prime primeable) *Checkout {
 }
 
 func (u *Checkout) Run(params *Params) (rerr error) {
+	var archive *checkout.Archive
+	if params.FromArchive != "" {
+		var err error
+		archive, err = checkout.NewArchive(params.FromArchive)
+		if err != nil {
+			return errs.Wrap(err, "Unable to read archive")
+		}
+		defer archive.Cleanup()
+		params.Namespace = archive.Namespace
+		params.Branch = archive.Branch
+	}
+
 	defer func() { runtime_runbit.RationalizeSolveError(u.prime.Project(), u.auth, &rerr) }()
 
 	logging.Debug("Checkout %v", params.Namespace)
@@ -84,7 +98,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 	u.out.Notice(locale.Tr("checking_out", params.Namespace.String()))
 
 	var err error
-	projectDir, err := u.checkout.Run(params.Namespace, params.Branch, params.RuntimePath, params.PreferredPath, params.NoClone)
+	projectDir, err := u.checkout.Run(params.Namespace, params.Branch, params.RuntimePath, params.PreferredPath, params.NoClone, params.FromArchive != "")
 	if err != nil {
 		return errs.Wrap(err, "Checkout failed")
 	}
@@ -117,25 +131,39 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		}()
 	}
 
-	commitID, err := localcommit.Get(proj.Path())
-	if err != nil {
-		return errs.Wrap(err, "Could not get local commit")
+	var buildPlan *buildplan.BuildPlan
+	rtOpts := []runtime_runbit.SetOpt{}
+	if params.FromArchive == "" {
+		commitID, err := localcommit.Get(proj.Path())
+		if err != nil {
+			return errs.Wrap(err, "Could not get local commit")
+		}
+
+		// Solve runtime
+		solveSpinner := output.StartSpinner(u.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
+		bpm := bpModel.NewBuildPlannerModel(u.auth)
+		commit, err := bpm.FetchCommit(commitID, proj.Owner(), proj.Name(), nil)
+		if err != nil {
+			solveSpinner.Stop(locale.T("progress_fail"))
+			return errs.Wrap(err, "Failed to fetch build result")
+		}
+		solveSpinner.Stop(locale.T("progress_success"))
+
+		buildPlan = commit.BuildPlan()
+		rtOpts = append(rtOpts, runtime_runbit.WithCommit(commit))
+
+	} else {
+		buildPlan = archive.BuildPlan
+
+		rtOpts = append(rtOpts,
+			runtime_runbit.WithArchive(archive),
+			runtime_runbit.WithoutBuildscriptValidation(),
+		)
 	}
 
-	// Solve runtime
-	solveSpinner := output.StartSpinner(u.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
-	bpm := bpModel.NewBuildPlannerModel(u.auth)
-	commit, err := bpm.FetchCommit(commitID, proj.Owner(), proj.Name(), nil)
-	if err != nil {
-		solveSpinner.Stop(locale.T("progress_fail"))
-		return errs.Wrap(err, "Failed to fetch build result")
-	}
-	solveSpinner.Stop(locale.T("progress_success"))
+	dependencies.OutputSummary(u.out, buildPlan.RequestedArtifacts())
 
-	dependencies.OutputSummary(u.out, commit.BuildPlan().RequestedArtifacts())
-	rti, err := runtime_runbit.Update(u.prime, trigger.TriggerCheckout,
-		runtime_runbit.WithCommit(commit),
-	)
+	rti, err := runtime_runbit.Update(u.prime, trigger.TriggerCheckout, rtOpts...)
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime")
 	}
