@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/shirou/gopsutil/v3/process"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -243,7 +244,7 @@ func detectShellWindows() string {
 	// process.
 
 	p, err := process.NewProcess(int32(os.Getppid()))
-	if err != nil && !errors.As(err, &os.PathError{}) {
+	if err != nil && !errors.As(err, ptr.To(&os.PathError{})) {
 		panic(err)
 	}
 
