@@ -117,7 +117,7 @@ func (v *SubShell) Activate(prj *project.Project, cfg sscommon.Configurable, out
 			return err
 		}
 
-		shellArgs = []string{"-NoExit", "-Command", fmt.Sprintf(". '%s'", v.rcFile.Name())}
+		shellArgs = []string{"-executionpolicy", "bypass", "-NoExit", "-Command", fmt.Sprintf(". '%s'", v.rcFile.Name())}
 	} else {
 		directEnv = sscommon.EnvSlice(v.env)
 	}

@@ -902,7 +902,7 @@ func (c *Command) logArgs(args []string) {
 func flags(args []string) []string {
 	flags := []string{}
 	for _, arg := range args {
-		if strings.HasPrefix(arg, "-") {
+		if strings.HasPrefix(arg, "-") || condition.InActiveStateCI() || condition.BuiltOnDevMachine() {
 			flags = append(flags, arg)
 		}
 	}
