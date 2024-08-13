@@ -357,7 +357,10 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutFromArchive() {
 	root := environment.GetRootPathUnsafe()
 	archive := filepath.Join(root, "test", "integration", "testdata", "checkout-from-archive", runtime.GOOS+".tar.gz")
 
-	cp := ts.Spawn("checkout", "org/project", "--from-archive", archive)
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", "org/project", "--from-archive", archive),
+		e2e.OptAppendEnv("HTTPS_PROXY=none://"), // simulate lack of network connection
+	)
 	cp.Expect("Checking out project: ActiveState-CLI/AlmostEmpty")
 	cp.Expect("Setting up the following dependencies:")
 	cp.Expect("└─ zlib@1.3.1")
