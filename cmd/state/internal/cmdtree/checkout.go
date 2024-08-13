@@ -48,9 +48,8 @@ func newCheckoutCommand(prime *primer.Values) *captain.Command {
 		},
 		[]*captain.Argument{
 			{
-				Name:        locale.Tl("arg_state_checkout_namespace", "org/project"),
-				Description: locale.Tl("arg_state_checkout_namespace_description", "The namespace of the project that you wish to checkout"),
-				Required:    true,
+				Name:        locale.T("arg_state_checkout_namespace"),
+				Description: locale.T("arg_state_checkout_namespace_description"),
 				Value:       params.Namespace,
 			},
 			{

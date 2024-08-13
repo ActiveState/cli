@@ -87,6 +87,8 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		defer archive.Cleanup()
 		params.Namespace = archive.Namespace
 		params.Branch = archive.Branch
+	} else if params.Namespace.Project == "" {
+		return locale.NewInputError("err_checkout_namespace_required", "", locale.T("arg_state_checkout_namespace"), locale.T("arg_state_checkout_namespace_description"))
 	}
 
 	defer func() { runtime_runbit.RationalizeSolveError(u.prime.Project(), u.auth, &rerr) }()
