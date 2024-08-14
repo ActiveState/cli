@@ -25,8 +25,11 @@ type Archive struct {
 
 const ArchiveExt = ".tar.gz"
 const ArtifactExt = ".tar.gz"
+const BuildPlanJson = "buildplan.json"
+const InstallerConfigJson = "installer_config.json"
+const BuildExpressionJson = "buildexpression.json"
 
-type projectJson struct {
+type configJson struct {
 	Owner      string `json:"org_name"`
 	Project    string `json:"project_name"`
 	Branch     string `json:"branch"`
@@ -70,13 +73,13 @@ func NewArchive(archivePath string) (_ *Archive, rerr error) {
 		return nil, errs.Wrap(err, "Unable to extract archive")
 	}
 
-	// Read from project.json.
+	// Read from config JSON.
 	ns, branch, platformID, err := readProject(dir)
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to read project from archive")
 	}
 
-	// Read from buildplan.json.
+	// Read from buildplan JSON.
 	buildPlan, err := readBuildPlan(dir)
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to read buildplan from archive")
@@ -92,28 +95,28 @@ func (a *Archive) Cleanup() error {
 }
 
 // readProject reads and returns a project namespace (with commitID) and branch from
-// "project.json", as well as a platformID.
+// config JSON, as well as a platformID.
 func readProject(dir string) (*project.Namespaced, string, strfmt.UUID, error) {
-	projectBytes, err := fileutils.ReadFile(filepath.Join(dir, "project.json"))
+	jsonBytes, err := fileutils.ReadFile(filepath.Join(dir, InstallerConfigJson))
 	if err != nil {
-		return nil, "", "", errs.Wrap(err, "Invalid archive: project.json not found")
+		return nil, "", "", errs.Wrap(err, "Invalid archive: %s not found", InstallerConfigJson)
 	}
 
-	var proj *projectJson
-	err = json.Unmarshal(projectBytes, &proj)
+	var proj *configJson
+	err = json.Unmarshal(jsonBytes, &proj)
 	if err != nil {
-		return nil, "", "", errs.Wrap(err, "Unable to read project.json")
+		return nil, "", "", errs.Wrap(err, "Unable to read %s", InstallerConfigJson)
 	}
 
 	ns := &project.Namespaced{Owner: proj.Owner, Project: proj.Project, CommitID: ptr.To(strfmt.UUID(proj.CommitID))}
 	return ns, proj.Branch, strfmt.UUID(proj.PlatformID), nil
 }
 
-// readBuildPlan reads and returns a buildplan from "buildplan.json".
+// readBuildPlan reads and returns a buildplan from buildplan JSON.
 func readBuildPlan(dir string) (*buildplan.BuildPlan, error) {
-	buildplanBytes, err := fileutils.ReadFile(filepath.Join(dir, "buildplan.json"))
+	buildplanBytes, err := fileutils.ReadFile(filepath.Join(dir, BuildPlanJson))
 	if err != nil {
-		return nil, errs.Wrap(err, "Invalid archive: buildplan.json not found")
+		return nil, errs.Wrap(err, "Invalid archive: %s not found", BuildPlanJson)
 	}
 
 	return buildplan.Unmarshal(buildplanBytes)
