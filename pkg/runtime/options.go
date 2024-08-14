@@ -18,11 +18,7 @@ func WithPreferredLibcVersion(version string) SetOpt {
 }
 
 func WithArchive(dir string, platformID strfmt.UUID, ext string) SetOpt {
-	return func(opts *Opts) {
-		opts.FromArchiveDir = dir
-		opts.PlatformID = &platformID
-		opts.ArtifactExt = ext
-	}
+	return func(opts *Opts) { opts.FromArchive = &fromArchive{dir, platformID, ext} }
 }
 
 func WithAnnotations(owner, project string, commitUUID strfmt.UUID) SetOpt {

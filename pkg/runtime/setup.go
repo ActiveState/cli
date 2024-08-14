@@ -36,15 +36,19 @@ import (
 // maxConcurrency is the maximum number of concurrent workers that can be running at any given time during an update
 const maxConcurrency = 5
 
+// fromArchive contains options for setting up a runtime from an archive.
+type fromArchive struct {
+	Dir         string
+	PlatformID  strfmt.UUID
+	ArtifactExt string
+}
+
 type Opts struct {
 	PreferredLibcVersion string
 	EventHandlers        []events.HandlerFunc
 	BuildlogFilePath     string
 
-	// Options for setting up a runtime from an archive.
-	FromArchiveDir string
-	PlatformID     *strfmt.UUID
-	ArtifactExt    string
+	FromArchive *fromArchive
 
 	// Annotations are used strictly to pass information for the purposes of analytics
 	// These should never be used for business logic. If the need to use them for business logic arises either we are
@@ -83,17 +87,19 @@ type setup struct {
 func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depot *depot, opts *Opts) (*setup, error) {
 	installedArtifacts := depot.List(path)
 
-	platformID := opts.PlatformID
-	if platformID == nil {
-		platID, err := model.FilterCurrentPlatform(sysinfo.OS().String(), bp.Platforms(), opts.PreferredLibcVersion)
+	var platformID strfmt.UUID
+	if opts.FromArchive == nil {
+		var err error
+		platformID, err = model.FilterCurrentPlatform(sysinfo.OS().String(), bp.Platforms(), opts.PreferredLibcVersion)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not get platform ID")
 		}
-		platformID = &platID
+	} else {
+		platformID = opts.FromArchive.PlatformID
 	}
 
 	filterInstallable := []buildplan.FilterArtifact{
-		buildplan.FilterPlatformArtifacts(*platformID),
+		buildplan.FilterPlatformArtifacts(platformID),
 		buildplan.FilterStateArtifacts(),
 	}
 	if os.Getenv(constants.InstallBuildDependenciesEnvVarName) != "true" {
@@ -278,7 +284,7 @@ func (s *setup) onArtifactBuildReady(blog *buildlog.BuildLog, artifact *buildpla
 
 func (s *setup) obtain(artifact *buildplan.Artifact) (rerr error) {
 	var b []byte
-	if s.opts.FromArchiveDir == "" {
+	if s.opts.FromArchive == nil {
 		// Download artifact
 		var err error
 		b, err = s.download(artifact)
@@ -288,8 +294,8 @@ func (s *setup) obtain(artifact *buildplan.Artifact) (rerr error) {
 	} else {
 		// Read the artifact from the archive.
 		var err error
-		name := artifact.ArtifactID.String() + s.opts.ArtifactExt
-		artifactFile := filepath.Join(s.opts.FromArchiveDir, name)
+		name := artifact.ArtifactID.String() + s.opts.FromArchive.ArtifactExt
+		artifactFile := filepath.Join(s.opts.FromArchive.Dir, name)
 		logging.Debug("Reading file '%s' for '%s'", artifactFile, artifact.DisplayName)
 		b, err = fileutils.ReadFile(artifactFile)
 		if err != nil {
