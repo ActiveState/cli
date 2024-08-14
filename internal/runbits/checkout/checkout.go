@@ -76,86 +76,10 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	commitID := ns.CommitID
 	var language string
 	if !fromArchive {
-		// If project does not exist at path then we must checkout
-		// the project and create the project file
-		pj, err := model.FetchProjectByName(ns.Owner, ns.Project, r.auth)
+		owner, proj, commitID, branchName, language, err = r.checkout(path, ns, branchName, commitID, cachePath, noClone)
 		if err != nil {
-			return "", locale.WrapError(err, "err_fetch_project", "", ns.String())
+			return "", errs.Wrap(err, "Unable to checkout project")
 		}
-		proj = pj.Name
-
-		var branch *mono_models.Branch
-
-		switch {
-		// Fetch the branch the given commitID is on.
-		case commitID != nil:
-			for _, b := range pj.Branches {
-				if belongs, err := model.CommitBelongsToBranch(ns.Owner, ns.Project, b.Label, *commitID, r.auth); err == nil && belongs {
-					branch = b
-					break
-				} else if err != nil {
-					return "", errs.Wrap(err, "Could not determine which branch the given commitID belongs to")
-				}
-			}
-			if branch == nil {
-				return "", &errCommitDoesNotBelong{CommitID: *commitID}
-			}
-
-		// Fetch the given project branch.
-		case branchName != "":
-			branch, err = model.BranchForProjectByName(pj, branchName)
-			if err != nil {
-				return "", locale.WrapError(err, "err_fetch_branch", "", branchName)
-			}
-			commitID = branch.CommitID
-
-		// Fetch the default branch for the given project.
-		default:
-			branch, err = model.DefaultBranchForProject(pj)
-			if err != nil {
-				return "", errs.Wrap(err, "Could not grab branch for project")
-			}
-			commitID = branch.CommitID
-		}
-		commitID = branch.CommitID
-		branchName = branch.Label
-
-		if commitID == nil {
-			return "", errNoCommitID
-		}
-
-		// Clone the related repo, if it is defined
-		if !noClone && pj.RepoURL != nil && *pj.RepoURL != "" {
-			err := r.repo.CloneProject(ns.Owner, ns.Project, path, r.Outputer, r.analytics)
-			if err != nil {
-				return "", locale.WrapError(err, "err_clone_project", "Could not clone associated git repository")
-			}
-		}
-
-		lang, err := getLanguage(*commitID, r.auth)
-		if err != nil {
-			return "", errs.Wrap(err, "Could not get language from commitID")
-		}
-		language = lang.String()
-
-		if cachePath != "" && !filepath.IsAbs(cachePath) {
-			cachePath, err = filepath.Abs(cachePath)
-			if err != nil {
-				return "", errs.Wrap(err, "Could not get absolute path for cache")
-			}
-		}
-
-		// Match the case of the organization.
-		// Otherwise the incorrect case will be written to the project file.
-		owners, err := model.FetchOrganizationsByIDs([]strfmt.UUID{pj.OrganizationID}, r.auth)
-		if err != nil {
-			return "", errs.Wrap(err, "Unable to get the project's org")
-		}
-		if len(owners) == 0 {
-			return "", locale.NewInputError("err_no_org_name", "Your project's organization name could not be found")
-		}
-		owner = owners[0].URLName
-
 	} else if commitID == nil {
 		return "", errNoCommitID
 	}
@@ -171,6 +95,95 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	}
 
 	return path, nil
+}
+
+// checkout performs the checkout and returns the checkout's owner, project, commitID, branchName,
+// and language.
+func (r *Checkout) checkout(
+	path string, ns *project.Namespaced, branchName string, commitID *strfmt.UUID, cachePath string,
+	noClone bool) (string, string, *strfmt.UUID, string, string, error) {
+
+	// If project does not exist at path then we must checkout
+	// the project and create the project file
+	pj, err := model.FetchProjectByName(ns.Owner, ns.Project, r.auth)
+	if err != nil {
+		return "", "", nil, "", "", locale.WrapError(err, "err_fetch_project", "", ns.String())
+	}
+	proj := pj.Name
+
+	var branch *mono_models.Branch
+
+	switch {
+	// Fetch the branch the given commitID is on.
+	case commitID != nil:
+		for _, b := range pj.Branches {
+			if belongs, err := model.CommitBelongsToBranch(ns.Owner, ns.Project, b.Label, *commitID, r.auth); err == nil && belongs {
+				branch = b
+				break
+			} else if err != nil {
+				return "", "", nil, "", "", errs.Wrap(err, "Could not determine which branch the given commitID belongs to")
+			}
+		}
+		if branch == nil {
+			return "", "", nil, "", "", &errCommitDoesNotBelong{CommitID: *commitID}
+		}
+
+	// Fetch the given project branch.
+	case branchName != "":
+		branch, err = model.BranchForProjectByName(pj, branchName)
+		if err != nil {
+			return "", "", nil, "", "", locale.WrapError(err, "err_fetch_branch", "", branchName)
+		}
+		commitID = branch.CommitID
+
+	// Fetch the default branch for the given project.
+	default:
+		branch, err = model.DefaultBranchForProject(pj)
+		if err != nil {
+			return "", "", nil, "", "", errs.Wrap(err, "Could not grab branch for project")
+		}
+		commitID = branch.CommitID
+	}
+	commitID = branch.CommitID
+	branchName = branch.Label
+
+	if commitID == nil {
+		return "", "", nil, "", "", errNoCommitID
+	}
+
+	// Clone the related repo, if it is defined
+	if !noClone && pj.RepoURL != nil && *pj.RepoURL != "" {
+		err := r.repo.CloneProject(ns.Owner, ns.Project, path, r.Outputer, r.analytics)
+		if err != nil {
+			return "", "", nil, "", "", locale.WrapError(err, "err_clone_project", "Could not clone associated git repository")
+		}
+	}
+
+	lang, err := getLanguage(*commitID, r.auth)
+	if err != nil {
+		return "", "", nil, "", "", errs.Wrap(err, "Could not get language from commitID")
+	}
+	language := lang.String()
+
+	if cachePath != "" && !filepath.IsAbs(cachePath) {
+		cachePath, err = filepath.Abs(cachePath)
+		if err != nil {
+			return "", "", nil, "", "", errs.Wrap(err, "Could not get absolute path for cache")
+		}
+	}
+
+	// Match the case of the organization.
+	// Otherwise the incorrect case will be written to the project file.
+	owners, err := model.FetchOrganizationsByIDs([]strfmt.UUID{pj.OrganizationID}, r.auth)
+	if err != nil {
+		return "", "", nil, "", "", errs.Wrap(err, "Unable to get the project's org")
+	}
+	if len(owners) == 0 {
+		return "", "", nil, "", "", locale.NewInputError("err_no_org_name", "Your project's organization name could not be found")
+	}
+	owner := owners[0].URLName
+
+	return owner, proj, commitID, branchName, language, nil
 }
 
 func CreateProjectFiles(checkoutPath, cachePath, owner, name, branch, commitID, language string) error {
