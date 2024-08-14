@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -160,19 +159,7 @@ func (c *Commit) Run() (rerr error) {
 	dependencies.OutputChangeSummary(out, rtCommit.BuildPlan(), oldCommit.BuildPlan())
 
 	// Report CVEs.
-	newReqs, err := newRequirements(oldCommit.BuildScript(), rtCommit.BuildScript())
-	if err != nil {
-		return errs.Wrap(err, "Could not get new requirements")
-	}
-	var names []string
-	for _, req := range newReqs {
-		req, ok := req.(buildscript.DependencyRequirement)
-		if !ok {
-			continue
-		}
-		names = append(names, req.Name)
-	}
-	if err := cves.NewCveReport(c.prime).Report(rtCommit.BuildPlan(), oldCommit.BuildPlan(), names...); err != nil {
+	if err := cves.NewCveReport(c.prime).Report(rtCommit, oldCommit); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
@@ -193,46 +180,4 @@ func (c *Commit) Run() (rerr error) {
 	))
 
 	return nil
-}
-
-func newRequirements(oldBuildScript *buildscript.BuildScript, newBuildScript *buildscript.BuildScript) ([]buildscript.Requirement, error) {
-	var requirements []buildscript.Requirement
-
-	old, err := oldBuildScript.Requirements()
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get old requirements")
-	}
-
-	oldReqs := make(map[string]bool)
-	for _, req := range old {
-		req, ok := req.(buildscript.DependencyRequirement)
-		if !ok {
-			continue
-		}
-		oldReqs[qualifiedName(req)] = true
-	}
-
-	newReqs, err := newBuildScript.Requirements()
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get new requirements")
-	}
-
-	for _, req := range newReqs {
-		req, ok := req.(buildscript.DependencyRequirement)
-		if !ok {
-			continue
-		}
-		if !oldReqs[qualifiedName(req)] {
-			requirements = append(requirements, req)
-		}
-	}
-
-	return requirements, nil
-}
-
-func qualifiedName(req buildscript.DependencyRequirement) string {
-	if req.Namespace == "" {
-		return req.Name
-	}
-	return req.Namespace + "/" + req.Name
 }
