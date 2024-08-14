@@ -17,7 +17,7 @@ func WithPreferredLibcVersion(version string) SetOpt {
 	return func(opts *Opts) { opts.PreferredLibcVersion = version }
 }
 
-func WithFromArchive(dir string, platformID strfmt.UUID, ext string) SetOpt {
+func WithArchive(dir string, platformID strfmt.UUID, ext string) SetOpt {
 	return func(opts *Opts) {
 		opts.FromArchiveDir = dir
 		opts.PlatformID = &platformID

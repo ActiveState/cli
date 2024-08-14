@@ -241,7 +241,7 @@ func Update(
 		runtime.WithPreferredLibcVersion(prime.Config().GetString(constants.PreferredGlibcVersionConfig)),
 	}
 	if opts.Archive != nil {
-		rtOpts = append(rtOpts, runtime.WithFromArchive(opts.Archive.Dir, opts.Archive.PlatformID, checkout.ArtifactExt))
+		rtOpts = append(rtOpts, runtime.WithArchive(opts.Archive.Dir, opts.Archive.PlatformID, checkout.ArtifactExt))
 	}
 
 	if err := rt.Update(buildPlan, rtHash, rtOpts...); err != nil {
