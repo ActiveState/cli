@@ -178,13 +178,13 @@ func Update(
 	}
 
 	var buildPlan *buildplan.BuildPlan
-	if opts.Archive != nil {
-		buildPlan = opts.Archive.BuildPlan
-	} else if opts.Commit != nil {
-		buildPlan = opts.Commit.BuildPlan()
-	}
 	commit := opts.Commit
-	if commit == nil && buildPlan == nil {
+	switch {
+	case opts.Archive != nil:
+		buildPlan = opts.Archive.BuildPlan
+	case commit != nil:
+		buildPlan = commit.BuildPlan()
+	default:
 		// Solve
 		solveSpinner := output.StartSpinner(prime.Output(), locale.T("progress_solve"), constants.TerminalAnimationInterval)
 
