@@ -119,5 +119,10 @@ func readBuildPlan(dir string) (*buildplan.BuildPlan, error) {
 		return nil, errs.Wrap(err, "Invalid archive: %s not found", BuildPlanJson)
 	}
 
-	return buildplan.Unmarshal(buildplanBytes)
+	buildPlan, err := buildplan.Unmarshal(buildplanBytes)
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to unmarshal build plan")
+	}
+
+	return buildPlan, nil
 }
