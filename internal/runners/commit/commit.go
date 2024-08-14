@@ -172,7 +172,7 @@ func (c *Commit) Run() (rerr error) {
 		}
 		names = append(names, req.Name)
 	}
-	if err := cves.NewCveReport(c.prime).Report(rtCommit.BuildPlan(), oldCommit.BuildPlan()); err != nil {
+	if err := cves.NewCveReport(c.prime).Report(rtCommit.BuildPlan(), oldCommit.BuildPlan(), names...); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
@@ -198,9 +198,18 @@ func (c *Commit) Run() (rerr error) {
 func newRequirements(oldBuildScript *buildscript.BuildScript, newBuildScript *buildscript.BuildScript) ([]buildscript.Requirement, error) {
 	var requirements []buildscript.Requirement
 
-	oldReqs, err := oldBuildScript.Requirements()
+	old, err := oldBuildScript.Requirements()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get old requirements")
+	}
+
+	oldReqs := make(map[string]bool)
+	for _, req := range old {
+		req, ok := req.(buildscript.DependencyRequirement)
+		if !ok {
+			continue
+		}
+		oldReqs[qualifiedName(req)] = true
 	}
 
 	newReqs, err := newBuildScript.Requirements()
@@ -208,21 +217,12 @@ func newRequirements(oldBuildScript *buildscript.BuildScript, newBuildScript *bu
 		return nil, errs.Wrap(err, "Could not get new requirements")
 	}
 
-	oldReqsMap := make(map[string]bool)
-	for _, req := range oldReqs {
-		req, ok := req.(buildscript.DependencyRequirement)
-		if !ok {
-			continue
-		}
-		oldReqsMap[qualifiedName(req)] = true
-	}
-
 	for _, req := range newReqs {
 		req, ok := req.(buildscript.DependencyRequirement)
 		if !ok {
 			continue
 		}
-		if _, ok := oldReqsMap[qualifiedName(req)]; !ok {
+		if !oldReqs[qualifiedName(req)] {
 			requirements = append(requirements, req)
 		}
 	}
