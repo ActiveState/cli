@@ -370,6 +370,13 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutFromArchive() {
 	cp.Expect("All dependencies have been installed and verified")
 	cp.Expect("Checked out project ActiveState-CLI/AlmostEmpty")
 	cp.ExpectExitCode(0)
+
+	// Verify the zlib runtime files exist.
+	proj, err := project.FromPath(filepath.Join(ts.Dirs.Work, "AlmostEmpty"))
+	suite.Require().NoError(err)
+	cachePath := filepath.Join(ts.Dirs.Cache, runtime_helpers.DirNameFromProjectDir(proj.Dir()))
+	zlibH := filepath.Join(cachePath, "usr", "include", "zlib.h")
+	suite.Assert().FileExists(zlibH, "zlib.h does not exist")
 }
 
 func TestCheckoutIntegrationTestSuite(t *testing.T) {
