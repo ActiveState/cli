@@ -5,13 +5,10 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/checkout"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 func newCheckoutCommand(prime *primer.Values) *captain.Command {
-	params := &checkout.Params{
-		Namespace: &project.Namespaced{AllowOmitOwner: true},
-	}
+	params := &checkout.Params{}
 
 	cmd := captain.NewCommand(
 		"checkout",
@@ -40,17 +37,13 @@ func newCheckoutCommand(prime *primer.Values) *captain.Command {
 				Description: locale.Tl("flag_state_checkout_force", "Leave a failed project checkout on disk; do not delete it"),
 				Value:       &params.Force,
 			},
-			{
-				Name:        "from-archive",
-				Description: locale.Tl("flag_state_checkout_from_archive", "Checkout from the given .tar.gz archive"),
-				Value:       &params.FromArchive,
-			},
 		},
 		[]*captain.Argument{
 			{
 				Name:        locale.T("arg_state_checkout_namespace"),
 				Description: locale.T("arg_state_checkout_namespace_description"),
-				Value:       params.Namespace,
+				Value:       &params.Namespace,
+				Required:    true,
 			},
 			{
 				Name:        locale.Tl("arg_state_checkout_path", "path"),

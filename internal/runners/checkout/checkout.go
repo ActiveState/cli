@@ -3,6 +3,7 @@ package checkout
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
@@ -29,13 +30,12 @@ import (
 )
 
 type Params struct {
-	Namespace     *project.Namespaced
+	Namespace     string
 	PreferredPath string
 	Branch        string
 	RuntimePath   string
 	NoClone       bool
 	Force         bool
-	FromArchive   string
 }
 
 type primeable interface {
@@ -77,30 +77,35 @@ func NewCheckout(prime primeable) *Checkout {
 }
 
 func (u *Checkout) Run(params *Params) (rerr error) {
+	var ns project.Namespaced
 	var archive *checkout.Archive
-	if params.FromArchive != "" {
+
+	if strings.HasSuffix(params.Namespace, checkout.ArchiveExt) {
 		var err error
-		archive, err = checkout.NewArchive(params.FromArchive)
+		archive, err = checkout.NewArchive(params.Namespace)
 		if err != nil {
 			return errs.Wrap(err, "Unable to read archive")
 		}
 		defer archive.Cleanup()
-		params.Namespace = archive.Namespace
+		ns = *archive.Namespace
 		params.Branch = archive.Branch
-	} else if params.Namespace.Project == "" {
-		return locale.NewInputError("err_checkout_namespace_required", "", locale.T("arg_state_checkout_namespace"), locale.T("arg_state_checkout_namespace_description"))
+	} else {
+		err := ns.Set(params.Namespace)
+		if err != nil {
+			return errs.Wrap(err, "cannot set namespace")
+		}
 	}
 
 	defer func() { runtime_runbit.RationalizeSolveError(u.prime.Project(), u.auth, &rerr) }()
 
-	logging.Debug("Checkout %v", params.Namespace)
+	logging.Debug("Checkout %v", ns)
 
-	logging.Debug("Checking out %s to %s", params.Namespace.String(), params.PreferredPath)
+	logging.Debug("Checking out %s to %s", ns.String(), params.PreferredPath)
 
-	u.out.Notice(locale.Tr("checking_out", params.Namespace.String()))
+	u.out.Notice(locale.Tr("checking_out", ns.String()))
 
 	var err error
-	projectDir, err := u.checkout.Run(params.Namespace, params.Branch, params.RuntimePath, params.PreferredPath, params.NoClone, params.FromArchive != "")
+	projectDir, err := u.checkout.Run(&ns, params.Branch, params.RuntimePath, params.PreferredPath, params.NoClone, archive != nil)
 	if err != nil {
 		return errs.Wrap(err, "Checkout failed")
 	}
@@ -135,7 +140,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 
 	var buildPlan *buildplan.BuildPlan
 	rtOpts := []runtime_runbit.SetOpt{}
-	if params.FromArchive == "" {
+	if archive == nil {
 		commitID, err := localcommit.Get(proj.Path())
 		if err != nil {
 			return errs.Wrap(err, "Could not get local commit")

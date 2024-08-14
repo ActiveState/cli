@@ -358,7 +358,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutFromArchive() {
 	archive := filepath.Join(root, "test", "integration", "testdata", "checkout-from-archive", runtime.GOOS+".tar.gz")
 
 	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "org/project", "--from-archive", archive),
+		e2e.OptArgs("checkout", archive),
 		e2e.OptAppendEnv("HTTPS_PROXY=none://"), // simulate lack of network connection
 	)
 	cp.Expect("Checking out project: ActiveState-CLI/AlmostEmpty")

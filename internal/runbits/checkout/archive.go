@@ -23,6 +23,7 @@ type Archive struct {
 	BuildPlan  *buildplan.BuildPlan
 }
 
+const ArchiveExt = ".tar.gz"
 const ArtifactExt = ".tar.gz"
 
 type projectJson struct {
