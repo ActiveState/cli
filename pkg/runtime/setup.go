@@ -293,13 +293,24 @@ func (s *setup) obtain(artifact *buildplan.Artifact) (rerr error) {
 		}
 	} else {
 		// Read the artifact from the archive.
+		if err := s.fireEvent(events.ArtifactDownloadStarted{artifact.ArtifactID, 0}); err != nil {
+			return errs.Wrap(err, "Could not handle ArtifactDownloadStarted event")
+		}
+
 		var err error
 		name := artifact.ArtifactID.String() + s.opts.FromArchive.ArtifactExt
 		artifactFile := filepath.Join(s.opts.FromArchive.Dir, name)
 		logging.Debug("Reading file '%s' for '%s'", artifactFile, artifact.DisplayName)
 		b, err = fileutils.ReadFile(artifactFile)
 		if err != nil {
+			if err2 := s.fireEvent(events.ArtifactDownloadFailure{artifact.ArtifactID, err}); err2 != nil {
+				err = errs.Pack(err, errs.Wrap(err2, "Could not handle ArtifactDownloadFailure event"))
+			}
 			return errs.Wrap(err, "read from archive failed")
+		}
+
+		if err := s.fireEvent(events.ArtifactDownloadSuccess{artifact.ArtifactID}); err != nil {
+			return errs.Wrap(errs.Pack(err, err), "Could not handle ArtifactDownloadSuccess event")
 		}
 	}
 
