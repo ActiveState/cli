@@ -240,25 +240,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		solveSpinner.Stop(locale.T("progress_fail"))
 		return errs.Wrap(err, "Failed to fetch old build result")
 	}
-
-	// Fetch the impact report.
-	impactReport, err := bp.ImpactReport(&bpModel.ImpactReportParams{
-		Owner:   r.prime.Project().Owner(),
-		Project: r.prime.Project().Name(),
-		Before:  oldCommit.BuildScript(),
-		After:   commit.BuildScript(),
-	})
-	if err != nil {
-		solveSpinner.Stop(locale.T("progress_fail"))
-		return errs.Wrap(err, "Failed to fetch impact report")
-	}
 	solveSpinner.Stop(locale.T("progress_success"))
 
-	dependencies.OutputChangeSummary(r.prime.Output(), impactReport, commit.BuildPlan())
+	dependencies.OutputChangeSummary(r.prime.Output(), commit.BuildPlan(), oldCommit.BuildPlan())
 
 	// Report CVEs
 	names := requirementNames(requirements...)
-	if err := cves.NewCveReport(r.prime).Report(impactReport, names...); err != nil {
+	if err := cves.NewCveReport(r.prime).Report(commit.BuildPlan(), oldCommit.BuildPlan(), names...); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 

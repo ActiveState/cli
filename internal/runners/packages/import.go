@@ -147,30 +147,18 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
+	// Output change summary.
 	previousCommit, err := bp.FetchCommit(localCommitId, proj.Owner(), proj.Name(), nil)
 	if err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))
 		return errs.Wrap(err, "Failed to fetch build result for previous commit")
 	}
-
-	// Fetch the impact report.
-	impactReport, err := bp.ImpactReport(&buildplanner.ImpactReportParams{
-		Owner:   i.prime.Project().Owner(),
-		Project: i.prime.Project().Name(),
-		Before:  previousCommit.BuildScript(),
-		After:   stagedCommit.BuildScript(),
-	})
-	if err != nil {
-		solveSpinner.Stop(locale.T("progress_fail"))
-		return errs.Wrap(err, "Failed to fetch impact report")
-	}
 	solveSpinner.Stop(locale.T("progress_success"))
 
-	// Output change summary.
-	dependencies.OutputChangeSummary(i.prime.Output(), impactReport, stagedCommit.BuildPlan())
+	dependencies.OutputChangeSummary(i.prime.Output(), stagedCommit.BuildPlan(), previousCommit.BuildPlan())
 
 	// Report CVEs.
-	if err := cves.NewCveReport(i.prime).Report(impactReport); err != nil {
+	if err := cves.NewCveReport(i.prime).Report(stagedCommit.BuildPlan(), previousCommit.BuildPlan()); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
