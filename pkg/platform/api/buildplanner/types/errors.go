@@ -19,7 +19,6 @@ const (
 	MergeConflictErrorType            = "MergeConflict"
 	RevertConflictErrorType           = "RevertConflict"
 	CommitNotInTargetHistoryErrorType = "CommitNotInTargetHistory"
-	CommitHasNoParentErrorType        = "CommitHasNoParent"
+	ComitHasNoParentErrorType         = "CommitHasNoParent"
 	TargetNotFoundErrorType           = "TargetNotFound"
-	ImpactReportErrorType             = "ImpactReportError"
 )
