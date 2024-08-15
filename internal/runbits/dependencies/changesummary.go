@@ -41,6 +41,27 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 		}
 	}
 
+	if len(changeset.Added) > 0 && len(addedLocale) == 0 {
+		for _, a := range changeset.Added {
+			// Check if the added artifact is a direct dependency of a requested package.
+			// This can happen when an updated package brings in a new dependency.
+			for _, req := range requested {
+				if !isDirectDependency(a, req) {
+					continue
+				}
+				v := fmt.Sprintf("%s@%s", req.Name(), req.Version()) // requested package, not added package
+				addedString = append(addedLocale, v)
+				addedLocale = append(addedLocale, fmt.Sprintf("[ACTIONABLE]%s[/RESET]", v))
+
+				for _, i := range a.Ingredients { // added package, not requested package
+					dependencies = append(dependencies, i)
+					directDependencies = append(dependencies, i)
+				}
+				break
+			}
+		}
+	}
+
 	dependencies = sliceutils.UniqueByProperty(dependencies, func(i *buildplan.Ingredient) any { return i.IngredientID })
 	directDependencies = sliceutils.UniqueByProperty(directDependencies, func(i *buildplan.Ingredient) any { return i.IngredientID })
 	commonDependencies := directDependencies.CommonRuntimeDependencies().ToIDMap()
@@ -105,4 +126,20 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 	}
 
 	out.Notice("") // blank line
+}
+
+// isDirectDependency returns whether the given artifact is a direct dependency of the other given
+// artifact.
+func isDirectDependency(artifact *buildplan.Artifact, other *buildplan.Artifact) bool {
+	for _, i := range other.Ingredients {
+		directDependencies := i.RuntimeDependencies(false).ToIDMap()
+		for _, dep := range directDependencies {
+			for _, a := range dep.Artifacts {
+				if a.ArtifactID == artifact.ArtifactID {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
