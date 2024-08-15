@@ -38,10 +38,9 @@ type primeable interface {
 type Checkout struct {
 	repo git.Repository
 	output.Outputer
-	config     *config.Instance
-	analytics  analytics.Dispatcher
-	branchName string
-	auth       *authentication.Auth
+	config    *config.Instance
+	analytics analytics.Dispatcher
+	auth      *authentication.Auth
 }
 
 type errCommitDoesNotBelong struct {
@@ -55,7 +54,7 @@ func (e errCommitDoesNotBelong) Error() string {
 var errNoCommitID = errs.New("commitID is nil")
 
 func New(repo git.Repository, prime primeable) *Checkout {
-	return &Checkout{repo, prime.Output(), prime.Config(), prime.Analytics(), "", prime.Auth()}
+	return &Checkout{repo, prime.Output(), prime.Config(), prime.Analytics(), prime.Auth()}
 }
 
 func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath string, noClone, fromArchive bool) (_ string, rerr error) {
