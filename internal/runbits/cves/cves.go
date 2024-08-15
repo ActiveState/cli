@@ -14,11 +14,9 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/buildscript"
 	vulnModel "github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 )
 
 func init() {
@@ -41,8 +39,8 @@ func NewCveReport(prime primeable) *CveReport {
 	return &CveReport{prime}
 }
 
-func (c *CveReport) Report(newCommit *buildplanner.Commit, oldCommit *buildplanner.Commit, names ...string) error {
-	changeset := newCommit.BuildPlan().DiffArtifacts(oldCommit.BuildPlan(), false)
+func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan) error {
+	changeset := newBuildPlan.DiffArtifacts(oldBuildPlan, false)
 	if c.shouldSkipReporting(changeset) {
 		logging.Debug("Skipping CVE reporting")
 		return nil
@@ -73,13 +71,7 @@ func (c *CveReport) Report(newCommit *buildplanner.Commit, oldCommit *buildplann
 		}
 	}
 
-	if len(names) == 0 {
-		var err error
-		names, err = addedRequirements(oldCommit.BuildScript(), newCommit.BuildScript())
-		if err != nil {
-			return errs.Wrap(err, "Failed to get added requirements")
-		}
-	}
+	names := addedRequirements(oldBuildPlan.Requirements(), newBuildPlan.Requirements())
 	pg := output.StartSpinner(c.prime.Output(), locale.Tr("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
 
 	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(c.prime.Auth(), ingredients)
@@ -204,42 +196,25 @@ func (c *CveReport) promptForSecurity() (bool, error) {
 	return confirm, nil
 }
 
-func addedRequirements(oldBuildScript *buildscript.BuildScript, newBuildScript *buildscript.BuildScript) ([]string, error) {
+func addedRequirements(oldRequirements buildplan.Requirements, newRequirements buildplan.Requirements) []string {
 	var names []string
 
-	old, err := oldBuildScript.Requirements()
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get old requirements")
-	}
-
 	oldReqs := make(map[string]bool)
-	for _, req := range old {
-		req, ok := req.(buildscript.DependencyRequirement)
-		if !ok {
-			continue
-		}
+	for _, req := range oldRequirements {
 		oldReqs[qualifiedName(req)] = true
 	}
 
-	newReqs, err := newBuildScript.Requirements()
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get new requirements")
-	}
-
-	for _, req := range newReqs {
-		req, ok := req.(buildscript.DependencyRequirement)
-		if !ok {
+	for _, req := range newRequirements {
+		if oldReqs[qualifiedName(req)] || req.Namespace == buildplan.NamespaceInternal {
 			continue
 		}
-		if !oldReqs[qualifiedName(req)] {
-			names = append(names, req.Name)
-		}
+		names = append(names, req.Name)
 	}
 
-	return names, nil
+	return names
 }
 
-func qualifiedName(req buildscript.DependencyRequirement) string {
+func qualifiedName(req *buildplan.Requirement) string {
 	if req.Namespace == "" {
 		return req.Name
 	}

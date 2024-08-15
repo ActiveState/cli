@@ -158,7 +158,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	dependencies.OutputChangeSummary(i.prime.Output(), stagedCommit.BuildPlan(), previousCommit.BuildPlan())
 
 	// Report CVEs.
-	if err := cves.NewCveReport(i.prime).Report(stagedCommit, previousCommit); err != nil {
+	if err := cves.NewCveReport(i.prime).Report(stagedCommit.BuildPlan(), previousCommit.BuildPlan()); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
