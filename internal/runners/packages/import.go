@@ -125,9 +125,8 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		return locale.WrapError(err, "err_cannot_apply_changeset", "Could not apply changeset")
 	}
 
-	solveSpinner := output.StartSpinner(i.prime.Output(), locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
 	msg := locale.T("commit_reqstext_message")
-	stagedCommit, err := bp.StageCommit(buildplanner.StageCommitParams{
+	stagedCommitID, err := bp.StageCommitWithoutBuild(buildplanner.StageCommitParams{
 		Owner:        proj.Owner(),
 		Project:      proj.Name(),
 		ParentCommit: localCommitId.String(),
@@ -135,16 +134,21 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		Script:       bs,
 	})
 	if err != nil {
-		solveSpinner.Stop(locale.T("progress_fail"))
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
 
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
 
-	if err := localcommit.Set(proj.Dir(), stagedCommit.CommitID.String()); err != nil {
-		solveSpinner.Stop(locale.T("progress_fail"))
+	if err := localcommit.Set(proj.Dir(), stagedCommitID.String()); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
+	}
+
+	solveSpinner := output.StartSpinner(i.prime.Output(), locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+	stagedCommit, err := bp.FetchCommit(stagedCommitID, proj.Owner(), proj.Name(), nil)
+	if err != nil {
+		solveSpinner.Stop(locale.T("progress_fail"))
+		return errs.Wrap(err, "Failed to fetch build result for previous commit")
 	}
 
 	// Output change summary.
