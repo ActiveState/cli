@@ -89,11 +89,8 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		defer archive.Cleanup()
 		ns = *archive.Namespace
 		params.Branch = archive.Branch
-	} else {
-		err := ns.Set(params.Namespace)
-		if err != nil {
-			return errs.Wrap(err, "cannot set namespace")
-		}
+	} else if err := ns.Set(params.Namespace); err != nil {
+		return errs.Wrap(err, "cannot set namespace")
 	}
 
 	defer func() { runtime_runbit.RationalizeSolveError(u.prime.Project(), u.auth, &rerr) }()
