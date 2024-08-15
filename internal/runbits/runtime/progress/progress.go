@@ -70,6 +70,7 @@ type ProgressDigester struct {
 	// time we won't have the totals unless we previously recorded them.
 	buildsExpected    buildplan.ArtifactIDMap
 	downloadsExpected buildplan.ArtifactIDMap
+	unpacksExpected   buildplan.ArtifactIDMap
 	installsExpected  buildplan.ArtifactIDMap
 
 	// Debug properties used to reduce the number of log entries generated
@@ -152,6 +153,7 @@ func (p *ProgressDigester) Handle(ev events.Event) error {
 
 		p.buildsExpected = v.ArtifactsToBuild
 		p.downloadsExpected = v.ArtifactsToDownload
+		p.unpacksExpected = v.ArtifactsToUnpack
 		p.installsExpected = v.ArtifactsToInstall
 
 		if len(v.ArtifactsToBuild)+len(v.ArtifactsToDownload)+len(v.ArtifactsToInstall) == 0 {
@@ -244,9 +246,9 @@ func (p *ProgressDigester) Handle(ev events.Event) error {
 
 	case events.ArtifactUnpackStarted:
 		if p.unpackBar == nil {
-			p.unpackBar = p.addTotalBar(locale.Tl("progress_unpacking", "Unpacking"), int64(len(p.downloadsExpected)), mpb.BarPriority(StepUnpack.priority))
+			p.unpackBar = p.addTotalBar(locale.Tl("progress_unpacking", "Unpacking"), int64(len(p.unpacksExpected)), mpb.BarPriority(StepUnpack.priority))
 		}
-		if _, ok := p.downloadsExpected[v.ArtifactID]; !ok {
+		if _, ok := p.unpacksExpected[v.ArtifactID]; !ok {
 			return errs.New("ArtifactUnpackStarted called for an artifact that was not expected: %s", v.ArtifactID.String())
 		}
 		if err := p.addArtifactBar(v.ArtifactID, StepUnpack, int64(v.TotalSize), true); err != nil {
@@ -254,7 +256,7 @@ func (p *ProgressDigester) Handle(ev events.Event) error {
 		}
 
 	case events.ArtifactUnpackProgress:
-		if _, ok := p.downloadsExpected[v.ArtifactID]; !ok {
+		if _, ok := p.unpacksExpected[v.ArtifactID]; !ok {
 			return errs.New("ArtifactUnpackSuccess called for an artifact that was not expected: %s", v.ArtifactID.String())
 		}
 		if err := p.updateArtifactBar(v.ArtifactID, StepUnpack, v.IncrementBySize); err != nil {
@@ -265,7 +267,7 @@ func (p *ProgressDigester) Handle(ev events.Event) error {
 		if p.unpackBar == nil {
 			return errs.New("ArtifactUnpackSuccess called before unpackBar was initialized")
 		}
-		if _, ok := p.downloadsExpected[v.ArtifactID]; !ok {
+		if _, ok := p.unpacksExpected[v.ArtifactID]; !ok {
 			return errs.New("ArtifactUnpackSuccess called for an artifact that was not expected: %s", v.ArtifactID.String())
 		}
 		if err := p.dropArtifactBar(v.ArtifactID, StepUnpack); err != nil {
