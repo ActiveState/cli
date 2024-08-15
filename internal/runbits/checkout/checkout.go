@@ -57,7 +57,7 @@ func New(repo git.Repository, prime primeable) *Checkout {
 	return &Checkout{repo, prime.Output(), prime.Config(), prime.Analytics(), prime.Auth()}
 }
 
-func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath string, noClone, fromArchive bool) (_ string, rerr error) {
+func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath string, noClone, onlyValidate bool) (_ string, rerr error) {
 	defer r.rationalizeError(&rerr)
 
 	path, err := r.pathToUse(ns, targetPath)
@@ -74,7 +74,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	proj := ns.Project
 	commitID := ns.CommitID
 	var language string
-	if !fromArchive {
+	if !onlyValidate {
 		owner, proj, commitID, branchName, language, err = r.checkout(path, ns, branchName, commitID, cachePath, noClone)
 		if err != nil {
 			return "", errs.Wrap(err, "Unable to checkout project")
