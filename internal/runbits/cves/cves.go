@@ -40,7 +40,7 @@ func NewCveReport(prime primeable) *CveReport {
 }
 
 func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan, names ...string) error {
-	changeset := newBuildPlan.DiffArtifacts(oldBuildPlan, false)
+	changeset := newBuildPlan.DiffArtifacts(oldBuildPlan, oldBuildPlan == nil)
 	if c.shouldSkipReporting(changeset) {
 		logging.Debug("Skipping CVE reporting")
 		return nil

@@ -339,12 +339,27 @@ func (suite *CheckoutIntegrationTestSuite) TestChangeSummary() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python")
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("checkout", "ActiveState-CLI/small-python")
 	cp.Expect("Resolving Dependencies")
 	cp.Expect("Done")
 	cp.Expect("Setting up the following dependencies:")
 	cp.Expect("└─ python@3.10.10")
 	suite.Assert().NotContains(cp.Snapshot(), "├─", "more than one dependency was printed")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *CheckoutIntegrationTestSuite) TestCveReport() {
+	suite.OnlyRunForTags(tagsuite.Checkout)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Empty")
+	cp.Expect("Checking for vulnerabilities")
 	cp.ExpectExitCode(0)
 }
 

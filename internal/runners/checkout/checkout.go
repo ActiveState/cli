@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/checkout"
+	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
@@ -133,6 +134,9 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 	solveSpinner.Stop(locale.T("progress_success"))
 
 	dependencies.OutputSummary(u.out, commit.BuildPlan().RequestedArtifacts())
+	if err := cves.NewCveReport(u.prime).Report(commit.BuildPlan(), nil); err != nil {
+		return errs.Wrap(err, "Could not report CVEs")
+	}
 	rti, err := runtime_runbit.Update(u.prime, trigger.TriggerCheckout,
 		runtime_runbit.WithCommit(commit),
 	)
