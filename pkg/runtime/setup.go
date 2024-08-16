@@ -226,11 +226,7 @@ func (s *setup) update() error {
 	// Note: if there are artifacts to download, s.toUnpack == s.toDownload, and downloaded artifacts
 	// are unpacked in the same step.
 	wp := workerpool.New(maxConcurrency)
-	artifacts := s.toDownload
-	if s.opts.FromArchive != nil {
-		artifacts = s.toUnpack
-	}
-	for _, a := range artifacts {
+	for _, a := range s.toUnpack { // iterate over unpack as downloads will not be set if installing from archive
 		s.onArtifactBuildReady(blog, a, func() {
 			wp.Submit(func() error {
 				if err := s.obtain(a); err != nil {

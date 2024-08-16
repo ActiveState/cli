@@ -77,32 +77,35 @@ func NewCheckout(prime primeable) *Checkout {
 }
 
 func (u *Checkout) Run(params *Params) (rerr error) {
-	var ns project.Namespaced
+	var err error
+	var ns *project.Namespaced
 	var archive *checkout.Archive
 
-	if strings.HasSuffix(params.Namespace, checkout.ArchiveExt) {
-		var err error
+	switch {
+	// Checkout from archive
+	case strings.HasSuffix(params.Namespace, checkout.ArchiveExt):
 		archive, err = checkout.NewArchive(params.Namespace)
 		if err != nil {
 			return errs.Wrap(err, "Unable to read archive")
 		}
 		defer archive.Cleanup()
-		ns = *archive.Namespace
+		ns = archive.Namespace
 		params.Branch = archive.Branch
-	} else if err := ns.Set(params.Namespace); err != nil {
-		return errs.Wrap(err, "cannot set namespace")
+
+	// Checkout from namespace
+	default:
+		if ns, err = project.ParseNamespace(params.Namespace); err != nil {
+			return errs.Wrap(err, "cannot set namespace")
+		}
 	}
 
 	defer func() { runtime_runbit.RationalizeSolveError(u.prime.Project(), u.auth, &rerr) }()
-
-	logging.Debug("Checkout %v", ns)
 
 	logging.Debug("Checking out %s to %s", ns.String(), params.PreferredPath)
 
 	u.out.Notice(locale.Tr("checking_out", ns.String()))
 
-	var err error
-	projectDir, err := u.checkout.Run(&ns, params.Branch, params.RuntimePath, params.PreferredPath, params.NoClone, archive != nil)
+	projectDir, err := u.checkout.Run(ns, params.Branch, params.RuntimePath, params.PreferredPath, params.NoClone, archive != nil)
 	if err != nil {
 		return errs.Wrap(err, "Checkout failed")
 	}
