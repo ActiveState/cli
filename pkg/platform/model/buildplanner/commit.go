@@ -64,7 +64,7 @@ func (b *BuildPlanner) StageCommit(params StageCommitParams) (*Commit, error) {
 	}
 
 	if response.IsErrorResponse(resp.Commit.Build.Type) {
-		return nil, response.ProcessBuildError(resp.Commit.Build, "Could not process error response from stage commit")
+		return &Commit{resp.Commit, nil, nil}, response.ProcessBuildError(resp.Commit.Build, "Could not process error response from stage commit")
 	}
 
 	// The BuildPlanner will return a build plan with a status of
@@ -88,45 +88,6 @@ func (b *BuildPlanner) StageCommit(params StageCommitParams) (*Commit, error) {
 	}
 
 	return &Commit{resp.Commit, bp, stagedScript}, nil
-}
-
-// StageCommitWithoutBuild stages a commit but does not request the corresponding build plan or
-// build expression. This is useful when we want to stage a commit but we know that the commit may
-// not solve successfully. This funciton should be used sparingly as requesting a build after calling
-// this function will result in excess solves.
-func (b *BuildPlanner) StageCommitWithoutBuild(params StageCommitParams) (strfmt.UUID, error) {
-	logging.Debug("StageCommit, params: %+v", params)
-	script := params.Script
-
-	if script == nil {
-		return "", errs.New("Script is nil")
-	}
-
-	expression, err := script.MarshalBuildExpression()
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to marshal build expression")
-	}
-
-	// With the updated build expression call the stage commit mutation
-	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, params.Description, script.AtTime(), expression)
-	resp := &response.StageCommitResult{}
-	if err := b.client.Run(request, resp); err != nil {
-		return "", processBuildPlannerError(err, "failed to stage commit")
-	}
-
-	if resp.Commit == nil {
-		return "", errs.New("Staged commit is nil")
-	}
-
-	if response.IsErrorResponse(resp.Commit.Type) {
-		return "", response.ProcessCommitError(resp.Commit, "Could not process error response from stage commit")
-	}
-
-	if resp.Commit.CommitID == "" {
-		return "", errs.New("Staged commit does not contain commitID")
-	}
-
-	return resp.Commit.CommitID, nil
 }
 
 func (b *BuildPlanner) RevertCommit(organization, project, parentCommitID, commitID string) (strfmt.UUID, error) {
