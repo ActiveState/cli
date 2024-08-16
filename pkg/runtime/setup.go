@@ -35,10 +35,19 @@ import (
 // maxConcurrency is the maximum number of concurrent workers that can be running at any given time during an update
 const maxConcurrency = 5
 
+// fromArchive contains options for setting up a runtime from an archive.
+type fromArchive struct {
+	Dir         string
+	PlatformID  strfmt.UUID
+	ArtifactExt string
+}
+
 type Opts struct {
 	PreferredLibcVersion string
 	EventHandlers        []events.HandlerFunc
 	BuildlogFilePath     string
+
+	FromArchive *fromArchive
 
 	// Annotations are used strictly to pass information for the purposes of analytics
 	// These should never be used for business logic. If the need to use them for business logic arises either we are
@@ -67,6 +76,12 @@ type setup struct {
 	// toDownload encompasses all artifacts that will need to be downloaded for this runtime. The same caveat applies as for toBuild.
 	toDownload buildplan.ArtifactIDMap
 
+	// toUnpack encompasses all artifacts that will need to be unpacked for this runtime.
+	// This is identical to toDownload except when setting up a runtime from an archive. In that case,
+	// toDownload is nil.
+	// The same caveat applies as for toBuild.
+	toUnpack buildplan.ArtifactIDMap
+
 	// toInstall encompasses all artifacts that will need to be installed for this runtime. The same caveat applies as for toBuild.
 	toInstall buildplan.ArtifactIDMap
 
@@ -77,9 +92,15 @@ type setup struct {
 func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depot *depot, opts *Opts) (*setup, error) {
 	installedArtifacts := depot.List(path)
 
-	platformID, err := model.FilterCurrentPlatform(sysinfo.OS().String(), bp.Platforms(), opts.PreferredLibcVersion)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get platform ID")
+	var platformID strfmt.UUID
+	if opts.FromArchive == nil {
+		var err error
+		platformID, err = model.FilterCurrentPlatform(sysinfo.OS().String(), bp.Platforms(), opts.PreferredLibcVersion)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get platform ID")
+		}
+	} else {
+		platformID = opts.FromArchive.PlatformID
 	}
 
 	filterInstallable := []buildplan.FilterArtifact{
@@ -109,11 +130,15 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 	}
 
 	// Calculate which artifacts need to be downloaded; if an artifact we want to install is not in our depot then
-	// by definition we'll need to download it.
+	// by definition we'll need to download it (unless we're setting up the runtime from an archive).
 	// We also calculate which artifacts are immediately ready to be installed, as its the inverse condition of the above.
 	artifactsToDownload := artifactsToInstall.Filter(func(a *buildplan.Artifact) bool {
 		return !depot.Exists(a.ArtifactID)
 	})
+	artifactsToUnpack := artifactsToDownload
+	if opts.FromArchive != nil {
+		artifactsToDownload = nil
+	}
 
 	// Now that we know which artifacts we'll need to download we can use this as our basis for calculating which artifacts
 	// still need to be build. This encompasses the artifacts themselves, as well as any of their dependencies. And of
@@ -145,6 +170,7 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 		buildplan:   bp,
 		toBuild:     artifactsToBuild.ToIDMap(),
 		toDownload:  artifactsToDownload.ToIDMap(),
+		toUnpack:    artifactsToUnpack.ToIDMap(),
 		toInstall:   artifactsToInstall.ToIDMap(),
 		toUninstall: artifactsToUninstall,
 	}, nil
@@ -174,6 +200,7 @@ func (s *setup) RunAndWait() (rerr error) {
 		LogFilePath:         s.opts.BuildlogFilePath,
 		ArtifactsToBuild:    s.toBuild,
 		ArtifactsToDownload: s.toDownload,
+		ArtifactsToUnpack:   s.toUnpack,
 		ArtifactsToInstall:  s.toInstall,
 	}); err != nil {
 		return errs.Wrap(err, "Could not handle Start event")
@@ -195,9 +222,11 @@ func (s *setup) update() error {
 		WithEventHandler(s.opts.EventHandlers...).
 		WithLogFile(filepath.Join(s.path, configDir, buildLogFile))
 
-	// Download artifacts when ready
+	// Download artifacts when ready, or unpack artifacts from archive.
+	// Note: if there are artifacts to download, s.toUnpack == s.toDownload, and downloaded artifacts
+	// are unpacked in the same step.
 	wp := workerpool.New(maxConcurrency)
-	for _, a := range s.toDownload {
+	for _, a := range s.toUnpack { // iterate over unpack as downloads will not be set if installing from archive
 		s.onArtifactBuildReady(blog, a, func() {
 			wp.Submit(func() error {
 				if err := s.obtain(a); err != nil {
@@ -267,10 +296,23 @@ func (s *setup) onArtifactBuildReady(blog *buildlog.BuildLog, artifact *buildpla
 }
 
 func (s *setup) obtain(artifact *buildplan.Artifact) (rerr error) {
-	// Download artifact
-	b, err := s.download(artifact)
-	if err != nil {
-		return errs.Wrap(err, "download failed")
+	var b []byte
+	if s.opts.FromArchive == nil {
+		// Download artifact
+		var err error
+		b, err = s.download(artifact)
+		if err != nil {
+			return errs.Wrap(err, "download failed")
+		}
+	} else {
+		// Read the artifact from the archive.
+		var err error
+		name := artifact.ArtifactID.String() + s.opts.FromArchive.ArtifactExt
+		artifactFile := filepath.Join(s.opts.FromArchive.Dir, name)
+		b, err = fileutils.ReadFile(artifactFile)
+		if err != nil {
+			return errs.Wrap(err, "read from archive failed")
+		}
 	}
 
 	// Unpack artifact
