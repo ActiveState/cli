@@ -18,12 +18,12 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/org"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
+	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -302,7 +302,8 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	}
 	solveSpinner.Stop(locale.T("progress_success"))
 
-	dependencies.OutputSummary(r.out, commit.BuildPlan().RequestedArtifacts())
+	// When running `state init` we want to show all of the dependencies that will be installed.
+	dependencies.OutputSummary(r.out, commit.BuildPlan().Artifacts())
 	rti, err := runtime_runbit.Update(r.prime, trigger.TriggerInit, runtime_runbit.WithCommit(commit))
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime after init")
