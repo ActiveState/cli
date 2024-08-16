@@ -64,7 +64,7 @@ func (b *BuildPlanner) StageCommit(params StageCommitParams) (*Commit, error) {
 	}
 
 	if response.IsErrorResponse(resp.Commit.Build.Type) {
-		return nil, response.ProcessBuildError(resp.Commit.Build, "Could not process error response from stage commit")
+		return &Commit{resp.Commit, nil, nil}, response.ProcessBuildError(resp.Commit.Build, "Could not process error response from stage commit")
 	}
 
 	// The BuildPlanner will return a build plan with a status of

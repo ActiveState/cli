@@ -3,6 +3,7 @@ package checkout
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
@@ -20,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -28,7 +30,7 @@ import (
 )
 
 type Params struct {
-	Namespace     *project.Namespaced
+	Namespace     string
 	PreferredPath string
 	Branch        string
 	RuntimePath   string
@@ -75,16 +77,35 @@ func NewCheckout(prime primeable) *Checkout {
 }
 
 func (u *Checkout) Run(params *Params) (rerr error) {
+	var err error
+	var ns *project.Namespaced
+	var archive *checkout.Archive
+
+	switch {
+	// Checkout from archive
+	case strings.HasSuffix(params.Namespace, checkout.ArchiveExt):
+		archive, err = checkout.NewArchive(params.Namespace)
+		if err != nil {
+			return errs.Wrap(err, "Unable to read archive")
+		}
+		defer archive.Cleanup()
+		ns = archive.Namespace
+		params.Branch = archive.Branch
+
+	// Checkout from namespace
+	default:
+		if ns, err = project.ParseNamespace(params.Namespace); err != nil {
+			return errs.Wrap(err, "cannot set namespace")
+		}
+	}
+
 	defer func() { runtime_runbit.RationalizeSolveError(u.prime.Project(), u.auth, &rerr) }()
 
-	logging.Debug("Checkout %v", params.Namespace)
+	logging.Debug("Checking out %s to %s", ns.String(), params.PreferredPath)
 
-	logging.Debug("Checking out %s to %s", params.Namespace.String(), params.PreferredPath)
+	u.out.Notice(locale.Tr("checking_out", ns.String()))
 
-	u.out.Notice(locale.Tr("checking_out", params.Namespace.String()))
-
-	var err error
-	projectDir, err := u.checkout.Run(params.Namespace, params.Branch, params.RuntimePath, params.PreferredPath, params.NoClone)
+	projectDir, err := u.checkout.Run(ns, params.Branch, params.RuntimePath, params.PreferredPath, params.NoClone, archive != nil)
 	if err != nil {
 		return errs.Wrap(err, "Checkout failed")
 	}
@@ -117,25 +138,39 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		}()
 	}
 
-	commitID, err := localcommit.Get(proj.Path())
-	if err != nil {
-		return errs.Wrap(err, "Could not get local commit")
+	var buildPlan *buildplan.BuildPlan
+	rtOpts := []runtime_runbit.SetOpt{}
+	if archive == nil {
+		commitID, err := localcommit.Get(proj.Path())
+		if err != nil {
+			return errs.Wrap(err, "Could not get local commit")
+		}
+
+		// Solve runtime
+		solveSpinner := output.StartSpinner(u.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
+		bpm := bpModel.NewBuildPlannerModel(u.auth)
+		commit, err := bpm.FetchCommit(commitID, proj.Owner(), proj.Name(), nil)
+		if err != nil {
+			solveSpinner.Stop(locale.T("progress_fail"))
+			return errs.Wrap(err, "Failed to fetch build result")
+		}
+		solveSpinner.Stop(locale.T("progress_success"))
+
+		buildPlan = commit.BuildPlan()
+		rtOpts = append(rtOpts, runtime_runbit.WithCommit(commit))
+
+	} else {
+		buildPlan = archive.BuildPlan
+
+		rtOpts = append(rtOpts,
+			runtime_runbit.WithArchive(archive),
+			runtime_runbit.WithoutBuildscriptValidation(),
+		)
 	}
 
-	// Solve runtime
-	solveSpinner := output.StartSpinner(u.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
-	bpm := bpModel.NewBuildPlannerModel(u.auth)
-	commit, err := bpm.FetchCommit(commitID, proj.Owner(), proj.Name(), nil)
-	if err != nil {
-		solveSpinner.Stop(locale.T("progress_fail"))
-		return errs.Wrap(err, "Failed to fetch build result")
-	}
-	solveSpinner.Stop(locale.T("progress_success"))
+	dependencies.OutputSummary(u.out, buildPlan.RequestedArtifacts())
 
-	dependencies.OutputSummary(u.out, commit.BuildPlan().RequestedArtifacts())
-	rti, err := runtime_runbit.Update(u.prime, trigger.TriggerCheckout,
-		runtime_runbit.WithCommit(commit),
-	)
+	rti, err := runtime_runbit.Update(u.prime, trigger.TriggerCheckout, rtOpts...)
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime")
 	}

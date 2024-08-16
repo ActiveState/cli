@@ -40,6 +40,7 @@ type Start struct {
 
 	ArtifactsToBuild    buildplan.ArtifactIDMap
 	ArtifactsToDownload buildplan.ArtifactIDMap
+	ArtifactsToUnpack   buildplan.ArtifactIDMap
 	ArtifactsToInstall  buildplan.ArtifactIDMap
 }
 
