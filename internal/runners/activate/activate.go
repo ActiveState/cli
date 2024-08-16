@@ -95,7 +95,7 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		}
 
 		// Perform fresh checkout
-		pathToUse, err := r.activateCheckout.Run(params.Namespace, params.Branch, "", params.PreferredPath, false)
+		pathToUse, err := r.activateCheckout.Run(params.Namespace, params.Branch, "", params.PreferredPath, false, false)
 		if err != nil {
 			return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
 		}

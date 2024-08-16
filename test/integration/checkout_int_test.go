@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -361,6 +362,36 @@ func (suite *CheckoutIntegrationTestSuite) TestCveReport() {
 	cp := ts.Spawn("checkout", "ActiveState-CLI/Empty")
 	cp.Expect("Checking for vulnerabilities")
 	cp.ExpectExitCode(0)
+}
+
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutFromArchive() {
+	suite.OnlyRunForTags(tagsuite.Checkout)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	root := environment.GetRootPathUnsafe()
+	archive := filepath.Join(root, "test", "integration", "testdata", "checkout-from-archive", runtime.GOOS+".tar.gz")
+
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", archive),
+		e2e.OptAppendEnv("HTTPS_PROXY=none://"), // simulate lack of network connection
+	)
+	cp.Expect("Checking out project: ActiveState-CLI/AlmostEmpty")
+	cp.Expect("Setting up the following dependencies:")
+	cp.Expect("└─ zlib@1.3.1")
+	cp.Expect("Sourcing Runtime")
+	cp.Expect("Unpacking")
+	cp.Expect("Installing")
+	cp.Expect("All dependencies have been installed and verified")
+	cp.Expect("Checked out project ActiveState-CLI/AlmostEmpty")
+	cp.ExpectExitCode(0)
+
+	// Verify the zlib runtime files exist.
+	proj, err := project.FromPath(filepath.Join(ts.Dirs.Work, "AlmostEmpty"))
+	suite.Require().NoError(err)
+	cachePath := filepath.Join(ts.Dirs.Cache, runtime_helpers.DirNameFromProjectDir(proj.Dir()))
+	zlibH := filepath.Join(cachePath, "usr", "include", "zlib.h")
+	suite.Assert().FileExists(zlibH, "zlib.h does not exist")
 }
 
 func TestCheckoutIntegrationTestSuite(t *testing.T) {

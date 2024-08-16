@@ -1361,6 +1361,10 @@ shell_project_statement:
     Opening shell for project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
     This shell is operating inside a virtual environment.
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
+arg_state_checkout_namespace:
+  other: org/project
+arg_state_checkout_namespace_description:
+  other: The namespace of the project that you wish to checkout, or the path to a project archive (.tar.gz) to checkout
 checking_out:
   other: |
     Checking out project: [NOTICE]{{.V0}}[/RESET]
