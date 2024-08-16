@@ -29,14 +29,39 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 	directDependencies := buildplan.Ingredients{}
 	changeset := newBuildPlan.DiffArtifacts(oldBuildPlan, false)
 	for _, a := range changeset.Added {
-		if _, exists := requested[a.ArtifactID]; exists {
-			v := fmt.Sprintf("%s@%s", a.Name(), a.Version())
-			addedString = append(addedLocale, v)
-			addedLocale = append(addedLocale, fmt.Sprintf("[ACTIONABLE]%s[/RESET]", v))
+		if _, exists := requested[a.ArtifactID]; !exists {
+			continue
+		}
+		v := fmt.Sprintf("%s@%s", a.Name(), a.Version())
+		addedString = append(addedLocale, v)
+		addedLocale = append(addedLocale, fmt.Sprintf("[ACTIONABLE]%s[/RESET]", v))
 
-			for _, i := range a.Ingredients {
-				dependencies = append(dependencies, i.RuntimeDependencies(true)...)
-				directDependencies = append(directDependencies, i.RuntimeDependencies(false)...)
+		for _, i := range a.Ingredients {
+			dependencies = append(dependencies, i.RuntimeDependencies(true)...)
+			directDependencies = append(directDependencies, i.RuntimeDependencies(false)...)
+		}
+	}
+
+	// Check for any direct dependencies added by a requested package update.
+	for _, u := range changeset.Updated {
+		if _, exists := requested[u.To.ArtifactID]; !exists {
+			continue
+		}
+		for _, dep := range u.To.RuntimeDependencies(false) {
+			for _, a := range changeset.Added {
+				if a.ArtifactID != dep.ArtifactID {
+					continue
+				}
+				v := fmt.Sprintf("%s@%s", u.To.Name(), u.To.Version()) // updated/requested package, not added package
+				addedString = append(addedLocale, v)
+				addedLocale = append(addedLocale, fmt.Sprintf("[ACTIONABLE]%s[/RESET]", v))
+
+				for _, i := range a.Ingredients { // added package, not updated/requested package
+					dependencies = append(dependencies, i)
+					directDependencies = append(dependencies, i)
+				}
+				break
+
 			}
 		}
 	}
