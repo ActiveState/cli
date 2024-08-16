@@ -302,7 +302,8 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	}
 	solveSpinner.Stop(locale.T("progress_success"))
 
-	dependencies.OutputSummary(r.out, commit.BuildPlan().RequestedArtifacts())
+	// When running `state init` we want to show all of the dependencies that will be installed.
+	dependencies.OutputSummary(r.out, commit.BuildPlan().Artifacts())
 	rti, err := runtime_runbit.Update(r.prime, trigger.TriggerInit, runtime_runbit.WithCommit(commit))
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime after init")
