@@ -39,7 +39,7 @@ func NewCveReport(prime primeable) *CveReport {
 	return &CveReport{prime}
 }
 
-func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan, names ...string) error {
+func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan) error {
 	changeset := newBuildPlan.DiffArtifacts(oldBuildPlan, oldBuildPlan == nil)
 	if c.shouldSkipReporting(changeset) {
 		logging.Debug("Skipping CVE reporting")
@@ -71,11 +71,7 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 		}
 	}
 
-	if len(names) == 0 {
-		for _, ing := range ingredients {
-			names = append(names, ing.Name)
-		}
-	}
+	names := addedRequirements(oldBuildPlan.Requirements(), newBuildPlan.Requirements())
 	pg := output.StartSpinner(c.prime.Output(), locale.Tr("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
 
 	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(c.prime.Auth(), ingredients)
@@ -198,4 +194,29 @@ func (c *CveReport) promptForSecurity() (bool, error) {
 	}
 
 	return confirm, nil
+}
+
+func addedRequirements(oldRequirements buildplan.Requirements, newRequirements buildplan.Requirements) []string {
+	var names []string
+
+	oldReqs := make(map[string]bool)
+	for _, req := range oldRequirements {
+		oldReqs[qualifiedName(req)] = true
+	}
+
+	for _, req := range newRequirements {
+		if oldReqs[qualifiedName(req)] || req.Namespace == buildplan.NamespaceInternal {
+			continue
+		}
+		names = append(names, req.Name)
+	}
+
+	return names
+}
+
+func qualifiedName(req *buildplan.Requirement) string {
+	if req.Namespace == "" {
+		return req.Name
+	}
+	return req.Namespace + "/" + req.Name
 }
