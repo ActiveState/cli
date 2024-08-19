@@ -156,7 +156,6 @@ func (r *Checkout) fetchProject(
 		}
 		commitID = branch.CommitID
 	}
-	commitID = branch.CommitID
 	branchName = branch.Label
 
 	if commitID == nil {
