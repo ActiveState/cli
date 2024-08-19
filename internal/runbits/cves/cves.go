@@ -40,7 +40,7 @@ func NewCveReport(prime primeable) *CveReport {
 }
 
 func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan) error {
-	changeset := newBuildPlan.DiffArtifacts(oldBuildPlan, false)
+	changeset := newBuildPlan.DiffArtifacts(oldBuildPlan, oldBuildPlan == nil)
 	if c.shouldSkipReporting(changeset) {
 		logging.Debug("Skipping CVE reporting")
 		return nil
@@ -71,7 +71,7 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 		}
 	}
 
-	names := addedRequirements(oldBuildPlan.Requirements(), newBuildPlan.Requirements())
+	names := addedRequirements(oldBuildPlan, newBuildPlan)
 	pg := output.StartSpinner(c.prime.Output(), locale.Tr("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
 
 	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(c.prime.Auth(), ingredients)
@@ -196,8 +196,13 @@ func (c *CveReport) promptForSecurity() (bool, error) {
 	return confirm, nil
 }
 
-func addedRequirements(oldRequirements buildplan.Requirements, newRequirements buildplan.Requirements) []string {
+func addedRequirements(oldBuildPlan *buildplan.BuildPlan, newBuildPlan *buildplan.BuildPlan) []string {
 	var names []string
+	var oldRequirements buildplan.Requirements
+	if oldBuildPlan != nil {
+		oldRequirements = oldBuildPlan.Requirements()
+	}
+	newRequirements := newBuildPlan.Requirements()
 
 	oldReqs := make(map[string]bool)
 	for _, req := range oldRequirements {

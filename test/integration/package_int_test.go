@@ -630,7 +630,10 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDock
 
 	ts.LoginAsPersistentUser() // needed for Enterprise-tier features
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Python-OfflineInstaller-Docker", ".")
+	cp := ts.Spawn("config", "set", constants.SecurityPromptConfig, "false")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("checkout", "ActiveState-CLI/Python-OfflineInstaller-Docker", ".")
 	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }

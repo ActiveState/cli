@@ -89,10 +89,14 @@ func (b *BuildPlan) DiffArtifacts(oldBp *BuildPlan, requestedOnly bool) Artifact
 
 	if requestedOnly {
 		new = b.RequestedArtifacts().ToNameMap()
-		old = oldBp.RequestedArtifacts().ToNameMap()
+		if oldBp != nil {
+			old = oldBp.RequestedArtifacts().ToNameMap()
+		}
 	} else {
 		new = b.Artifacts().ToNameMap()
-		old = oldBp.Artifacts().ToNameMap()
+		if oldBp != nil {
+			old = oldBp.Artifacts().ToNameMap()
+		}
 	}
 
 	var updated []ArtifactUpdate
