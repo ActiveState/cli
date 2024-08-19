@@ -134,17 +134,18 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		Description:  msg,
 		Script:       bs,
 	})
+	// Always update the local commit ID even if the commit fails to build
+	if stagedCommit != nil && stagedCommit.Commit != nil && stagedCommit.Commit.CommitID != "" {
+		if err := localcommit.Set(proj.Dir(), stagedCommit.CommitID.String()); err != nil {
+			solveSpinner.Stop(locale.T("progress_fail"))
+			return locale.WrapError(err, "err_package_update_commit_id")
+		}
+		pg.Stop(locale.T("progress_success"))
+		pg = nil
+	}
 	if err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
-	}
-
-	pg.Stop(locale.T("progress_success"))
-	pg = nil
-
-	if err := localcommit.Set(proj.Dir(), stagedCommit.CommitID.String()); err != nil {
-		solveSpinner.Stop(locale.T("progress_fail"))
-		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
 	// Output change summary.
