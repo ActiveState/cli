@@ -38,9 +38,6 @@ func (suite *ImportIntegrationTestSuite) TestImport_detached() {
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("config", "set", constants.SecurityPromptConfig, "false")
-	cp.ExpectExitCode(0)
-
 	cp = ts.Spawn("import", importPath)
 	cp.Expect("Operating on project")
 	cp.Expect("ActiveState-CLI/small-python")
@@ -110,9 +107,6 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 		cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 		cp.ExpectExitCode(0)
 
-		cp = ts.Spawn("config", "set", constants.SecurityPromptConfig, "false")
-		cp.ExpectExitCode(0)
-
 		cp = ts.Spawn("import", "requirements.txt")
 		cp.ExpectExitCode(0)
 
@@ -126,9 +120,6 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 		ts.PrepareFile(reqsFilePath, complexReqsData)
 
 		cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
-		cp.ExpectExitCode(0)
-
-		cp = ts.Spawn("config", "set", constants.SecurityPromptConfig, "false")
 		cp.ExpectExitCode(0)
 
 		cp = ts.Spawn("import", "requirements.txt")

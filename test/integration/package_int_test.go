@@ -630,10 +630,7 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDock
 
 	ts.LoginAsPersistentUser() // needed for Enterprise-tier features
 
-	cp := ts.Spawn("config", "set", constants.SecurityPromptConfig, "false")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("checkout", "ActiveState-CLI/Python-OfflineInstaller-Docker", ".")
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Python-OfflineInstaller-Docker", ".")
 	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
@@ -688,16 +685,13 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Prompt() {
 	cp = ts.Spawn("config", "set", "security.prompt.level", "high")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("config", "set", "security.prompt.enabled", "true")
+	cp = ts.Spawn("config", "set", constants.SecurityPromptConfig, "true")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "urllib3@2.0.2")
 	cp.Expect("Warning: Dependency has 2 known vulnerabilities")
 	cp.Expect("Do you want to continue")
 	cp.SendLine("y")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("config", "set", "security.prompt.enabled", "false")
 	cp.ExpectExitCode(0)
 }
 
@@ -711,6 +705,9 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Indirect() {
 	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
 
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "set", constants.SecurityPromptConfig, "true")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "private/ActiveState-CLI-Testing/language/python/django_dep", "--ts=now")
