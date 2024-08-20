@@ -182,7 +182,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
 	require.NoError(session.T, err)
 
-	cfg, err := config.New()
+	cfg, err := config.NewCustom(dirs.Config, singlethread.New(), true)
 	require.NoError(session.T, err)
 
 	if err := cfg.Set(constants.SecurityPromptConfig, false); err != nil {

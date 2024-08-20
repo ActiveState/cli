@@ -128,7 +128,7 @@ func (c *CveReport) shouldPromptForSecurity(vulnerabilities model.VulnerableIngr
 
 	promptLevel := c.prime.Config().GetString(constants.SecurityPromptLevelConfig)
 
-	logging.Debug("Prompt level: ", promptLevel)
+	logging.Debug("Prompt level: %s", promptLevel)
 	switch promptLevel {
 	case vulnModel.SeverityCritical:
 		return vulnerabilities.Critical.Count > 0
