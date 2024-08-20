@@ -28,9 +28,10 @@ type depotConfig struct {
 }
 
 type deployment struct {
-	Type  deploymentType `json:"type"`
-	Path  string         `json:"path"`
-	Files []string       `json:"files"`
+	Type       deploymentType `json:"type"`
+	Path       string         `json:"path"`
+	Files      []string       `json:"files"`
+	InstallDir string         `json:"installDir"`
 }
 
 type deploymentType string
@@ -187,9 +188,10 @@ func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) 
 		d.config.Deployments[id] = []deployment{}
 	}
 	d.config.Deployments[id] = append(d.config.Deployments[id], deployment{
-		Type:  deploymentTypeLink,
-		Path:  absoluteDest,
-		Files: files.RelativePaths(),
+		Type:       deploymentTypeLink,
+		Path:       absoluteDest,
+		Files:      files.RelativePaths(),
+		InstallDir: relativeSrc,
 	})
 
 	return nil
@@ -243,9 +245,10 @@ func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) 
 		d.config.Deployments[id] = []deployment{}
 	}
 	d.config.Deployments[id] = append(d.config.Deployments[id], deployment{
-		Type:  deploymentTypeCopy,
-		Path:  absoluteDest,
-		Files: files.RelativePaths(),
+		Type:       deploymentTypeCopy,
+		Path:       absoluteDest,
+		Files:      files.RelativePaths(),
+		InstallDir: relativeSrc,
 	})
 
 	return nil
@@ -270,14 +273,42 @@ func (d *depot) Undeploy(id strfmt.UUID, relativeSrc, path string) error {
 	if !ok {
 		return errs.New("deployment for %s not found in depot", id)
 	}
-	deploy := sliceutils.Filter(deployments, func(d deployment) bool { return d.Path == path })
-	if len(deploy) != 1 {
+	deployments = sliceutils.Filter(deployments, func(d deployment) bool { return d.Path == path })
+	if len(deployments) != 1 {
 		return errs.New("no deployment found for %s in depot", path)
 	}
 
+	// Determine if there are any files provided by another artifact that will need to be re-linked
+	// or re-copied after this artifact is uninstalled.
+	relinks, err := d.getSharedFilesToReLink(id, relativeSrc, path)
+	if err != nil {
+		return errs.Wrap(err, "failed to get shared files")
+	}
+	sharedFiles := make([]string, 0)
+	for file := range relinks {
+		sharedFiles = append(sharedFiles, file)
+	}
+
 	// Perform uninstall based on deployment type
-	if err := smartlink.UnlinkContents(filepath.Join(d.Path(id), relativeSrc), path); err != nil {
+	if err := smartlink.UnlinkContents(filepath.Join(d.Path(id), relativeSrc), path, sharedFiles...); err != nil {
 		return errs.Wrap(err, "failed to unlink artifact")
+	}
+
+	// Re-link or re-copy any files provided by other artifacts.
+	for sharedFile, relinkSrc := range relinks {
+		if err := os.Remove(sharedFile); err != nil {
+			return errs.Wrap(err, "failed to remove file")
+		}
+		switch deployments[0].Type {
+		case deploymentTypeLink:
+			if err := smartlink.Link(relinkSrc, sharedFile); err != nil {
+				return errs.Wrap(err, "failed to relink file")
+			}
+		case deploymentTypeCopy:
+			if err := fileutils.CopyFile(relinkSrc, sharedFile); err != nil {
+				return errs.Wrap(err, "failed to re-copy file")
+			}
+		}
 	}
 
 	// Write changes to config
@@ -298,6 +329,46 @@ func (d *depot) validateVolume(absoluteDest string) error {
 	}
 
 	return nil
+}
+
+// getSharedFilesToReLink returns a map of deployed files to re-link to (or re-copy from) another
+// artifact that provides those files. The key is the deployed file path and the value is the
+// source path from another artifact.
+func (d *depot) getSharedFilesToReLink(id strfmt.UUID, relativeSrc, path string) (map[string]string, error) {
+	// Map of deployed paths to other sources that provides those paths.
+	relink := make(map[string]string, 0)
+
+	// Get a listing of all files deployed by this artifact.
+	deployedDir := filepath.Join(d.Path(id), relativeSrc)
+	deployedFiles, err := fileutils.ListDirSimple(deployedDir, false)
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to list depot files for artifact")
+	}
+
+	// For each of those files, find another artifact (if any) that deploys its own copy.
+	for _, deployedFile := range deployedFiles {
+		relativeDeployedFile := deployedFile[len(deployedDir)+1:]
+		for artifactId, artifactDeployments := range d.config.Deployments {
+			if artifactId == id {
+				continue
+			}
+
+			for _, deployment := range artifactDeployments {
+				for _, relativeDeploymentFile := range deployment.Files {
+					if relativeDeployedFile == relativeDeploymentFile {
+						// We'll want to relink this other artifact's copy after undeploying the currently deployed version.
+						deployedFile := filepath.Join(path, relativeDeployedFile)
+						newSrc := filepath.Join(d.Path(artifactId), deployment.InstallDir, relativeDeployedFile)
+						logging.Debug("More than one artifact provides '%s'", relativeDeployedFile)
+						logging.Debug("Will relink %s to %s", deployedFile, newSrc)
+						relink[deployedFile] = newSrc
+					}
+				}
+			}
+		}
+	}
+
+	return relink, nil
 }
 
 // Save will write config changes to disk (ie. links between depot artifacts and runtimes that use it).
