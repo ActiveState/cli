@@ -108,7 +108,6 @@ func (b *BuildPlan) hydrateWithBuildClosure(nodeIDs []strfmt.UUID, platformID *s
 		default:
 			return errs.New("unexpected node type '%T': %#v", v, v)
 		}
-		return nil
 	})
 	if err != nil {
 		return errs.Wrap(err, "error hydrating from build closure")
@@ -144,7 +143,6 @@ func (b *BuildPlan) hydrateWithRuntimeClosure(nodeIDs []strfmt.UUID, platformID 
 		default:
 			return errs.New("unexpected node type '%T': %#v", v, v)
 		}
-		return nil
 	})
 	if err != nil {
 		return errs.Wrap(err, "error hydrating from runtime closure")

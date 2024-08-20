@@ -192,3 +192,75 @@ var buildWithRuntimeDepsViaSrc = &Build{
 		},
 	},
 }
+
+var buildWithRuntimeDepsViaSrcCycle = &Build{
+	Terminals: []*NamedTarget{
+		{
+			Tag:     "platform:00000000-0000-0000-0000-000000000001",
+			NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000002"},
+		},
+	},
+	Steps: []*Step{
+		{
+			StepID:  "00000000-0000-0000-0000-000000000003",
+			Outputs: []string{"00000000-0000-0000-0000-000000000002"},
+			Inputs: []*NamedTarget{
+				{Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000007"}},
+			},
+		},
+		{
+			StepID:  "00000000-0000-0000-0000-000000000008",
+			Outputs: []string{"00000000-0000-0000-0000-000000000007"},
+			Inputs: []*NamedTarget{
+				{Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000010"}},
+			},
+		},
+		{
+			StepID: "00000000-0000-0000-0000-000000000011",
+			Outputs: []string{
+				"00000000-0000-0000-0000-000000000010",
+			},
+			Inputs: []*NamedTarget{
+				{Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000013"}},
+			},
+		},
+	},
+	Artifacts: []*Artifact{
+		{
+			NodeID:      "00000000-0000-0000-0000-000000000002",
+			DisplayName: "installer",
+			MimeType:    "application/unrecognized",
+			GeneratedBy: "00000000-0000-0000-0000-000000000003",
+		},
+		{
+			NodeID:      "00000000-0000-0000-0000-000000000007",
+			DisplayName: "pkgOne",
+			MimeType:    "application/unrecognized",
+			GeneratedBy: "00000000-0000-0000-0000-000000000008",
+		},
+		{
+			NodeID:      "00000000-0000-0000-0000-000000000010",
+			DisplayName: "pkgTwo",
+			MimeType:    "application/unrecognized",
+			GeneratedBy: "00000000-0000-0000-0000-000000000011",
+		},
+		{
+			NodeID:              "00000000-0000-0000-0000-000000000013",
+			DisplayName:         "pkgThree",
+			MimeType:            types.XActiveStateArtifactMimeType,
+			RuntimeDependencies: []strfmt.UUID{"00000000-0000-0000-0000-000000000010"},
+			GeneratedBy:         "00000000-0000-0000-0000-000000000011",
+		},
+	},
+	Sources: []*Source{
+		{
+			NodeID: "00000000-0000-0000-0000-000000000006",
+		},
+		{
+			NodeID: "00000000-0000-0000-0000-000000000009",
+		},
+		{
+			NodeID: "00000000-0000-0000-0000-000000000012",
+		},
+	},
+}
