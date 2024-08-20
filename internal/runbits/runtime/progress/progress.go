@@ -156,16 +156,6 @@ func (p *ProgressDigester) Handle(ev events.Event) error {
 		p.unpacksExpected = v.ArtifactsToUnpack
 		p.installsExpected = v.ArtifactsToInstall
 
-		for _, artifact := range v.ArtifactsToDownload {
-			logging.Debug("Expected download: %s", artifact.DisplayName)
-		}
-		for _, artifact := range v.ArtifactsToUnpack {
-			logging.Debug("Expected unpack: %s", artifact.DisplayName)
-		}
-		for _, artifact := range v.ArtifactsToInstall {
-			logging.Debug("Expected install: %s", artifact.DisplayName)
-		}
-
 		if len(v.ArtifactsToBuild)+len(v.ArtifactsToDownload)+len(v.ArtifactsToInstall) == 0 {
 			p.out.Notice(locale.T("progress_nothing_to_do"))
 		} else {
