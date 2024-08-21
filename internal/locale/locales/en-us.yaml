@@ -1161,13 +1161,13 @@ package_ingredient_alternatives_nolang:
 
     This may be because you have not installed a language for your project. Install a language by running "[ACTIONABLE]state languages install <language-name>[/RESET]".
 progress_search:
-  other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalog"
+  other: "• Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalog"
 progress_cve_search:
-  other: " • Checking for vulnerabilities (CVEs) on [ACTIONABLE]{{.V0}}[/RESET] and its dependencies"
+  other: "• Checking for vulnerabilities (CVEs) on [ACTIONABLE]{{.V0}}[/RESET] and its dependencies"
 setup_runtime:
   other: "Setting Up Runtime"
 progress_solve:
-  other: "Resolving Dependencies"
+  other: "• Resolving Dependencies"
 additional_dependencies:
   other: Installing {{.V0}} includes [ACTIONABLE]{{.V1}}[/RESET] direct dependencies.
 additional_total_dependencies:
@@ -1183,11 +1183,11 @@ progress_safe:
 progress_unsafe:
   other: " [ERROR]x Unsafe[/RESET]"
 progress_commit:
-  other: " • Creating commit"
+  other: "• Creating commit"
 progress_solve_preruntime:
-  other: " • Resolving Dependencies"
+  other: "• Resolving Dependencies"
 progress_pkg_nolang:
-  other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] across all languages in the ActiveState Catalog"
+  other: "• Searching for [ACTIONABLE]{{.V0}}[/RESET] across all languages in the ActiveState Catalog"
 progress_build_log:
   other: "Build Log [ACTIONABLE]{{.V0}}[/RESET]"
 progress_completed:

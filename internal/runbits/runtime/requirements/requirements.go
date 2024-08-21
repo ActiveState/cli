@@ -214,7 +214,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 	}
 
 	// Solve runtime
-	solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+	solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve"), constants.TerminalAnimationInterval)
 	commit, err := bp.StageCommit(params)
 	if err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))
