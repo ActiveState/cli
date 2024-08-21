@@ -73,7 +73,7 @@ func (m *Manifest) Run() (rerr error) {
 		return errs.Wrap(err, "Could not fetch artifacts")
 	}
 
-	vulns, err := m.fetchVulnerabilities(reqs)
+	vulns, err := m.fetchVulnerabilities(reqs, bpReqs)
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch vulnerabilities")
 	}
@@ -140,7 +140,7 @@ func (m *Manifest) fetchBuildplanRequirements() (buildplan.Ingredients, error) {
 	return commit.BuildPlan().RequestedIngredients(), nil
 }
 
-func (m *Manifest) fetchVulnerabilities(reqs []buildscript.Requirement) (vulnerabilities, error) {
+func (m *Manifest) fetchVulnerabilities(reqs []buildscript.Requirement, bpReqs buildplan.Ingredients) (vulnerabilities, error) {
 	vulns := make(vulnerabilities)
 
 	if !m.auth.Authenticated() {
@@ -165,8 +165,11 @@ func (m *Manifest) fetchVulnerabilities(reqs []buildscript.Requirement) (vulnera
 			// https://activestatef.atlassian.net/browse/PB-5165
 			continue
 		}
-		if r.VersionRequirement != nil {
-			version = model.BuildPlannerVersionConstraintsToString(r.VersionRequirement)
+		resolvedVersion := resolveVersion(r.Requirement, bpReqs)
+		if resolvedVersion.Resolved == "" {
+			version = resolvedVersion.Requested
+		} else {
+			version = resolvedVersion.Resolved
 		}
 
 		ingredients = append(ingredients, &request.Ingredient{
