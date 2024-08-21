@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/output/spinner"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
@@ -138,17 +137,12 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		return errNoRequirements
 	}
 
-	pgGroup := spinner.NewGroup(r.Output.Config().Colored, r.Output.Config().Interactive)
-
 	out := r.Output
-	var pg spinner.Spinnable
+	var pg *output.Spinner
 	defer func() {
-		// This is a bit awkward, but it would be even more awkward to manually address this for every error condition
 		if pg != nil {
+			// This is a bit awkward, but it would be even more awkward to manually address this for every error condition
 			pg.Stop(locale.T("progress_fail"))
-		}
-		if pgGroup != nil {
-			pgGroup.Wait()
 		}
 	}()
 
@@ -174,7 +168,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 	}
 	hasParentCommit := parentCommitID != ""
 
-	pg = pgGroup.Add(locale.T("progress_commit"))
+	pg = output.StartSpinner(out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
 
 	if err := r.checkForUpdate(parentCommitID, requirements...); err != nil {
 		return locale.WrapError(err, "err_check_for_update", "Could not check for requirements updates")
@@ -220,7 +214,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 	}
 
 	// Solve runtime
-	solveSpinner := pgGroup.Add(locale.T("progress_solve_preruntime"))
+	solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
 	commit, err := bp.StageCommit(params)
 	if err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))
@@ -247,9 +241,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		return errs.Wrap(err, "Failed to fetch old build result")
 	}
 	solveSpinner.Stop(locale.T("progress_success"))
-
-	pgGroup.Wait()
-	pgGroup = nil
 
 	dependencies.OutputChangeSummary(r.prime.Output(), commit.BuildPlan(), oldCommit.BuildPlan())
 

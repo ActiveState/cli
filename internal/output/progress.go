@@ -28,7 +28,7 @@ func (d *Spinner) MarshalOutput(f Format) interface{} {
 func StartSpinner(out Outputer, msg string, interval time.Duration) *Spinner {
 	frames := []string{".", "..", "..."}
 	if out.Config().Interactive {
-		frames = SpinnerFrames
+		frames = []string{`|`, `/`, `-`, `\`}
 	}
 	d := &Spinner{0, frames, out, make(chan struct{}, 1), interval, false}
 
