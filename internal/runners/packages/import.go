@@ -125,7 +125,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		return locale.WrapError(err, "err_cannot_apply_changeset", "Could not apply changeset")
 	}
 
-	solveSpinner := output.StartSpinner(i.prime.Output(), locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+	solveSpinner := output.StartSpinner(i.prime.Output(), locale.T("progress_solve"), constants.TerminalAnimationInterval)
 	msg := locale.T("commit_reqstext_message")
 	stagedCommit, err := bp.StageCommit(buildplanner.StageCommitParams{
 		Owner:        proj.Owner(),
@@ -163,6 +163,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
+	out.Notice("") // blank line
 	_, err = runtime_runbit.Update(i.prime, trigger.TriggerImport, runtime_runbit.WithCommitID(stagedCommit.CommitID))
 	if err != nil {
 		return errs.Wrap(err, "Runtime update failed")

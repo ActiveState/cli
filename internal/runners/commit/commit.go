@@ -133,7 +133,7 @@ func (c *Commit) Run() (rerr error) {
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
 
-	pgSolve := output.StartSpinner(out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+	pgSolve := output.StartSpinner(out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
 	defer func() {
 		if pgSolve != nil {
 			pgSolve.Stop(locale.T("progress_fail"))
@@ -163,6 +163,7 @@ func (c *Commit) Run() (rerr error) {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
+	out.Notice("") // blank line
 	out.Print(output.Prepare(
 		locale.Tl(
 			"commit_success",
