@@ -168,7 +168,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 	}
 	hasParentCommit := parentCommitID != ""
 
-	pg = output.StartSpinner(out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
+	pg = output.StartSpinner(r.Output, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
 
 	if err := r.checkForUpdate(parentCommitID, requirements...); err != nil {
 		return locale.WrapError(err, "err_check_for_update", "Could not check for requirements updates")
@@ -214,15 +214,10 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 	}
 
 	// Solve runtime
-	solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve"), constants.TerminalAnimationInterval)
 	commit, err := bp.StageCommit(params)
 	if err != nil {
-		solveSpinner.Stop(locale.T("progress_fail"))
 		return errs.Wrap(err, "Could not stage commit")
 	}
-
-	pg.Stop(locale.T("progress_success"))
-	pg = nil
 
 	ns := requirements[0].Namespace
 	var trig trigger.Trigger
@@ -237,10 +232,11 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 
 	oldCommit, err := bp.FetchCommit(parentCommitID, r.Project.Owner(), r.Project.Name(), nil)
 	if err != nil {
-		solveSpinner.Stop(locale.T("progress_fail"))
 		return errs.Wrap(err, "Failed to fetch old build result")
 	}
-	solveSpinner.Stop(locale.T("progress_success"))
+
+	pg.Stop(locale.T("progress_success"))
+	pg = nil
 
 	dependencies.OutputChangeSummary(r.prime.Output(), commit.BuildPlan(), oldCommit.BuildPlan())
 

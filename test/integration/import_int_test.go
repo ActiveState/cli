@@ -41,7 +41,6 @@ func (suite *ImportIntegrationTestSuite) TestImport_detached() {
 	cp = ts.Spawn("import", importPath)
 	cp.Expect("Operating on project")
 	cp.Expect("ActiveState-CLI/small-python")
-	cp.Expect("Creating commit")
 	cp.Expect("Resolving Dependencies")
 	cp.Expect("Import Finished")
 	cp.ExpectExitCode(0)
@@ -158,8 +157,9 @@ func (suite *ImportIntegrationTestSuite) TestImportCycloneDx() {
 	for _, sbom := range []string{jsonSbom, xmlSbom} {
 		suite.Run("import "+sbom, func() {
 			cp := ts.Spawn("import", sbom)
-			cp.Expect("Creating commit")
-			cp.Expect("Done")
+			cp.Expect("Resolving Dependencies")
+			cp.Expect("Failed")
+			cp.Expect("unavailable")
 			cp.ExpectNotExitCode(0) // solve should fail due to private namespace
 
 			cp = ts.Spawn("history")
@@ -193,8 +193,9 @@ func (suite *ImportIntegrationTestSuite) TestImportSpdx() {
 	jsonSbom := filepath.Join(osutil.GetTestDataDir(), "import", "spdx", "appbomination.spdx.json")
 
 	cp = ts.Spawn("import", jsonSbom)
-	cp.Expect("Creating commit")
-	cp.Expect("Done")
+	cp.Expect("Resolving Dependencies")
+	cp.Expect("Failed")
+	cp.Expect("unavailable")
 	cp.ExpectNotExitCode(0) // solve should fail due to private namespace
 
 	cp = ts.Spawn("history")
@@ -217,8 +218,9 @@ func (suite *ImportIntegrationTestSuite) TestImportSpdx() {
 	spdxSbom := filepath.Join(osutil.GetTestDataDir(), "import", "spdx", "example1.spdx")
 
 	cp = ts.Spawn("import", spdxSbom)
-	cp.Expect("Creating commit")
-	cp.Expect("Done")
+	cp.Expect("Resolving Dependencies")
+	cp.Expect("Failed")
+	cp.Expect("unavailable")
 	cp.ExpectNotExitCode(0) // solve should fail due to private namespace
 
 	cp = ts.Spawn("history")

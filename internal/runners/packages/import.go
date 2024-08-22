@@ -103,7 +103,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		return locale.WrapError(err, "err_import_language", "Unable to get language from project")
 	}
 
-	pg := output.StartSpinner(out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
+	pg := output.StartSpinner(i.prime.Output(), locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
 	defer func() {
 		if pg != nil {
 			pg.Stop(locale.T("progress_fail"))
@@ -125,7 +125,6 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		return locale.WrapError(err, "err_cannot_apply_changeset", "Could not apply changeset")
 	}
 
-	solveSpinner := output.StartSpinner(i.prime.Output(), locale.T("progress_solve"), constants.TerminalAnimationInterval)
 	msg := locale.T("commit_reqstext_message")
 	stagedCommit, err := bp.StageCommit(buildplanner.StageCommitParams{
 		Owner:        proj.Owner(),
@@ -137,24 +136,21 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	// Always update the local commit ID even if the commit fails to build
 	if stagedCommit != nil && stagedCommit.Commit != nil && stagedCommit.Commit.CommitID != "" {
 		if err := localcommit.Set(proj.Dir(), stagedCommit.CommitID.String()); err != nil {
-			solveSpinner.Stop(locale.T("progress_fail"))
 			return locale.WrapError(err, "err_package_update_commit_id")
 		}
-		pg.Stop(locale.T("progress_success"))
-		pg = nil
 	}
 	if err != nil {
-		solveSpinner.Stop(locale.T("progress_fail"))
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
 
 	// Output change summary.
 	previousCommit, err := bp.FetchCommit(localCommitId, proj.Owner(), proj.Name(), nil)
 	if err != nil {
-		solveSpinner.Stop(locale.T("progress_fail"))
 		return errs.Wrap(err, "Failed to fetch build result for previous commit")
 	}
-	solveSpinner.Stop(locale.T("progress_success"))
+
+	pg.Stop(locale.T("progress_success"))
+	pg = nil
 
 	dependencies.OutputChangeSummary(i.prime.Output(), stagedCommit.BuildPlan(), previousCommit.BuildPlan())
 
