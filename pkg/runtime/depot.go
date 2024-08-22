@@ -345,10 +345,12 @@ func (d *depot) getSharedFilesToRedeploy(id strfmt.UUID, deploy deployment, path
 						logging.Debug("More than one artifact provides '%s'", relativeDeployedFile)
 						logging.Debug("Will redeploy '%s' to '%s'", newSrc, deployedFile)
 						redeploy[deployedFile] = newSrc
+						goto nextDeployedFile
 					}
 				}
 			}
 		}
+	nextDeployedFile:
 	}
 
 	return redeploy, nil
