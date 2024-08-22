@@ -45,7 +45,7 @@ func (r *RequirementOperation) Uninstall(requirements []*Requirement) (rerr erro
 	// Start the process of creating a commit with the requested changes.
 	bp := bpModel.NewBuildPlannerModel(r.Auth)
 
-	pg := output.StartSpinner(r.Output, locale.T("progress_commit"), constants.TerminalAnimationInterval)
+	pg := output.StartSpinner(r.Output, locale.T("progress_solve"), constants.TerminalAnimationInterval)
 	defer func() {
 		if pg != nil {
 			pg.Stop(locale.T("progress_fail"))
@@ -89,7 +89,7 @@ func (r *RequirementOperation) Uninstall(requirements []*Requirement) (rerr erro
 		}
 	}
 
-	// Stage the commit.
+	// Stage the commit and solve the runtime.
 	commitMessages := make([]string, len(requirements))
 	for i, req := range requirements {
 		message := packageCommitMessage(req.Operation, req.Name, req.Version)
@@ -109,22 +109,13 @@ func (r *RequirementOperation) Uninstall(requirements []*Requirement) (rerr erro
 		Description:  commitMessage,
 		Script:       script,
 	}
-	stagedCommitID, err := bp.StageCommit(params)
+	stagedCommit, err := bp.StageCommit(params)
 	if err != nil {
 		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")
 	}
 
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
-
-	// Solve the runtime.
-	solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
-	rtCommit, err := bp.FetchCommit(stagedCommitID, r.Project.Owner(), r.Project.Name(), nil)
-	if err != nil {
-		solveSpinner.Stop(locale.T("progress_fail"))
-		return errs.Wrap(err, "Failed to fetch build result")
-	}
-	solveSpinner.Stop(locale.T("progress_success"))
 
 	// Update the runtime.
 	if !r.Config.GetBool(constants.AsyncRuntimeConfig) {
@@ -141,13 +132,13 @@ func (r *RequirementOperation) Uninstall(requirements []*Requirement) (rerr erro
 
 		// refresh or install runtime
 		_, err = runtime_runbit.Update(r.prime, trig,
-			runtime_runbit.WithCommit(rtCommit),
+			runtime_runbit.WithCommit(stagedCommit),
 			runtime_runbit.WithoutBuildscriptValidation(),
 		)
 		if err != nil {
 			if !IsBuildError(err) {
 				// If the error is not a build error we want to retain the changes
-				if err2 := r.updateCommitID(stagedCommitID); err2 != nil {
+				if err2 := r.updateCommitID(stagedCommit.CommitID); err2 != nil {
 					return errs.Pack(err, locale.WrapError(err2, "err_package_update_commit_id"))
 				}
 			}
@@ -156,7 +147,7 @@ func (r *RequirementOperation) Uninstall(requirements []*Requirement) (rerr erro
 	}
 
 	// Record the new commit ID and update the local build script.
-	if err := r.updateCommitID(stagedCommitID); err != nil {
+	if err := r.updateCommitID(stagedCommit.CommitID); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 

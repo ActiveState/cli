@@ -54,7 +54,7 @@ func (r *RequirementOperation) Install(ts *time.Time, requirements []*Requiremen
 	// Start the process of creating a commit with the requested changes.
 	bp := bpModel.NewBuildPlannerModel(r.Auth)
 
-	pg := output.StartSpinner(r.Output, locale.T("progress_commit"), constants.TerminalAnimationInterval)
+	pg := output.StartSpinner(r.Output, locale.T("progress_solve"), constants.TerminalAnimationInterval)
 	defer func() {
 		if pg != nil {
 			pg.Stop(locale.T("progress_fail"))
@@ -129,7 +129,7 @@ func (r *RequirementOperation) Install(ts *time.Time, requirements []*Requiremen
 		}
 	}
 
-	// Stage the commit.
+	// Stage the commit and solve the runtime.
 	commitMessages := make([]string, len(ingredients))
 	for i, ing := range ingredients {
 		req := requirements[i]
@@ -150,46 +150,24 @@ func (r *RequirementOperation) Install(ts *time.Time, requirements []*Requiremen
 		Description:  commitMessage,
 		Script:       script,
 	}
-	stagedCommitID, err := bp.StageCommit(params)
+	stagedCommit, err := bp.StageCommit(params)
 	if err != nil {
-		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")
+		return errs.Wrap(err, "Could not stage commit")
+	}
+
+	previousCommit, err := bp.FetchCommit(commitID, r.Project.Owner(), r.Project.Name(), nil)
+	if err != nil {
+		return errs.Wrap(err, "Failed to fetch build result for previous commit")
 	}
 
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
 
-	// Solve the runtime.
-	solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
-	rtCommit, err := bp.FetchCommit(stagedCommitID, r.Project.Owner(), r.Project.Name(), nil)
-	if err != nil {
-		solveSpinner.Stop(locale.T("progress_fail"))
-		return errs.Wrap(err, "Failed to fetch build result")
-	}
-
-	previousCommit, err := bp.FetchCommit(commitID, r.Project.Owner(), r.Project.Name(), nil)
-	if err != nil {
-		solveSpinner.Stop(locale.T("progress_fail"))
-		return errs.Wrap(err, "Failed to fetch build result for previous commit")
-	}
-
-	// Fetch the impact report.
-	impactReport, err := bp.ImpactReport(&bpModel.ImpactReportParams{
-		Owner:   r.prime.Project().Owner(),
-		Project: r.prime.Project().Name(),
-		Before:  previousCommit.BuildScript(),
-		After:   rtCommit.BuildScript(),
-	})
-	if err != nil {
-		return errs.Wrap(err, "Failed to fetch impact report")
-	}
-	solveSpinner.Stop(locale.T("progress_success"))
-
 	// Output change summary.
-	dependencies.OutputChangeSummary(r.Output, impactReport, rtCommit.BuildPlan())
+	dependencies.OutputChangeSummary(r.prime.Output(), stagedCommit.BuildPlan(), previousCommit.BuildPlan())
 
 	// Report CVEs.
-	names := requirementNames(requirements...)
-	if err := cves.NewCveReport(r.prime).Report(impactReport, names...); err != nil {
+	if err := cves.NewCveReport(r.prime).Report(stagedCommit.BuildPlan(), previousCommit.BuildPlan()); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
@@ -208,13 +186,13 @@ func (r *RequirementOperation) Install(ts *time.Time, requirements []*Requiremen
 
 		// refresh or install runtime
 		_, err = runtime_runbit.Update(r.prime, trig,
-			runtime_runbit.WithCommit(rtCommit),
+			runtime_runbit.WithCommit(stagedCommit),
 			runtime_runbit.WithoutBuildscriptValidation(),
 		)
 		if err != nil {
 			if !IsBuildError(err) {
 				// If the error is not a build error we want to retain the changes
-				if err2 := r.updateCommitID(stagedCommitID); err2 != nil {
+				if err2 := r.updateCommitID(stagedCommit.CommitID); err2 != nil {
 					return errs.Pack(err, locale.WrapError(err2, "err_package_update_commit_id"))
 				}
 			}
@@ -223,7 +201,7 @@ func (r *RequirementOperation) Install(ts *time.Time, requirements []*Requiremen
 	}
 
 	// Record the new commit ID and update the local build script.
-	if err := r.updateCommitID(stagedCommitID); err != nil {
+	if err := r.updateCommitID(stagedCommit.CommitID); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
@@ -362,7 +340,7 @@ func (r *RequirementOperation) InstallPlatform(requirements []*Requirement) (rer
 	// Start the process of creating a commit with the requested changes.
 	bp := bpModel.NewBuildPlannerModel(r.Auth)
 
-	pg := output.StartSpinner(r.Output, locale.T("progress_commit"), constants.TerminalAnimationInterval)
+	pg := output.StartSpinner(r.Output, locale.T("progress_solve"), constants.TerminalAnimationInterval)
 	defer func() {
 		if pg != nil {
 			pg.Stop(locale.T("progress_fail"))
@@ -389,7 +367,7 @@ func (r *RequirementOperation) InstallPlatform(requirements []*Requirement) (rer
 		}
 	}
 
-	// Stage the commit.
+	// Stage the commit and solve the runtime.
 	commitMessages := make([]string, len(requirements))
 	for i, req := range requirements {
 		message := platformCommitMessage(req.Operation, req.Name, req.Version, req.BitWidth)
@@ -406,7 +384,7 @@ func (r *RequirementOperation) InstallPlatform(requirements []*Requirement) (rer
 		Description:  commitMessage,
 		Script:       script,
 	}
-	stagedCommitID, err := bp.StageCommit(params)
+	stagedCommit, err := bp.StageCommit(params)
 	if err != nil {
 		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")
 	}
@@ -414,28 +392,19 @@ func (r *RequirementOperation) InstallPlatform(requirements []*Requirement) (rer
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
 
-	// Solve the runtime.
-	solveSpinner := output.StartSpinner(r.Output, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
-	rtCommit, err := bp.FetchCommit(stagedCommitID, r.Project.Owner(), r.Project.Name(), nil)
-	if err != nil {
-		solveSpinner.Stop(locale.T("progress_fail"))
-		return errs.Wrap(err, "Failed to fetch build result")
-	}
-	solveSpinner.Stop(locale.T("progress_success"))
-
 	// Update the runtime.
 	if !r.Config.GetBool(constants.AsyncRuntimeConfig) {
 		r.Output.Notice("")
 
 		// refresh or install runtime
 		_, err = runtime_runbit.Update(r.prime, trigger.TriggerPlatform,
-			runtime_runbit.WithCommit(rtCommit),
+			runtime_runbit.WithCommit(stagedCommit),
 			runtime_runbit.WithoutBuildscriptValidation(),
 		)
 		if err != nil {
 			if !IsBuildError(err) {
 				// If the error is not a build error we want to retain the changes
-				if err2 := r.updateCommitID(stagedCommitID); err2 != nil {
+				if err2 := r.updateCommitID(stagedCommit.CommitID); err2 != nil {
 					return errs.Pack(err, locale.WrapError(err2, "err_package_update_commit_id"))
 				}
 			}
@@ -444,7 +413,7 @@ func (r *RequirementOperation) InstallPlatform(requirements []*Requirement) (rer
 	}
 
 	// Record the new commit ID and update the local build script.
-	if err := r.updateCommitID(stagedCommitID); err != nil {
+	if err := r.updateCommitID(stagedCommit.CommitID); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 

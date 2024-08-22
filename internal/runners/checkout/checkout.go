@@ -174,7 +174,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 	if err := cves.NewCveReport(u.prime).Report(buildPlan, nil); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
-	
+
 	rti, err := runtime_runbit.Update(u.prime, trigger.TriggerCheckout, rtOpts...)
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime")
