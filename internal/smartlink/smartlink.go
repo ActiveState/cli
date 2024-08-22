@@ -47,7 +47,7 @@ func Link(src, dest string) error {
 	}
 
 	if fileutils.IsDir(src) {
-		if err := os.MkdirAll(dest, 0755); err != nil {
+		if err := fileutils.Mkdir(dest); err != nil {
 			return errs.Wrap(err, "could not create directory %s", dest)
 		}
 		entries, err := os.ReadDir(src)
@@ -60,6 +60,11 @@ func Link(src, dest string) error {
 			}
 		}
 		return nil
+	}
+
+	destDir := filepath.Dir(dest)
+	if err := fileutils.MkdirUnlessExists(destDir); err != nil {
+		return errs.Wrap(err, "could not create directory %s", destDir)
 	}
 
 	// Multiple artifacts can supply the same file. We do not have a better solution for this at the moment other than
