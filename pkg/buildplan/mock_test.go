@@ -107,13 +107,13 @@ func createMockArtifactWithBuildTimeDeps() *Artifact {
 
 // createIngredientWithRuntimeDeps creates a mock ingredient with runtime dependencies.
 // The dependencies are:
-// Ingredient0010
-//	-> Artifact0001
-//	  -> Artifact0002 (child)
-//	    -> Ingredient0020
-//	      -> Artifact0003
-//	        -> Artifact0004 (child)
-//	          -> Ingredient0030
+// 00000000-0000-0000-0000-000000000010 (Ingredient0010)
+//	-> 00000000-0000-0000-0000-000000000001 (Artifact0001)
+//	  -> 00000000-0000-0000-0000-000000000002 (Artifact child of Artifact0001)
+//	    -> 00000000-0000-0000-0000-000000000020 (Ingredient0020)
+//	      -> 00000000-0000-0000-0000-000000000003 (Artifact0003)
+//	        -> 00000000-0000-0000-0000-000000000004 (Artifact child of Artifact0003)
+//	          -> 00000000-0000-0000-0000-000000000030 (Ingredient0030)
 func createIngredientWithRuntimeDeps() *Ingredient {
 	artifact0001 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000001"}
 	artifact0002 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000002"}
@@ -180,16 +180,16 @@ func createIngredientWithRuntimeDeps() *Ingredient {
 // to the ingredient then the children of that artifact and finally the ingredients of those children.
 //
 // The ingredient cycle is:
-// Ingredient0010
-//	-> Artifact0001
-//	  -> Artifact0002 (child)
-//	    -> Ingredient0020
-//	      -> Artifact0003
-//	        -> Artifact0004 (child)
-//	          -> Ingredient0030
-//	            -> Artifact0005
-//	              -> Artifact0006 (child)
-//	                -> Ingredeint0010 (Cycle back to the first ingredient)
+// 00000000-0000-0000-0000-000000000010 (Ingredient0010)
+//	-> 00000000-0000-0000-0000-000000000001 (Artifact0001)
+//	  -> 00000000-0000-0000-0000-000000000002 (Child of Artifact0001)
+//	    -> 00000000-0000-0000-0000-000000000020 (Ingredient0020)
+//	      -> 00000000-0000-0000-0000-000000000003 (Artifact0003)
+//	        -> 00000000-0000-0000-0000-000000000004 (Child of Artifact0003)
+//	          -> 00000000-0000-0000-0000-000000000030 (Ingredient0030)
+//	            -> 00000000-0000-0000-0000-000000000005 (Artifact0005)
+//	              -> 00000000-0000-0000-0000-000000000006 (Child of Artifact0005)
+//	                -> 00000000-0000-0000-0000-000000000010 (Ingredient0010 cycle back to the first ingredient)
 func createMockIngredientWithCycles() *Ingredient {
 	artifact0001 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000001"}
 	artifact0002 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000002"}

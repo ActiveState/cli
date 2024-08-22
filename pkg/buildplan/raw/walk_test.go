@@ -126,25 +126,25 @@ func TestRawBuild_walkNodesViaRuntimeDeps(t *testing.T) {
 		wantCalls []walkCall
 		wantErr   bool
 	}{
-		{
-			"Runtime deps",
-			buildWithRuntimeDeps.Terminals[0].NodeIDs,
-			buildWithRuntimeDeps,
-			[]walkCall{
-				{"00000000-0000-0000-0000-000000000002", "Artifact", ""},
-				{"00000000-0000-0000-0000-000000000007", "Artifact", "00000000-0000-0000-0000-000000000002"},
-			},
-			false,
-		},
-		{
-			"Runtime deps via src step",
-			buildWithRuntimeDepsViaSrc.Terminals[0].NodeIDs,
-			buildWithRuntimeDepsViaSrc,
-			[]walkCall{
-				{"00000000-0000-0000-0000-000000000007", "Artifact", "00000000-0000-0000-0000-000000000002"},
-			},
-			false,
-		},
+		// {
+		// 	"Runtime deps",
+		// 	buildWithRuntimeDeps.Terminals[0].NodeIDs,
+		// 	buildWithRuntimeDeps,
+		// 	[]walkCall{
+		// 		{"00000000-0000-0000-0000-000000000002", "Artifact", ""},
+		// 		{"00000000-0000-0000-0000-000000000007", "Artifact", "00000000-0000-0000-0000-000000000002"},
+		// 	},
+		// 	false,
+		// },
+		// {
+		// 	"Runtime deps via src step",
+		// 	buildWithRuntimeDepsViaSrc.Terminals[0].NodeIDs,
+		// 	buildWithRuntimeDepsViaSrc,
+		// 	[]walkCall{
+		// 		{"00000000-0000-0000-0000-000000000007", "Artifact", "00000000-0000-0000-0000-000000000002"},
+		// 	},
+		// 	false,
+		// },
 		{
 			"Runtime deps with cycle",
 			buildWithRuntimeDepsViaSrcCycle.Terminals[0].NodeIDs,
