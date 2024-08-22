@@ -23,12 +23,13 @@ func OutputSummary(out output.Outputer, directDependencies buildplan.Artifacts) 
 		return ingredients[i].Name < ingredients[j].Name
 	})
 
-	out.Notice(locale.Tl("setting_up_dependencies", "Setting up the following dependencies:"))
+	out.Notice("") // blank line
+	out.Notice(locale.Tl("setting_up_dependencies", "  Setting up the following dependencies:"))
 
 	for i, ingredient := range ingredients {
-		prefix := "├─"
+		prefix := "  ├─"
 		if i == len(ingredients)-1 {
-			prefix = "└─"
+			prefix = "  └─"
 		}
 
 		subdependencies := ""

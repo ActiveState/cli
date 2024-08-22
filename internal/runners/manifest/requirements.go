@@ -76,6 +76,7 @@ func (o requirements) Print(out output.Outputer) {
 		requirementsOutput = append(requirementsOutput, requirementOutput)
 	}
 
+	out.Print("") // blank line
 	out.Print(struct {
 		Requirements []*requirementOutput `locale:"," opts:"hideDash,omitKey"`
 	}{

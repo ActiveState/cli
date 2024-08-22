@@ -159,6 +159,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
+	out.Notice("") // blank line
 	_, err = runtime_runbit.Update(i.prime, trigger.TriggerImport, runtime_runbit.WithCommitID(stagedCommit.CommitID))
 	if err != nil {
 		return errs.Wrap(err, "Runtime update failed")
