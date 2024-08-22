@@ -242,8 +242,7 @@ func (suite *InitIntegrationTestSuite) TestInit_ChangeSummary() {
 	cp.Expect("Done")
 	ts.NotifyProjectCreated(e2e.PersistentUsername, project)
 	cp.Expect("Setting up the following dependencies:")
-	cp.Expect("└─ python@3.10.10")
-	suite.Assert().NotContains(cp.Snapshot(), "├─", "more than one dependency was printed")
+	cp.Expect("├─ python@3.10.10")
 	cp.ExpectExitCode(0)
 }
 

@@ -139,6 +139,11 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 		}
 	}
 
+	if runtime.GOOS == "windows" {
+		shortcutDir := filepath.Join(ts.Dirs.HomeDir, "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")
+		suite.NoDirExists(shortcutDir, "shortcut dir should not exist after uninstall")
+	}
+
 	if fileutils.DirExists(binDir) {
 		suite.Fail("bin directory should not exist after uninstall")
 	}

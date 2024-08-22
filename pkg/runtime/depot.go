@@ -3,8 +3,10 @@ package runtime
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 
 	"github.com/go-openapi/strfmt"
@@ -38,6 +40,15 @@ const (
 	deploymentTypeCopy                = "copy"
 )
 
+type ErrVolumeMismatch struct {
+	DepotVolume string
+	PathVolume  string
+}
+
+func (e ErrVolumeMismatch) Error() string {
+	return fmt.Sprintf("volume mismatch: path volume is '%s', but depot volume is '%s'", e.PathVolume, e.DepotVolume)
+}
+
 type depot struct {
 	config    depotConfig
 	depotPath string
@@ -45,8 +56,18 @@ type depot struct {
 	fsMutex   *sync.Mutex
 }
 
-func newDepot() (*depot, error) {
+func newDepot(runtimePath string) (*depot, error) {
 	depotPath := filepath.Join(storage.CachePath(), depotName)
+
+	// Windows does not support hard-linking across drives, so determine if the runtime path is on a
+	// separate drive than the default depot path. If so, use a drive-specific depot path.
+	if runtime.GOOS == "windows" {
+		runtimeVolume := filepath.VolumeName(runtimePath)
+		storageVolume := filepath.VolumeName(storage.CachePath())
+		if runtimeVolume != storageVolume {
+			depotPath = filepath.Join(runtimeVolume+"\\", "activestate", depotName)
+		}
+	}
 
 	result := &depot{
 		config: depotConfig{
@@ -131,6 +152,10 @@ func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) 
 		return errs.New("artifact not found in depot")
 	}
 
+	if err := d.validateVolume(absoluteDest); err != nil {
+		return errs.Wrap(err, "volume validation failed")
+	}
+
 	// Collect artifact meta info
 	var err error
 	absoluteDest, err = fileutils.ResolvePath(absoluteDest)
@@ -183,6 +208,10 @@ func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) 
 	absoluteDest, err = fileutils.ResolvePath(absoluteDest)
 	if err != nil {
 		return errs.Wrap(err, "failed to resolve path")
+	}
+
+	if err := d.validateVolume(absoluteDest); err != nil {
+		return errs.Wrap(err, "volume validation failed")
 	}
 
 	if err := fileutils.MkdirUnlessExists(absoluteDest); err != nil {
@@ -253,6 +282,20 @@ func (d *depot) Undeploy(id strfmt.UUID, relativeSrc, path string) error {
 
 	// Write changes to config
 	d.config.Deployments[id] = sliceutils.Filter(d.config.Deployments[id], func(d deployment) bool { return d.Path != path })
+
+	return nil
+}
+
+func (d *depot) validateVolume(absoluteDest string) error {
+	if runtime.GOOS != "windows" {
+		return nil
+	}
+
+	depotVolume := filepath.VolumeName(d.depotPath)
+	pathVolume := filepath.VolumeName(absoluteDest)
+	if pathVolume != depotVolume {
+		return &ErrVolumeMismatch{depotVolume, pathVolume}
+	}
 
 	return nil
 }

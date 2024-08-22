@@ -28,6 +28,9 @@ function {{$K}} {
 }
 {{end}}
 
+# Reset execution policy, since we had to set it to bypass to run this script
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy (Get-ExecutionPolicy -Scope User)
+
 echo "{{ escapePwsh .ActivatedMessage}}"
 echo "Warning: PowerShell is not yet officially supported."
 

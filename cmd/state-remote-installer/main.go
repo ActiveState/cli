@@ -216,6 +216,9 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	if params.nonInteractive {
 		args = append(args, "-n") // forward to installer
 	}
+	if params.force {
+		args = append(args, "--force") // forward to installer
+	}
 	env := []string{
 		constants.InstallerNoSubshell + "=true",
 	}

@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
@@ -106,7 +106,7 @@ func (c *Commit) Run() (rerr error) {
 		}
 	}()
 
-	stagedCommitID, err := bp.StageCommit(buildplanner.StageCommitParams{
+	stagedCommit, err := bp.StageCommit(buildplanner.StageCommitParams{
 		Owner:        proj.Owner(),
 		Project:      proj.Name(),
 		ParentCommit: localCommitID.String(),
@@ -117,12 +117,12 @@ func (c *Commit) Run() (rerr error) {
 	}
 
 	// Update local commit ID
-	if err := localcommit.Set(proj.Dir(), stagedCommitID.String()); err != nil {
+	if err := localcommit.Set(proj.Dir(), stagedCommit.CommitID.String()); err != nil {
 		return errs.Wrap(err, "Could not set local commit ID")
 	}
 
 	// Update our local build expression to match the committed one. This allows our API a way to ensure forward compatibility.
-	newScript, err := bp.GetBuildScript(stagedCommitID.String())
+	newScript, err := bp.GetBuildScript(stagedCommit.CommitID.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the remote build script")
 	}
@@ -133,7 +133,7 @@ func (c *Commit) Run() (rerr error) {
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
 
-	pgSolve := output.StartSpinner(out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+	pgSolve := output.StartSpinner(out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
 	defer func() {
 		if pgSolve != nil {
 			pgSolve.Stop(locale.T("progress_fail"))
@@ -141,7 +141,7 @@ func (c *Commit) Run() (rerr error) {
 	}()
 
 	// Solve runtime
-	rtCommit, err := bp.FetchCommit(stagedCommitID, proj.Owner(), proj.Name(), nil)
+	rtCommit, err := bp.FetchCommit(stagedCommit.CommitID, proj.Owner(), proj.Name(), nil)
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch staged commit")
 	}
@@ -152,32 +152,22 @@ func (c *Commit) Run() (rerr error) {
 		return errs.Wrap(err, "Failed to fetch old commit")
 	}
 
-	// Fetch the impact report.
-	impactReport, err := bp.ImpactReport(&buildplanner.ImpactReportParams{
-		Owner:   c.prime.Project().Owner(),
-		Project: c.prime.Project().Name(),
-		Before:  oldCommit.BuildScript(),
-		After:   rtCommit.BuildScript(),
-	})
-	if err != nil {
-		return errs.Wrap(err, "Failed to fetch impact report")
-	}
-
 	pgSolve.Stop(locale.T("progress_success"))
 	pgSolve = nil
 
 	// Output dependency list.
-	dependencies.OutputChangeSummary(c.prime.Output(), impactReport, rtCommit.BuildPlan())
+	dependencies.OutputChangeSummary(out, rtCommit.BuildPlan(), oldCommit.BuildPlan())
 
 	// Report CVEs.
-	if err := cves.NewCveReport(c.prime).Report(impactReport); err != nil {
+	if err := cves.NewCveReport(c.prime).Report(rtCommit.BuildPlan(), oldCommit.BuildPlan()); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
 
+	out.Notice("") // blank line
 	out.Print(output.Prepare(
 		locale.Tl(
 			"commit_success",
-			"", stagedCommitID.String(), proj.NamespaceString(),
+			"", stagedCommit.CommitID.String(), proj.NamespaceString(),
 		),
 		&struct {
 			Namespace string `json:"namespace"`
@@ -186,7 +176,7 @@ func (c *Commit) Run() (rerr error) {
 		}{
 			proj.NamespaceString(),
 			proj.Dir(),
-			stagedCommitID.String(),
+			stagedCommit.CommitID.String(),
 		},
 	))
 

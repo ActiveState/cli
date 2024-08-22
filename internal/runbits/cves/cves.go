@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	vulnModel "github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -40,38 +39,39 @@ func NewCveReport(prime primeable) *CveReport {
 	return &CveReport{prime}
 }
 
-func (c *CveReport) Report(report *response.ImpactReportResult, names ...string) error {
-	if !c.prime.Auth().Authenticated() {
+func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan) error {
+	changeset := newBuildPlan.DiffArtifacts(oldBuildPlan, oldBuildPlan == nil)
+	if c.shouldSkipReporting(changeset) {
 		logging.Debug("Skipping CVE reporting")
 		return nil
 	}
 
 	var ingredients []*request.Ingredient
-	for _, i := range report.Ingredients {
-		if i.After == nil {
-			continue // only care about additions or changes
-		}
-
-		if i.Before != nil && i.Before.Version == i.After.Version {
-			continue // only care about changes
-		}
-
-		ingredients = append(ingredients, &request.Ingredient{
-			Namespace: i.Namespace,
-			Name:      i.Name,
-			Version:   i.After.Version,
-		})
-	}
-
-	if len(ingredients) == 0 {
-		return nil
-	}
-
-	if len(names) == 0 {
-		for _, ing := range ingredients {
-			names = append(names, ing.Name)
+	for _, artifact := range changeset.Added {
+		for _, ing := range artifact.Ingredients {
+			ingredients = append(ingredients, &request.Ingredient{
+				Namespace: ing.Namespace,
+				Name:      ing.Name,
+				Version:   ing.Version,
+			})
 		}
 	}
+
+	for _, change := range changeset.Updated {
+		if !change.VersionsChanged() {
+			continue // For CVE reporting we only care about ingredient changes
+		}
+
+		for _, ing := range change.To.Ingredients {
+			ingredients = append(ingredients, &request.Ingredient{
+				Namespace: ing.Namespace,
+				Name:      ing.Name,
+				Version:   ing.Version,
+			})
+		}
+	}
+
+	names := addedRequirements(oldBuildPlan, newBuildPlan)
 	pg := output.StartSpinner(c.prime.Output(), locale.Tr("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
 
 	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(c.prime.Auth(), ingredients)
@@ -128,7 +128,7 @@ func (c *CveReport) shouldPromptForSecurity(vulnerabilities model.VulnerableIngr
 
 	promptLevel := c.prime.Config().GetString(constants.SecurityPromptLevelConfig)
 
-	logging.Debug("Prompt level: ", promptLevel)
+	logging.Debug("Prompt level: %s", promptLevel)
 	switch promptLevel {
 	case vulnModel.SeverityCritical:
 		return vulnerabilities.Critical.Count > 0
@@ -155,11 +155,11 @@ func (c *CveReport) summarizeCVEs(vulnerabilities model.VulnerableIngredientsByL
 
 	switch {
 	case vulnerabilities.CountPrimary == 0:
-		out.Print("   " + locale.Tr("warning_vulnerable_indirectonly", strconv.Itoa(vulnerabilities.Count)))
+		out.Print("  " + locale.Tr("warning_vulnerable_indirectonly", strconv.Itoa(vulnerabilities.Count)))
 	case vulnerabilities.CountPrimary == vulnerabilities.Count:
-		out.Print("   " + locale.Tr("warning_vulnerable_directonly", strconv.Itoa(vulnerabilities.Count)))
+		out.Print("  " + locale.Tr("warning_vulnerable_directonly", strconv.Itoa(vulnerabilities.Count)))
 	default:
-		out.Print("   " + locale.Tr("warning_vulnerable", strconv.Itoa(vulnerabilities.CountPrimary), strconv.Itoa(vulnerabilities.Count-vulnerabilities.CountPrimary)))
+		out.Print("  " + locale.Tr("warning_vulnerable", strconv.Itoa(vulnerabilities.CountPrimary), strconv.Itoa(vulnerabilities.Count-vulnerabilities.CountPrimary)))
 	}
 
 	printVulnerabilities := func(vulnerableIngredients model.VulnerableIngredientsByLevel, name, color string) {
@@ -172,7 +172,7 @@ func (c *CveReport) summarizeCVEs(vulnerabilities model.VulnerableIngredientsByL
 				}
 				ings = append(ings, fmt.Sprintf("%s[CYAN]%s[/RESET]", prefix, strings.Join(vulns.CVEIDs, ", ")))
 			}
-			out.Print(fmt.Sprintf("    • [%s]%d %s:[/RESET] %s", color, vulnerableIngredients.Count, name, strings.Join(ings, ", ")))
+			out.Print(fmt.Sprintf("  • [%s]%d %s:[/RESET] %s", color, vulnerableIngredients.Count, name, strings.Join(ings, ", ")))
 		}
 	}
 
@@ -182,8 +182,8 @@ func (c *CveReport) summarizeCVEs(vulnerabilities model.VulnerableIngredientsByL
 	printVulnerabilities(vulnerabilities.Low, locale.Tl("cve_low", "Low"), "MAGENTA")
 
 	out.Print("")
-	out.Print("   " + locale.T("more_info_vulnerabilities"))
-	out.Print("   " + locale.T("disable_prompting_vulnerabilities"))
+	out.Print("  " + locale.T("more_info_vulnerabilities"))
+	out.Print("  " + locale.T("disable_prompting_vulnerabilities"))
 	out.Print("")
 }
 
@@ -194,4 +194,34 @@ func (c *CveReport) promptForSecurity() (bool, error) {
 	}
 
 	return confirm, nil
+}
+
+func addedRequirements(oldBuildPlan *buildplan.BuildPlan, newBuildPlan *buildplan.BuildPlan) []string {
+	var names []string
+	var oldRequirements buildplan.Requirements
+	if oldBuildPlan != nil {
+		oldRequirements = oldBuildPlan.Requirements()
+	}
+	newRequirements := newBuildPlan.Requirements()
+
+	oldReqs := make(map[string]bool)
+	for _, req := range oldRequirements {
+		oldReqs[qualifiedName(req)] = true
+	}
+
+	for _, req := range newRequirements {
+		if oldReqs[qualifiedName(req)] || req.Namespace == buildplan.NamespaceInternal {
+			continue
+		}
+		names = append(names, req.Name)
+	}
+
+	return names
+}
+
+func qualifiedName(req *buildplan.Requirement) string {
+	if req.Namespace == "" {
+		return req.Name
+	}
+	return req.Namespace + "/" + req.Name
 }

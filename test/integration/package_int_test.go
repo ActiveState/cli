@@ -685,16 +685,13 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Prompt() {
 	cp = ts.Spawn("config", "set", "security.prompt.level", "high")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("config", "set", "security.prompt.enabled", "true")
+	cp = ts.Spawn("config", "set", constants.SecurityPromptConfig, "true")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "urllib3@2.0.2")
 	cp.Expect("Warning: Dependency has 2 known vulnerabilities")
 	cp.Expect("Do you want to continue")
 	cp.SendLine("y")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("config", "set", "security.prompt.enabled", "false")
 	cp.ExpectExitCode(0)
 }
 
@@ -708,6 +705,9 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Indirect() {
 	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
 
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "set", constants.SecurityPromptConfig, "true")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "private/ActiveState-CLI-Testing/language/python/django_dep", "--ts=now")
@@ -737,6 +737,28 @@ func (suite *PackageIntegrationTestSuite) TestChangeSummary() {
 	cp.Expect("├─ ")
 	cp.Expect("└─ ")
 	cp.Expect("Package added: requests", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0)
+}
+
+func (suite *PackageIntegrationTestSuite) TestChangeSummaryShowsAddedForUpdate() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.Expect("Successfully set")
+	cp.ExpectExitCode(0)
+
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+
+	cp = ts.Spawn("install", "jinja2@2.0")
+	cp.Expect("Package added: jinja2")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "jinja2@3.1.4")
+	cp.Expect("Installing jinja2@3.1.4 includes 1 direct dep")
+	cp.Expect("└─ markupsafe@2.1.5")
+	cp.Expect("Package updated: jinja2")
 	cp.ExpectExitCode(0)
 }
 

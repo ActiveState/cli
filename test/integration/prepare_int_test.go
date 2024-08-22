@@ -92,6 +92,12 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 		profileContents := fileutils.ReadFileUnsafe(profile)
 		suite.NotContains(profileContents, app.Exec, "autostart should not be configured for Linux server environment anymore")
 	}
+
+	// Verify the Windows shortcuts were installed.
+	if runtime.GOOS == "windows" {
+		shortcutDir := filepath.Join(ts.Dirs.HomeDir, "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")
+		suite.DirExists(shortcutDir, "shortcut dir should exist after prepare")
+	}
 }
 
 func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {

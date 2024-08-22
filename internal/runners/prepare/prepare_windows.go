@@ -8,15 +8,18 @@ import (
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
+	userhome "github.com/ActiveState/cli/internal/osutils/user"
 )
 
-var shortcutDir = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")
+// shortcutPathRelative is relative to USERHOME
+var shortcutPathRelative = filepath.Join("AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")
 
 func (r *Prepare) prepareOS() error {
 	err := setStateProtocol()
@@ -41,12 +44,19 @@ func (r *Prepare) prepareOS() error {
 }
 
 func (r *Prepare) prepareStartShortcut() error {
+	home, err := userhome.HomeDir()
+	if err != nil {
+		return errs.Wrap(err, "Unable to get home directory")
+	}
+
+	shortcutDir := filepath.Join(home, shortcutPathRelative)
+
 	if err := fileutils.MkdirUnlessExists(shortcutDir); err != nil {
 		return locale.WrapInputError(err, "err_preparestart_mkdir", "Could not create start menu entry: %s", shortcutDir)
 	}
 
 	sc := shortcut.New(shortcutDir, "Uninstall State Tool", r.subshell.Binary(), "/C \"state clean uninstall --prompt\"")
-	err := sc.Enable()
+	err = sc.Enable()
 	if err != nil {
 		return locale.WrapError(err, "err_preparestart_shortcut", "", sc.Path())
 	}
@@ -107,6 +117,16 @@ func setStateProtocol() error {
 	}
 
 	return nil
+}
+
+func extraInstalledPreparedFiles() []string {
+	home, err := userhome.HomeDir()
+	if err != nil {
+		multilog.Error("Unable to get home directory: %v", err)
+		return nil
+	}
+
+	return []string{filepath.Join(home, shortcutPathRelative)}
 }
 
 func cleanOS() error {

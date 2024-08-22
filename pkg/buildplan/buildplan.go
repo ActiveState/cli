@@ -78,6 +78,61 @@ func (b *BuildPlan) Ingredients(filters ...filterIngredient) Ingredients {
 	return b.ingredients.Filter(filters...)
 }
 
+func (b *BuildPlan) DiffArtifacts(oldBp *BuildPlan, requestedOnly bool) ArtifactChangeset {
+	// Basic outline of what needs to happen here:
+	//   - add ArtifactID to the `Added` field if artifactID only appears in the the `new` buildplan
+	//   - add ArtifactID to the `Removed` field if artifactID only appears in the the `old` buildplan
+	//   - add ArtifactID to the `Updated` field if `ResolvedRequirements.feature` appears in both buildplans, but the resolved version has changed.
+
+	var new ArtifactNameMap
+	var old ArtifactNameMap
+
+	if requestedOnly {
+		new = b.RequestedArtifacts().ToNameMap()
+		if oldBp != nil {
+			old = oldBp.RequestedArtifacts().ToNameMap()
+		}
+	} else {
+		new = b.Artifacts().ToNameMap()
+		if oldBp != nil {
+			old = oldBp.Artifacts().ToNameMap()
+		}
+	}
+
+	var updated []ArtifactUpdate
+	var added []*Artifact
+	for name, artf := range new {
+		if artfOld, notNew := old[name]; notNew {
+			// The artifact name exists in both the old and new recipe, maybe it was updated though
+			if artfOld.ArtifactID == artf.ArtifactID {
+				continue
+			}
+			updated = append(updated, ArtifactUpdate{
+				From: artfOld,
+				To:   artf,
+			})
+
+		} else {
+			// If it's not an update it is a new artifact
+			added = append(added, artf)
+		}
+	}
+
+	var removed []*Artifact
+	for name, artf := range old {
+		if _, noDiff := new[name]; noDiff {
+			continue
+		}
+		removed = append(removed, artf)
+	}
+
+	return ArtifactChangeset{
+		Added:   added,
+		Removed: removed,
+		Updated: updated,
+	}
+}
+
 func (b *BuildPlan) Engine() types.BuildEngine {
 	buildEngine := types.Alternative
 	for _, s := range b.raw.Sources {
