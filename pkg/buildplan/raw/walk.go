@@ -1,8 +1,6 @@
 package raw
 
 import (
-	"fmt"
-
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -151,17 +149,14 @@ func (b *Build) walkNodeViaRuntimeDeps(node interface{}, parent *Artifact, visit
 		return nil
 	}
 
-	fmt.Println("Processing node:", ar.NodeID)
 	// If we detect a cycle we should stop
 	if visited[ar.NodeID] {
-		fmt.Println("Cycle detected, stopping")
 		return nil
 	}
 	visited[ar.NodeID] = true
 
 	// Only state tool artifacts are considered to be a runtime dependency
 	if IsStateToolMimeType(ar.MimeType) {
-		fmt.Println("Found state tool artifact")
 		if err := walk(ar, parent); err != nil {
 			return errs.Wrap(err, "error walking over runtime dep %+v", node)
 		}
