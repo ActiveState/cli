@@ -205,7 +205,7 @@ func (a *Artifact) dependencies(recursive bool, seen map[strfmt.UUID]struct{}, r
 				related = true
 			}
 		}
-		if related == false {
+		if !related {
 			continue
 		}
 
