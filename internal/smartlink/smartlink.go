@@ -62,6 +62,12 @@ func Link(src, dest string) error {
 		return nil
 	}
 
+	if destDir := filepath.Dir(dest); !fileutils.DirExists(destDir) {
+		if err := os.MkdirAll(destDir, 0755); err != nil {
+			return errs.Wrap(err, "could not create directory %s", destDir)
+		}
+	}
+
 	// Multiple artifacts can supply the same file. We do not have a better solution for this at the moment other than
 	// favouring the first one encountered.
 	if fileutils.TargetExists(dest) {
@@ -78,7 +84,7 @@ func Link(src, dest string) error {
 // UnlinkContents will unlink the contents of src to dest if the links exist
 // WARNING: on windows smartlinks are hard links, and relating hard links back to their source is non-trivial, so instead
 // we just delete the target path. If the user modified the target in any way their changes will be lost.
-func UnlinkContents(src, dest string, ignorePaths ...string) error {
+func UnlinkContents(src, dest string) error {
 	if !fileutils.DirExists(dest) {
 		return errs.New("dest dir does not exist: %s", dest)
 	}
@@ -87,11 +93,6 @@ func UnlinkContents(src, dest string, ignorePaths ...string) error {
 	src, dest, err = resolvePaths(src, dest)
 	if err != nil {
 		return errs.Wrap(err, "Could not resolve src and dest paths")
-	}
-
-	ignore := make(map[string]bool)
-	for _, path := range ignorePaths {
-		ignore[path] = true
 	}
 
 	entries, err := os.ReadDir(src)
@@ -106,12 +107,8 @@ func UnlinkContents(src, dest string, ignorePaths ...string) error {
 			continue
 		}
 
-		if _, yes := ignore[destPath]; yes {
-			continue
-		}
-
 		if fileutils.IsDir(destPath) {
-			if err := UnlinkContents(srcPath, destPath, ignorePaths...); err != nil {
+			if err := UnlinkContents(srcPath, destPath); err != nil {
 				return err // Not wrapping here cause it'd just repeat the same error due to the recursion
 			}
 		} else {

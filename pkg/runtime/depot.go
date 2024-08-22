@@ -279,27 +279,17 @@ func (d *depot) Undeploy(id strfmt.UUID, relativeSrc, path string) error {
 	}
 	deploy := deployments[0]
 
-	// Determine if there are any files provided by another artifact that will need to be re-linked
-	// or re-copied after this artifact is uninstalled.
-	redeploys, err := d.getSharedFilesToRedeploy(id, deploy, path)
-	if err != nil {
-		return errs.Wrap(err, "failed to get shared files")
-	}
-	sharedFiles := make([]string, 0)
-	for file := range redeploys {
-		sharedFiles = append(sharedFiles, file)
-	}
-
 	// Perform uninstall based on deployment type
-	if err := smartlink.UnlinkContents(filepath.Join(d.Path(id), relativeSrc), path, sharedFiles...); err != nil {
+	if err := smartlink.UnlinkContents(filepath.Join(d.Path(id), relativeSrc), path); err != nil {
 		return errs.Wrap(err, "failed to unlink artifact")
 	}
 
 	// Re-link or re-copy any files provided by other artifacts.
+	redeploys, err := d.getSharedFilesToRedeploy(id, deploy, path)
+	if err != nil {
+		return errs.Wrap(err, "failed to get shared files")
+	}
 	for sharedFile, relinkSrc := range redeploys {
-		if err := os.Remove(sharedFile); err != nil {
-			return errs.Wrap(err, "failed to remove file")
-		}
 		switch deploy.Type {
 		case deploymentTypeLink:
 			if err := smartlink.Link(relinkSrc, sharedFile); err != nil {
