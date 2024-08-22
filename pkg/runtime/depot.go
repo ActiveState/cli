@@ -337,20 +337,27 @@ func (d *depot) getSharedFilesToRedeploy(id strfmt.UUID, deploy deployment, path
 				continue
 			}
 
-			for _, deployment := range artifactDeployments {
-				for _, fileToDeploy := range deployment.Files {
-					if relativeDeployedFile == fileToDeploy {
+			findArtifact := func() bool {
+				for _, deployment := range artifactDeployments {
+					for _, fileToDeploy := range deployment.Files {
+						if relativeDeployedFile != fileToDeploy {
+							continue
+						}
 						// We'll want to redeploy this from other artifact's copy after undeploying the currently deployed version.
 						newSrc := filepath.Join(d.Path(artifactId), deployment.RelativeSrc, relativeDeployedFile)
 						logging.Debug("More than one artifact provides '%s'", relativeDeployedFile)
 						logging.Debug("Will redeploy '%s' to '%s'", newSrc, deployedFile)
 						redeploy[deployedFile] = newSrc
-						goto nextDeployedFile
+						return true
 					}
 				}
+				return false
+			}
+
+			if findArtifact() {
+				break // ignore all other copies once one is found
 			}
 		}
-	nextDeployedFile:
 	}
 
 	return redeploy, nil
