@@ -120,6 +120,7 @@ func (b *Build) inputNodeIDsFromStep(ar *Artifact, tag StepInputTag) ([]strfmt.U
 
 func (b *Build) WalkViaRuntimeDeps(nodeIDs []strfmt.UUID, walk walkFunc) error {
 	lookup := b.LookupMap()
+	visited := make(map[strfmt.UUID]bool)
 
 	for _, id := range nodeIDs {
 		node, ok := lookup[id]
@@ -127,7 +128,7 @@ func (b *Build) WalkViaRuntimeDeps(nodeIDs []strfmt.UUID, walk walkFunc) error {
 			return errs.New("node ID '%s' does not exist in lookup table", id)
 		}
 
-		if err := b.walkNodeViaRuntimeDeps(node, nil, walk); err != nil {
+		if err := b.walkNodeViaRuntimeDeps(node, nil, visited, walk); err != nil {
 			return errs.Wrap(err, "error walking over runtime dep %s", id)
 		}
 	}
@@ -135,7 +136,7 @@ func (b *Build) WalkViaRuntimeDeps(nodeIDs []strfmt.UUID, walk walkFunc) error {
 	return nil
 }
 
-func (b *Build) walkNodeViaRuntimeDeps(node interface{}, parent *Artifact, walk walkFunc) error {
+func (b *Build) walkNodeViaRuntimeDeps(node interface{}, parent *Artifact, visited map[strfmt.UUID]bool, walk walkFunc) error {
 	lookup := b.LookupMap()
 
 	ar, ok := node.(*Artifact)
@@ -147,6 +148,12 @@ func (b *Build) walkNodeViaRuntimeDeps(node interface{}, parent *Artifact, walk 
 		// In these cases we can simply skip them, because the remaining top level nodes still cover our use-cases.
 		return nil
 	}
+
+	// If we detect a cycle we should stop
+	if visited[ar.NodeID] {
+		return nil
+	}
+	visited[ar.NodeID] = true
 
 	// Only state tool artifacts are considered to be a runtime dependency
 	if IsStateToolMimeType(ar.MimeType) {
@@ -168,7 +175,7 @@ func (b *Build) walkNodeViaRuntimeDeps(node interface{}, parent *Artifact, walk 
 			if !ok {
 				return errs.New("step node ID '%s' does not exist in lookup table", id)
 			}
-			if err := b.walkNodeViaRuntimeDeps(subNode, ar, walk); err != nil {
+			if err := b.walkNodeViaRuntimeDeps(subNode, ar, visited, walk); err != nil {
 				return errs.Wrap(err, "error walking over runtime dep %s", id)
 			}
 		}
@@ -178,7 +185,7 @@ func (b *Build) walkNodeViaRuntimeDeps(node interface{}, parent *Artifact, walk 
 			if !ok {
 				return errs.New("node ID '%s' does not exist in lookup table", id)
 			}
-			if err := b.walkNodeViaRuntimeDeps(subNode, ar, walk); err != nil {
+			if err := b.walkNodeViaRuntimeDeps(subNode, ar, visited, walk); err != nil {
 				return errs.Wrap(err, "error walking over runtime dep %s", id)
 			}
 		}
