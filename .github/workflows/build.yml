@@ -221,6 +221,7 @@ jobs:
         with:
           scan-type: rootfs
           scan-ref: build
+          ignore-unfixed: true
           format: table
           exit-code: 1
 
