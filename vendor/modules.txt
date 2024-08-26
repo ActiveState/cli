@@ -198,6 +198,9 @@ github.com/dsnet/compress/bzip2/internal/sais
 github.com/dsnet/compress/internal
 github.com/dsnet/compress/internal/errors
 github.com/dsnet/compress/internal/prefix
+# github.com/dustin/go-humanize v1.0.1
+## explicit; go 1.16
+github.com/dustin/go-humanize
 # github.com/emirpasic/gods v1.18.1
 ## explicit; go 1.2
 github.com/emirpasic/gods/containers
@@ -353,10 +356,10 @@ github.com/google/go-github/v45/github
 # github.com/google/go-querystring v1.1.0
 ## explicit; go 1.10
 github.com/google/go-querystring/query
-# github.com/google/pprof v0.0.0-20200708004538-1a94d8640e99
-## explicit; go 1.14
+# github.com/google/pprof v0.0.0-20240409012703-83162a5b38cd
+## explicit; go 1.19
 github.com/google/pprof/profile
-# github.com/google/uuid v1.3.0
+# github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
 # github.com/gorilla/websocket v1.5.0
@@ -375,6 +378,11 @@ github.com/hashicorp/go-version
 ## explicit; go 1.12
 github.com/hashicorp/golang-lru
 github.com/hashicorp/golang-lru/simplelru
+# github.com/hashicorp/golang-lru/v2 v2.0.7
+## explicit; go 1.18
+github.com/hashicorp/golang-lru/v2
+github.com/hashicorp/golang-lru/v2/internal
+github.com/hashicorp/golang-lru/v2/simplelru
 # github.com/hinshun/vt10x v0.0.0-20220301184237-5011da428d02
 ## explicit; go 1.14
 github.com/hinshun/vt10x
@@ -462,7 +470,7 @@ github.com/mash/go-tempfile-suffix
 # github.com/mattn/go-colorable v0.1.12
 ## explicit; go 1.13
 github.com/mattn/go-colorable
-# github.com/mattn/go-isatty v0.0.18
+# github.com/mattn/go-isatty v0.0.20
 ## explicit; go 1.15
 github.com/mattn/go-isatty
 # github.com/mattn/go-localereader v0.0.1
@@ -498,6 +506,9 @@ github.com/muesli/reflow/wrap
 # github.com/muesli/termenv v0.15.2
 ## explicit; go 1.17
 github.com/muesli/termenv
+# github.com/ncruces/go-strftime v0.1.9
+## explicit; go 1.17
+github.com/ncruces/go-strftime
 # github.com/nicksnyder/go-i18n v1.10.0
 ## explicit
 github.com/nicksnyder/go-i18n/i18n
@@ -551,7 +562,7 @@ github.com/posener/wstest
 # github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c
 ## explicit; go 1.14
 github.com/power-devops/perfstat
-# github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0
+# github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec
 ## explicit; go 1.12
 github.com/remyoudompheng/bigfft
 # github.com/rivo/uniseg v0.4.6
@@ -687,8 +698,8 @@ golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/agent
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 golang.org/x/crypto/ssh/knownhosts
-# golang.org/x/mod v0.12.0
-## explicit; go 1.17
+# golang.org/x/mod v0.16.0
+## explicit; go 1.18
 golang.org/x/mod/semver
 # golang.org/x/net v0.25.0
 ## explicit; go 1.18
@@ -700,10 +711,10 @@ golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
-# golang.org/x/sync v0.3.0
-## explicit; go 1.17
+# golang.org/x/sync v0.6.0
+## explicit; go 1.18
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.20.0
+# golang.org/x/sys v0.22.0
 ## explicit; go 1.18
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
@@ -730,13 +741,14 @@ golang.org/x/text/width
 # golang.org/x/time v0.1.0
 ## explicit
 golang.org/x/time/rate
-# golang.org/x/tools v0.13.0
-## explicit; go 1.18
+# golang.org/x/tools v0.19.0
+## explicit; go 1.19
 golang.org/x/tools/cmd/stringer
 golang.org/x/tools/go/gcexportdata
 golang.org/x/tools/go/internal/packagesdriver
 golang.org/x/tools/go/packages
 golang.org/x/tools/go/types/objectpath
+golang.org/x/tools/internal/aliases
 golang.org/x/tools/internal/event
 golang.org/x/tools/internal/event/core
 golang.org/x/tools/internal/event/keys
@@ -749,6 +761,7 @@ golang.org/x/tools/internal/pkgbits
 golang.org/x/tools/internal/tokeninternal
 golang.org/x/tools/internal/typeparams
 golang.org/x/tools/internal/typesinternal
+golang.org/x/tools/internal/versions
 # gopkg.in/AlecAivazis/survey.v1 v1.8.8
 ## explicit; go 1.13
 gopkg.in/AlecAivazis/survey.v1
@@ -777,15 +790,15 @@ gopkg.in/yaml.v3
 howett.net/plist
 # lukechampine.com/uint128 v1.1.1
 ## explicit; go 1.12
-lukechampine.com/uint128
 # modernc.org/cc/v3 v3.33.6
 ## explicit; go 1.15
-modernc.org/cc/v3
 # modernc.org/ccgo/v3 v3.9.5
 ## explicit; go 1.15
-modernc.org/ccgo/v3/lib
-# modernc.org/libc v1.9.11
-## explicit; go 1.15
+# modernc.org/gc/v3 v3.0.0-20240107210532-573471604cb6
+## explicit; go 1.20
+modernc.org/gc/v3
+# modernc.org/libc v1.55.3
+## explicit; go 1.20
 modernc.org/libc
 modernc.org/libc/errno
 modernc.org/libc/fcntl
@@ -801,6 +814,7 @@ modernc.org/libc/pthread
 modernc.org/libc/pwd
 modernc.org/libc/signal
 modernc.org/libc/stdio
+modernc.org/libc/stdlib
 modernc.org/libc/sys/socket
 modernc.org/libc/sys/stat
 modernc.org/libc/sys/types
@@ -808,23 +822,24 @@ modernc.org/libc/termios
 modernc.org/libc/time
 modernc.org/libc/unistd
 modernc.org/libc/utime
+modernc.org/libc/uuid
 modernc.org/libc/uuid/uuid
-# modernc.org/mathutil v1.4.0
-## explicit; go 1.13
+modernc.org/libc/wctype
+# modernc.org/mathutil v1.6.0
+## explicit; go 1.18
 modernc.org/mathutil
-# modernc.org/memory v1.0.4
-## explicit; go 1.15
+# modernc.org/memory v1.8.0
+## explicit; go 1.18
 modernc.org/memory
-# modernc.org/opt v0.1.1
+# modernc.org/opt v0.1.3
 ## explicit; go 1.13
-modernc.org/opt
-# modernc.org/sqlite v1.11.2
-## explicit; go 1.15
+# modernc.org/sqlite v1.32.0
+## explicit; go 1.20
 modernc.org/sqlite
 modernc.org/sqlite/lib
-# modernc.org/strutil v1.1.1
-## explicit; go 1.15
+# modernc.org/strutil v1.2.0
+## explicit; go 1.18
 modernc.org/strutil
-# modernc.org/token v1.0.0
+# modernc.org/token v1.1.0
 ## explicit
 modernc.org/token

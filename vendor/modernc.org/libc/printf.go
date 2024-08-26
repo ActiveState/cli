@@ -2,11 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build !(linux && (amd64 || arm64 || loong64))
+
 package libc // import "modernc.org/libc"
 
 import (
 	"bytes"
 	"fmt"
+	"runtime"
 	"strconv"
 	"strings"
 	"unsafe"
@@ -18,6 +21,7 @@ const (
 	modH
 	modL
 	modLL
+	modLD
 	modQ
 	modCapitalL
 	modJ
@@ -36,15 +40,17 @@ const (
 // the output stream; and conversion specifications, each of which results in
 // fetching zero or more subsequent arguments.
 func printf(format, args uintptr) []byte {
+	// format0 := format
+	// args0 := args
 	buf := bytes.NewBuffer(nil)
 	for {
 		switch c := *(*byte)(unsafe.Pointer(format)); c {
 		case '%':
 			format = printfConversion(buf, format, &args)
 		case 0:
-			// if dmesgs {
-			// 	dmesg("%v: %q", origin(1), buf.Bytes())
-			// }
+			// 			if dmesgs {
+			// 				dmesg("%v: %q, %#x -> %q", origin(1), GoString(format0), args0, buf.Bytes())
+			// 			}
 			return buf.Bytes()
 		default:
 			format++
@@ -110,7 +116,7 @@ flags:
 			break flags
 		}
 	}
-	format, width, hasWidth := parseFieldWidth(format)
+	format, width, hasWidth := parseFieldWidth(format, args)
 	if hasWidth {
 		spec += strconv.Itoa(width)
 	}
@@ -133,15 +139,20 @@ more:
 		// the output is empty.
 		format++
 		var arg int64
+		if isWindows && mod == modL {
+			mod = modNone
+		}
 		switch mod {
-		case modNone, modL, modLL, mod64:
+		case modL, modLL, mod64, modJ:
 			arg = VaInt64(args)
 		case modH:
 			arg = int64(int16(VaInt32(args)))
 		case modHH:
 			arg = int64(int8(VaInt32(args)))
-		case mod32:
+		case mod32, modNone:
 			arg = int64(VaInt32(args))
+		case modT:
+			arg = int64(VaInt64(args))
 		default:
 			panic(todo("", mod))
 		}
@@ -164,8 +175,13 @@ more:
 		// precision 0, the output is empty.
 		format++
 		var arg uint64
+		if isWindows && mod == modL {
+			mod = modNone
+		}
 		switch mod {
-		case modNone, modL, modLL, mod64:
+		case modNone:
+			arg = uint64(VaUint32(args))
+		case modL, modLL, mod64:
 			arg = VaUint64(args)
 		case modH:
 			arg = uint64(uint16(VaInt32(args)))
@@ -173,6 +189,8 @@ more:
 			arg = uint64(uint8(VaInt32(args)))
 		case mod32:
 			arg = uint64(VaInt32(args))
+		case modZ:
+			arg = uint64(VaInt64(args))
 		default:
 			panic(todo("", mod))
 		}
@@ -195,8 +213,13 @@ more:
 		// precision 0, the output is empty.
 		format++
 		var arg uint64
+		if isWindows && mod == modL {
+			mod = modNone
+		}
 		switch mod {
-		case modNone, modL, modLL, mod64:
+		case modNone:
+			arg = uint64(VaUint32(args))
+		case modL, modLL, mod64:
 			arg = VaUint64(args)
 		case modH:
 			arg = uint64(uint16(VaInt32(args)))
@@ -217,6 +240,38 @@ more:
 		}
 
 		f := spec + "o"
+		str = fmt.Sprintf(f, arg)
+	case 'b':
+		// Base 2.
+		format++
+		var arg uint64
+		if isWindows && mod == modL {
+			mod = modNone
+		}
+		switch mod {
+		case modNone:
+			arg = uint64(VaUint32(args))
+		case modL, modLL, mod64:
+			arg = VaUint64(args)
+		case modH:
+			arg = uint64(uint16(VaInt32(args)))
+		case modHH:
+			arg = uint64(uint8(VaInt32(args)))
+		case mod32:
+			arg = uint64(VaInt32(args))
+		default:
+			panic(todo("", mod))
+		}
+
+		if arg == 0 && hasPrecision && prec == 0 {
+			break
+		}
+
+		if hasPrecision {
+			panic(todo("", prec))
+		}
+
+		f := spec + "b"
 		str = fmt.Sprintf(f, arg)
 	case 'I':
 		if !isWindows {
@@ -277,8 +332,13 @@ more:
 		// printed with an explicit precision 0, the output is empty.
 		format++
 		var arg uint64
+		if isWindows && mod == modL {
+			mod = modNone
+		}
 		switch mod {
-		case modNone, modL, modLL, mod64:
+		case modNone:
+			arg = uint64(VaUint32(args))
+		case modL, modLL, mod64:
 			arg = VaUint64(args)
 		case modH:
 			arg = uint64(uint16(VaInt32(args)))
@@ -286,6 +346,8 @@ more:
 			arg = uint64(uint8(VaInt32(args)))
 		case mod32:
 			arg = uint64(VaInt32(args))
+		case modZ:
+			arg = uint64(VaInt64(args))
 		default:
 			panic(todo("", mod))
 		}
@@ -333,7 +395,7 @@ more:
 			prec = 6
 		}
 		f := fmt.Sprintf("%s.%d%c", spec, prec, c)
-		str = fmt.Sprintf(f, arg)
+		str = fixNanInf(fmt.Sprintf(f, arg))
 	case 'G':
 		fallthrough
 	case 'g':
@@ -354,7 +416,7 @@ more:
 		}
 
 		f := fmt.Sprintf("%s.%d%c", spec, prec, c)
-		str = fmt.Sprintf(f, arg)
+		str = fixNanInf(fmt.Sprintf(f, arg))
 	case 's':
 		// If  no l modifier is present: the const char * argument is expected to be a
 		// pointer to an array of character type (pointer to a string).  Characters
@@ -385,7 +447,7 @@ more:
 			switch {
 			case hasPrecision:
 				f = fmt.Sprintf("%s.%ds", spec, prec)
-				str = fmt.Sprintf(f, GoBytes(arg, prec))
+				str = fmt.Sprintf(f, GoString(arg))
 			default:
 				f = spec + "s"
 				str = fmt.Sprintf(f, GoString(arg))
@@ -397,9 +459,17 @@ more:
 		// The void * pointer argument is printed in hexadecimal (as if by %#x or
 		// %#lx).
 		format++
-		arg := VaUintptr(args)
-		buf.WriteString("0x")
-		buf.WriteString(strconv.FormatInt(int64(arg), 16))
+		switch runtime.GOOS {
+		case "windows":
+			switch runtime.GOARCH {
+			case "386", "arm":
+				fmt.Fprintf(buf, "%08X", VaUintptr(args))
+			default:
+				fmt.Fprintf(buf, "%016X", VaUintptr(args))
+			}
+		default:
+			fmt.Fprintf(buf, "%#0x", VaUintptr(args))
+		}
 	case 'c':
 		// If no l modifier is present, the int argument is converted to an unsigned
 		// char, and the resulting character is written.  If an l modifier is present,
@@ -440,7 +510,7 @@ more:
 // nonexistent or small field width cause truncation of a field; if the result
 // of a conversion is wider than the field width, the field is expanded to
 // contain the conversion result.
-func parseFieldWidth(format uintptr) (_ uintptr, n int, ok bool) {
+func parseFieldWidth(format uintptr, args *uintptr) (_ uintptr, n int, ok bool) {
 	first := true
 	for {
 		var digit int
@@ -448,7 +518,13 @@ func parseFieldWidth(format uintptr) (_ uintptr, n int, ok bool) {
 		case first && c == '0':
 			return format, n, ok
 		case first && c == '*':
-			panic(todo(""))
+			format++
+			switch c := *(*byte)(unsafe.Pointer(format)); {
+			case c >= '0' && c <= '9':
+				panic(todo(""))
+			default:
+				return format, int(VaInt32(args)), true
+			}
 		case c >= '0' && c <= '9':
 			format++
 			ok = true
@@ -575,16 +651,34 @@ func parseLengthModifier(format uintptr) (_ uintptr, n int) {
 	case 'q':
 		panic(todo(""))
 	case 'L':
-		panic(todo(""))
+		format++
+		n = modLD
+		return format, n
 	case 'j':
-		panic(todo(""))
+		format++
+		n = modJ
+		return format, n
 	case 'z':
-		panic(todo(""))
+		format++
+		return format, modZ
 	case 'Z':
-		panic(todo(""))
+		format++
+		return format, modCapitalZ
 	case 't':
-		panic(todo(""))
+		format++
+		return format, modT
 	default:
 		return format, 0
+	}
+}
+
+func fixNanInf(s string) string {
+	switch s {
+	case "NaN":
+		return "nan"
+	case "+Inf", "-Inf":
+		return "inf"
+	default:
+		return s
 	}
 }

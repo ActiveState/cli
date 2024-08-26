@@ -1,4 +1,5 @@
-until unconvert -fastmath . &> /dev/null
+set -evx
+until unconvert -fastmath -all ./...
 do
-	unconvert -fastmath -apply . &> /dev/null
+	unconvert2 -fastmath -apply -all ./...
 done
