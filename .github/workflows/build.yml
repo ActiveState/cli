@@ -214,6 +214,16 @@ jobs:
         shell: bash
         run: parallelize results Build-Executor
 
+      - # === Scan for CVEs (Linux only) ===
+        name: Scan for CVEs
+        if: runner.os == 'Linux'
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          scan-type: rootfs
+          scan-ref: build
+          format: table
+          exit-code: 1
+
       - # === Prepare Windows Cert ===
         name: Prepare Windows Cert
         shell: bash
@@ -424,7 +434,7 @@ jobs:
         name: Install Go
         uses: actions/setup-go@v3
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: 1.22.x
 
       - # === Install State Tool ===
         name: Install State Tool
