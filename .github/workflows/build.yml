@@ -221,7 +221,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.20.0
         with:
           scan-type: rootfs
-          scan-ref: build/state
+          scan-ref: build
           format: table
           exit-code: 1
 
