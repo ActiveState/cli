@@ -182,20 +182,17 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 		}
 	}()
 
-	binary = os.Getenv("SHELL")
-	if binary == "" && runtime.GOOS == "windows" {
-		binary = detectShellWindows()
+	binary = configured
+	if binary == "" {
+		binary = detectShellParent()
 	}
 
 	if binary == "" {
-		binary = configured
+		binary = os.Getenv(SHELL_ENV_VAR)
 	}
+
 	if binary == "" {
-		if runtime.GOOS == "windows" {
-			binary = "cmd.exe"
-		} else {
-			binary = "bash"
-		}
+		binary = OS_DEFULAT
 	}
 
 	path := resolveBinaryPath(binary)
@@ -239,24 +236,30 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 	return name, path
 }
 
-func detectShellWindows() string {
-	// Windows does not provide a way of identifying which shell we are running in, so we have to look at the parent
-	// process.
-
+func detectShellParent() string {
 	p, err := process.NewProcess(int32(os.Getppid()))
 	if err != nil && !errors.As(err, ptr.To(&os.PathError{})) {
-		panic(err)
+		logging.Error("Failed to get parent process: %v", err)
 	}
 
-	for p != nil {
+	for p != nil && p.Pid != 0 {
 		name, err := p.Name()
 		if err == nil {
-			if strings.Contains(name, "cmd.exe") || strings.Contains(name, "powershell.exe") {
+			if supportedShellName(name) {
 				return name
 			}
 		}
 		p, _ = p.Parent()
 	}
 
-	return os.Getenv("ComSpec")
+	return ""
+}
+
+func supportedShellName(name string) bool {
+	for _, subshell := range supportedShells {
+		if name == subshell.Shell() {
+			return true
+		}
+	}
+	return false
 }

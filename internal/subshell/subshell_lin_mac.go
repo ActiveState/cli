@@ -18,3 +18,8 @@ var supportedShells = []SubShell{
 	&fish.SubShell{},
 	&cmd.SubShell{},
 }
+
+const (
+	SHELL_ENV_VAR = "SHELL"
+	OS_DEFULAT    = "bash"
+)
