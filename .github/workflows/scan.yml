@@ -3,6 +3,7 @@ name: Scan
 on:
   schedule:
     - cron: 0 0 * * *
+  push:
 
 jobs:
   fetch-binaries:
