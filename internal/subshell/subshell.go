@@ -182,10 +182,10 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 		}
 	}()
 
-	binary = configured
+	binary = detectShellParent()
 	logging.Debug("Configured shell: %s", binary)
 	if binary == "" {
-		binary = detectShellParent()
+		binary = configured
 	}
 
 	if binary == "" {
