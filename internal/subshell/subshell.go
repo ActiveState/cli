@@ -245,6 +245,7 @@ func detectShellParent() string {
 	for p != nil && p.Pid != 0 {
 		name, err := p.Name()
 		if err == nil {
+			logging.Debug("Searching for supported shell in parent process: %s", name)
 			if supportedShellName(name) {
 				return name
 			}
