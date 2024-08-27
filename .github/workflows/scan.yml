@@ -1,0 +1,44 @@
+name: Scan
+
+on:
+  schedule:
+    - cron: 0 0 * * *
+
+jobs:
+  fetch-binaries:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Install State Tool
+        uses: ActiveState/setup-state-tool@v1
+
+      - name: Copy State Tool binaries to workspace dir
+        shell: bash
+        run: |
+          exe=`which state`
+          dir=`dirname $exe`
+          cp -r $dir/* '${{ github.workspace }}'
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-binaries
+          path: .
+
+  scan:
+    needs: fetch-binaries
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+
+      - name: Scan binaries
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          scan-type: rootfs
+          scan-ref: '.'
+          ignore-unfixed: true
+          format: table
+          exit-code: 1
