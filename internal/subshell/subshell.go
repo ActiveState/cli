@@ -183,6 +183,7 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 	}()
 
 	binary = configured
+	logging.Debug("Configured shell: %s", binary)
 	if binary == "" {
 		binary = detectShellParent()
 	}
@@ -237,6 +238,7 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 }
 
 func detectShellParent() string {
+	logging.Debug("Detecting shell from parent process")
 	p, err := process.NewProcess(int32(os.Getppid()))
 	if err != nil && !errors.As(err, ptr.To(&os.PathError{})) {
 		logging.Error("Failed to get parent process: %v", err)
