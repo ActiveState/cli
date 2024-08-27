@@ -254,12 +254,3 @@ func detectShellParent() string {
 
 	return ""
 }
-
-func supportedShellName(name string) bool {
-	for _, subshell := range supportedShells {
-		if name == subshell.Shell() {
-			return true
-		}
-	}
-	return false
-}

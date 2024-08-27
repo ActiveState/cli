@@ -23,3 +23,12 @@ const (
 	SHELL_ENV_VAR = "SHELL"
 	OS_DEFULAT    = "bash"
 )
+
+func supportedShellName(name string) bool {
+	for _, subshell := range supportedShells {
+		if name == subshell.Shell() {
+			return true
+		}
+	}
+	return false
+}
