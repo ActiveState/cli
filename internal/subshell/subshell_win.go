@@ -6,6 +6,7 @@ package subshell
 import (
 	"fmt"
 
+	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/subshell/pwsh"
 )
@@ -13,6 +14,7 @@ import (
 var supportedShells = []SubShell{
 	&cmd.SubShell{},
 	&pwsh.SubShell{},
+	&bash.SubShell{},
 }
 
 const (
