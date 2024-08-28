@@ -61,7 +61,7 @@ func TestArtifact_Dependencies(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := tt.artifact
-			deps := a.Dependencies(tt.recursive)
+			deps := a.Dependencies(tt.recursive, nil)
 			got := make([]string, len(deps))
 			for i, dep := range deps {
 				got[i] = dep.ArtifactID.String()

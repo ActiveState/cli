@@ -48,7 +48,7 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 		if _, exists := requested[change.Artifact.ArtifactID]; !exists {
 			continue
 		}
-		for _, dep := range change.Artifact.RuntimeDependencies(false) {
+		for _, dep := range change.Artifact.RuntimeDependencies(false, nil) {
 			for _, subchange := range changeset.Filter(buildplan.ArtifactAdded) {
 				a := subchange.Artifact
 				if a.ArtifactID != dep.ArtifactID {

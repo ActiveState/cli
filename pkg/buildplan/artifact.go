@@ -194,43 +194,46 @@ func (a ArtifactChange) VersionsChanged() bool {
 	return !reflect.DeepEqual(fromVersions, toVersions)
 }
 
-func (as Artifacts) RuntimeDependencies(recursive bool) Artifacts {
-	seen := make(map[strfmt.UUID]struct{})
+func (as Artifacts) RuntimeDependencies(recursive bool, ignore *map[strfmt.UUID]struct{}) Artifacts {
 	dependencies := Artifacts{}
 	for _, a := range as {
-		dependencies = append(dependencies, a.dependencies(recursive, seen, RuntimeRelation)...)
+		dependencies = append(dependencies, a.dependencies(recursive, ignore, RuntimeRelation)...)
 	}
 	return dependencies
 }
 
-func (a *Artifact) RuntimeDependencies(recursive bool) Artifacts {
-	return a.dependencies(recursive, make(map[strfmt.UUID]struct{}), RuntimeRelation)
+func (a *Artifact) RuntimeDependencies(recursive bool, ignore *map[strfmt.UUID]struct{}) Artifacts {
+	return a.dependencies(recursive, ignore, RuntimeRelation)
 }
 
 // Dependencies returns ALL dependencies that an artifact has, this covers runtime and build time dependencies.
 // It does not cover test dependencies as we have no use for them in the state tool.
-func (as Artifacts) Dependencies(recursive bool) Artifacts {
-	seen := make(map[strfmt.UUID]struct{})
+func (as Artifacts) Dependencies(recursive bool, ignore *map[strfmt.UUID]struct{}) Artifacts {
 	dependencies := Artifacts{}
 	for _, a := range as {
-		dependencies = append(dependencies, a.dependencies(recursive, seen, RuntimeRelation, BuildtimeRelation)...)
+		dependencies = append(dependencies, a.dependencies(recursive, ignore, RuntimeRelation, BuildtimeRelation)...)
 	}
 	return dependencies
 }
 
 // Dependencies returns ALL dependencies that an artifact has, this covers runtime and build time dependencies.
 // It does not cover test dependencies as we have no use for them in the state tool.
-func (a *Artifact) Dependencies(recursive bool) Artifacts {
-	return a.dependencies(recursive, make(map[strfmt.UUID]struct{}), RuntimeRelation, BuildtimeRelation)
+func (a *Artifact) Dependencies(recursive bool, ignore *map[strfmt.UUID]struct{}) Artifacts {
+	return a.dependencies(recursive, ignore, RuntimeRelation, BuildtimeRelation)
 }
 
-func (a *Artifact) dependencies(recursive bool, seen map[strfmt.UUID]struct{}, relations ...Relation) Artifacts {
+func (a *Artifact) dependencies(recursive bool, maybeIgnore *map[strfmt.UUID]struct{}, relations ...Relation) Artifacts {
+	ignore := map[strfmt.UUID]struct{}{}
+	if maybeIgnore != nil {
+		ignore = *maybeIgnore
+	}
+
 	// Guard against recursion, this shouldn't really be possible but we don't know how the buildplan might evolve
 	// so better safe than sorry.
-	if _, ok := seen[a.ArtifactID]; ok {
+	if _, ok := ignore[a.ArtifactID]; ok {
 		return Artifacts{}
 	}
-	seen[a.ArtifactID] = struct{}{}
+	ignore[a.ArtifactID] = struct{}{}
 
 	dependencies := Artifacts{}
 	for _, ac := range a.children {
@@ -244,9 +247,11 @@ func (a *Artifact) dependencies(recursive bool, seen map[strfmt.UUID]struct{}, r
 			continue
 		}
 
-		dependencies = append(dependencies, ac.Artifact)
-		if recursive {
-			dependencies = append(dependencies, ac.Artifact.dependencies(recursive, seen, relations...)...)
+		if _, ok := ignore[ac.Artifact.ArtifactID]; !ok {
+			dependencies = append(dependencies, ac.Artifact)
+			if recursive {
+				dependencies = append(dependencies, ac.Artifact.dependencies(recursive, &ignore, relations...)...)
+			}
 		}
 	}
 	return dependencies
