@@ -6,12 +6,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/table"
@@ -32,7 +34,8 @@ type primeable interface {
 }
 
 type Params struct {
-	Expand bool
+	Timestamp captain.TimeValue
+	Expand    bool
 }
 
 func NewParams() *Params {
@@ -103,7 +106,7 @@ func (u *Upgrade) Run(params *Params) (rerr error) {
 	if err != nil {
 		return errs.Wrap(err, "Failed to clone build script")
 	}
-	ts, err := model.FetchLatestTimeStamp(u.prime.Auth())
+	ts, err := commits_runbit.ExpandTime(&params.Timestamp, u.prime.Auth())
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch latest timestamp")
 	}

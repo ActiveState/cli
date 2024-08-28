@@ -19,6 +19,11 @@ func newUpgradeCommand(prime *primer.Values) *captain.Command {
 		prime,
 		[]*captain.Flag{
 			{
+				Name:        "ts",
+				Description: locale.T("flag_state_upgrade_ts_description"),
+				Value:       &params.Timestamp,
+			},
+			{
 				Name:        "expand",
 				Description: locale.T("flag_state_upgrade_expand_description"),
 				Value:       &params.Expand,

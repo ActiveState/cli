@@ -1579,3 +1579,5 @@ namespace_row:
   other: " [DISABLED]{{.V0}} namespace:[/RESET] [CYAN]{{.V1}}[/RESET]"
 flag_state_upgrade_expand_description:
   other: Show individual transitive dependency changes rather than a summary
+flag_state_upgrade_ts_description:
+  other: Manually specify the timestamp to 'upgrade' to. Can be either 'now' or RFC3339 formatted timestamp.
