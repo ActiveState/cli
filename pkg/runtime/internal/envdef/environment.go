@@ -6,7 +6,6 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -341,11 +340,7 @@ func (ed *EnvironmentDefinition) GetEnvBasedOn(envLookup map[string]string) (map
 	for _, ev := range ed.Env {
 		pev := &ev
 		if pev.Inherit {
-			name := pev.Name
-			if runtime.GOOS == "windows" && name == "PATH" {
-				name = "Path" // env vars are case-insensitive on Windows, and this is what it uses
-			}
-			osValue, hasOsValue := envLookup[name]
+			osValue, hasOsValue := envLookup[pev.Name]
 			if hasOsValue {
 				osEv := ev
 				osEv.Values = []string{osValue}
