@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -31,7 +32,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/pkg/runtime"
+	rt "github.com/ActiveState/cli/pkg/runtime"
 )
 
 type Configurable interface {
@@ -98,7 +99,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	// If the path passed resolves to a runtime dir (ie. has a runtime marker) then the project is not used
 	var proj *project.Project
 	var err error
-	if params.Path != "" && runtime.IsRuntimeDir(params.Path) {
+	if params.Path != "" && rt.IsRuntimeDir(params.Path) {
 		projectDir = projectFromRuntimeDir(s.cfg, params.Path)
 		proj, err = project.FromPath(projectDir)
 		if err != nil {
@@ -145,14 +146,18 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 
 	if !fileutils.TargetExists(exeTarget) {
 		// Report recursive execution of executor: The path for the executable should be different from the default bin dir
-		exesOnPath := osutils.FilterExesOnPATH(exeTarget, env["PATH"], func(exe string) bool {
+		filter := func(exe string) bool {
 			v, err := executors.IsExecutor(exe)
 			if err != nil {
 				logging.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
 				return true // This usually means there's a permission issue, which means we likely don't own it
 			}
 			return !v
-		})
+		}
+		exesOnPath := osutils.FilterExesOnPATH(exeTarget, env["PATH"], filter)
+		if runtime.GOOS == "windows" {
+			exesOnPath = append(exesOnPath, osutils.FilterExesOnPATH(exeTarget, env["Path"], filter)...)
+		}
 
 		if len(exesOnPath) > 0 {
 			exeTarget = exesOnPath[0]
