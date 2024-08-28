@@ -4,7 +4,6 @@
 package subshell
 
 import (
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/subshell/fish"
@@ -27,7 +26,6 @@ const (
 
 func supportedShellName(name string) bool {
 	for _, subshell := range supportedShells {
-		logging.Debug("Shell name: %s", subshell.Shell())
 		if name == subshell.Shell() {
 			return true
 		}
