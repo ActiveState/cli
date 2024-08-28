@@ -61,3 +61,6 @@ func Structured(structured interface{}) *structuredOutput {
 	return &structuredOutput{structured}
 }
 
+const TreeMid = "├─"
+const TreeLink = "│"
+const TreeEnd = "└─"

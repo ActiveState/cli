@@ -106,9 +106,9 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 	// depending on whether or not it has subdependencies, and whether or not showUpdatedPackages is
 	// `true`.
 	for i, ingredient := range directDependencies {
-		prefix := "├─"
+		prefix := output.TreeMid
 		if i == len(directDependencies)-1 {
-			prefix = "└─"
+			prefix = output.TreeEnd
 		}
 
 		// Retrieve runtime dependencies, and then filter out any dependencies that are common between all added ingredients.
