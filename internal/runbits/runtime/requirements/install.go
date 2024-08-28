@@ -172,32 +172,28 @@ func (r *RequirementOperation) Install(ts *time.Time, requirements []*Requiremen
 	}
 
 	// Update the runtime.
-	if !r.Config.GetBool(constants.AsyncRuntimeConfig) {
-		r.Output.Notice("")
+	// For deprecated commands like `languages install`, change the trigger.
+	trig := trigger.TriggerPackage
+	if len(requirements) == 1 && requirements[0].Namespace != nil {
+		switch requirements[0].Namespace.Type() {
+		case model.NamespaceLanguage:
+			trig = trigger.TriggerLanguage
+		}
+	}
 
-		// For deprecated commands like `languages install`, change the trigger.
-		trig := trigger.TriggerPackage
-		if len(requirements) == 1 && requirements[0].Namespace != nil {
-			switch requirements[0].Namespace.Type() {
-			case model.NamespaceLanguage:
-				trig = trigger.TriggerLanguage
+	r.Output.Notice("") // blank line
+	_, err = runtime_runbit.Update(r.prime, trig,
+		runtime_runbit.WithCommit(stagedCommit),
+		runtime_runbit.WithoutBuildscriptValidation(),
+	)
+	if err != nil {
+		if !IsBuildError(err) {
+			// If the error is not a build error we want to retain the changes
+			if err2 := r.updateCommitID(stagedCommit.CommitID); err2 != nil {
+				return errs.Pack(err, locale.WrapError(err2, "err_package_update_commit_id"))
 			}
 		}
-
-		// refresh or install runtime
-		_, err = runtime_runbit.Update(r.prime, trig,
-			runtime_runbit.WithCommit(stagedCommit),
-			runtime_runbit.WithoutBuildscriptValidation(),
-		)
-		if err != nil {
-			if !IsBuildError(err) {
-				// If the error is not a build error we want to retain the changes
-				if err2 := r.updateCommitID(stagedCommit.CommitID); err2 != nil {
-					return errs.Pack(err, locale.WrapError(err2, "err_package_update_commit_id"))
-				}
-			}
-			return errs.Wrap(err, "Failed to refresh runtime")
-		}
+		return errs.Wrap(err, "Failed to refresh runtime")
 	}
 
 	// Record the new commit ID and update the local build script.
@@ -393,23 +389,19 @@ func (r *RequirementOperation) InstallPlatform(requirements []*Requirement) (rer
 	pg = nil
 
 	// Update the runtime.
-	if !r.Config.GetBool(constants.AsyncRuntimeConfig) {
-		r.Output.Notice("")
-
-		// refresh or install runtime
-		_, err = runtime_runbit.Update(r.prime, trigger.TriggerPlatform,
-			runtime_runbit.WithCommit(stagedCommit),
-			runtime_runbit.WithoutBuildscriptValidation(),
-		)
-		if err != nil {
-			if !IsBuildError(err) {
-				// If the error is not a build error we want to retain the changes
-				if err2 := r.updateCommitID(stagedCommit.CommitID); err2 != nil {
-					return errs.Pack(err, locale.WrapError(err2, "err_package_update_commit_id"))
-				}
+	r.Output.Notice("") // blank line
+	_, err = runtime_runbit.Update(r.prime, trigger.TriggerPlatform,
+		runtime_runbit.WithCommit(stagedCommit),
+		runtime_runbit.WithoutBuildscriptValidation(),
+	)
+	if err != nil {
+		if !IsBuildError(err) {
+			// If the error is not a build error we want to retain the changes
+			if err2 := r.updateCommitID(stagedCommit.CommitID); err2 != nil {
+				return errs.Pack(err, locale.WrapError(err2, "err_package_update_commit_id"))
 			}
-			return errs.Wrap(err, "Failed to refresh runtime")
 		}
+		return errs.Wrap(err, "Failed to refresh runtime")
 	}
 
 	// Record the new commit ID and update the local build script.
