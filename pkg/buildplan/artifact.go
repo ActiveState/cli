@@ -63,6 +63,26 @@ func (a *Artifact) Version() string {
 	return ""
 }
 
+// Revision returns the name of the ingredient for this artifact, if it only has exactly one ingredient associated.
+// Otherwise it returns an empty version.
+func (a *Artifact) Revision() int {
+	if len(a.Ingredients) == 1 {
+		return a.Ingredients[0].Revision
+	}
+	return -1
+}
+
+func (a *Artifact) Licenses() []string {
+	result := []string{}
+	if len(a.Ingredients) == 0 {
+		return result
+	}
+	for _, ing := range a.Ingredients {
+		result = append(result, ing.Licenses...)
+	}
+	return result
+}
+
 func (a *Artifact) NameAndVersion() string {
 	version := a.Version()
 	if version == "" {
