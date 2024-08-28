@@ -133,25 +133,60 @@ func (a Artifacts) ToNameMap() ArtifactNameMap {
 	return result
 }
 
-type ArtifactChangeset struct {
-	Added   []*Artifact
-	Removed []*Artifact
-	Updated []ArtifactUpdate
+type ChangeType int
+
+const (
+	ArtifactAdded ChangeType = iota
+	ArtifactRemoved
+	ArtifactUpdated
+)
+
+func (c ChangeType) String() string {
+	switch c {
+	case ArtifactAdded:
+		return "added"
+	case ArtifactRemoved:
+		return "removed"
+	case ArtifactUpdated:
+		return "updated"
+	}
+
+	return "unknown"
 }
 
-type ArtifactUpdate struct {
-	From *Artifact
-	To   *Artifact
+type ArtifactChange struct {
+	ChangeType ChangeType
+	Artifact   *Artifact
+	Old        *Artifact // Old is only set when ChangeType=ArtifactUpdated
 }
 
-func (a ArtifactUpdate) VersionsChanged() bool {
+type ArtifactChangeset []ArtifactChange
+
+func (a ArtifactChangeset) Filter(t ...ChangeType) ArtifactChangeset {
+	lookup := make(map[ChangeType]struct{}, len(t))
+	for _, t := range t {
+		lookup[t] = struct{}{}
+	}
+	result := ArtifactChangeset{}
+	for _, ac := range a {
+		if _, ok := lookup[ac.ChangeType]; ok {
+			result = append(result, ac)
+		}
+	}
+	return result
+}
+
+func (a ArtifactChange) VersionsChanged() bool {
+	if a.Old == nil {
+		return false
+	}
 	fromVersions := []string{}
-	for _, ing := range a.From.Ingredients {
+	for _, ing := range a.Old.Ingredients {
 		fromVersions = append(fromVersions, ing.Version)
 	}
 	sort.Strings(fromVersions)
 	toVersions := []string{}
-	for _, ing := range a.To.Ingredients {
+	for _, ing := range a.Artifact.Ingredients {
 		toVersions = append(toVersions, ing.Version)
 	}
 	sort.Strings(toVersions)

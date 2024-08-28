@@ -47,8 +47,8 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 	}
 
 	var ingredients []*request.Ingredient
-	for _, artifact := range changeset.Added {
-		for _, ing := range artifact.Ingredients {
+	for _, change := range changeset.Filter(buildplan.ArtifactAdded) {
+		for _, ing := range change.Artifact.Ingredients {
 			ingredients = append(ingredients, &request.Ingredient{
 				Namespace: ing.Namespace,
 				Name:      ing.Name,
@@ -57,12 +57,12 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 		}
 	}
 
-	for _, change := range changeset.Updated {
+	for _, change := range changeset.Filter(buildplan.ArtifactUpdated) {
 		if !change.VersionsChanged() {
 			continue // For CVE reporting we only care about ingredient changes
 		}
 
-		for _, ing := range change.To.Ingredients {
+		for _, ing := range change.Artifact.Ingredients {
 			ingredients = append(ingredients, &request.Ingredient{
 				Namespace: ing.Namespace,
 				Name:      ing.Name,
@@ -118,7 +118,7 @@ func (c *CveReport) shouldSkipReporting(changeset buildplan.ArtifactChangeset) b
 		return true
 	}
 
-	return len(changeset.Added) == 0 && len(changeset.Updated) == 0
+	return len(changeset.Filter(buildplan.ArtifactAdded, buildplan.ArtifactUpdated)) == 0
 }
 
 func (c *CveReport) shouldPromptForSecurity(vulnerabilities model.VulnerableIngredientsByLevels) bool {
