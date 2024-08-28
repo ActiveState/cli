@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
 	"github.com/ActiveState/cli/internal/runbits/runtime/requirements"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -51,10 +52,10 @@ func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) (rerr
 		reqs = append(reqs, req)
 	}
 
-	ts, err := getTime(&params.Timestamp, a.prime.Auth(), a.prime.Project())
+	ts, err := commits_runbit.ExpandTimeForProject(&params.Timestamp, a.prime.Auth(), a.prime.Project())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get timestamp from params")
 	}
 
-	return requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(ts, reqs...)
+	return requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(&ts, reqs...)
 }
