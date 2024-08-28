@@ -397,11 +397,33 @@ jobs:
           name: session-build-${{ matrix.sys.os }}
           path: build/
 
+  scan:
+    name: Scan
+    needs:
+      - os_specific
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download All Build Session Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: build/
+
+      - name: Scan for CVEs
+        if: runner.os == 'Linux'
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          scan-type: rootfs
+          scan-ref: build
+          list-all-pkgs: true
+          ignore-unfixed: true
+          format: table
+          exit-code: 1
+
   # === Deploy job (runs once with combined artifacts from OS specific job) ===
   deploy:
     name: Deploy
     needs:
-      - os_specific
+      - scan
     runs-on: ubuntu-20.04
     env:
       ACTIVESTATE_CI: true
@@ -424,7 +446,7 @@ jobs:
         name: Install Go
         uses: actions/setup-go@v3
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: 1.22.x
 
       - # === Install State Tool ===
         name: Install State Tool
