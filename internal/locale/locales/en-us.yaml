@@ -1549,3 +1549,33 @@ warn_additional_requirements:
     [WARNING]WARNING:[/RESET] This project has additional build criteria that cannot be managed through the State Tool. Please edit your [ACTIONABLE]buildscript.as[/RESET] file manually to modify these:
 migrate_project_error:
   other: Could not migrate your project files. Please address any errors and try again. For full detail view your log file with '[ACTIONABLE]state export log -i 0[/RESET]'.
+upgrade_solving:
+  other: • Searching for available upgrades for your requirements
+upgrade_confirm:
+  other: Would you like to install these upgrades?
+upgrade_no_changes:
+  other: No upgrades were found for your project. Note that requirements with fixed version numbers will never be upgraded.
+upgrade_aborted:
+  other: Upgrade aborted
+upgrade_success:
+  other: Upgrade completed
+upgrade_field_same:
+  other: "[CYAN]{{.V0}}[/RESET]"
+upgrade_field_change:
+  other: "[CYAN]{{.V0}}[/RESET] > [BOLD][ACTIONABLE]{{.V1}}[/RESET]"
+name:
+  other: Name
+version:
+  other: Version
+license:
+  other: License
+vulnerabilities:
+  other: Vulnerabilities (CVEs)
+dependency_row:
+  other: " [DISABLED]{{.V0}}[/RESET] [CYAN]{{.V1}}[/RESET] [DISABLED]transitive dependencies touched[/RESET]"
+dependency_detail_row:
+  other: " [DISABLED]{{.V0}} {{.V1}}[/RESET] {{.V2}}"
+namespace_row:
+  other: " [DISABLED]{{.V0}} namespace:[/RESET] [CYAN]{{.V1}}[/RESET]"
+flag_state_upgrade_expand_description:
+  other: Show individual transitive dependency changes rather than a summary

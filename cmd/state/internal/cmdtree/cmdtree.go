@@ -214,6 +214,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newEvalCommand(prime),
 		newManifestCommmand(prime),
 		artifactsCmd,
+		newUpgradeCommand(prime),
 	)
 
 	return &CmdTree{
