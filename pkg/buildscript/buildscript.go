@@ -37,3 +37,16 @@ func (b *BuildScript) Equals(other *BuildScript) (bool, error) {
 	}
 	return string(myBytes) == string(otherBytes), nil
 }
+
+func (b *BuildScript) Clone() (*BuildScript, error) {
+	m, err := b.Marshal()
+	if err != nil {
+		return nil, errs.Wrap(err, "unable to marshal this buildscript")
+	}
+
+	u, err := Unmarshal(m)
+	if err != nil {
+		return nil, errs.Wrap(err, "unable to unmarshal buildscript")
+	}
+	return u, nil
+}
