@@ -62,6 +62,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 		e2e.OptArgs(installationDir(ts), "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=false"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
+		e2e.OptMaybeRunInsideShell(),
 	)
 	cp.Expect("successfully installed")
 	cp.ExpectInput()

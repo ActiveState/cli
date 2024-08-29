@@ -485,7 +485,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	cp.ExpectExitCode(0)
 
 	// next activation is cached
-	cp = ts.Spawn("activate", "ActiveState-CLI/langless", "--path", ts.Dirs.Work)
+	cp = ts.SpawnShell("activate", "ActiveState-CLI/langless", "--path", ts.Dirs.Work)
 
 	cp.ExpectInput(e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("exit")
