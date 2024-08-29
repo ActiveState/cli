@@ -27,9 +27,9 @@ func OutputSummary(out output.Outputer, directDependencies buildplan.Artifacts) 
 	out.Notice(locale.Tl("setting_up_dependencies", "  Setting up the following dependencies:"))
 
 	for i, ingredient := range ingredients {
-		prefix := "  ├─"
+		prefix := "  " + output.TreeMid
 		if i == len(ingredients)-1 {
-			prefix = "  └─"
+			prefix = "  " + output.TreeEnd
 		}
 
 		subdependencies := ""

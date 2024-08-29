@@ -62,16 +62,16 @@ func (o *projectsOutput) MarshalOutput(f output.Format) interface{} {
 			}
 			execDir := v.Executables[i]
 			if execDir != "" {
-				checkouts = append(checkouts, locale.Tl("projects_local_checkout_exec", " ├─ Local Checkout → {{.V0}}", checkout))
+				checkouts = append(checkouts, locale.Tl("projects_local_checkout_exec", " {{.V0}} Local Checkout → {{.V1}}", output.TreeMid, checkout))
 				if f == output.PlainFormatName {
 					// Show executable path below checkout path for plain text output.
-					checkouts = append(checkouts, locale.Tl("projects_executables", " └─ Executables → {{.V0}}", execDir))
+					checkouts = append(checkouts, locale.Tl("projects_executables", " {{.V0}} Executables → {{.V1}}", output.TreeEnd, execDir))
 				} else {
 					// Show executables in a separate table.
 					executables = append(executables, execDir)
 				}
 			} else {
-				checkouts = append(checkouts, locale.Tl("projects_local_checkout", " └─ Local Checkout → {{.V0}}", checkout))
+				checkouts = append(checkouts, locale.Tl("projects_local_checkout", " {{.V0}} Local Checkout → {{.V1}}", output.TreeEnd, checkout))
 			}
 		}
 		r = append(r, projectOutputPlain{v.Name, v.Organization, strings.Join(checkouts, "\n"), strings.Join(executables, "\n")})

@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -70,12 +71,12 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 		normalized = params.Package.Name
 	}
 
-	ts, err := getTime(&params.Timestamp, i.auth, i.proj)
+	ts, err := commits_runbit.ExpandTimeForProject(&params.Timestamp, i.auth, i.proj)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get timestamp from params")
 	}
 
-	packages, err := model.SearchIngredientsStrict(ns.String(), normalized, false, false, ts, i.auth) // ideally case-sensitive would be true (PB-4371)
+	packages, err := model.SearchIngredientsStrict(ns.String(), normalized, false, false, &ts, i.auth) // ideally case-sensitive would be true (PB-4371)
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 	}

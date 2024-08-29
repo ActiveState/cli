@@ -70,7 +70,7 @@ func (o requirements) Print(out output.Outputer) {
 		}
 
 		if req.Namespace != "" {
-			requirementOutput.Namespace = locale.Tl("manifest_namespace", " └─ [DISABLED]namespace:[/RESET] [CYAN]{{.V0}}[/RESET]", req.Namespace)
+			requirementOutput.Namespace = locale.Tr("namespace_row", output.TreeEnd, req.Namespace)
 		}
 
 		requirementsOutput = append(requirementsOutput, requirementOutput)

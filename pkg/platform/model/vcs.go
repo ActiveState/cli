@@ -204,10 +204,12 @@ func NewNamespacePlatform() Namespace {
 	return Namespace{NamespacePlatform, "platform"}
 }
 
+const OrgNamespacePrefix = "private/"
+
 func NewOrgNamespace(orgName string) Namespace {
 	return Namespace{
 		nsType: NamespaceOrg,
-		value:  fmt.Sprintf("private/%s", orgName),
+		value:  OrgNamespacePrefix + orgName,
 	}
 }
 
