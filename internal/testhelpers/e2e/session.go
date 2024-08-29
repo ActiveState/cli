@@ -261,6 +261,14 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 		termtest.OptNormalizedLineEnds(true),
 	)
 
+	if runtime.GOOS == "windows" && condition.OnCI() {
+		// Our Windows integration tests are run on bash. Due to the way the PTY library runs a new
+		// command we need to run the command inside a shell in order to setup the correct process
+		// tree. Without this integration tests run in bash will incorrectly identify the partent shell
+		// as bash, rather than the actual shell that is running the command.
+		spawnOpts.RunInsideShell = true
+	}
+
 	for _, optSet := range optSetters {
 		optSet(&spawnOpts)
 	}
