@@ -44,6 +44,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 		e2e.OptArgs(installationDir(ts), "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=false"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
+		e2e.OptMaybeRunInsideShell(),
 	)
 
 	// Assert output
@@ -176,6 +177,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 		e2e.OptArgs(installationDir(ts), "--activate", "ActiveState-CLI/Python3", "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=true"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
+		e2e.OptMaybeRunInsideShell(),
 	)
 
 	cp.ExpectInput(e2e.RuntimeSourcingTimeoutOpt)

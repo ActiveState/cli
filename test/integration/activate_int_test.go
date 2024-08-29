@@ -54,7 +54,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	close := suite.addForegroundSvc(ts)
 	defer close()
 
-	cp := ts.Spawn("activate", "ActiveState-CLI/Empty")
+	cp := ts.SpawnShell("activate", "ActiveState-CLI/Empty")
 	cp.Expect("Activated")
 	cp.ExpectInput()
 
@@ -134,7 +134,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 	close := suite.addForegroundSvc(ts)
 	defer close()
 
-	cp := ts.Spawn("activate", "ActiveState-CLI/Empty#6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8", "--path", ts.Dirs.Work)
+	cp := ts.SpawnShell("activate", "ActiveState-CLI/Empty#6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8", "--path", ts.Dirs.Work)
 	cp.Expect("Activated")
 	cp.ExpectInput()
 
@@ -149,7 +149,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 	close := suite.addForegroundSvc(ts)
 	defer close()
 
-	cp := ts.Spawn("activate", "activestate-cli/empty", "--path", ts.Dirs.Work)
+	cp := ts.SpawnShell("activate", "activestate-cli/empty", "--path", ts.Dirs.Work)
 	cp.Expect("Activated")
 	cp.ExpectInput()
 
@@ -177,7 +177,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 	defer close()
 
 	projectName := "Python-LinuxWorks"
-	cp := ts.Spawn("activate", "cli-integration-tests/"+projectName, "--path="+ts.Dirs.Work)
+	cp := ts.SpawnShell("activate", "cli-integration-tests/"+projectName, "--path="+ts.Dirs.Work)
 
 	if runtime.GOOS == "linux" {
 		cp.Expect("Creating a Virtual Environment")
@@ -221,6 +221,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", namespace),
 		e2e.OptAppendEnv(extraEnv...),
+		e2e.OptMaybeRunInsideShell(),
 	)
 
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
@@ -294,7 +295,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_PythonPath() {
 
 	namespace := "ActiveState-CLI/Python3"
 
-	cp := ts.Spawn("activate", namespace)
+	cp := ts.SpawnShell("activate", namespace)
 
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	// ensure that shell is functional
@@ -337,6 +338,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_SpaceInCacheDir() {
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "ActiveState-CLI/Python3"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.CacheEnvVarName, cacheDir)),
+		e2e.OptMaybeRunInsideShell(),
 	)
 
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
@@ -358,7 +360,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerlCamel() {
 	close := suite.addForegroundSvc(ts)
 	defer close()
 
-	cp := ts.Spawn("activate", "ActiveState-CLI/Perl")
+	cp := ts.SpawnShell("activate", "ActiveState-CLI/Perl")
 
 	cp.Expect("Downloading", termtest.OptExpectTimeout(40*time.Second))
 	cp.Expect("Installing", termtest.OptExpectTimeout(140*time.Second))
@@ -402,6 +404,7 @@ version: %s
 	c2 := ts.SpawnWithOpts(
 		e2e.OptArgs("activate"),
 		e2e.OptWD(filepath.Join(ts.Dirs.Work, "foo", "bar", "baz")),
+		e2e.OptMaybeRunInsideShell(),
 	)
 	c2.Expect("Activated")
 
@@ -474,7 +477,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 
 	// Note: cannot use Empty project since we need artifacts to download and install.
 	// Pick the langless project, which just has some small, non-language artifacts.
-	cp := ts.Spawn("activate", "ActiveState-CLI/langless", "--path", ts.Dirs.Work)
+	cp := ts.SpawnShell("activate", "ActiveState-CLI/langless", "--path", ts.Dirs.Work)
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 
 	suite.assertCompletedStatusBarReport(cp.Output())

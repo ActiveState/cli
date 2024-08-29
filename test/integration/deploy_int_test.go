@@ -168,6 +168,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 			"cmd.exe",
 			e2e.OptArgs("/k", filepath.Join(targetPath, "bin", "shell.bat")),
 			e2e.OptAppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK", "SHELL="),
+			e2e.OptRunInsideShell(true),
 		)
 	} else {
 		cp = ts.SpawnCmdWithOpts(

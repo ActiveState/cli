@@ -104,7 +104,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 			if runtime.GOOS == "windows" {
 				cmd = "powershell.exe"
-				opts = append(opts, e2e.OptAppendEnv("SHELL="))
+				opts = append(opts, e2e.OptAppendEnv("SHELL="), e2e.OptRunInsideShell(true))
 			}
 			cp := ts.SpawnCmdWithOpts(cmd, opts...)
 			cp.Expect("Preparing Installer for State Tool Package Manager")
