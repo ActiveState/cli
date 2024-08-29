@@ -112,10 +112,6 @@ func (u *Upgrade) Run(params *Params) (rerr error) {
 	}
 	bumpedBS.SetAtTime(ts)
 
-	if bumpedBS.AtTime().String() == localCommit.BuildScript().AtTime().String() {
-		panic(fmt.Sprintf("bumped buildscript is same as local commit, old: %s, new: %s", bumpedBS.AtTime(), localCommit.BuildScript().AtTime()))
-	}
-
 	// Since our platform is commit based we need to create a commit for the "after" buildplan, even though we may not
 	// end up using it it the user doesn't confirm the upgrade.
 	bumpedCommit, err := bpm.StageCommit(bpModel.StageCommitParams{
