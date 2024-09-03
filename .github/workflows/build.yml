@@ -293,6 +293,12 @@ jobs:
           state run deploy-installers
           state run deploy-remote-installer
 
+      - # === Set restricted powershell permissions ===
+        name: Restrict powershell permissions
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: Set-ExecutionPolicy -ExecutionPolicy Restricted
+
       - # === Integration Tests ===
         name: Integration Tests
         id: integration_tests
