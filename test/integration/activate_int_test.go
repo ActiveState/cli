@@ -54,7 +54,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	close := suite.addForegroundSvc(ts)
 	defer close()
 
-	cp := ts.SpawnShell("activate", "ActiveState-CLI/Empty")
+	cp := ts.SpawnInsideShell("activate", "ActiveState-CLI/Empty")
 	cp.Expect("Activated")
 	cp.ExpectInput()
 
@@ -134,7 +134,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 	close := suite.addForegroundSvc(ts)
 	defer close()
 
-	cp := ts.SpawnShell("activate", "ActiveState-CLI/Empty#6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8", "--path", ts.Dirs.Work)
+	cp := ts.SpawnInsideShell("activate", "ActiveState-CLI/Empty#6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8", "--path", ts.Dirs.Work)
 	cp.Expect("Activated")
 	cp.ExpectInput()
 
@@ -149,7 +149,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 	close := suite.addForegroundSvc(ts)
 	defer close()
 
-	cp := ts.SpawnShell("activate", "activestate-cli/empty", "--path", ts.Dirs.Work)
+	cp := ts.SpawnInsideShell("activate", "activestate-cli/empty", "--path", ts.Dirs.Work)
 	cp.Expect("Activated")
 	cp.ExpectInput()
 
@@ -177,7 +177,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 	defer close()
 
 	projectName := "Python-LinuxWorks"
-	cp := ts.SpawnShell("activate", "cli-integration-tests/"+projectName, "--path="+ts.Dirs.Work)
+	cp := ts.SpawnInsideShell("activate", "cli-integration-tests/"+projectName, "--path="+ts.Dirs.Work)
 
 	if runtime.GOOS == "linux" {
 		cp.Expect("Creating a Virtual Environment")
@@ -218,10 +218,9 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 
 	namespace := "ActiveState-CLI/Python" + version
 
-	cp := ts.SpawnWithOpts(
+	cp := ts.SpawnInsideShellWithOpts(
 		e2e.OptArgs("activate", namespace),
 		e2e.OptAppendEnv(extraEnv...),
-		e2e.OptMaybeRunInsideShell(),
 	)
 
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
@@ -295,7 +294,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_PythonPath() {
 
 	namespace := "ActiveState-CLI/Python3"
 
-	cp := ts.SpawnShell("activate", namespace)
+	cp := ts.SpawnInsideShell("activate", namespace)
 
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	// ensure that shell is functional
@@ -335,10 +334,9 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_SpaceInCacheDir() {
 	err := fileutils.MkdirUnlessExists(cacheDir)
 	suite.Require().NoError(err)
 
-	cp := ts.SpawnWithOpts(
+	cp := ts.SpawnInsideShellWithOpts(
 		e2e.OptArgs("activate", "ActiveState-CLI/Python3"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.CacheEnvVarName, cacheDir)),
-		e2e.OptMaybeRunInsideShell(),
 	)
 
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
@@ -360,7 +358,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerlCamel() {
 	close := suite.addForegroundSvc(ts)
 	defer close()
 
-	cp := ts.SpawnShell("activate", "ActiveState-CLI/Perl")
+	cp := ts.SpawnInsideShell("activate", "ActiveState-CLI/Perl")
 
 	cp.Expect("Downloading", termtest.OptExpectTimeout(40*time.Second))
 	cp.Expect("Installing", termtest.OptExpectTimeout(140*time.Second))
@@ -401,10 +399,9 @@ version: %s
 	ts.PrepareCommitIdFile("6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8")
 
 	// Activate in the subdirectory
-	c2 := ts.SpawnWithOpts(
+	c2 := ts.SpawnInsideShellWithOpts(
 		e2e.OptArgs("activate"),
 		e2e.OptWD(filepath.Join(ts.Dirs.Work, "foo", "bar", "baz")),
-		e2e.OptMaybeRunInsideShell(),
 	)
 	c2.Expect("Activated")
 
@@ -477,7 +474,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 
 	// Note: cannot use Empty project since we need artifacts to download and install.
 	// Pick the langless project, which just has some small, non-language artifacts.
-	cp := ts.SpawnShell("activate", "ActiveState-CLI/langless", "--path", ts.Dirs.Work)
+	cp := ts.SpawnInsideShell("activate", "ActiveState-CLI/langless", "--path", ts.Dirs.Work)
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 
 	suite.assertCompletedStatusBarReport(cp.Output())
@@ -485,7 +482,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	cp.ExpectExitCode(0)
 
 	// next activation is cached
-	cp = ts.SpawnShell("activate", "ActiveState-CLI/langless", "--path", ts.Dirs.Work)
+	cp = ts.SpawnInsideShell("activate", "ActiveState-CLI/langless", "--path", ts.Dirs.Work)
 
 	cp.ExpectInput(e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("exit")

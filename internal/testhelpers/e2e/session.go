@@ -234,20 +234,6 @@ func (s *Session) SpawnShellWithOpts(shell Shell, opts ...SpawnOptSetter) *Spawn
 	return s.SpawnCmdWithOpts(string(shell), opts...)
 }
 
-// SpawnShell spawns the state tool executable to be tested with arguments.
-// This function differs from Spawn in that it runs the command in a shell on Windows CI.
-// Our Windows integration tests are run on bash. Due to the way the PTY library runs a new
-// command we need to run the command inside a shell in order to setup the correct process
-// tree. Without this integration tests run in bash will incorrectly identify the partent shell
-// as bash, rather than the actual shell that is running the command
-func (s *Session) SpawnShell(args ...string) *SpawnedCmd {
-	opts := []SpawnOptSetter{OptArgs(args...)}
-	if runtime.GOOS == "windows" && condition.OnCI() {
-		opts = append(opts, OptRunInsideShell(true))
-	}
-	return s.SpawnCmdWithOpts(s.Exe, opts...)
-}
-
 // SpawnCmdWithOpts executes an executable in a pseudo-terminal for integration tests
 // Arguments and other parameters can be specified by specifying SpawnOptSetter
 func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *SpawnedCmd {

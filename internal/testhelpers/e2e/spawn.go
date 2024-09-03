@@ -10,7 +10,6 @@ import (
 
 	"github.com/ActiveState/termtest"
 
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/osutils"
 )
@@ -180,14 +179,4 @@ func OptRunInsideShell(v bool) SpawnOptSetter {
 	return func(opts *SpawnOpts) {
 		opts.RunInsideShell = v
 	}
-}
-
-func OptMaybeRunInsideShell() SpawnOptSetter {
-	if runtime.GOOS == "windows" && condition.OnCI() {
-		return func(opts *SpawnOpts) {
-			opts.RunInsideShell = true
-		}
-	}
-
-	return func(opts *SpawnOpts) {}
 }
