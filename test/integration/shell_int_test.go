@@ -500,7 +500,11 @@ func (suite *ShellIntegrationTestSuite) TestWindowsShells() {
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnCmd("powershell", "-Command", "state", "shell")
+	cp = ts.SpawnCmdWithOpts(
+		"powershell",
+		e2e.OptArgs("-Command", "state", "shell"),
+		e2e.OptAppendEnv(constants.OverrideShellEnvVarName+"="),
+	)
 	cp.ExpectInput()
 	cp.SendLine("$host.name")
 	cp.Expect("ConsoleHost") // powershell always shows ConsoleHost, go figure
