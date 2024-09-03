@@ -118,6 +118,10 @@ func (c *CveReport) shouldSkipReporting(changeset buildplan.ArtifactChangeset) b
 		return true
 	}
 
+	if c.prime.Output().Type().IsStructured() {
+		return true
+	}
+
 	return len(changeset.Filter(buildplan.ArtifactAdded, buildplan.ArtifactUpdated)) == 0
 }
 
