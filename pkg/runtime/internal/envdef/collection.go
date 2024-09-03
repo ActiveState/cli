@@ -26,10 +26,6 @@ func New() *Collection {
 }
 
 func (c *Collection) Load(path string) (*EnvironmentDefinition, error) {
-	if envDef, ok := c.raw.EnvDefs[path]; ok {
-		return envDef, nil
-	}
-
 	envDef, err := NewEnvironmentDefinition(filepath.Join(path, EnvironmentDefinitionFilename))
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to initialize environment definition")
@@ -44,13 +40,13 @@ func (c *Collection) Load(path string) (*EnvironmentDefinition, error) {
 }
 
 func (c *Collection) Unload(path string) error {
+	// Prevent concurrent reads and writes
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	if _, ok := c.raw.EnvDefs[path]; !ok {
 		return errs.New("Environment definition not found for path: %s", path)
 	}
-
-	// Prevent concurrent writes
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
 
 	delete(c.raw.EnvDefs, path)
 
