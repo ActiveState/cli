@@ -1207,10 +1207,21 @@ warning_vulnerable_indirectonly:
 warning_vulnerable_directonly:
   other: |
     [ERROR]Warning: Dependency has {{.V0}} known vulnerabilities (CVEs)[/RESET]
+cve_critical:
+  other: Critical
+cve_high:
+  other: High
+cve_medium:
+  other: Medium
+cve_low:
+  other: Low
 more_info_vulnerabilities:
   other: For more information on these vulnerabilities run '[ACTIONABLE]state security open <ID>[/RESET]'.
 disable_prompting_vulnerabilities:
   other: To disable prompting for vulnerabilities run '[ACTIONABLE]state config set security.prompt.enabled false[/RESET]'.
+warning_vulnerable_short:
+  other: |
+    [ERROR]Warning:[/RESET] Dependency has [ERROR]{{.V0}} known vulnerabilities (CVEs)[/RESET]. Severity: {{.V1}}. Run '[ACTIONABLE]state security[/RESET]' for more info.
 prompt_continue_pkg_operation:
   other: |
     Do you want to continue installing this dependency despite its vulnerabilities?
