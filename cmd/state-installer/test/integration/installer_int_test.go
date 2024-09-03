@@ -39,7 +39,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	suite.NoError(err)
 
 	// Run installer with source-path flag (ie. install from this local path)
-	cp := ts.SpawnCmdInsideShellWithOpts(
+	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
 		e2e.OptArgs(installationDir(ts), "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=false"),
@@ -56,7 +56,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp.ExpectExitCode(0)
 
 	// Ensure installing overtop doesn't result in errors
-	cp = ts.SpawnCmdInsideShellWithOpts(
+	cp = ts.SpawnCmdWithOpts(
 		suite.installerExe,
 		e2e.OptArgs(installationDir(ts), "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=false"),
@@ -171,7 +171,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 	dir, err := os.MkdirTemp("", "system*")
 	suite.NoError(err)
 
-	cp := ts.SpawnCmdInsideShellWithOpts(
+	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
 		e2e.OptArgs(installationDir(ts), "--activate", "ActiveState-CLI/Python3", "-n"),
 		e2e.OptAppendEnv(constants.DisableUpdates+"=true"),

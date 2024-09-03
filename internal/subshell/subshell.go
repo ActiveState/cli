@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/shirou/gopsutil/v3/process"
 
@@ -182,8 +183,14 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 		}
 	}()
 
-	binary = detectShellParent()
-	logging.Debug("Configured shell: %s", binary)
+	if os.Getenv(constants.OverrideShellEnvVarName) != "" {
+		binary = os.Getenv(constants.OverrideShellEnvVarName)
+	}
+
+	if binary == "" {
+		binary = detectShellParent()
+	}
+
 	if binary == "" {
 		binary = configured
 	}

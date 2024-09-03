@@ -466,7 +466,7 @@ events:`, lang, splat), 1)
 	suite.Require().NoError(fileutils.WriteFile(asyFilename, []byte(contents)))
 
 	// Verify that running a script as a command with an argument containing special characters works.
-	cp = ts.SpawnInsideShell("shell")
+	cp = ts.Spawn("shell")
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput()
 	cp.SendLine(`args "<3"`)
