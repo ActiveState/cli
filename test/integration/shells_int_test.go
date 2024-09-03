@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -48,7 +49,10 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 			}
 
 			// Run the checkout in a particular shell.
-			cp = ts.SpawnShellWithOpts(shell)
+			cp = ts.SpawnShellWithOpts(
+				shell,
+				e2e.OptAppendEnv(constants.OverrideShellEnvVarName+"="),
+			)
 			cp.SendLine(e2e.QuoteCommand(shell, ts.ExecutablePath(), "checkout", "ActiveState-CLI/small-python", string(shell)))
 			cp.Expect("Checked out project")
 			cp.SendLine("exit")
@@ -58,7 +62,10 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 
 			// There are 2 or more instances checked out, so we should get a prompt in whichever shell we
 			// use.
-			cp = ts.SpawnShellWithOpts(shell)
+			cp = ts.SpawnShellWithOpts(
+				shell,
+				e2e.OptAppendEnv(constants.OverrideShellEnvVarName+"="),
+			)
 			cp.SendLine(e2e.QuoteCommand(shell, ts.ExecutablePath(), "shell", "small-python"))
 			cp.Expect("Multiple project paths")
 
