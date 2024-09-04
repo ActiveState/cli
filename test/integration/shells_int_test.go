@@ -6,8 +6,12 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/rtutils/singlethread"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -47,6 +51,12 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 				err := fileutils.Touch(filepath.Join(ts.Dirs.HomeDir, ".zshrc"))
 				suite.Require().NoError(err)
 			}
+
+			// Clear configured shell.
+			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+			suite.Require().NoError(err)
+			err = cfg.Set(subshell.ConfigKeyShell, "")
+			require.NoError(t, err)
 
 			// Run the checkout in a particular shell.
 			cp = ts.SpawnShellWithOpts(
