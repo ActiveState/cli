@@ -339,6 +339,9 @@ func (d *depot) getSharedFilesToRedeploy(id strfmt.UUID, deploy deployment, path
 
 			findArtifact := func() bool {
 				for _, deployment := range artifactDeployments {
+					if deployment.Path != path {
+						continue // deployment is outside this one
+					}
 					for _, fileToDeploy := range deployment.Files {
 						if relativeDeployedFile != fileToDeploy {
 							continue
