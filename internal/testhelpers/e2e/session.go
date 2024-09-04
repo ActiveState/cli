@@ -189,12 +189,6 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		require.NoError(session.T, err)
 	}
 
-	if runtime.GOOS == "windows" {
-		if err := cfg.Set(subshell.ConfigKeyShell, "cmd.exe"); err != nil {
-			require.NoError(session.T, err)
-		}
-	}
-
 	return session
 }
 
