@@ -200,7 +200,7 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 	}
 
 	if binary == "" {
-		binary = OS_DEFULAT
+		binary = OS_DEFAULT
 	}
 
 	path := resolveBinaryPath(binary)

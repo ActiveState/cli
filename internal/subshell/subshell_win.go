@@ -19,7 +19,7 @@ var supportedShells = []SubShell{
 
 const (
 	SHELL_ENV_VAR = "COMSPEC"
-	OS_DEFULAT    = "cmd.exe"
+	OS_DEFAULT    = "cmd.exe"
 )
 
 func supportedShellName(name string) bool {

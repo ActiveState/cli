@@ -21,7 +21,7 @@ var supportedShells = []SubShell{
 
 const (
 	SHELL_ENV_VAR = "SHELL"
-	OS_DEFULAT    = "bash"
+	OS_DEFAULT    = "bash"
 )
 
 func supportedShellName(name string) bool {
