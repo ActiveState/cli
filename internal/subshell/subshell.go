@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -253,6 +254,9 @@ func detectShellParent() string {
 	for p != nil && p.Pid != 0 {
 		name, err := p.Name()
 		if err == nil {
+			if strings.Contains(name, string(filepath.Separator)) {
+				name = path.Base(name)
+			}
 			if supportedShellName(name) {
 				return name
 			}
