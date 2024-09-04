@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
-	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -56,7 +55,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
 			suite.Require().NoError(err)
 			err = cfg.Set(subshell.ConfigKeyShell, "")
-			require.NoError(t, err)
+			suite.Require().NoError(err)
 
 			// Run the checkout in a particular shell.
 			cp = ts.SpawnShellWithOpts(

@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
@@ -499,6 +500,12 @@ func (suite *ShellIntegrationTestSuite) TestWindowsShells() {
 	cp.Expect(hostname) // cmd.exe shows the actual hostname
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
+
+	// Clear configured shell.
+	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+	suite.Require().NoError(err)
+	err = cfg.Set(subshell.ConfigKeyShell, "")
+	suite.Require().NoError(err)
 
 	cp = ts.SpawnCmdWithOpts(
 		"powershell",
