@@ -332,9 +332,6 @@ func (d *depot) getSharedFilesToRedeploy(id strfmt.UUID, deploy deployment, path
 	// For each file deployed by this artifact, find another artifact (if any) that deploys its own copy.
 	for _, relativeDeployedFile := range deploy.Files {
 		deployedFile := filepath.Join(path, relativeDeployedFile)
-		if fileutils.TargetExists(deployedFile) {
-			continue // file still exists; no need to re-link or re-copy
-		}
 		for artifactId, artifactDeployments := range d.config.Deployments {
 			if artifactId == id {
 				continue
