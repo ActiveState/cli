@@ -173,9 +173,25 @@ func (r *Runner) Run(params *Params) error {
 		if err != nil && !errors.As(err, &errSearch404) { // 404 means either the ingredient or the namespace was not found, which is fine
 			return locale.WrapError(err, "err_uploadingredient_search", "Could not search for ingredient")
 		}
+
 		if len(ingredients) > 0 {
-			i := ingredients[0].LatestVersion
-			ingredient = &ParentIngredient{*i.IngredientID, *i.IngredientVersionID, *i.Version, i.Dependencies}
+			i := ingredients[0]
+
+			// Attempt to find the ingredient's dependencies.
+			var dependencies []inventory_models.Dependency
+			ingredientVersions, err := model.FetchIngredientVersions(&i.IngredientID, r.auth)
+			if err != nil {
+				return locale.WrapError(err, "err_uploadingredient_fetch_versions", "Could not retrieve ingredient version information")
+			}
+			for _, iv := range ingredientVersions {
+				if iv.Version != nil && *iv.Version == i.Version {
+					dependencies = iv.Dependencies
+					break
+				}
+			}
+
+			ingredientVersionID := i.Versions[0].IngredientVersionID // latest version
+			ingredient = &ParentIngredient{i.IngredientID, ingredientVersionID, i.Version, dependencies}
 			if params.Version == "" {
 				isRevision = true
 			}

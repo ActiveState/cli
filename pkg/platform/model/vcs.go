@@ -226,7 +226,7 @@ func FilterSupportedIngredients(supported []model.SupportedLanguage, ingredients
 	var res []*IngredientAndVersion
 
 	for _, i := range ingredients {
-		language := LanguageFromNamespace(*i.Ingredient.PrimaryNamespace)
+		language := LanguageFromNamespace(i.Namespace.Namespace)
 
 		for _, l := range supported {
 			if l.Name != language {

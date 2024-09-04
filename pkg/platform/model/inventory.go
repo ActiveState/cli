@@ -48,9 +48,8 @@ func (e ErrNoMatchingPlatform) Error() string {
 
 type ErrSearch404 struct{ *locale.LocalizedError }
 
-// IngredientAndVersion is a sane version of whatever the hell it is go-swagger thinks it's doing
 type IngredientAndVersion struct {
-	*inventory_models.SearchIngredientsResponseItem
+	*hsInventoryModel.SearchIngredient
 	Version string
 }
 
@@ -104,9 +103,7 @@ func SearchIngredientsStrict(namespace string, name string, caseSensitive bool, 
 	ingredients := results[:0]
 	for _, ing := range results {
 		var ingName string
-		if ing.Ingredient.Name != nil {
-			ingName = *ing.Ingredient.Name
-		}
+		ingName = ing.Name
 		if !caseSensitive {
 			ingName = strings.ToLower(ingName)
 		}
@@ -146,14 +143,11 @@ func processLatestIngredients(ingredients []*IngredientAndVersion) []*Ingredient
 	seen := make(map[string]bool)
 	var processedIngredients []*IngredientAndVersion
 	for _, ing := range ingredients {
-		if ing.Ingredient.Name == nil {
-			continue
-		}
-		if seen[*ing.Ingredient.Name] {
+		if seen[ing.Name] {
 			continue
 		}
 		processedIngredients = append(processedIngredients, ing)
-		seen[*ing.Ingredient.Name] = true
+		seen[ing.Name] = true
 	}
 	return processedIngredients
 }
@@ -190,62 +184,39 @@ type ErrTooManyMatches struct {
 }
 
 func searchIngredientsNamespace(ns string, name string, includeVersions bool, exactOnly bool, ts *time.Time, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
-	limit := int64(100)
-	offset := int64(0)
+	limit := 100
+	offset := 0
 
-	client := inventory.Get(auth)
-
-	params := inventory_operations.NewSearchIngredientsParams()
-	params.SetQ(&name)
-	if exactOnly {
-		params.SetExactOnly(&exactOnly)
-	}
-	if ns != "" {
-		params.SetNamespaces(&ns)
-	}
-	params.SetLimit(&limit)
-	params.SetHTTPClient(api.NewHTTPClient())
-
-	if ts != nil {
-		dt := strfmt.DateTime(*ts)
-		params.SetStateAt(&dt)
-	}
+	client := hsInventory.New(auth)
+	request := hsInventoryRequest.SearchIngredients([]string{ns}, name, exactOnly, ts, limit, offset)
 
 	var ingredients []*IngredientAndVersion
-	var entries []*inventory_models.SearchIngredientsResponseItem
-	for offset == 0 || len(entries) == int(limit) {
+	for {
+		response := hsInventoryModel.SearchIngredientsResponse{}
 		if offset > (limit * 10) { // at most we will get 10 pages of ingredients (that's ONE THOUSAND ingredients)
 			// Guard against queries that match TOO MANY ingredients
 			return nil, &ErrTooManyMatches{locale.NewInputError("err_searchingredient_toomany", "", name), name}
 		}
 
-		params.SetOffset(&offset)
-		results, err := client.SearchIngredients(params, auth.ClientAuth())
+		request.SetOffset(offset)
+		err := client.Run(request, &response)
 		if err != nil {
-			if sidErr, ok := err.(*inventory_operations.SearchIngredientsDefault); ok {
-				errv := locale.NewError(*sidErr.Payload.Message)
-				if sidErr.Code() == 404 {
-					return nil, &ErrSearch404{errv}
-				}
-				return nil, errv
-			}
 			return nil, errs.Wrap(err, "SearchIngredients failed")
 		}
-		entries = results.Payload.Ingredients
 
-		for _, res := range entries {
-			if res.Ingredient.PrimaryNamespace == nil {
-				continue // Shouldn't ever happen, but this at least guards around nil pointer panics
-			}
+		for _, res := range response.SearchIngredients {
 			if includeVersions {
 				for _, v := range res.Versions {
-					ingredients = append(ingredients, &IngredientAndVersion{res, v.Version})
+					ingredients = append(ingredients, &IngredientAndVersion{&res, v.Version})
 				}
 			} else {
-				ingredients = append(ingredients, &IngredientAndVersion{res, ""})
+				ingredients = append(ingredients, &IngredientAndVersion{&res, res.Versions[0].Version})
 			}
 		}
 
+		if len(response.SearchIngredients) < limit {
+			break
+		}
 		offset += limit
 	}
 

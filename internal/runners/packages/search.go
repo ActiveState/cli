@@ -142,8 +142,8 @@ func (s *Search) getVulns(packages []*model.IngredientAndVersion) ([]*model.Vuln
 	var ingredients []*request.Ingredient
 	for _, pkg := range packages {
 		ingredients = append(ingredients, &request.Ingredient{
-			Name:      *pkg.Ingredient.Name,
-			Namespace: *pkg.Ingredient.PrimaryNamespace,
+			Name:      pkg.Name,
+			Namespace: pkg.Namespace.Namespace,
 			Version:   pkg.Version,
 		})
 	}
