@@ -5,6 +5,7 @@ package subshell
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
@@ -22,9 +23,9 @@ const (
 	OS_DEFAULT    = "cmd.exe"
 )
 
-func supportedShellName(name string) bool {
+func supportedShellName(filename string) bool {
 	for _, subshell := range supportedShells {
-		if name == fmt.Sprintf("%s.exe", subshell.Shell()) {
+		if strings.EqualFold(filename, fmt.Sprintf("%s.exe", subshell.Shell())) {
 			return true
 		}
 	}

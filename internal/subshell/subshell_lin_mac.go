@@ -26,9 +26,9 @@ const (
 	OS_DEFAULT    = "bash"
 )
 
-func supportedShellName(name string) bool {
+func supportedShellName(filename string) bool {
 	for _, subshell := range supportedShells {
-		if strings.EqualFold(name, subshell.Shell()) {
+		if strings.EqualFold(filename, subshell.Shell()) {
 			return true
 		}
 	}
