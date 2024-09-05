@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	hsInventory "github.com/ActiveState/cli/pkg/platform/api/hasura_inventory"
 	hsInventoryModel "github.com/ActiveState/cli/pkg/platform/api/hasura_inventory/model"
@@ -179,6 +180,7 @@ type ErrTooManyMatches struct {
 }
 
 func searchIngredientsNamespace(ns string, name string, includeVersions bool, exactOnly bool, partial bool, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
+	defer profile.Measure("searchIngredientsNamespace", time.Now())
 	limit := 100
 	offset := 0
 
