@@ -82,16 +82,10 @@ func GetIngredientByNameAndVersion(namespace string, name string, version string
 	return response.Payload, nil
 }
 
-// SearchIngredients will return all ingredients+ingredientVersions that fuzzily
-// match the ingredient name.
-func SearchIngredients(namespace string, name string, includeVersions bool, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
-	return searchIngredientsNamespace(namespace, name, includeVersions, false, auth)
-}
-
 // SearchIngredientsStrict will return all ingredients+ingredientVersions that
 // strictly match the ingredient name.
 func SearchIngredientsStrict(namespace string, name string, caseSensitive bool, includeVersions bool, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
-	results, err := searchIngredientsNamespace(namespace, name, includeVersions, true, auth)
+	results, err := searchIngredientsNamespace(namespace, name, includeVersions, true, false, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -118,8 +112,9 @@ func SearchIngredientsStrict(namespace string, name string, caseSensitive bool, 
 // SearchIngredientsLatest will return all ingredients+ingredientVersions that
 // fuzzily match the ingredient name, but only the latest version of each
 // ingredient.
-func SearchIngredientsLatest(namespace string, name string, includeVersions bool, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
-	results, err := searchIngredientsNamespace(namespace, name, includeVersions, false, auth)
+// Returns an error if there are too many matches unless `partial` is true.
+func SearchIngredientsLatest(namespace string, name string, includeVersions bool, partial bool, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
+	results, err := searchIngredientsNamespace(namespace, name, includeVersions, false, partial, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +178,7 @@ type ErrTooManyMatches struct {
 	Query string
 }
 
-func searchIngredientsNamespace(ns string, name string, includeVersions bool, exactOnly bool, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
+func searchIngredientsNamespace(ns string, name string, includeVersions bool, exactOnly bool, partial bool, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
 	limit := 100
 	offset := 0
 
@@ -219,7 +214,7 @@ func searchIngredientsNamespace(ns string, name string, includeVersions bool, ex
 			}
 		}
 
-		if len(response.SearchIngredients) < limit {
+		if len(response.SearchIngredients) < limit || partial {
 			break
 		}
 		offset += limit

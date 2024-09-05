@@ -62,7 +62,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	if params.ExactTerm {
 		packages, err = model.SearchIngredientsLatestStrict(ns.String(), params.Ingredient.Name, true, true, s.auth)
 	} else {
-		packages, err = model.SearchIngredientsLatest(ns.String(), params.Ingredient.Name, true, s.auth)
+		packages, err = model.SearchIngredientsLatest(ns.String(), params.Ingredient.Name, true, false, s.auth)
 	}
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")

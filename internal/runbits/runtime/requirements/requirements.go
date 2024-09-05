@@ -639,7 +639,7 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 }
 
 func getSuggestions(ns model.Namespace, name string, auth *authentication.Auth) ([]string, error) {
-	results, err := model.SearchIngredients(ns.String(), name, false, auth)
+	results, err := model.SearchIngredientsLatest(ns.String(), name, false, true, auth)
 	if err != nil {
 		return []string{}, locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
 	}

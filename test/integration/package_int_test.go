@@ -151,7 +151,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 	suite.PrepareActiveStateYAML(ts)
 
 	// Note that the expected strings might change due to inventory changes
-	cp := ts.Spawn("search", "requests")
+	cp := ts.Spawn("search", "requests2")
 	expectations := []string{
 		"requests2",
 		"2.16.0",
@@ -207,8 +207,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
 	cp := ts.Spawn("search", "Moose", "--language=perl")
 	cp.Expect("Name")
 	cp.Expect("Moose")
-	cp.Expect("Moose-Autobox")
-	cp.Expect("MooseFS")
+	cp.Expect("IO-Moose")
+	cp.Expect("MooseX")
 	cp.Send("q")
 	cp.ExpectExitCode(0)
 }
@@ -246,7 +246,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithBadLang() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("search", "numpy", "--language=bad")
-	cp.Expect("Cannot obtain search")
+	cp.Expect("No packages in our catalog match")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 }
@@ -279,8 +279,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_detached_operation() {
 
 	suite.Run("install non-existing", func() {
 		cp := ts.Spawn("install", "json")
-		cp.Expect("No results found for search term")
-		cp.Expect("json2")
+		cp.Expect(`No results found for search term "json". Did you mean:`)
+		cp.Expect("json") // suggestions include packages with json in the name
 		cp.Wait()
 	})
 
@@ -665,8 +665,11 @@ func (suite *PackageIntegrationTestSuite) TestCVE_NoPrompt() {
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
+	// Note: this version has 2 known vulnerabilities, but since the number of indirect
+	// vulnerabilities is variable, we need to craft our expectations accordingly.
 	cp = ts.Spawn("install", "urllib3@2.0.2")
-	cp.Expect("Warning: Dependency has 2 known vulnerabilities", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Warning: Dependency has 2")
+	cp.Expect("known vulnerabilities")
 	cp.ExpectExitCode(0)
 }
 
@@ -688,8 +691,11 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Prompt() {
 	cp = ts.Spawn("config", "set", constants.SecurityPromptConfig, "true")
 	cp.ExpectExitCode(0)
 
+	// Note: this version has 2 known vulnerabilities, but since the number of indirect
+	// vulnerabilities is variable, we need to craft our expectations accordingly.
 	cp = ts.Spawn("install", "urllib3@2.0.2")
-	cp.Expect("Warning: Dependency has 2 known vulnerabilities")
+	cp.Expect("Warning: Dependency has 2")
+	cp.Expect("known vulnerabilities")
 	cp.Expect("Do you want to continue")
 	cp.SendLine("y")
 	cp.ExpectExitCode(0)
@@ -711,7 +717,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Indirect() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "private/ActiveState-CLI-Testing/language/python/django_dep")
-	cp.ExpectRe(`Warning: Dependency has \d indirect known vulnerabilities`)
+	cp.ExpectRe(`Warning: Dependency has \d+ indirect known vulnerabilities`)
 	cp.Expect("Do you want to continue")
 	cp.SendLine("n")
 	cp.ExpectExitCode(1)
