@@ -4,6 +4,7 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runners/install"
 	"github.com/ActiveState/cli/internal/runners/packages"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
@@ -43,9 +44,9 @@ func newBundlesCommand(prime *primer.Values) *captain.Command {
 }
 
 func newBundleInstallCommand(prime *primer.Values) *captain.Command {
-	runner := packages.NewInstall(prime)
+	runner := install.NewInstall(prime)
 
-	params := packages.InstallRunParams{}
+	params := install.InstallRunParams{}
 
 	return captain.NewCommand(
 		"install",
@@ -62,7 +63,7 @@ func newBundleInstallCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params, model.NamespaceBundle)
+			return runner.Run(params)
 		},
 	).SetSupportsStructuredOutput()
 }

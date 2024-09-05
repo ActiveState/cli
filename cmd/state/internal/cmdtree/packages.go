@@ -4,6 +4,7 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runners/install"
 	"github.com/ActiveState/cli/internal/runners/packages"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
@@ -49,9 +50,9 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 }
 
 func newInstallCommand(prime *primer.Values) *captain.Command {
-	runner := packages.NewInstall(prime)
+	runner := install.NewInstall(prime)
 
-	params := packages.InstallRunParams{}
+	params := install.InstallRunParams{}
 
 	var packagesRaw string
 	cmd := captain.NewCommand(
@@ -65,12 +66,6 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 				Description: locale.T("package_flag_ts_description"),
 				Value:       &params.Timestamp,
 			},
-			{
-				Name:        "revision",
-				Shorthand:   "r",
-				Description: locale.T("package_flag_rev_description"),
-				Value:       &params.Revision,
-			},
 		},
 		[]*captain.Argument{
 			{
@@ -83,10 +78,10 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, args []string) error {
 			for _, p := range args {
 				if err := params.Packages.Set(p); err != nil {
-					return locale.WrapInputError(err, "err_install_packages_args", "Invalid package install arguments")
+					return locale.WrapInputError(err, "err_install_packages_args", "Invalid install arguments")
 				}
 			}
-			return runner.Run(params, model.NamespacePackage)
+			return runner.Run(params)
 		},
 	)
 

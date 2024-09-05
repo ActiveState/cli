@@ -604,6 +604,8 @@ package_search_flag_exact-term_description:
   other: Ensures that search results match search term exactly
 package_import_flag_filename_description:
   other: The file to import
+commit_message_added:
+  other: "Added: {{.V0}}"
 commit_message_added_package:
   other: "Added package: {{.V0}}@{{.V1}}"
 commit_message_removed_package:
@@ -1155,13 +1157,13 @@ package_ingredient_alternatives_nosuggest:
     No results found for search term "[NOTICE]{{.V0}}[/RESET]".
 
     Run "[ACTIONABLE]state search {{.V0}}[/RESET]" to find alternatives.
-package_ingredient_alternatives_nolang:
+package_requirements_no_match:
   other: |
-    No results found for search term "[NOTICE]{{.V0}}[/RESET]".
+    No results found for following packages: {{.V0}}.
 
-    This may be because you have not installed a language for your project. Install a language by running "[ACTIONABLE]state languages install <language-name>[/RESET]".
+    Run "[ACTIONABLE]state search {{.V0}}[/RESET]" to find alternatives.
 progress_search:
-  other: "• Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalog"
+  other: "• Searching for packages in the ActiveState Catalog"
 progress_cve_search:
   other: "• Checking for vulnerabilities (CVEs) on [ACTIONABLE]{{.V0}}[/RESET] and its dependencies"
 setup_runtime:

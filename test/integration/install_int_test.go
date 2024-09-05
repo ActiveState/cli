@@ -25,7 +25,7 @@ func (suite *InstallIntegrationTestSuite) TestInstall() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "trender")
-	cp.Expect("Package added")
+	cp.Expect("project has been updated")
 	cp.ExpectExitCode(0)
 }
 
@@ -103,7 +103,7 @@ func (suite *InstallIntegrationTestSuite) TestInstall_Resolved() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "requests")
-	cp.Expect("Package added")
+	cp.Expect("project has been updated")
 	cp.ExpectExitCode(0)
 
 	// Run `state packages` to verify a full package version was resolved.

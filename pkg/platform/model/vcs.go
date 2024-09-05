@@ -169,6 +169,18 @@ func (n Namespace) String() string {
 	return n.value
 }
 
+func ParseNamespace(ns string) Namespace {
+	if ns == "" {
+		return Namespace{NamespaceBlank, ns}
+	}
+	for _, n := range []NamespaceType{NamespacePackage, NamespaceBundle, NamespaceLanguage, NamespacePlatform, NamespaceOrg} {
+		if NamespaceMatch(ns, n.Matchable()) {
+			return Namespace{n, ns}
+		}
+	}
+	return Namespace{nsType: NamespaceRaw, value: ns}
+}
+
 func NewNamespacePkgOrBundle(language string, nstype NamespaceType) Namespace {
 	if nstype == NamespaceBundle {
 		return NewNamespaceBundle(language)
@@ -181,7 +193,7 @@ func NewNamespacePackage(language string) Namespace {
 	return Namespace{NamespacePackage, fmt.Sprintf("language/%s", language)}
 }
 
-func NewRawNamespace(value string) Namespace {
+func NewNamespaceRaw(value string) Namespace {
 	return Namespace{NamespaceRaw, value}
 }
 

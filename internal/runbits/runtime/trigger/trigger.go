@@ -29,6 +29,7 @@ const (
 	TriggerShell    Trigger = "shell"
 	TriggerCheckout Trigger = "checkout"
 	TriggerUse      Trigger = "use"
+	TriggerInstall  Trigger = "install"
 )
 
 func NewExecTrigger(cmd string) Trigger {

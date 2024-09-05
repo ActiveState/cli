@@ -1,6 +1,8 @@
 package buildscript
 
 import (
+	"errors"
+
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -15,15 +17,15 @@ func (b *BuildScript) UpdateRequirement(operation types.Operation, requirement t
 	var err error
 	switch operation {
 	case types.OperationAdded:
-		err = b.addRequirement(requirement)
+		err = b.AddRequirement(requirement)
 	case types.OperationRemoved:
-		err = b.removeRequirement(requirement)
+		err = b.RemoveRequirement(requirement)
 	case types.OperationUpdated:
-		err = b.removeRequirement(requirement)
+		err = b.RemoveRequirement(requirement)
 		if err != nil {
 			break
 		}
-		err = b.addRequirement(requirement)
+		err = b.AddRequirement(requirement)
 	default:
 		return errs.New("Unsupported operation")
 	}
@@ -33,7 +35,11 @@ func (b *BuildScript) UpdateRequirement(operation types.Operation, requirement t
 	return nil
 }
 
-func (b *BuildScript) addRequirement(requirement types.Requirement) error {
+func (b *BuildScript) AddRequirement(requirement types.Requirement) error {
+	if err := b.RemoveRequirement(requirement); err != nil && !errors.As(err, ptr.To(&RequirementNotFoundError{})) {
+		return errs.Wrap(err, "Could not remove requirement")
+	}
+
 	// Use object form for now, and then transform it into function form later.
 	obj := []*Assignment{
 		{requirementNameKey, newString(requirement.Name)},
@@ -72,7 +78,7 @@ type RequirementNotFoundError struct {
 	*locale.LocalizedError // for legacy non-user-facing error usages
 }
 
-func (b *BuildScript) removeRequirement(requirement types.Requirement) error {
+func (b *BuildScript) RemoveRequirement(requirement types.Requirement) error {
 	requirementsNode, err := b.getRequirementsNode()
 	if err != nil {
 		return errs.Wrap(err, "Could not get requirements node")

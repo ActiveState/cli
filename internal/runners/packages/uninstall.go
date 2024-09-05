@@ -43,7 +43,7 @@ func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) (
 		}
 
 		if p.Namespace != "" {
-			req.Namespace = ptr.To(model.NewRawNamespace(p.Namespace))
+			req.Namespace = ptr.To(model.NewNamespaceRaw(p.Namespace))
 		} else {
 			req.NamespaceType = &nsType
 		}
