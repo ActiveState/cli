@@ -41,7 +41,6 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 	}
 
 	if err := requirements.NewRequirementOperation(r.prime).ExecuteRequirementOperation(
-		nil,
 		&requirements.Requirement{
 			Name:          params.name,
 			Version:       params.version,

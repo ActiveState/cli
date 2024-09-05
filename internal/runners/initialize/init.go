@@ -334,7 +334,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 }
 
 func getKnownVersions(lang language.Language, auth *authentication.Auth) ([]string, error) {
-	pkgs, err := model.SearchIngredientsStrict(model.NewNamespaceLanguage().String(), lang.Requirement(), false, true, nil, auth)
+	pkgs, err := model.SearchIngredientsStrict(model.NewNamespaceLanguage().String(), lang.Requirement(), false, true, auth)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to fetch Platform languages")
 	}

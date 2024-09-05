@@ -61,11 +61,6 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 		prime,
 		[]*captain.Flag{
 			{
-				Name:        "ts",
-				Description: locale.T("package_flag_ts_description"),
-				Value:       &params.Timestamp,
-			},
-			{
 				Name:        "revision",
 				Shorthand:   "r",
 				Description: locale.T("package_flag_rev_description"),
@@ -181,11 +176,6 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 				Description: locale.T("package_search_flag_exact-term_description"),
 				Value:       &params.ExactTerm,
 			},
-			{
-				Name:        "ts",
-				Description: locale.T("package_flag_ts_description"),
-				Value:       &params.Timestamp,
-			},
 		},
 		[]*captain.Argument{
 			{
@@ -216,11 +206,6 @@ func newInfoCommand(prime *primer.Values) *captain.Command {
 				Name:        "language",
 				Description: locale.T("package_info_flag_language_description"),
 				Value:       &params.Language,
-			},
-			{
-				Name:        "ts",
-				Description: locale.T("package_flag_ts_description"),
-				Value:       &params.Timestamp,
 			},
 		},
 		[]*captain.Argument{

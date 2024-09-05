@@ -51,7 +51,6 @@ func (a *Add) Run(ps AddRunParams) error {
 	}
 
 	if err := requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(
-		nil,
 		&requirements.Requirement{
 			Name:          params.name,
 			Version:       params.version,

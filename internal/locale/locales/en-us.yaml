@@ -594,8 +594,6 @@ namespace_list_flag_project_description:
   other: The namespace packages should be listed from
 package_search_flag_ns_description:
   other: The namespace to search within.
-package_flag_ts_description:
-  other: The timestamp at which you want to query. Can be either 'now' or RFC3339 formatted timestamp.
 package_flag_rev_description:
   other: The revision you want to use. This ensures you get this exact revision and nothing else.
 package_search_flag_language_description:
@@ -1455,7 +1453,7 @@ uploadingredient_success:
     Revision: [ACTIONABLE]{{.V3}}[/RESET]
     Timestamp: [ACTIONABLE]{{.V4}}[/RESET]
 
-    You can install this package by running `[ACTIONABLE]state install {{.V1}}/{{.V0}} --ts now`[/RESET].
+    You can install this package by running `[ACTIONABLE]state install {{.V1}}/{{.V0}}`[/RESET].
 err_runtime_cache_invalid:
   other: Your runtime needs to be updated. Please run '[ACTIONABLE]state refresh[/RESET]'.
 err_buildscript_not_exist:

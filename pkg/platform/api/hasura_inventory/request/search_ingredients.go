@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func SearchIngredients(namespaces []string, name string, exact bool, time *time.Time, limit, offset int) *searchIngredients {
+func SearchIngredients(namespaces []string, name string, exact bool, time time.Time, limit, offset int) *searchIngredients {
 	return &searchIngredients{map[string]interface{}{
 		"namespaces": fmt.Sprintf("{%s}", strings.Join(namespaces, ",")), // API requires enclosure in {}
 		"name":       name,
@@ -23,7 +23,7 @@ type searchIngredients struct {
 
 func (s *searchIngredients) Query() string {
 	return `
-query ($namespaces: _non_empty_citext, $name: non_empty_citext, $exact: Boolean!, $time: timestamptz, $limit: Int!, $offset: Int!) {
+query ($namespaces: _non_empty_citext, $name: non_empty_citext, $exact: Boolean!, $time: timestamptz!, $limit: Int!, $offset: Int!) {
   search_ingredients(
     args: {namespaces: $namespaces, name_: $name, exact: $exact, timestamp_: $time, limit_: $limit, offset_: $offset}
   ) {

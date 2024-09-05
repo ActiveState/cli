@@ -2,10 +2,8 @@ package packages
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime/requirements"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
@@ -51,10 +49,5 @@ func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) (
 		reqs = append(reqs, req)
 	}
 
-	ts, err := commits_runbit.ExpandTimeForProject(&captain.TimeValue{}, u.prime.Auth(), u.prime.Project())
-	if err != nil {
-		return errs.Wrap(err, "Unable to get timestamp from params")
-	}
-
-	return requirements.NewRequirementOperation(u.prime).ExecuteRequirementOperation(&ts, reqs...)
+	return requirements.NewRequirementOperation(u.prime).ExecuteRequirementOperation(reqs...)
 }
