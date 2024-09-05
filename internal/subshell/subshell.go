@@ -189,11 +189,11 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 	}
 
 	if binary == "" {
-		binary = configured
+		binary = detectShellParent()
 	}
 
 	if binary == "" {
-		binary = detectShellParent()
+		binary = configured
 	}
 
 	if binary == "" {
