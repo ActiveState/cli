@@ -181,7 +181,7 @@ type ErrTooManyMatches struct {
 
 func searchIngredientsNamespace(ns string, name string, includeVersions bool, exactOnly bool, partial bool, ts *time.Time, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
 	defer profile.Measure("searchIngredientsNamespace", time.Now())
-	limit := 100
+	limit := 1000
 	offset := 0
 
 	if ts == nil {
@@ -198,7 +198,7 @@ func searchIngredientsNamespace(ns string, name string, includeVersions bool, ex
 	var ingredients []*IngredientAndVersion
 	for {
 		response := hsInventoryModel.SearchIngredientsResponse{}
-		if offset > (limit * 10) { // at most we will get 10 pages of ingredients (that's ONE THOUSAND ingredients)
+		if offset > 0 {
 			// Guard against queries that match TOO MANY ingredients
 			return nil, &ErrTooManyMatches{locale.NewInputError("err_searchingredient_toomany", "", name), name}
 		}
