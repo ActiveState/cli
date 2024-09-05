@@ -188,7 +188,10 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 		binary = os.Getenv(constants.OverrideShellEnvVarName)
 	}
 
-	binary = configured
+	if binary == "" {
+		binary = configured
+	}
+
 	if binary == "" {
 		binary = detectShellParent()
 	}
