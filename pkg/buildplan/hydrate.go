@@ -195,8 +195,6 @@ func (b *BuildPlan) hydrateWithIngredients(artifact *Artifact, platformID *strfm
 			default:
 				return errs.New("unexpected node type '%T': %#v", v, v)
 			}
-
-			return nil
 		})
 	if err != nil {
 		return errs.Wrap(err, "error hydrating ingredients")
