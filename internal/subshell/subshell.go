@@ -248,7 +248,7 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 func detectShellParent() string {
 	p, err := process.NewProcess(int32(os.Getppid()))
 	if err != nil && !errors.As(err, ptr.To(&os.PathError{})) {
-		logging.Error("Failed to get parent process: %v", err)
+		logging.Error("Failed to get parent process: %s", errs.JoinMessage(err))
 	}
 
 	for p != nil && p.Pid != 0 {
