@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
 	hsInventoryModel "github.com/ActiveState/cli/pkg/platform/api/hasura_inventory/model"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -21,8 +22,9 @@ import (
 
 // InfoRunParams tracks the info required for running Info.
 type InfoRunParams struct {
-	Package  captain.PackageValue
-	Language string
+	Package   captain.PackageValue
+	Timestamp captain.TimeValue
+	Language  string
 }
 
 // Info manages the information execution context.
@@ -68,7 +70,12 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 		normalized = params.Package.Name
 	}
 
-	packages, err := model.SearchIngredientsStrict(ns.String(), normalized, false, false, i.auth) // ideally case-sensitive would be true (PB-4371)
+	ts, err := commits_runbit.ExpandTimeForProject(&params.Timestamp, i.auth, i.proj)
+	if err != nil {
+		return errs.Wrap(err, "Unable to get timestamp from params")
+	}
+
+	packages, err := model.SearchIngredientsStrict(ns.String(), normalized, false, false, &ts, i.auth) // ideally case-sensitive would be true (PB-4371)
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 	}

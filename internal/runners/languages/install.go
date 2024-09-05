@@ -54,7 +54,7 @@ func (u *Update) Run(params *UpdateParams) error {
 	}
 
 	op := requirements.NewRequirementOperation(u.prime)
-	return op.ExecuteRequirementOperation(&requirements.Requirement{
+	return op.ExecuteRequirementOperation(nil, &requirements.Requirement{
 		Name:          lang.Name,
 		Version:       lang.Version,
 		NamespaceType: &model.NamespaceLanguage,

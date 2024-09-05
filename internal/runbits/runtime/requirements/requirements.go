@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
@@ -129,7 +130,7 @@ type Requirement struct {
 
 // ExecuteRequirementOperation executes the operation on the requirement
 // This has become quite unwieldy, and is ripe for a refactor - https://activestatef.atlassian.net/browse/DX-1897
-func (r *RequirementOperation) ExecuteRequirementOperation(requirements ...*Requirement) (rerr error) {
+func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requirements ...*Requirement) (rerr error) {
 	defer r.rationalizeError(&rerr)
 
 	if len(requirements) == 0 {
@@ -153,7 +154,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirements ...*Requ
 	}
 	out.Notice(locale.Tr("operating_message", r.Project.NamespaceString(), r.Project.Dir()))
 
-	if err := r.resolveNamespaces(requirements...); err != nil {
+	if err := r.resolveNamespaces(ts, requirements...); err != nil {
 		return errs.Wrap(err, "Could not resolve namespaces")
 	}
 
@@ -199,7 +200,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirements ...*Requ
 	}
 
 	bp := bpModel.NewBuildPlannerModel(r.Auth)
-	script, err := r.prepareBuildScript(bp, parentCommitID, requirements)
+	script, err := r.prepareBuildScript(bp, parentCommitID, requirements, ts)
 	if err != nil {
 		return errs.Wrap(err, "Could not prepare build script")
 	}
@@ -280,21 +281,25 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirements ...*Requ
 	return nil
 }
 
-func (r *RequirementOperation) prepareBuildScript(bp *bpModel.BuildPlanner, parentCommit strfmt.UUID, requirements []*Requirement) (*buildscript.BuildScript, error) {
+func (r *RequirementOperation) prepareBuildScript(bp *bpModel.BuildPlanner, parentCommit strfmt.UUID, requirements []*Requirement, ts *time.Time) (*buildscript.BuildScript, error) {
 	script, err := bp.GetBuildScript(string(parentCommit))
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to get build expression")
 	}
 
-	// Ensure that the atTime in the script is updated to use
-	// the most recent, which is either the current value or the platform latest.
-	latest, err := model.FetchLatestTimeStamp(r.Auth)
-	if err != nil {
-		return nil, errs.Wrap(err, "Unable to fetch latest Platform timestamp")
-	}
-	atTime := script.AtTime()
-	if atTime == nil || latest.After(*atTime) {
-		script.SetAtTime(latest)
+	if ts != nil {
+		script.SetAtTime(*ts)
+	} else {
+		// If no atTime was provided then we need to ensure that the atTime in the script is updated to use
+		// the most recent, which is either the current value or the platform latest.
+		latest, err := model.FetchLatestTimeStamp(r.Auth)
+		if err != nil {
+			return nil, errs.Wrap(err, "Unable to fetch latest Platform timestamp")
+		}
+		atTime := script.AtTime()
+		if atTime == nil || latest.After(*atTime) {
+			script.SetAtTime(latest)
+		}
 	}
 
 	for _, req := range requirements {
@@ -329,9 +334,9 @@ func (e ResolveNamespaceError) Error() string {
 	return "unable to resolve namespace"
 }
 
-func (r *RequirementOperation) resolveNamespaces(requirements ...*Requirement) error {
+func (r *RequirementOperation) resolveNamespaces(ts *time.Time, requirements ...*Requirement) error {
 	for _, requirement := range requirements {
-		if err := r.resolveNamespace(requirement); err != nil {
+		if err := r.resolveNamespace(ts, requirement); err != nil {
 			if err != errNoLanguage {
 				err = errs.Pack(err, &ResolveNamespaceError{requirement.Name})
 			}
@@ -341,7 +346,7 @@ func (r *RequirementOperation) resolveNamespaces(requirements ...*Requirement) e
 	return nil
 }
 
-func (r *RequirementOperation) resolveNamespace(requirement *Requirement) error {
+func (r *RequirementOperation) resolveNamespace(ts *time.Time, requirement *Requirement) error {
 	requirement.langName = "undetermined"
 
 	if requirement.NamespaceType != nil {
@@ -381,7 +386,7 @@ func (r *RequirementOperation) resolveNamespace(requirement *Requirement) error 
 
 		var nsv model.Namespace
 		var supportedLang *medmodel.SupportedLanguage
-		requirement.Name, nsv, supportedLang, err = resolvePkgAndNamespace(r.Prompt, requirement.Name, *requirement.NamespaceType, supported, r.Auth)
+		requirement.Name, nsv, supportedLang, err = resolvePkgAndNamespace(r.Prompt, requirement.Name, *requirement.NamespaceType, supported, ts, r.Auth)
 		if err != nil {
 			return errs.Wrap(err, "Could not resolve pkg and namespace")
 		}
@@ -436,7 +441,7 @@ func (r *RequirementOperation) validatePackage(requirement *Requirement) error {
 		multilog.Error("Failed to normalize '%s': %v", requirement.Name, err)
 	}
 
-	packages, err := model.SearchIngredientsStrict(requirement.Namespace.String(), normalized, false, false, r.Auth) // ideally case-sensitive would be true (PB-4371)
+	packages, err := model.SearchIngredientsStrict(requirement.Namespace.String(), normalized, false, false, nil, r.Auth) // ideally case-sensitive would be true (PB-4371)
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 	}
@@ -586,11 +591,11 @@ func supportedLanguageByName(supported []medmodel.SupportedLanguage, langName st
 	return funk.Find(supported, func(l medmodel.SupportedLanguage) bool { return l.Name == langName }).(medmodel.SupportedLanguage)
 }
 
-func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType model.NamespaceType, supported []medmodel.SupportedLanguage, auth *authentication.Auth) (string, model.Namespace, *medmodel.SupportedLanguage, error) {
+func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType model.NamespaceType, supported []medmodel.SupportedLanguage, ts *time.Time, auth *authentication.Auth) (string, model.Namespace, *medmodel.SupportedLanguage, error) {
 	ns := model.NewBlankNamespace()
 
 	// Find ingredients that match the input query
-	ingredients, err := model.SearchIngredientsStrict("", packageName, false, false, auth)
+	ingredients, err := model.SearchIngredientsStrict("", packageName, false, false, ts, auth)
 	if err != nil {
 		return "", ns, nil, locale.WrapError(err, "err_pkgop_search_err", "Failed to check for ingredients.")
 	}
@@ -639,7 +644,7 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 }
 
 func getSuggestions(ns model.Namespace, name string, auth *authentication.Auth) ([]string, error) {
-	results, err := model.SearchIngredientsLatest(ns.String(), name, false, true, auth)
+	results, err := model.SearchIngredientsLatest(ns.String(), name, false, true, nil, auth)
 	if err != nil {
 		return []string{}, locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
 	}

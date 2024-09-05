@@ -2,8 +2,10 @@ package packages
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
 	"github.com/ActiveState/cli/internal/runbits/runtime/requirements"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -11,8 +13,9 @@ import (
 
 // InstallRunParams tracks the info required for running Install.
 type InstallRunParams struct {
-	Packages captain.PackagesValue
-	Revision captain.IntValue
+	Packages  captain.PackagesValue
+	Timestamp captain.TimeValue
+	Revision  captain.IntValue
 }
 
 // Install manages the installing execution context.
@@ -49,5 +52,10 @@ func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) (rerr
 		reqs = append(reqs, req)
 	}
 
-	return requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(reqs...)
+	ts, err := commits_runbit.ExpandTimeForProject(&params.Timestamp, a.prime.Auth(), a.prime.Project())
+	if err != nil {
+		return errs.Wrap(err, "Unable to get timestamp from params")
+	}
+
+	return requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(&ts, reqs...)
 }

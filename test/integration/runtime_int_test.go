@@ -148,7 +148,7 @@ func (suite *RuntimeIntegrationTestSuite) TestBuildInProgress() {
 
 	ts.LoginAsPersistentUser()
 
-	// Publish a new ingredient revision, which, when coupled with `state install`, will
+	// Publish a new ingredient revision, which, when coupled with `state install --ts now`, will
 	// force a build.
 	// The ingredient is a tarball comprising:
 	//   1. An empty, executable "configure" script (emulating autotools).
@@ -167,7 +167,7 @@ func (suite *RuntimeIntegrationTestSuite) TestBuildInProgress() {
 
 	ts.PrepareEmptyProject()
 
-	cp = ts.Spawn("install", "private/"+e2e.PersistentUsername+"/hello-world")
+	cp = ts.Spawn("install", "private/"+e2e.PersistentUsername+"/hello-world", "--ts", "now")
 	cp.Expect("Build Log")
 	cp.Expect("Building")
 	cp.Expect("All dependencies have been installed and verified", e2e.RuntimeBuildSourcingTimeoutOpt)

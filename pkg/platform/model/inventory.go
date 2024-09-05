@@ -85,8 +85,8 @@ func GetIngredientByNameAndVersion(namespace string, name string, version string
 
 // SearchIngredientsStrict will return all ingredients+ingredientVersions that
 // strictly match the ingredient name.
-func SearchIngredientsStrict(namespace string, name string, caseSensitive bool, includeVersions bool, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
-	results, err := searchIngredientsNamespace(namespace, name, includeVersions, true, false, auth)
+func SearchIngredientsStrict(namespace string, name string, caseSensitive bool, includeVersions bool, ts *time.Time, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
+	results, err := searchIngredientsNamespace(namespace, name, includeVersions, true, false, ts, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -114,8 +114,8 @@ func SearchIngredientsStrict(namespace string, name string, caseSensitive bool, 
 // fuzzily match the ingredient name, but only the latest version of each
 // ingredient.
 // Returns an error if there are too many matches unless `partial` is true.
-func SearchIngredientsLatest(namespace string, name string, includeVersions bool, partial bool, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
-	results, err := searchIngredientsNamespace(namespace, name, includeVersions, false, partial, auth)
+func SearchIngredientsLatest(namespace string, name string, includeVersions bool, partial bool, ts *time.Time, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
+	results, err := searchIngredientsNamespace(namespace, name, includeVersions, false, partial, ts, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -126,8 +126,8 @@ func SearchIngredientsLatest(namespace string, name string, includeVersions bool
 // SearchIngredientsLatestStrict will return all ingredients+ingredientVersions that
 // strictly match the ingredient name, but only the latest version of each
 // ingredient.
-func SearchIngredientsLatestStrict(namespace string, name string, caseSensitive bool, includeVersions bool, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
-	results, err := SearchIngredientsStrict(namespace, name, caseSensitive, includeVersions, auth)
+func SearchIngredientsLatestStrict(namespace string, name string, caseSensitive bool, includeVersions bool, ts *time.Time, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
+	results, err := SearchIngredientsStrict(namespace, name, caseSensitive, includeVersions, ts, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -179,18 +179,21 @@ type ErrTooManyMatches struct {
 	Query string
 }
 
-func searchIngredientsNamespace(ns string, name string, includeVersions bool, exactOnly bool, partial bool, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
+func searchIngredientsNamespace(ns string, name string, includeVersions bool, exactOnly bool, partial bool, ts *time.Time, auth *authentication.Auth) ([]*IngredientAndVersion, error) {
 	defer profile.Measure("searchIngredientsNamespace", time.Now())
 	limit := 100
 	offset := 0
 
-	ts, err := FetchLatestRevisionTimeStamp(auth)
-	if err != nil {
-		return nil, errs.Wrap(err, "Unable to fetch latest inventory timestamp")
+	if ts == nil {
+		platformTime, err := FetchLatestTimeStamp(auth)
+		if err != nil {
+			return nil, errs.Wrap(err, "Unable to fetch latest platform timestamp")
+		}
+		ts = &platformTime
 	}
 
 	client := hsInventory.New(auth)
-	request := hsInventoryRequest.SearchIngredients([]string{ns}, name, exactOnly, ts, limit, offset)
+	request := hsInventoryRequest.SearchIngredients([]string{ns}, name, exactOnly, *ts, limit, offset)
 
 	var ingredients []*IngredientAndVersion
 	for {
