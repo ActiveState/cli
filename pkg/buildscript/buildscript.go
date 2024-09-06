@@ -18,12 +18,12 @@ func New() (*BuildScript, error) {
 	return UnmarshalBuildExpression([]byte(emptyBuildExpression), nil)
 }
 
-func (b *BuildScript) AtTime() *time.Time {
-	return b.raw.AtTime
+func (b *BuildScript) AtTime() time.Time {
+	return b.raw.CheckoutInfo.AtTime
 }
 
 func (b *BuildScript) SetAtTime(t time.Time) {
-	b.raw.AtTime = &t
+	b.raw.CheckoutInfo.AtTime = t
 }
 
 func (b *BuildScript) Equals(other *BuildScript) (bool, error) {

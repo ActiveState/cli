@@ -8,8 +8,6 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
-
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
 const (
@@ -30,11 +28,10 @@ const (
 func (b *BuildScript) Marshal() ([]byte, error) {
 	buf := strings.Builder{}
 
-	if b.raw.AtTime != nil {
-		buf.WriteString(assignmentString(
-			&Assignment{atTimeKey, &Value{Str: ptr.To(b.raw.AtTime.Format(strfmt.RFC3339Millis))}}))
-		buf.WriteString("\n")
-	}
+	buf.WriteString("```\n")
+	buf.WriteString("Project: " + b.raw.CheckoutInfo.Project + "\n")
+	buf.WriteString("Time: " + b.raw.CheckoutInfo.AtTime.Format(strfmt.RFC3339Millis) + "\n")
+	buf.WriteString("```\n\n")
 
 	var main *Assignment
 	for _, assignment := range b.raw.Assignments {

@@ -64,7 +64,7 @@ func RegisterFunctionPreUnmarshaler(name string, preUnmarshal PreUnmarshalerFunc
 // Build expressions ALWAYS set at_time to `$at_time`, which refers to the timestamp on the commit,
 // while buildscripts encode this timestamp as part of their definition. For this reason we have
 // to supply the timestamp as a separate argument.
-func UnmarshalBuildExpression(data []byte, atTime *time.Time) (*BuildScript, error) {
+func UnmarshalBuildExpression(data []byte, checkoutInfo *CheckoutInfo) (*BuildScript, error) {
 	expr := make(map[string]interface{})
 	err := json.Unmarshal(data, &expr)
 	if err != nil {
@@ -93,13 +93,13 @@ func UnmarshalBuildExpression(data []byte, atTime *time.Time) (*BuildScript, err
 		}
 		atTimeNode.Str = nil
 		atTimeNode.Ident = ptr.To("at_time")
-		script.raw.AtTime = ptr.To(time.Time(atTime))
+		script.raw.CheckoutInfo.AtTime = time.Time(atTime)
 	} else if err != nil {
 		return nil, errs.Wrap(err, "Could not get at_time node")
 	}
 
-	if atTime != nil {
-		script.raw.AtTime = atTime
+	if checkoutInfo != nil {
+		script.raw.CheckoutInfo = *checkoutInfo
 	}
 
 	// If the requirements are in legacy object form, e.g.
