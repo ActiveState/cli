@@ -36,8 +36,8 @@ func (b *BuildScript) UpdateRequirement(operation types.Operation, requirement t
 func (b *BuildScript) addRequirement(requirement types.Requirement) error {
 	// Use object form for now, and then transform it into function form later.
 	obj := []*Assignment{
-		{requirementNameKey, newString(requirement.Name)},
-		{requirementNamespaceKey, newString(requirement.Namespace)},
+		{requirementNameKey, &Value{Str: &requirement.Name}},
+		{requirementNamespaceKey, &Value{Str: &requirement.Namespace}},
 	}
 
 	if requirement.Revision != nil {
@@ -48,8 +48,8 @@ func (b *BuildScript) addRequirement(requirement types.Requirement) error {
 		values := []*Value{}
 		for _, req := range requirement.VersionRequirement {
 			values = append(values, &Value{Object: &[]*Assignment{
-				{requirementComparatorKey, newString(req[requirementComparatorKey])},
-				{requirementVersionKey, newString(req[requirementVersionKey])},
+				{requirementComparatorKey, &Value{Str: ptr.To(req[requirementComparatorKey])}},
+				{requirementVersionKey, &Value{Str: ptr.To(req[requirementVersionKey])}},
 			}})
 		}
 		obj = append(obj, &Assignment{requirementVersionRequirementsKey, &Value{List: &values}})
@@ -85,7 +85,7 @@ func (b *BuildScript) removeRequirement(requirement types.Requirement) error {
 		}
 
 		for _, arg := range req.FuncCall.Arguments {
-			if arg.Assignment.Key == requirementNameKey && strValue(arg.Assignment.Value) == requirement.Name {
+			if arg.Assignment.Key == requirementNameKey && *arg.Assignment.Value.Str == requirement.Name {
 				list := *requirementsNode.List
 				list = append(list[:i], list[i+1:]...)
 				requirementsNode.List = &list
@@ -132,7 +132,7 @@ func (b *BuildScript) addPlatform(platformID strfmt.UUID) error {
 	}
 
 	list := *platformsNode.List
-	list = append(list, newString(platformID.String()))
+	list = append(list, &Value{Str: ptr.To(platformID.String())})
 	platformsNode.List = &list
 
 	return nil
@@ -151,7 +151,7 @@ func (b *BuildScript) removePlatform(platformID strfmt.UUID) error {
 
 	var found bool
 	for i, value := range *platformsNode.List {
-		if value.Str != nil && strValue(value) == platformID.String() {
+		if value.Str != nil && *value.Str == platformID.String() {
 			list := *platformsNode.List
 			list = append(list[:i], list[i+1:]...)
 			platformsNode.List = &list
