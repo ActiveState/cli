@@ -3,7 +3,6 @@ package buildscript
 import (
 	"encoding/json"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -69,10 +68,10 @@ func (b *BuildScript) UnmarshalBuildExpression(data []byte) error {
 
 	// Extract the 'at_time' from the solve node, if it exists, and change its value to be a
 	// reference to "$at_time", which is how we want to show it in AScript format.
-	if atTimeNode, err := b.getSolveAtTimeValue(); err == nil && atTimeNode.Str != nil && !strings.HasPrefix(strValue(atTimeNode), `$`) {
-		atTime, err := strfmt.ParseDateTime(strValue(atTimeNode))
+	if atTimeNode, err := b.getSolveAtTimeValue(); err == nil && atTimeNode.Str != nil && !strings.HasPrefix(*atTimeNode.Str, `$`) {
+		atTime, err := strfmt.ParseDateTime(*atTimeNode.Str)
 		if err != nil {
-			return errs.Wrap(err, "Invalid timestamp: %s", strValue(atTimeNode))
+			return errs.Wrap(err, "Invalid timestamp: %s", *atTimeNode.Str)
 		}
 		atTimeNode.Str = nil
 		atTimeNode.Ident = ptr.To("at_time")
@@ -171,7 +170,7 @@ func unmarshalValue(path []string, valueInterface interface{}) (*value, error) {
 		if sliceutils.Contains(path, ctxIn) || strings.HasPrefix(v, "$") {
 			result.Ident = ptr.To(strings.TrimPrefix(v, "$"))
 		} else {
-			result.Str = ptr.To(strconv.Quote(v)) // quoting is mandatory
+			result.Str = ptr.To(v)
 		}
 
 	case float64:
@@ -349,7 +348,7 @@ func transformVersion(requirements *assignment) *funcCall {
 					{Assignment: &assignment{"value", o.Value}},
 				}
 			case requirementComparatorKey:
-				f.Name = cases.Title(language.English).String(strValue(o.Value))
+				f.Name = cases.Title(language.English).String(*o.Value.Str)
 			}
 		}
 		funcs = append(funcs, f)

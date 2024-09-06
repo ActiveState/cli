@@ -17,7 +17,7 @@ const atTimeKey = "at_time"
 
 // Unmarshal returns a structured form of the given AScript (on-disk format).
 func Unmarshal(data []byte) (*BuildScript, error) {
-	parser, err := participle.Build[rawBuildScript]()
+	parser, err := participle.Build[rawBuildScript](participle.Unquote())
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create parser for build script")
 	}
@@ -42,9 +42,9 @@ func Unmarshal(data []byte) (*BuildScript, error) {
 		if value.Str == nil {
 			break
 		}
-		atTime, err := strfmt.ParseDateTime(strValue(value))
+		atTime, err := strfmt.ParseDateTime(*value.Str)
 		if err != nil {
-			return nil, errs.Wrap(err, "Invalid timestamp: %s", strValue(value))
+			return nil, errs.Wrap(err, "Invalid timestamp: %s", *value.Str)
 		}
 		raw.AtTime = ptr.To(time.Time(atTime))
 		break

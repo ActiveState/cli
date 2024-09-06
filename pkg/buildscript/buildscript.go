@@ -162,7 +162,7 @@ func exportValue(v *value) any {
 		}
 		return result
 	case v.Str != nil:
-		return strValue(v)
+		return *v.Str
 	case v.Number != nil:
 		return *v.Number
 	case v.Null != nil:
