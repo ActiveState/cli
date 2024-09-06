@@ -1,7 +1,7 @@
 package model
 
 import (
-	"fmt"
+	"errors"
 	"regexp"
 	"runtime"
 	"sort"
@@ -453,7 +453,18 @@ func FetchPlatformByUID(uid strfmt.UUID) (*Platform, error) {
 	return nil, nil
 }
 
-func FetchPlatformByDetails(name, version string, word int, auth *authentication.Auth) (*Platform, error) {
+var ErrPlatformNotFound = errors.New("could not find platform matching provided criteria")
+
+func FetchPlatformByDetails(name, version string, bitwidth int) (*Platform, error) {
+	var platformID string
+	if version == "" && bitwidth == 0 {
+		var err error
+		platformID, err = PlatformNameToPlatformID(name)
+		if err != nil {
+			return nil, errs.Wrap(err, "platform id from name failed")
+		}
+	}
+
 	runtimePlatforms, err := FetchPlatforms()
 	if err != nil {
 		return nil, err
@@ -462,6 +473,12 @@ func FetchPlatformByDetails(name, version string, word int, auth *authentication
 	lower := strings.ToLower
 
 	for _, rtPf := range runtimePlatforms {
+		if platformID != "" {
+			if rtPf.PlatformID.String() == platformID {
+				return rtPf, nil
+			}
+			continue
+		}
 		if rtPf.Kernel == nil || rtPf.Kernel.Name == nil {
 			continue
 		}
@@ -479,16 +496,14 @@ func FetchPlatformByDetails(name, version string, word int, auth *authentication
 		if rtPf.CPUArchitecture == nil {
 			continue
 		}
-		if rtPf.CPUArchitecture.BitWidth == nil || *rtPf.CPUArchitecture.BitWidth != strconv.Itoa(word) {
+		if rtPf.CPUArchitecture.BitWidth == nil || *rtPf.CPUArchitecture.BitWidth != strconv.Itoa(bitwidth) {
 			continue
 		}
 
 		return rtPf, nil
 	}
 
-	details := fmt.Sprintf("%s %d %s", name, word, version)
-
-	return nil, locale.NewExternalError("err_unsupported_platform", "", details)
+	return nil, ErrPlatformNotFound
 }
 
 func FetchLanguageForCommit(commitID strfmt.UUID, auth *authentication.Auth) (*Language, error) {

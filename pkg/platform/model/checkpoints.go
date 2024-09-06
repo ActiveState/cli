@@ -191,12 +191,7 @@ func PlatformNameToPlatformID(name string) (string, error) {
 	if name == "darwin" {
 		name = "macos"
 	}
-	id, err := hostPlatformToPlatformID(name)
-	return id, err
-}
-
-func hostPlatformToPlatformID(os string) (string, error) {
-	switch strings.ToLower(os) {
+	switch strings.ToLower(name) {
 	case strings.ToLower(sysinfo.Linux.String()):
 		return constants.LinuxBit64UUID, nil
 	case strings.ToLower(sysinfo.Mac.String()):
@@ -204,7 +199,7 @@ func hostPlatformToPlatformID(os string) (string, error) {
 	case strings.ToLower(sysinfo.Windows.String()):
 		return constants.Win10Bit64UUID, nil
 	default:
-		return "", locale.NewExternalError("err_unsupported_platform", "", os)
+		return "", ErrPlatformNotFound
 	}
 }
 

@@ -119,9 +119,9 @@ func (b *BuildScript) UpdatePlatform(operation types.Operation, platformID strfm
 	var err error
 	switch operation {
 	case types.OperationAdded:
-		err = b.addPlatform(platformID)
+		err = b.AddPlatform(platformID)
 	case types.OperationRemoved:
-		err = b.removePlatform(platformID)
+		err = b.RemovePlatform(platformID)
 	default:
 		return errs.New("Unsupported operation")
 	}
@@ -131,7 +131,7 @@ func (b *BuildScript) UpdatePlatform(operation types.Operation, platformID strfm
 	return nil
 }
 
-func (b *BuildScript) addPlatform(platformID strfmt.UUID) error {
+func (b *BuildScript) AddPlatform(platformID strfmt.UUID) error {
 	platformsNode, err := b.getPlatformsNode()
 	if err != nil {
 		return errs.Wrap(err, "Could not get platforms node")
@@ -149,7 +149,7 @@ type PlatformNotFoundError struct {
 	*locale.LocalizedError // for legacy non-user-facing error usages
 }
 
-func (b *BuildScript) removePlatform(platformID strfmt.UUID) error {
+func (b *BuildScript) RemovePlatform(platformID strfmt.UUID) error {
 	platformsNode, err := b.getPlatformsNode()
 	if err != nil {
 		return errs.Wrap(err, "Could not get platforms node")

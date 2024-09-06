@@ -556,7 +556,7 @@ func UpdateProjectBranchCommitWithModel(pjm *mono_models.Project, branchName str
 
 // CommitInitial creates a root commit for a new branch
 func CommitInitial(hostPlatform string, langName, langVersion string, auth *authentication.Auth) (strfmt.UUID, error) {
-	platformID, err := hostPlatformToPlatformID(hostPlatform)
+	platformID, err := PlatformNameToPlatformID(hostPlatform)
 	if err != nil {
 		return "", err
 	}
@@ -665,7 +665,7 @@ func (cs indexedCommits) countBetween(first, last string) (int, error) {
 
 func ResolveRequirementNameAndVersion(name, version string, word int, namespace Namespace, auth *authentication.Auth) (string, string, error) {
 	if namespace.Type() == NamespacePlatform {
-		platform, err := FetchPlatformByDetails(name, version, word, auth)
+		platform, err := FetchPlatformByDetails(name, version, word)
 		if err != nil {
 			return "", "", errs.Wrap(err, "Could not fetch platform")
 		}

@@ -132,6 +132,29 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemoveLatest() {
 
 }
 
+func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addNotFound() {
+	suite.OnlyRunForTags(tagsuite.Platforms)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareEmptyProject()
+
+	// OS name doesn't match
+	cp := ts.Spawn("platforms", "add", "bunnies")
+	cp.Expect("Could not find")
+	cp.ExpectExitCode(1)
+
+	// OS version doesn't match
+	cp = ts.Spawn("platforms", "add", "windows@99.99.99")
+	cp.Expect("Could not find")
+	cp.ExpectExitCode(1)
+
+	// bitwidth version doesn't match
+	cp = ts.Spawn("platforms", "add", "windows", "--bit-width=999")
+	cp.Expect("Could not find")
+	cp.ExpectExitCode(1)
+}
+
 func (suite *PlatformsIntegrationTestSuite) TestJSON() {
 	suite.OnlyRunForTags(tagsuite.Platforms, tagsuite.JSON)
 	ts := e2e.New(suite.T(), false)

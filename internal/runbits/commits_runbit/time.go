@@ -17,11 +17,11 @@ import (
 // Otherwise, returns the specified timestamp or nil (which falls back on the default Platform
 // timestamp for a given operation)
 func ExpandTime(ts *captain.TimeValue, auth *authentication.Auth) (time.Time, error) {
-	if ts.Time != nil {
+	if ts != nil && ts.Time != nil {
 		return *ts.Time, nil
 	}
 
-	if ts.Now() {
+	if ts != nil && ts.Now() {
 		latest, err := model.FetchLatestRevisionTimeStamp(auth)
 		if err != nil {
 			return time.Time{}, errs.Wrap(err, "Unable to determine latest revision time")

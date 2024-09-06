@@ -1,7 +1,6 @@
 package install
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -15,22 +14,15 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
-	"github.com/ActiveState/cli/internal/runbits/cves"
-	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
-	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
+	"github.com/ActiveState/cli/internal/runbits/reqop_runbit"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/runtime"
-	"github.com/go-openapi/strfmt"
 )
 
 type primeable interface {
@@ -103,7 +95,6 @@ func (i *Install) Run(params InstallRunParams) (rerr error) {
 	var pg *output.Spinner
 	defer func() {
 		if pg != nil {
-			// This is a bit awkward, but it would be even more awkward to manually address this for every error condition
 			pg.Stop(locale.T("progress_fail"))
 		}
 	}()
@@ -147,69 +138,18 @@ func (i *Install) Run(params InstallRunParams) (rerr error) {
 
 		// Done resolving requirements
 		pg.Stop(locale.T("progress_found"))
-	}
-
-	// Start process of creating the commit, which also solves it
-	var newCommit *bpModel.Commit
-	{
-		pg = output.StartSpinner(out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
-
-		script, err := i.prepareBuildScript(oldCommit.BuildScript(), reqs, ts)
-		if err != nil {
-			return errs.Wrap(err, "Could not prepare build script")
-		}
-
-		bsv, _ := script.Marshal()
-		logging.Debug("Buildscript: %s", string(bsv))
-
-		commitParams := bpModel.StageCommitParams{
-			Owner:        pj.Owner(),
-			Project:      pj.Name(),
-			ParentCommit: string(oldCommit.CommitID),
-			Description:  locale.Tr("commit_message_added", reqs.String()),
-			Script:       script,
-		}
-
-		// Solve runtime
-		newCommit, err = bp.StageCommit(commitParams)
-		if err != nil {
-			return errs.Wrap(err, "Could not stage commit")
-		}
-
-		// Stop process of creating the commit
-		pg.Stop(locale.T("progress_success"))
 		pg = nil
 	}
 
-	// Report changes and CVEs to user
-	{
-		dependencies.OutputChangeSummary(out, newCommit.BuildPlan(), oldCommit.BuildPlan())
-		if err := cves.NewCveReport(i.prime).Report(newCommit.BuildPlan(), oldCommit.BuildPlan()); err != nil {
-			return errs.Wrap(err, "Could not report CVEs")
-		}
+	// Prepare updated buildscript
+	script, err := prepareBuildScript(oldCommit.BuildScript(), reqs, ts)
+	if err != nil {
+		return errs.Wrap(err, "Could not prepare build script")
 	}
 
-	// Start runtime sourcing UI
-	if !i.prime.Config().GetBool(constants.AsyncRuntimeConfig) {
-		// refresh or install runtime
-		_, err := runtime_runbit.Update(i.prime, trigger.TriggerInstall,
-			runtime_runbit.WithCommit(newCommit),
-			runtime_runbit.WithoutBuildscriptValidation(),
-		)
-		if err != nil {
-			if !IsBuildError(err) {
-				// If the error is not a build error we still want to update the commit
-				if err2 := i.updateCommitID(newCommit.CommitID); err2 != nil {
-					return errs.Pack(err, locale.WrapError(err2, "err_package_update_commit_id"))
-				}
-			}
-			return errs.Wrap(err, "Failed to refresh runtime")
-		}
-	}
-
-	// Update commit ID
-	if err := i.updateCommitID(newCommit.CommitID); err != nil {
-		return locale.WrapError(err, "err_package_update_commit_id")
+	// Update local checkout and source runtime changes
+	if err := reqop_runbit.UpdateAndReload(i.prime, script, oldCommit, locale.Tr("commit_message_added", reqs.String())); err != nil {
+		return errs.Wrap(err, "Failed to update local checkout")
 	}
 
 	// All done
@@ -336,7 +276,7 @@ func (i *Install) promptForMatchingIngredient(req *requirement) (*model.Ingredie
 	return values[choice], nil
 }
 
-func (i *Install) prepareBuildScript(script *buildscript.BuildScript, requirements requirements, ts time.Time) (*buildscript.BuildScript, error) {
+func prepareBuildScript(script *buildscript.BuildScript, requirements requirements, ts time.Time) (*buildscript.BuildScript, error) {
 	script.SetAtTime(ts)
 	for _, req := range requirements {
 		requirement := types.Requirement{
@@ -352,32 +292,4 @@ func (i *Install) prepareBuildScript(script *buildscript.BuildScript, requiremen
 	}
 
 	return script, nil
-}
-
-func (i *Install) updateCommitID(commitID strfmt.UUID) error {
-	if err := localcommit.Set(i.prime.Project().Dir(), commitID.String()); err != nil {
-		return locale.WrapError(err, "err_package_update_commit_id")
-	}
-
-	if i.prime.Config().GetBool(constants.OptinBuildscriptsConfig) {
-		bp := bpModel.NewBuildPlannerModel(i.prime.Auth())
-		script, err := bp.GetBuildScript(commitID.String())
-		if err != nil {
-			return errs.Wrap(err, "Could not get remote build expr and time")
-		}
-
-		err = buildscript_runbit.Update(i.prime.Project(), script)
-		if err != nil {
-			return locale.WrapError(err, "err_update_build_script")
-		}
-	}
-
-	return nil
-}
-
-func IsBuildError(err error) bool {
-	var errBuild *runtime.BuildError
-	var errBuildPlanner *response.BuildPlannerError
-
-	return errors.As(err, &errBuild) || errors.As(err, &errBuildPlanner)
 }

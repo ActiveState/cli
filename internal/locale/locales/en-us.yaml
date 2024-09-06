@@ -941,7 +941,7 @@ err_arg_required:
 err_init_no_language:
   other: "A project has not been set using 'state use'. You must include the [NOTICE]language[/RESET] argument. For more help, run '[ACTIONABLE]state init --help[/RESET]'."
 platform_added:
-  other: "[NOTICE]{{.V0}}@{{.V1}}[/RESET] has been added."
+  other: "[NOTICE]{{.V0}}[/RESET] has been added."
 platform_removed:
   other: "[NOTICE]{{.V0}}@{{.V1}}[/RESET] has been removed."
 deploy_usable_path:
@@ -1164,6 +1164,8 @@ package_requirements_no_match:
     Run "[ACTIONABLE]state search {{.V0}}[/RESET]" to find alternatives.
 progress_search:
   other: "• Searching for packages in the ActiveState Catalog"
+progress_platform_search:
+  other: "• Searching for platform in the ActiveState Catalog"
 progress_cve_search:
   other: "• Checking for vulnerabilities (CVEs) on [ACTIONABLE]{{.V0}}[/RESET] and its dependencies"
 setup_runtime:
@@ -1583,3 +1585,5 @@ flag_state_upgrade_expand_description:
   other: Show individual transitive dependency changes rather than a summary
 flag_state_upgrade_ts_description:
   other: Manually specify the timestamp to 'upgrade' to. Can be either 'now' or RFC3339 formatted timestamp.
+platform_add_not_found:
+  other: Could not find a platform matching your criteria
