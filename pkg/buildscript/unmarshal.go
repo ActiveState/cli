@@ -2,18 +2,26 @@ package buildscript
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/alecthomas/participle/v2"
 	"github.com/go-openapi/strfmt"
+	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
 const atTimeKey = "at_time"
+
+var ErrOutdatedAtTime = errs.New("outdated at_time on top")
+
+type checkoutInfo struct {
+	Project string `yaml:"Project"`
+	Time    string `yaml:"Time"`
+}
 
 // Unmarshal returns a structured form of the given AScript (on-disk format).
 func Unmarshal(data []byte) (*BuildScript, error) {
@@ -31,23 +39,31 @@ func Unmarshal(data []byte) (*BuildScript, error) {
 		return nil, locale.WrapError(err, "err_parse_buildscript_bytes", "Could not parse build script: {{.V0}}", err.Error())
 	}
 
-	// Extract 'at_time' value from the list of assignments, if it exists.
-	for i, assignment := range raw.Assignments {
-		key := assignment.Key
-		value := assignment.Value
-		if key != atTimeKey {
+	// If 'at_time' is among the list of assignments, this is an outdated build script, so error out.
+	for _, assignment := range raw.Assignments {
+		if assignment.Key != atTimeKey {
 			continue
 		}
-		raw.Assignments = append(raw.Assignments[:i], raw.Assignments[i+1:]...)
-		if value.Str == nil {
-			break
-		}
-		atTime, err := strfmt.ParseDateTime(*value.Str)
+		return nil, ErrOutdatedAtTime
+	}
+
+	if raw.Info != nil {
+		info := checkoutInfo{}
+
+		err := yaml.Unmarshal([]byte(strings.Trim(*raw.Info, "`\n")), &info)
 		if err != nil {
-			return nil, errs.Wrap(err, "Invalid timestamp: %s", *value.Str)
+			return nil, locale.NewExternalError(
+				"err_buildscript_checkoutinfo",
+				"Could not parse checkout information in the buildscript. The parser produced the following error: {{.V0}}", err.Error())
 		}
-		raw.AtTime = ptr.To(time.Time(atTime))
-		break
+
+		raw.CheckoutInfo.Project = info.Project
+
+		atTime, err := strfmt.ParseDateTime(info.Time)
+		if err != nil {
+			return nil, errs.Wrap(err, "Invalid timestamp: %s", info.Time)
+		}
+		raw.CheckoutInfo.AtTime = time.Time(atTime)
 	}
 
 	return &BuildScript{raw}, nil

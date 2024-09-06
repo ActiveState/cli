@@ -75,7 +75,7 @@ func ExpandTimeForBuildScript(ts *captain.TimeValue, auth *authentication.Auth, 
 
 	atTime := script.AtTime()
 	if atTime.After(timestamp) {
-		return *atTime, nil
+		return atTime, nil
 	}
 
 	return timestamp, nil

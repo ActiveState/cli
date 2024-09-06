@@ -2,16 +2,39 @@ package buildplanner
 
 import (
 	"encoding/json"
+	"fmt"
+	"net/url"
+	"os"
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 )
+
+func buildScriptCheckoutInfo(owner, project, commitID string, atTime time.Time) *buildscript.CheckoutInfo {
+	// Note: cannot use api.GetPlatformURL() due to import cycle.
+	host := constants.DefaultAPIHost
+	if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
+		host = hostOverride
+	}
+	u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", host, owner, project))
+	if err != nil {
+		multilog.Error("url parse for project URL failed: %w", err)
+		return nil
+	}
+	q := u.Query()
+	q.Set("commitID", commitID)
+	u.RawQuery = q.Encode()
+	projectURL := u.String()
+
+	return &buildscript.CheckoutInfo{projectURL, atTime}
+}
 
 func (b *BuildPlanner) GetBuildScript(commitID string) (*buildscript.BuildScript, error) {
 	logging.Debug("GetBuildScript, commitID: %s", commitID)
@@ -52,7 +75,7 @@ func (b *BuildPlanner) GetBuildScript(commitID string) (*buildscript.BuildScript
 		return nil, errs.New("Commit does not contain expression")
 	}
 
-	script, err := buildscript.UnmarshalBuildExpression(resp.Commit.Expression, ptr.To(time.Time(resp.Commit.AtTime)))
+	script, err := buildscript.UnmarshalBuildExpression(resp.Commit.Expression, buildScriptCheckoutInfo("", "", "", time.Time(resp.Commit.AtTime)))
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}
