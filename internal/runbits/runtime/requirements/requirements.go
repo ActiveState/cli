@@ -296,8 +296,7 @@ func (r *RequirementOperation) prepareBuildScript(bp *bpModel.BuildPlanner, pare
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to fetch latest Platform timestamp")
 		}
-		atTime := script.AtTime()
-		if atTime == nil || latest.After(*atTime) {
+		if latest.After(script.AtTime()) {
 			script.SetAtTime(latest)
 		}
 	}

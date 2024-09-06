@@ -3,13 +3,9 @@ package buildscript
 import (
 	"encoding/json"
 	"strings"
-	"time"
-
-	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
 const (
@@ -39,16 +35,6 @@ func (b *BuildScript) MarshalJSON() ([]byte, error) {
 		key := assignment.Key
 		value := assignment.Value
 		switch key {
-		case atTimeKey:
-			if value.Str == nil {
-				return nil, errs.New("String timestamp expected for '%s'", key)
-			}
-			atTime, err := strfmt.ParseDateTime(*value.Str)
-			if err != nil {
-				return nil, errs.Wrap(err, "Invalid timestamp: %s", *value.Str)
-			}
-			b.raw.AtTime = ptr.To(time.Time(atTime))
-			continue // do not include this custom assignment in the let block
 		case mainKey:
 			key = inKey // rename
 		}

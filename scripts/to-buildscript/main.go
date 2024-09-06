@@ -35,16 +35,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	var atTime *time.Time
+	var commitInfo *buildscript.CommitInfo
 	if len(os.Args) == 2 {
 		t, err := time.Parse(strfmt.RFC3339Millis, os.Args[1])
 		if err != nil {
 			panic(errs.JoinMessage(err))
 		}
-		atTime = &t
+		commitInfo = &buildscript.CommitInfo{"https://platform.activestate.com/org/project?commitID=00000000-0000-0000-0000-000000000000", t}
 	}
 
-	bs, err := buildscript.UnmarshalBuildExpression([]byte(input), atTime)
+	bs, err := buildscript.UnmarshalBuildExpression([]byte(input), commitInfo)
 	if err != nil {
 		panic(errs.JoinMessage(err))
 	}
