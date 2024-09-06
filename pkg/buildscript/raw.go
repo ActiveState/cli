@@ -1,16 +1,13 @@
 package buildscript
 
 import (
-	"time"
-
 	"github.com/brunoga/deep"
 )
 
 // Tagged fields will be filled in by Participle.
 type rawBuildScript struct {
+	Info        *string       `parser:"(RawString @RawString RawString)?"`
 	Assignments []*assignment `parser:"@@+"`
-
-	AtTime *time.Time // set after initial read
 }
 
 // clone is meant to facilitate making modifications to functions at marshal time. The idea is that these modifications

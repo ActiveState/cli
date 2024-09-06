@@ -75,7 +75,7 @@ func (b *BuildScript) UnmarshalBuildExpression(data []byte) error {
 		}
 		atTimeNode.Str = nil
 		atTimeNode.Ident = ptr.To("at_time")
-		b.raw.AtTime = ptr.To(time.Time(atTime))
+		b.atTime = ptr.To(time.Time(atTime))
 	} else if err != nil {
 		return errs.Wrap(err, "Could not get at_time node")
 	}

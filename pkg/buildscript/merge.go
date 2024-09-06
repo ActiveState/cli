@@ -57,7 +57,7 @@ func (b *BuildScript) Merge(other *BuildScript, strategies *mono_models.MergeStr
 
 	// When merging build scripts we want to use the most recent timestamp
 	atTime := other.AtTime()
-	if atTime != nil && atTime.After(*b.AtTime()) {
+	if atTime != nil && b.AtTime() != nil && atTime.After(*b.AtTime()) {
 		b.SetAtTime(*atTime)
 	}
 
