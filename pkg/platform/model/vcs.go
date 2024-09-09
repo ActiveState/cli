@@ -134,7 +134,7 @@ var (
 	NamespaceBundle   = NamespaceType{"bundle", "bundles", NamespaceBundlesMatch}
 	NamespaceLanguage = NamespaceType{"language", "", NamespaceLanguageMatch}
 	NamespacePlatform = NamespaceType{"platform", "", NamespacePlatformMatch}
-	NamespaceOrg      = NamespaceType{"org", "org", NamespaceOrgMatch}
+	NamespaceOrg      = NamespaceType{"org", "private/", NamespaceOrgMatch}
 	NamespaceRaw      = NamespaceType{"raw", "", ""}
 	NamespaceBlank    = NamespaceType{"", "", ""}
 )
@@ -216,21 +216,24 @@ func NewNamespacePlatform() Namespace {
 	return Namespace{NamespacePlatform, "platform"}
 }
 
-const OrgNamespacePrefix = "private/"
-
 func NewOrgNamespace(orgName string) Namespace {
 	return Namespace{
 		nsType: NamespaceOrg,
-		value:  OrgNamespacePrefix + orgName,
+		value:  NamespaceOrg.prefix + "/" + orgName,
 	}
 }
 
 func LanguageFromNamespace(ns string) string {
-	values := strings.Split(ns, "/")
-	if len(values) != 2 {
-		return ""
+	matchables := []NamespaceMatchable{
+		NamespacePackage.Matchable(),
+		NamespaceBundle.Matchable(),
 	}
-	return values[1]
+	for _, m := range matchables {
+		if NamespaceMatch(ns, m) {
+			return strings.Split(ns, "/")[1]
+		}
+	}
+	return ""
 }
 
 // FilterSupportedIngredients filters a list of ingredients, returning only those that are currently supported (such that they can be built) by the Platform

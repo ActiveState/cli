@@ -64,12 +64,13 @@ func (r requirements) String() string {
 
 // Install manages the installing execution context.
 type Install struct {
-	prime primeable
+	prime  primeable
+	nsType model.NamespaceType
 }
 
 // NewInstall prepares an installation execution context for use.
-func NewInstall(prime primeable) *Install {
-	return &Install{prime}
+func NewInstall(prime primeable, nsType model.NamespaceType) *Install {
+	return &Install{prime, nsType}
 }
 
 // Run executes the install behavior.
@@ -169,7 +170,7 @@ func (i *Install) resolveRequirements(packages captain.PackagesValue, ts time.Ti
 	var failed []*requirement
 	reqs := []*requirement{}
 	for _, pkg := range packages {
-		req := &requirement{input: &pkg}
+		req := &requirement{input: pkg}
 		if pkg.Namespace != "" {
 			req.resolvedNamespace = ptr.To(model.NewNamespaceRaw(pkg.Namespace))
 		}

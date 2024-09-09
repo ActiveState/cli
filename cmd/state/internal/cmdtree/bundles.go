@@ -44,8 +44,7 @@ func newBundlesCommand(prime *primer.Values) *captain.Command {
 }
 
 func newBundleInstallCommand(prime *primer.Values) *captain.Command {
-	runner := install.NewInstall(prime)
-
+	runner := install.NewInstall(prime, model.NamespaceBundle)
 	params := install.InstallRunParams{}
 
 	return captain.NewCommand(
@@ -62,7 +61,13 @@ func newBundleInstallCommand(prime *primer.Values) *captain.Command {
 				Required:    true,
 			},
 		},
-		func(_ *captain.Command, _ []string) error {
+		func(_ *captain.Command, args []string) error {
+			for _, p := range args {
+				_, err := params.Packages.Add(p)
+				if err != nil {
+					return locale.WrapInputError(err, "err_install_packages_args", "Invalid install arguments")
+				}
+			}
 			return runner.Run(params)
 		},
 	).SetSupportsStructuredOutput()

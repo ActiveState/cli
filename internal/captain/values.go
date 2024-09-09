@@ -203,7 +203,7 @@ func (p *PackageValueNSRequired) Type() string {
 }
 
 // PackagesValue is used to represent multiple PackageValue, this is used when a flag can be passed multiple times.
-type PackagesValue []PackageValue
+type PackagesValue []*PackageValue
 
 var _ FlagMarshaler = &PackagesValue{}
 
@@ -216,12 +216,16 @@ func (p *PackagesValue) String() string {
 }
 
 func (p *PackagesValue) Set(s string) error {
+	return nil // This is currently not natively supported by captain as it takes a full list of arguments
+}
+
+func (p *PackagesValue) Add(s string) (*PackageValue, error) {
 	pf := &PackageValue{}
 	if err := pf.Set(s); err != nil {
-		return err
+		return nil, err
 	}
-	*p = append(*p, *pf)
-	return nil
+	*p = append(*p, pf)
+	return pf, nil
 }
 
 func (p *PackagesValue) Type() string {

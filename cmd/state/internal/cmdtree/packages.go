@@ -50,7 +50,7 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 }
 
 func newInstallCommand(prime *primer.Values) *captain.Command {
-	runner := install.NewInstall(prime)
+	runner := install.NewInstall(prime, model.NamespacePackage)
 
 	params := install.InstallRunParams{}
 
@@ -77,7 +77,7 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 		},
 		func(_ *captain.Command, args []string) error {
 			for _, p := range args {
-				if err := params.Packages.Set(p); err != nil {
+				if _, err := params.Packages.Add(p); err != nil {
 					return locale.WrapInputError(err, "err_install_packages_args", "Invalid install arguments")
 				}
 			}
