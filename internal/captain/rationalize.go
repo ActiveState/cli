@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/checkoutinfo"
 )
 
@@ -30,6 +31,12 @@ func rationalizeError(err *error) {
 	case errors.As(*err, &errInvalidCommitID):
 		*err = errs.WrapUserFacing(*err,
 			locale.Tr("err_commit_id_invalid", errInvalidCommitID.CommitID),
+			errs.SetInput())
+
+	// Outdated build script.
+	case errors.Is(*err, buildscript.ErrOutdatedAtTime):
+		*err = errs.WrapUserFacing(*err,
+			locale.T("err_outdated_buildscript"),
 			errs.SetInput())
 	}
 }
