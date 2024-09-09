@@ -75,7 +75,7 @@ func NewInstall(prime primeable, nsType model.NamespaceType) *Install {
 
 // Run executes the install behavior.
 func (i *Install) Run(params InstallRunParams) (rerr error) {
-	defer rationalizeError(i.prime.Auth(), &rerr)
+	defer i.rationalizeError(&rerr)
 
 	logging.Debug("ExecuteInstall")
 
@@ -162,6 +162,7 @@ func (i *Install) Run(params InstallRunParams) (rerr error) {
 type errNoMatches struct {
 	error
 	requirements []*requirement
+	languages    []model.Language
 }
 
 // resolveRequirements will attempt to resolve the ingredient and namespace for each requested package
@@ -184,8 +185,11 @@ func (i *Install) resolveRequirements(packages captain.PackagesValue, ts time.Ti
 		// Resolve matched ingredients
 		if pkg.Namespace == "" {
 			// Filter out ingredients that don't target one of the supported languages
-			ingredients = sliceutils.Filter(ingredients, func(i *model.IngredientAndVersion) bool {
-				il := model.LanguageFromNamespace(*i.Ingredient.PrimaryNamespace)
+			ingredients = sliceutils.Filter(ingredients, func(iv *model.IngredientAndVersion) bool {
+				if !model.NamespaceMatch(*iv.Ingredient.PrimaryNamespace, i.nsType.Matchable()) {
+					return false
+				}
+				il := model.LanguageFromNamespace(*iv.Ingredient.PrimaryNamespace)
 				for _, l := range languages {
 					if l.Name == il {
 						return true
@@ -214,7 +218,7 @@ func (i *Install) resolveRequirements(packages captain.PackagesValue, ts time.Ti
 
 	// Fail if not all requirements could be resolved
 	if len(failed) > 0 {
-		return nil, errNoMatches{error: errs.New("Failed to resolve requirements"), requirements: failed}
+		return nil, errNoMatches{error: errs.New("Failed to resolve requirements"), requirements: failed, languages: languages}
 	}
 
 	// Disambiguate requirements that match multiple ingredients

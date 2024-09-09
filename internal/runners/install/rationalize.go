@@ -10,12 +10,12 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalizers"
+	"github.com/ActiveState/cli/internal/sliceutils"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
-func rationalizeError(auth *authentication.Auth, rerr *error) {
+func (i *Install) rationalizeError(rerr *error) {
 	var noMatchErr errNoMatches
 
 	switch {
@@ -26,13 +26,13 @@ func rationalizeError(auth *authentication.Auth, rerr *error) {
 	case errors.As(*rerr, &noMatchErr):
 		names := []string{}
 		for _, r := range noMatchErr.requirements {
-			names = append(names, fmt.Sprintf(`"[[ACTIONABLE]%s[/RESET]"`, r.input.Name))
+			names = append(names, fmt.Sprintf(`[ACTIONABLE]%s[/RESET]`, r.input.Name))
 		}
 		if len(noMatchErr.requirements) > 1 {
 			*rerr = errs.WrapUserFacing(*rerr, locale.Tr("package_requirements_no_match", strings.Join(names, ", ")))
 			return
 		}
-		suggestions, err := getSuggestions(noMatchErr.requirements[0], auth)
+		suggestions, err := i.getSuggestions(noMatchErr.requirements[0], noMatchErr.languages)
 		if err != nil {
 			multilog.Error("Failed to retrieve suggestions: %v", err)
 		}
@@ -42,7 +42,7 @@ func rationalizeError(auth *authentication.Auth, rerr *error) {
 			return
 		}
 
-		*rerr = errs.WrapUserFacing(*rerr, locale.Tr("package_ingredient_alternatives", strings.Join(names, ", ")))
+		*rerr = errs.WrapUserFacing(*rerr, locale.Tr("package_ingredient_alternatives", strings.Join(names, ", "), strings.Join(suggestions, "\n")))
 
 	// Error staging a commit during install.
 	case errors.As(*rerr, ptr.To(&bpResp.CommitError{})):
@@ -51,20 +51,37 @@ func rationalizeError(auth *authentication.Auth, rerr *error) {
 	}
 }
 
-func getSuggestions(req *requirement, auth *authentication.Auth) ([]string, error) {
-	results, err := model.SearchIngredients(req.input.Namespace, req.input.Name, false, nil, auth)
+func (i *Install) getSuggestions(req *requirement, languages []model.Language) ([]string, error) {
+	ingredients, err := model.SearchIngredients(req.input.Namespace, req.input.Name, false, nil, i.prime.Auth())
 	if err != nil {
 		return []string{}, locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", req.input.Name)
 	}
 
-	maxResults := 5
-	if len(results) > maxResults {
-		results = results[:maxResults]
+	// Filter out irrelevant ingredients
+	if req.input.Namespace == "" {
+		// Filter out ingredients that don't target one of the supported languages
+		ingredients = sliceutils.Filter(ingredients, func(iv *model.IngredientAndVersion) bool {
+			if !model.NamespaceMatch(*iv.Ingredient.PrimaryNamespace, i.nsType.Matchable()) {
+				return false
+			}
+			il := model.LanguageFromNamespace(*iv.Ingredient.PrimaryNamespace)
+			for _, l := range languages {
+				if l.Name == il {
+					return true
+				}
+			}
+			return false
+		})
 	}
 
-	suggestions := make([]string, 0, maxResults+1)
-	for _, result := range results {
-		suggestions = append(suggestions, fmt.Sprintf(" - %s", *result.Ingredient.Name))
+	suggestions := []string{}
+	for _, ing := range ingredients {
+		suggestions = append(suggestions, fmt.Sprintf(" - %s/%s", *ing.Ingredient.PrimaryNamespace, *ing.Ingredient.Name))
+	}
+
+	maxResults := 5
+	if len(suggestions) > maxResults {
+		suggestions = suggestions[:maxResults]
 	}
 
 	return suggestions, nil

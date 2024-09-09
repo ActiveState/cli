@@ -1147,16 +1147,16 @@ err_exec_recursion:
     To allow recursion, set [ACTIONABLE]{{.V1}}=true[/RESET]
 package_ingredient_alternatives:
   other: |
-    No results found for search term "[NOTICE]{{.V0}}[/RESET]". Did you mean:
+    No results found for search term {{.V0}}. Did you mean:
 
     {{.V1}}
 
-    Run "[ACTIONABLE]state search {{.V0}}[/RESET]" to see more suggestions.
+    Use "[ACTIONABLE]state search[/RESET]" to find more suggestions.
 package_ingredient_alternatives_nosuggest:
   other: |
-    No results found for search term "[NOTICE]{{.V0}}[/RESET]".
+    No results found for search term {{.V0}}.
 
-    Run "[ACTIONABLE]state search {{.V0}}[/RESET]" to find alternatives.
+    Use "[ACTIONABLE]state search[/RESET]" to find alternatives.
 package_requirements_no_match:
   other: |
     No results found for following packages: {{.V0}}.
