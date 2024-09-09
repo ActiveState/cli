@@ -55,7 +55,7 @@ func projectURL(owner, project, commitID string) string {
 	pjf := projectfile.NewProjectField()
 	err := pjf.LoadProject("https://" + host)
 	if err != nil {
-		multilog.Error("could not initialize new project field: %w", err)
+		multilog.Error("could not initialize new project field: %v", err)
 		return ""
 	}
 	pjf.SetNamespace(owner, project)
