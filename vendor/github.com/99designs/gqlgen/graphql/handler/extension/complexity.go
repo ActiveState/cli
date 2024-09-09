@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/vektah/gqlparser/v2/gqlerror"
+
 	"github.com/99designs/gqlgen/complexity"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/errcode"
-	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 const errComplexityLimit = "COMPLEXITY_LIMIT_EXCEEDED"
@@ -59,17 +60,17 @@ func (c *ComplexityLimit) Validate(schema graphql.ExecutableSchema) error {
 
 func (c ComplexityLimit) MutateOperationContext(ctx context.Context, rc *graphql.OperationContext) *gqlerror.Error {
 	op := rc.Doc.Operations.ForName(rc.OperationName)
-	complexity := complexity.Calculate(c.es, op, rc.Variables)
+	complexityCalcs := complexity.Calculate(c.es, op, rc.Variables)
 
 	limit := c.Func(ctx, rc)
 
 	rc.Stats.SetExtension(complexityExtension, &ComplexityStats{
-		Complexity:      complexity,
+		Complexity:      complexityCalcs,
 		ComplexityLimit: limit,
 	})
 
-	if complexity > limit {
-		err := gqlerror.Errorf("operation has complexity %d, which exceeds the limit of %d", complexity, limit)
+	if complexityCalcs > limit {
+		err := gqlerror.Errorf("operation has complexity %d, which exceeds the limit of %d", complexityCalcs, limit)
 		errcode.Set(err, errComplexityLimit)
 		return err
 	}
