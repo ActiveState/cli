@@ -18,6 +18,14 @@ func New() (*BuildScript, error) {
 	return UnmarshalBuildExpression([]byte(emptyBuildExpression), nil)
 }
 
+func (b *BuildScript) ProjectURL() string {
+	return b.raw.CommitInfo.Project
+}
+
+func (b *BuildScript) SetProjectURL(url string) {
+	b.raw.CommitInfo.Project = url
+}
+
 func (b *BuildScript) AtTime() time.Time {
 	return b.raw.CommitInfo.AtTime
 }

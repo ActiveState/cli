@@ -1,8 +1,15 @@
 package localcommit
 
 import (
+	"errors"
+	"os"
+	"path/filepath"
+
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
@@ -58,6 +65,49 @@ func Set(pjpath, commitID string) error {
 
 	if err := proj.SetLegacyCommit(commitID); err != nil {
 		return errs.Wrap(err, "Could not set commit ID")
+	}
+
+	if err := updateBuildScript(); err != nil {
+		return errs.Wrap(err, "Could not update build script")
+	}
+
+	return nil
+}
+
+// updateBuildScript updates the build script's Project info field.
+// Note: cannot use runbits.buildscript.ScriptFromProject() and Update() due to import cycle.
+func updateBuildScript() error {
+	buildscriptPath := filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName)
+
+	data, err := fileutils.ReadFile(buildscriptPath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			// There is no build script to update, so just exit.
+			// Normally we would put this behind a optin.buildscripts config test, but that would require
+			// another config global anti-pattern for this package.
+			return nil // no build script to update
+		}
+		return errs.Wrap(err, "Could not read build script for updating")
+	}
+
+	script, err := buildscript.Unmarshal(data)
+	if err != nil {
+		if errors.Is(err, buildscript.ErrOutdatedAtTime) {
+			return nil // likely running `state reset LOCAL`, so ignore this error
+		}
+		return errs.Wrap(err, "Could not unmarshal build script")
+	}
+
+	script.SetProjectURL(proj.URL())
+
+	data, err = script.Marshal()
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal updated build script")
+	}
+
+	err = fileutils.WriteFile(buildscriptPath, data)
+	if err != nil {
+		return errs.Wrap(err, "Could not write updated build script")
 	}
 
 	return nil
