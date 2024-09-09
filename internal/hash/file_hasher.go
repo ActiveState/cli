@@ -28,42 +28,42 @@ func NewFileHasher() *FileHasher {
 	}
 }
 
-func (f *FileHasher) HashFiles(files []string) (string, error) {
+func (fh *FileHasher) HashFiles(files []string) (string, error) {
 	sort.Strings(files)
 
 	hasher := xxhash.New()
-	for _, file := range files {
-		openFile, err := os.Open(file)
+	for _, f := range files {
+		file, err := os.Open(f)
 		if err != nil {
-			return "", errs.Wrap(err, "Could not open file: %s", file)
+			return "", errs.Wrap(err, "Could not open file: %s", file.Name())
 		}
 
-		fileInfo, err := openFile.Stat()
+		fileInfo, err := file.Stat()
 		if err != nil {
-			return "", errs.Wrap(err, "Could not stat file: %s", file)
+			return "", errs.Wrap(err, "Could not stat file: %s", file.Name())
 		}
 
 		var hash string
-		fh, ok := f.cache.Get(cacheKey(file, fileInfo.ModTime().String()))
+		cachedHash, ok := fh.cache.Get(cacheKey(file.Name(), fileInfo.ModTime().String()))
 		if ok {
-			hash, ok = fh.(string)
+			hash, ok = cachedHash.(string)
 			if !ok {
 				return "", errs.New("Could not convert cache value to string")
 			}
 		} else {
 			fileHasher := xxhash.New()
-			if _, err := io.Copy(fileHasher, openFile); err != nil {
-				return "", errs.Wrap(err, "Could not hash file: %s", file)
-			}
-
-			if err := openFile.Close(); err != nil {
-				return "", errs.Wrap(err, "Could not close file: %s", file)
+			if _, err := io.Copy(fileHasher, file); err != nil {
+				return "", errs.Wrap(err, "Could not hash file: %s", file.Name())
 			}
 
 			hash = fmt.Sprintf("%x", fileHasher.Sum(nil))
 		}
 
-		f.cache.Set(cacheKey(file, fileInfo.ModTime().String()), hash, cache.NoExpiration)
+		if err := file.Close(); err != nil {
+			return "", errs.Wrap(err, "Could not close file: %s", f)
+		}
+
+		fh.cache.Set(cacheKey(file.Name(), fileInfo.ModTime().String()), hash, cache.NoExpiration)
 		fmt.Fprintf(hasher, "%x", hash)
 	}
 
