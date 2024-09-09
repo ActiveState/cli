@@ -19,19 +19,19 @@ func New() (*BuildScript, error) {
 }
 
 func (b *BuildScript) ProjectURL() string {
-	return b.raw.CommitInfo.Project
+	return b.raw.CheckoutInfo.Project
 }
 
 func (b *BuildScript) SetProjectURL(url string) {
-	b.raw.CommitInfo.Project = url
+	b.raw.CheckoutInfo.Project = url
 }
 
 func (b *BuildScript) AtTime() time.Time {
-	return b.raw.CommitInfo.AtTime
+	return b.raw.CheckoutInfo.AtTime
 }
 
 func (b *BuildScript) SetAtTime(t time.Time) {
-	b.raw.CommitInfo.AtTime = t
+	b.raw.CheckoutInfo.AtTime = t
 }
 
 func (b *BuildScript) Equals(other *BuildScript) (bool, error) {

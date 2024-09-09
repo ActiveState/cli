@@ -29,8 +29,8 @@ func (b *BuildScript) Marshal() ([]byte, error) {
 	buf := strings.Builder{}
 
 	buf.WriteString("```\n")
-	buf.WriteString("Project: " + b.raw.CommitInfo.Project + "\n")
-	buf.WriteString("Time: " + b.raw.CommitInfo.AtTime.Format(strfmt.RFC3339Millis) + "\n")
+	buf.WriteString("Project: " + b.raw.CheckoutInfo.Project + "\n")
+	buf.WriteString("Time: " + b.raw.CheckoutInfo.AtTime.Format(strfmt.RFC3339Millis) + "\n")
 	buf.WriteString("```\n\n")
 
 	var main *Assignment

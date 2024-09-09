@@ -48,7 +48,7 @@ const (
 // Build expressions ALWAYS set at_time to `$at_time`, which refers to the timestamp on the commit,
 // while buildscripts encode this timestamp as part of their definition. For this reason we have
 // to supply the timestamp as a separate argument.
-func UnmarshalBuildExpression(data []byte, commitInfo *CommitInfo) (*BuildScript, error) {
+func UnmarshalBuildExpression(data []byte, checkoutInfo *CheckoutInfo) (*BuildScript, error) {
 	expr := make(map[string]interface{})
 	err := json.Unmarshal(data, &expr)
 	if err != nil {
@@ -77,13 +77,13 @@ func UnmarshalBuildExpression(data []byte, commitInfo *CommitInfo) (*BuildScript
 		}
 		atTimeNode.Str = nil
 		atTimeNode.Ident = ptr.To("at_time")
-		script.raw.CommitInfo.AtTime = time.Time(atTime)
+		script.raw.CheckoutInfo.AtTime = time.Time(atTime)
 	} else if err != nil {
 		return nil, errs.Wrap(err, "Could not get at_time node")
 	}
 
-	if commitInfo != nil {
-		script.raw.CommitInfo = *commitInfo
+	if checkoutInfo != nil {
+		script.raw.CheckoutInfo = *checkoutInfo
 	}
 
 	// If the requirements are in legacy object form, e.g.

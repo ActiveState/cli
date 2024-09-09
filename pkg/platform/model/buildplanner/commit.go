@@ -82,11 +82,11 @@ func (b *BuildPlanner) StageCommit(params StageCommitParams) (*Commit, error) {
 		return nil, errs.Wrap(err, "failed to unmarshal build plan")
 	}
 
-	commitInfo := &buildscript.CommitInfo{
+	checkoutInfo := &buildscript.CheckoutInfo{
 		Project: projectURL(params.Owner, params.Project, resp.Commit.CommitID.String()),
 		AtTime:  time.Time(resp.Commit.AtTime),
 	}
-	stagedScript, err := buildscript.UnmarshalBuildExpression(resp.Commit.Expression, commitInfo)
+	stagedScript, err := buildscript.UnmarshalBuildExpression(resp.Commit.Expression, checkoutInfo)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}

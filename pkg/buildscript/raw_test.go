@@ -13,22 +13,22 @@ import (
 const testProject = "https://platform.activestate.com/org/project?branch=main&commitID=00000000-0000-0000-0000-000000000000"
 const testTime = "2000-01-01T00:00:00.000Z"
 
-func commitInfo(project, time string) string {
+func checkoutInfo(project, time string) string {
 	return "```\n" +
 		"Project: " + project + "\n" +
 		"Time: " + time + "\n" +
 		"```\n"
 }
 
-var testCommitInfo string
+var testCheckoutInfo string
 
 func init() {
-	testCommitInfo = commitInfo(testProject, testTime)
+	testCheckoutInfo = checkoutInfo(testProject, testTime)
 }
 
 func TestRawRepresentation(t *testing.T) {
 	script, err := Unmarshal([]byte(
-		testCommitInfo + `
+		testCheckoutInfo + `
 runtime = solve(
 	at_time = at_time,
 	platforms = ["linux", "windows"],
@@ -48,7 +48,7 @@ main = runtime
 	atTime := time.Time(atTimeStrfmt)
 
 	assert.Equal(t, &rawBuildScript{
-		Info: ptr.To(testCommitInfo[2 : len(testCommitInfo)-3]),
+		Info: ptr.To(testCheckoutInfo[2 : len(testCheckoutInfo)-3]),
 		Assignments: []*Assignment{
 			{"runtime", &Value{
 				FuncCall: &FuncCall{"solve", []*Value{
@@ -89,13 +89,13 @@ main = runtime
 			}},
 			{"main", &Value{Ident: ptr.To("runtime")}},
 		},
-		CommitInfo: CommitInfo{testProject, atTime},
+		CheckoutInfo: CheckoutInfo{testProject, atTime},
 	}, script.raw)
 }
 
 func TestComplex(t *testing.T) {
 	script, err := Unmarshal([]byte(
-		testCommitInfo + `
+		testCheckoutInfo + `
 linux_runtime = solve(
 		at_time = at_time,
 		requirements=[
@@ -124,7 +124,7 @@ main = merge(
 	atTime := time.Time(atTimeStrfmt)
 
 	assert.Equal(t, &rawBuildScript{
-		Info: ptr.To(testCommitInfo[2 : len(testCommitInfo)-3]),
+		Info: ptr.To(testCheckoutInfo[2 : len(testCheckoutInfo)-3]),
 		Assignments: []*Assignment{
 			{"linux_runtime", &Value{
 				FuncCall: &FuncCall{"solve", []*Value{
@@ -170,14 +170,14 @@ main = merge(
 					{FuncCall: &FuncCall{"tar_installer", []*Value{{Ident: ptr.To("linux_runtime")}}}},
 				}}}},
 		},
-		CommitInfo: CommitInfo{testProject, atTime},
+		CheckoutInfo: CheckoutInfo{testProject, atTime},
 	}, script.raw)
 }
 
 func TestComplexVersions(t *testing.T) {
-	commitInfo := commitInfo(testProject, "2023-04-27T17:30:05.999Z")
+	checkoutInfo := checkoutInfo(testProject, "2023-04-27T17:30:05.999Z")
 	script, err := Unmarshal([]byte(
-		commitInfo + `
+		checkoutInfo + `
 runtime = solve(
 	at_time = at_time,
 	platforms = ["96b7e6f2-bebf-564c-bc1c-f04482398f38", "96b7e6f2-bebf-564c-bc1c-f04482398f38"],
@@ -198,7 +198,7 @@ main = runtime
 	atTime := time.Time(atTimeStrfmt)
 
 	assert.Equal(t, &rawBuildScript{
-		Info: ptr.To(commitInfo[2 : len(commitInfo)-3]),
+		Info: ptr.To(checkoutInfo[2 : len(checkoutInfo)-3]),
 		Assignments: []*Assignment{
 			{"runtime", &Value{
 				FuncCall: &FuncCall{"solve", []*Value{
@@ -266,6 +266,6 @@ main = runtime
 			}},
 			{"main", &Value{Ident: ptr.To("runtime")}},
 		},
-		CommitInfo: CommitInfo{testProject, atTime},
+		CheckoutInfo: CheckoutInfo{testProject, atTime},
 	}, script.raw)
 }

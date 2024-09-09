@@ -81,11 +81,11 @@ func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, 
 		return nil, errs.Wrap(err, "failed to unmarshal build plan")
 	}
 
-	commitInfo := &buildscript.CommitInfo{
+	checkoutInfo := &buildscript.CheckoutInfo{
 		Project: projectURL(owner, project, commitID.String()),
 		AtTime:  time.Time(commit.AtTime),
 	}
-	script, err := buildscript.UnmarshalBuildExpression(commit.Expression, commitInfo)
+	script, err := buildscript.UnmarshalBuildExpression(commit.Expression, checkoutInfo)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}

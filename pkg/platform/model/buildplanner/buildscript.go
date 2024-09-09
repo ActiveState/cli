@@ -34,11 +34,11 @@ func (b *BuildPlanner) GetBuildScript(owner, project, commitID string) (*buildsc
 		return nil, errs.New("Commit does not contain expression")
 	}
 
-	commitInfo := &buildscript.CommitInfo{
+	checkoutInfo := &buildscript.CheckoutInfo{
 		Project: projectURL(owner, project, commitID),
 		AtTime:  time.Time(resp.Commit.AtTime),
 	}
-	script, err := buildscript.UnmarshalBuildExpression(resp.Commit.Expression, commitInfo)
+	script, err := buildscript.UnmarshalBuildExpression(resp.Commit.Expression, checkoutInfo)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}

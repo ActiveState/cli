@@ -17,7 +17,7 @@ const atTimeKey = "at_time"
 
 var ErrOutdatedAtTime = errs.New("outdated at_time on top")
 
-var commitInfoPairRegex = regexp.MustCompile(`(\w+)\s*:\s*([^\n]+)`)
+var checkoutInfoPairRegex = regexp.MustCompile(`(\w+)\s*:\s*([^\n]+)`)
 
 // Unmarshal returns a structured form of the given AScript (on-disk format).
 func Unmarshal(data []byte) (*BuildScript, error) {
@@ -44,17 +44,17 @@ func Unmarshal(data []byte) (*BuildScript, error) {
 	}
 
 	if raw.Info != nil {
-		for _, matches := range commitInfoPairRegex.FindAllStringSubmatch(*raw.Info, -1) {
+		for _, matches := range checkoutInfoPairRegex.FindAllStringSubmatch(*raw.Info, -1) {
 			key, value := matches[1], matches[2]
 			switch key {
 			case "Project":
-				raw.CommitInfo.Project = value
+				raw.CheckoutInfo.Project = value
 			case "Time":
 				atTime, err := strfmt.ParseDateTime(value)
 				if err != nil {
 					return nil, errs.Wrap(err, "Invalid timestamp: %s", value)
 				}
-				raw.CommitInfo.AtTime = time.Time(atTime)
+				raw.CheckoutInfo.AtTime = time.Time(atTime)
 			}
 		}
 	}

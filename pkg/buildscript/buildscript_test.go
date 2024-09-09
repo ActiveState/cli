@@ -10,7 +10,7 @@ import (
 )
 
 var basicBuildScript = []byte(
-	commitInfo(testProject, testTime) + `
+	checkoutInfo(testProject, testTime) + `
 runtime = state_tool_artifacts(
 	src = sources
 )
@@ -99,7 +99,7 @@ func TestExpressionToScript(t *testing.T) {
 	ts, err := time.Parse(strfmt.RFC3339Millis, testTime)
 	require.NoError(t, err)
 
-	script, err := UnmarshalBuildExpression(basicBuildExpression, &CommitInfo{testProject, ts})
+	script, err := UnmarshalBuildExpression(basicBuildExpression, &CheckoutInfo{testProject, ts})
 	require.NoError(t, err)
 
 	data, err := script.Marshal()

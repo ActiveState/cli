@@ -9,7 +9,7 @@ type rawBuildScript struct {
 	Info        *string       `parser:"(RawString @RawString RawString)?"`
 	Assignments []*Assignment `parser:"@@+"`
 
-	CommitInfo CommitInfo // set after initial read
+	CheckoutInfo CheckoutInfo // set after initial read
 }
 
 type Assignment struct {
@@ -38,7 +38,7 @@ type FuncCall struct {
 	Arguments []*Value `parser:"'(' @@ (',' @@)* ','? ')'"`
 }
 
-type CommitInfo struct {
+type CheckoutInfo struct {
 	Project string
 	AtTime  time.Time
 }

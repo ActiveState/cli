@@ -13,7 +13,7 @@ const mergeBTime = "2000-01-02T00:00:00.000Z"
 
 func TestMergeAdd(t *testing.T) {
 	scriptA, err := Unmarshal([]byte(
-		commitInfo(testProject, mergeATime) + `
+		checkoutInfo(testProject, mergeATime) + `
 runtime = solve(
 	at_time = at_time,
 	platforms = [
@@ -31,7 +31,7 @@ main = runtime
 	require.NoError(t, err)
 
 	scriptB, err := Unmarshal([]byte(
-		commitInfo(testProject, mergeBTime) + `
+		checkoutInfo(testProject, mergeBTime) + `
 runtime = solve(
 	at_time = at_time,
 	platforms = [
@@ -63,7 +63,7 @@ main = runtime
 	require.NoError(t, err)
 
 	assert.Equal(t,
-		commitInfo(testProject, mergeBTime)+`
+		checkoutInfo(testProject, mergeBTime)+`
 runtime = solve(
 	at_time = at_time,
 	platforms = [
@@ -82,7 +82,7 @@ main = runtime`, string(v))
 
 func TestMergeRemove(t *testing.T) {
 	scriptA, err := Unmarshal([]byte(
-		commitInfo(testProject, mergeBTime) + `
+		checkoutInfo(testProject, mergeBTime) + `
 runtime = solve(
 	at_time = at_time,
 	platforms = [
@@ -101,7 +101,7 @@ main = runtime
 	require.NoError(t, err)
 
 	scriptB, err := Unmarshal([]byte(
-		commitInfo(testProject, mergeATime) + `
+		checkoutInfo(testProject, mergeATime) + `
 runtime = solve(
 	at_time = at_time,
 	platforms = [
@@ -132,7 +132,7 @@ main = runtime
 	require.NoError(t, err)
 
 	assert.Equal(t,
-		commitInfo(testProject, mergeBTime)+`
+		checkoutInfo(testProject, mergeBTime)+`
 runtime = solve(
 	at_time = at_time,
 	platforms = [
@@ -150,7 +150,7 @@ main = runtime`, string(v))
 
 func TestMergeConflict(t *testing.T) {
 	scriptA, err := Unmarshal([]byte(
-		commitInfo(testProject, mergeATime) + `
+		checkoutInfo(testProject, mergeATime) + `
 runtime = solve(
 	at_time = at_time,
 	platforms = [
@@ -167,7 +167,7 @@ main = runtime
 	require.NoError(t, err)
 
 	scriptB, err := Unmarshal([]byte(
-		commitInfo(testProject, mergeATime) + `
+		checkoutInfo(testProject, mergeATime) + `
 runtime = solve(
 	at_time = at_time,
 	platforms = [
