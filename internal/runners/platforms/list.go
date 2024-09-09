@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -37,7 +37,7 @@ func (l *List) Run() error {
 		return rationalize.ErrNoProject
 	}
 
-	commitID, err := localcommit.Get(l.proj.Dir())
+	commitID, err := checkoutinfo.GetCommitID(l.proj.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}

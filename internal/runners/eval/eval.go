@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
@@ -50,7 +50,7 @@ func (e *Eval) Run(params *Params) (rerr error) {
 		return rationalize.ErrNoProject
 	}
 
-	commitID, err := localcommit.Get(e.project.Dir())
+	commitID, err := checkoutinfo.GetCommitID(e.project.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get commit ID")
 	}

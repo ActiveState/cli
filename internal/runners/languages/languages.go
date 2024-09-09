@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -57,7 +57,7 @@ func (l *Languages) Run() error {
 		return rationalize.ErrNoProject
 	}
 
-	commitID, err := localcommit.Get(l.project.Dir())
+	commitID, err := checkoutinfo.GetCommitID(l.project.Dir())
 	if err != nil {
 		return errs.AddTips(
 			locale.WrapError(

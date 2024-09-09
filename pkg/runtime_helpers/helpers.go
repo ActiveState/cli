@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/runtime"
 	"github.com/go-openapi/strfmt"
@@ -49,7 +49,7 @@ func Hash(proj *project.Project, overrideCommitID *strfmt.UUID) (string, error) 
 	var err error
 	var commitID strfmt.UUID
 	if overrideCommitID == nil {
-		commitID, err = localcommit.Get(proj.Dir())
+		commitID, err = checkoutinfo.GetCommitID(proj.Dir())
 		if err != nil {
 			return "", errs.Wrap(err, "Failed to get local commit")
 		}

@@ -28,7 +28,7 @@ import (
 	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/buildscript"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
@@ -162,7 +162,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		return errs.Wrap(err, "Could not validate packages")
 	}
 
-	parentCommitID, err := localcommit.Get(r.Project.Dir())
+	parentCommitID, err := checkoutinfo.GetCommitID(r.Project.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -351,7 +351,7 @@ func (r *RequirementOperation) resolveNamespace(ts *time.Time, requirement *Requ
 	if requirement.NamespaceType != nil {
 		switch *requirement.NamespaceType {
 		case model.NamespacePackage, model.NamespaceBundle:
-			commitID, err := localcommit.Get(r.Project.Dir())
+			commitID, err := checkoutinfo.GetCommitID(r.Project.Dir())
 			if err != nil {
 				return errs.Wrap(err, "Unable to get local commit")
 			}
@@ -532,7 +532,7 @@ func (r *RequirementOperation) resolveRequirement(requirement *Requirement) erro
 }
 
 func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
-	if err := localcommit.Set(r.Project.Dir(), commitID.String()); err != nil {
+	if err := checkoutinfo.SetCommitID(r.Project.Dir(), commitID.String()); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 

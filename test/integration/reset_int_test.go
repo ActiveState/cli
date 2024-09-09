@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 )
 
 type ResetIntegrationTestSuite struct {
@@ -23,7 +23,7 @@ func (suite *ResetIntegrationTestSuite) TestReset() {
 	defer ts.Close()
 
 	ts.PrepareEmptyProject()
-	commitID, err := localcommit.Get(ts.Dirs.Work)
+	commitID, err := checkoutinfo.GetCommitID(ts.Dirs.Work)
 	suite.Require().NoError(err)
 
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
@@ -76,7 +76,7 @@ func (suite *ResetIntegrationTestSuite) TestRevertInvalidURL() {
 	defer ts.Close()
 
 	ts.PrepareEmptyProject()
-	commitID, err := localcommit.Get(ts.Dirs.Work)
+	commitID, err := checkoutinfo.GetCommitID(ts.Dirs.Work)
 	suite.Require().NoError(err)
 
 	contents := fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))

@@ -5,7 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -46,7 +46,7 @@ func ExpandTimeForProject(ts *captain.TimeValue, auth *authentication.Auth, proj
 	}
 
 	if proj != nil {
-		commitID, err := localcommit.Get(proj.Dir())
+		commitID, err := checkoutinfo.GetCommitID(proj.Dir())
 		if err != nil {
 			return time.Time{}, errs.Wrap(err, "Unable to get commit ID")
 		}

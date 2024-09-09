@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -124,7 +124,7 @@ func targetedLanguage(languageOpt string, proj *project.Project, auth *authentic
 		)
 	}
 
-	commitID, err := localcommit.Get(proj.Dir())
+	commitID, err := checkoutinfo.GetCommitID(proj.Dir())
 	if err != nil {
 		return "", errs.Wrap(err, "Unable to get local commit")
 	}

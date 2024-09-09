@@ -14,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -118,9 +118,9 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	// ignore it). After resolving buildscript conflicts, `state commit` should always have something
 	// new to commit.
 	remoteHeadCommit := "2c461e7c-43d2-4e43-b169-a255c305becd"
-	commit, err := localcommit.Get(ts.Dirs.Work)
+	commit, err := checkoutinfo.GetCommitID(ts.Dirs.Work)
 	suite.Require().NoError(err)
-	suite.Assert().Equal(remoteHeadCommit, commit.String(), "localcommit should have been updated to remote commit")
+	suite.Assert().Equal(remoteHeadCommit, commit.String(), "checkoutinfo should have been updated to remote commit")
 }
 
 func (suite *PullIntegrationTestSuite) assertMergeStrategyNotification(ts *e2e.Session, strategy string) {

@@ -23,7 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -142,7 +142,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 	var buildPlan *buildplan.BuildPlan
 	rtOpts := []runtime_runbit.SetOpt{}
 	if archive == nil {
-		commitID, err := localcommit.Get(proj.Path())
+		commitID, err := checkoutinfo.GetCommitID(proj.Path())
 		if err != nil {
 			return errs.Wrap(err, "Could not get local commit")
 		}
@@ -174,7 +174,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 	if err := cves.NewCveReport(u.prime).Report(buildPlan, nil); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
-	
+
 	rti, err := runtime_runbit.Update(u.prime, trigger.TriggerCheckout, rtOpts...)
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime")

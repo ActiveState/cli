@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -91,7 +91,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 	}
 	r.out.Notice(locale.Tr("operating_message", r.project.NamespaceString(), r.project.Dir()))
 
-	commitID, err := localcommit.Get(r.project.Dir()) // The commit we want to push
+	commitID, err := checkoutinfo.GetCommitID(r.project.Dir()) // The commit we want to push
 	if err != nil {
 		// Note: should not get here, as verifyInput() ensures there is a local commit
 		return errs.Wrap(err, "Unable to get local commit")
@@ -196,7 +196,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		}
 
 		// Update the project's commitID with the create project or push result.
-		if err := localcommit.Set(r.project.Dir(), commitID.String()); err != nil {
+		if err := checkoutinfo.SetCommitID(r.project.Dir(), commitID.String()); err != nil {
 			return errs.Wrap(err, "Unable to create local commit file")
 		}
 
@@ -283,7 +283,7 @@ func (r *Push) verifyInput() error {
 		return rationalize.ErrNoProject
 	}
 
-	commitID, err := localcommit.Get(r.project.Dir())
+	commitID, err := checkoutinfo.GetCommitID(r.project.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -321,7 +321,7 @@ func (r *Push) promptNamespace() (*project.Namespaced, error) {
 	}
 
 	var name string
-	commitID, err := localcommit.Get(r.project.Dir())
+	commitID, err := checkoutinfo.GetCommitID(r.project.Dir())
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get local commit")
 	}

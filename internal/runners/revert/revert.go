@@ -14,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	gqlmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -84,7 +84,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 	if !strfmt.IsUUID(commitID) && !strings.EqualFold(commitID, remoteCommitID) {
 		return locale.NewInputError("err_revert_invalid_commit_id", "Invalid commit ID")
 	}
-	latestCommit, err := localcommit.Get(r.project.Dir())
+	latestCommit, err := checkoutinfo.GetCommitID(r.project.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -156,7 +156,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 			locale.T("tip_private_project_auth"))
 	}
 
-	err = localcommit.Set(r.project.Dir(), revertCommit.String())
+	err = checkoutinfo.SetCommitID(r.project.Dir(), revertCommit.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to set local commit")
 	}

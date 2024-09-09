@@ -23,7 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
@@ -140,7 +140,7 @@ func Update(
 		commitID = opts.Commit.CommitID
 	}
 	if commitID == "" {
-		commitID, err = localcommit.Get(proj.Dir())
+		commitID, err = checkoutinfo.GetCommitID(proj.Dir())
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to get local commit")
 		}

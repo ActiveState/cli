@@ -82,7 +82,7 @@ func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName
 		pjName = pj.Name()
 		pjNamespace = pj.NamespaceString()
 		pjURL = pj.URL()
-		pjCommit = pj.LegacyCommitID() // Not using localcommit due to import cycle. See anti-pattern comment in localcommit pkg.
+		pjCommit = pj.LegacyCommitID() // Not using checkoutinfo due to import cycle. See anti-pattern comment in checkoutinfo pkg.
 		pjBranch = pj.BranchName()
 		pjDir = pj.Dir()
 	}

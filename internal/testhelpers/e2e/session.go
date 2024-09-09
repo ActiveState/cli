@@ -332,7 +332,7 @@ func (s *Session) PrepareCommitIdFile(commitID string) {
 }
 
 // CommitID is used to grab the current commit ID for the project in our working directory.
-// For integration tests you should use this function instead of localcommit.Get() and pjfile.LegacyCommitID() as it
+// For integration tests you should use this function instead of checkoutinfo.GetCommitID() and pjfile.LegacyCommitID() as it
 // is guaranteed to give a fresh result from disk, whereas the ones above use caching which tests don't like.
 func (s *Session) CommitID() string {
 	pjfile, err := projectfile.Parse(filepath.Join(s.Dirs.Work, constants.ConfigFileName))

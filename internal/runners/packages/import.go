@@ -17,7 +17,7 @@ import (
 	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/buildscript"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
@@ -92,7 +92,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		params.FileName = defaultImportFile
 	}
 
-	localCommitId, err := localcommit.Get(proj.Dir())
+	localCommitId, err := checkoutinfo.GetCommitID(proj.Dir())
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_commit")
 	}
@@ -135,7 +135,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	})
 	// Always update the local commit ID even if the commit fails to build
 	if stagedCommit != nil && stagedCommit.Commit != nil && stagedCommit.Commit.CommitID != "" {
-		if err := localcommit.Set(proj.Dir(), stagedCommit.CommitID.String()); err != nil {
+		if err := checkoutinfo.SetCommitID(proj.Dir(), stagedCommit.CommitID.String()); err != nil {
 			return locale.WrapError(err, "err_package_update_commit_id")
 		}
 	}

@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -76,7 +76,7 @@ func GetCommit(
 	switch {
 	// Return the buildplan from this runtime.
 	case !namespaceProvided && !commitIdProvided:
-		localCommitID, err := localcommit.Get(pj.Path())
+		localCommitID, err := checkoutinfo.GetCommitID(pj.Path())
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not get local commit")
 		}
@@ -143,7 +143,7 @@ func GetCommit(
 		owner = pj.Owner()
 		name = pj.Name()
 		nsString = pj.NamespaceString()
-		commitID, err := localcommit.Get(pj.Path())
+		commitID, err := checkoutinfo.GetCommitID(pj.Path())
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not get local commit")
 		}

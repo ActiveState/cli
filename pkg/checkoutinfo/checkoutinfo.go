@@ -1,4 +1,4 @@
-package localcommit
+package checkoutinfo
 
 import (
 	"errors"
@@ -41,7 +41,7 @@ func setupProject(pjpath string) error {
 	return nil
 }
 
-func Get(pjpath string) (strfmt.UUID, error) {
+func GetCommitID(pjpath string) (strfmt.UUID, error) {
 	if err := setupProject(pjpath); err != nil {
 		return "", errs.Wrap(err, "Could not setup project")
 	}
@@ -54,7 +54,7 @@ func Get(pjpath string) (strfmt.UUID, error) {
 	return strfmt.UUID(commitID), nil
 }
 
-func Set(pjpath, commitID string) error {
+func SetCommitID(pjpath, commitID string) error {
 	if !strfmt.IsUUID(commitID) {
 		return locale.NewInputError("err_commit_id_invalid", commitID)
 	}

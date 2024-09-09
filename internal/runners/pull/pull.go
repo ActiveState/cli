@@ -21,7 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -124,7 +124,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 	}
 
 	var localCommit *strfmt.UUID
-	localCommitID, err := localcommit.Get(p.project.Dir())
+	localCommitID, err := checkoutinfo.GetCommitID(p.project.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -182,7 +182,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		p.notifyMergeStrategy(string(strategy), *localCommit, remoteProject)
 	}
 
-	commitID, err := localcommit.Get(p.project.Dir())
+	commitID, err := checkoutinfo.GetCommitID(p.project.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -193,7 +193,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 			if err != nil {
 				var errBuildScriptMergeConflict *ErrBuildScriptMergeConflict
 				if errors.As(err, &errBuildScriptMergeConflict) {
-					err2 := localcommit.Set(p.project.Dir(), remoteCommit.String())
+					err2 := checkoutinfo.SetCommitID(p.project.Dir(), remoteCommit.String())
 					if err2 != nil {
 						err = errs.Pack(err, errs.Wrap(err2, "Could not set local commit to remote commit after build script merge conflict"))
 					}
@@ -202,7 +202,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 			}
 		}
 
-		err := localcommit.Set(p.project.Dir(), resultingCommit.String())
+		err := checkoutinfo.SetCommitID(p.project.Dir(), resultingCommit.String())
 		if err != nil {
 			return errs.Wrap(err, "Unable to set local commit")
 		}

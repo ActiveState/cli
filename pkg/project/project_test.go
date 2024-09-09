@@ -61,7 +61,7 @@ func (suite *ProjectTestSuite) TestProject() {
 	projectLine := "https://platform.activestate.com/ActiveState/project?branch=main&commitID=00010001-0001-0001-0001-000100010001"
 	suite.Equal(projectLine, suite.project.URL(), "Values should match")
 	suite.Equal("project", suite.project.Name(), "Values should match")
-	commitID := suite.project.LegacyCommitID() // Not using localcommit due to import cycle. See anti-pattern comment in localcommit pkg.
+	commitID := suite.project.LegacyCommitID() // Not using checkoutinfo due to import cycle. See anti-pattern comment in checkoutinfo pkg.
 	suite.Equal("00010001-0001-0001-0001-000100010001", commitID, "Values should match")
 	suite.Equal("ActiveState", suite.project.Owner(), "Values should match")
 	suite.Equal("ActiveState/project", suite.project.Namespace().String(), "Values should match")

@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 )
@@ -79,7 +79,7 @@ func (c *Commit) Run() (rerr error) {
 	}
 
 	// Get equivalent build script for current state of the project
-	localCommitID, err := localcommit.Get(proj.Dir())
+	localCommitID, err := checkoutinfo.GetCommitID(proj.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit ID")
 	}
@@ -117,7 +117,7 @@ func (c *Commit) Run() (rerr error) {
 	}
 
 	// Update local commit ID
-	if err := localcommit.Set(proj.Dir(), stagedCommit.CommitID.String()); err != nil {
+	if err := checkoutinfo.SetCommitID(proj.Dir(), stagedCommit.CommitID.String()); err != nil {
 		return errs.Wrap(err, "Could not set local commit ID")
 	}
 

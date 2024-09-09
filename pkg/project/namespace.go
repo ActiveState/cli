@@ -158,7 +158,7 @@ func NameSpaceForConfig(configFile string) *Namespaced {
 		Project: prj.Name(),
 	}
 
-	commitID := strfmt.UUID(prj.LegacyCommitID()) // Not using localcommit due to import cycle. See anti-pattern comment in localcommit pkg.
+	commitID := strfmt.UUID(prj.LegacyCommitID()) // Not using checkoutinfo due to import cycle. See anti-pattern comment in checkoutinfo pkg.
 	if commitID != "" {
 		names.CommitID = &commitID
 	}

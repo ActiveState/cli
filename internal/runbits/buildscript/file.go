@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/buildscript"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 )
@@ -51,7 +51,7 @@ func Initialize(proj projecter, auth *authentication.Auth) error {
 	}
 
 	logging.Debug("Build script does not exist. Creating one.")
-	commitId, err := localcommit.Get(proj.Dir())
+	commitId, err := checkoutinfo.GetCommitID(proj.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the local commit ID")
 	}

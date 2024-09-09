@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -210,7 +210,7 @@ func targetFromProjectFile(proj *project.Project) (*strfmt.UUID, error) {
 	if proj == nil {
 		return nil, rationalize.ErrNoProject
 	}
-	commit, err := localcommit.Get(proj.Dir())
+	commit, err := checkoutinfo.GetCommitID(proj.Dir())
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get local commit")
 	}

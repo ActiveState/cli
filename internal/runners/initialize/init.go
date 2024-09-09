@@ -25,7 +25,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -108,7 +108,7 @@ func inferLanguage(config projectfile.ConfigGetter, auth *authentication.Auth) (
 	if err != nil {
 		return "", "", false
 	}
-	commitID, err := localcommit.Get(defaultProj.Dir())
+	commitID, err := checkoutinfo.GetCommitID(defaultProj.Dir())
 	if err != nil {
 		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
 		return "", "", false
@@ -276,7 +276,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return errs.Wrap(err, "Could not create project")
 	}
 
-	if err := localcommit.Set(proj.Dir(), commitID.String()); err != nil {
+	if err := checkoutinfo.SetCommitID(proj.Dir(), commitID.String()); err != nil {
 		return errs.Wrap(err, "Unable to create local commit file")
 	}
 

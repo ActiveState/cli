@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -53,7 +53,7 @@ func (a *Add) Run(params AddParams) error {
 		return locale.WrapError(err, "err_fetch_branch", "", localBranch)
 	}
 
-	commitID, err := localcommit.Get(a.project.Dir())
+	commitID, err := checkoutinfo.GetCommitID(a.project.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}

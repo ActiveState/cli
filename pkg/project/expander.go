@@ -240,7 +240,7 @@ func ProjectExpander(_ string, name string, _ string, isFunction bool, ctx *Expa
 	case "url":
 		return project.URL(), nil
 	case "commit":
-		commitID := project.LegacyCommitID() // Not using localcommit due to import cycle. See anti-pattern comment in localcommit pkg.
+		commitID := project.LegacyCommitID() // Not using checkoutinfo due to import cycle. See anti-pattern comment in checkoutinfo pkg.
 		return commitID, nil
 	case "branch":
 		return project.BranchName(), nil

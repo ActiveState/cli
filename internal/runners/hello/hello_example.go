@@ -16,7 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/example"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -150,7 +150,7 @@ func currentCommitMessage(proj *project.Project, auth *authentication.Auth) (str
 		return "", errs.New("Cannot determine which project to use")
 	}
 
-	commitId, err := localcommit.Get(proj.Dir())
+	commitId, err := checkoutinfo.GetCommitID(proj.Dir())
 	if err != nil {
 		return "", errs.Wrap(err, "Cannot determine which commit to use")
 	}

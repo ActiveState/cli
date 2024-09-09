@@ -17,7 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/buildscript"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -81,8 +81,8 @@ func (r *Reset) Run(params *Params) error {
 		if err != nil {
 			return locale.WrapError(err, "err_reset_latest_commit", "Could not get latest commit ID")
 		}
-		localCommitID, err := localcommit.Get(r.project.Dir())
-		var errInvalidCommitID *localcommit.ErrInvalidCommitID
+		localCommitID, err := checkoutinfo.GetCommitID(r.project.Dir())
+		var errInvalidCommitID *checkoutinfo.ErrInvalidCommitID
 		if err != nil && !errors.As(err, &errInvalidCommitID) {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
@@ -92,7 +92,7 @@ func (r *Reset) Run(params *Params) error {
 		commitID = *latestCommit
 
 	case strings.EqualFold(params.CommitID, local):
-		localCommitID, err := localcommit.Get(r.project.Dir())
+		localCommitID, err := checkoutinfo.GetCommitID(r.project.Dir())
 		if err != nil {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
@@ -110,8 +110,8 @@ func (r *Reset) Run(params *Params) error {
 		}
 	}
 
-	localCommitID, err := localcommit.Get(r.project.Dir())
-	var errInvalidCommitID *localcommit.ErrInvalidCommitID
+	localCommitID, err := checkoutinfo.GetCommitID(r.project.Dir())
+	var errInvalidCommitID *checkoutinfo.ErrInvalidCommitID
 	if err != nil && !errors.As(err, &errInvalidCommitID) {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -127,7 +127,7 @@ func (r *Reset) Run(params *Params) error {
 		}
 	}
 
-	err = localcommit.Set(r.project.Dir(), commitID.String())
+	err = checkoutinfo.SetCommitID(r.project.Dir(), commitID.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to set local commit")
 	}
