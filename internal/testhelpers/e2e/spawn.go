@@ -74,7 +74,7 @@ func (s *SpawnedCmd) ExpectInput(opts ...termtest.SetExpectOpt) error {
 	expect := `expect'input from posix shell`
 	if cmdName != "bash" && shellName != "bash" && runtime.GOOS == "windows" {
 		if strings.Contains(cmdName, "powershell") || strings.Contains(shellName, "powershell") {
-			send = "echo \"`<expect input from powershell`>\""
+			send = "echo \"<expect input from powershell>\""
 			expect = `<expect input from powershell>`
 		} else {
 			send = `echo ^<expect input from cmd prompt^>`

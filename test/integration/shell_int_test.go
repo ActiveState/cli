@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
@@ -489,14 +490,28 @@ func (suite *ShellIntegrationTestSuite) TestWindowsShells() {
 
 	hostname, err := os.Hostname()
 	suite.Require().NoError(err)
-	cp := ts.SpawnCmd("cmd", "/C", "state", "shell")
+	cp := ts.SpawnCmdWithOpts(
+		"cmd",
+		e2e.OptArgs("/C", "state", "shell"),
+		e2e.OptAppendEnv(constants.OverrideShellEnvVarName+"="),
+	)
 	cp.ExpectInput()
 	cp.SendLine("hostname")
 	cp.Expect(hostname) // cmd.exe shows the actual hostname
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnCmd("powershell", "-Command", "state", "shell")
+	// Clear configured shell.
+	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+	suite.Require().NoError(err)
+	err = cfg.Set(subshell.ConfigKeyShell, "")
+	suite.Require().NoError(err)
+
+	cp = ts.SpawnCmdWithOpts(
+		"powershell",
+		e2e.OptArgs("-Command", "state", "shell"),
+		e2e.OptAppendEnv(constants.OverrideShellEnvVarName+"="),
+	)
 	cp.ExpectInput()
 	cp.SendLine("$host.name")
 	cp.Expect("ConsoleHost") // powershell always shows ConsoleHost, go figure

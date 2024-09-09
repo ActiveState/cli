@@ -4,10 +4,12 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/shirou/gopsutil/v3/process"
 
@@ -182,20 +184,24 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 		}
 	}()
 
-	binary = os.Getenv("SHELL")
-	if binary == "" && runtime.GOOS == "windows" {
-		binary = detectShellWindows()
+	if os.Getenv(constants.OverrideShellEnvVarName) != "" {
+		binary = os.Getenv(constants.OverrideShellEnvVarName)
+	}
+
+	if binary == "" {
+		binary = detectShellParent()
 	}
 
 	if binary == "" {
 		binary = configured
 	}
+
 	if binary == "" {
-		if runtime.GOOS == "windows" {
-			binary = "cmd.exe"
-		} else {
-			binary = "bash"
-		}
+		binary = os.Getenv(SHELL_ENV_VAR)
+	}
+
+	if binary == "" {
+		binary = OS_DEFAULT
 	}
 
 	path := resolveBinaryPath(binary)
@@ -239,24 +245,24 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 	return name, path
 }
 
-func detectShellWindows() string {
-	// Windows does not provide a way of identifying which shell we are running in, so we have to look at the parent
-	// process.
-
+func detectShellParent() string {
 	p, err := process.NewProcess(int32(os.Getppid()))
 	if err != nil && !errors.As(err, ptr.To(&os.PathError{})) {
-		panic(err)
+		multilog.Error("Failed to get parent process: %s", errs.JoinMessage(err))
 	}
 
-	for p != nil {
+	for p != nil && p.Pid != 0 {
 		name, err := p.Name()
 		if err == nil {
-			if strings.Contains(name, "cmd.exe") || strings.Contains(name, "powershell.exe") {
+			if strings.Contains(name, string(filepath.Separator)) {
+				name = path.Base(name)
+			}
+			if supportedShellName(name) {
 				return name
 			}
 		}
 		p, _ = p.Parent()
 	}
 
-	return os.Getenv("ComSpec")
+	return ""
 }

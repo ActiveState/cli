@@ -17,7 +17,7 @@ const (
 )
 
 func platformSpecificEnv(dirs *Dirs) []string {
-	return []string{
+	env := []string{
 		"SystemDrive=C:",
 		"SystemRoot=C:\\Windows",
 		"PROGRAMFILES=C:\\Program Files",
@@ -39,6 +39,12 @@ func platformSpecificEnv(dirs *Dirs) []string {
 		fmt.Sprintf("LOCALAPPDATA=%s", dirs.TempDir),
 		fmt.Sprintf("%s=true", constants.DisableActivateEventsEnvVarName),
 	}
+
+	if condition.OnCI() {
+		env = append(env, fmt.Sprintf("%s=cmd.exe", constants.OverrideShellEnvVarName))
+	}
+
+	return env
 }
 
 func platformPath() string {
