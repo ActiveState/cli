@@ -434,13 +434,13 @@ scripts:
 func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
 	suite.OnlyRunForTags(tagsuite.Package)
 
-	ts := e2e.New(suite.T(), false)
+	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("uninstall", "doesNotExist")
-	cp.Expect("does not exist")
+	cp.Expect("could not be found")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 

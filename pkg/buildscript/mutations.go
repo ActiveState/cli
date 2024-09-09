@@ -78,34 +78,44 @@ type RequirementNotFoundError struct {
 	*locale.LocalizedError // for legacy non-user-facing error usages
 }
 
+// RemoveRequirement will remove any matching requirement. Note that it only operates on the Name and Namespace fields.
+// It will not verify if revision or version match.
 func (b *BuildScript) RemoveRequirement(requirement types.Requirement) error {
 	requirementsNode, err := b.getRequirementsNode()
 	if err != nil {
 		return errs.Wrap(err, "Could not get requirements node")
 	}
 
-	var found bool
+	match := false
 	for i, req := range *requirementsNode.List {
 		if req.FuncCall == nil || req.FuncCall.Name != reqFuncName {
 			continue
 		}
 
 		for _, arg := range req.FuncCall.Arguments {
-			if arg.Assignment.Key == requirementNameKey && strValue(arg.Assignment.Value) == requirement.Name {
-				list := *requirementsNode.List
-				list = append(list[:i], list[i+1:]...)
-				requirementsNode.List = &list
-				found = true
-				break
+			if arg.Assignment.Key == requirementNameKey {
+				match := strValue(arg.Assignment.Value) == requirement.Name
+				if !match || requirement.Namespace == "" {
+					break
+				}
+			}
+			if arg.Assignment.Key == requirementNamespaceKey {
+				match = strValue(arg.Assignment.Value) == requirement.Namespace
+				if !match {
+					break
+				}
 			}
 		}
 
-		if found {
+		if match {
+			list := *requirementsNode.List
+			list = append(list[:i], list[i+1:]...)
+			requirementsNode.List = &list
 			break
 		}
 	}
 
-	if !found {
+	if !match {
 		return &RequirementNotFoundError{
 			requirement.Name,
 			locale.NewInputError("err_remove_requirement_not_found", "", requirement.Name),

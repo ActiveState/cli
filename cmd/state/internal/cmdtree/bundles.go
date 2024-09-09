@@ -44,8 +44,8 @@ func newBundlesCommand(prime *primer.Values) *captain.Command {
 }
 
 func newBundleInstallCommand(prime *primer.Values) *captain.Command {
-	runner := install.NewInstall(prime, model.NamespaceBundle)
-	params := install.InstallRunParams{}
+	runner := install.New(prime, model.NamespaceBundle)
+	params := install.Params{}
 
 	return captain.NewCommand(
 		"install",

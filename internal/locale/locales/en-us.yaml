@@ -606,6 +606,8 @@ package_import_flag_filename_description:
   other: The file to import
 commit_message_added:
   other: "Added: {{.V0}}"
+commit_message_removed:
+  other: "Removed: {{.V0}}"
 commit_message_added_package:
   other: "Added package: {{.V0}}@{{.V1}}"
 commit_message_removed_package:
@@ -1587,3 +1589,7 @@ flag_state_upgrade_ts_description:
   other: Manually specify the timestamp to 'upgrade' to. Can be either 'now' or RFC3339 formatted timestamp.
 platform_add_not_found:
   other: Could not find a platform matching your criteria
+err_uninstall_nomatch:
+  other: "The following package(s) could not be found in your project: {{.V0}}"
+progress_requirements:
+  other: "• Updating requirements"

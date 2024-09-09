@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/install"
 	"github.com/ActiveState/cli/internal/runners/packages"
+	"github.com/ActiveState/cli/internal/runners/uninstall"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -50,9 +51,9 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 }
 
 func newInstallCommand(prime *primer.Values) *captain.Command {
-	runner := install.NewInstall(prime, model.NamespacePackage)
+	runner := install.New(prime, model.NamespacePackage)
 
-	params := install.InstallRunParams{}
+	params := install.Params{}
 
 	var packagesRaw string
 	cmd := captain.NewCommand(
@@ -93,9 +94,9 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 }
 
 func newUninstallCommand(prime *primer.Values) *captain.Command {
-	runner := packages.NewUninstall(prime)
+	runner := uninstall.New(prime, model.NamespacePackage)
 
-	params := packages.UninstallRunParams{}
+	params := uninstall.Params{}
 
 	var packagesRaw string
 	cmd := captain.NewCommand(
@@ -114,11 +115,11 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 		},
 		func(_ *captain.Command, args []string) error {
 			for _, p := range args {
-				if err := params.Packages.Set(p); err != nil {
+				if _, err := params.Packages.Add(p); err != nil {
 					return locale.WrapInputError(err, "err_uninstall_packages_args", "Invalid package uninstall arguments")
 				}
 			}
-			return runner.Run(params, model.NamespacePackage)
+			return runner.Run(params)
 		},
 	)
 

@@ -26,8 +26,8 @@ func newLanguagesCommand(prime *primer.Values) *captain.Command {
 }
 
 func newLanguageInstallCommand(prime *primer.Values) *captain.Command {
-	runner := install.NewInstall(prime, model.NamespaceLanguage)
-	params := install.InstallRunParams{}
+	runner := install.New(prime, model.NamespaceLanguage)
+	params := install.Params{}
 
 	return captain.NewCommand(
 		"install",

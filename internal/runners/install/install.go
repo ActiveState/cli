@@ -35,8 +35,8 @@ type primeable interface {
 	primer.SvcModeler
 }
 
-// InstallRunParams tracks the info required for running Install.
-type InstallRunParams struct {
+// Params tracks the info required for running Install.
+type Params struct {
 	Packages  captain.PackagesValue
 	Timestamp captain.TimeValue
 }
@@ -68,13 +68,13 @@ type Install struct {
 	nsType model.NamespaceType
 }
 
-// NewInstall prepares an installation execution context for use.
-func NewInstall(prime primeable, nsType model.NamespaceType) *Install {
+// New prepares an installation execution context for use.
+func New(prime primeable, nsType model.NamespaceType) *Install {
 	return &Install{prime, nsType}
 }
 
 // Run executes the install behavior.
-func (i *Install) Run(params InstallRunParams) (rerr error) {
+func (i *Install) Run(params Params) (rerr error) {
 	defer i.rationalizeError(&rerr)
 
 	logging.Debug("ExecuteInstall")
@@ -143,8 +143,8 @@ func (i *Install) Run(params InstallRunParams) (rerr error) {
 	}
 
 	// Prepare updated buildscript
-	script, err := prepareBuildScript(oldCommit.BuildScript(), reqs, ts)
-	if err != nil {
+	script := oldCommit.BuildScript()
+	if err := prepareBuildScript(script, reqs, ts); err != nil {
 		return errs.Wrap(err, "Could not prepare build script")
 	}
 
@@ -281,7 +281,7 @@ func (i *Install) promptForMatchingIngredient(req *requirement) (*model.Ingredie
 	return values[choice], nil
 }
 
-func prepareBuildScript(script *buildscript.BuildScript, requirements requirements, ts time.Time) (*buildscript.BuildScript, error) {
+func prepareBuildScript(script *buildscript.BuildScript, requirements requirements, ts time.Time) error {
 	script.SetAtTime(ts)
 	for _, req := range requirements {
 		requirement := types.Requirement{
@@ -292,9 +292,9 @@ func prepareBuildScript(script *buildscript.BuildScript, requirements requiremen
 
 		err := script.AddRequirement(requirement)
 		if err != nil {
-			return nil, errs.Wrap(err, "Failed to update build expression with requirement")
+			return errs.Wrap(err, "Failed to update build expression with requirement")
 		}
 	}
 
-	return script, nil
+	return nil
 }
