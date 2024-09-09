@@ -84,7 +84,7 @@ func (c *Commit) Run() (rerr error) {
 		return errs.Wrap(err, "Unable to get local commit ID")
 	}
 	bp := buildplanner.NewBuildPlannerModel(c.prime.Auth())
-	remoteScript, err := bp.GetBuildScript(localCommitID.String())
+	remoteScript, err := bp.GetBuildScript(proj.Owner(), proj.Name(), localCommitID.String())
 	if err != nil {
 		return errs.Wrap(err, "Could not get remote build expr and time for provided commit")
 	}
@@ -122,7 +122,7 @@ func (c *Commit) Run() (rerr error) {
 	}
 
 	// Update our local build expression to match the committed one. This allows our API a way to ensure forward compatibility.
-	newScript, err := bp.GetBuildScript(stagedCommit.CommitID.String())
+	newScript, err := bp.GetBuildScript(proj.Owner(), proj.Name(), stagedCommit.CommitID.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the remote build script")
 	}

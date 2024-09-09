@@ -107,7 +107,7 @@ func (m *Manifest) fetchRequirements() ([]buildscript.Requirement, error) {
 		}
 
 		bp := bpModel.NewBuildPlannerModel(m.auth)
-		script, err = bp.GetBuildScript(commitID.String())
+		script, err = bp.GetBuildScript(m.project.Owner(), m.project.Name(), commitID.String())
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not get remote build expr and time")
 		}

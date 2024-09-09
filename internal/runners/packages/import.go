@@ -116,7 +116,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	}
 
 	bp := buildplanner.NewBuildPlannerModel(auth)
-	bs, err := bp.GetBuildScript(localCommitId.String())
+	bs, err := bp.GetBuildScript(proj.Owner(), proj.Name(), localCommitId.String())
 	if err != nil {
 		return locale.WrapError(err, "err_cannot_get_build_expression", "Could not get build expression")
 	}

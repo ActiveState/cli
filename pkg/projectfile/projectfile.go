@@ -965,18 +965,13 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
 			host = hostOverride
 		}
-		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", host, params.Owner, params.Project))
-		if err != nil {
-			return nil, errs.Wrap(err, "url parse new project url failed")
-		}
-		q := u.Query()
-
+		pjf := NewProjectField()
+		pjf.LoadProject("https://" + host)
+		pjf.SetNamespace(params.Owner, params.Project)
 		if params.BranchName != "" {
-			q.Set("branch", params.BranchName)
+			pjf.SetBranch(params.BranchName)
 		}
-
-		u.RawQuery = q.Encode()
-		params.ProjectURL = u.String()
+		params.ProjectURL = pjf.String()
 	}
 
 	params.path = filepath.Join(params.Directory, constants.ConfigFileName)

@@ -1,8 +1,6 @@
 package buildplanner
 
 import (
-	"fmt"
-	"net/url"
 	"os"
 	"time"
 
@@ -13,28 +11,10 @@ import (
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-func buildScriptCommitInfo(owner, project, commitID string, atTime time.Time) *buildscript.CommitInfo {
-	// Note: cannot use api.GetPlatformURL() due to import cycle.
-	host := constants.DefaultAPIHost
-	if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
-		host = hostOverride
-	}
-	u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", host, owner, project))
-	if err != nil {
-		multilog.Error("url parse for project URL failed: %w", err)
-		return nil
-	}
-	q := u.Query()
-	q.Set("commitID", commitID)
-	u.RawQuery = q.Encode()
-	projectURL := u.String()
-
-	return &buildscript.CommitInfo{projectURL, atTime}
-}
-
-func (b *BuildPlanner) GetBuildScript(commitID string) (*buildscript.BuildScript, error) {
+func (b *BuildPlanner) GetBuildScript(owner, project, commitID string) (*buildscript.BuildScript, error) {
 	logging.Debug("GetBuildExpression, commitID: %s", commitID)
 	resp := &bpResp.BuildExpressionResponse{}
 	err := b.client.Run(request.BuildExpression(commitID), resp)
@@ -54,10 +34,31 @@ func (b *BuildPlanner) GetBuildScript(commitID string) (*buildscript.BuildScript
 		return nil, errs.New("Commit does not contain expression")
 	}
 
-	script, err := buildscript.UnmarshalBuildExpression(resp.Commit.Expression, buildScriptCommitInfo("", "", "", time.Time(resp.Commit.AtTime)))
+	commitInfo := &buildscript.CommitInfo{
+		Project: projectURL(owner, project, commitID),
+		AtTime:  time.Time(resp.Commit.AtTime),
+	}
+	script, err := buildscript.UnmarshalBuildExpression(resp.Commit.Expression, commitInfo)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}
 
 	return script, nil
+}
+
+func projectURL(owner, project, commitID string) string {
+	// Note: cannot use api.GetPlatformURL() due to import cycle.
+	host := constants.DefaultAPIHost
+	if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
+		host = hostOverride
+	}
+	pjf := projectfile.NewProjectField()
+	err := pjf.LoadProject("https://" + host)
+	if err != nil {
+		multilog.Error("could not initialize new project field: %w", err)
+		return ""
+	}
+	pjf.SetNamespace(owner, project)
+	pjf.SetLegacyCommitID(commitID)
+	return pjf.String()
 }

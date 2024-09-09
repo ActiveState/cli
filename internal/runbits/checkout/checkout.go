@@ -104,7 +104,11 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	}
 
 	if r.config.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript_runbit.Initialize(path, r.auth); err != nil {
+		pj, err := project.FromPath(path)
+		if err != nil {
+			return "", errs.Wrap(err, "Could not load created project file")
+		}
+		if err := buildscript_runbit.Initialize(pj, r.auth); err != nil {
 			return "", errs.Wrap(err, "Unable to initialize buildscript")
 		}
 	}

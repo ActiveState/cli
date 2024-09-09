@@ -180,7 +180,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		r.out.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", targetNamespace.Owner, targetNamespace.Project))
 
 		// Create a new project with the current project's buildscript.
-		script, err := bp.GetBuildScript(commitID.String())
+		script, err := bp.GetBuildScript(targetNamespace.Owner, targetNamespace.Project, commitID.String())
 		if err != nil {
 			return errs.Wrap(err, "Could not get buildscript")
 		}

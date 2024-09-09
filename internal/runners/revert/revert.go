@@ -195,7 +195,7 @@ func (r *Revert) revertCommit(params revertParams, bp *buildplanner.BuildPlanner
 }
 
 func (r *Revert) revertToCommit(params revertParams, bp *buildplanner.BuildPlanner) (strfmt.UUID, error) {
-	bs, err := bp.GetBuildScript(params.revertCommitID)
+	bs, err := bp.GetBuildScript(params.organization, params.project, params.revertCommitID)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get build expression")
 	}

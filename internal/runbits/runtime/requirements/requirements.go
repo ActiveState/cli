@@ -282,7 +282,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 }
 
 func (r *RequirementOperation) prepareBuildScript(bp *bpModel.BuildPlanner, parentCommit strfmt.UUID, requirements []*Requirement, ts *time.Time) (*buildscript.BuildScript, error) {
-	script, err := bp.GetBuildScript(string(parentCommit))
+	script, err := bp.GetBuildScript(r.Project.Owner(), r.Project.Name(), string(parentCommit))
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to get build expression")
 	}
@@ -538,7 +538,7 @@ func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 
 	if r.Config.GetBool(constants.OptinBuildscriptsConfig) {
 		bp := bpModel.NewBuildPlannerModel(r.Auth)
-		script, err := bp.GetBuildScript(commitID.String())
+		script, err := bp.GetBuildScript(r.Project.Owner(), r.Project.Name(), commitID.String())
 		if err != nil {
 			return errs.Wrap(err, "Could not get remote build expr and time")
 		}

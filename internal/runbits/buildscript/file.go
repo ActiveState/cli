@@ -17,7 +17,7 @@ import (
 
 // projecter is a union between project.Project and setup.Targeter
 type projecter interface {
-	ProjectDir() string
+	Dir() string
 	Owner() string
 	Name() string
 }
@@ -25,7 +25,7 @@ type projecter interface {
 var ErrBuildscriptNotExist = errors.New("Build script does not exist")
 
 func ScriptFromProject(proj projecter) (*buildscript.BuildScript, error) {
-	path := filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName)
+	path := filepath.Join(proj.Dir(), constants.BuildScriptFileName)
 	return ScriptFromFile(path)
 }
 
@@ -40,8 +40,8 @@ func ScriptFromFile(path string) (*buildscript.BuildScript, error) {
 	return buildscript.Unmarshal(data)
 }
 
-func Initialize(path string, auth *authentication.Auth) error {
-	scriptPath := filepath.Join(path, constants.BuildScriptFileName)
+func Initialize(proj projecter, auth *authentication.Auth) error {
+	scriptPath := filepath.Join(proj.Dir(), constants.BuildScriptFileName)
 	script, err := ScriptFromFile(scriptPath)
 	if err == nil {
 		return nil // nothing to do, buildscript already exists
@@ -51,13 +51,13 @@ func Initialize(path string, auth *authentication.Auth) error {
 	}
 
 	logging.Debug("Build script does not exist. Creating one.")
-	commitId, err := localcommit.Get(path)
+	commitId, err := localcommit.Get(proj.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the local commit ID")
 	}
 
 	buildplanner := buildplanner.NewBuildPlannerModel(auth)
-	script, err = buildplanner.GetBuildScript(commitId.String())
+	script, err = buildplanner.GetBuildScript(proj.Owner(), proj.Name(), commitId.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the remote build expression and time")
 	}
@@ -96,8 +96,14 @@ func Update(proj projecter, newScript *buildscript.BuildScript) error {
 	}
 
 	logging.Debug("Writing build script")
-	if err := fileutils.WriteFile(filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName), sb); err != nil {
+	if err := fileutils.WriteFile(filepath.Join(proj.Dir(), constants.BuildScriptFileName), sb); err != nil {
 		return errs.Wrap(err, "Could not write build script to file")
 	}
 	return nil
+}
+
+// Remove removes an existing buildscript.
+// This is primarily for updating an outdated buildscript.
+func Remove(path string) error {
+	return os.Remove(filepath.Join(path, constants.BuildScriptFileName))
 }

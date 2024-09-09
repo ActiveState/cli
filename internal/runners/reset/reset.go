@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
+	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -134,8 +135,18 @@ func (r *Reset) Run(params *Params) error {
 	// Ensure the buildscript exists. Normally we should never do this, but reset is used for resetting from a corrupted
 	// state, so it is appropriate.
 	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript_runbit.Initialize(r.project.Dir(), r.auth); err != nil {
-			return errs.Wrap(err, "Unable to initialize buildscript")
+		err := buildscript_runbit.Initialize(r.project, r.auth)
+		if err != nil {
+			if errors.Is(err, buildscript.ErrOutdatedAtTime) {
+				// Remove the outdated build script and try again.
+				if err := buildscript_runbit.Remove(r.project.Dir()); err != nil {
+					return errs.Wrap(err, "Unable to remove outdated build script")
+				}
+				err = buildscript_runbit.Initialize(r.project, r.auth)
+			}
+			if err != nil {
+				return errs.Wrap(err, "Unable to initialize buildscript")
+			}
 		}
 	}
 
