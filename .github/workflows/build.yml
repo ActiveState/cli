@@ -1,7 +1,7 @@
 name: Build-Test-Deploy
 
 # === Triggers ===
-"on":
+'on':
   push:
     branches:
       - master
@@ -20,7 +20,7 @@ name: Build-Test-Deploy
 # === Workflow Permissions ===
 permissions:
   id-token: write # This is required for requesting the JWT
-  contents: read  # This is required for actions/checkout
+  contents: read # This is required for actions/checkout
 
 # === Workflow-level environment variables ===
 env:
@@ -38,9 +38,9 @@ jobs:
         go-version:
           - 1.22.x
         sys:
-          - {os: ubuntu-latest}
-          - {os: macos-12, shell: zsh}
-          - {os: windows-2019}
+          - { os: ubuntu-latest }
+          - { os: macos-12, shell: zsh }
+          - { os: windows-2019 }
       fail-fast: false
     runs-on: ${{ matrix.sys.os }}
     env:
@@ -174,7 +174,7 @@ jobs:
         name: Check Format
         id: check_format
         shell: bash
-        if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\", \"refs/heads/master\"]'), github.ref) && !startsWith(github.event.pull_request.head.ref, 'version/')"
+        if: '!contains(fromJSON(''["refs/heads/beta", "refs/heads/release", "refs/heads/LTS", "refs/heads/master"]''), github.ref) && !startsWith(github.event.pull_request.head.ref, ''version/'')'
         run: parallelize results Check-Format
 
       - # === Unit Tests ===
@@ -185,32 +185,32 @@ jobs:
         continue-on-error: ${{ github.event_name != 'schedule' }}
 
       - # === "Build: CLI" ===
-        name: "Build: CLI"
+        name: 'Build: CLI'
         shell: bash
         run: parallelize results Build-CLI
 
       - # === "Build: Service" ===
-        name: "Build: Service"
+        name: 'Build: Service'
         shell: bash
         run: parallelize results Build-Service
 
       - # === "Build: Installer" ===
-        name: "Build: Installer"
+        name: 'Build: Installer'
         shell: bash
         run: parallelize results Build-Installer
 
       - # === "Build: Remote Installer" ===
-        name: "Build: Remote Installer"
+        name: 'Build: Remote Installer'
         shell: bash
         run: parallelize results Build-Remote-Installer
 
       - # === "Build: Install Scripts" ===
-        name: "Build: Install Scripts"
+        name: 'Build: Install Scripts'
         shell: bash
         run: parallelize results Build-Install-Scripts
 
       - # === "Build: Executor" ===
-        name: "Build: Executor"
+        name: 'Build: Executor'
         shell: bash
         run: parallelize results Build-Executor
 
@@ -271,7 +271,7 @@ jobs:
 
       - # === Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments. ===
         name: Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments.
-        if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\"]'), github.ref)"
+        if: '!contains(fromJSON(''["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]''), github.ref)'
         shell: bash
         run: |
           if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
@@ -296,7 +296,7 @@ jobs:
       - # === Integration Tests ===
         name: Integration Tests
         id: integration_tests
-        if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\"]'), github.ref)"
+        if: '!contains(fromJSON(''["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]''), github.ref)'
         shell: bash
         run: |
           if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
@@ -392,7 +392,7 @@ jobs:
 
       - # === Upload Session Artifacts ===
         name: Upload Session Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: session-build-${{ matrix.sys.os }}
           path: build/
@@ -435,7 +435,6 @@ jobs:
 
     # === Deploy Steps ===
     steps:
-
       - # === Checkout code ===
         name: Checkout code
         uses: actions/checkout@v4
@@ -510,7 +509,7 @@ jobs:
 
       - # === Upload Artifacts ===
         name: Upload Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: build
           path: build/
