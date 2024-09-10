@@ -36,7 +36,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_project_name_noData() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *BundleIntegrationTestSuite) TestBundle_install() {
+func (suite *BundleIntegrationTestSuite) TestBundle_install_uninstall() {
 	suite.OnlyRunForTags(tagsuite.Bundle)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -46,6 +46,10 @@ func (suite *BundleIntegrationTestSuite) TestBundle_install() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("bundles", "install", "python-module-build-support")
+	cp.Expect("project has been updated")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("bundles", "uninstall", "python-module-build-support")
 	cp.Expect("project has been updated")
 	cp.ExpectExitCode(0)
 }

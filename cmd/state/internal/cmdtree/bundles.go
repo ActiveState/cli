@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/install"
 	"github.com/ActiveState/cli/internal/runners/packages"
+	"github.com/ActiveState/cli/internal/runners/uninstall"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -74,9 +75,9 @@ func newBundleInstallCommand(prime *primer.Values) *captain.Command {
 }
 
 func newBundleUninstallCommand(prime *primer.Values) *captain.Command {
-	runner := packages.NewUninstall(prime)
+	runner := uninstall.New(prime, model.NamespaceBundle)
 
-	params := packages.UninstallRunParams{}
+	params := uninstall.Params{}
 
 	return captain.NewCommand(
 		"uninstall",
@@ -93,7 +94,7 @@ func newBundleUninstallCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params, model.NamespaceBundle)
+			return runner.Run(params)
 		},
 	).SetSupportsStructuredOutput()
 }
