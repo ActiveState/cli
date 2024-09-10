@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/rationalizers"
 	"github.com/ActiveState/cli/internal/runbits/reqop_runbit"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -101,7 +102,7 @@ func (a *Add) Run(params AddRunParams) (rerr error) {
 	script.AddPlatform(*platform.PlatformID)
 
 	// Update local checkout and source runtime changes
-	if err := reqop_runbit.UpdateAndReload(a.prime, script, oldCommit, locale.Tr("commit_message_added", *platform.DisplayName)); err != nil {
+	if err := reqop_runbit.UpdateAndReload(a.prime, script, oldCommit, locale.Tr("commit_message_added", *platform.DisplayName), trigger.TriggerPlatform); err != nil {
 		return errs.Wrap(err, "Failed to update local checkout")
 	}
 

@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/reqop_runbit"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
@@ -149,7 +150,7 @@ func (i *Install) Run(params Params) (rerr error) {
 	}
 
 	// Update local checkout and source runtime changes
-	if err := reqop_runbit.UpdateAndReload(i.prime, script, oldCommit, locale.Tr("commit_message_added", reqs.String())); err != nil {
+	if err := reqop_runbit.UpdateAndReload(i.prime, script, oldCommit, locale.Tr("commit_message_added", reqs.String()), trigger.TriggerInstall); err != nil {
 		return errs.Wrap(err, "Failed to update local checkout")
 	}
 

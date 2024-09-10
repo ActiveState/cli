@@ -54,7 +54,7 @@ func (i *Install) rationalizeError(rerr *error) {
 func (i *Install) getSuggestions(req *requirement, languages []model.Language) ([]string, error) {
 	ingredients, err := model.SearchIngredients(req.input.Namespace, req.input.Name, false, nil, i.prime.Auth())
 	if err != nil {
-		return []string{}, locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", req.input.Name)
+		return []string{}, locale.WrapError(err, "err_package_ingredient_search", "Failed to resolve ingredient named: {{.V0}}", req.input.Name)
 	}
 
 	// Filter out irrelevant ingredients

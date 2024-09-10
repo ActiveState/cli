@@ -52,7 +52,7 @@ type Requirement struct {
 	Version   []types.VersionRequirement
 }
 
-func UpdateAndReload(prime primeable, script *buildscript.BuildScript, oldCommit *buildplanner.Commit, commitMsg string) error {
+func UpdateAndReload(prime primeable, script *buildscript.BuildScript, oldCommit *buildplanner.Commit, commitMsg string, trigger trigger.Trigger) error {
 	pj := prime.Project()
 	out := prime.Output()
 	cfg := prime.Config()
@@ -96,7 +96,7 @@ func UpdateAndReload(prime primeable, script *buildscript.BuildScript, oldCommit
 	// Start runtime sourcing UI
 	if !cfg.GetBool(constants.AsyncRuntimeConfig) {
 		// refresh or install runtime
-		_, err := runtime_runbit.Update(prime, trigger.TriggerInstall,
+		_, err := runtime_runbit.Update(prime, trigger,
 			runtime_runbit.WithCommit(newCommit),
 			runtime_runbit.WithoutBuildscriptValidation(),
 		)

@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/reqop_runbit"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
@@ -105,7 +106,7 @@ func (u *Uninstall) Run(params Params) (rerr error) {
 	pg = nil
 
 	// Update local checkout and source runtime changes
-	if err := reqop_runbit.UpdateAndReload(u.prime, script, oldCommit, locale.Tr("commit_message_added", params.Packages.String())); err != nil {
+	if err := reqop_runbit.UpdateAndReload(u.prime, script, oldCommit, locale.Tr("commit_message_added", params.Packages.String()), trigger.TriggerUninstall); err != nil {
 		return errs.Wrap(err, "Failed to update local checkout")
 	}
 

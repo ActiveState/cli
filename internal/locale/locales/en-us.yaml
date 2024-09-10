@@ -484,18 +484,6 @@ field_version:
   other: Version
 field_bitwidth:
   other: Bit Width
-commit_message_added_platform:
-  other: "Added platform: {{.V0}} {{.V1}}bit {{.V2}}"
-commit_message_updated_platform:
-  other: "Updated platform: {{.V0}} to {{.V1}}"
-commit_message_removed_platform:
-  other: "Removed platform: {{.V0}} {{.V1}}bit {{.V2}}"
-commit_message_added_language:
-  other: "Added language: {{.V0}} {{.V1}}"
-commit_message_updated_language:
-  other: "Updated language: {{.V0}} to {{.V1}}"
-commit_message_removed_language:
-  other: "Removed language: {{.V0}} {{.V1}}"
 fileutils_err_amend_file:
   other: "Could not edit file: [NOTICE]{{.V0}}[/RESET]"
 err_auth_empty_token:
@@ -608,12 +596,6 @@ commit_message_added:
   other: "Added: {{.V0}}"
 commit_message_removed:
   other: "Removed: {{.V0}}"
-commit_message_added_package:
-  other: "Added package: {{.V0}}@{{.V1}}"
-commit_message_removed_package:
-  other: "Removed package: {{.V0}}"
-commit_message_updated_package:
-  other: "Updated package: {{.V0}} to {{.V1}}"
 commit_message_add_initial:
   other: Initialize project via the State Tool
 commit_reqstext_message:
@@ -864,10 +846,6 @@ languages_install_cmd_description:
   other: Update the language of a project
 arg_languages_install_description:
   other: The language to update in the form of <language>@<version>
-err_language_format:
-  other: The language and version provided is not formatting correctly. It must be in the form of <language>@<version>
-err_language_mismatch:
-  other: Cannot change languages. Only changes to the current project's language version are allowed
 err_no_recipes:
   other: No build recipes could be generated for the current project
 err_order_unknown:
@@ -1521,11 +1499,6 @@ err_headless:
   other: Cannot operate on a headless project. Please visit {{.V0}} to convert your project and try again.
 notice_needs_buildscript_reset:
   other: Your project is missing its buildscript file. Please run '[ACTIONABLE]state reset LOCAL[/RESET]' to recreate it.
-
-err_initial_no_requirement:
-  other: |
-    Could not find compatible requirement for initial commit. Please ensure that you are trying to install a valid package.
-    To check for available packages run '[ACTIONABLE]state search <package_name>[/RESET]'.
 manifest_deprecation_warning:
   other: |
     [WARNING]Warning:[/RESET] This command is deprecated. Please use '[ACTIONABLE]state manifest[/RESET]' instead.
