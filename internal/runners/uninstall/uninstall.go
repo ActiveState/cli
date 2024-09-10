@@ -1,8 +1,6 @@
 package uninstall
 
 import (
-	"errors"
-
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -10,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/reqop_runbit"
 	"github.com/ActiveState/cli/internal/sliceutils"
@@ -99,7 +96,7 @@ func (u *Uninstall) Run(params Params) (rerr error) {
 
 	// Update buildscript
 	script := oldCommit.BuildScript()
-	if err := prepareBuildScript(script, params.Packages); err != nil {
+	if err := u.prepareBuildScript(script, params.Packages); err != nil {
 		return errs.Wrap(err, "Could not prepare build script")
 	}
 
@@ -118,41 +115,55 @@ func (u *Uninstall) Run(params Params) (rerr error) {
 	return nil
 }
 
-func prepareBuildScript(script *buildscript.BuildScript, pkgs captain.PackagesValue) error {
+func (u *Uninstall) prepareBuildScript(script *buildscript.BuildScript, pkgs captain.PackagesValue) error {
 	reqs, err := script.DependencyRequirements()
 	if err != nil {
 		return errs.Wrap(err, "Unable to get requirements")
 	}
 
-	// Check that we're not matching multiple packages
+	// Resolve requirements and check for errors
+	toRemove := []types.Requirement{}
+	notFound := captain.PackagesValue{}
 	multipleMatches := captain.PackagesValue{}
 	for _, pkg := range pkgs {
+		// Filter matching requirements
 		matches := sliceutils.Filter(reqs, func(req types.Requirement) bool {
-			return pkg.Name == req.Name && (pkg.Namespace == "" || pkg.Namespace == req.Namespace)
+			if pkg.Name != req.Name {
+				return false
+			}
+			if pkg.Namespace != "" {
+				return req.Namespace == pkg.Namespace
+			}
+			return model.NamespaceMatch(req.Namespace, u.nsType.Matchable())
 		})
+		toRemove = append(toRemove, matches...)
+
+		// Check for duplicate matches
 		if len(matches) > 1 {
 			multipleMatches = append(multipleMatches, pkg)
 		}
+
+		// Check for no matches
+		if len(matches) == 0 {
+			notFound = append(notFound, pkg)
+		}
 	}
+
+	// Error out on duplicate matches
 	if len(multipleMatches) > 0 {
 		return &errMultipleMatches{error: errs.New("Could not find all requested packages"), packages: multipleMatches}
 	}
 
-	// Remove requirements
-	var removeErrs error
-	notFound := captain.PackagesValue{}
-	for _, pkg := range pkgs {
-		if err := script.RemoveRequirement(types.Requirement{Name: pkg.Name, Namespace: pkg.Namespace}); err != nil {
-			if errors.As(err, ptr.To(&buildscript.RequirementNotFoundError{})) {
-				notFound = append(notFound, pkg)
-				removeErrs = errs.Pack(removeErrs, err)
-			} else {
-				return errs.Wrap(err, "Unable to remove requirement")
-			}
-		}
-	}
+	// Error out on no matches
 	if len(notFound) > 0 {
-		return errs.Pack(&errNoMatches{error: errs.New("Could not find all requested packages"), packages: notFound}, removeErrs)
+		return &errNoMatches{error: errs.New("Could not find all requested packages"), packages: notFound}
+	}
+
+	// Remove requirements
+	for _, req := range toRemove {
+		if err := script.RemoveRequirement(req); err != nil {
+			return errs.Wrap(err, "Unable to remove requirement")
+		}
 	}
 
 	return nil
