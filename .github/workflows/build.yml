@@ -68,7 +68,7 @@ jobs:
 
       - # === Install Go ===
         name: Install Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
 
@@ -392,7 +392,7 @@ jobs:
 
       - # === Upload Session Artifacts ===
         name: Upload Session Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: session-build-${{ matrix.sys.os }}
           path: build/
@@ -404,9 +404,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download All Build Session Artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           path: build/
+          merge-multiple: true
 
       - name: Scan for CVEs
         if: runner.os == 'Linux'
@@ -444,7 +445,7 @@ jobs:
 
       - # === Install Go ===
         name: Install Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: 1.22.x
 
@@ -454,9 +455,10 @@ jobs:
 
       - # === Download All Build Session Artifacts ===
         name: Download All Build Session Artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           path: build/
+          merge-multiple: true
 
       - # === Sanitize All Session Artifacts ===
         name: Sanitize All Session Artifacts
@@ -501,7 +503,7 @@ jobs:
 
       - # === Cleanup Session Artifacts ===
         name: Cleanup Session Artifacts
-        uses: geekyeggo/delete-artifact@v1
+        uses: geekyeggo/delete-artifact@v5
         with:
           name: |
             session-build-ubuntu-20.04
@@ -510,7 +512,7 @@ jobs:
 
       - # === Upload Artifacts ===
         name: Upload Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: build
           path: build/
