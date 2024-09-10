@@ -2,7 +2,6 @@ package buildplan
 
 import (
 	"encoding/json"
-	"sort"
 
 	"github.com/go-openapi/strfmt"
 
@@ -131,8 +130,6 @@ func (b *BuildPlan) DiffArtifacts(oldBp *BuildPlan, requestedOnly bool) Artifact
 			Artifact:   artf,
 		})
 	}
-
-	sort.SliceStable(changeset, func(i, j int) bool { return changeset[i].Artifact.Name() < changeset[j].Artifact.Name() })
 
 	return changeset
 }
