@@ -127,6 +127,86 @@ func TestFileHasher_ContentAgnostic(t *testing.T) {
 	assert.Len(t, tc.misses, 2)
 }
 
+func TestFileHasher_NotEqualFileAdded(t *testing.T) {
+	file1 := createTempFile(t, "file1")
+	file2 := createTempFile(t, "file2")
+	file3 := createTempFile(t, "file3")
+
+	tc := &testCache{
+		cache: cache.New(cache.NoExpiration, cache.NoExpiration),
+	}
+
+	hasher := &FileHasher{
+		cache: tc,
+	}
+
+	hash1, err := hasher.HashFiles([]string{file1, file2})
+	assert.NoError(t, err)
+
+	hash2, err := hasher.HashFiles([]string{file1, file2, file3})
+	assert.NoError(t, err)
+
+	assert.NotEqual(t, hash1, hash2)
+	assert.Len(t, tc.hits, 2)
+	assert.Len(t, tc.misses, 3)
+}
+
+func TestFileHasher_NotEqualFileRemoved(t *testing.T) {
+	file1 := createTempFile(t, "file1")
+	file2 := createTempFile(t, "file2")
+	file3 := createTempFile(t, "file3")
+
+	tc := &testCache{
+		cache: cache.New(cache.NoExpiration, cache.NoExpiration),
+	}
+
+	hasher := &FileHasher{
+		cache: tc,
+	}
+
+	hash1, err := hasher.HashFiles([]string{file1, file2, file3})
+	assert.NoError(t, err)
+
+	hash2, err := hasher.HashFiles([]string{file1, file2})
+	assert.NoError(t, err)
+
+	assert.NotEqual(t, hash1, hash2)
+	assert.Len(t, tc.hits, 2)
+	assert.Len(t, tc.misses, 3)
+}
+
+func TestFileHasher_NotEqualContentChanged(t *testing.T) {
+	file1 := createTempFile(t, "file1")
+	file2 := createTempFile(t, "file2")
+
+	tc := &testCache{
+		cache: cache.New(cache.NoExpiration, cache.NoExpiration),
+	}
+
+	hasher := &FileHasher{
+		cache: tc,
+	}
+
+	hash1, err := hasher.HashFiles([]string{file1, file2})
+	assert.NoError(t, err)
+
+	hash2, err := hasher.HashFiles([]string{file1, file2})
+	assert.NoError(t, err)
+
+	assert.Equal(t, hash1, hash2)
+
+	if err := os.WriteFile(file1, []byte("file1_changed"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	hash2Modified, err := hasher.HashFiles([]string{file1, file2})
+	assert.NoError(t, err)
+
+	assert.NotEqual(t, hash1, hash2Modified)
+	assert.Len(t, tc.hits, 3)
+	assert.Len(t, tc.misses, 3)
+}
+
 func createTempFile(t *testing.T, content string) string {
 	tmpfile, err := os.CreateTemp("", "testfile")
 	if err != nil {
