@@ -93,7 +93,12 @@ func newBundleUninstallCommand(prime *primer.Values) *captain.Command {
 				Required:    true,
 			},
 		},
-		func(_ *captain.Command, _ []string) error {
+		func(_ *captain.Command, args []string) error {
+			for _, p := range args {
+				if _, err := params.Packages.Add(p); err != nil {
+					return locale.WrapInputError(err, "err_uninstall_packages_args", "Invalid package uninstall arguments")
+				}
+			}
 			return runner.Run(params)
 		},
 	).SetSupportsStructuredOutput()

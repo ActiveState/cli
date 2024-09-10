@@ -34,7 +34,7 @@ func HandleCommitErrors(rerr *error) {
 		)
 	case types.NoChangeSinceLastCommitErrorType:
 		*rerr = errs.WrapUserFacing(*rerr,
-			locale.Tl("err_packages_exist", "The requested package is already installed."),
+			locale.Tl("err_commit_nochanges", "There are no changes since the last commit."),
 			errs.SetInput(),
 		)
 	default:

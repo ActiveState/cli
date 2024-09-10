@@ -99,7 +99,7 @@ func (b *BuildScript) RemoveRequirement(requirement types.Requirement) error {
 					break
 				}
 			}
-			if arg.Assignment.Key == requirementNamespaceKey {
+			if requirement.Namespace != "" && arg.Assignment.Key == requirementNamespaceKey {
 				match = strValue(arg.Assignment.Value) == requirement.Namespace
 				if !match {
 					break
