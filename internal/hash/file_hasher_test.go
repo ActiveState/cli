@@ -195,6 +195,10 @@ func TestFileHasher_NotEqualContentChanged(t *testing.T) {
 
 	assert.Equal(t, hash1, hash2)
 
+	// Change content of file1 and ensure mod time is different to avoid a cache hit.
+	// The time these tests take as well as the accuracy of the file system's mod time
+	// resolution may cause the mod time to be the same.
+	time.Sleep(10 * time.Millisecond)
 	if err := os.WriteFile(file1, []byte("file1_changed"), 0644); err != nil {
 		t.Fatal(err)
 	}

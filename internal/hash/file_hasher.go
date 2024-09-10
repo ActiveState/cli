@@ -44,7 +44,7 @@ func (fh *FileHasher) HashFiles(files []string) (string, error) {
 		}
 
 		var hash string
-		cachedHash, ok := fh.cache.Get(cacheKey(file.Name(), fileInfo.ModTime().String()))
+		cachedHash, ok := fh.cache.Get(cacheKey(file.Name(), fileInfo.ModTime()))
 		if ok {
 			hash, ok = cachedHash.(string)
 			if !ok {
@@ -63,13 +63,13 @@ func (fh *FileHasher) HashFiles(files []string) (string, error) {
 			return "", errs.Wrap(err, "Could not close file: %s", f)
 		}
 
-		fh.cache.Set(cacheKey(file.Name(), fileInfo.ModTime().String()), hash, cache.NoExpiration)
+		fh.cache.Set(cacheKey(file.Name(), fileInfo.ModTime()), hash, cache.NoExpiration)
 		fmt.Fprintf(hasher, "%x", hash)
 	}
 
 	return base64.StdEncoding.EncodeToString(hasher.Sum(nil)), nil
 }
 
-func cacheKey(file string, modTime string) string {
-	return fmt.Sprintf("%s-%s", file, modTime)
+func cacheKey(file string, modTime time.Time) string {
+	return fmt.Sprintf("%s-%d", file, modTime.UTC().UnixNano())
 }
