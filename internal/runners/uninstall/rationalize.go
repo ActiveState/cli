@@ -2,7 +2,6 @@ package uninstall
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -13,22 +12,17 @@ import (
 
 func (u *Uninstall) rationalizeError(rerr *error) {
 	var noMatchesErr *errNoMatches
+	var multipleMatchesErr *errMultipleMatches
 
 	switch {
 	case rerr == nil:
 		return
 
-	// Error staging a commit during uninstall.
 	case errors.As(*rerr, &noMatchesErr):
-		pkgs := []string{}
-		for _, pkg := range noMatchesErr.packages {
-			name := pkg.Name
-			if pkg.Namespace != "" {
-				name = fmt.Sprintf("%s/%s", pkg.Namespace, pkg.Name)
-			}
-			pkgs = append(pkgs, fmt.Sprintf("[ACTIONABLE]%s[/RESET]", name))
-		}
 		*rerr = errs.WrapUserFacing(*rerr, locale.Tr("err_uninstall_nomatch", noMatchesErr.packages.String()))
+
+	case errors.As(*rerr, &multipleMatchesErr):
+		*rerr = errs.WrapUserFacing(*rerr, locale.Tr("err_uninstall_multimatch", multipleMatchesErr.packages.String()))
 
 	// Error staging a commit during install.
 	case errors.As(*rerr, ptr.To(&bpResp.CommitError{})):

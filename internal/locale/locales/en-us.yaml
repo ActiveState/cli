@@ -1591,5 +1591,10 @@ platform_add_not_found:
   other: Could not find a platform matching your criteria
 err_uninstall_nomatch:
   other: "The following package(s) could not be found in your project: {{.V0}}"
+err_uninstall_multimatch:
+  other: |
+    The following terms match multiple requirements in your project: [ACTIONABLE]{{.V0}}[/RESET].
+    Please specify the requirement to uninstall by using its full namespace.
+    To view the namespace of your project requirements run: [ACTIONABLE]state manifest[/RESET].
 progress_requirements:
   other: "• Updating requirements"

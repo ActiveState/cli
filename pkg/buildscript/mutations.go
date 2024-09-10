@@ -94,7 +94,7 @@ func (b *BuildScript) RemoveRequirement(requirement types.Requirement) error {
 
 		for _, arg := range req.FuncCall.Arguments {
 			if arg.Assignment.Key == requirementNameKey {
-				match := strValue(arg.Assignment.Value) == requirement.Name
+				match = strValue(arg.Assignment.Value) == requirement.Name
 				if !match || requirement.Namespace == "" {
 					break
 				}

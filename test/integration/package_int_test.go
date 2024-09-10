@@ -431,6 +431,22 @@ scripts:
 	ts.PrepareCommitIdFile("a9d0bc88-585a-49cf-89c1-6c07af781cff")
 }
 
+func (suite *PackageIntegrationTestSuite) TestPackage_Uninstall() {
+	suite.OnlyRunForTags(tagsuite.Package)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI-Testing/small-python-with-pkg", "a2115792-2620-4217-89ed-b596c8c11ce3")
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("uninstall", "requests")
+	// cp = ts.SpawnDebuggerForCmdWithOpts(e2e.OptArgs("uninstall", "requests"))
+	cp.Expect("project has been updated") // , termtest.OptExpectTimeout(600*time.Second))
+	cp.ExpectExitCode(0)
+}
+
 func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
 	suite.OnlyRunForTags(tagsuite.Package)
 
@@ -447,6 +463,30 @@ func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
 	if strings.Count(cp.Snapshot(), " x ") != 2 { // 2 because "Creating commit x Failed" is also printed
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
 	}
+}
+
+func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDupeMatch() {
+	suite.OnlyRunForTags(tagsuite.Package)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI-Testing/duplicate-pkg-name", "e5a15d59-9192-446a-a133-9f4c2ebe0898")
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("uninstall", "oauth")
+	cp.Expect("match multiple requirements")
+	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
+
+	if strings.Count(cp.Snapshot(), " x ") != 2 { // 2 because "Creating commit x Failed" is also printed
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
+	}
+
+	cp = ts.Spawn("uninstall", "language/python/oauth")
+	cp.Expect("project has been updated")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) TestJSON() {

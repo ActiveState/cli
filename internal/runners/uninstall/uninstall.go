@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/reqop_runbit"
+	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
@@ -47,6 +48,11 @@ func New(prime primeable, nsType model.NamespaceType) *Uninstall {
 }
 
 type errNoMatches struct {
+	error
+	packages captain.PackagesValue
+}
+
+type errMultipleMatches struct {
 	error
 	packages captain.PackagesValue
 }
@@ -113,6 +119,25 @@ func (u *Uninstall) Run(params Params) (rerr error) {
 }
 
 func prepareBuildScript(script *buildscript.BuildScript, pkgs captain.PackagesValue) error {
+	reqs, err := script.DependencyRequirements()
+	if err != nil {
+		return errs.Wrap(err, "Unable to get requirements")
+	}
+
+	// Check that we're not matching multiple packages
+	multipleMatches := captain.PackagesValue{}
+	for _, pkg := range pkgs {
+		matches := sliceutils.Filter(reqs, func(req types.Requirement) bool {
+			return pkg.Name == req.Name && (pkg.Namespace == "" || pkg.Namespace == req.Namespace)
+		})
+		if len(matches) > 1 {
+			multipleMatches = append(multipleMatches, pkg)
+		}
+	}
+	if len(multipleMatches) > 0 {
+		return &errMultipleMatches{error: errs.New("Could not find all requested packages"), packages: multipleMatches}
+	}
+
 	// Remove requirements
 	var removeErrs error
 	notFound := captain.PackagesValue{}
