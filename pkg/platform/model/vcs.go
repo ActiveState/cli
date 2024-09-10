@@ -83,7 +83,7 @@ const (
 	NamespaceCamelFlagsMatch = `^camel-flags$`
 
 	// NamespaceOrgMatch is the namespace used for org specific requirements
-	NamespaceOrgMatch = `^org\/`
+	NamespaceOrgMatch = `^private\/`
 
 	// NamespaceBuildFlagsMatch is the namespace used for passing build flags
 	NamespaceBuildFlagsMatch = `^build-flags$`
