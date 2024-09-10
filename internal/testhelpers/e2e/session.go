@@ -210,7 +210,7 @@ func (s *Session) Spawn(args ...string) *SpawnedCmd {
 	return s.SpawnCmdWithOpts(s.Exe, OptArgs(args...))
 }
 
-func (s *Session) SpawnDebuggerForCmdWithOpts(opts ...SpawnOptSetter) *SpawnedCmd {
+func (s *Session) SpawnDebuggerWithOpts(opts ...SpawnOptSetter) *SpawnedCmd {
 	spawnOpts := s.newSpawnOpts(opts...)
 	args := slices.Clone(spawnOpts.Args)
 
@@ -490,7 +490,7 @@ func (s *Session) DebugMessage(prefix string) string {
 		prefix = prefix + "\n"
 	}
 
-	output := map[string]string{}
+	output := []string{}
 	for _, spawn := range s.spawned {
 		name := spawn.Cmd().String()
 		if spawn.opts.HideCmdArgs {
@@ -501,24 +501,25 @@ func (s *Session) DebugMessage(prefix string) string {
 			// If we encountered a panic it's unlikely the snapshot has enough information to be useful, so in this
 			// case we include the full output. Which we don't normally do as it is just the dump of pty data, and
 			// tends to be overly verbose and difficult to grok.
-			output[name] = strings.TrimSpace(out)
+			output = append(output, fmt.Sprintf("Snapshot for Cmd '%s':\n%s", name, strings.TrimSpace(out)))
 		} else {
-			output[name] = strings.TrimSpace(spawn.Snapshot())
+			output = append(output, fmt.Sprintf("Snapshot for Cmd '%s':\n%s", name, strings.TrimSpace(spawn.Snapshot())))
 		}
+	}
+
+	logs := []string{}
+	for name, log := range s.DebugLogs() {
+		logs = append(logs, fmt.Sprintf("Log for '%s':\n%s", name, log))
 	}
 
 	v, err := strutils.ParseTemplate(`
 {{.Prefix}}Stack:
 {{.Stacktrace}}
-{{range $title, $value := .Outputs}}
-{{$.A}}Snapshot for Cmd '{{$title}}':
-{{$value}}
-{{$.Z}}
+{{range $value := .Outputs}}
+{{$.A}}{{$value}}{{$.Z}}
 {{end}}
-{{range $title, $value := .Logs}}
-{{$.A}}Log '{{$title}}':
-{{$value}}
-{{$.Z}}
+{{range $value := .Logs}}
+{{$.A}}{{$value}}{{$.Z}}
 {{else}}
 No logs
 {{end}}
@@ -526,7 +527,7 @@ No logs
 		"Prefix":     prefix,
 		"Stacktrace": stacktrace.Get().String(),
 		"Outputs":    output,
-		"Logs":       s.DebugLogs(),
+		"Logs":       logs,
 		"A":          sectionStart,
 		"Z":          sectionEnd,
 	}, nil)
