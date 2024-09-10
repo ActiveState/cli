@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -209,6 +210,20 @@ func (s *Session) Spawn(args ...string) *SpawnedCmd {
 	return s.SpawnCmdWithOpts(s.Exe, OptArgs(args...))
 }
 
+func (s *Session) SpawnDebuggerForCmdWithOpts(opts ...SpawnOptSetter) *SpawnedCmd {
+	spawnOpts := s.newSpawnOpts(opts...)
+	args := slices.Clone(spawnOpts.Args)
+
+	workDir := spawnOpts.Dir
+	spawnOpts.Args = []string{"debug", "--wd", workDir, "--headless", "--listen=:2345", "--api-version=2", "github.com/ActiveState/cli/cmd/state", "--"}
+	spawnOpts.Args = append(spawnOpts.Args, args...)
+	spawnOpts.Dir = environment.GetRootPathUnsafe()
+
+	return s.SpawnCmdWithOpts("dlv", func(opts *SpawnOpts) {
+		*opts = spawnOpts
+	})
+}
+
 // SpawnWithOpts spawns the state tool executable to be tested with arguments
 func (s *Session) SpawnWithOpts(opts ...SpawnOptSetter) *SpawnedCmd {
 	return s.SpawnCmdWithOpts(s.Exe, opts...)
@@ -231,33 +246,7 @@ func (s *Session) SpawnShellWithOpts(shell Shell, opts ...SpawnOptSetter) *Spawn
 // SpawnCmdWithOpts executes an executable in a pseudo-terminal for integration tests
 // Arguments and other parameters can be specified by specifying SpawnOptSetter
 func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *SpawnedCmd {
-	spawnOpts := NewSpawnOpts()
-	spawnOpts.Env = s.Env
-	spawnOpts.Dir = s.Dirs.Work
-
-	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
-		termtest.OptErrorHandler(func(tt *termtest.TermTest, err error) error {
-			s.T.Fatal(s.DebugMessage(errs.JoinMessage(err)))
-			return err
-		}),
-		termtest.OptDefaultTimeout(defaultTimeout),
-		termtest.OptCols(140),
-		termtest.OptRows(30), // Needs to be able to accommodate most JSON output
-	)
-
-	// TTYs output newlines in two steps: '\r' (CR) to move the caret to the beginning of the line,
-	// and '\n' (LF) to move the caret one line down. Terminal emulators do the same thing, so the
-	// raw terminal output will contain "\r\n". Since our multi-line expectation messages often use
-	// '\n', normalize line endings to that for convenience, regardless of platform ('\n' for Linux
-	// and macOS, "\r\n" for Windows).
-	// More info: https://superuser.com/a/1774370
-	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
-		termtest.OptNormalizedLineEnds(true),
-	)
-
-	for _, optSet := range optSetters {
-		optSet(&spawnOpts)
-	}
+	spawnOpts := s.newSpawnOpts(optSetters...)
 
 	var shell string
 	var args []string
@@ -317,6 +306,38 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 	logging.Debug("Spawning CMD: %s, args: %v", exe, cmdArgs)
 
 	return spawn
+}
+
+func (s *Session) newSpawnOpts(optSetters ...SpawnOptSetter) SpawnOpts {
+	spawnOpts := NewSpawnOpts()
+	spawnOpts.Env = s.Env
+	spawnOpts.Dir = s.Dirs.Work
+
+	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
+		termtest.OptErrorHandler(func(tt *termtest.TermTest, err error) error {
+			s.T.Fatal(s.DebugMessage(errs.JoinMessage(err)))
+			return err
+		}),
+		termtest.OptDefaultTimeout(defaultTimeout),
+		termtest.OptCols(140),
+		termtest.OptRows(30), // Needs to be able to accommodate most JSON output
+	)
+
+	// TTYs output newlines in two steps: '\r' (CR) to move the caret to the beginning of the line,
+	// and '\n' (LF) to move the caret one line down. Terminal emulators do the same thing, so the
+	// raw terminal output will contain "\r\n". Since our multi-line expectation messages often use
+	// '\n', normalize line endings to that for convenience, regardless of platform ('\n' for Linux
+	// and macOS, "\r\n" for Windows).
+	// More info: https://superuser.com/a/1774370
+	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
+		termtest.OptNormalizedLineEnds(true),
+	)
+
+	for _, optSet := range optSetters {
+		optSet(&spawnOpts)
+	}
+
+	return spawnOpts
 }
 
 // PrepareActiveStateYAML creates an activestate.yaml in the session's work directory from the

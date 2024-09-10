@@ -442,8 +442,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_Uninstall() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("uninstall", "requests")
-	// cp = ts.SpawnDebuggerForCmdWithOpts(e2e.OptArgs("uninstall", "requests"))
-	cp.Expect("project has been updated") // , termtest.OptExpectTimeout(600*time.Second))
+	cp.Expect("project has been updated")
 	cp.ExpectExitCode(0)
 }
 
