@@ -17,7 +17,7 @@ import (
 
 // projecter is a union between project.Project and setup.Targeter
 type projecter interface {
-	Dir() string
+	ProjectDir() string
 	Owner() string
 	Name() string
 }
@@ -25,7 +25,7 @@ type projecter interface {
 var ErrBuildscriptNotExist = errors.New("Build script does not exist")
 
 func ScriptFromProject(proj projecter) (*buildscript.BuildScript, error) {
-	path := filepath.Join(proj.Dir(), constants.BuildScriptFileName)
+	path := filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName)
 	return ScriptFromFile(path)
 }
 
@@ -40,8 +40,8 @@ func ScriptFromFile(path string) (*buildscript.BuildScript, error) {
 	return buildscript.Unmarshal(data)
 }
 
-func Initialize(proj projecter, auth *authentication.Auth) error {
-	scriptPath := filepath.Join(proj.Dir(), constants.BuildScriptFileName)
+func Initialize(path, owner, project string, auth *authentication.Auth) error {
+	scriptPath := filepath.Join(path, constants.BuildScriptFileName)
 	script, err := ScriptFromFile(scriptPath)
 	if err == nil {
 		return nil // nothing to do, buildscript already exists
@@ -51,13 +51,13 @@ func Initialize(proj projecter, auth *authentication.Auth) error {
 	}
 
 	logging.Debug("Build script does not exist. Creating one.")
-	commitId, err := checkoutinfo.GetCommitID(proj.Dir())
+	commitId, err := checkoutinfo.GetCommitID(path)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the local commit ID")
 	}
 
 	buildplanner := buildplanner.NewBuildPlannerModel(auth)
-	script, err = buildplanner.GetBuildScript(proj.Owner(), proj.Name(), commitId.String())
+	script, err = buildplanner.GetBuildScript(owner, project, commitId.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the remote build expression and time")
 	}
@@ -96,7 +96,7 @@ func Update(proj projecter, newScript *buildscript.BuildScript) error {
 	}
 
 	logging.Debug("Writing build script")
-	if err := fileutils.WriteFile(filepath.Join(proj.Dir(), constants.BuildScriptFileName), sb); err != nil {
+	if err := fileutils.WriteFile(filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName), sb); err != nil {
 		return errs.Wrap(err, "Could not write build script to file")
 	}
 	return nil

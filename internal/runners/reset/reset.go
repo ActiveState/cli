@@ -135,14 +135,14 @@ func (r *Reset) Run(params *Params) error {
 	// Ensure the buildscript exists. Normally we should never do this, but reset is used for resetting from a corrupted
 	// state, so it is appropriate.
 	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		err := buildscript_runbit.Initialize(r.project, r.auth)
+		err := buildscript_runbit.Initialize(r.project.Dir(), r.project.Owner(), r.project.Name(), r.auth)
 		if err != nil {
 			if errors.Is(err, buildscript.ErrOutdatedAtTime) {
 				// Remove the outdated build script and try again.
 				if err := buildscript_runbit.Remove(r.project.Dir()); err != nil {
 					return errs.Wrap(err, "Unable to remove outdated build script")
 				}
-				err = buildscript_runbit.Initialize(r.project, r.auth)
+				err = buildscript_runbit.Initialize(r.project.Dir(), r.project.Owner(), r.project.Name(), r.auth)
 			}
 			if err != nil {
 				return errs.Wrap(err, "Unable to initialize buildscript")
