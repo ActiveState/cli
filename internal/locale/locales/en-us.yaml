@@ -1596,5 +1596,14 @@ err_uninstall_multimatch:
     The following terms match multiple requirements in your project: [ACTIONABLE]{{.V0}}[/RESET].
     Please specify the requirement to uninstall by using its full namespace.
     To view the namespace of your project requirements run: [ACTIONABLE]state manifest[/RESET].
+err_uninstall_platform_nomatch:
+  other: "The specified platform does not exist in your project"
+err_uninstall_platform_multimatch:
+  other: |
+    The platform query you provided matches multiple platforms in your project.
+    Please specify the platform to uninstall by using its version and bit-width. 
+    To view the platforms your project uses run: [ACTIONABLE]state platforms[/RESET].
 progress_requirements:
   other: "• Updating requirements"
+progress_platforms:
+  other: "• Updating platforms"

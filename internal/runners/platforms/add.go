@@ -48,15 +48,10 @@ func NewAdd(prime primeable) *Add {
 }
 
 // Run executes the add behavior.
-func (a *Add) Run(ps AddRunParams) (rerr error) {
+func (a *Add) Run(params AddRunParams) (rerr error) {
 	defer rationalizeAddPlatformError(&rerr)
 
 	logging.Debug("Execute platforms add")
-
-	params, err := prepareParams(ps.Params)
-	if err != nil {
-		return err
-	}
 
 	if a.prime.Project() == nil {
 		return rationalize.ErrNoProject

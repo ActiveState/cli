@@ -456,10 +456,10 @@ func FetchPlatformByUID(uid strfmt.UUID) (*Platform, error) {
 var ErrPlatformNotFound = errors.New("could not find platform matching provided criteria")
 
 func FetchPlatformByDetails(name, version string, bitwidth int) (*Platform, error) {
-	var platformID string
+	// For backward compatibility we still want to raise ErrPlatformNotFound due to name ID matching
 	if version == "" && bitwidth == 0 {
 		var err error
-		platformID, err = PlatformNameToPlatformID(name)
+		_, err = PlatformNameToPlatformID(name)
 		if err != nil {
 			return nil, errs.Wrap(err, "platform id from name failed")
 		}
@@ -470,40 +470,41 @@ func FetchPlatformByDetails(name, version string, bitwidth int) (*Platform, erro
 		return nil, err
 	}
 
-	lower := strings.ToLower
-
 	for _, rtPf := range runtimePlatforms {
-		if platformID != "" {
-			if rtPf.PlatformID.String() == platformID {
-				return rtPf, nil
-			}
-			continue
+		if IsPlatformMatch(rtPf, name, version, bitwidth) {
+			return rtPf, nil
 		}
-		if rtPf.Kernel == nil || rtPf.Kernel.Name == nil {
-			continue
-		}
-		if lower(*rtPf.Kernel.Name) != lower(name) {
-			continue
-		}
-
-		if rtPf.KernelVersion == nil || rtPf.KernelVersion.Version == nil {
-			continue
-		}
-		if lower(*rtPf.KernelVersion.Version) != lower(version) {
-			continue
-		}
-
-		if rtPf.CPUArchitecture == nil {
-			continue
-		}
-		if rtPf.CPUArchitecture.BitWidth == nil || *rtPf.CPUArchitecture.BitWidth != strconv.Itoa(bitwidth) {
-			continue
-		}
-
-		return rtPf, nil
 	}
 
 	return nil, ErrPlatformNotFound
+}
+
+func IsPlatformMatch(platform *Platform, name, version string, bitwidth int) bool {
+	var platformID string
+	if version == "" && bitwidth == 0 {
+		var err error
+		platformID, err = PlatformNameToPlatformID(name)
+		if err != nil || platformID == "" {
+			return false
+		}
+		return platform.PlatformID.String() == platformID
+	}
+
+	if platform.Kernel == nil || platform.Kernel.Name == nil ||
+		!strings.EqualFold(*platform.Kernel.Name, name) {
+		return false
+	}
+	if version != "" && (platform.KernelVersion == nil || platform.KernelVersion.Version == nil ||
+		!strings.EqualFold(*platform.KernelVersion.Version, version)) {
+		return false
+	}
+	if bitwidth != 0 && (platform.CPUArchitecture == nil ||
+		platform.CPUArchitecture.BitWidth == nil ||
+		!strings.EqualFold(*platform.CPUArchitecture.BitWidth, strconv.Itoa(bitwidth))) {
+		return false
+	}
+
+	return true
 }
 
 func FetchLanguageForCommit(commitID strfmt.UUID, auth *authentication.Auth) (*Language, error) {

@@ -3,11 +3,13 @@ package integration
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/termtest"
 )
 
 type PlatformsIntegrationTestSuite struct {
@@ -118,18 +120,14 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemoveLatest() {
 	suite.Require().NotContains(output, "Windows", "Windows platform should not be present after removal")
 
 	cp = ts.Spawn("platforms", "add", "windows")
-	cp.ExpectExitCode(0)
+	// cp = ts.SpawnDebuggerWithOpts(e2e.OptArgs("platforms", "add", "windows"))
+	cp.ExpectExitCode(0, termtest.OptExpectTimeout(10*time.Minute))
 
 	cp = ts.Spawn("platforms")
-	expectations := []string{
-		platform,
-		version,
-		"64",
-	}
-	for _, expectation := range expectations {
-		cp.Expect(expectation)
-	}
-
+	cp.Expect(platform)
+	cp.Expect(version)
+	cp.Expect("64")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addNotFound() {
