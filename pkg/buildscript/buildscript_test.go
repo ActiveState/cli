@@ -10,7 +10,7 @@ import (
 )
 
 var basicBuildScript = []byte(
-	checkoutInfo(testProject, testTime) + `
+	checkoutInfoString(testProject, testTime) + `
 runtime = state_tool_artifacts(
 	src = sources
 )

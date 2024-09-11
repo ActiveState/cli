@@ -2,11 +2,12 @@ package buildscript
 
 import (
 	"errors"
-	"regexp"
+	"strings"
 	"time"
 
 	"github.com/alecthomas/participle/v2"
 	"github.com/go-openapi/strfmt"
+	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -17,7 +18,10 @@ const atTimeKey = "at_time"
 
 var ErrOutdatedAtTime = errs.New("outdated at_time on top")
 
-var checkoutInfoPairRegex = regexp.MustCompile(`(\w+)\s*:\s*([^\n]+)`)
+type checkoutInfo struct {
+	Project string `yaml:"Project"`
+	Time    string `yaml:"Time"`
+}
 
 // Unmarshal returns a structured form of the given AScript (on-disk format).
 func Unmarshal(data []byte) (*BuildScript, error) {
@@ -44,19 +48,22 @@ func Unmarshal(data []byte) (*BuildScript, error) {
 	}
 
 	if raw.Info != nil {
-		for _, matches := range checkoutInfoPairRegex.FindAllStringSubmatch(*raw.Info, -1) {
-			key, value := matches[1], matches[2]
-			switch key {
-			case "Project":
-				raw.CheckoutInfo.Project = value
-			case "Time":
-				atTime, err := strfmt.ParseDateTime(value)
-				if err != nil {
-					return nil, errs.Wrap(err, "Invalid timestamp: %s", value)
-				}
-				raw.CheckoutInfo.AtTime = time.Time(atTime)
-			}
+		info := checkoutInfo{}
+
+		err := yaml.Unmarshal([]byte(strings.Trim(*raw.Info, "`\n")), &info)
+		if err != nil {
+			return nil, locale.NewExternalError(
+				"err_buildscript_checkoutinfo",
+				"Could not parse checkout information in the buildscript. The parser produced the following error: {{.V0}}", err.Error())
 		}
+
+		raw.CheckoutInfo.Project = info.Project
+
+		atTime, err := strfmt.ParseDateTime(info.Time)
+		if err != nil {
+			return nil, errs.Wrap(err, "Invalid timestamp: %s", info.Time)
+		}
+		raw.CheckoutInfo.AtTime = time.Time(atTime)
 	}
 
 	return &BuildScript{raw}, nil

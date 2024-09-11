@@ -13,7 +13,7 @@ import (
 const testProject = "https://platform.activestate.com/org/project?branch=main&commitID=00000000-0000-0000-0000-000000000000"
 const testTime = "2000-01-01T00:00:00.000Z"
 
-func checkoutInfo(project, time string) string {
+func checkoutInfoString(project, time string) string {
 	return "```\n" +
 		"Project: " + project + "\n" +
 		"Time: " + time + "\n" +
@@ -23,7 +23,7 @@ func checkoutInfo(project, time string) string {
 var testCheckoutInfo string
 
 func init() {
-	testCheckoutInfo = checkoutInfo(testProject, testTime)
+	testCheckoutInfo = checkoutInfoString(testProject, testTime)
 }
 
 func TestRawRepresentation(t *testing.T) {
@@ -175,7 +175,7 @@ main = merge(
 }
 
 func TestComplexVersions(t *testing.T) {
-	checkoutInfo := checkoutInfo(testProject, "2023-04-27T17:30:05.999Z")
+	checkoutInfo := checkoutInfoString(testProject, "2023-04-27T17:30:05.999Z")
 	script, err := Unmarshal([]byte(
 		checkoutInfo + `
 runtime = solve(
