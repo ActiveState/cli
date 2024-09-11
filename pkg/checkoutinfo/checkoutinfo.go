@@ -112,3 +112,18 @@ func updateBuildScript() error {
 
 	return nil
 }
+
+func UpdateProject(script *buildscript.BuildScript, dir string) error {
+	err := setupProject(dir)
+	if err != nil {
+		return errs.Wrap(err, "Could not setup project")
+	}
+
+	proj.Source().Project = script.ProjectURL()
+	err = proj.Source().Save(nil)
+	if err != nil {
+		return errs.Wrap(err, "Could not update project")
+	}
+
+	return nil
+}

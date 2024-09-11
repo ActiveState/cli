@@ -37,7 +37,18 @@ func ScriptFromFile(path string) (*buildscript.BuildScript, error) {
 		}
 		return nil, errs.Wrap(err, "Could not read build script from file")
 	}
-	return buildscript.Unmarshal(data)
+
+	script, err := buildscript.Unmarshal(data)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not unmarshal build script")
+	}
+
+	err = checkoutinfo.UpdateProject(script, path)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not update project file")
+	}
+
+	return script, nil
 }
 
 func Initialize(path, owner, project, branch string, auth *authentication.Auth) error {
