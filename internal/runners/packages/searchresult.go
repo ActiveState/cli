@@ -28,10 +28,10 @@ func createSearchResults(packages []*model.IngredientAndVersion, vulns []*model.
 	var packageNames []string
 	for _, pkg := range packages {
 		result := &searchResult{}
-		result.Name = ptr.From(pkg.Ingredient.Name, "")
-		result.Description = ptr.From(pkg.Ingredient.Description, "")
-		result.Website = pkg.Ingredient.Website.String()
-		result.License = ptr.From(pkg.LatestVersion.LicenseExpression, "")
+		result.Name = pkg.Name
+		result.Description = pkg.Description
+		result.Website = ptr.From(pkg.Website, "")
+		result.License = pkg.Versions[0].LicenseExpression // latest version
 
 		var versions []string
 		for _, v := range pkg.Versions {
@@ -44,8 +44,8 @@ func createSearchResults(packages []*model.IngredientAndVersion, vulns []*model.
 
 		var ingredientVulns *model.VulnerabilityIngredient
 		for _, v := range vulns {
-			if strings.EqualFold(v.Name, *pkg.Ingredient.Name) &&
-				strings.EqualFold(v.PrimaryNamespace, *pkg.Ingredient.PrimaryNamespace) &&
+			if strings.EqualFold(v.Name, pkg.Name) &&
+				strings.EqualFold(v.PrimaryNamespace, pkg.Namespace.Namespace) &&
 				strings.EqualFold(v.Version, pkg.Version) {
 				ingredientVulns = v
 				break
@@ -56,7 +56,7 @@ func createSearchResults(packages []*model.IngredientAndVersion, vulns []*model.
 			result.Vulnerabilities = ingredientVulns.Vulnerabilities.Count()
 		}
 
-		packageNames = append(packageNames, *pkg.Ingredient.Name)
+		packageNames = append(packageNames, pkg.Name)
 		results = append(results, result)
 	}
 

@@ -13,12 +13,11 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	hsInventoryModel "github.com/ActiveState/cli/pkg/platform/api/hasura_inventory/model"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/go-openapi/strfmt"
 )
 
 // InfoRunParams tracks the info required for running Info.
@@ -90,16 +89,18 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	}
 
 	pkg := packages[0]
-	ingredientVersion := pkg.LatestVersion
+	ingredientVersion := pkg.Versions[0] // latest version
 
 	if params.Package.Version != "" {
-		ingredientVersion, err = specificIngredientVersion(pkg.Ingredient.IngredientID, params.Package.Version, i.auth)
-		if err != nil {
-			return locale.WrapExternalError(err, "info_err_version_not_found", "Could not find version {{.V0}} for package {{.V1}}", params.Package.Version, params.Package.Name)
+		for _, v := range pkg.Versions {
+			if v.Version == params.Package.Version {
+				ingredientVersion = v
+				break
+			}
 		}
 	}
 
-	authors, err := model.FetchAuthors(pkg.Ingredient.IngredientID, ingredientVersion.IngredientVersionID, i.auth)
+	authors, err := model.FetchAuthors(&pkg.IngredientID, &ingredientVersion.IngredientVersionID, i.auth)
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_authors_info", "Cannot obtain authors info")
 	}
@@ -109,8 +110,8 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 		vulnerabilityIngredients := make([]*request.Ingredient, len(pkg.Versions))
 		for i, p := range pkg.Versions {
 			vulnerabilityIngredients[i] = &request.Ingredient{
-				Name:      *pkg.Ingredient.Name,
-				Namespace: *pkg.Ingredient.PrimaryNamespace,
+				Name:      pkg.Name,
+				Namespace: pkg.Namespace.Namespace,
 				Version:   p.Version,
 			}
 		}
@@ -122,29 +123,14 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	}
 
 	i.out.Print(&infoOutput{i.out, structuredOutput{
-		pkg.Ingredient,
-		ingredientVersion,
+		pkg.SearchIngredient,
+		&ingredientVersion,
 		authors,
 		pkg.Versions,
 		vulns,
 	}})
 
 	return nil
-}
-
-func specificIngredientVersion(ingredientID *strfmt.UUID, version string, auth *authentication.Auth) (*inventory_models.IngredientVersion, error) {
-	ingredientVersions, err := model.FetchIngredientVersions(ingredientID, auth)
-	if err != nil {
-		return nil, locale.WrapError(err, "info_err_cannot_obtain_version", "Could not retrieve ingredient version information")
-	}
-
-	for _, iv := range ingredientVersions {
-		if iv.Version != nil && *iv.Version == version {
-			return iv, nil
-		}
-	}
-
-	return nil, locale.NewInputError("err_no_ingredient_version_found", "No ingredient version found")
 }
 
 // PkgDetailsTable describes package details.
@@ -171,25 +157,13 @@ func newInfoResult(so structuredOutput) *infoResult {
 		PkgDetailsTable: &PkgDetailsTable{},
 	}
 
-	if so.Ingredient.Name != nil {
-		res.name = *so.Ingredient.Name
+	res.name = so.Ingredient.Name
+	res.version = so.IngredientVersion.Version
+	res.PkgDetailsTable.Description = so.Ingredient.Description
+	if so.Ingredient.Website != nil {
+		res.PkgDetailsTable.Website = *so.Ingredient.Website
 	}
-
-	if so.IngredientVersion.Version != nil {
-		res.version = *so.IngredientVersion.Version
-	}
-
-	if so.Ingredient.Description != nil {
-		res.PkgDetailsTable.Description = *so.Ingredient.Description
-	}
-
-	if so.Ingredient.Website != "" {
-		res.PkgDetailsTable.Website = so.Ingredient.Website.String()
-	}
-
-	if so.IngredientVersion.LicenseExpression != nil {
-		res.PkgDetailsTable.License = fmt.Sprintf("[CYAN]%s[/RESET]", *so.IngredientVersion.LicenseExpression)
-	}
+	res.PkgDetailsTable.License = fmt.Sprintf("[CYAN]%s[/RESET]", so.IngredientVersion.LicenseExpression)
 
 	for _, version := range so.Versions {
 		res.plainVersions = append(res.plainVersions, version.Version)
@@ -286,11 +260,11 @@ func newInfoResult(so structuredOutput) *infoResult {
 }
 
 type structuredOutput struct {
-	Ingredient        *inventory_models.Ingredient                         `json:"ingredient"`
-	IngredientVersion *inventory_models.IngredientVersion                  `json:"ingredient_version"`
-	Authors           model.Authors                                        `json:"authors"`
-	Versions          []*inventory_models.SearchIngredientsResponseVersion `json:"versions"`
-	Vulnerabilities   []*model.VulnerabilityIngredient                     `json:"vulnerabilities,omitempty"`
+	Ingredient        *hsInventoryModel.SearchIngredient   `json:"ingredient"`
+	IngredientVersion *hsInventoryModel.IngredientVersion  `json:"ingredient_version"`
+	Authors           model.Authors                        `json:"authors"`
+	Versions          []hsInventoryModel.IngredientVersion `json:"versions"`
+	Vulnerabilities   []*model.VulnerabilityIngredient     `json:"vulnerabilities,omitempty"`
 }
 
 type infoOutput struct {

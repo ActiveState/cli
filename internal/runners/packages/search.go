@@ -68,7 +68,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	if params.ExactTerm {
 		packages, err = model.SearchIngredientsLatestStrict(ns.String(), params.Ingredient.Name, true, true, &ts, s.auth)
 	} else {
-		packages, err = model.SearchIngredientsLatest(ns.String(), params.Ingredient.Name, true, &ts, s.auth)
+		packages, err = model.SearchIngredientsLatest(ns.String(), params.Ingredient.Name, true, false, &ts, s.auth)
 	}
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
@@ -142,8 +142,8 @@ func (s *Search) getVulns(packages []*model.IngredientAndVersion) ([]*model.Vuln
 	var ingredients []*request.Ingredient
 	for _, pkg := range packages {
 		ingredients = append(ingredients, &request.Ingredient{
-			Name:      *pkg.Ingredient.Name,
-			Namespace: *pkg.Ingredient.PrimaryNamespace,
+			Name:      pkg.Name,
+			Namespace: pkg.Namespace.Namespace,
 			Version:   pkg.Version,
 		})
 	}

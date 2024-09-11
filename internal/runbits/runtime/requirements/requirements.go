@@ -608,12 +608,12 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 	choices := []string{}
 	values := map[string][]string{}
 	for _, i := range ingredients {
-		language := model.LanguageFromNamespace(*i.Ingredient.PrimaryNamespace)
+		language := model.LanguageFromNamespace(i.Namespace.Namespace)
 
 		// Generate ingredient choices to present to the user
-		name := fmt.Sprintf("%s (%s)", *i.Ingredient.Name, language)
+		name := fmt.Sprintf("%s (%s)", i.Name, language)
 		choices = append(choices, name)
-		values[name] = []string{*i.Ingredient.Name, language}
+		values[name] = []string{i.Name, language}
 	}
 
 	if len(choices) == 0 {
@@ -644,7 +644,7 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 }
 
 func getSuggestions(ns model.Namespace, name string, auth *authentication.Auth) ([]string, error) {
-	results, err := model.SearchIngredients(ns.String(), name, false, nil, auth)
+	results, err := model.SearchIngredientsLatest(ns.String(), name, false, true, nil, auth)
 	if err != nil {
 		return []string{}, locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
 	}
@@ -656,7 +656,7 @@ func getSuggestions(ns model.Namespace, name string, auth *authentication.Auth) 
 
 	suggestions := make([]string, 0, maxResults+1)
 	for _, result := range results {
-		suggestions = append(suggestions, fmt.Sprintf(" - %s", *result.Ingredient.Name))
+		suggestions = append(suggestions, fmt.Sprintf(" - %s", result.Name))
 	}
 
 	return suggestions, nil
