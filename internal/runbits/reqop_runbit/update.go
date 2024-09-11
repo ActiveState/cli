@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
@@ -65,9 +64,6 @@ func UpdateAndReload(prime primeable, script *buildscript.BuildScript, oldCommit
 		}
 	}()
 	pg = output.StartSpinner(out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
-
-	bsv, _ := script.Marshal()
-	logging.Debug("Buildscript: %s", string(bsv))
 
 	commitParams := buildplanner.StageCommitParams{
 		Owner:        pj.Owner(),

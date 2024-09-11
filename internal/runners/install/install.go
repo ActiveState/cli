@@ -1,6 +1,7 @@
 package install
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -42,11 +43,18 @@ type Params struct {
 	Timestamp captain.TimeValue
 }
 
+type resolvedRequirement struct {
+	types.Requirement
+	Version string `json:"version"`
+}
+
 type requirement struct {
-	input              *captain.PackageValue
-	resolvedVersionReq []types.VersionRequirement
-	resolvedNamespace  *model.Namespace
-	matchedIngredients []*model.IngredientAndVersion
+	Requested *captain.PackageValue `json:"requested"`
+	Resolved  resolvedRequirement   `json:"resolved"`
+
+	// Remainder are for display purposes only
+	Type      model.NamespaceType `json:"type"`
+	Operation types.Operation     `json:"operation"`
 }
 
 type requirements []*requirement
@@ -54,10 +62,10 @@ type requirements []*requirement
 func (r requirements) String() string {
 	result := []string{}
 	for _, req := range r {
-		if req.resolvedNamespace != nil {
-			result = append(result, fmt.Sprintf("%s/%s", req.resolvedNamespace.String(), req.input.Name))
+		if req.Resolved.Namespace != "" {
+			result = append(result, fmt.Sprintf("%s/%s", req.Resolved.Namespace, req.Requested.Name))
 		} else {
-			result = append(result, req.input.Name)
+			result = append(result, req.Requested.Name)
 		}
 	}
 	return strings.Join(result, ", ")
@@ -154,6 +162,12 @@ func (i *Install) Run(params Params) (rerr error) {
 		return errs.Wrap(err, "Failed to update local checkout")
 	}
 
+	if out.Type().IsStructured() {
+		out.Print(output.Structured(reqs))
+	} else {
+		i.renderUserFacing(reqs)
+	}
+
 	// All done
 	out.Notice(locale.T("operation_success_local"))
 
@@ -168,13 +182,14 @@ type errNoMatches struct {
 
 // resolveRequirements will attempt to resolve the ingredient and namespace for each requested package
 func (i *Install) resolveRequirements(packages captain.PackagesValue, ts time.Time, languages []model.Language) (requirements, error) {
-	var disambiguate []*requirement
-	var failed []*requirement
+	disambiguate := map[*requirement][]*model.IngredientAndVersion{}
+	failed := []*requirement{}
 	reqs := []*requirement{}
 	for _, pkg := range packages {
-		req := &requirement{input: pkg}
+		req := &requirement{Requested: pkg}
 		if pkg.Namespace != "" {
-			req.resolvedNamespace = ptr.To(model.NewNamespaceRaw(pkg.Namespace))
+			req.Resolved.Name = pkg.Name
+			req.Resolved.Namespace = pkg.Namespace
 		}
 
 		// Find ingredients that match the pkg query
@@ -199,18 +214,13 @@ func (i *Install) resolveRequirements(packages captain.PackagesValue, ts time.Ti
 				return false
 			})
 		}
-		req.matchedIngredients = ingredients
 
 		// Validate that the ingredient is resolved, and prompt the user if multiple ingredients matched
-		if req.resolvedNamespace == nil {
-			len := len(ingredients)
-			switch {
-			case len == 1:
-				req.resolvedNamespace = ptr.To(model.ParseNamespace(*ingredients[0].Ingredient.PrimaryNamespace))
-			case len > 1:
-				disambiguate = append(disambiguate, req)
-			case len == 0:
+		if req.Resolved.Namespace == "" {
+			if len(ingredients) == 0 {
 				failed = append(failed, req)
+			} else {
+				disambiguate[req] = ingredients
 			}
 		}
 
@@ -222,22 +232,31 @@ func (i *Install) resolveRequirements(packages captain.PackagesValue, ts time.Ti
 		return nil, errNoMatches{error: errs.New("Failed to resolve requirements"), requirements: failed, languages: languages}
 	}
 
-	// Disambiguate requirements that match multiple ingredients
+	// Disambiguate requirements that had to be resolved with an ingredient lookup
 	if len(disambiguate) > 0 {
-		for _, req := range disambiguate {
-			ingredient, err := i.promptForMatchingIngredient(req)
-			if err != nil {
-				return nil, errs.Wrap(err, "Prompting for namespace failed")
+		for req, ingredients := range disambiguate {
+			var ingredient *model.IngredientAndVersion
+			if len(ingredients) == 1 {
+				ingredient = ingredients[0]
+			} else {
+				var err error
+				ingredient, err = i.promptForMatchingIngredient(req, ingredients)
+				if err != nil {
+					return nil, errs.Wrap(err, "Prompting for namespace failed")
+				}
 			}
-			req.matchedIngredients = []*model.IngredientAndVersion{ingredient}
-			req.resolvedNamespace = ptr.To(model.ParseNamespace(*ingredient.Ingredient.PrimaryNamespace))
+			req.Resolved.Name = ingredient.Ingredient.NormalizedName
+			req.Resolved.Namespace = *ingredient.Ingredient.PrimaryNamespace
 		}
 	}
 
-	// Now that we have the ingredient resolved we can also resolve the version requirement
+	// Now that we have the ingredient resolved we can also resolve the version requirement.
+	// We can also set the type and operation, which are used for conveying what happened to the user.
 	for _, req := range reqs {
-		version := req.input.Version
-		if req.input.Version == "" {
+		req.Type = model.ParseNamespace(req.Resolved.Namespace).Type()
+		version := req.Requested.Version
+		if req.Requested.Version == "" {
+			req.Resolved.Version = locale.T("constraint_auto")
 			continue
 		}
 		if _, err := strconv.Atoi(version); err == nil {
@@ -245,7 +264,8 @@ func (i *Install) resolveRequirements(packages captain.PackagesValue, ts time.Ti
 			version = fmt.Sprintf("%d.x", version)
 		}
 		var err error
-		req.resolvedVersionReq, err = bpModel.VersionStringToRequirements(version)
+		req.Resolved.Version = version
+		req.Resolved.VersionRequirement, err = bpModel.VersionStringToRequirements(version)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not process version string into requirements")
 		}
@@ -254,24 +274,24 @@ func (i *Install) resolveRequirements(packages captain.PackagesValue, ts time.Ti
 	return reqs, nil
 }
 
-func (i *Install) promptForMatchingIngredient(req *requirement) (*model.IngredientAndVersion, error) {
-	if len(req.matchedIngredients) <= 1 {
+func (i *Install) promptForMatchingIngredient(req *requirement, ingredients []*model.IngredientAndVersion) (*model.IngredientAndVersion, error) {
+	if len(ingredients) <= 1 {
 		return nil, errs.New("promptForNamespace should never be called if there are no multiple ingredient matches")
 	}
 
 	choices := []string{}
 	values := map[string]*model.IngredientAndVersion{}
-	for _, i := range req.matchedIngredients {
+	for _, i := range ingredients {
 		// Generate ingredient choices to present to the user
-		name := fmt.Sprintf("%s (%s)", *i.Ingredient.Name, i.Ingredient.PrimaryNamespace)
+		name := fmt.Sprintf("%s (%s)", *i.Ingredient.Name, *i.Ingredient.PrimaryNamespace)
 		choices = append(choices, name)
 		values[name] = i
 	}
 
 	// Prompt the user with the ingredient choices
 	choice, err := i.prime.Prompt().Select(
-		locale.Tl("prompt_pkgop_ingredient", "Multiple Matches"),
-		locale.Tl("prompt_pkgop_ingredient_msg", "Your query has multiple matches. Which one would you like to use?"),
+		locale.T("prompt_pkgop_ingredient"),
+		locale.Tr("prompt_pkgop_ingredient_msg", req.Requested.String()),
 		choices, &choices[0],
 	)
 	if err != nil {
@@ -282,13 +302,32 @@ func (i *Install) promptForMatchingIngredient(req *requirement) (*model.Ingredie
 	return values[choice], nil
 }
 
+func (i *Install) renderUserFacing(reqs requirements) {
+	for _, req := range reqs {
+		l := "install_report_added"
+		if req.Operation == types.OperationUpdated {
+			l = "install_report_updated"
+		}
+		i.prime.Output().Notice(locale.Tr(l, fmt.Sprintf("%s/%s@%s", req.Resolved.Namespace, req.Resolved.Name, req.Resolved.Version)))
+	}
+	i.prime.Output().Notice("")
+}
+
 func prepareBuildScript(script *buildscript.BuildScript, requirements requirements, ts time.Time) error {
 	script.SetAtTime(ts)
 	for _, req := range requirements {
 		requirement := types.Requirement{
-			Namespace:          req.resolvedNamespace.String(),
-			Name:               req.input.Name,
-			VersionRequirement: req.resolvedVersionReq,
+			Namespace:          req.Resolved.Namespace,
+			Name:               req.Requested.Name,
+			VersionRequirement: req.Resolved.VersionRequirement,
+		}
+
+		req.Operation = types.OperationUpdated
+		if err := script.RemoveRequirement(requirement); err != nil {
+			if !errors.As(err, ptr.To(&buildscript.RequirementNotFoundError{})) {
+				return errs.Wrap(err, "Could not remove requirement")
+			}
+			req.Operation = types.OperationAdded // If req could not be found it means this is an addition
 		}
 
 		err := script.AddRequirement(requirement)

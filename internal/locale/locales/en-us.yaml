@@ -1580,3 +1580,11 @@ progress_requirements:
   other: "• Updating requirements"
 progress_platforms:
   other: "• Updating platforms"
+prompt_pkgop_ingredient:
+  other: Multiple Matches
+prompt_pkgop_ingredient_msg:
+  other: "Your query for [ACTIONABLE]{{.V0}}[/RESET] has multiple matches. Which one would you like to use?"
+install_report_added:
+  other: "Added: [NOTICE]{{.V0}}[/RESET]"
+install_report_updated:
+  other: "Updated: [NOTICE]{{.V0}}[/RESET]"

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -141,6 +142,10 @@ var (
 
 func (t NamespaceType) String() string {
 	return t.name
+}
+
+func (t NamespaceType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.String())
 }
 
 func (t NamespaceType) Prefix() string {
