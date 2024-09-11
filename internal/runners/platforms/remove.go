@@ -17,7 +17,6 @@ import (
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/go-openapi/strfmt"
 )
 
 // RemoveRunParams tracks the info required for running Remove.
@@ -82,14 +81,14 @@ func (a *Remove) Run(params RemoveRunParams) (rerr error) {
 	if err != nil {
 		return errs.Wrap(err, "Failed to get platforms")
 	}
-	toRemove := []strfmt.UUID{}
+	toRemove := []*model.Platform{}
 	for _, uid := range platforms {
 		platform, err := model.FetchPlatformByUID(uid)
 		if err != nil {
 			return errs.Wrap(err, "Failed to get platform")
 		}
 		if model.IsPlatformMatch(platform, params.Platform.Name(), params.Platform.Version(), params.BitWidth) {
-			toRemove = append(toRemove, uid)
+			toRemove = append(toRemove, platform)
 		}
 	}
 	if len(toRemove) == 0 {
@@ -99,7 +98,7 @@ func (a *Remove) Run(params RemoveRunParams) (rerr error) {
 		return errMultiMatch
 	}
 
-	if err := script.RemovePlatform(toRemove[0]); err != nil {
+	if err := script.RemovePlatform(*toRemove[0].PlatformID); err != nil {
 		return errs.Wrap(err, "Failed to remove platform")
 	}
 
@@ -109,6 +108,10 @@ func (a *Remove) Run(params RemoveRunParams) (rerr error) {
 	}
 
 	out.Notice(locale.Tr("platform_added", params.Platform.String()))
+
+	if out.Type().IsStructured() {
+		out.Print(output.Structured(toRemove[0]))
+	}
 
 	return nil
 }

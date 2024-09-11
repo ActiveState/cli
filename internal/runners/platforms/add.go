@@ -108,6 +108,10 @@ func (a *Add) Run(params AddRunParams) (rerr error) {
 
 	out.Notice(locale.Tr("platform_added", *platform.DisplayName))
 
+	if out.Type().IsStructured() {
+		out.Print(output.Structured(platform))
+	}
+
 	return nil
 }
 
