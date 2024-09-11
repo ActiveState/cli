@@ -456,13 +456,9 @@ func FetchPlatformByUID(uid strfmt.UUID) (*Platform, error) {
 var ErrPlatformNotFound = errors.New("could not find platform matching provided criteria")
 
 func FetchPlatformByDetails(name, version string, bitwidth int) (*Platform, error) {
-	// For backward compatibility we still want to raise ErrPlatformNotFound due to name ID matching
-	if version == "" && bitwidth == 0 {
-		var err error
-		_, err = PlatformNameToPlatformID(name)
-		if err != nil {
-			return nil, errs.Wrap(err, "platform id from name failed")
-		}
+	platformID, err := PlatformNameToPlatformID(name)
+	if err != nil {
+		return nil, errs.Wrap(err, "platform id from name failed")
 	}
 
 	runtimePlatforms, err := FetchPlatforms()
@@ -470,6 +466,18 @@ func FetchPlatformByDetails(name, version string, bitwidth int) (*Platform, erro
 		return nil, err
 	}
 
+	// Prioritize the platform that we record as default
+	for _, rtPf := range runtimePlatforms {
+		if rtPf.PlatformID.String() != platformID {
+			continue
+		}
+		if IsPlatformMatch(rtPf, name, version, bitwidth) {
+			return rtPf, nil
+		}
+		break
+	}
+
+	// Return the first platform whose criteria match
 	for _, rtPf := range runtimePlatforms {
 		if IsPlatformMatch(rtPf, name, version, bitwidth) {
 			return rtPf, nil
