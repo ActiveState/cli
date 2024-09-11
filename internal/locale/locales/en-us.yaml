@@ -1588,3 +1588,5 @@ install_report_added:
   other: "Added: [NOTICE]{{.V0}}[/RESET]"
 install_report_updated:
   other: "Updated: [NOTICE]{{.V0}}[/RESET]"
+install_report_removed:
+  other: "Removed: [NOTICE]{{.V0}}[/RESET]"

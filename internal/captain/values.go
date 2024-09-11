@@ -126,7 +126,7 @@ func (u *UsersValue) Type() string {
 type PackageValue struct {
 	Namespace string `json:"namespace"`
 	Name      string `json:"name"`
-	Version   string `json:"version"`
+	Version   string `json:"version,omitempty"`
 }
 
 var _ FlagMarshaler = &PackageValue{}

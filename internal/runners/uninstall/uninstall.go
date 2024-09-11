@@ -1,6 +1,9 @@
 package uninstall
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -32,6 +35,28 @@ type primeable interface {
 // Params tracks the info required for running Uninstall.
 type Params struct {
 	Packages captain.PackagesValue
+}
+
+type requirement struct {
+	Requested *captain.PackageValue `json:"requested"`
+	Resolved  types.Requirement     `json:"resolved"`
+
+	// Remainder are for display purposes only
+	Type model.NamespaceType `json:"type"`
+}
+
+type requirements []*requirement
+
+func (r requirements) String() string {
+	result := []string{}
+	for _, req := range r {
+		if req.Resolved.Namespace != "" {
+			result = append(result, fmt.Sprintf("%s/%s", req.Resolved.Namespace, req.Requested.Name))
+		} else {
+			result = append(result, req.Requested.Name)
+		}
+	}
+	return strings.Join(result, ", ")
 }
 
 // Uninstall manages the installing execution context.
@@ -97,8 +122,14 @@ func (u *Uninstall) Run(params Params) (rerr error) {
 
 	// Update buildscript
 	script := oldCommit.BuildScript()
-	if err := u.prepareBuildScript(script, params.Packages); err != nil {
-		return errs.Wrap(err, "Could not prepare build script")
+	reqs, err := u.resolveRequirements(script, params.Packages)
+	if err != nil {
+		return errs.Wrap(err, "Failed to resolve requirements")
+	}
+	for _, req := range reqs {
+		if err := script.RemoveRequirement(req.Resolved); err != nil {
+			return errs.Wrap(err, "Unable to remove requirement")
+		}
 	}
 
 	// Done updating requirements
@@ -110,20 +141,36 @@ func (u *Uninstall) Run(params Params) (rerr error) {
 		return errs.Wrap(err, "Failed to update local checkout")
 	}
 
+	if out.Type().IsStructured() {
+		out.Print(output.Structured(reqs))
+	} else {
+		u.renderUserFacing(reqs)
+	}
+
 	// All done
 	out.Notice(locale.T("operation_success_local"))
 
 	return nil
 }
 
-func (u *Uninstall) prepareBuildScript(script *buildscript.BuildScript, pkgs captain.PackagesValue) error {
+func (u *Uninstall) renderUserFacing(reqs requirements) {
+	u.prime.Output().Notice("")
+	for _, req := range reqs {
+		l := "install_report_removed"
+		u.prime.Output().Notice(locale.Tr(l, fmt.Sprintf("%s/%s", req.Resolved.Namespace, req.Resolved.Name)))
+	}
+	u.prime.Output().Notice("")
+}
+
+func (u *Uninstall) resolveRequirements(script *buildscript.BuildScript, pkgs captain.PackagesValue) (requirements, error) {
+	result := requirements{}
+
 	reqs, err := script.DependencyRequirements()
 	if err != nil {
-		return errs.Wrap(err, "Unable to get requirements")
+		return nil, errs.Wrap(err, "Unable to get requirements")
 	}
 
 	// Resolve requirements and check for errors
-	toRemove := []types.Requirement{}
 	notFound := captain.PackagesValue{}
 	multipleMatches := captain.PackagesValue{}
 	for _, pkg := range pkgs {
@@ -137,35 +184,35 @@ func (u *Uninstall) prepareBuildScript(script *buildscript.BuildScript, pkgs cap
 			}
 			return model.NamespaceMatch(req.Namespace, u.nsType.Matchable())
 		})
-		toRemove = append(toRemove, matches...)
 
 		// Check for duplicate matches
 		if len(matches) > 1 {
 			multipleMatches = append(multipleMatches, pkg)
+			continue
 		}
 
 		// Check for no matches
 		if len(matches) == 0 {
 			notFound = append(notFound, pkg)
+			continue
 		}
+
+		result = append(result, &requirement{
+			Requested: pkg,
+			Resolved:  matches[0],
+			Type:      model.ParseNamespace(matches[0].Namespace).Type(),
+		})
 	}
 
 	// Error out on duplicate matches
 	if len(multipleMatches) > 0 {
-		return &errMultipleMatches{error: errs.New("Could not find all requested packages"), packages: multipleMatches}
+		return result, &errMultipleMatches{error: errs.New("Could not find all requested packages"), packages: multipleMatches}
 	}
 
 	// Error out on no matches
 	if len(notFound) > 0 {
-		return &errNoMatches{error: errs.New("Could not find all requested packages"), packages: notFound}
+		return result, &errNoMatches{error: errs.New("Could not find all requested packages"), packages: notFound}
 	}
 
-	// Remove requirements
-	for _, req := range toRemove {
-		if err := script.RemoveRequirement(req); err != nil {
-			return errs.Wrap(err, "Unable to remove requirement")
-		}
-	}
-
-	return nil
+	return result, nil
 }
