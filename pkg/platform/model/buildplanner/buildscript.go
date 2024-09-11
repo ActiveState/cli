@@ -14,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-func (b *BuildPlanner) GetBuildScript(owner, project, commitID string) (*buildscript.BuildScript, error) {
+func (b *BuildPlanner) GetBuildScript(owner, project, branch, commitID string) (*buildscript.BuildScript, error) {
 	logging.Debug("GetBuildExpression, commitID: %s", commitID)
 	resp := &bpResp.BuildExpressionResponse{}
 	err := b.client.Run(request.BuildExpression(commitID), resp)
@@ -35,7 +35,7 @@ func (b *BuildPlanner) GetBuildScript(owner, project, commitID string) (*buildsc
 	}
 
 	checkoutInfo := &buildscript.CheckoutInfo{
-		Project: projectURL(owner, project, commitID),
+		Project: projectURL(owner, project, branch, commitID),
 		AtTime:  time.Time(resp.Commit.AtTime),
 	}
 	script, err := buildscript.UnmarshalBuildExpression(resp.Commit.Expression, checkoutInfo)
@@ -46,7 +46,7 @@ func (b *BuildPlanner) GetBuildScript(owner, project, commitID string) (*buildsc
 	return script, nil
 }
 
-func projectURL(owner, project, commitID string) string {
+func projectURL(owner, project, branch, commitID string) string {
 	// Note: cannot use api.GetPlatformURL() due to import cycle.
 	host := constants.DefaultAPIHost
 	if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
@@ -59,6 +59,7 @@ func projectURL(owner, project, commitID string) string {
 		return ""
 	}
 	pjf.SetNamespace(owner, project)
+	pjf.SetBranch(branch)
 	pjf.SetLegacyCommitID(commitID)
 	return pjf.String()
 }

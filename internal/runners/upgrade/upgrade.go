@@ -96,7 +96,7 @@ func (u *Upgrade) Run(params *Params) (rerr error) {
 	}
 
 	bpm := bpModel.NewBuildPlannerModel(u.prime.Auth())
-	localCommit, err := bpm.FetchCommit(localCommitID, proj.Owner(), proj.Name(), nil)
+	localCommit, err := bpm.FetchCommit(localCommitID, proj.Owner(), proj.Name(), proj.BranchName(), nil)
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch build result")
 	}
@@ -117,6 +117,7 @@ func (u *Upgrade) Run(params *Params) (rerr error) {
 	bumpedCommit, err := bpm.StageCommit(bpModel.StageCommitParams{
 		Owner:        proj.Owner(),
 		Project:      proj.Name(),
+		Branch:       proj.BranchName(),
 		ParentCommit: localCommitID.String(),
 		Script:       bumpedBS,
 	})

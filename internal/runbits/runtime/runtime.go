@@ -189,7 +189,7 @@ func Update(
 		solveSpinner := output.StartSpinner(prime.Output(), locale.T("progress_solve"), constants.TerminalAnimationInterval)
 
 		bpm := bpModel.NewBuildPlannerModel(prime.Auth())
-		commit, err = bpm.FetchCommit(commitID, proj.Owner(), proj.Name(), nil)
+		commit, err = bpm.FetchCommit(commitID, proj.Owner(), proj.Name(), proj.BranchName(), nil)
 		if err != nil {
 			solveSpinner.Stop(locale.T("progress_fail"))
 			return nil, errs.Wrap(err, "Failed to fetch build result")

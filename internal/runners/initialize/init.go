@@ -281,7 +281,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	}
 
 	if r.config.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript_runbit.Initialize(proj.Dir(), proj.Owner(), proj.Name(), r.auth); err != nil {
+		if err := buildscript_runbit.Initialize(proj.Dir(), proj.Owner(), proj.Name(), proj.BranchName(), r.auth); err != nil {
 			return errs.Wrap(err, "Unable to initialize buildscript")
 		}
 	}
@@ -289,7 +289,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	// Solve runtime
 	solveSpinner := output.StartSpinner(r.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
 	bpm := bpModel.NewBuildPlannerModel(r.auth)
-	commit, err := bpm.FetchCommit(commitID, r.prime.Project().Owner(), r.prime.Project().Name(), nil)
+	commit, err := bpm.FetchCommit(commitID, r.prime.Project().Owner(), r.prime.Project().Name(), r.prime.Project().BranchName(), nil)
 	if err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))
 		logging.Debug("Deleting remotely created project due to runtime setup error")

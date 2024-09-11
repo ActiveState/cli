@@ -25,7 +25,7 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProjectAndBuildScript("ActiveState-CLI", "Commit-Test-A", "7a1b416e-c17f-4d4a-9e27-cbad9e8f5655")
+	ts.PrepareProjectAndBuildScript("ActiveState-CLI", "Commit-Test-A", "main", "7a1b416e-c17f-4d4a-9e27-cbad9e8f5655")
 
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.NoError(err, "Error loading project")
@@ -66,7 +66,7 @@ func (suite *CommitIntegrationTestSuite) TestCommitAtTimeChange() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProjectAndBuildScript("ActiveState-CLI", "Commit-Test-A", "7a1b416e-c17f-4d4a-9e27-cbad9e8f5655")
+	ts.PrepareProjectAndBuildScript("ActiveState-CLI", "Commit-Test-A", "main", "7a1b416e-c17f-4d4a-9e27-cbad9e8f5655")
 
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.NoError(err, "Error loading project")

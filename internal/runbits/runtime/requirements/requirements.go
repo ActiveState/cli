@@ -208,6 +208,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 	params := bpModel.StageCommitParams{
 		Owner:        r.Project.Owner(),
 		Project:      r.Project.Name(),
+		Branch:       r.Project.BranchName(),
 		ParentCommit: string(parentCommitID),
 		Description:  commitMessage(requirements...),
 		Script:       script,
@@ -230,7 +231,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		trig = trigger.TriggerPackage
 	}
 
-	oldCommit, err := bp.FetchCommit(parentCommitID, r.Project.Owner(), r.Project.Name(), nil)
+	oldCommit, err := bp.FetchCommit(parentCommitID, r.Project.Owner(), r.Project.Name(), r.Project.BranchName(), nil)
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch old build result")
 	}
@@ -282,7 +283,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 }
 
 func (r *RequirementOperation) prepareBuildScript(bp *bpModel.BuildPlanner, parentCommit strfmt.UUID, requirements []*Requirement, ts *time.Time) (*buildscript.BuildScript, error) {
-	script, err := bp.GetBuildScript(r.Project.Owner(), r.Project.Name(), string(parentCommit))
+	script, err := bp.GetBuildScript(r.Project.Owner(), r.Project.Name(), r.Project.BranchName(), string(parentCommit))
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to get build expression")
 	}
@@ -538,7 +539,7 @@ func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 
 	if r.Config.GetBool(constants.OptinBuildscriptsConfig) {
 		bp := bpModel.NewBuildPlannerModel(r.Auth)
-		script, err := bp.GetBuildScript(r.Project.Owner(), r.Project.Name(), commitID.String())
+		script, err := bp.GetBuildScript(r.Project.Owner(), r.Project.Name(), r.Project.BranchName(), commitID.String())
 		if err != nil {
 			return errs.Wrap(err, "Could not get remote build expr and time")
 		}

@@ -116,7 +116,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	}
 
 	bp := buildplanner.NewBuildPlannerModel(auth)
-	bs, err := bp.GetBuildScript(proj.Owner(), proj.Name(), localCommitId.String())
+	bs, err := bp.GetBuildScript(proj.Owner(), proj.Name(), proj.BranchName(), localCommitId.String())
 	if err != nil {
 		return locale.WrapError(err, "err_cannot_get_build_expression", "Could not get build expression")
 	}
@@ -129,6 +129,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	stagedCommit, err := bp.StageCommit(buildplanner.StageCommitParams{
 		Owner:        proj.Owner(),
 		Project:      proj.Name(),
+		Branch:       proj.BranchName(),
 		ParentCommit: localCommitId.String(),
 		Description:  msg,
 		Script:       bs,
@@ -144,7 +145,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	}
 
 	// Output change summary.
-	previousCommit, err := bp.FetchCommit(localCommitId, proj.Owner(), proj.Name(), nil)
+	previousCommit, err := bp.FetchCommit(localCommitId, proj.Owner(), proj.Name(), proj.BranchName(), nil)
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch build result for previous commit")
 	}

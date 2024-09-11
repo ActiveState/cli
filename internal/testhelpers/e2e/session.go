@@ -356,10 +356,10 @@ func (s *Session) PrepareProject(namespace, commitID string) {
 	}
 }
 
-func (s *Session) PrepareProjectAndBuildScript(owner, project, commitID string) {
+func (s *Session) PrepareProjectAndBuildScript(owner, project, branch, commitID string) {
 	s.PrepareProject(owner+"/"+project, commitID)
 	bp := buildplanner.NewBuildPlannerModel(nil)
-	script, err := bp.GetBuildScript(owner, project, commitID)
+	script, err := bp.GetBuildScript(owner, project, branch, commitID)
 	require.NoError(s.T, err)
 	b, err := script.Marshal()
 	require.NoError(s.T, err)

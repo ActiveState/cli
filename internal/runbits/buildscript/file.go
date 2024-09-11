@@ -40,7 +40,7 @@ func ScriptFromFile(path string) (*buildscript.BuildScript, error) {
 	return buildscript.Unmarshal(data)
 }
 
-func Initialize(path, owner, project string, auth *authentication.Auth) error {
+func Initialize(path, owner, project, branch string, auth *authentication.Auth) error {
 	scriptPath := filepath.Join(path, constants.BuildScriptFileName)
 	script, err := ScriptFromFile(scriptPath)
 	if err == nil {
@@ -57,7 +57,7 @@ func Initialize(path, owner, project string, auth *authentication.Auth) error {
 	}
 
 	buildplanner := buildplanner.NewBuildPlannerModel(auth)
-	script, err = buildplanner.GetBuildScript(owner, project, commitId.String())
+	script, err = buildplanner.GetBuildScript(owner, project, branch, commitId.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the remote build expression and time")
 	}
@@ -102,8 +102,12 @@ func Update(proj projecter, newScript *buildscript.BuildScript) error {
 	return nil
 }
 
-// Remove removes an existing buildscript.
+// Remove removes an existing buildscript if it exists.
 // This is primarily for updating an outdated buildscript.
 func Remove(path string) error {
-	return os.Remove(filepath.Join(path, constants.BuildScriptFileName))
+	bsPath := filepath.Join(path, constants.BuildScriptFileName)
+	if !fileutils.TargetExists(bsPath) {
+		return nil
+	}
+	return os.Remove(bsPath)
 }

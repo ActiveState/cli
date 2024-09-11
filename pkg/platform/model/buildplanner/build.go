@@ -52,7 +52,7 @@ func (c *client) Run(req gqlclient.Request, resp interface{}) error {
 	return c.gqlClient.Run(req, resp)
 }
 
-func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, target *string) (*Commit, error) {
+func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project, branch string, target *string) (*Commit, error) {
 	logging.Debug("FetchBuildResult, commitID: %s, owner: %s, project: %s", commitID, owner, project)
 	resp := &response.ProjectCommitResponse{}
 	err := b.client.Run(request.ProjectCommit(commitID.String(), owner, project, target), resp)
@@ -82,7 +82,7 @@ func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, 
 	}
 
 	checkoutInfo := &buildscript.CheckoutInfo{
-		Project: projectURL(owner, project, commitID.String()),
+		Project: projectURL(owner, project, branch, commitID.String()),
 		AtTime:  time.Time(commit.AtTime),
 	}
 	script, err := buildscript.UnmarshalBuildExpression(commit.Expression, checkoutInfo)

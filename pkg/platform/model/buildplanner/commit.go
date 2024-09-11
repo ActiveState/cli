@@ -26,6 +26,7 @@ type StageCommitRequirement struct {
 type StageCommitParams struct {
 	Owner        string
 	Project      string
+	Branch       string
 	ParentCommit string
 	Description  string
 	Script       *buildscript.BuildScript
@@ -83,7 +84,7 @@ func (b *BuildPlanner) StageCommit(params StageCommitParams) (*Commit, error) {
 	}
 
 	checkoutInfo := &buildscript.CheckoutInfo{
-		Project: projectURL(params.Owner, params.Project, resp.Commit.CommitID.String()),
+		Project: projectURL(params.Owner, params.Project, params.Branch, resp.Commit.CommitID.String()),
 		AtTime:  time.Time(resp.Commit.AtTime),
 	}
 	stagedScript, err := buildscript.UnmarshalBuildExpression(resp.Commit.Expression, checkoutInfo)

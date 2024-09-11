@@ -28,7 +28,7 @@ func NewMigrator(auth *authentication.Auth, cfg *config.Instance) projectfile.Mi
 			case 0:
 				if cfg.GetBool(constants.OptinBuildscriptsConfig) {
 					logging.Debug("Creating buildscript")
-					if err := buildscript_runbit.Initialize(filepath.Dir(project.Path()), project.Owner(), project.Name(), auth); err != nil {
+					if err := buildscript_runbit.Initialize(filepath.Dir(project.Path()), project.Owner(), project.Name(), project.BranchName(), auth); err != nil {
 						return v, errs.Wrap(err, "Failed to initialize buildscript")
 					}
 				}
