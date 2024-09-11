@@ -431,6 +431,21 @@ scripts:
 	ts.PrepareCommitIdFile("a9d0bc88-585a-49cf-89c1-6c07af781cff")
 }
 
+func (suite *PackageIntegrationTestSuite) TestPackage_Install() {
+	suite.OnlyRunForTags(tagsuite.Package)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "requests")
+	cp.Expect("project has been updated")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *PackageIntegrationTestSuite) TestPackage_Uninstall() {
 	suite.OnlyRunForTags(tagsuite.Package)
 
