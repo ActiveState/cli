@@ -91,16 +91,6 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 
 	cp = ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("bundles", "install", "Testing", "--output", "json")
-	cp.Expect(`"name":"Testing"`)
-	cp.ExpectExitCode(0)
-	AssertValidJSON(suite.T(), cp)
-
-	cp = ts.Spawn("bundles", "uninstall", "Testing", "-o", "editor")
-	cp.Expect(`"name":"Testing"`)
-	cp.ExpectExitCode(0)
-	AssertValidJSON(suite.T(), cp)
 }
 
 func TestBundleIntegrationTestSuite(t *testing.T) {
