@@ -3,7 +3,7 @@ package install
 import (
 	"errors"
 	"fmt"
-	"strconv"
+	"regexp"
 	"strings"
 	"time"
 
@@ -45,7 +45,8 @@ type Params struct {
 
 type resolvedRequirement struct {
 	types.Requirement
-	Version string `json:"version"`
+	VersionLocale string `json:"version"` // VersionLocale represents the version as we want to show it to the user
+	ingredient    *model.IngredientAndVersion
 }
 
 type requirement struct {
@@ -182,7 +183,6 @@ type errNoMatches struct {
 
 // resolveRequirements will attempt to resolve the ingredient and namespace for each requested package
 func (i *Install) resolveRequirements(packages captain.PackagesValue, ts time.Time, languages []model.Language) (requirements, error) {
-	disambiguate := map[*requirement][]*model.IngredientAndVersion{}
 	failed := []*requirement{}
 	reqs := []*requirement{}
 	for _, pkg := range packages {
@@ -198,30 +198,47 @@ func (i *Install) resolveRequirements(packages captain.PackagesValue, ts time.Ti
 			return nil, locale.WrapError(err, "err_pkgop_search_err", "Failed to check for ingredients.")
 		}
 
-		// Resolve matched ingredients
+		// Filter out ingredients that don't target one of the supported languages
 		if pkg.Namespace == "" {
-			// Filter out ingredients that don't target one of the supported languages
 			ingredients = sliceutils.Filter(ingredients, func(iv *model.IngredientAndVersion) bool {
+				// Ensure namespace type matches
 				if !model.NamespaceMatch(*iv.Ingredient.PrimaryNamespace, i.nsType.Matchable()) {
 					return false
 				}
-				il := model.LanguageFromNamespace(*iv.Ingredient.PrimaryNamespace)
-				for _, l := range languages {
-					if l.Name == il {
-						return true
+
+				// Ensure that this is namespace covers one of the languages in our project
+				// But only if we're aiming to install a package or bundle, because otherwise the namespace is not
+				// guaranteed to hold the language.
+				if i.nsType == model.NamespacePackage || i.nsType == model.NamespaceBundle {
+					il := model.LanguageFromNamespace(*iv.Ingredient.PrimaryNamespace)
+					for _, l := range languages {
+						if l.Name == il {
+							return true
+						}
 					}
+					return false
 				}
-				return false
+				return true
 			})
 		}
 
-		// Validate that the ingredient is resolved, and prompt the user if multiple ingredients matched
-		if req.Resolved.Namespace == "" {
-			if len(ingredients) == 0 {
-				failed = append(failed, req)
-			} else {
-				disambiguate[req] = ingredients
+		// Resolve matched ingredients
+		var ingredient *model.IngredientAndVersion
+		if len(ingredients) == 1 {
+			ingredient = ingredients[0]
+		} else if len(ingredients) > 1 { // This wouldn't ever trigger if namespace was provided as that should guarantee a single result
+			var err error
+			ingredient, err = i.promptForMatchingIngredient(req, ingredients)
+			if err != nil {
+				return nil, errs.Wrap(err, "Prompting for namespace failed")
 			}
+		}
+		if ingredient == nil {
+			failed = append(failed, req)
+		} else {
+			req.Resolved.Name = ingredient.Ingredient.NormalizedName
+			req.Resolved.Namespace = *ingredient.Ingredient.PrimaryNamespace
+			req.Resolved.ingredient = ingredient
 		}
 
 		reqs = append(reqs, req)
@@ -232,46 +249,57 @@ func (i *Install) resolveRequirements(packages captain.PackagesValue, ts time.Ti
 		return nil, errNoMatches{error: errs.New("Failed to resolve requirements"), requirements: failed, languages: languages}
 	}
 
-	// Disambiguate requirements that had to be resolved with an ingredient lookup
-	if len(disambiguate) > 0 {
-		for req, ingredients := range disambiguate {
-			var ingredient *model.IngredientAndVersion
-			if len(ingredients) == 1 {
-				ingredient = ingredients[0]
-			} else {
-				var err error
-				ingredient, err = i.promptForMatchingIngredient(req, ingredients)
-				if err != nil {
-					return nil, errs.Wrap(err, "Prompting for namespace failed")
-				}
-			}
-			req.Resolved.Name = ingredient.Ingredient.NormalizedName
-			req.Resolved.Namespace = *ingredient.Ingredient.PrimaryNamespace
-		}
-	}
-
 	// Now that we have the ingredient resolved we can also resolve the version requirement.
 	// We can also set the type and operation, which are used for conveying what happened to the user.
 	for _, req := range reqs {
+		// Set requirement type
 		req.Type = model.ParseNamespace(req.Resolved.Namespace).Type()
-		version := req.Requested.Version
-		if req.Requested.Version == "" {
-			req.Resolved.Version = locale.T("constraint_auto")
-			continue
-		}
-		if _, err := strconv.Atoi(version); err == nil {
-			// If the version number provided is a straight up integer (no dots or dashes) then assume it's a wildcard
-			version = fmt.Sprintf("%d.x", version)
-		}
-		var err error
-		req.Resolved.Version = version
-		req.Resolved.VersionRequirement, err = bpModel.VersionStringToRequirements(version)
-		if err != nil {
-			return nil, errs.Wrap(err, "Could not process version string into requirements")
+
+		if err := resolveVersion(req); err != nil {
+			return nil, errs.Wrap(err, "Could not resolve version")
 		}
 	}
 
 	return reqs, nil
+}
+
+var versionRe = regexp.MustCompile(`^\d(\.\d+)*$`)
+
+func resolveVersion(req *requirement) error {
+	version := req.Requested.Version
+
+	// An empty version means "Auto"
+	if req.Requested.Version == "" {
+		req.Resolved.VersionLocale = locale.T("constraint_auto")
+		return nil
+	}
+
+	// Verify that the version provided can be resolved
+	if versionRe.MatchString(version) {
+		match := false
+		for _, knownVersion := range req.Resolved.ingredient.Versions {
+			if knownVersion.Version == version {
+				match = true
+				break
+			}
+		}
+		if !match {
+			for _, knownVersion := range req.Resolved.ingredient.Versions {
+				if strings.HasPrefix(knownVersion.Version, version) {
+					version = version + ".x" // The user supplied a partial version, resolve it as a wildcard
+				}
+			}
+		}
+	}
+
+	var err error
+	req.Resolved.VersionLocale = version
+	req.Resolved.VersionRequirement, err = bpModel.VersionStringToRequirements(version)
+	if err != nil {
+		return errs.Wrap(err, "Could not process version string into requirements")
+	}
+
+	return nil
 }
 
 func (i *Install) promptForMatchingIngredient(req *requirement, ingredients []*model.IngredientAndVersion) (*model.IngredientAndVersion, error) {
@@ -308,7 +336,7 @@ func (i *Install) renderUserFacing(reqs requirements) {
 		if req.Operation == types.OperationUpdated {
 			l = "install_report_updated"
 		}
-		i.prime.Output().Notice(locale.Tr(l, fmt.Sprintf("%s/%s@%s", req.Resolved.Namespace, req.Resolved.Name, req.Resolved.Version)))
+		i.prime.Output().Notice(locale.Tr(l, fmt.Sprintf("%s/%s@%s", req.Resolved.Namespace, req.Resolved.Name, req.Resolved.VersionLocale)))
 	}
 	i.prime.Output().Notice("")
 }

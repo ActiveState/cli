@@ -671,19 +671,6 @@ func (cs indexedCommits) countBetween(first, last string) (int, error) {
 	return ct, nil
 }
 
-func ResolveRequirementNameAndVersion(name, version string, word int, namespace Namespace, auth *authentication.Auth) (string, string, error) {
-	if namespace.Type() == NamespacePlatform {
-		platform, err := FetchPlatformByDetails(name, version, word)
-		if err != nil {
-			return "", "", errs.Wrap(err, "Could not fetch platform")
-		}
-		name = platform.PlatformID.String()
-		version = ""
-	}
-
-	return name, version, nil
-}
-
 func ChangesetFromRequirements(op Operation, reqs []*gqlModel.Requirement) Changeset {
 	var changeset Changeset
 

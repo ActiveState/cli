@@ -137,7 +137,7 @@ func (suite *LanguagesIntegrationTestSuite) TestWildcards() {
 
 	// Test implicit wildcard.
 	cp = ts.Spawn("languages", "install", "python@3.9")
-	cp.Expect("Updated: python@3.9")
+	cp.Expect("Updated: language/python@3.9.x")
 	cp.ExpectExitCode(0)
 	cp = ts.Spawn("history")
 	cp.Expect("→ >=3.9,<3.10")
