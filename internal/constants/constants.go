@@ -490,3 +490,6 @@ const OverrideSandbox = "ACTIVESTATE_TEST_OVERRIDE_SANDBOX"
 
 // PlatformPrivateNamespace is the namespace for private packages.
 const PlatformPrivateNamespace = "private"
+
+// OverrideShellEnvVarName is the environment variable to set when overriding the shell for shell detection.
+const OverrideShellEnvVarName = "ACTIVESTATE_CLI_SHELL_OVERRIDE"
