@@ -25,7 +25,7 @@ type FileHasher struct {
 
 func NewFileHasher() *FileHasher {
 	return &FileHasher{
-		cache: cache.New(cache.NoExpiration, cache.NoExpiration),
+		cache: cache.New(cache.NoExpiration, 24*time.Hour),
 	}
 }
 
