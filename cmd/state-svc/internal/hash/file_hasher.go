@@ -62,6 +62,8 @@ func (fh *FileHasher) HashFiles(files []string) (hash string, rerr error) {
 		}
 
 		fh.cache.Set(cacheKey(file.Name(), fileInfo.ModTime()), hash, cache.NoExpiration)
+
+		// Incorporate the individual file hash into the overall hash in hex format
 		fmt.Fprintf(hasher, "%x", hash)
 	}
 
