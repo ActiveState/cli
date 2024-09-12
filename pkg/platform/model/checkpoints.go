@@ -3,6 +3,7 @@ package model
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/go-openapi/strfmt"
 
@@ -64,6 +65,27 @@ func FetchLanguagesForCommit(commitID strfmt.UUID, auth *authentication.Auth) ([
 			lang := Language{
 				Name:    requirement.Requirement,
 				Version: version,
+			}
+			languages = append(languages, lang)
+		}
+	}
+
+	return languages, nil
+}
+
+// FetchLanguagesForBuildScript fetches a list of language names for the given buildscript
+func FetchLanguagesForBuildScript(script *buildscript.BuildScript) ([]Language, error) {
+	languages := []Language{}
+	reqs, err := script.DependencyRequirements()
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to get dependency requirements")
+	}
+
+	for _, requirement := range reqs {
+		if NamespaceMatch(requirement.Namespace, NamespaceLanguageMatch) {
+			lang := Language{
+				Name:    requirement.Name,
+				Version: BuildPlannerVersionConstraintsToString(requirement.VersionRequirement),
 			}
 			languages = append(languages, lang)
 		}

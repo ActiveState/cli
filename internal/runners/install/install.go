@@ -118,13 +118,6 @@ func (i *Install) Run(params Params) (rerr error) {
 	{
 		pg = output.StartSpinner(out, locale.T("progress_search"), constants.TerminalAnimationInterval)
 
-		// Resolve timestamp, commit and languages used for current project.
-		// This will be used to resolve the requirements.
-		ts, err = commits_runbit.ExpandTimeForProject(&params.Timestamp, i.prime.Auth(), i.prime.Project())
-		if err != nil {
-			return errs.Wrap(err, "Unable to get timestamp from params")
-		}
-
 		// Grab local commit info
 		localCommitID, err := localcommit.Get(i.prime.Project().Dir())
 		if err != nil {
@@ -135,8 +128,15 @@ func (i *Install) Run(params Params) (rerr error) {
 			return errs.Wrap(err, "Failed to fetch old build result")
 		}
 
+		// Resolve timestamp, commit and languages used for current project.
+		// This will be used to resolve the requirements.
+		ts, err = commits_runbit.ExpandTimeForBuildScript(&params.Timestamp, i.prime.Auth(), oldCommit.BuildScript())
+		if err != nil {
+			return errs.Wrap(err, "Unable to get timestamp from params")
+		}
+
 		// Get languages used in current project
-		languages, err := model.FetchLanguagesForCommit(localCommitID, i.prime.Auth())
+		languages, err := model.FetchLanguagesForBuildScript(oldCommit.BuildScript())
 		if err != nil {
 			logging.Debug("Could not get language from project: %v", err)
 		}

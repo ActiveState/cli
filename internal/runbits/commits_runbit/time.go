@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -59,6 +60,22 @@ func ExpandTimeForProject(ts *captain.TimeValue, auth *authentication.Auth, proj
 		if atTime.After(timestamp) {
 			return *atTime, nil
 		}
+	}
+
+	return timestamp, nil
+}
+
+// ExpandTimeForBuildScript is the same as ExpandTimeForProject except that it works off of a buildscript, allowing for
+// fewer API round trips.
+func ExpandTimeForBuildScript(ts *captain.TimeValue, auth *authentication.Auth, script *buildscript.BuildScript) (time.Time, error) {
+	timestamp, err := ExpandTime(ts, auth)
+	if err != nil {
+		return time.Time{}, errs.Wrap(err, "Unable to expand time")
+	}
+
+	atTime := script.AtTime()
+	if atTime.After(timestamp) {
+		return *atTime, nil
 	}
 
 	return timestamp, nil
