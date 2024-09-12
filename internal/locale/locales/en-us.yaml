@@ -628,56 +628,12 @@ package_name:
   other: Name
 package_version:
   other: Version
-package_added:
-  other: "Package added: [NOTICE]{{.V0}}[/RESET]"
-package_version_added:
-  other: "Package added: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
-bundle_added:
-  other: "[SUCCESS]✔ {{.V0}} Bundle successfully installed![/RESET]"
-bundle_version_added:
-  other: "[SUCCESS]✔ {{.V0}} Bundle @ version {{.V1}} successfully installed![/RESET]"
-language_updated:
-  other: "Language updated: [NOTICE]{{.V0}}[/RESET]"
-language_version_updated:
-  other: "Language updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
-err_package_updated:
-  other: Failed to update package
-err_bundle_updated:
-  other: Failed to update bundle
-package_updated:
-  other: "Package updated: [NOTICE]{{.V0}}[/RESET]"
-package_version_updated:
-  other: "Package updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
-bundle_updated:
-  other: "Bundle updated: [NOTICE]{{.V0}}[/RESET]"
-bundle_version_updated:
-  other: "Bundle updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
-err_package_removed:
-  other: Failed to remove package
 err_remove_requirement_not_found:
   other: Could not remove requirement '[ACTIONABLE]{{.V0}}[/RESET]', because it does not exist.
 err_remove_platform_not_found:
   other: Could not remove platform '[ACTIONABLE]{{.V0}}[/RESET]', because it does not exist.
-err_bundle_removed:
-  other: Failed to remove bundle
-err_packages_removed:
-  other: Failed to remove packages
-package_removed:
-  other: "Package uninstalled: [NOTICE]{{.V0}}[/RESET]"
-bundle_removed:
-  other: "Bundle uninstalled: [NOTICE]{{.V0}}[/RESET]"
 err_update_build_script:
   other: Could not update runtime build script
-raw_version_added:
-  other: "Package added: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
-raw_added:
-  other: "Package added: [NOTICE]{{.V0}}[/RESET]"
-raw_version_updated:
-  other: "Package updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
-raw_updated:
-  other: "Package updated: [NOTICE]{{.V0}}[/RESET]"
-raw_removed:
-  other: "Package removed: [NOTICE]{{.V0}}[/RESET]"
 notice_commit_build_script:
   other: |
     Your local build script has changes that should be committed. Please run '[ACTIONABLE]state commit[/RESET]' to do so.
