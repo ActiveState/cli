@@ -111,7 +111,6 @@ func (i *Install) Run(params Params) (rerr error) {
 	}()
 
 	// Start process of resolving requirements
-	var err error
 	var oldCommit *bpModel.Commit
 	var reqs requirements
 	var ts time.Time
