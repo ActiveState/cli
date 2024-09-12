@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ActiveState/cli/cmd/state-svc/internal/hash"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/messages"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/rtwatcher"
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
@@ -21,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
-	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
