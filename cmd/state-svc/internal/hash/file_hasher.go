@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/cespare/xxhash"
 	"github.com/patrickmn/go-cache"
 )
@@ -28,7 +29,7 @@ func NewFileHasher() *FileHasher {
 	}
 }
 
-func (fh *FileHasher) HashFiles(files []string) (string, error) {
+func (fh *FileHasher) HashFiles(files []string) (hash string, rerr error) {
 	sort.Strings(files)
 
 	hasher := xxhash.New()
@@ -37,6 +38,7 @@ func (fh *FileHasher) HashFiles(files []string) (string, error) {
 		if err != nil {
 			return "", errs.Wrap(err, "Could not open file: %s", file.Name())
 		}
+		defer rtutils.Closer(file.Close, &rerr)
 
 		fileInfo, err := file.Stat()
 		if err != nil {
@@ -57,10 +59,6 @@ func (fh *FileHasher) HashFiles(files []string) (string, error) {
 			}
 
 			hash = fmt.Sprintf("%x", fileHasher.Sum(nil))
-		}
-
-		if err := file.Close(); err != nil {
-			return "", errs.Wrap(err, "Could not close file: %s", f)
 		}
 
 		fh.cache.Set(cacheKey(file.Name(), fileInfo.ModTime()), hash, cache.NoExpiration)
