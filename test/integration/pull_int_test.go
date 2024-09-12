@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -96,7 +95,7 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.NoError(err, "Error loading project")
 
-	_, err = buildscript_runbit.ScriptFromProject(proj)
+	_, err = buildscript_runbit.ScriptFromProject(proj.Dir())
 	suite.Require().NoError(err) // just verify it's a valid build script
 
 	cp = ts.Spawn("pull")
@@ -106,7 +105,7 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	cp.ExpectNotExitCode(0)
 	ts.IgnoreLogErrors()
 
-	_, err = buildscript_runbit.ScriptFromProject(proj)
+	_, err = buildscript_runbit.ScriptFromProject(proj.Dir())
 	suite.Assert().Error(err)
 	bytes := fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName))
 	suite.Assert().Contains(string(bytes), "<<<<<<<", "No merge conflict markers are in build script")
@@ -118,9 +117,8 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	// ignore it). After resolving buildscript conflicts, `state commit` should always have something
 	// new to commit.
 	remoteHeadCommit := "2c461e7c-43d2-4e43-b169-a255c305becd"
-	commit, err := checkoutinfo.GetCommitID(ts.Dirs.Work)
-	suite.Require().NoError(err)
-	suite.Assert().Equal(remoteHeadCommit, commit.String(), "checkoutinfo should have been updated to remote commit")
+	commit := ts.CommitID()
+	suite.Assert().Equal(remoteHeadCommit, commit, "commit ID should have been updated to remote commit")
 }
 
 func (suite *PullIntegrationTestSuite) assertMergeStrategyNotification(ts *e2e.Session, strategy string) {

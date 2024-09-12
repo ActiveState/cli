@@ -41,6 +41,14 @@ func setupProject(pjpath string) error {
 	return nil
 }
 
+func GetProject(pjpath string) (string, error) {
+	if err := setupProject(pjpath); err != nil {
+		return "", errs.Wrap(err, "Could not setup project")
+	}
+
+	return proj.Source().Project, nil
+}
+
 func GetCommitID(pjpath string) (strfmt.UUID, error) {
 	if err := setupProject(pjpath); err != nil {
 		return "", errs.Wrap(err, "Could not setup project")

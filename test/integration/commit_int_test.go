@@ -30,14 +30,14 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.NoError(err, "Error loading project")
 
-	_, err = buildscript_runbit.ScriptFromProject(proj)
+	_, err = buildscript_runbit.ScriptFromProject(proj.Dir())
 	suite.Require().NoError(err) // verify validity
 
 	cp := ts.Spawn("commit")
 	cp.Expect("no new changes")
 	cp.ExpectExitCode(1)
 
-	_, err = buildscript_runbit.ScriptFromProject(proj)
+	_, err = buildscript_runbit.ScriptFromProject(proj.Dir())
 	suite.Require().NoError(err) // verify validity
 
 	scriptPath := filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName)
@@ -71,7 +71,7 @@ func (suite *CommitIntegrationTestSuite) TestCommitAtTimeChange() {
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.NoError(err, "Error loading project")
 
-	_, err = buildscript_runbit.ScriptFromProject(proj)
+	_, err = buildscript_runbit.ScriptFromProject(proj.Dir())
 	suite.Require().NoError(err) // verify validity
 
 	// Update top-level at_time variable.

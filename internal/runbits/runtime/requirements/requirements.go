@@ -28,7 +28,6 @@ import (
 	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/buildscript"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
@@ -162,9 +161,9 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		return errs.Wrap(err, "Could not validate packages")
 	}
 
-	parentCommitID, err := checkoutinfo.GetCommitID(r.Project.Dir())
+	parentCommitID, err := buildscript_runbit.CommitID(r.Project.Dir(), r.Config)
 	if err != nil {
-		return errs.Wrap(err, "Unable to get local commit")
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 	hasParentCommit := parentCommitID != ""
 
@@ -258,7 +257,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		if err != nil {
 			if !IsBuildError(err) {
 				// If the error is not a build error we want to retain the changes
-				if err2 := r.updateCommitID(commit.CommitID); err2 != nil {
+				if err2 := r.updateBuildScript(commit.BuildScript()); err2 != nil {
 					return errs.Pack(err, locale.WrapError(err2, "err_package_update_commit_id"))
 				}
 			}
@@ -266,7 +265,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		}
 	}
 
-	if err := r.updateCommitID(commit.CommitID); err != nil {
+	if err := r.updateBuildScript(commit.BuildScript()); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
@@ -352,9 +351,9 @@ func (r *RequirementOperation) resolveNamespace(ts *time.Time, requirement *Requ
 	if requirement.NamespaceType != nil {
 		switch *requirement.NamespaceType {
 		case model.NamespacePackage, model.NamespaceBundle:
-			commitID, err := checkoutinfo.GetCommitID(r.Project.Dir())
+			commitID, err := buildscript_runbit.CommitID(r.Project.Dir(), r.Config)
 			if err != nil {
-				return errs.Wrap(err, "Unable to get local commit")
+				return errs.Wrap(err, "Unable to get commit ID")
 			}
 
 			language, err := model.LanguageByCommit(commitID, r.Auth)
@@ -532,21 +531,14 @@ func (r *RequirementOperation) resolveRequirement(requirement *Requirement) erro
 	return nil
 }
 
-func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
-	if err := checkoutinfo.SetCommitID(r.Project.Dir(), commitID.String()); err != nil {
-		return locale.WrapError(err, "err_package_update_commit_id")
-	}
-
-	if r.Config.GetBool(constants.OptinBuildscriptsConfig) {
-		bp := bpModel.NewBuildPlannerModel(r.Auth)
-		script, err := bp.GetBuildScript(r.Project.Owner(), r.Project.Name(), r.Project.BranchName(), commitID.String())
-		if err != nil {
-			return errs.Wrap(err, "Could not get remote build expr and time")
-		}
-
-		err = buildscript_runbit.Update(r.Project, script)
-		if err != nil {
+func (r *RequirementOperation) updateBuildScript(script *buildscript.BuildScript) error {
+	err := buildscript_runbit.Update(r.Project.Dir(), script, r.Config)
+	if err != nil {
+		if r.Config.GetBool(constants.OptinBuildscriptsConfig) {
 			return locale.WrapError(err, "err_update_build_script")
+		} else {
+			// Update() only tried to update the commit ID if buildscripts are disabled.
+			return locale.WrapError(err, "err_package_update_commit_id")
 		}
 	}
 

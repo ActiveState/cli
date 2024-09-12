@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/git"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -103,10 +102,8 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		return "", errs.Wrap(err, "Could not create project files")
 	}
 
-	if r.config.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript_runbit.Initialize(path, owner, proj, branchName, r.auth); err != nil {
-			return "", errs.Wrap(err, "Unable to initialize buildscript")
-		}
+	if err := buildscript_runbit.Initialize(path, owner, proj, branchName, commitID.String(), r.auth, r.config); err != nil {
+		return "", errs.Wrap(err, "Unable to initialize buildscript")
 	}
 
 	return path, nil
@@ -199,10 +196,6 @@ func CreateProjectFiles(checkoutPath, cachePath, owner, name, branch, commitID, 
 			}
 			return errs.Wrap(err, "Could not create projectfile")
 		}
-	}
-
-	if err := checkoutinfo.SetCommitID(checkoutPath, commitID); err != nil {
-		return errs.Wrap(err, "Could not create local commit file")
 	}
 
 	return nil

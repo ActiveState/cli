@@ -4,7 +4,6 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -26,11 +25,9 @@ func NewMigrator(auth *authentication.Auth, cfg *config.Instance) projectfile.Mi
 			// WARNING: When we return a version along with an error we need to ensure that all updates UP TO THAT VERSION
 			// have completed. Ensure you roll back any partial updates in the case of an error as they will need to be attempted again.
 			case 0:
-				if cfg.GetBool(constants.OptinBuildscriptsConfig) {
-					logging.Debug("Creating buildscript")
-					if err := buildscript_runbit.Initialize(filepath.Dir(project.Path()), project.Owner(), project.Name(), project.BranchName(), auth); err != nil {
-						return v, errs.Wrap(err, "Failed to initialize buildscript")
-					}
+				logging.Debug("Attempting to create buildscript")
+				if err := buildscript_runbit.Initialize(filepath.Dir(project.Path()), project.Owner(), project.Name(), project.BranchName(), project.LegacyCommitID(), auth, cfg); err != nil {
+					return v, errs.Wrap(err, "Failed to initialize buildscript")
 				}
 			}
 		}

@@ -17,8 +17,8 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -89,7 +89,7 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
 	default:
-		commitID, err = targetFromProjectFile(l.project)
+		commitID, err = targetFromProjectFile(l.project, l.cfg)
 		if err != nil {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
@@ -205,14 +205,14 @@ func targetFromProject(projectString string) (*strfmt.UUID, error) {
 	return branch.CommitID, nil
 }
 
-func targetFromProjectFile(proj *project.Project) (*strfmt.UUID, error) {
+func targetFromProjectFile(proj *project.Project, cfg *config.Instance) (*strfmt.UUID, error) {
 	logging.Debug("commit from project file")
 	if proj == nil {
 		return nil, rationalize.ErrNoProject
 	}
-	commit, err := checkoutinfo.GetCommitID(proj.Dir())
+	commit, err := buildscript_runbit.CommitID(proj.Dir(), cfg)
 	if err != nil {
-		return nil, errs.Wrap(err, "Unable to get local commit")
+		return nil, errs.Wrap(err, "Unable to get commit ID")
 	}
 	if commit == "" {
 		logging.Debug("latest commit used as fallback selection")

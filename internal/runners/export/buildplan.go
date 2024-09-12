@@ -34,7 +34,7 @@ func (b *BuildPlan) Run(params *BuildPlanParams) (rerr error) {
 	}
 
 	commit, err := buildplanner.GetCommit(
-		proj, params.Namespace, params.CommitID, params.Target, b.prime.Auth(), out)
+		proj, params.Namespace, params.CommitID, params.Target, b.prime.Auth(), out, b.prime.Config())
 	if err != nil {
 		return errs.Wrap(err, "Could not get commit")
 	}

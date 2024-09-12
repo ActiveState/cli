@@ -1,14 +1,15 @@
 package buildplanner
 
 import (
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -43,7 +44,8 @@ func GetCommit(
 	commitID string,
 	target string,
 	auth *authentication.Auth,
-	out output.Outputer) (commit *bpModel.Commit, rerr error) {
+	out output.Outputer,
+	cfg *config.Instance) (commit *bpModel.Commit, rerr error) {
 	if pj == nil && !namespace.IsValid() {
 		return nil, rationalize.ErrNoProject
 	}
@@ -76,9 +78,9 @@ func GetCommit(
 	switch {
 	// Return the buildplan from this runtime.
 	case !namespaceProvided && !commitIdProvided:
-		localCommitID, err := checkoutinfo.GetCommitID(pj.Path())
+		localCommitID, err := buildscript_runbit.CommitID(pj.Path(), cfg)
 		if err != nil {
-			return nil, errs.Wrap(err, "Could not get local commit")
+			return nil, errs.Wrap(err, "Could not get commit ID")
 		}
 
 		bp := bpModel.NewBuildPlannerModel(auth)
@@ -153,9 +155,9 @@ func GetCommit(
 		owner = pj.Owner()
 		name = pj.Name()
 		nsString = pj.NamespaceString()
-		commitID, err := checkoutinfo.GetCommitID(pj.Path())
+		commitID, err := buildscript_runbit.CommitID(pj.Path(), cfg)
 		if err != nil {
-			return nil, errs.Wrap(err, "Could not get local commit")
+			return nil, errs.Wrap(err, "Could not get commit ID")
 		}
 		localCommitID = &commitID
 	}
@@ -180,8 +182,9 @@ func GetBuildPlan(
 	commitID string,
 	target string,
 	auth *authentication.Auth,
-	out output.Outputer) (bp *buildplan.BuildPlan, rerr error) {
-	commit, err := GetCommit(pj, namespace, commitID, target, auth, out)
+	out output.Outputer,
+	cfg *config.Instance) (bp *buildplan.BuildPlan, rerr error) {
+	commit, err := GetCommit(pj, namespace, commitID, target, auth, out, cfg)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get commit")
 	}

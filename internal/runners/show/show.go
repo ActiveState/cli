@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/pkg/runtime_helpers"
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -16,9 +17,9 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/secrets"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -38,6 +39,7 @@ type Show struct {
 	out         output.Outputer
 	conditional *constraints.Conditional
 	auth        *authentication.Auth
+	cfg         *config.Instance
 }
 
 type primeable interface {
@@ -45,6 +47,7 @@ type primeable interface {
 	primer.Outputer
 	primer.Conditioner
 	primer.Auther
+	primer.Configurer
 }
 
 type RuntimeDetails struct {
@@ -128,6 +131,7 @@ func New(prime primeable) *Show {
 		prime.Output(),
 		prime.Conditional(),
 		prime.Auth(),
+		prime.Config(),
 	}
 }
 
@@ -189,9 +193,9 @@ func (s *Show) Run(params Params) error {
 			return locale.WrapError(err, "err_show_scripts", "Could not parse scripts")
 		}
 
-		commitID, err = checkoutinfo.GetCommitID(s.project.Dir())
+		commitID, err = buildscript_runbit.CommitID(s.project.Dir(), s.cfg)
 		if err != nil {
-			return errs.Wrap(err, "Unable to get local commit")
+			return errs.Wrap(err, "Unable to get commit ID")
 		}
 
 		projectDir = filepath.Dir(s.project.Path())
@@ -225,7 +229,7 @@ func (s *Show) Run(params Params) error {
 		return locale.WrapError(err, "err_show_langauges", "Could not retrieve language information")
 	}
 
-	commit, err := commitsData(owner, projectName, branchName, commitID, s.project, s.auth)
+	commit, err := commitsData(owner, projectName, branchName, commitID, s.project, s.auth, s.cfg)
 	if err != nil {
 		return locale.WrapError(err, "err_show_commit", "Could not get commit information")
 	}
@@ -356,7 +360,7 @@ func visibilityData(owner, project string, remoteProject *mono_models.Project) s
 	return locale.T("public")
 }
 
-func commitsData(owner, project, branchName string, commitID strfmt.UUID, localProject *project.Project, auth *authentication.Auth) (string, error) {
+func commitsData(owner, project, branchName string, commitID strfmt.UUID, localProject *project.Project, auth *authentication.Auth, cfg *config.Instance) (string, error) {
 	latestCommit, err := model.BranchCommitID(owner, project, branchName)
 	if err != nil {
 		return "", locale.WrapError(err, "err_show_get_latest_commit", "Could not get latest commit ID")
@@ -380,9 +384,9 @@ func commitsData(owner, project, branchName string, commitID strfmt.UUID, localP
 		if err != nil {
 			return "", locale.WrapError(err, "err_show_commits_behind", "Could not determine number of commits behind latest")
 		}
-		localCommitID, err := checkoutinfo.GetCommitID(localProject.Dir())
+		localCommitID, err := buildscript_runbit.CommitID(localProject.Dir(), cfg)
 		if err != nil {
-			return "", errs.Wrap(err, "Unable to get local commit")
+			return "", errs.Wrap(err, "Unable to get commit ID")
 		}
 		if behind > 0 {
 			return fmt.Sprintf("%s (%d %s)", localCommitID.String(), behind, locale.Tl("show_commits_behind_latest", "behind latest")), nil

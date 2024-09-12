@@ -7,9 +7,9 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -57,7 +57,7 @@ func (l *Languages) Run() error {
 		return rationalize.ErrNoProject
 	}
 
-	commitID, err := checkoutinfo.GetCommitID(l.project.Dir())
+	commitID, err := buildscript_runbit.CommitID(l.project.Dir(), l.cfg)
 	if err != nil {
 		return errs.AddTips(
 			locale.WrapError(

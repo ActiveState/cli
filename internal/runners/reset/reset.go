@@ -6,7 +6,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -80,10 +79,10 @@ func (r *Reset) Run(params *Params) error {
 		if err != nil {
 			return locale.WrapError(err, "err_reset_latest_commit", "Could not get latest commit ID")
 		}
-		localCommitID, err := checkoutinfo.GetCommitID(r.project.Dir())
+		localCommitID, err := buildscript_runbit.CommitID(r.project.Dir(), r.cfg)
 		var errInvalidCommitID *checkoutinfo.ErrInvalidCommitID
 		if err != nil && !errors.As(err, &errInvalidCommitID) {
-			return errs.Wrap(err, "Unable to get local commit")
+			return errs.Wrap(err, "Unable to get commit ID")
 		}
 		if *latestCommit == localCommitID {
 			return locale.NewInputError("err_reset_latest", "You are already on the latest commit")
@@ -91,9 +90,9 @@ func (r *Reset) Run(params *Params) error {
 		commitID = *latestCommit
 
 	case strings.EqualFold(params.CommitID, local):
-		localCommitID, err := checkoutinfo.GetCommitID(r.project.Dir())
+		localCommitID, err := buildscript_runbit.CommitID(r.project.Dir(), r.cfg)
 		if err != nil {
-			return errs.Wrap(err, "Unable to get local commit")
+			return errs.Wrap(err, "Unable to get commit ID")
 		}
 		commitID = localCommitID
 
@@ -109,10 +108,10 @@ func (r *Reset) Run(params *Params) error {
 		}
 	}
 
-	localCommitID, err := checkoutinfo.GetCommitID(r.project.Dir())
+	localCommitID, err := buildscript_runbit.CommitID(r.project.Dir(), r.cfg)
 	var errInvalidCommitID *checkoutinfo.ErrInvalidCommitID
 	if err != nil && !errors.As(err, &errInvalidCommitID) {
-		return errs.Wrap(err, "Unable to get local commit")
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 	r.out.Notice(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", commitID.String()))
 	if commitID != localCommitID {
@@ -126,20 +125,12 @@ func (r *Reset) Run(params *Params) error {
 		}
 	}
 
-	err = checkoutinfo.SetCommitID(r.project.Dir(), commitID.String())
-	if err != nil {
-		return errs.Wrap(err, "Unable to set local commit")
+	// Reset the build script.
+	if err := buildscript_runbit.Remove(r.project.Dir()); err != nil {
+		return errs.Wrap(err, "Unable to remove existing build script")
 	}
-
-	// Ensure the buildscript exists. Normally we should never do this, but reset is used for resetting from a corrupted
-	// state, so it is appropriate.
-	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript_runbit.Remove(r.project.Dir()); err != nil {
-			return errs.Wrap(err, "Unable to remove existing build script")
-		}
-		if err := buildscript_runbit.Initialize(r.project.Dir(), r.project.Owner(), r.project.Name(), r.project.BranchName(), r.auth); err != nil {
-			return errs.Wrap(err, "Unable to initialize buildscript")
-		}
+	if err := buildscript_runbit.Initialize(r.project.Dir(), r.project.Owner(), r.project.Name(), r.project.BranchName(), commitID.String(), r.auth, r.cfg); err != nil {
+		return errs.Wrap(err, "Unable to initialize buildscript")
 	}
 
 	_, err = runtime_runbit.Update(r.prime, trigger.TriggerReset, runtime_runbit.WithoutBuildscriptValidation())

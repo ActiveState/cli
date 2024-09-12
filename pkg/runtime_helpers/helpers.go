@@ -4,13 +4,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/runtime"
 	"github.com/go-openapi/strfmt"
@@ -31,13 +32,13 @@ func FromProject(proj *project.Project) (*runtime.Runtime, error) {
 	return rt, nil
 }
 
-func NeedsUpdate(proj *project.Project, overrideCommitID *strfmt.UUID) (bool, error) {
+func NeedsUpdate(proj *project.Project, overrideCommitID *strfmt.UUID, cfg *config.Instance) (bool, error) {
 	rt, err := FromProject(proj)
 	if err != nil {
 		return false, errs.Wrap(err, "Could not obtain runtime")
 	}
 
-	hash, err := Hash(proj, overrideCommitID)
+	hash, err := Hash(proj, overrideCommitID, cfg)
 	if err != nil {
 		return false, errs.Wrap(err, "Could not get hash")
 	}
@@ -45,13 +46,13 @@ func NeedsUpdate(proj *project.Project, overrideCommitID *strfmt.UUID) (bool, er
 	return hash != rt.Hash(), nil
 }
 
-func Hash(proj *project.Project, overrideCommitID *strfmt.UUID) (string, error) {
+func Hash(proj *project.Project, overrideCommitID *strfmt.UUID, cfg *config.Instance) (string, error) {
 	var err error
 	var commitID strfmt.UUID
 	if overrideCommitID == nil {
-		commitID, err = checkoutinfo.GetCommitID(proj.Dir())
+		commitID, err = buildscript_runbit.CommitID(proj.Dir(), cfg)
 		if err != nil {
-			return "", errs.Wrap(err, "Failed to get local commit")
+			return "", errs.Wrap(err, "Failed to get commit ID")
 		}
 	} else {
 		commitID = *overrideCommitID

@@ -21,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/checkout"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/git"
@@ -28,7 +29,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -146,9 +146,9 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 	}
 
 	if proj != nil {
-		commitID, err := checkoutinfo.GetCommitID(proj.Dir())
+		commitID, err := buildscript_runbit.CommitID(proj.Dir(), r.config)
 		if err != nil {
-			return errs.Wrap(err, "Unable to get local commit")
+			return errs.Wrap(err, "Unable to get commit ID")
 		}
 		if cid := params.Namespace.CommitID; cid != nil && *cid != commitID {
 			return locale.NewInputError("err_activate_commit_id_mismatch")
@@ -196,9 +196,9 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		}
 	}
 
-	commitID, err := checkoutinfo.GetCommitID(proj.Dir())
+	commitID, err := buildscript_runbit.CommitID(proj.Dir(), r.config)
 	if err != nil {
-		return errs.Wrap(err, "Unable to get local commit")
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 	if commitID == "" {
 		err := locale.NewInputError("err_project_no_commit", "Your project does not have a commit ID. Please run [ACTIONIABLE]'state push'[/RESET] first.", model.ProjectURL(proj.Owner(), proj.Name(), ""))

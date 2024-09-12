@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -33,6 +34,7 @@ type Info struct {
 	out  output.Outputer
 	proj *project.Project
 	auth *authentication.Auth
+	cfg  *config.Instance
 }
 
 // NewInfo prepares an information execution context for use.
@@ -41,6 +43,7 @@ func NewInfo(prime primeable) *Info {
 		out:  prime.Output(),
 		proj: prime.Project(),
 		auth: prime.Auth(),
+		cfg:  prime.Config(),
 	}
 }
 
@@ -58,7 +61,7 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	}
 
 	if nsTypeV != nil {
-		language, err := targetedLanguage(params.Language, i.proj, i.auth)
+		language, err := targetedLanguage(params.Language, i.proj, i.auth, i.cfg)
 		if err != nil {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", *nsTypeV))
 		}
@@ -71,7 +74,7 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 		normalized = params.Package.Name
 	}
 
-	ts, err := commits_runbit.ExpandTimeForProject(&params.Timestamp, i.auth, i.proj)
+	ts, err := commits_runbit.ExpandTimeForProject(&params.Timestamp, i.auth, i.proj, i.cfg)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get timestamp from params")
 	}

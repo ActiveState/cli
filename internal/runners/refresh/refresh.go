@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
@@ -77,8 +78,12 @@ func (r *Refresh) Run(params *Params) error {
 
 	r.out.Notice(locale.Tr("operating_message", proj.NamespaceString(), proj.Dir()))
 
-	needsUpdate, err := runtime_helpers.NeedsUpdate(proj, nil)
+	needsUpdate, err := runtime_helpers.NeedsUpdate(proj, nil, r.config)
 	if err != nil {
+		if errors.Is(err, buildscript_runbit.ErrBuildscriptNotExist) {
+			return locale.WrapInputError(err, locale.T("notice_needs_buildscript_reset"))
+
+		}
 		return errs.Wrap(err, "could not determine if runtime needs update")
 	}
 

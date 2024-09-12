@@ -15,21 +15,16 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 )
 
-// projecter is a union between project.Project and setup.Targeter
-type projecter interface {
-	ProjectDir() string
-	Owner() string
-	Name() string
+// configurer is here until buildscripts are no longer walled behind an opt-in config option.
+type configurer interface {
+	GetBool(string) bool
 }
 
 var ErrBuildscriptNotExist = errors.New("Build script does not exist")
 
-func ScriptFromProject(proj projecter) (*buildscript.BuildScript, error) {
-	path := filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName)
-	return ScriptFromFile(path)
-}
+func ScriptFromProject(projectDir string) (*buildscript.BuildScript, error) {
+	path := filepath.Join(projectDir, constants.BuildScriptFileName)
 
-func ScriptFromFile(path string) (*buildscript.BuildScript, error) {
 	data, err := fileutils.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -43,6 +38,7 @@ func ScriptFromFile(path string) (*buildscript.BuildScript, error) {
 		return nil, errs.Wrap(err, "Could not unmarshal build script")
 	}
 
+	// Synchronize any changes with activestate.yaml.
 	err = checkoutinfo.UpdateProject(script, path)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not update project file")
@@ -51,26 +47,30 @@ func ScriptFromFile(path string) (*buildscript.BuildScript, error) {
 	return script, nil
 }
 
-func Initialize(path, owner, project, branch string, auth *authentication.Auth) error {
-	scriptPath := filepath.Join(path, constants.BuildScriptFileName)
-	script, err := ScriptFromFile(scriptPath)
-	if err == nil {
-		return nil // nothing to do, buildscript already exists
-	}
-	if !errors.Is(err, os.ErrNotExist) {
-		return errs.Wrap(err, "Could not read build script from file")
-	}
-
-	logging.Debug("Build script does not exist. Creating one.")
-	commitId, err := checkoutinfo.GetCommitID(path)
-	if err != nil {
-		return errs.Wrap(err, "Unable to get the local commit ID")
+func Initialize(path, owner, project, branch, commitID string, auth *authentication.Auth, cfg configurer) error {
+	if cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		_, err := ScriptFromProject(path)
+		if err == nil {
+			return nil // nothing to do, buildscript already exists
+		}
+		if !errors.Is(err, os.ErrNotExist) {
+			return errs.Wrap(err, "Could not read project build script")
+		}
 	}
 
 	buildplanner := buildplanner.NewBuildPlannerModel(auth)
-	script, err = buildplanner.GetBuildScript(owner, project, branch, commitId.String())
+	script, err := buildplanner.GetBuildScript(owner, project, branch, commitID)
 	if err != nil {
-		return errs.Wrap(err, "Unable to get the remote build expression and time")
+		return errs.Wrap(err, "Unable to get the remote build script")
+	}
+
+	if !cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		// Just update the project file with the new commit ID.
+		err = checkoutinfo.UpdateProject(script, path)
+		if err != nil {
+			return errs.Wrap(err, "Unable to update project file")
+		}
+		return nil
 	}
 
 	scriptBytes, err := script.Marshal()
@@ -78,6 +78,7 @@ func Initialize(path, owner, project, branch string, auth *authentication.Auth) 
 		return errs.Wrap(err, "Unable to marshal build script")
 	}
 
+	scriptPath := filepath.Join(path, constants.BuildScriptFileName)
 	logging.Debug("Initializing build script at %s", scriptPath)
 	err = fileutils.WriteFile(scriptPath, scriptBytes)
 	if err != nil {
@@ -87,8 +88,14 @@ func Initialize(path, owner, project, branch string, auth *authentication.Auth) 
 	return nil
 }
 
-func Update(proj projecter, newScript *buildscript.BuildScript) error {
-	script, err := ScriptFromProject(proj)
+func Update(path string, newScript *buildscript.BuildScript, cfg configurer) error {
+	if !cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		// Just update the activestate.yaml file (e.g. with the new commit ID).
+		// Eventually the buildscript will be the one source of truth.
+		return checkoutinfo.UpdateProject(newScript, path)
+	}
+
+	script, err := ScriptFromProject(path)
 	if err != nil {
 		return errs.Wrap(err, "Could not read build script")
 	}
@@ -107,9 +114,16 @@ func Update(proj projecter, newScript *buildscript.BuildScript) error {
 	}
 
 	logging.Debug("Writing build script")
-	if err := fileutils.WriteFile(filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName), sb); err != nil {
+	if err := fileutils.WriteFile(filepath.Join(path, constants.BuildScriptFileName), sb); err != nil {
 		return errs.Wrap(err, "Could not write build script to file")
 	}
+
+	// Synchronize changes with activestate.yaml.
+	err = checkoutinfo.UpdateProject(newScript, path)
+	if err != nil {
+		return errs.Wrap(err, "Could not update project file")
+	}
+
 	return nil
 }
 

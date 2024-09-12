@@ -23,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
@@ -140,9 +139,9 @@ func Update(
 		commitID = opts.Commit.CommitID
 	}
 	if commitID == "" {
-		commitID, err = checkoutinfo.GetCommitID(proj.Dir())
+		commitID, err = buildscript_runbit.CommitID(proj.Dir(), prime.Config())
 		if err != nil {
-			return nil, errs.Wrap(err, "Failed to get local commit")
+			return nil, errs.Wrap(err, "Failed to get commit ID")
 		}
 	}
 
@@ -162,7 +161,7 @@ func Update(
 		}
 	}()
 
-	rtHash, err := runtime_helpers.Hash(proj, &commitID)
+	rtHash, err := runtime_helpers.Hash(proj, &commitID, prime.Config())
 	if err != nil {
 		ah.fire(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeCache, nil)
 		return nil, errs.Wrap(err, "Failed to get runtime hash")
@@ -201,7 +200,7 @@ func Update(
 
 	// Validate buildscript
 	if prime.Config().GetBool(constants.OptinBuildscriptsConfig) && opts.ValidateBuildscript && os.Getenv(constants.DisableBuildscriptDirtyCheck) != "true" {
-		bs, err := buildscript_runbit.ScriptFromProject(proj)
+		bs, err := buildscript_runbit.ScriptFromProject(proj.Dir())
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to get buildscript")
 		}

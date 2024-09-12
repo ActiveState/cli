@@ -3,12 +3,13 @@ package history
 import (
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/commit"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -19,12 +20,14 @@ type primeable interface {
 	primer.Projecter
 	primer.Outputer
 	primer.Auther
+	primer.Configurer
 }
 
 type History struct {
 	project *project.Project
 	out     output.Outputer
 	auth    *authentication.Auth
+	cfg     *config.Instance
 }
 
 func NewHistory(prime primeable) *History {
@@ -32,6 +35,7 @@ func NewHistory(prime primeable) *History {
 		prime.Project(),
 		prime.Output(),
 		prime.Auth(),
+		prime.Config(),
 	}
 }
 
@@ -44,9 +48,9 @@ func (h *History) Run(params *HistoryParams) error {
 	}
 	h.out.Notice(locale.Tr("operating_message", h.project.NamespaceString(), h.project.Dir()))
 
-	localCommitID, err := checkoutinfo.GetCommitID(h.project.Dir())
+	localCommitID, err := buildscript_runbit.CommitID(h.project.Dir(), h.cfg)
 	if err != nil {
-		return errs.Wrap(err, "Unable to get local commit")
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 
 	if h.project.IsHeadless() {

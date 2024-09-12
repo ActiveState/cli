@@ -1,12 +1,13 @@
 package branch
 
 import (
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -16,6 +17,7 @@ type Add struct {
 	out     output.Outputer
 	project *project.Project
 	auth    *authentication.Auth
+	cfg     *config.Instance
 }
 
 type AddParams struct {
@@ -27,6 +29,7 @@ func NewAdd(prime primeable) *Add {
 		out:     prime.Output(),
 		project: prime.Project(),
 		auth:    prime.Auth(),
+		cfg:     prime.Config(),
 	}
 }
 
@@ -53,9 +56,9 @@ func (a *Add) Run(params AddParams) error {
 		return locale.WrapError(err, "err_fetch_branch", "", localBranch)
 	}
 
-	commitID, err := checkoutinfo.GetCommitID(a.project.Dir())
+	commitID, err := buildscript_runbit.CommitID(a.project.Dir(), a.cfg)
 	if err != nil {
-		return errs.Wrap(err, "Unable to get local commit")
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 
 	err = model.UpdateBranchTracking(branchID, commitID, branch.BranchID, model.TrackingIgnore, a.auth)

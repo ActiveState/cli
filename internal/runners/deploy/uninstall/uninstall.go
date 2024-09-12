@@ -17,10 +17,10 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -85,7 +85,7 @@ func (u *Uninstall) Run(params *Params) error {
 		return locale.WrapError(err, "err_deploy_uninstall_cannot_read_project", "Cannot read project at '{{.V0}}'", path)
 	}
 
-	commitID, err := checkoutinfo.GetCommitID(path)
+	commitID, err := buildscript_runbit.CommitID(path, u.cfg)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_uninstall_cannot_read_commit", "Cannot read commit ID from project at '{{.V0}}'", path)
 	}

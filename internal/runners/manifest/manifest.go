@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/buildscript"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -96,12 +95,12 @@ func (m *Manifest) fetchRequirements() ([]buildscript.Requirement, error) {
 	var script *buildscript.BuildScript
 	if m.cfg.GetBool(constants.OptinBuildscriptsConfig) {
 		var err error
-		script, err = buildscript_runbit.ScriptFromProject(m.project)
+		script, err = buildscript_runbit.ScriptFromProject(m.project.Dir())
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not get buildscript")
 		}
 	} else {
-		commitID, err := checkoutinfo.GetCommitID(m.project.Dir())
+		commitID, err := buildscript_runbit.CommitID(m.project.Dir(), m.cfg)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not get commit ID")
 		}
@@ -122,9 +121,9 @@ func (m *Manifest) fetchRequirements() ([]buildscript.Requirement, error) {
 }
 
 func (m *Manifest) fetchBuildplanRequirements() (buildplan.Ingredients, error) {
-	commitID, err := checkoutinfo.GetCommitID(m.project.Dir())
+	commitID, err := buildscript_runbit.CommitID(m.project.Dir(), m.cfg)
 	if err != nil {
-		return nil, errs.Wrap(err, "Failed to get local commit")
+		return nil, errs.Wrap(err, "Failed to get commit ID")
 	}
 
 	// Solve runtime

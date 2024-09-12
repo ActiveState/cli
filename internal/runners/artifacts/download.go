@@ -92,7 +92,7 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 	}
 
 	bp, err := buildplanner_runbit.GetBuildPlan(
-		d.project, params.Namespace, params.CommitID, target, d.auth, d.out)
+		d.project, params.Namespace, params.CommitID, target, d.auth, d.out, d.config)
 	if err != nil {
 		return errs.Wrap(err, "Could not get build plan map")
 	}

@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/org"
@@ -17,7 +18,6 @@ import (
 	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/buildscript"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
@@ -68,6 +68,7 @@ type primeable interface {
 	primer.Configurer
 	primer.Analyticer
 	primer.SvcModeler
+	primer.Configurer
 }
 
 // NewImport prepares an importation execution context for use.
@@ -92,7 +93,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		params.FileName = defaultImportFile
 	}
 
-	localCommitId, err := checkoutinfo.GetCommitID(proj.Dir())
+	localCommitId, err := buildscript_runbit.CommitID(proj.Dir(), i.prime.Config())
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_commit")
 	}
@@ -134,14 +135,21 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		Description:  msg,
 		Script:       bs,
 	})
-	// Always update the local commit ID even if the commit fails to build
-	if stagedCommit != nil && stagedCommit.Commit != nil && stagedCommit.Commit.CommitID != "" {
-		if err := checkoutinfo.SetCommitID(proj.Dir(), stagedCommit.CommitID.String()); err != nil {
-			return locale.WrapError(err, "err_package_update_commit_id")
-		}
-	}
 	if err != nil {
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
+	}
+
+	// Always update the build script, even if the commit fails to build
+	if stagedCommit != nil && stagedCommit.Commit != nil && stagedCommit.Commit.CommitID != "" {
+		err = buildscript_runbit.Update(proj.Dir(), stagedCommit.BuildScript(), i.prime.Config())
+		if err != nil {
+			if i.prime.Config().GetBool(constants.OptinBuildscriptsConfig) {
+				return locale.WrapError(err, "err_update_build_script")
+			} else {
+				// Update() only tried to update the commit ID if buildscripts are disabled.
+				return locale.WrapError(err, "err_package_update_commit_id")
+			}
+		}
 	}
 
 	// Output change summary.

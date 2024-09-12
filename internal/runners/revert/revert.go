@@ -10,11 +10,12 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/commit"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
+	"github.com/ActiveState/cli/pkg/buildscript"
 	gqlmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -84,9 +85,9 @@ func (r *Revert) Run(params *Params) (rerr error) {
 	if !strfmt.IsUUID(commitID) && !strings.EqualFold(commitID, remoteCommitID) {
 		return locale.NewInputError("err_revert_invalid_commit_id", "Invalid commit ID")
 	}
-	latestCommit, err := checkoutinfo.GetCommitID(r.project.Dir())
+	latestCommit, err := buildscript_runbit.CommitID(r.project.Dir(), r.cfg)
 	if err != nil {
-		return errs.Wrap(err, "Unable to get local commit")
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 	if strings.EqualFold(commitID, remoteCommitID) {
 		commitID = latestCommit.String()
@@ -149,7 +150,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 		return locale.NewInputError("err_revert_aborted", "Revert aborted by user")
 	}
 
-	revertCommit, err := revertFunc(revertParams, bp)
+	revertScript, err := revertFunc(revertParams, bp)
 	if err != nil {
 		return errs.AddTips(
 			locale.WrapError(err, "err_revert_commit", "", preposition, commitID),
@@ -157,9 +158,9 @@ func (r *Revert) Run(params *Params) (rerr error) {
 			locale.T("tip_private_project_auth"))
 	}
 
-	err = checkoutinfo.SetCommitID(r.project.Dir(), revertCommit.String())
+	err = buildscript_runbit.Update(r.project.Dir(), revertScript, r.cfg)
 	if err != nil {
-		return errs.Wrap(err, "Unable to set local commit")
+		return errs.Wrap(err, "Unable to update build script")
 	}
 
 	_, err = runtime_runbit.Update(r.prime, trigger.TriggerRevert)
@@ -167,6 +168,10 @@ func (r *Revert) Run(params *Params) (rerr error) {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
 
+	revertCommit, err := revertScript.CommitID()
+	if err != nil {
+		return errs.Wrap(err, "Unable to get commitID")
+	}
 	r.out.Print(output.Prepare(
 		locale.Tl("revert_success", "Successfully reverted{{.V0}} commit: {{.V1}}", preposition, commitID),
 		&struct {
@@ -187,19 +192,19 @@ type revertParams struct {
 	revertCommitID string
 }
 
-func (r *Revert) revertCommit(params revertParams, bp *buildplanner.BuildPlanner) (strfmt.UUID, error) {
+func (r *Revert) revertCommit(params revertParams, bp *buildplanner.BuildPlanner) (*buildscript.BuildScript, error) {
 	newCommitID, err := bp.RevertCommit(params.organization, params.project, params.parentCommitID, params.revertCommitID)
 	if err != nil {
-		return "", errs.Wrap(err, "Could not revert commit")
+		return nil, errs.Wrap(err, "Could not revert commit")
 	}
 
-	return newCommitID, nil
+	return bp.GetBuildScript(params.organization, params.project, params.branch, newCommitID.String())
 }
 
-func (r *Revert) revertToCommit(params revertParams, bp *buildplanner.BuildPlanner) (strfmt.UUID, error) {
+func (r *Revert) revertToCommit(params revertParams, bp *buildplanner.BuildPlanner) (*buildscript.BuildScript, error) {
 	bs, err := bp.GetBuildScript(params.organization, params.project, params.branch, params.revertCommitID)
 	if err != nil {
-		return "", errs.Wrap(err, "Could not get build expression")
+		return nil, errs.Wrap(err, "Could not get build script")
 	}
 
 	stageCommitParams := buildplanner.StageCommitParams{
@@ -213,8 +218,8 @@ func (r *Revert) revertToCommit(params revertParams, bp *buildplanner.BuildPlann
 
 	newCommit, err := bp.StageCommit(stageCommitParams)
 	if err != nil {
-		return "", errs.Wrap(err, "Could not stage commit")
+		return nil, errs.Wrap(err, "Could not stage commit")
 	}
 
-	return newCommit.CommitID, nil
+	return newCommit.BuildScript(), nil
 }

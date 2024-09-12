@@ -116,7 +116,7 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 	}
 
 	bp, err := buildplanner_runbit.GetBuildPlan(
-		b.project, params.Namespace, params.CommitID, params.Target, b.auth, b.out)
+		b.project, params.Namespace, params.CommitID, params.Target, b.auth, b.out, b.config)
 	if err != nil {
 		return errs.Wrap(err, "Could not get buildplan")
 	}

@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 )
@@ -73,13 +72,13 @@ func (c *Commit) Run() (rerr error) {
 	out.Notice(locale.Tr("operating_message", proj.NamespaceString(), proj.Dir()))
 
 	// Get buildscript.as representation
-	script, err := buildscript_runbit.ScriptFromProject(proj)
+	script, err := buildscript_runbit.ScriptFromProject(proj.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
 	}
 
 	// Get equivalent build script for current state of the project
-	localCommitID, err := checkoutinfo.GetCommitID(proj.Dir())
+	localCommitID, err := script.CommitID()
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit ID")
 	}
@@ -117,18 +116,9 @@ func (c *Commit) Run() (rerr error) {
 		return errs.Wrap(err, "Could not update project to reflect build script changes.")
 	}
 
-	// Update local commit ID
-	if err := checkoutinfo.SetCommitID(proj.Dir(), stagedCommit.CommitID.String()); err != nil {
-		return errs.Wrap(err, "Could not set local commit ID")
-	}
-
-	// Update our local build expression to match the committed one. This allows our API a way to ensure forward compatibility.
-	newScript, err := bp.GetBuildScript(proj.Owner(), proj.Name(), proj.BranchName(), stagedCommit.CommitID.String())
-	if err != nil {
-		return errs.Wrap(err, "Unable to get the remote build script")
-	}
-	if err := buildscript_runbit.Update(proj, newScript); err != nil {
-		return errs.Wrap(err, "Could not update local build script")
+	// Update the local build script. Its build expression should match the committed expression.
+	if err := buildscript_runbit.Update(proj.Dir(), stagedCommit.BuildScript(), c.prime.Config()); err != nil {
+		return errs.Wrap(err, "Could not update build script")
 	}
 
 	pg.Stop(locale.T("progress_success"))

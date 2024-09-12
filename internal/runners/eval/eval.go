@@ -1,13 +1,14 @@
 package eval
 
 import (
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
@@ -17,6 +18,7 @@ type primeable interface {
 	primer.Outputer
 	primer.Auther
 	primer.Projecter
+	primer.Configurer
 }
 
 type Params struct {
@@ -27,6 +29,7 @@ type Eval struct {
 	out     output.Outputer
 	project *project.Project
 	auth    *authentication.Auth
+	cfg     *config.Instance
 }
 
 func New(p primeable) *Eval {
@@ -34,6 +37,7 @@ func New(p primeable) *Eval {
 		out:     p.Output(),
 		project: p.Project(),
 		auth:    p.Auth(),
+		cfg:     p.Config(),
 	}
 }
 
@@ -50,7 +54,7 @@ func (e *Eval) Run(params *Params) (rerr error) {
 		return rationalize.ErrNoProject
 	}
 
-	commitID, err := checkoutinfo.GetCommitID(e.project.Dir())
+	commitID, err := buildscript_runbit.CommitID(e.project.Dir(), e.cfg)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get commit ID")
 	}

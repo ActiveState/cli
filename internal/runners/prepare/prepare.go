@@ -77,7 +77,7 @@ func (r *Prepare) resetExecutors() error {
 		return errs.Wrap(err, "Could not initialize runtime for project.")
 	}
 
-	rtHash, err := runtime_helpers.Hash(proj, nil)
+	rtHash, err := runtime_helpers.Hash(proj, nil, r.cfg)
 	if err != nil {
 		return errs.Wrap(err, "Could not get runtime hash")
 	}

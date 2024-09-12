@@ -1,7 +1,10 @@
 package buildscript
 
 import (
+	"net/url"
 	"time"
+
+	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
 )
@@ -24,6 +27,14 @@ func (b *BuildScript) ProjectURL() string {
 
 func (b *BuildScript) SetProjectURL(url string) {
 	b.raw.CheckoutInfo.Project = url
+}
+
+func (b *BuildScript) CommitID() (strfmt.UUID, error) {
+	u, err := url.Parse(b.raw.CheckoutInfo.Project)
+	if err != nil {
+		return "", errs.Wrap(err, "Invalid project URL")
+	}
+	return strfmt.UUID(u.Query().Get("commitID")), nil
 }
 
 func (b *BuildScript) AtTime() time.Time {

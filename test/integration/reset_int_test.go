@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 )
 
 type ResetIntegrationTestSuite struct {
@@ -23,8 +22,7 @@ func (suite *ResetIntegrationTestSuite) TestReset() {
 	defer ts.Close()
 
 	ts.PrepareEmptyProject()
-	commitID, err := checkoutinfo.GetCommitID(ts.Dirs.Work)
-	suite.Require().NoError(err)
+	commitID := ts.CommitID()
 
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
@@ -38,11 +36,11 @@ func (suite *ResetIntegrationTestSuite) TestReset() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("reset")
-	cp.Expect("Your project will be reset to " + commitID.String())
+	cp.Expect("Your project will be reset to " + commitID)
 	cp.Expect("Are you sure")
 	cp.Expect("(y/N)")
 	cp.SendLine("y")
-	cp.Expect("Successfully reset to commit: " + commitID.String())
+	cp.Expect("Successfully reset to commit: " + commitID)
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("history")
@@ -76,12 +74,11 @@ func (suite *ResetIntegrationTestSuite) TestRevertInvalidURL() {
 	defer ts.Close()
 
 	ts.PrepareEmptyProject()
-	commitID, err := checkoutinfo.GetCommitID(ts.Dirs.Work)
-	suite.Require().NoError(err)
+	commitID := ts.CommitID()
 
 	contents := fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	contents = bytes.Replace(contents, []byte(commitID.String()), []byte(""), 1)
-	err = fileutils.WriteFile(filepath.Join(ts.Dirs.Work, constants.ConfigFileName), contents)
+	contents = bytes.Replace(contents, []byte(commitID), []byte(""), 1)
+	err := fileutils.WriteFile(filepath.Join(ts.Dirs.Work, constants.ConfigFileName), contents)
 	suite.Require().NoError(err)
 
 	cp := ts.Spawn("install", "language/python/requests")
@@ -90,7 +87,7 @@ func (suite *ResetIntegrationTestSuite) TestRevertInvalidURL() {
 	cp.ExpectNotExitCode(0)
 
 	cp = ts.Spawn("reset", "-n")
-	cp.Expect("Successfully reset to commit: " + commitID.String())
+	cp.Expect("Successfully reset to commit: " + commitID)
 	cp.ExpectExitCode(0)
 }
 

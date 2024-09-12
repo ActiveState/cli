@@ -21,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -124,9 +123,9 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 	}
 
 	var localCommit *strfmt.UUID
-	localCommitID, err := checkoutinfo.GetCommitID(p.project.Dir())
+	localCommitID, err := buildscript_runbit.CommitID(p.project.Dir(), p.cfg)
 	if err != nil {
-		return errs.Wrap(err, "Unable to get local commit")
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 	if localCommitID != "" {
 		localCommit = &localCommitID
@@ -182,29 +181,25 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		p.notifyMergeStrategy(string(strategy), *localCommit, remoteProject)
 	}
 
-	commitID, err := checkoutinfo.GetCommitID(p.project.Dir())
+	commitID, err := buildscript_runbit.CommitID(p.project.Dir(), p.cfg)
 	if err != nil {
-		return errs.Wrap(err, "Unable to get local commit")
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 
 	if commitID != *resultingCommit {
-		if p.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-			err := p.mergeBuildScript(*remoteCommit, *localCommit)
-			if err != nil {
-				var errBuildScriptMergeConflict *ErrBuildScriptMergeConflict
-				if errors.As(err, &errBuildScriptMergeConflict) {
-					err2 := checkoutinfo.SetCommitID(p.project.Dir(), remoteCommit.String())
-					if err2 != nil {
-						err = errs.Pack(err, errs.Wrap(err2, "Could not set local commit to remote commit after build script merge conflict"))
-					}
-				}
-				return errs.Wrap(err, "Could not merge local build script with remote changes")
-			}
+		err := p.mergeBuildScript(*remoteCommit, *localCommit)
+		if err != nil {
+			return errs.Wrap(err, "Could not merge local build script with remote changes")
 		}
 
-		err := checkoutinfo.SetCommitID(p.project.Dir(), resultingCommit.String())
+		bp := buildplanner.NewBuildPlannerModel(p.auth)
+		script, err := bp.GetBuildScript(p.project.Owner(), p.project.Name(), p.project.BranchName(), commitID.String())
 		if err != nil {
-			return errs.Wrap(err, "Unable to set local commit")
+			return errs.Wrap(err, "Could not get build script")
+		}
+		err = buildscript_runbit.Update(p.project.Dir(), script, p.cfg)
+		if err != nil {
+			return errs.Wrap(err, "Unable to update build script")
 		}
 
 		p.out.Print(&pullOutput{
@@ -262,8 +257,12 @@ func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *pr
 
 // mergeBuildScript merges the local build script with the remote buildscript.
 func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
+	if !p.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		return nil // nothing to do
+	}
+
 	// Get the build script to merge.
-	scriptA, err := buildscript_runbit.ScriptFromProject(p.project)
+	scriptA, err := buildscript_runbit.ScriptFromProject(p.project.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
 	}
@@ -280,7 +279,8 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	if err != nil {
 		switch {
 		case errors.Is(err, model.ErrMergeFastForward):
-			return buildscript_runbit.Update(p.project, scriptB)
+			// Fast forward to the remote commit ID.
+			return buildscript_runbit.Update(p.project.Dir(), scriptB, p.cfg)
 		case !errors.Is(err, model.ErrMergeCommitInHistory):
 			return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
 		}
@@ -297,7 +297,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	}
 
 	// Write the merged build expression as a local build script.
-	return buildscript_runbit.Update(p.project, scriptA)
+	return buildscript_runbit.Update(p.project.Dir(), scriptA, p.cfg)
 }
 
 func resolveRemoteProject(prj *project.Project) (*project.Namespaced, error) {
