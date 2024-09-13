@@ -125,22 +125,6 @@ func (b *BuildScript) RemoveRequirement(requirement types.Requirement) error {
 	return nil
 }
 
-func (b *BuildScript) UpdatePlatform(operation types.Operation, platformID strfmt.UUID) error {
-	var err error
-	switch operation {
-	case types.OperationAdded:
-		err = b.AddPlatform(platformID)
-	case types.OperationRemoved:
-		err = b.RemovePlatform(platformID)
-	default:
-		return errs.New("Unsupported operation")
-	}
-	if err != nil {
-		return errs.Wrap(err, "Could not update BuildScript's platform")
-	}
-	return nil
-}
-
 func (b *BuildScript) AddPlatform(platformID strfmt.UUID) error {
 	platformsNode, err := b.getPlatformsNode()
 	if err != nil {
