@@ -25,11 +25,11 @@ type FileHasher struct {
 
 func NewFileHasher() *FileHasher {
 	return &FileHasher{
-		cache: cache.New(cache.NoExpiration, 24*time.Hour),
+		cache: cache.New(24*time.Hour, 24*time.Hour),
 	}
 }
 
-func (fh *FileHasher) HashFiles(files []string) (hash string, rerr error) {
+func (fh *FileHasher) HashFiles(files []string) (string, error) {
 	sort.Strings(files)
 
 	hasher := xxhash.New()
