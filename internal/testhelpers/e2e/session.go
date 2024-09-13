@@ -44,6 +44,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	RuntimeSolvingTimeoutOpt       = termtest.OptExpectTimeout(1 * time.Minute)
+	RuntimeSourcingTimeoutOpt      = termtest.OptExpectTimeout(3 * time.Minute)
+	RuntimeBuildSourcingTimeoutOpt = termtest.OptExpectTimeout(6 * time.Minute)
+)
+
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
 // It provides a consistent environment (environment variables and temporary
 // directories) that is shared by processes spawned during this session.

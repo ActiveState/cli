@@ -273,7 +273,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation_multiple() {
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "requests", "urllib3@1.25.6")
 		cp.Expect("Operating on project ActiveState-CLI/small-python")
-		cp.Expect("Added: language/python/requests", e2e.RuntimeSourcingTimeoutOpt)
+		cp.Expect("Added: language/python/requests", e2e.RuntimeSolvingTimeoutOpt)
 		cp.Expect("Added: language/python/urllib3")
 		cp.Wait()
 	})
@@ -281,14 +281,14 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation_multiple() {
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.8")
 		cp.Expect("Operating on project ActiveState-CLI/small-python")
-		cp.Expect("Updated: language/python/urllib3", e2e.RuntimeSourcingTimeoutOpt)
+		cp.Expect("Updated: language/python/urllib3", e2e.RuntimeSolvingTimeoutOpt)
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "requests", "urllib3")
 		cp.Expect("Operating on project ActiveState-CLI/small-python")
-		cp.Expect("Removed: language/python/requests", e2e.RuntimeSourcingTimeoutOpt)
+		cp.Expect("Removed: language/python/requests", e2e.RuntimeSolvingTimeoutOpt)
 		cp.Expect("Removed: language/python/urllib3")
 		cp.Wait()
 	})
@@ -567,7 +567,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_NoPrompt() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "urllib3@2.0.2")
-	cp.ExpectRe(`Warning: Dependency has .* vulnerabilities`, e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectRe(`Warning: Dependency has .* vulnerabilities`, e2e.RuntimeSolvingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 
@@ -590,7 +590,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Prompt() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "urllib3@2.0.2", "--ts=2024-09-10T16:36:34.393Z")
-	cp.ExpectRe(`Warning: Dependency has .* vulnerabilities`, e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectRe(`Warning: Dependency has .* vulnerabilities`, e2e.RuntimeSolvingTimeoutOpt)
 	cp.Expect("Do you want to continue")
 	cp.SendLine("y")
 	cp.ExpectExitCode(0)
@@ -612,7 +612,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Indirect() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "private/ActiveState-CLI-Testing/language/python/django_dep", "--ts=2024-09-10T16:36:34.393Z")
-	cp.ExpectRe(`Warning: Dependency has \d+ indirect known vulnerabilities`, e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectRe(`Warning: Dependency has \d+ indirect known vulnerabilities`, e2e.RuntimeSolvingTimeoutOpt)
 	cp.Expect("Do you want to continue")
 	cp.SendLine("n")
 	cp.ExpectExitCode(1)
@@ -637,7 +637,7 @@ func (suite *PackageIntegrationTestSuite) TestChangeSummary() {
 	cp.Expect("├─ ")
 	cp.Expect("├─ ")
 	cp.Expect("└─ ")
-	cp.Expect("Added: language/python/requests", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Added: language/python/requests", e2e.RuntimeSolvingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 
