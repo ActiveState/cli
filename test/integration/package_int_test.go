@@ -331,7 +331,7 @@ scripts:
 func (suite *PackageIntegrationTestSuite) TestPackage_Install() {
 	suite.OnlyRunForTags(tagsuite.Package)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
@@ -346,7 +346,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_Install() {
 func (suite *PackageIntegrationTestSuite) TestPackage_Uninstall() {
 	suite.OnlyRunForTags(tagsuite.Package)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	ts.PrepareProject("ActiveState-CLI-Testing/small-python-with-pkg", "a2115792-2620-4217-89ed-b596c8c11ce3")
@@ -361,7 +361,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_Uninstall() {
 func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
 	suite.OnlyRunForTags(tagsuite.Package)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	suite.PrepareActiveStateYAML(ts)
@@ -379,7 +379,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
 func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDupeMatch() {
 	suite.OnlyRunForTags(tagsuite.Package)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	ts.PrepareProject("ActiveState-CLI-Testing/duplicate-pkg-name", "e5a15d59-9192-446a-a133-9f4c2ebe0898")

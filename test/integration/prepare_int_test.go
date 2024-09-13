@@ -124,7 +124,7 @@ func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
 
 func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	suite.OnlyRunForTags(tagsuite.Prepare)
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	err := ts.ClearCache()
 	suite.Require().NoError(err)
 	defer ts.Close()
