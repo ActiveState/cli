@@ -210,6 +210,12 @@ func (s *Session) Spawn(args ...string) *SpawnedCmd {
 	return s.SpawnCmdWithOpts(s.Exe, OptArgs(args...))
 }
 
+// SpawnDebuggerWithOpts will spawn a state tool command with the dlv debugger in remote debugging port.
+// It uses the default dlv port of `2345`. It has been tested in Goland (intellij), see instructions here:
+// https://www.jetbrains.com/help/go/attach-to-running-go-processes-with-debugger.html#step-3-create-the-remote-run-debug-configuration-on-the-client-computer
+// Note remote debugging seems a bit unreliable. I've found it works best to start the test code first, and once it is
+// running then start the remote debugger. When I launch the remote debugger first it often doesn't take. But even
+// when using this trickery it may at times not work; try restarting goland, your machine, or dlv.
 func (s *Session) SpawnDebuggerWithOpts(opts ...SpawnOptSetter) *SpawnedCmd {
 	spawnOpts := s.newSpawnOpts(opts...)
 	args := slices.Clone(spawnOpts.Args)
