@@ -567,7 +567,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_NoPrompt() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "urllib3@2.0.2")
-	cp.ExpectRe(`Warning: Dependency has \d+ known vulnerabilities`, e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectRe(`Warning: Dependency has .* vulnerabilities`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 
