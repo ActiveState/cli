@@ -90,6 +90,9 @@ func UpdateAndReload(prime primeable, script *buildscript.BuildScript, oldCommit
 	}
 
 	// Start runtime sourcing UI
+	// Note normally we'd defer to Update's logic of async runtimes, but the reason we do this is to allow for solve
+	// errors to still be relayed even when using async. In this particular case the solving logic already happened
+	// when we created the commit, so running it again doesn't provide any value and only would slow things down.
 	if !cfg.GetBool(constants.AsyncRuntimeConfig) {
 		// refresh or install runtime
 		_, err := runtime_runbit.Update(prime, trigger,
