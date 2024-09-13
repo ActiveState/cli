@@ -21,6 +21,21 @@ const (
 	requirementComparatorKey          = "comparator"
 )
 
+type MarshalerFunc func([]*Value) ([]byte, error)
+
+var marshalers map[string]MarshalerFunc
+
+func init() {
+	marshalers = make(map[string]MarshalerFunc)
+	RegisterFunctionMarshaler("Req", marshalReq) // marshal into legacy object format for now
+}
+
+// RegisterFunctionMarshaler registers a buildexpression marshaler for a buildscript function.
+// Marshalers accept a buildscript Value, and marshals it to buildexpression JSON (e.g. an object).
+func RegisterFunctionMarshaler(name string, marshalJSON MarshalerFunc) {
+	marshalers[name] = marshalJSON
+}
+
 // MarshalJSON returns this structure as a build expression in JSON format, suitable for sending to
 // the Platform.
 func (b *BuildScript) MarshalBuildExpression() ([]byte, error) {
@@ -91,8 +106,8 @@ func (v *Value) MarshalJSON() ([]byte, error) {
 }
 
 func (f *FuncCall) MarshalJSON() ([]byte, error) {
-	if f.Name == reqFuncName {
-		return marshalReq(f.Arguments) // marshal into legacy object format for now
+	if marshalJSON, exists := marshalers[f.Name]; exists {
+		return marshalJSON(f.Arguments)
 	}
 
 	m := make(map[string]interface{})

@@ -197,7 +197,6 @@ func newExportLogCommand(prime *primer.Values) *captain.Command {
 		})
 
 	cmd.SetSupportsStructuredOutput()
-	cmd.SetUnstable(true)
 
 	return cmd
 }

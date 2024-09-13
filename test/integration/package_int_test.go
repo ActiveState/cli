@@ -566,6 +566,8 @@ func (suite *PackageIntegrationTestSuite) TestCVE_NoPrompt() {
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
+	// Note: this version has 2 direct vulnerabilities, and 3 indirect vulnerabilities, but since
+	// we're not prompting, we're only showing a single count.
 	cp = ts.Spawn("install", "urllib3@2.0.2")
 	cp.ExpectRe(`Warning: Dependency has .* vulnerabilities`, e2e.RuntimeSolvingTimeoutOpt)
 	cp.ExpectExitCode(0)
