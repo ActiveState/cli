@@ -19,17 +19,14 @@ import (
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 )
 
-// RemoveRunParams tracks the info required for running Remove.
 type RemoveRunParams struct {
 	Params
 }
 
-// Remove manages the adding execution context.
 type Remove struct {
 	prime primeable
 }
 
-// NewRemove prepares an add execution context for use.
 func NewRemove(prime primeable) *Remove {
 	return &Remove{
 		prime: prime,
@@ -39,7 +36,6 @@ func NewRemove(prime primeable) *Remove {
 var errNoMatch = errors.New("no platform matched the search criteria")
 var errMultiMatch = errors.New("multiple platforms matched the search criteria")
 
-// Run executes the add behavior.
 func (a *Remove) Run(params RemoveRunParams) (rerr error) {
 	defer rationalizeRemovePlatformError(&rerr)
 
