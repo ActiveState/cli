@@ -29,7 +29,7 @@ func NewFileHasher() *FileHasher {
 	}
 }
 
-func (fh *FileHasher) HashFiles(files []string) (hash string, rerr error) {
+func (fh *FileHasher) HashFiles(files []string) (_ string, rerr error) {
 	sort.Strings(files)
 
 	hasher := xxhash.New()
