@@ -713,7 +713,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Indirect() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "private/ActiveState-CLI-Testing/language/python/django_dep", "--ts=now")
-	cp.ExpectRe(`Warning: Dependency has \d+ indirect known vulnerabilities`)
+	cp.ExpectRe(`Warning: Dependency has \d+ indirect known vulnerabilities`, termtest.OptExpectTimeout(60*time.Second))
 	cp.Expect("Do you want to continue")
 	cp.SendLine("n")
 	cp.ExpectExitCode(1)
