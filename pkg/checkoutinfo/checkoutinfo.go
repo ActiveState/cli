@@ -127,10 +127,14 @@ func UpdateProject(script *buildscript.BuildScript, dir string) error {
 		return errs.Wrap(err, "Could not setup project")
 	}
 
-	proj.Source().Project = script.ProjectURL()
-	err = proj.Source().Save(nil)
+	commitID, err := script.CommitID()
 	if err != nil {
-		return errs.Wrap(err, "Could not update project")
+		return errs.Wrap(err, "Could not get commit ID")
+	}
+
+	err = proj.SetLegacyCommit(commitID.String())
+	if err != nil {
+		return errs.Wrap(err, "Could not update commit ID")
 	}
 
 	return nil

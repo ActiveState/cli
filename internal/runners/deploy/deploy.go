@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/checkout"
 	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
@@ -171,6 +172,10 @@ func (d *Deploy) install(params *Params, commitID strfmt.UUID) (rerr error) {
 		constants.DefaultBranchName, commitID.String(), "",
 	); err != nil {
 		return errs.Wrap(err, "Could not create project files")
+	}
+
+	if err := buildscript_runbit.Initialize(params.Path, params.Namespace.Owner, params.Namespace.Project, constants.DefaultBranchName, commitID.String(), d.auth, d.cfg); err != nil {
+		return errs.Wrap(err, "Unable to initialize buildscript")
 	}
 
 	proj, err := project.FromPath(params.Path)
