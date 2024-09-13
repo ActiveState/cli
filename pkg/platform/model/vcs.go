@@ -221,7 +221,7 @@ func NewNamespacePlatform() Namespace {
 	return Namespace{NamespacePlatform, "platform"}
 }
 
-func NewOrgNamespace(orgName string) Namespace {
+func NewNamespaceOrg(orgName string) Namespace {
 	return Namespace{
 		nsType: NamespaceOrg,
 		value:  NamespaceOrg.prefix + "/" + orgName,

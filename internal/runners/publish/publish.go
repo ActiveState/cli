@@ -125,7 +125,7 @@ func (r *Runner) Run(params *Params) error {
 	if params.Namespace != "" {
 		reqVars.Namespace = params.Namespace
 	} else if reqVars.Namespace == "" && r.project != nil && r.project.Owner() != "" {
-		reqVars.Namespace = model.NewOrgNamespace(r.project.Owner()).String()
+		reqVars.Namespace = model.NewNamespaceOrg(r.project.Owner()).String()
 	}
 
 	// Name
