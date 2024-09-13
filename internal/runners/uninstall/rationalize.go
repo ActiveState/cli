@@ -19,10 +19,16 @@ func (u *Uninstall) rationalizeError(rerr *error) {
 		return
 
 	case errors.As(*rerr, &noMatchesErr):
-		*rerr = errs.WrapUserFacing(*rerr, locale.Tr("err_uninstall_nomatch", noMatchesErr.packages.String()))
+		*rerr = errs.WrapUserFacing(
+			*rerr,
+			locale.Tr("err_uninstall_nomatch", noMatchesErr.packages.String()),
+			errs.SetInput())
 
 	case errors.As(*rerr, &multipleMatchesErr):
-		*rerr = errs.WrapUserFacing(*rerr, locale.Tr("err_uninstall_multimatch", multipleMatchesErr.packages.String()))
+		*rerr = errs.WrapUserFacing(
+			*rerr,
+			locale.Tr("err_uninstall_multimatch", multipleMatchesErr.packages.String()),
+			errs.SetInput())
 
 	// Error staging a commit during install.
 	case errors.As(*rerr, ptr.To(&bpResp.CommitError{})):

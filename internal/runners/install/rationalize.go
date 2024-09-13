@@ -29,7 +29,10 @@ func (i *Install) rationalizeError(rerr *error) {
 			names = append(names, fmt.Sprintf(`[ACTIONABLE]%s[/RESET]`, r.Requested.Name))
 		}
 		if len(noMatchErr.requirements) > 1 {
-			*rerr = errs.WrapUserFacing(*rerr, locale.Tr("package_requirements_no_match", strings.Join(names, ", ")))
+			*rerr = errs.WrapUserFacing(
+				*rerr,
+				locale.Tr("package_requirements_no_match", strings.Join(names, ", ")),
+				errs.SetInput())
 			return
 		}
 		suggestions, err := i.getSuggestions(noMatchErr.requirements[0], noMatchErr.languages)
@@ -38,11 +41,17 @@ func (i *Install) rationalizeError(rerr *error) {
 		}
 
 		if len(suggestions) == 0 {
-			*rerr = errs.WrapUserFacing(*rerr, locale.Tr("package_ingredient_alternatives_nosuggest", strings.Join(names, ", ")))
+			*rerr = errs.WrapUserFacing(
+				*rerr,
+				locale.Tr("package_ingredient_alternatives_nosuggest", strings.Join(names, ", ")),
+				errs.SetInput())
 			return
 		}
 
-		*rerr = errs.WrapUserFacing(*rerr, locale.Tr("package_ingredient_alternatives", strings.Join(names, ", "), strings.Join(suggestions, "\n")))
+		*rerr = errs.WrapUserFacing(
+			*rerr,
+			locale.Tr("package_ingredient_alternatives", strings.Join(names, ", "), strings.Join(suggestions, "\n")),
+			errs.SetInput())
 
 	// Error staging a commit during install.
 	case errors.As(*rerr, ptr.To(&bpResp.CommitError{})):
