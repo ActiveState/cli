@@ -205,6 +205,7 @@ func searchIngredientsNamespace(ns string, name string, includeVersions bool, ex
 	}
 	params.SetLimit(&limit)
 	params.SetHTTPClient(api.NewHTTPClient())
+	params.WithTimeout(60 * time.Second)
 
 	if ts != nil {
 		dt := strfmt.DateTime(*ts)
