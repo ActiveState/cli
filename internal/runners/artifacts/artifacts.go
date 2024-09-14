@@ -8,13 +8,13 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	buildplanner_runbit "github.com/ActiveState/cli/internal/runbits/buildplanner"
 	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -29,8 +29,8 @@ type primeable interface {
 	primer.Auther
 	primer.Projecter
 	primer.SvcModeler
-	primer.Configurer
 	primer.Analyticer
+	primer.CheckoutInfoer
 }
 
 type Params struct {
@@ -41,18 +41,13 @@ type Params struct {
 	Full      bool
 }
 
-type Configurable interface {
-	GetString(key string) string
-	GetBool(key string) bool
-}
-
 type Artifacts struct {
 	out       output.Outputer
 	project   *project.Project
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
 	auth      *authentication.Auth
-	config    *config.Instance
+	info      *checkoutinfo.CheckoutInfo
 }
 
 type StructuredOutput struct {
@@ -87,8 +82,8 @@ func New(p primeable) *Artifacts {
 		project:   p.Project(),
 		auth:      p.Auth(),
 		svcModel:  p.SvcModel(),
-		config:    p.Config(),
 		analytics: p.Analytics(),
+		info:      p.CheckoutInfo(),
 	}
 }
 
@@ -116,7 +111,7 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 	}
 
 	bp, err := buildplanner_runbit.GetBuildPlan(
-		b.project, params.Namespace, params.CommitID, params.Target, b.auth, b.out, b.config)
+		b.project, params.Namespace, params.CommitID, params.Target, b.auth, b.out, b.info)
 	if err != nil {
 		return errs.Wrap(err, "Could not get buildplan")
 	}

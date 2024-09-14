@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
@@ -51,6 +50,7 @@ type primeable interface {
 	primer.Configurer
 	primer.Analyticer
 	primer.SvcModeler
+	primer.CheckoutInfoer
 }
 
 func New(prime primeable) *Reset {
@@ -79,7 +79,7 @@ func (r *Reset) Run(params *Params) error {
 		if err != nil {
 			return locale.WrapError(err, "err_reset_latest_commit", "Could not get latest commit ID")
 		}
-		localCommitID, err := buildscript_runbit.CommitID(r.project.Dir(), r.cfg)
+		localCommitID, err := r.prime.CheckoutInfo().CommitID()
 		var errInvalidCommitID *checkoutinfo.ErrInvalidCommitID
 		if err != nil && !errors.As(err, &errInvalidCommitID) {
 			return errs.Wrap(err, "Unable to get commit ID")
@@ -90,7 +90,7 @@ func (r *Reset) Run(params *Params) error {
 		commitID = *latestCommit
 
 	case strings.EqualFold(params.CommitID, local):
-		localCommitID, err := buildscript_runbit.CommitID(r.project.Dir(), r.cfg)
+		localCommitID, err := r.prime.CheckoutInfo().CommitID()
 		if err != nil {
 			return errs.Wrap(err, "Unable to get commit ID")
 		}
@@ -108,7 +108,7 @@ func (r *Reset) Run(params *Params) error {
 		}
 	}
 
-	localCommitID, err := buildscript_runbit.CommitID(r.project.Dir(), r.cfg)
+	localCommitID, err := r.prime.CheckoutInfo().CommitID()
 	var errInvalidCommitID *checkoutinfo.ErrInvalidCommitID
 	if err != nil && !errors.As(err, &errInvalidCommitID) {
 		return errs.Wrap(err, "Unable to get commit ID")
@@ -126,10 +126,7 @@ func (r *Reset) Run(params *Params) error {
 	}
 
 	// Reset the build script.
-	if err := buildscript_runbit.Remove(r.project.Dir()); err != nil {
-		return errs.Wrap(err, "Unable to remove existing build script")
-	}
-	if err := buildscript_runbit.Initialize(r.project.Dir(), r.project.Owner(), r.project.Name(), r.project.BranchName(), commitID.String(), r.auth, r.cfg); err != nil {
+	if err := r.prime.CheckoutInfo().InitializeBuildScript(commitID); err != nil {
 		return errs.Wrap(err, "Unable to initialize buildscript")
 	}
 

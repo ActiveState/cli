@@ -4,12 +4,11 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -17,8 +16,8 @@ import (
 
 // RunCommitsBehindNotifier checks for the commits behind count based on the
 // provided project and displays the results to the user in a helpful manner.
-func RunCommitsBehindNotifier(p *project.Project, out output.Outputer, auth *authentication.Auth, cfg *config.Instance) {
-	count, err := CommitsBehind(p, auth, cfg)
+func RunCommitsBehindNotifier(p *project.Project, out output.Outputer, auth *authentication.Auth, info *checkoutinfo.CheckoutInfo) {
+	count, err := CommitsBehind(p, auth, info)
 	if err != nil {
 		if errors.Is(err, model.ErrCommitCountUnknowable) {
 			out.Notice(output.Title(locale.Tr("runtime_update_notice_unknown_count")))
@@ -36,7 +35,7 @@ func RunCommitsBehindNotifier(p *project.Project, out output.Outputer, auth *aut
 	}
 }
 
-func CommitsBehind(p *project.Project, auth *authentication.Auth, cfg *config.Instance) (int, error) {
+func CommitsBehind(p *project.Project, auth *authentication.Auth, info *checkoutinfo.CheckoutInfo) (int, error) {
 	if p.IsHeadless() {
 		return 0, nil
 	}
@@ -50,7 +49,7 @@ func CommitsBehind(p *project.Project, auth *authentication.Auth, cfg *config.In
 		return 0, locale.NewError("err_latest_commit", "Latest commit ID is nil")
 	}
 
-	commitID, err := buildscript_runbit.CommitID(p.Dir(), cfg)
+	commitID, err := info.CommitID()
 	if err != nil {
 		return 0, errs.Wrap(err, "Unable to get commit ID")
 	}

@@ -11,14 +11,13 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -39,7 +38,7 @@ type List struct {
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
 	auth      *authentication.Auth
-	cfg       *config.Instance
+	info      *checkoutinfo.CheckoutInfo
 }
 
 // NewList prepares a list execution context for use.
@@ -50,7 +49,7 @@ func NewList(prime primeable) *List {
 		analytics: prime.Analytics(),
 		svcModel:  prime.SvcModel(),
 		auth:      prime.Auth(),
-		cfg:       prime.Config(),
+		info:      prime.CheckoutInfo(),
 	}
 }
 
@@ -89,7 +88,7 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
 	default:
-		commitID, err = targetFromProjectFile(l.project, l.cfg)
+		commitID, err = targetFromProjectFile(l.project, l.info)
 		if err != nil {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
@@ -205,12 +204,12 @@ func targetFromProject(projectString string) (*strfmt.UUID, error) {
 	return branch.CommitID, nil
 }
 
-func targetFromProjectFile(proj *project.Project, cfg *config.Instance) (*strfmt.UUID, error) {
+func targetFromProjectFile(proj *project.Project, info *checkoutinfo.CheckoutInfo) (*strfmt.UUID, error) {
 	logging.Debug("commit from project file")
 	if proj == nil {
 		return nil, rationalize.ErrNoProject
 	}
-	commit, err := buildscript_runbit.CommitID(proj.Dir(), cfg)
+	commit, err := info.CommitID()
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get commit ID")
 	}

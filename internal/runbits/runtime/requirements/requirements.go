@@ -21,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
@@ -75,6 +74,7 @@ type primeable interface {
 	primer.Configurer
 	primer.Analyticer
 	primer.SvcModeler
+	primer.CheckoutInfoer
 }
 
 func NewRequirementOperation(prime primeable) *RequirementOperation {
@@ -161,7 +161,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		return errs.Wrap(err, "Could not validate packages")
 	}
 
-	parentCommitID, err := buildscript_runbit.CommitID(r.Project.Dir(), r.Config)
+	parentCommitID, err := r.prime.CheckoutInfo().CommitID()
 	if err != nil {
 		return errs.Wrap(err, "Unable to get commit ID")
 	}
@@ -351,7 +351,7 @@ func (r *RequirementOperation) resolveNamespace(ts *time.Time, requirement *Requ
 	if requirement.NamespaceType != nil {
 		switch *requirement.NamespaceType {
 		case model.NamespacePackage, model.NamespaceBundle:
-			commitID, err := buildscript_runbit.CommitID(r.Project.Dir(), r.Config)
+			commitID, err := r.prime.CheckoutInfo().CommitID()
 			if err != nil {
 				return errs.Wrap(err, "Unable to get commit ID")
 			}
@@ -532,12 +532,12 @@ func (r *RequirementOperation) resolveRequirement(requirement *Requirement) erro
 }
 
 func (r *RequirementOperation) updateBuildScript(script *buildscript.BuildScript) error {
-	err := buildscript_runbit.Update(r.Project.Dir(), script, r.Config)
+	err := r.prime.CheckoutInfo().UpdateBuildScript(script)
 	if err != nil {
 		if r.Config.GetBool(constants.OptinBuildscriptsConfig) {
 			return locale.WrapError(err, "err_update_build_script")
 		} else {
-			// Update() only tried to update the commit ID if buildscripts are disabled.
+			// UpdateBuildScript() only tried to update the commit ID if buildscripts are disabled.
 			return locale.WrapError(err, "err_package_update_commit_id")
 		}
 	}

@@ -64,6 +64,7 @@ type primeable interface {
 	primer.Analyticer
 	primer.Configurer
 	primer.SvcModeler
+	primer.CheckoutInfoer
 }
 
 func New(prime primeable) *Pull {
@@ -123,7 +124,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 	}
 
 	var localCommit *strfmt.UUID
-	localCommitID, err := buildscript_runbit.CommitID(p.project.Dir(), p.cfg)
+	localCommitID, err := p.prime.CheckoutInfo().CommitID()
 	if err != nil {
 		return errs.Wrap(err, "Unable to get commit ID")
 	}
@@ -181,7 +182,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		p.notifyMergeStrategy(string(strategy), *localCommit, remoteProject)
 	}
 
-	commitID, err := buildscript_runbit.CommitID(p.project.Dir(), p.cfg)
+	commitID, err := p.prime.CheckoutInfo().CommitID()
 	if err != nil {
 		return errs.Wrap(err, "Unable to get commit ID")
 	}
@@ -197,7 +198,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		if err != nil {
 			return errs.Wrap(err, "Could not get build script")
 		}
-		err = buildscript_runbit.Update(p.project.Dir(), script, p.cfg)
+		err = p.prime.CheckoutInfo().UpdateBuildScript(script)
 		if err != nil {
 			return errs.Wrap(err, "Unable to update build script")
 		}
@@ -280,7 +281,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 		switch {
 		case errors.Is(err, model.ErrMergeFastForward):
 			// Fast forward to the remote commit ID.
-			return buildscript_runbit.Update(p.project.Dir(), scriptB, p.cfg)
+			return p.prime.CheckoutInfo().UpdateBuildScript(scriptB)
 		case !errors.Is(err, model.ErrMergeCommitInHistory):
 			return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
 		}
@@ -297,7 +298,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	}
 
 	// Write the merged build expression as a local build script.
-	return buildscript_runbit.Update(p.project.Dir(), scriptA, p.cfg)
+	return p.prime.CheckoutInfo().UpdateBuildScript(scriptA)
 }
 
 func resolveRemoteProject(prj *project.Project) (*project.Namespaced, error) {

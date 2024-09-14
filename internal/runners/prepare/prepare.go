@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/runtime_helpers"
@@ -37,6 +38,7 @@ type primeable interface {
 	primer.Configurer
 	primer.Analyticer
 	primer.SvcModeler
+	primer.CheckoutInfoer
 }
 
 // Prepare manages the prepare execution context.
@@ -46,6 +48,7 @@ type Prepare struct {
 	cfg       *config.Instance
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
+	info      *checkoutinfo.CheckoutInfo
 }
 
 // New prepares a prepare execution context for use.
@@ -55,6 +58,7 @@ func New(prime primeable) *Prepare {
 		subshell:  prime.Subshell(),
 		cfg:       prime.Config(),
 		analytics: prime.Analytics(),
+		info:      prime.CheckoutInfo(),
 	}
 }
 
@@ -77,7 +81,7 @@ func (r *Prepare) resetExecutors() error {
 		return errs.Wrap(err, "Could not initialize runtime for project.")
 	}
 
-	rtHash, err := runtime_helpers.Hash(proj, nil, r.cfg)
+	rtHash, err := runtime_helpers.Hash(proj, nil, r.info)
 	if err != nil {
 		return errs.Wrap(err, "Could not get runtime hash")
 	}

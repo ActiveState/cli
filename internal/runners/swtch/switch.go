@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
@@ -44,6 +43,7 @@ type primeable interface {
 	primer.Configurer
 	primer.Analyticer
 	primer.SvcModeler
+	primer.CheckoutInfoer
 }
 
 type identifier interface {
@@ -99,7 +99,6 @@ func (s *Switch) Run(params SwitchParams) error {
 	if err != nil {
 		return locale.WrapError(err, "err_fetch_project", "", s.project.Namespace().String())
 	}
-	branch := s.project.BranchName()
 
 	identifier, err := resolveIdentifier(project, params.Identifier)
 	if err != nil {
@@ -107,12 +106,13 @@ func (s *Switch) Run(params SwitchParams) error {
 	}
 
 	if id, ok := identifier.(branchIdentifier); ok {
-		branch = id.branch.Label
+		err = s.project.Source().SetBranch(id.branch.Label)
+		if err != nil {
+			return locale.WrapError(err, "err_switch_set_branch", "Could not update branch")
+		}
 	}
 
-	commitID := identifier.CommitID()
-
-	belongs, err := model.CommitBelongsToBranch(s.project.Owner(), s.project.Name(), branch, commitID, s.auth)
+	belongs, err := model.CommitBelongsToBranch(s.project.Owner(), s.project.Name(), s.project.BranchName(), identifier.CommitID(), s.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_identifier_branch", "Could not determine if commit belongs to branch")
 	}
@@ -121,11 +121,11 @@ func (s *Switch) Run(params SwitchParams) error {
 	}
 
 	bp := buildplanner.NewBuildPlannerModel(s.auth)
-	script, err := bp.GetBuildScript(s.project.Owner(), s.project.Name(), branch, commitID.String())
+	script, err := bp.GetBuildScript(s.project.Owner(), s.project.Name(), s.project.BranchName(), identifier.CommitID().String())
 	if err != nil {
 		return errs.Wrap(err, "Could not get build script")
 	}
-	err = buildscript_runbit.Update(s.project.Dir(), script, s.cfg)
+	err = s.prime.CheckoutInfo().UpdateBuildScript(script)
 	if err != nil {
 		return errs.Wrap(err, "Unable to update build script")
 	}

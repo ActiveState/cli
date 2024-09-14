@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -17,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/git"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -102,8 +102,14 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		return "", errs.Wrap(err, "Could not create project files")
 	}
 
-	if err := buildscript_runbit.Initialize(path, owner, proj, branchName, commitID.String(), r.auth, r.config); err != nil {
-		return "", errs.Wrap(err, "Unable to initialize buildscript")
+	pj, err := project.FromPath(path)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not read created project")
+	}
+
+	info := checkoutinfo.New(r.auth, r.config, pj)
+	if err := info.InitializeBuildScript(*commitID); err != nil {
+		return "", errs.Wrap(err, "Unable to initialize build script")
 	}
 
 	return path, nil

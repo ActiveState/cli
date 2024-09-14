@@ -52,7 +52,7 @@ func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) (rerr
 		reqs = append(reqs, req)
 	}
 
-	ts, err := commits_runbit.ExpandTimeForProject(&params.Timestamp, a.prime.Auth(), a.prime.Project(), a.prime.Config())
+	ts, err := commits_runbit.ExpandTimeForProject(&params.Timestamp, a.prime.Auth(), a.prime.Project(), a.prime.CheckoutInfo())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get timestamp from params")
 	}

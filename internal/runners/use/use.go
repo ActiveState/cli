@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/checkout"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/git"
@@ -37,6 +36,7 @@ type primeable interface {
 	primer.SvcModeler
 	primer.Analyticer
 	primer.Projecter
+	primer.CheckoutInfoer
 }
 
 type Use struct {
@@ -81,7 +81,7 @@ func (u *Use) Run(params *Params) error {
 
 	u.prime.SetProject(proj)
 
-	commitID, err := buildscript_runbit.CommitID(proj.Dir(), u.config)
+	commitID, err := u.prime.CheckoutInfo().CommitID()
 	if err != nil {
 		return errs.Wrap(err, "Unable to get commit ID")
 	}

@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/captain"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -14,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -34,7 +34,7 @@ type Info struct {
 	out  output.Outputer
 	proj *project.Project
 	auth *authentication.Auth
-	cfg  *config.Instance
+	info *checkoutinfo.CheckoutInfo
 }
 
 // NewInfo prepares an information execution context for use.
@@ -43,7 +43,7 @@ func NewInfo(prime primeable) *Info {
 		out:  prime.Output(),
 		proj: prime.Project(),
 		auth: prime.Auth(),
-		cfg:  prime.Config(),
+		info: prime.CheckoutInfo(),
 	}
 }
 
@@ -61,7 +61,7 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	}
 
 	if nsTypeV != nil {
-		language, err := targetedLanguage(params.Language, i.proj, i.auth, i.cfg)
+		language, err := targetedLanguage(params.Language, i.proj, i.auth, i.info)
 		if err != nil {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", *nsTypeV))
 		}
@@ -74,7 +74,7 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 		normalized = params.Package.Name
 	}
 
-	ts, err := commits_runbit.ExpandTimeForProject(&params.Timestamp, i.auth, i.proj, i.cfg)
+	ts, err := commits_runbit.ExpandTimeForProject(&params.Timestamp, i.auth, i.proj, i.info)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get timestamp from params")
 	}

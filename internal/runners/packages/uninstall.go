@@ -51,7 +51,7 @@ func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) (
 		reqs = append(reqs, req)
 	}
 
-	ts, err := commits_runbit.ExpandTimeForProject(&captain.TimeValue{}, u.prime.Auth(), u.prime.Project(), u.prime.Config())
+	ts, err := commits_runbit.ExpandTimeForProject(&captain.TimeValue{}, u.prime.Auth(), u.prime.Project(), u.prime.CheckoutInfo())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get timestamp from params")
 	}

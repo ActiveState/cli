@@ -17,7 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/checkout"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
@@ -97,6 +97,7 @@ type primeable interface {
 	primer.Configurer
 	primer.SvcModeler
 	primer.Analyticer
+	primer.CheckoutInfoer
 }
 
 func Update(
@@ -139,7 +140,7 @@ func Update(
 		commitID = opts.Commit.CommitID
 	}
 	if commitID == "" {
-		commitID, err = buildscript_runbit.CommitID(proj.Dir(), prime.Config())
+		commitID, err = prime.CheckoutInfo().CommitID()
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to get commit ID")
 		}
@@ -161,7 +162,7 @@ func Update(
 		}
 	}()
 
-	rtHash, err := runtime_helpers.Hash(proj, &commitID, prime.Config())
+	rtHash, err := runtime_helpers.Hash(proj, &commitID, prime.CheckoutInfo())
 	if err != nil {
 		ah.fire(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeCache, nil)
 		return nil, errs.Wrap(err, "Failed to get runtime hash")

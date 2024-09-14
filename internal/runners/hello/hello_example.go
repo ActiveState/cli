@@ -10,14 +10,13 @@ package hello
 import (
 	"errors"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/example"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -28,7 +27,7 @@ type primeable interface {
 	primer.Outputer
 	primer.Auther
 	primer.Projecter
-	primer.Configurer
+	primer.CheckoutInfoer
 }
 
 // Params defines the parameters needed to execute a given runner. These
@@ -53,7 +52,7 @@ type Hello struct {
 	out     output.Outputer
 	project *project.Project
 	auth    *authentication.Auth
-	cfg     *config.Instance
+	info    *checkoutinfo.CheckoutInfo
 }
 
 // New contains the scope in which an instance of Hello is constructed from an
@@ -63,7 +62,7 @@ func New(p primeable) *Hello {
 		out:     p.Output(),
 		project: p.Project(),
 		auth:    p.Auth(),
-		cfg:     p.Config(),
+		info:    p.CheckoutInfo(),
 	}
 }
 
@@ -125,7 +124,7 @@ func (h *Hello) Run(params *Params) (rerr error) {
 	}
 
 	// Grab data from the platform.
-	commitMsg, err := currentCommitMessage(h.project, h.auth, h.cfg)
+	commitMsg, err := currentCommitMessage(h.project, h.auth, h.info)
 	if err != nil {
 		err = errs.Wrap(
 			err, "Cannot get commit message",
@@ -149,12 +148,12 @@ func (h *Hello) Run(params *Params) (rerr error) {
 // is obtained. Since it is a sort of construction function that has some
 // complexity, it is helpful to provide localized error context. Secluding this
 // sort of logic is helpful to keep the subhandlers clean.
-func currentCommitMessage(proj *project.Project, auth *authentication.Auth, cfg *config.Instance) (string, error) {
+func currentCommitMessage(proj *project.Project, auth *authentication.Auth, info *checkoutinfo.CheckoutInfo) (string, error) {
 	if proj == nil {
 		return "", errs.New("Cannot determine which project to use")
 	}
 
-	commitId, err := buildscript_runbit.CommitID(proj.Dir(), cfg)
+	commitId, err := info.CommitID()
 	if err != nil {
 		return "", errs.Wrap(err, "Cannot determine which commit to use")
 	}

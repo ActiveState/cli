@@ -4,13 +4,12 @@ import (
 	"fmt"
 
 	"github.com/ActiveState/cli/internal/captain"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -31,7 +30,7 @@ type Search struct {
 	out  output.Outputer
 	proj *project.Project
 	auth *authentication.Auth
-	cfg  *config.Instance
+	info *checkoutinfo.CheckoutInfo
 }
 
 // NewSearch prepares a searching execution context for use.
@@ -40,7 +39,7 @@ func NewSearch(prime primeable) *Search {
 		out:  prime.Output(),
 		proj: prime.Project(),
 		auth: prime.Auth(),
-		cfg:  prime.Config(),
+		info: prime.CheckoutInfo(),
 	}
 }
 
@@ -52,7 +51,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 
 	var ns model.Namespace
 	if params.Ingredient.Namespace == "" {
-		language, err := targetedLanguage(params.Language, s.proj, s.auth, s.cfg)
+		language, err := targetedLanguage(params.Language, s.proj, s.auth, s.info)
 		if err != nil {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
 		}
@@ -62,7 +61,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 		ns = model.NewRawNamespace(params.Ingredient.Namespace)
 	}
 
-	ts, err := commits_runbit.ExpandTimeForProject(&params.Timestamp, s.auth, s.proj, s.cfg)
+	ts, err := commits_runbit.ExpandTimeForProject(&params.Timestamp, s.auth, s.proj, s.info)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get timestamp from params")
 	}
@@ -116,7 +115,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	return nil
 }
 
-func targetedLanguage(languageOpt string, proj *project.Project, auth *authentication.Auth, cfg *config.Instance) (string, error) {
+func targetedLanguage(languageOpt string, proj *project.Project, auth *authentication.Auth, info *checkoutinfo.CheckoutInfo) (string, error) {
 	if languageOpt != "" {
 		return languageOpt, nil
 	}
@@ -127,7 +126,7 @@ func targetedLanguage(languageOpt string, proj *project.Project, auth *authentic
 		)
 	}
 
-	commitID, err := buildscript_runbit.CommitID(proj.Dir(), cfg)
+	commitID, err := info.CommitID()
 	if err != nil {
 		return "", errs.Wrap(err, "Unable to get commit ID")
 	}

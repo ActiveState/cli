@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/httputil"
@@ -19,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	buildplanner_runbit "github.com/ActiveState/cli/internal/runbits/buildplanner"
 	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -40,7 +40,7 @@ type Download struct {
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
 	auth      *authentication.Auth
-	config    *config.Instance
+	info      *checkoutinfo.CheckoutInfo
 }
 
 func NewDownload(prime primeable) *Download {
@@ -50,7 +50,7 @@ func NewDownload(prime primeable) *Download {
 		analytics: prime.Analytics(),
 		svcModel:  prime.SvcModel(),
 		auth:      prime.Auth(),
-		config:    prime.Config(),
+		info:      prime.CheckoutInfo(),
 	}
 }
 
@@ -92,7 +92,7 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 	}
 
 	bp, err := buildplanner_runbit.GetBuildPlan(
-		d.project, params.Namespace, params.CommitID, target, d.auth, d.out, d.config)
+		d.project, params.Namespace, params.CommitID, target, d.auth, d.out, d.info)
 	if err != nil {
 		return errs.Wrap(err, "Could not get build plan map")
 	}

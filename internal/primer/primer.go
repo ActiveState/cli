@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcctl"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -19,17 +20,18 @@ import (
 )
 
 type Values struct {
-	project     *project.Project
-	projectfile *projectfile.Project
-	output      output.Outputer
-	auth        *authentication.Auth
-	prompt      prompt.Prompter
-	subshell    subshell.SubShell
-	conditional *constraints.Conditional
-	config      *config.Instance
-	ipComm      svcctl.IPCommunicator
-	svcModel    *model.SvcModel
-	analytics   analytics.Dispatcher
+	project      *project.Project
+	projectfile  *projectfile.Project
+	output       output.Outputer
+	auth         *authentication.Auth
+	prompt       prompt.Prompter
+	subshell     subshell.SubShell
+	conditional  *constraints.Conditional
+	config       *config.Instance
+	ipComm       svcctl.IPCommunicator
+	svcModel     *model.SvcModel
+	analytics    analytics.Dispatcher
+	checkoutinfo *checkoutinfo.CheckoutInfo
 }
 
 func New(values ...any) *Values {
@@ -65,12 +67,14 @@ func New(values ...any) *Values {
 			}
 		}
 	}
+	result.checkoutinfo = checkoutinfo.New(result.auth, result.config, result.project)
 	return result
 }
 
 func (v *Values) SetProject(p *project.Project) {
 	v.project = p
 	v.projectfile = p.Source()
+	v.checkoutinfo = checkoutinfo.New(v.auth, v.config, p)
 }
 
 type Projecter interface {
@@ -118,6 +122,10 @@ type Conditioner interface {
 	Conditional() *constraints.Conditional
 }
 
+type CheckoutInfoer interface {
+	CheckoutInfo() *checkoutinfo.CheckoutInfo
+}
+
 func (v *Values) Project() *project.Project {
 	return v.project
 }
@@ -160,4 +168,8 @@ func (v *Values) Config() *config.Instance {
 
 func (v *Values) Analytics() analytics.Dispatcher {
 	return v.analytics
+}
+
+func (v *Values) CheckoutInfo() *checkoutinfo.CheckoutInfo {
+	return v.checkoutinfo
 }

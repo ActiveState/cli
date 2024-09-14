@@ -7,13 +7,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -24,14 +23,14 @@ type primeable interface {
 	primer.Projecter
 	primer.Auther
 	primer.Outputer
-	primer.Configurer
+	primer.CheckoutInfoer
 }
 
 type Cve struct {
 	proj *project.Project
 	auth *authentication.Auth
 	out  output.Outputer
-	cfg  *config.Instance
+	info *checkoutinfo.CheckoutInfo
 }
 
 type CveInfo struct {
@@ -41,7 +40,7 @@ type CveInfo struct {
 }
 
 func NewCve(prime primeable) *Cve {
-	return &Cve{prime.Project(), prime.Auth(), prime.Output(), prime.Config()}
+	return &Cve{prime.Project(), prime.Auth(), prime.Output(), prime.CheckoutInfo()}
 }
 
 type Params struct {
@@ -118,7 +117,7 @@ func (r *Cve) fetchVulnerabilities(namespaceOverride project.Namespaced) (*medmo
 		commitID = namespaceOverride.CommitID.String()
 	} else {
 		var err error
-		commitUUID, err := buildscript_runbit.CommitID(r.proj.Dir(), r.cfg)
+		commitUUID, err := r.info.CommitID()
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to get commit ID")
 		}

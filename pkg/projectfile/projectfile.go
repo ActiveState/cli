@@ -1195,6 +1195,7 @@ type ConfigGetter interface {
 	AllKeys() []string
 	GetStringSlice(string) []string
 	GetString(string) string
+	GetBool(string) bool
 	Set(string, interface{}) error
 	GetThenSet(string, func(interface{}) (interface{}, error)) error
 	Close() error

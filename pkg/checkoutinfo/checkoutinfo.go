@@ -5,21 +5,38 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/buildscript"
-	"github.com/ActiveState/cli/pkg/project"
-	"github.com/go-openapi/strfmt"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 )
 
-// proj holds the project instance most recently accessed, if any.
-// Using globals in this way is an anti-pattern, but because the commit mechanic is going through a lot of changes
-// we're currently handling it this way to help further refactors. Once we've landed the go-forward mechanic we should
-// remove this anti-pattern.
-// https://activestatef.atlassian.net/browse/DX-2524
-var proj *project.Project
+type configurer interface {
+	GetBool(string) bool
+}
+
+type projecter interface {
+	Owner() string
+	Name() string
+	BranchName() string
+	LegacyCommitID() string
+	SetLegacyCommit(string) error
+	Dir() string
+	URL() string
+}
+
+type CheckoutInfo struct {
+	auth    *authentication.Auth
+	cfg     configurer
+	project projecter
+}
+
+var ErrBuildscriptNotExist = errors.New("Build script does not exist")
 
 type ErrInvalidCommitID struct {
 	CommitID string
@@ -29,32 +46,24 @@ func (e ErrInvalidCommitID) Error() string {
 	return "invalid commit ID"
 }
 
-func setupProject(pjpath string) error {
-	if proj != nil && proj.Dir() == pjpath {
-		return nil
-	}
-	var err error
-	proj, err = project.FromPath(pjpath)
-	if err != nil {
-		return errs.Wrap(err, "Could not get project info to set up project")
-	}
-	return nil
+func New(auth *authentication.Auth, cfg configurer, project projecter) *CheckoutInfo {
+	return &CheckoutInfo{auth, cfg, project}
 }
 
-func GetProject(pjpath string) (string, error) {
-	if err := setupProject(pjpath); err != nil {
-		return "", errs.Wrap(err, "Could not setup project")
-	}
-
-	return proj.Source().Project, nil
+func (c *CheckoutInfo) Owner() string {
+	return c.project.Owner()
 }
 
-func GetCommitID(pjpath string) (strfmt.UUID, error) {
-	if err := setupProject(pjpath); err != nil {
-		return "", errs.Wrap(err, "Could not setup project")
-	}
+func (c *CheckoutInfo) Name() string {
+	return c.project.Name()
+}
 
-	commitID := proj.LegacyCommitID()
+func (c *CheckoutInfo) Branch() string {
+	return c.project.BranchName()
+}
+
+func (c *CheckoutInfo) CommitID() (strfmt.UUID, error) {
+	commitID := c.project.LegacyCommitID()
 	if !strfmt.IsUUID(commitID) {
 		return "", &ErrInvalidCommitID{commitID}
 	}
@@ -62,39 +71,27 @@ func GetCommitID(pjpath string) (strfmt.UUID, error) {
 	return strfmt.UUID(commitID), nil
 }
 
-func SetCommitID(pjpath, commitID string) error {
-	if !strfmt.IsUUID(commitID) {
-		return locale.NewInputError("err_commit_id_invalid", commitID)
-	}
-
-	if err := setupProject(pjpath); err != nil {
-		return errs.Wrap(err, "Could not setup project")
-	}
-
-	if err := proj.SetLegacyCommit(commitID); err != nil {
+func (c *CheckoutInfo) SetCommitID(commitID strfmt.UUID) error {
+	// Update commitID in activestate.yaml.
+	logging.Debug("Updating commitID in activestate.yaml")
+	if err := c.project.SetLegacyCommit(commitID.String()); err != nil {
 		return errs.Wrap(err, "Could not set commit ID")
 	}
 
-	if err := updateBuildScript(); err != nil {
-		return errs.Wrap(err, "Could not update build script")
+	if !c.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		return nil // buildscripts are not enabled, so nothing more to do
 	}
 
-	return nil
-}
+	// Update commitID in Project field of build script.
+	logging.Debug("Updating commitID in buildscript")
+	buildscriptPath := filepath.Join(c.project.Dir(), constants.BuildScriptFileName)
 
-// updateBuildScript updates the build script's Project info field.
-// Note: cannot use runbits.buildscript.ScriptFromProject() and Update() due to import cycle.
-func updateBuildScript() error {
-	buildscriptPath := filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName)
+	if !fileutils.FileExists(buildscriptPath) {
+		return c.InitializeBuildScript(commitID)
+	}
 
 	data, err := fileutils.ReadFile(buildscriptPath)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			// There is no build script to update, so just exit.
-			// Normally we would put this behind a optin.buildscripts config test, but that would require
-			// another config global anti-pattern for this package.
-			return nil // no build script to update
-		}
 		return errs.Wrap(err, "Could not read build script for updating")
 	}
 
@@ -106,7 +103,7 @@ func updateBuildScript() error {
 		return errs.Wrap(err, "Could not unmarshal build script")
 	}
 
-	script.SetProjectURL(proj.URL())
+	script.SetProjectURL(c.project.URL())
 
 	data, err = script.Marshal()
 	if err != nil {
@@ -121,20 +118,78 @@ func updateBuildScript() error {
 	return nil
 }
 
-func UpdateProject(script *buildscript.BuildScript, dir string) error {
-	err := setupProject(dir)
-	if err != nil {
-		return errs.Wrap(err, "Could not setup project")
+func (c *CheckoutInfo) InitializeBuildScript(commitID strfmt.UUID) error {
+	if c.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		buildplanner := buildplanner.NewBuildPlannerModel(c.auth)
+		script, err := buildplanner.GetBuildScript(c.Owner(), c.Name(), c.Branch(), commitID.String())
+		if err != nil {
+			return errs.Wrap(err, "Unable to get the remote build script")
+		}
+
+		scriptBytes, err := script.Marshal()
+		if err != nil {
+			return errs.Wrap(err, "Unable to marshal build script")
+		}
+
+		scriptPath := filepath.Join(c.project.Dir(), constants.BuildScriptFileName)
+		logging.Debug("Initializing build script at %s", scriptPath)
+		err = fileutils.WriteFile(scriptPath, scriptBytes)
+		if err != nil {
+			return errs.Wrap(err, "Unable to write build script")
+		}
 	}
 
-	commitID, err := script.CommitID()
-	if err != nil {
-		return errs.Wrap(err, "Could not get commit ID")
+	// Update activestate.yaml.
+	if err := c.project.SetLegacyCommit(commitID.String()); err != nil {
+		return errs.Wrap(err, "Could not set commit ID")
 	}
 
-	err = proj.SetLegacyCommit(commitID.String())
+	return nil
+}
+
+func (c *CheckoutInfo) UpdateBuildScript(newScript *buildscript.BuildScript) error {
+	if c.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		path := filepath.Join(c.project.Dir(), constants.BuildScriptFileName)
+
+		data, err := fileutils.ReadFile(path)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				return errs.Pack(err, ErrBuildscriptNotExist)
+			}
+			return errs.Wrap(err, "Could not read build script from file")
+		}
+
+		script, err := buildscript.Unmarshal(data)
+		if err != nil {
+			return errs.Wrap(err, "Could not unmarshal build script")
+		}
+
+		equals, err := script.Equals(newScript)
+		if err != nil {
+			return errs.Wrap(err, "Could not compare build script")
+		}
+		if script != nil && equals {
+			return nil // no changes to write
+		}
+
+		sb, err := newScript.Marshal()
+		if err != nil {
+			return errs.Wrap(err, "Could not marshal build script")
+		}
+
+		logging.Debug("Writing build script")
+		if err := fileutils.WriteFile(filepath.Join(path, constants.BuildScriptFileName), sb); err != nil {
+			return errs.Wrap(err, "Could not write build script to file")
+		}
+	}
+
+	// Update activestate.yaml.
+	commitID, err := newScript.CommitID()
 	if err != nil {
-		return errs.Wrap(err, "Could not update commit ID")
+		return errs.Wrap(err, "Could not get script commit ID")
+	}
+	if err := c.project.SetLegacyCommit(commitID.String()); err != nil {
+		return errs.Wrap(err, "Could not set commit ID")
 	}
 
 	return nil

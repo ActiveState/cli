@@ -11,8 +11,8 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -35,6 +35,7 @@ type Push struct {
 	project *project.Project
 	prompt  prompt.Prompter
 	auth    *authentication.Auth
+	info    *checkoutinfo.CheckoutInfo
 }
 
 type PushParams struct {
@@ -47,10 +48,11 @@ type primeable interface {
 	primer.Configurer
 	primer.Prompter
 	primer.Auther
+	primer.CheckoutInfoer
 }
 
 func NewPush(prime primeable) *Push {
-	return &Push{prime.Config(), prime.Output(), prime.Project(), prime.Prompt(), prime.Auth()}
+	return &Push{prime.Config(), prime.Output(), prime.Project(), prime.Prompt(), prime.Auth(), prime.CheckoutInfo()}
 }
 
 type intention uint16
@@ -92,7 +94,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 	}
 	r.out.Notice(locale.Tr("operating_message", r.project.NamespaceString(), r.project.Dir()))
 
-	commitID, err := buildscript_runbit.CommitID(r.project.Dir(), r.config) // The commit we want to push
+	commitID, err := r.info.CommitID() // The commit we want to push
 	if err != nil {
 		// Note: should not get here, as verifyInput() ensures there is a local commit
 		return errs.Wrap(err, "Unable to get commit ID")
@@ -207,11 +209,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		}
 
 		// Update the project's commitID with the create project or push result.
-		script, err = bp.GetBuildScript(targetNamespace.Owner, targetNamespace.Project, branch.Label, commitID.String())
-		if err != nil {
-			return errs.Wrap(err, "Could not get build script")
-		}
-		err = buildscript_runbit.Update(r.project.Dir(), script, r.config)
+		err = r.info.SetCommitID(commitID)
 		if err != nil {
 			return errs.Wrap(err, "Unable to update build script")
 		}
@@ -289,7 +287,7 @@ func (r *Push) verifyInput() error {
 		return rationalize.ErrNoProject
 	}
 
-	commitID, err := buildscript_runbit.CommitID(r.project.Dir(), r.config)
+	commitID, err := r.info.CommitID()
 	if err != nil {
 		return errs.Wrap(err, "Unable to get commit ID")
 	}
@@ -327,7 +325,7 @@ func (r *Push) promptNamespace() (*project.Namespaced, error) {
 	}
 
 	var name string
-	commitID, err := buildscript_runbit.CommitID(r.project.Dir(), r.config)
+	commitID, err := r.info.CommitID()
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get commit ID")
 	}

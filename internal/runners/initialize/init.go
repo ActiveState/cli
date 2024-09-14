@@ -18,13 +18,13 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/org"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -69,6 +69,7 @@ type primeable interface {
 	primer.Analyticer
 	primer.SvcModeler
 	primer.Projecter
+	primer.CheckoutInfoer
 }
 
 type errProjectExists struct {
@@ -98,7 +99,7 @@ func New(prime primeable) *Initialize {
 // (i.e. `state use show`).
 // Error handling is not necessary because it's an input error to not include a language to
 // `state init`. We're just trying to infer one as a convenience to the user.
-func inferLanguage(config projectfile.ConfigGetter, auth *authentication.Auth, cfg Configurable) (string, string, bool) {
+func inferLanguage(config projectfile.ConfigGetter, auth *authentication.Auth) (string, string, bool) {
 	defaultProjectDir := config.GetString(constants.GlobalDefaultPrefname)
 	if defaultProjectDir == "" {
 		return "", "", false
@@ -107,7 +108,8 @@ func inferLanguage(config projectfile.ConfigGetter, auth *authentication.Auth, c
 	if err != nil {
 		return "", "", false
 	}
-	commitID, err := buildscript_runbit.CommitID(defaultProj.Dir(), cfg)
+	info := checkoutinfo.New(auth, config, defaultProj)
+	commitID, err := info.CommitID()
 	if err != nil {
 		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
 		return "", "", false
@@ -180,7 +182,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 			languageVersion = langParts[1]
 		}
 	} else {
-		languageName, languageVersion, inferred = inferLanguage(r.config, r.auth, r.config)
+		languageName, languageVersion, inferred = inferLanguage(r.config, r.auth)
 	}
 
 	if languageName == "" {
@@ -275,7 +277,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return errs.Wrap(err, "Could not create project")
 	}
 
-	if err := buildscript_runbit.Initialize(proj.Dir(), proj.Owner(), proj.Name(), proj.BranchName(), commitID.String(), r.auth, r.config); err != nil {
+	if err := r.prime.CheckoutInfo().InitializeBuildScript(commitID); err != nil {
 		return errs.Wrap(err, "Unable to initialize buildscript")
 	}
 

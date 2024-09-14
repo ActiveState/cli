@@ -4,13 +4,11 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/commit"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
@@ -35,7 +33,6 @@ type Revert struct {
 	auth      *authentication.Auth
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
-	cfg       *config.Instance
 }
 
 type Params struct {
@@ -52,6 +49,7 @@ type primeable interface {
 	primer.Analyticer
 	primer.SvcModeler
 	primer.Configurer
+	primer.CheckoutInfoer
 }
 
 func New(prime primeable) *Revert {
@@ -63,7 +61,6 @@ func New(prime primeable) *Revert {
 		prime.Auth(),
 		prime.Analytics(),
 		prime.SvcModel(),
-		prime.Config(),
 	}
 }
 
@@ -85,7 +82,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 	if !strfmt.IsUUID(commitID) && !strings.EqualFold(commitID, remoteCommitID) {
 		return locale.NewInputError("err_revert_invalid_commit_id", "Invalid commit ID")
 	}
-	latestCommit, err := buildscript_runbit.CommitID(r.project.Dir(), r.cfg)
+	latestCommit, err := r.prime.CheckoutInfo().CommitID()
 	if err != nil {
 		return errs.Wrap(err, "Unable to get commit ID")
 	}
@@ -158,7 +155,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 			locale.T("tip_private_project_auth"))
 	}
 
-	err = buildscript_runbit.Update(r.project.Dir(), revertScript, r.cfg)
+	err = r.prime.CheckoutInfo().UpdateBuildScript(revertScript)
 	if err != nil {
 		return errs.Wrap(err, "Unable to update build script")
 	}

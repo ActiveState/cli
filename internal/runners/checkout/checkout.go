@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/checkout"
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
@@ -48,6 +47,7 @@ type primeable interface {
 	primer.SvcModeler
 	primer.Analyticer
 	primer.Projecter
+	primer.CheckoutInfoer
 }
 
 type Checkout struct {
@@ -142,7 +142,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 	var buildPlan *buildplan.BuildPlan
 	rtOpts := []runtime_runbit.SetOpt{}
 	if archive == nil {
-		commitID, err := buildscript_runbit.CommitID(proj.Path(), u.config)
+		commitID, err := u.prime.CheckoutInfo().CommitID()
 		if err != nil {
 			return errs.Wrap(err, "Could not get commit ID")
 		}

@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/org"
@@ -69,6 +68,7 @@ type primeable interface {
 	primer.Analyticer
 	primer.SvcModeler
 	primer.Configurer
+	primer.CheckoutInfoer
 }
 
 // NewImport prepares an importation execution context for use.
@@ -93,7 +93,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		params.FileName = defaultImportFile
 	}
 
-	localCommitId, err := buildscript_runbit.CommitID(proj.Dir(), i.prime.Config())
+	localCommitId, err := i.prime.CheckoutInfo().CommitID()
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_commit")
 	}
@@ -141,7 +141,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 
 	// Always update the build script, even if the commit fails to build
 	if stagedCommit != nil && stagedCommit.Commit != nil && stagedCommit.Commit.CommitID != "" {
-		err = buildscript_runbit.Update(proj.Dir(), stagedCommit.BuildScript(), i.prime.Config())
+		err = i.prime.CheckoutInfo().UpdateBuildScript(stagedCommit.BuildScript())
 		if err != nil {
 			if i.prime.Config().GetBool(constants.OptinBuildscriptsConfig) {
 				return locale.WrapError(err, "err_update_build_script")

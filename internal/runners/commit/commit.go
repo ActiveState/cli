@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
@@ -24,6 +24,7 @@ type primeable interface {
 	primer.SvcModeler
 	primer.Configurer
 	primer.Prompter
+	primer.CheckoutInfoer
 }
 
 type Commit struct {
@@ -117,7 +118,7 @@ func (c *Commit) Run() (rerr error) {
 	}
 
 	// Update the local build script. Its build expression should match the committed expression.
-	if err := buildscript_runbit.Update(proj.Dir(), stagedCommit.BuildScript(), c.prime.Config()); err != nil {
+	if err := c.prime.CheckoutInfo().UpdateBuildScript(stagedCommit.BuildScript()); err != nil {
 		return errs.Wrap(err, "Could not update build script")
 	}
 

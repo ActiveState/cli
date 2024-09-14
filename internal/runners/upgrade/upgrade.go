@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/sliceutils"
@@ -31,7 +30,7 @@ type primeable interface {
 	primer.Auther
 	primer.Projecter
 	primer.Prompter
-	primer.Configurer
+	primer.CheckoutInfoer
 }
 
 type Params struct {
@@ -91,7 +90,7 @@ func (u *Upgrade) Run(params *Params) (rerr error) {
 	}()
 
 	// Collect "before" buildplan
-	localCommitID, err := buildscript_runbit.CommitID(proj.Dir(), u.prime.Config())
+	localCommitID, err := u.prime.CheckoutInfo().CommitID()
 	if err != nil {
 		return errs.Wrap(err, "Failed to get commit ID")
 	}
@@ -158,7 +157,7 @@ func (u *Upgrade) Run(params *Params) (rerr error) {
 		}
 	}
 
-	err = buildscript_runbit.Update(proj.Dir(), bumpedCommit.BuildScript(), u.prime.Config())
+	err = u.prime.CheckoutInfo().UpdateBuildScript(bumpedCommit.BuildScript())
 	if err != nil {
 		return errs.Wrap(err, "Could not update build script")
 	}

@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/buildscript"
@@ -26,6 +26,7 @@ type primeable interface {
 	primer.Analyticer
 	primer.SvcModeler
 	primer.Configurer
+	primer.CheckoutInfoer
 }
 
 type Manifest struct {
@@ -100,7 +101,7 @@ func (m *Manifest) fetchRequirements() ([]buildscript.Requirement, error) {
 			return nil, errs.Wrap(err, "Could not get buildscript")
 		}
 	} else {
-		commitID, err := buildscript_runbit.CommitID(m.project.Dir(), m.cfg)
+		commitID, err := m.prime.CheckoutInfo().CommitID()
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not get commit ID")
 		}
@@ -121,7 +122,7 @@ func (m *Manifest) fetchRequirements() ([]buildscript.Requirement, error) {
 }
 
 func (m *Manifest) fetchBuildplanRequirements() (buildplan.Ingredients, error) {
-	commitID, err := buildscript_runbit.CommitID(m.project.Dir(), m.cfg)
+	commitID, err := m.prime.CheckoutInfo().CommitID()
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to get commit ID")
 	}
