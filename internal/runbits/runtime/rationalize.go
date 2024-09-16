@@ -8,8 +8,8 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	auth "github.com/ActiveState/cli/pkg/platform/authentication"
@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/pkg/runtime"
 )
 
-var ErrBuildscriptNotExist = buildscript_runbit.ErrBuildscriptNotExist
+var ErrBuildscriptNotExist = checkoutinfo.ErrBuildscriptNotExist
 
 var ErrBuildScriptNeedsCommit = errors.New("buildscript is dirty, need to run state commit")
 

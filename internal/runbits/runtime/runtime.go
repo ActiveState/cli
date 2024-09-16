@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/checkout"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
@@ -201,7 +200,7 @@ func Update(
 
 	// Validate buildscript
 	if prime.Config().GetBool(constants.OptinBuildscriptsConfig) && opts.ValidateBuildscript && os.Getenv(constants.DisableBuildscriptDirtyCheck) != "true" {
-		bs, err := buildscript_runbit.ScriptFromProject(proj.Dir())
+		bs, err := prime.CheckoutInfo().BuildScript()
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to get buildscript")
 		}

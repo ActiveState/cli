@@ -63,12 +63,54 @@ func (c *CheckoutInfo) Branch() string {
 }
 
 func (c *CheckoutInfo) CommitID() (strfmt.UUID, error) {
+	if c.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		if script, err := c.BuildScript(); err == nil {
+			commitID, err2 := script.CommitID()
+			if err2 != nil {
+				return "", errs.Wrap(err, "Could not get commit ID from build script")
+			}
+			return commitID, nil
+		} else if !errors.Is(err, ErrBuildscriptNotExist) {
+			return "", errs.Wrap(err, "Could not get build script")
+		}
+		// Fall back on activestate.yaml.
+	}
+
+	// Read from activestate.yaml.
 	commitID := c.project.LegacyCommitID()
 	if !strfmt.IsUUID(commitID) {
 		return "", &ErrInvalidCommitID{commitID}
 	}
 
 	return strfmt.UUID(commitID), nil
+}
+
+func (c *CheckoutInfo) BuildScript() (*buildscript.BuildScript, error) {
+	if !c.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		bp := buildplanner.NewBuildPlannerModel(c.auth)
+		script, err := bp.GetBuildScript(c.Owner(), c.Name(), c.Branch(), c.project.LegacyCommitID())
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get remote build script")
+		}
+		return script, nil
+	}
+
+	path := filepath.Join(c.project.Dir(), constants.BuildScriptFileName)
+
+	data, err := fileutils.ReadFile(path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, errs.Pack(err, ErrBuildscriptNotExist)
+		}
+		return nil, errs.Wrap(err, "Could not read build script from file")
+	}
+
+	script, err := buildscript.Unmarshal(data)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not unmarshal build script")
+	}
+
+	return script, nil
 }
 
 func (c *CheckoutInfo) SetCommitID(commitID strfmt.UUID) error {
@@ -149,19 +191,9 @@ func (c *CheckoutInfo) InitializeBuildScript(commitID strfmt.UUID) error {
 
 func (c *CheckoutInfo) UpdateBuildScript(newScript *buildscript.BuildScript) error {
 	if c.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		path := filepath.Join(c.project.Dir(), constants.BuildScriptFileName)
-
-		data, err := fileutils.ReadFile(path)
+		script, err := c.BuildScript()
 		if err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				return errs.Pack(err, ErrBuildscriptNotExist)
-			}
-			return errs.Wrap(err, "Could not read build script from file")
-		}
-
-		script, err := buildscript.Unmarshal(data)
-		if err != nil {
-			return errs.Wrap(err, "Could not unmarshal build script")
+			return errs.Wrap(err, "Could not get local build script")
 		}
 
 		equals, err := script.Equals(newScript)
@@ -178,6 +210,7 @@ func (c *CheckoutInfo) UpdateBuildScript(newScript *buildscript.BuildScript) err
 		}
 
 		logging.Debug("Writing build script")
+		path := filepath.Join(c.project.Dir(), constants.BuildScriptFileName)
 		if err := fileutils.WriteFile(filepath.Join(path, constants.BuildScriptFileName), sb); err != nil {
 			return errs.Wrap(err, "Could not write build script to file")
 		}

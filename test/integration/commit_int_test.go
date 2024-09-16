@@ -8,10 +8,10 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/termtest"
 )
@@ -30,14 +30,14 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.NoError(err, "Error loading project")
 
-	_, err = buildscript_runbit.ScriptFromProject(proj.Dir())
+	_, err = buildscriptFromProject(proj.Dir())
 	suite.Require().NoError(err) // verify validity
 
 	cp := ts.Spawn("commit")
 	cp.Expect("no new changes")
 	cp.ExpectExitCode(1)
 
-	_, err = buildscript_runbit.ScriptFromProject(proj.Dir())
+	_, err = buildscriptFromProject(proj.Dir())
 	suite.Require().NoError(err) // verify validity
 
 	scriptPath := filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName)
@@ -71,7 +71,7 @@ func (suite *CommitIntegrationTestSuite) TestCommitAtTimeChange() {
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.NoError(err, "Error loading project")
 
-	_, err = buildscript_runbit.ScriptFromProject(proj.Dir())
+	_, err = buildscriptFromProject(proj.Dir())
 	suite.Require().NoError(err) // verify validity
 
 	// Update top-level at_time variable.
@@ -93,6 +93,11 @@ func (suite *CommitIntegrationTestSuite) TestCommitAtTimeChange() {
 	suite.Require().NoError(err)
 	cp.Expect(revisionTime.Format(time.RFC822))
 	cp.ExpectExitCode(0)
+}
+
+func buildscriptFromProject(dir string) (*buildscript.BuildScript, error) {
+	path := filepath.Join(dir, constants.BuildScriptFileName)
+	return buildscript.Unmarshal(fileutils.ReadFileUnsafe(path))
 }
 
 func TestCommitIntegrationTestSuite(t *testing.T) {

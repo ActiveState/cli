@@ -263,7 +263,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	}
 
 	// Get the build script to merge.
-	scriptA, err := buildscript_runbit.ScriptFromProject(p.project.Dir())
+	scriptA, err := p.prime.CheckoutInfo().BuildScript()
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
 	}

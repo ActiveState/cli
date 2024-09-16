@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/buildscript"
@@ -93,24 +92,9 @@ func (m *Manifest) Run() (rerr error) {
 }
 
 func (m *Manifest) fetchRequirements() ([]buildscript.Requirement, error) {
-	var script *buildscript.BuildScript
-	if m.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		var err error
-		script, err = buildscript_runbit.ScriptFromProject(m.project.Dir())
-		if err != nil {
-			return nil, errs.Wrap(err, "Could not get buildscript")
-		}
-	} else {
-		commitID, err := m.prime.CheckoutInfo().CommitID()
-		if err != nil {
-			return nil, errs.Wrap(err, "Could not get commit ID")
-		}
-
-		bp := bpModel.NewBuildPlannerModel(m.auth)
-		script, err = bp.GetBuildScript(m.project.Owner(), m.project.Name(), m.project.BranchName(), commitID.String())
-		if err != nil {
-			return nil, errs.Wrap(err, "Could not get remote build expr and time")
-		}
+	script, err := m.prime.CheckoutInfo().BuildScript()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get build script")
 	}
 
 	reqs, err := script.Requirements()

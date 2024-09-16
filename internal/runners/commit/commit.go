@@ -8,10 +8,10 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 )
@@ -50,7 +50,7 @@ func rationalizeError(err *error) {
 			"Your buildscript contains no new changes. No commit necessary.",
 		), errs.SetInput())
 
-	case errors.Is(*err, buildscript_runbit.ErrBuildscriptNotExist):
+	case errors.Is(*err, checkoutinfo.ErrBuildscriptNotExist):
 		*err = errs.WrapUserFacing(*err, locale.T("err_buildscript_not_exist"))
 
 	// We communicate buildplanner errors verbatim as the intend is that these are curated by the buildplanner
@@ -73,7 +73,7 @@ func (c *Commit) Run() (rerr error) {
 	out.Notice(locale.Tr("operating_message", proj.NamespaceString(), proj.Dir()))
 
 	// Get buildscript.as representation
-	script, err := buildscript_runbit.ScriptFromProject(proj.Dir())
+	script, err := c.prime.CheckoutInfo().BuildScript()
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
 	}
