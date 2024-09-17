@@ -21,7 +21,13 @@ import (
 
 func init() {
 	configMediator.RegisterOption(constants.SecurityPromptConfig, configMediator.Bool, true)
-	configMediator.RegisterOption(constants.SecurityPromptLevelConfig, configMediator.String, vulnModel.SeverityCritical)
+	severities := configMediator.NewEnum([]string{
+		vulnModel.SeverityCritical,
+		vulnModel.SeverityHigh,
+		vulnModel.SeverityMedium,
+		vulnModel.SeverityLow,
+	}, vulnModel.SeverityCritical)
+	configMediator.RegisterOption(constants.SecurityPromptLevelConfig, configMediator.Enum, severities)
 }
 
 type primeable interface {
