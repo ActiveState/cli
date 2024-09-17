@@ -4,7 +4,9 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
@@ -155,6 +157,14 @@ func (r *Runtime) getEnv(inherit bool) (map[string]string, map[string]string, er
 	vars, err := r.envCollection.Environment(r.path, inherit)
 	if err != nil {
 		return empty, empty, errs.Wrap(err, "Failed to get environment variables")
+	}
+
+	if ignores := os.Getenv(constants.IgnoreEnvEnvVarName); ignores != "" {
+		for _, name := range strings.Split(ignores, ",") {
+			if _, exists := vars[name]; exists {
+				delete(vars, name)
+			}
+		}
 	}
 
 	executorsPath := ExecutorsPath(r.path)

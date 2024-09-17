@@ -493,3 +493,6 @@ const PlatformPrivateNamespace = "private"
 
 // OverrideShellEnvVarName is the environment variable to set when overriding the shell for shell detection.
 const OverrideShellEnvVarName = "ACTIVESTATE_CLI_SHELL_OVERRIDE"
+
+// IgnoreEnvEnvVarName is the environment variable to set for skipping specific environment variables during runtime setup.
+const IgnoreEnvEnvVarName = "ACTIVESTATE_CLI_IGNORE_ENV"

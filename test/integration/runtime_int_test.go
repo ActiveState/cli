@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -176,6 +177,34 @@ func (suite *RuntimeIntegrationTestSuite) TestBuildInProgress() {
 
 	cp = ts.Spawn("exec", "main")
 	cp.Expect("Hello world!")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *RuntimeIntegrationTestSuite) TestIgnoreEnvironmentVars() {
+	suite.OnlyRunForTags(tagsuite.Environment)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0)
+
+	pythonPath := "my/path"
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("exec", "python3", "--", "-c", `print(__import__("os").environ["PYTHONPATH"])`),
+		e2e.OptAppendEnv("PYTHONPATH="+pythonPath),
+	)
+	cp.ExpectExitCode(0)
+	suite.Assert().NotContains(cp.Snapshot(), pythonPath)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("exec", "python3", "--", "-c", `print(__import__("os").environ["PYTHONPATH"])`),
+		e2e.OptAppendEnv(
+			"PYTHONPATH="+pythonPath,
+			constants.IgnoreEnvEnvVarName+"=PYTHONPATH",
+		))
+	cp.Expect(pythonPath)
 	cp.ExpectExitCode(0)
 }
 
