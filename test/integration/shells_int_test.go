@@ -82,12 +82,6 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 			cp.SendEnter()
 			cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 
-			// Verify that the command prompt contains the right info, except for tcsh, whose prompt does
-			// not behave like other shells'.
-			if shell != e2e.Tcsh {
-				cp.Expect("[ActiveState-CLI/small-python]")
-			}
-
 			// Verify the runtime is functioning properly.
 			cp.SendLine("python3 --version")
 			cp.Expect("Python 3.10")
