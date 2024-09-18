@@ -22,13 +22,13 @@ func FilterPlatformArtifacts(platformID strfmt.UUID) FilterArtifact {
 
 func FilterBuildtimeArtifacts() FilterArtifact {
 	return func(a *Artifact) bool {
-		return a.isBuildtimeDependency
+		return a.IsBuildtimeDependency
 	}
 }
 
 func FilterRuntimeArtifacts() FilterArtifact {
 	return func(a *Artifact) bool {
-		return a.isRuntimeDependency
+		return a.IsRuntimeDependency
 	}
 }
 
@@ -75,4 +75,13 @@ func FilterNotBuild() FilterArtifact {
 	return func(a *Artifact) bool {
 		return a.Status != types.ArtifactSucceeded
 	}
+}
+
+type FilterOutIngredients struct {
+	Ingredients IngredientIDMap
+}
+
+func (f FilterOutIngredients) Filter(i *Ingredient) bool {
+	_, blacklist := f.Ingredients[i.IngredientID]
+	return !blacklist
 }

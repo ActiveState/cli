@@ -26,8 +26,8 @@ type Artifact struct {
 
 	Ingredients []*Ingredient `json:"-"` // While most artifacts only have a single ingredient, some artifacts such as installers can have multiple.
 
-	isRuntimeDependency   bool
-	isBuildtimeDependency bool
+	IsRuntimeDependency   bool
+	IsBuildtimeDependency bool
 
 	platforms []strfmt.UUID
 	children  []ArtifactRelation

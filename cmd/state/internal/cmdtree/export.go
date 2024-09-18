@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/export"
 	"github.com/ActiveState/cli/internal/runners/export/config"
+	"github.com/ActiveState/cli/internal/runners/export/deptree"
 	"github.com/ActiveState/cli/internal/runners/export/docs"
 	"github.com/ActiveState/cli/internal/runners/export/ghactions"
 	"github.com/ActiveState/cli/pkg/project"
@@ -265,5 +266,108 @@ func newExportBuildPlanCommand(prime *primer.Values) *captain.Command {
 	cmd.SetSupportsStructuredOutput()
 	cmd.SetUnstable(true)
 
+	return cmd
+}
+
+func newExportDepTreeCommand(prime *primer.Values) *captain.Command {
+	cmd := captain.NewCommand(
+		"deptree",
+		locale.Tl("export_dep_tree_title", "Export Dependency Tree"),
+		locale.Tl("export_dep_tree_description", "Export the dependency tree for your project"),
+		prime,
+		[]*captain.Flag{},
+		[]*captain.Argument{},
+		func(ccmd *captain.Command, _ []string) error {
+			prime.Output().Print(ccmd.Help())
+			return nil
+		},
+	)
+	cmd.SetHidden(true) // For development purposes only at the moment
+	cmd.SetUnstable(true)
+	return cmd
+}
+
+func newExportDepTreeArtifactsCommand(prime *primer.Values) *captain.Command {
+	params := deptree.ArtifactParams{Namespace: &project.Namespaced{}}
+	runner := deptree.NewByArtifacts(prime)
+	cmd := captain.NewCommand(
+		"artifacts",
+		locale.Tl("export_dep_tree_title", "Export Dependency Tree"),
+		locale.Tl("export_dep_tree_description", "Export the dependency tree for your project"),
+		prime,
+		[]*captain.Flag{
+			{
+				Name:        "namespace",
+				Description: locale.Tl("export_dep_tree_flags_namespace_description", "The namespace of the project to inspect dependencies for"),
+				Value:       params.Namespace,
+			},
+			{
+				Name:        "commit",
+				Description: locale.Tl("export_dep_tree_flags_commit_description", "The commit ID to inspect dependencies for"),
+				Value:       &params.CommitID,
+			},
+			{
+				Name:        "req",
+				Description: locale.Tl("export_dep_tree_flag_req_description", "Requirement name to filter for"),
+				Value:       &params.Req,
+			},
+			{
+				Name:        "platform",
+				Description: locale.Tl("export_dep_tree_flag_platform_description", "Platform ID to filter for (defaults to host platform)"),
+				Value:       &params.PlatformID,
+			},
+			{
+				Name:        "limit",
+				Description: locale.Tl("export_dep_tree_flag_limit_description", "Limit the recursion level"),
+				Value:       &params.LevelLimit,
+			},
+		},
+		[]*captain.Argument{},
+		func(ccmd *captain.Command, _ []string) error {
+			return runner.Run(params)
+		},
+	)
+	cmd.SetHidden(true) // For development purposes only at the moment
+	cmd.SetUnstable(true)
+	return cmd
+}
+
+func newExportDepTreeIngredientsCommand(prime *primer.Values) *captain.Command {
+	params := deptree.IngredientParams{Namespace: &project.Namespaced{}}
+	runner := deptree.NewByIngredients(prime)
+	cmd := captain.NewCommand(
+		"ingredients",
+		locale.Tl("export_dep_tree_title", "Export Dependency Tree"),
+		locale.Tl("export_dep_tree_description", "Export the dependency tree for your project"),
+		prime,
+		[]*captain.Flag{
+			{
+				Name:        "namespace",
+				Description: locale.Tl("export_dep_tree_flags_namespace_description", "The namespace of the project to inspect dependencies for"),
+				Value:       params.Namespace,
+			},
+			{
+				Name:        "commit",
+				Description: locale.Tl("export_dep_tree_flags_commit_description", "The commit ID to inspect dependencies for"),
+				Value:       &params.CommitID,
+			},
+			{
+				Name:        "req",
+				Description: locale.Tl("export_dep_tree_flag_req_description", "Requirement name to filter for"),
+				Value:       &params.Req,
+			},
+			{
+				Name:        "limit",
+				Description: locale.Tl("export_dep_tree_flag_limit_description", "Limit the recursion level"),
+				Value:       &params.LevelLimit,
+			},
+		},
+		[]*captain.Argument{},
+		func(ccmd *captain.Command, _ []string) error {
+			return runner.Run(params)
+		},
+	)
+	cmd.SetHidden(true) // For development purposes only at the moment
+	cmd.SetUnstable(true)
 	return cmd
 }
