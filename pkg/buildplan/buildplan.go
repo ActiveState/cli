@@ -2,11 +2,8 @@ package buildplan
 
 import (
 	"encoding/json"
-	"fmt"
 	"sort"
-	"time"
 
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -57,11 +54,6 @@ func Unmarshal(data []byte) (*BuildPlan, error) {
 			sort.Slice(input.NodeIDs, func(i, j int) bool { return input.NodeIDs[i] < input.NodeIDs[j] })
 		}
 	}
-
-	v, _ := b.Marshal()
-	vs := string(v)
-	_ = vs
-	fileutils.WriteFile(fmt.Sprintf("/tmp/buildplan-%d.json", time.Now().Unix()), v)
 
 	if err := b.hydrate(); err != nil {
 		return nil, errs.Wrap(err, "error hydrating build plan")
