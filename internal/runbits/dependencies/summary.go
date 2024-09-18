@@ -18,6 +18,7 @@ func OutputSummary(out output.Outputer, directDependencies buildplan.Artifacts) 
 	}
 
 	ingredients := directDependencies.Filter(buildplan.FilterStateArtifacts()).Ingredients()
+	commonDependencies := ingredients.CommonRuntimeDependencies().ToIDMap()
 
 	sort.SliceStable(ingredients, func(i, j int) bool {
 		return ingredients[i].Name < ingredients[j].Name
@@ -32,12 +33,18 @@ func OutputSummary(out output.Outputer, directDependencies buildplan.Artifacts) 
 			prefix = "  └─"
 		}
 
-		subdependencies := ""
-		if numSubs := len(ingredient.RuntimeDependencies(true)); numSubs > 0 {
-			subdependencies = locale.Tl("summary_subdeps", "([ACTIONABLE]{{.V0}}[/RESET] sub-dependencies)", strconv.Itoa(numSubs))
+		subDependencies := ingredient.RuntimeDependencies(true)
+		if _, isCommon := commonDependencies[ingredient.IngredientID]; !isCommon {
+			// If the ingredient is itself not a common sub-dependency; filter out any common sub dependencies so we don't
+			// report counts multiple times.
+			subDependencies = subDependencies.Filter(buildplan.FilterOutIngredients{commonDependencies}.Filter)
+		}
+		subdepLocale := ""
+		if numSubs := len(subDependencies); numSubs > 0 {
+			subdepLocale = locale.Tl("summary_subdeps", "([ACTIONABLE]{{.V0}}[/RESET] sub-dependencies)", strconv.Itoa(numSubs))
 		}
 
-		item := fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET] %s", ingredient.Name, ingredient.Version, subdependencies)
+		item := fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET] %s", ingredient.Name, ingredient.Version, subdepLocale)
 
 		out.Notice(fmt.Sprintf("[DISABLED]%s[/RESET] %s", prefix, item))
 	}
