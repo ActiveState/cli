@@ -76,12 +76,3 @@ func FilterNotBuild() FilterArtifact {
 		return a.Status != types.ArtifactSucceeded
 	}
 }
-
-type FilterOutIngredients struct {
-	Ingredients IngredientIDMap
-}
-
-func (f FilterOutIngredients) Filter(i *Ingredient) bool {
-	_, blacklist := f.Ingredients[i.IngredientID]
-	return !blacklist
-}
