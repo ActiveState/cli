@@ -131,7 +131,7 @@ func (d *DeptreeByArtifacts) printArtifacts(
 		d.prime.Output().Print(fmt.Sprintf("%s%d. [CYAN]%s[/RESET] [%s] ([DISABLED]%s[/RESET]) %s", indent, count, a.DisplayName, strings.Join(depTypes, "|"), a.ArtifactID, mime))
 		d.printArtifacts(
 			append(parents, a),
-			a.Dependencies(false).Filter(
+			a.Dependencies(false, nil).Filter(
 				buildplan.FilterPlatformArtifacts(platformID),
 			),
 			platformID,
