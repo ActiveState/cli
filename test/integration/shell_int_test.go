@@ -441,7 +441,7 @@ func (suite *ShellIntegrationTestSuite) TestScriptAlias() {
 	defer ts.Close()
 
 	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl-5.32", ".")
-	cp.Expect("Checked out project")
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	suite.NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "testargs.pl"), []byte(`
