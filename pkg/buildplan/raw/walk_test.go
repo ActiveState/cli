@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/pkg/buildplan/mock"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,7 +32,7 @@ func TestRawBuild_walkNodesViaSteps(t *testing.T) {
 			"Ingredient from step",
 			[]strfmt.UUID{"00000000-0000-0000-0000-000000000002"},
 			TagSource,
-			buildWithSourceFromStep,
+			mock.BuildWithSourceFromStep,
 			[]walkCall{
 				{"00000000-0000-0000-0000-000000000002", "Artifact", ""},
 				{"00000000-0000-0000-0000-000000000004", "Artifact", strfmt.UUID("00000000-0000-0000-0000-000000000002")},
@@ -43,7 +44,7 @@ func TestRawBuild_walkNodesViaSteps(t *testing.T) {
 			"Ingredient from generatedBy, multiple artifacts to same ingredient",
 			[]strfmt.UUID{"00000000-0000-0000-0000-000000000002", "00000000-0000-0000-0000-000000000003"},
 			TagSource,
-			buildWithSourceFromGeneratedBy,
+			mock.BuildWithSourceFromGeneratedBy,
 			[]walkCall{
 				{"00000000-0000-0000-0000-000000000002", "Artifact", ""},
 				{"00000000-0000-0000-0000-000000000004", "Source", strfmt.UUID("00000000-0000-0000-0000-000000000002")},
@@ -56,7 +57,7 @@ func TestRawBuild_walkNodesViaSteps(t *testing.T) {
 			"Build time deps",
 			[]strfmt.UUID{"00000000-0000-0000-0000-000000000002"},
 			TagDependency,
-			buildWithBuildDeps,
+			mock.BuildWithBuildDeps,
 			[]walkCall{
 				{"00000000-0000-0000-0000-000000000002", "Artifact", ""},
 				{"00000000-0000-0000-0000-000000000004", "Artifact", strfmt.UUID("00000000-0000-0000-0000-000000000002")},
@@ -128,8 +129,8 @@ func TestRawBuild_walkNodesViaRuntimeDeps(t *testing.T) {
 	}{
 		{
 			"Runtime deps",
-			buildWithRuntimeDeps.Terminals[0].NodeIDs,
-			buildWithRuntimeDeps,
+			mock.BuildWithRuntimeDeps.Terminals[0].NodeIDs,
+			mock.BuildWithRuntimeDeps,
 			[]walkCall{
 				{"00000000-0000-0000-0000-000000000002", "Artifact", ""},
 				{"00000000-0000-0000-0000-000000000007", "Artifact", "00000000-0000-0000-0000-000000000002"},
@@ -138,8 +139,8 @@ func TestRawBuild_walkNodesViaRuntimeDeps(t *testing.T) {
 		},
 		{
 			"Runtime deps via src step",
-			buildWithRuntimeDepsViaSrc.Terminals[0].NodeIDs,
-			buildWithRuntimeDepsViaSrc,
+			mock.BuildWithRuntimeDepsViaSrc.Terminals[0].NodeIDs,
+			mock.BuildWithRuntimeDepsViaSrc,
 			[]walkCall{
 				{"00000000-0000-0000-0000-000000000007", "Artifact", "00000000-0000-0000-0000-000000000002"},
 			},
@@ -147,8 +148,8 @@ func TestRawBuild_walkNodesViaRuntimeDeps(t *testing.T) {
 		},
 		{
 			"Runtime deps with cycle",
-			buildWithRuntimeDepsViaSrcCycle.Terminals[0].NodeIDs,
-			buildWithRuntimeDepsViaSrcCycle,
+			mock.BuildWithRuntimeDepsViaSrcCycle.Terminals[0].NodeIDs,
+			mock.BuildWithRuntimeDepsViaSrcCycle,
 			[]walkCall{
 				{"00000000-0000-0000-0000-000000000013", "Artifact", "00000000-0000-0000-0000-000000000010"},
 			},
