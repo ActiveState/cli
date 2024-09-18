@@ -90,7 +90,7 @@ func (u *Use) Run(params *Params) error {
 		return locale.NewInputError("err_use_commit_id_mismatch")
 	}
 
-	rti, err := runtime_runbit.Update(u.prime, trigger.TriggerUse, runtime_runbit.WithoutHeaders())
+	rti, err := runtime_runbit.Update(u.prime, trigger.TriggerUse, runtime_runbit.WithoutHeaders(), runtime_runbit.WithIgnoreAsync())
 	if err != nil {
 		return locale.WrapError(err, "err_use_runtime_new", "Cannot use this project.")
 	}

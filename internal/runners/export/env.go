@@ -47,7 +47,7 @@ func (e *Env) Run() error {
 		e.project.Dir()),
 	)
 
-	rt, err := runtime_runbit.Update(e.prime, trigger.TriggerActivate, runtime_runbit.WithoutHeaders())
+	rt, err := runtime_runbit.Update(e.prime, trigger.TriggerActivate, runtime_runbit.WithoutHeaders(), runtime_runbit.WithIgnoreAsync())
 	if err != nil {
 		return locale.WrapError(err, "err_export_new_runtime", "Could not initialize runtime")
 	}
