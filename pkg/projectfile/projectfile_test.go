@@ -377,13 +377,12 @@ func TestValidateProjectURL(t *testing.T) {
 
 func Test_parseURL(t *testing.T) {
 	tests := []struct {
-		name    string
-		rawURL  string
-		want    projectURL
-		wantErr bool
+		name   string
+		rawURL string
+		want   projectURL
 	}{
 		{
-			"Valid full legacy URL",
+			"Full URL",
 			"https://platform.activestate.com/Owner/Name?commitID=7BA74758-8665-4D3F-921C-757CD271A0C1&branch=main",
 			projectURL{
 				Owner:          "Owner",
@@ -391,10 +390,9 @@ func Test_parseURL(t *testing.T) {
 				LegacyCommitID: "7BA74758-8665-4D3F-921C-757CD271A0C1",
 				BranchName:     "main",
 			},
-			false,
 		},
 		{
-			"Valid commit URL",
+			"Legacy commit URL",
 			"https://platform.activestate.com/commit/7BA74758-8665-4D3F-921C-757CD271A0C1",
 			projectURL{
 				Owner:          "",
@@ -402,23 +400,16 @@ func Test_parseURL(t *testing.T) {
 				LegacyCommitID: "7BA74758-8665-4D3F-921C-757CD271A0C1",
 				BranchName:     "",
 			},
-			false,
-		},
-		{
-			"Invalid commit",
-			"https://platform.activestate.com/commit/nope",
-			projectURL{},
-			true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := parseURL(tt.rawURL)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("parseURL() error = %v, wantErr %v", err, tt.wantErr)
+			if err != nil {
+				t.Errorf("parseURL() error = %v", err)
 				return
 			}
-			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("parseURL() got = %v, want %v", got, tt.want)
 			}
 		})

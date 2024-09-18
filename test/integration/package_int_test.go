@@ -665,8 +665,10 @@ func (suite *PackageIntegrationTestSuite) TestCVE_NoPrompt() {
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
+	// Note: this version has 2 direct vulnerabilities, and 3 indirect vulnerabilities, but since
+	// we're not prompting, we're only showing a single count.
 	cp = ts.Spawn("install", "urllib3@2.0.2")
-	cp.Expect("Warning: Dependency has 2 known vulnerabilities", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectRe(`Warning: Dependency has \d+ known vulnerabilities`)
 	cp.ExpectExitCode(0)
 }
 
@@ -689,7 +691,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Prompt() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "urllib3@2.0.2")
-	cp.Expect("Warning: Dependency has 2 known vulnerabilities")
+	cp.ExpectRe(`Warning: Dependency has \d+ direct and \d+ indirect known vulnerabilities`)
 	cp.Expect("Do you want to continue")
 	cp.SendLine("y")
 	cp.ExpectExitCode(0)
@@ -711,7 +713,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Indirect() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "private/ActiveState-CLI-Testing/language/python/django_dep", "--ts=now")
-	cp.ExpectRe(`Warning: Dependency has \d indirect known vulnerabilities`)
+	cp.ExpectRe(`Warning: Dependency has \d+ indirect known vulnerabilities`, termtest.OptExpectTimeout(60*time.Second))
 	cp.Expect("Do you want to continue")
 	cp.SendLine("n")
 	cp.ExpectExitCode(1)

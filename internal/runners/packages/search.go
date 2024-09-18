@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -58,16 +59,16 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 		ns = model.NewRawNamespace(params.Ingredient.Namespace)
 	}
 
-	ts, err := getTime(&params.Timestamp, s.auth, s.proj)
+	ts, err := commits_runbit.ExpandTimeForProject(&params.Timestamp, s.auth, s.proj)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get timestamp from params")
 	}
 
 	var packages []*model.IngredientAndVersion
 	if params.ExactTerm {
-		packages, err = model.SearchIngredientsLatestStrict(ns.String(), params.Ingredient.Name, true, true, ts, s.auth)
+		packages, err = model.SearchIngredientsLatestStrict(ns.String(), params.Ingredient.Name, true, true, &ts, s.auth)
 	} else {
-		packages, err = model.SearchIngredientsLatest(ns.String(), params.Ingredient.Name, true, ts, s.auth)
+		packages, err = model.SearchIngredientsLatest(ns.String(), params.Ingredient.Name, true, &ts, s.auth)
 	}
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")

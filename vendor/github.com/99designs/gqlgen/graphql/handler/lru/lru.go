@@ -3,18 +3,19 @@ package lru
 import (
 	"context"
 
+	lru "github.com/hashicorp/golang-lru/v2"
+
 	"github.com/99designs/gqlgen/graphql"
-	lru "github.com/hashicorp/golang-lru"
 )
 
 type LRU struct {
-	lru *lru.Cache
+	lru *lru.Cache[string, any]
 }
 
 var _ graphql.Cache = &LRU{}
 
 func New(size int) *LRU {
-	cache, err := lru.New(size)
+	cache, err := lru.New[string, any](size)
 	if err != nil {
 		// An error is only returned for non-positive cache size
 		// and we already checked for that.

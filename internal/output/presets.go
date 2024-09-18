@@ -32,19 +32,35 @@ func (h Emphasize) MarshalStructured(f Format) interface{} {
 	return Suppress
 }
 
-type preparedOutput struct {
-	plain      interface{}
+type plainOutput struct {
+	plain interface{}
+}
+
+type structuredOutput struct {
 	structured interface{}
 }
 
-func (o *preparedOutput) MarshalOutput(_ Format) interface{} {
+type preparedOutput struct {
+	*plainOutput
+	*structuredOutput
+}
+
+func (o *plainOutput) MarshalOutput(_ Format) interface{} {
 	return o.plain
 }
 
-func (o *preparedOutput) MarshalStructured(_ Format) interface{} {
+func (o *structuredOutput) MarshalStructured(_ Format) interface{} {
 	return o.structured
 }
 
 func Prepare(plain interface{}, structured interface{}) *preparedOutput {
-	return &preparedOutput{plain, structured}
+	return &preparedOutput{&plainOutput{plain}, &structuredOutput{structured}}
 }
+
+func Structured(structured interface{}) *structuredOutput {
+	return &structuredOutput{structured}
+}
+
+const TreeMid = "├─"
+const TreeLink = "│"
+const TreeEnd = "└─"

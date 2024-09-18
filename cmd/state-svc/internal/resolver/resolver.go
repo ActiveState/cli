@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"runtime/debug"
 	"sort"
 	"strconv"
 	"time"
 
+	"github.com/ActiveState/cli/cmd/state-svc/internal/hash"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/messages"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/rtwatcher"
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
@@ -36,6 +38,7 @@ type Resolver struct {
 	updatePoller   *poller.Poller
 	authPoller     *poller.Poller
 	projectIDCache *projectcache.ID
+	fileHasher     *hash.FileHasher
 	an             *sync.Client
 	anForClient    *sync.Client // Use separate client for events sent through service so we don't contaminate one with the other
 	rtwatch        *rtwatcher.Watcher
@@ -81,6 +84,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 		pollUpdate,
 		pollAuth,
 		projectcache.NewID(),
+		hash.NewFileHasher(),
 		an,
 		anForClient,
 		rtwatcher.New(cfg, anForClient),
@@ -263,6 +267,8 @@ func (r *Resolver) GetProcessesInUse(ctx context.Context, execDir string) ([]*gr
 }
 
 func (r *Resolver) GetJwt(ctx context.Context) (*graph.Jwt, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
 	if err := r.auth.MaybeRenew(); err != nil {
 		return nil, errs.Wrap(err, "Could not renew auth token")
 	}
@@ -294,6 +300,21 @@ func (r *Resolver) GetJwt(ctx context.Context) (*graph.Jwt, error) {
 	}
 
 	return jwt, nil
+}
+
+func (r *Resolver) HashGlobs(ctx context.Context, globs []string) (string, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
+	var files []string
+	for _, glob := range globs {
+		matches, err := filepath.Glob(glob)
+		if err != nil {
+			return "", errs.Wrap(err, "Could not match glob: %s", glob)
+		}
+		files = append(files, matches...)
+	}
+
+	return r.fileHasher.HashFiles(files)
 }
 
 func handlePanics(recovered interface{}, stack []byte) {

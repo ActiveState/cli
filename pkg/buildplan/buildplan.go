@@ -3,8 +3,8 @@ package buildplan
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
 	"time"
+	"sort"
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/go-openapi/strfmt"
@@ -130,38 +130,41 @@ func (b *BuildPlan) DiffArtifacts(oldBp *BuildPlan, requestedOnly bool) Artifact
 		}
 	}
 
-	var updated []ArtifactUpdate
-	var added []*Artifact
+	changeset := ArtifactChangeset{}
 	for name, artf := range new {
 		if artfOld, notNew := old[name]; notNew {
 			// The artifact name exists in both the old and new recipe, maybe it was updated though
 			if artfOld.ArtifactID == artf.ArtifactID {
 				continue
 			}
-			updated = append(updated, ArtifactUpdate{
-				From: artfOld,
-				To:   artf,
+			changeset = append(changeset, ArtifactChange{
+				ChangeType: ArtifactUpdated,
+				Artifact:   artf,
+				Old:        artfOld,
 			})
 
 		} else {
 			// If it's not an update it is a new artifact
-			added = append(added, artf)
+			changeset = append(changeset, ArtifactChange{
+				ChangeType: ArtifactAdded,
+				Artifact:   artf,
+			})
 		}
 	}
 
-	var removed []*Artifact
 	for name, artf := range old {
 		if _, noDiff := new[name]; noDiff {
 			continue
 		}
-		removed = append(removed, artf)
+		changeset = append(changeset, ArtifactChange{
+			ChangeType: ArtifactRemoved,
+			Artifact:   artf,
+		})
 	}
 
-	return ArtifactChangeset{
-		Added:   added,
-		Removed: removed,
-		Updated: updated,
-	}
+	sort.SliceStable(changeset, func(i, j int) bool { return changeset[i].Artifact.Name() < changeset[j].Artifact.Name() })
+
+	return changeset
 }
 
 func (b *BuildPlan) Engine() types.BuildEngine {

@@ -53,6 +53,9 @@ type Project struct {
 	Locations []string `json:"locations"`
 }
 
+type Query struct {
+}
+
 type ReportRuntimeUsageResponse struct {
 	Received bool `json:"received"`
 }

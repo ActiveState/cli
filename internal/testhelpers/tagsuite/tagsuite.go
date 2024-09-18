@@ -80,6 +80,7 @@ const (
 	Show            = "show"
 	Switch          = "switch"
 	Uninstall       = "uninstall"
+	Upgrade         = "upgrade"
 	Update          = "update"
 	Use             = "use"
 )

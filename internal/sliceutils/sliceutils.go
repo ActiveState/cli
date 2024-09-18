@@ -1,6 +1,8 @@
 package sliceutils
 
 import (
+	"cmp"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/go-openapi/strfmt"
 	"golang.org/x/text/unicode/norm"
@@ -111,4 +113,24 @@ func ToLookupMapByKey[T any, K string | int | strfmt.UUID](data []T, keyCb func(
 		result[keyCb(d)] = d
 	}
 	return result
+}
+
+// EqualValues checks if two slices have equal values, regardless of ordering. This does not recurse into nested slices or structs.
+func EqualValues[S ~[]E, E cmp.Ordered](a, b S) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	lookup := make(map[E]struct{}, len(a))
+	for _, e := range a {
+		lookup[e] = struct{}{}
+	}
+
+	for _, e := range b {
+		if _, ok := lookup[e]; !ok {
+			return false
+		}
+	}
+
+	return true
 }

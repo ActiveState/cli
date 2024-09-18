@@ -54,14 +54,13 @@ func TestArtifact_Dependencies(t *testing.T) {
 			want: []string{
 				"00000000-0000-0000-0000-000000000002",
 				"00000000-0000-0000-0000-000000000003",
-				"00000000-0000-0000-0000-000000000001",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := tt.artifact
-			deps := a.Dependencies(tt.recursive)
+			deps := a.Dependencies(tt.recursive, nil)
 			got := make([]string, len(deps))
 			for i, dep := range deps {
 				got[i] = dep.ArtifactID.String()
