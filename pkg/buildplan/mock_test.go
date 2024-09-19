@@ -2,7 +2,6 @@ package buildplan
 
 import (
 	"github.com/ActiveState/cli/pkg/buildplan/raw"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 )
 
 // createMockArtifactWithCycles creates a mock artifact with a cycle.
@@ -54,10 +53,10 @@ func createMockArtifactWithCycles() *Artifact {
 //	-> 00000000-0000-0000-0000-000000000002 (child)
 //	  -> 00000000-0000-0000-0000-000000000003 (child)
 func createMockArtifactWithRuntimeDeps() *Artifact {
-	artifact0001 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000001", MimeType: types.XArtifactMimeType}
-	artifact0002 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000002", MimeType: types.XArtifactMimeType}
-	artifact0003 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000003", MimeType: types.XArtifactMimeType}
-	artifact0004 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000004", MimeType: types.XArtifactMimeType}
+	artifact0001 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000001"}
+	artifact0002 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000002"}
+	artifact0003 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000003"}
+	artifact0004 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000004"}
 
 	artifact0001.children = []ArtifactRelation{
 		{
@@ -90,9 +89,9 @@ func createMockArtifactWithRuntimeDeps() *Artifact {
 //	-> 00000000-0000-0000-0000-000000000002 (child)
 //	  -> 00000000-0000-0000-0000-000000000003 (child)
 func createMockArtifactWithBuildTimeDeps() *Artifact {
-	artifact0001 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000001", MimeType: types.XArtifactMimeType}
-	artifact0002 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000002", MimeType: types.XArtifactMimeType}
-	artifact0003 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000003", MimeType: types.XArtifactMimeType}
+	artifact0001 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000001"}
+	artifact0002 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000002"}
+	artifact0003 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000003"}
 
 	artifact0001.children = []ArtifactRelation{
 		{
@@ -122,10 +121,10 @@ func createMockArtifactWithBuildTimeDeps() *Artifact {
 //	        -> 00000000-0000-0000-0000-000000000004 (Artifact child of Artifact0003)
 //	          -> 00000000-0000-0000-0000-000000000030 (Ingredient0030)
 func createIngredientWithRuntimeDeps() *Ingredient {
-	artifact0001 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000001", MimeType: types.XArtifactMimeType}
-	artifact0002 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000002", MimeType: types.XArtifactMimeType}
-	artifact0003 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000003", MimeType: types.XArtifactMimeType}
-	artifact0004 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000004", MimeType: types.XArtifactMimeType}
+	artifact0001 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000001"}
+	artifact0002 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000002"}
+	artifact0003 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000003"}
+	artifact0004 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000004"}
 
 	ingredient0010 := &Ingredient{
 		IngredientSource: &raw.IngredientSource{
@@ -199,12 +198,12 @@ func createIngredientWithRuntimeDeps() *Ingredient {
 //	              -> 00000000-0000-0000-0000-000000000006 (Child of Artifact0005)
 //	                -> 00000000-0000-0000-0000-000000000010 (Ingredient0010 cycle back to the first ingredient)
 func createMockIngredientWithCycles() *Ingredient {
-	artifact0001 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000001", MimeType: types.XArtifactMimeType}
-	artifact0002 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000002", MimeType: types.XArtifactMimeType}
-	artifact0003 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000003", MimeType: types.XArtifactMimeType}
-	artifact0004 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000004", MimeType: types.XArtifactMimeType}
-	artifact0005 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000005", MimeType: types.XArtifactMimeType}
-	artifact0006 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000006", MimeType: types.XArtifactMimeType}
+	artifact0001 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000001"}
+	artifact0002 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000002"}
+	artifact0003 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000003"}
+	artifact0004 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000004"}
+	artifact0005 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000005"}
+	artifact0006 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000006"}
 
 	ingredient0010 := &Ingredient{
 		IngredientSource: &raw.IngredientSource{
