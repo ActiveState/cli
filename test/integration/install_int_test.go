@@ -42,7 +42,7 @@ func (suite *InstallIntegrationTestSuite) TestInstallSuggest() {
 	cp = ts.Spawn("install", "djang")
 	cp.Expect("No results found", e2e.RuntimeSolvingTimeoutOpt)
 	cp.Expect("Did you mean")
-	cp.Expect("language/python/django")
+	cp.Expect("language/python/djang")
 	cp.ExpectExitCode(1)
 }
 
