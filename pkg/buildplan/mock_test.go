@@ -18,9 +18,9 @@ import (
 //	    -> 00000000-0000-0000-0000-000000000001 (Cycle back to the first artifact)
 func createMockArtifactWithCycles() *Artifact {
 	// Create the artifacts with placeholders
-	artifact0001 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000001", MimeType: types.XArtifactMimeType}
-	artifact0002 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000002", MimeType: types.XArtifactMimeType}
-	artifact0003 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000003", MimeType: types.XArtifactMimeType}
+	artifact0001 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000001"}
+	artifact0002 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000002"}
+	artifact0003 := &Artifact{ArtifactID: "00000000-0000-0000-0000-000000000003"}
 
 	// Create the deepest ingredients and artifacts first
 	artifact0003.children = []ArtifactRelation{
