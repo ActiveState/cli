@@ -3,11 +3,13 @@ package integration
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/termtest"
 )
 
 type PackageIntegrationTestSuite struct {
@@ -273,7 +275,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation_multiple() {
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "requests", "urllib3@1.25.6")
 		cp.Expect("Operating on project ActiveState-CLI/small-python")
-		cp.Expect("Added: language/python/requests", e2e.RuntimeSolvingTimeoutOpt)
+		cp.Expect("Added: language/python/requests", termtest.OptExpectTimeout(2*time.Minute)) // Extra time because 2 packages
 		cp.Expect("Added: language/python/urllib3")
 		cp.Wait()
 	})
