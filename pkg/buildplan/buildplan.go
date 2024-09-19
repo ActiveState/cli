@@ -31,9 +31,40 @@ func Unmarshal(data []byte) (*BuildPlan, error) {
 
 	b.raw = &rawBuild
 
-	b.cleanup()
+	b.sanitize()
 
-	// Sort buildplan slices to ensure consistency, because the API does not guarantee a consistent ordering
+	if err := b.hydrate(); err != nil {
+		return nil, errs.Wrap(err, "error hydrating build plan")
+	}
+
+	if len(b.artifacts) == 0 || len(b.ingredients) == 0 || len(b.platforms) == 0 {
+		return nil, errs.New("Buildplan unmarshalling failed as it got zero artifacts (%d), ingredients (%d) and or platforms (%d).",
+			len(b.artifacts), len(b.ingredients), len(b.platforms))
+	}
+
+	return b, nil
+}
+
+func (b *BuildPlan) Marshal() ([]byte, error) {
+	return json.MarshalIndent(b.raw, "", "  ")
+}
+
+// sanitize will remove empty targets and sort slices to ensure consistent interpretation of the same buildplan
+// Empty targets: The type aliasing in the query populates the response with emtpy targets that we should remove
+// Sorting: The API does not do any slice ordering, meaning the same buildplan retrieved twice can use different ordering
+func (b *BuildPlan) sanitize() {
+	b.raw.Steps = sliceutils.Filter(b.raw.Steps, func(s *raw.Step) bool {
+		return s.StepID != ""
+	})
+
+	b.raw.Sources = sliceutils.Filter(b.raw.Sources, func(s *raw.Source) bool {
+		return s.NodeID != ""
+	})
+
+	b.raw.Artifacts = sliceutils.Filter(b.raw.Artifacts, func(a *raw.Artifact) bool {
+		return a.NodeID != ""
+	})
+
 	sort.Slice(b.raw.Sources, func(i, j int) bool { return b.raw.Sources[i].NodeID < b.raw.Sources[j].NodeID })
 	sort.Slice(b.raw.Steps, func(i, j int) bool { return b.raw.Steps[i].StepID < b.raw.Steps[j].StepID })
 	sort.Slice(b.raw.Artifacts, func(i, j int) bool { return b.raw.Artifacts[i].NodeID < b.raw.Artifacts[j].NodeID })
@@ -54,37 +85,6 @@ func Unmarshal(data []byte) (*BuildPlan, error) {
 			sort.Slice(input.NodeIDs, func(i, j int) bool { return input.NodeIDs[i] < input.NodeIDs[j] })
 		}
 	}
-
-	if err := b.hydrate(); err != nil {
-		return nil, errs.Wrap(err, "error hydrating build plan")
-	}
-
-	if len(b.artifacts) == 0 || len(b.ingredients) == 0 || len(b.platforms) == 0 {
-		return nil, errs.New("Buildplan unmarshalling failed as it got zero artifacts (%d), ingredients (%d) and or platforms (%d).",
-			len(b.artifacts), len(b.ingredients), len(b.platforms))
-	}
-
-	return b, nil
-}
-
-func (b *BuildPlan) Marshal() ([]byte, error) {
-	return json.MarshalIndent(b.raw, "", "  ")
-}
-
-// cleanup empty targets
-// The type aliasing in the query populates the response with emtpy targets that we should remove
-func (b *BuildPlan) cleanup() {
-	b.raw.Steps = sliceutils.Filter(b.raw.Steps, func(s *raw.Step) bool {
-		return s.StepID != ""
-	})
-
-	b.raw.Sources = sliceutils.Filter(b.raw.Sources, func(s *raw.Source) bool {
-		return s.NodeID != ""
-	})
-
-	b.raw.Artifacts = sliceutils.Filter(b.raw.Artifacts, func(a *raw.Artifact) bool {
-		return a.NodeID != ""
-	})
 }
 
 func (b *BuildPlan) Platforms() []strfmt.UUID {
