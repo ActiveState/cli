@@ -1,11 +1,11 @@
 module github.com/ActiveState/cli
 
-go 1.22.0
+go 1.22.5
 
-toolchain go1.22.4
+toolchain go1.23.1
 
 require (
-	github.com/99designs/gqlgen v0.17.46
+	github.com/99designs/gqlgen v0.17.54
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 	github.com/ActiveState/termtest v0.7.3-0.20240703202616-34f7899287a4
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
@@ -70,6 +70,7 @@ require (
 
 require (
 	github.com/ActiveState/graphql v0.0.0-20230719154233-6949037a6e48
+	github.com/cespare/xxhash v1.1.0
 	github.com/charmbracelet/bubbles v0.18.0
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/lipgloss v0.9.1
@@ -86,7 +87,6 @@ require (
 	github.com/ProtonMail/go-crypto v1.0.0 // indirect
 	github.com/andybalholm/brotli v1.0.1 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
-	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.4 // indirect

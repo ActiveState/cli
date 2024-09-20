@@ -1,8 +1,8 @@
 # dario.cat/mergo v1.0.0
 ## explicit; go 1.13
 dario.cat/mergo
-# github.com/99designs/gqlgen v0.17.46
-## explicit; go 1.20
+# github.com/99designs/gqlgen v0.17.54
+## explicit; go 1.22.5
 github.com/99designs/gqlgen/complexity
 github.com/99designs/gqlgen/graphql
 github.com/99designs/gqlgen/graphql/errcode
