@@ -199,7 +199,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(ts *time.Time, requir
 		return locale.WrapError(err, "err_resolve_requirements", "Could not resolve one or more requirements")
 	}
 
-	bp := bpModel.NewBuildPlannerModel(r.Auth)
+	bp := bpModel.NewBuildPlannerModel(r.Auth, r.SvcModel)
 	script, err := r.prepareBuildScript(bp, parentCommitID, requirements, ts)
 	if err != nil {
 		return errs.Wrap(err, "Could not prepare build script")
@@ -538,7 +538,7 @@ func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
 	}
 
 	if r.Config.GetBool(constants.OptinBuildscriptsConfig) {
-		bp := bpModel.NewBuildPlannerModel(r.Auth)
+		bp := bpModel.NewBuildPlannerModel(r.Auth, r.SvcModel)
 		script, err := bp.GetBuildScript(commitID.String())
 		if err != nil {
 			return errs.Wrap(err, "Could not get remote build expr and time")

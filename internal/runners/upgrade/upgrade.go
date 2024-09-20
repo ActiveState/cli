@@ -31,6 +31,7 @@ type primeable interface {
 	primer.Auther
 	primer.Projecter
 	primer.Prompter
+	primer.SvcModeler
 }
 
 type Params struct {
@@ -95,7 +96,7 @@ func (u *Upgrade) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Failed to get local commit")
 	}
 
-	bpm := bpModel.NewBuildPlannerModel(u.prime.Auth())
+	bpm := bpModel.NewBuildPlannerModel(u.prime.Auth(), u.prime.SvcModel())
 	localCommit, err := bpm.FetchCommit(localCommitID, proj.Owner(), proj.Name(), nil)
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch build result")

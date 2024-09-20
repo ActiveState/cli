@@ -19,7 +19,7 @@ type BuildPlanner struct {
 	client *client
 }
 
-func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
+func NewBuildPlannerModel(auth *authentication.Auth, cache cacher) *BuildPlanner {
 	bpURL := api.GetServiceURL(api.ServiceBuildPlanner).String()
 	logging.Debug("Using build planner at: %s", bpURL)
 
