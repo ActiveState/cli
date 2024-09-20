@@ -97,6 +97,9 @@ func (i *Ingredient) runtimeDependencies(recursive bool, seen map[strfmt.UUID]st
 
 	dependencies := Ingredients{}
 	for _, a := range i.Artifacts {
+		if !raw.IsStateToolMimeType(a.MimeType) {
+			continue
+		}
 		for _, ac := range a.children {
 			if ac.Relation != RuntimeRelation {
 				continue

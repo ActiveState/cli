@@ -259,7 +259,7 @@ func (a *Artifact) dependencies(recursive bool, maybeIgnore *map[strfmt.UUID]str
 	for _, ac := range a.children {
 		related := len(relations) == 0
 		for _, relation := range relations {
-			if ac.Relation == relation {
+			if ac.Relation == relation && raw.IsStateToolMimeType(ac.Artifact.MimeType) {
 				related = true
 			}
 		}
