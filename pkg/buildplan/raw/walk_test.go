@@ -1,4 +1,4 @@
-package raw
+package raw_test
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/buildplan/mock"
+	"github.com/ActiveState/cli/pkg/buildplan/raw"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,15 +24,15 @@ func TestRawBuild_walkNodesViaSteps(t *testing.T) {
 	tests := []struct {
 		name      string
 		nodeIDs   []strfmt.UUID
-		tag       StepInputTag
-		build     *Build
+		tag       raw.StepInputTag
+		build     *raw.Build
 		wantCalls []walkCall
 		wantErr   bool
 	}{
 		{
 			"Ingredient from step",
 			[]strfmt.UUID{"00000000-0000-0000-0000-000000000002"},
-			TagSource,
+			raw.TagSource,
 			mock.BuildWithSourceFromStep,
 			[]walkCall{
 				{"00000000-0000-0000-0000-000000000002", "Artifact", ""},
@@ -43,7 +44,7 @@ func TestRawBuild_walkNodesViaSteps(t *testing.T) {
 		{
 			"Ingredient from generatedBy, multiple artifacts to same ingredient",
 			[]strfmt.UUID{"00000000-0000-0000-0000-000000000002", "00000000-0000-0000-0000-000000000003"},
-			TagSource,
+			raw.TagSource,
 			mock.BuildWithSourceFromGeneratedBy,
 			[]walkCall{
 				{"00000000-0000-0000-0000-000000000002", "Artifact", ""},
@@ -56,7 +57,7 @@ func TestRawBuild_walkNodesViaSteps(t *testing.T) {
 		{
 			"Build time deps",
 			[]strfmt.UUID{"00000000-0000-0000-0000-000000000002"},
-			TagDependency,
+			raw.TagDependency,
 			mock.BuildWithBuildDeps,
 			[]walkCall{
 				{"00000000-0000-0000-0000-000000000002", "Artifact", ""},
@@ -70,16 +71,16 @@ func TestRawBuild_walkNodesViaSteps(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			calls := []walkCall{}
-			walk := func(node interface{}, parent *Artifact) error {
+			walk := func(node interface{}, parent *raw.Artifact) error {
 				var parentID *strfmt.UUID
 				if parent != nil {
 					parentID = &parent.NodeID
 				}
 				var id strfmt.UUID
 				switch v := node.(type) {
-				case *Artifact:
+				case *raw.Artifact:
 					id = v.NodeID
-				case *Source:
+				case *raw.Source:
 					id = v.NodeID
 				default:
 					t.Fatalf("unexpected node type %T", v)
@@ -123,7 +124,7 @@ func TestRawBuild_walkNodesViaRuntimeDeps(t *testing.T) {
 	tests := []struct {
 		name      string
 		nodeIDs   []strfmt.UUID
-		build     *Build
+		build     *raw.Build
 		wantCalls []walkCall
 		wantErr   bool
 	}{
@@ -160,16 +161,16 @@ func TestRawBuild_walkNodesViaRuntimeDeps(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			calls := []walkCall{}
-			walk := func(node interface{}, parent *Artifact) error {
+			walk := func(node interface{}, parent *raw.Artifact) error {
 				var parentID *strfmt.UUID
 				if parent != nil {
 					parentID = &parent.NodeID
 				}
 				var id strfmt.UUID
 				switch v := node.(type) {
-				case *Artifact:
+				case *raw.Artifact:
 					id = v.NodeID
-				case *Source:
+				case *raw.Source:
 					id = v.NodeID
 				default:
 					t.Fatalf("unexpected node type %T", v)
