@@ -186,7 +186,9 @@ func (as Artifacts) Dependencies(recursive bool) Artifacts {
 // Dependencies returns ALL dependencies that an artifact has, this covers runtime and build time dependencies.
 // It does not cover test dependencies as we have no use for them in the state tool.
 func (a *Artifact) Dependencies(recursive bool) Artifacts {
-	return a.dependencies(recursive, make(map[strfmt.UUID]struct{}), RuntimeRelation, BuildtimeRelation)
+	as := a.dependencies(recursive, make(map[strfmt.UUID]struct{}), RuntimeRelation, BuildtimeRelation)
+	as = sliceutils.UniqueByProperty(as, func(a *Artifact) any { return a.ArtifactID })
+	return as
 }
 
 func (a *Artifact) dependencies(recursive bool, seen map[strfmt.UUID]struct{}, relations ...Relation) Artifacts {
