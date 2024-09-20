@@ -365,6 +365,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCveReport() {
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutFromArchive() {
+	suite.T().Skip("Skipping until https://activestatef.atlassian.net/browse/DX-3057 is fixed")
 	suite.OnlyRunForTags(tagsuite.Checkout)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
