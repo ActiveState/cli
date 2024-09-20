@@ -15,12 +15,16 @@ type ArtifactResponse struct {
 }
 
 type BuildResponse struct {
-	Type      string             `json:"__typename"`
-	Artifacts []ArtifactResponse `json:"artifacts"`
-	Status    string             `json:"status"`
 	*Error
 	*PlanningError
-	RawMessage json.RawMessage
+	Type       string             `json:"__typename"`
+	Artifacts  []ArtifactResponse `json:"artifacts"`
+	Status     string             `json:"status"`
+	RawMessage json.RawMessage    `json:"rawMessage"`
+}
+
+func (b *BuildResponse) MarshalJSON() ([]byte, error) {
+	return b.RawMessage.MarshalJSON()
 }
 
 // UnmarshalJSON lets us record both the raw json message as well as unmarshal the parts we care about
