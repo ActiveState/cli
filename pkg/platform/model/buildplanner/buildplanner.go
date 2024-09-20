@@ -1,6 +1,8 @@
 package buildplanner
 
 import (
+	"time"
+
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -17,6 +19,22 @@ type client struct {
 type BuildPlanner struct {
 	auth   *authentication.Auth
 	client *client
+	cache  cacher
+}
+
+type cacher interface {
+	GetCache(key string) (string, error)
+	SetCache(key, value string, expiry time.Duration) error
+}
+
+type VoidCacher struct{}
+
+func (v VoidCacher) GetCache(key string) (string, error) {
+	return "", nil
+}
+
+func (v VoidCacher) SetCache(key, value string, expiry time.Duration) error {
+	return nil
 }
 
 func NewBuildPlannerModel(auth *authentication.Auth, cache cacher) *BuildPlanner {
@@ -29,10 +47,16 @@ func NewBuildPlannerModel(auth *authentication.Auth, cache cacher) *BuildPlanner
 		gqlClient.SetTokenProvider(auth)
 	}
 
+	// To avoid error prone nil checks all over the place
+	if cache == nil {
+		cache = VoidCacher{}
+	}
+
 	return &BuildPlanner{
 		auth: auth,
 		client: &client{
 			gqlClient: gqlClient,
 		},
+		cache: cache,
 	}
 }

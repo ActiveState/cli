@@ -1,6 +1,7 @@
 package buildplanner
 
 import (
+	"encoding/json"
 	"errors"
 	"regexp"
 	"strconv"
@@ -53,16 +54,37 @@ func (c *client) Run(req gqlclient.Request, resp interface{}) error {
 	return c.gqlClient.Run(req, resp)
 }
 
+const fetchCommitCacheExpiry = time.Hour * 12
+
 func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, target *string) (*Commit, error) {
-	logging.Debug("FetchBuildResult, commitID: %s, owner: %s, project: %s", commitID, owner, project)
+	logging.Debug("FetchCommit, commitID: %s, owner: %s, project: %s", commitID, owner, project)
 	resp := &response.ProjectCommitResponse{}
-	err := b.client.Run(request.ProjectCommit(commitID.String(), owner, project, target), resp)
+
+	cacheKey := strings.Join([]string{"FetchCommit", commitID.String(), owner, project, ptr.From(target, "")}, "-")
+	respRaw, err := b.cache.GetCache(cacheKey)
 	if err != nil {
-		err = processBuildPlannerError(err, "failed to fetch commit")
-		if !b.auth.Authenticated() {
-			err = errs.AddTips(err, locale.T("tip_private_project_auth"))
+		return nil, errs.Wrap(err, "failed to get cache")
+	}
+	if respRaw != "" {
+		if err := json.Unmarshal([]byte(respRaw), resp); err != nil {
+			return nil, errs.Wrap(err, "failed to unmarshal cache: %s", cacheKey)
 		}
-		return nil, err
+	} else {
+		err := b.client.Run(request.ProjectCommit(commitID.String(), owner, project, target), resp)
+		if err != nil {
+			err = processBuildPlannerError(err, "failed to fetch commit")
+			if !b.auth.Authenticated() {
+				err = errs.AddTips(err, locale.T("tip_private_project_auth"))
+			}
+			return nil, err
+		}
+		respBytes, err := json.Marshal(resp)
+		if err != nil {
+			return nil, errs.Wrap(err, "failed to marshal cache")
+		}
+		if err := b.cache.SetCache(cacheKey, string(respBytes), fetchCommitCacheExpiry); err != nil {
+			return nil, errs.Wrap(err, "failed to set cache")
+		}
 	}
 
 	// The BuildPlanner will return a build plan with a status of
