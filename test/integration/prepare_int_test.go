@@ -166,8 +166,9 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	cp = ts.Spawn("activate")
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("which python3")
-	cp.SendLine("python3 --version")
+	cp.SendLine("python3")
 	cp.Expect("ActiveState")
+	cp.SendLine("exit()") // exit from Python interpreter
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
