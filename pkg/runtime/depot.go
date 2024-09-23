@@ -51,10 +51,11 @@ func (e ErrVolumeMismatch) Error() string {
 }
 
 type depot struct {
-	config    depotConfig
-	depotPath string
-	artifacts map[strfmt.UUID]struct{}
-	fsMutex   *sync.Mutex
+	config            depotConfig
+	depotPath         string
+	artifacts         map[strfmt.UUID]struct{}
+	fsMutex           *sync.Mutex
+	supportsHardLinks bool
 }
 
 func newDepot(runtimePath string) (*depot, error) {
@@ -74,9 +75,10 @@ func newDepot(runtimePath string) (*depot, error) {
 		config: depotConfig{
 			Deployments: map[strfmt.UUID][]deployment{},
 		},
-		depotPath: depotPath,
-		artifacts: map[strfmt.UUID]struct{}{},
-		fsMutex:   &sync.Mutex{},
+		depotPath:         depotPath,
+		artifacts:         map[strfmt.UUID]struct{}{},
+		fsMutex:           &sync.Mutex{},
+		supportsHardLinks: supportsHardLinks(depotPath),
 	}
 
 	if !fileutils.TargetExists(depotPath) {
@@ -146,6 +148,10 @@ func (d *depot) Put(id strfmt.UUID) error {
 
 // DeployViaLink will take an artifact from the depot and link it to the target path.
 func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) error {
+	if !d.supportsHardLinks {
+		return d.DeployViaCopy(id, relativeSrc, absoluteDest)
+	}
+
 	d.fsMutex.Lock()
 	defer d.fsMutex.Unlock()
 
