@@ -66,19 +66,19 @@ func makePlatformsFromModelPlatforms(platforms []*model.Platform) []*Platform {
 
 // Params represents the minimal defining details of a platform.
 type Params struct {
-	Platform PlatformVersion
-	BitWidth int
-	name     string
-	version  string
+	Platform        PlatformVersion
+	BitWidth        int
+	resolvedName    string // Holds the provided platforn name, or defaults to curernt platform name if not provided
+	resolvedVersion string // Holds the provided platform version, or defaults to latest version if not provided
 }
 
 func prepareParams(ps Params) (Params, error) {
-	ps.name = ps.Platform.Name()
-	if ps.name == "" {
-		ps.name = sysinfo.OS().String()
+	ps.resolvedName = ps.Platform.Name()
+	if ps.resolvedName == "" {
+		ps.resolvedName = sysinfo.OS().String()
 	}
-	ps.version = ps.Platform.Version()
-	if ps.version == "" {
+	ps.resolvedVersion = ps.Platform.Version()
+	if ps.resolvedVersion == "" {
 		return prepareLatestVersion(ps)
 	}
 
@@ -99,8 +99,8 @@ func prepareLatestVersion(params Params) (Params, error) {
 	if err != nil {
 		return params, locale.WrapError(err, "err_fetch_platform", "Could not get platform details")
 	}
-	params.name = *platform.Kernel.Name
-	params.version = *platform.KernelVersion.Version
+	params.resolvedName = *platform.Kernel.Name
+	params.resolvedVersion = *platform.KernelVersion.Version
 
 	bitWidth, err := strconv.Atoi(*platform.CPUArchitecture.BitWidth)
 	if err != nil {

@@ -254,7 +254,7 @@ func (u *Upgrade) renderUserFacing(changes []structuredChange, expand bool) erro
 		})
 
 		needsDepRow := len(change.TransitiveDeps) > 0
-		needsNamespaceRow := strings.HasPrefix(change.Namespace, model.OrgNamespacePrefix)
+		needsNamespaceRow := strings.HasPrefix(change.Namespace, model.NamespaceOrg.Prefix())
 
 		if needsNamespaceRow {
 			treeSymbol := output.TreeEnd
