@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/thoas/go-funk"
@@ -125,6 +126,24 @@ func NewEnvironmentDefinition(fp string) (*EnvironmentDefinition, error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "could not unmarshal environment definition file: %s", fp)
 	}
+
+	if ignores := os.Getenv(constants.IgnoreEnvEnvVarName); ignores != "" {
+		ignore := make(map[string]bool)
+		for _, name := range strings.Split(ignores, ",") {
+			ignore[name] = true
+		}
+
+		// Remove any environment variables to ignore.
+		for i := 0; i < len(ed.Env); {
+			if _, exists := ignore[ed.Env[i].Name]; !exists {
+				i++
+				continue
+			}
+			ed.Env[i] = ed.Env[len(ed.Env)-1]
+			ed.Env = ed.Env[:len(ed.Env)-1]
+		}
+	}
+
 	return ed, nil
 }
 
