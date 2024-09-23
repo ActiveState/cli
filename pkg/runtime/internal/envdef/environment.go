@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -134,14 +135,10 @@ func NewEnvironmentDefinition(fp string) (*EnvironmentDefinition, error) {
 		}
 
 		// Remove any environment variables to ignore.
-		for i := 0; i < len(ed.Env); {
-			if _, exists := ignore[ed.Env[i].Name]; !exists {
-				i++
-				continue
-			}
-			ed.Env[i] = ed.Env[len(ed.Env)-1]
-			ed.Env = ed.Env[:len(ed.Env)-1]
-		}
+		ed.Env = sliceutils.Filter(ed.Env, func(e EnvironmentVariable) bool {
+			_, exists := ignore[e.Name]
+			return !exists
+		})
 	}
 
 	return ed, nil
