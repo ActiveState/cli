@@ -125,7 +125,7 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 		cp.ExpectExitCode(0)
 
 		cp = ts.Spawn("import", "requirements.txt")
-		cp.ExpectExitCode(0, termtest.OptExpectTimeout(30*time.Second))
+		cp.ExpectExitCode(0, termtest.OptExpectTimeout(2*time.Minute)) // wait twice as long as a normal solve
 
 		cp = ts.Spawn("packages")
 		cp.Expect("coverage")
