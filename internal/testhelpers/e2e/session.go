@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -692,6 +693,13 @@ func (s *Session) LogFiles() []string {
 	if err != nil {
 		fmt.Printf("Error walking log dir: %v", err)
 	}
+
+	// Sort by filename timestamp (filenames are `[executable]-[processid]-[timestamp].log`)
+	slices.SortFunc(result, func(a, b string) int {
+		aa := strings.Split(a, "-")
+		bb := strings.Split(b, "-")
+		return strings.Compare(bb[len(bb)-1], aa[len(aa)-1])
+	})
 
 	return result
 }

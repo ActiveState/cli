@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -37,6 +38,19 @@ func (suite *ManifestIntegrationTestSuite) TestManifest() {
 	cp.Expect("auto → 5.9.0")
 	cp.Expect("None detected")
 	cp.ExpectExitCode(0)
+
+	// Ensure that `state manifest` utilized the cache (checkout should've warmed it)
+	logFile := ts.LogFiles()[0]
+	log := string(fileutils.ReadFileUnsafe(logFile))
+	matched := false
+	for _, line := range strings.Split(log, "\n") {
+		if strings.Contains(line, "GetCache FetchCommit-") {
+			suite.Require().Regexp(regexp.MustCompile(`FetchCommit-.*result size: [1-9]`), line)
+			matched = true
+			break
+		}
+	}
+	suite.Require().True(matched, "log file should contain a line with the FetchCommit call", log)
 }
 
 func (suite *ManifestIntegrationTestSuite) TestManifest_JSON() {
