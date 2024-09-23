@@ -39,7 +39,7 @@ func (b *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID, 
 		}
 
 		// Add the platform.
-		if err := script.UpdatePlatform(types.OperationAdded, params.PlatformID); err != nil {
+		if err := script.AddPlatform(params.PlatformID); err != nil {
 			return "", errs.Wrap(err, "Unable to add platform")
 		}
 

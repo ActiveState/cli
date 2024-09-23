@@ -484,18 +484,6 @@ field_version:
   other: Version
 field_bitwidth:
   other: Bit Width
-commit_message_added_platform:
-  other: "Added platform: {{.V0}} {{.V1}}bit {{.V2}}"
-commit_message_updated_platform:
-  other: "Updated platform: {{.V0}} to {{.V1}}"
-commit_message_removed_platform:
-  other: "Removed platform: {{.V0}} {{.V1}}bit {{.V2}}"
-commit_message_added_language:
-  other: "Added language: {{.V0}} {{.V1}}"
-commit_message_updated_language:
-  other: "Updated language: {{.V0}} to {{.V1}}"
-commit_message_removed_language:
-  other: "Removed language: {{.V0}} {{.V1}}"
 fileutils_err_amend_file:
   other: "Could not edit file: [NOTICE]{{.V0}}[/RESET]"
 err_auth_empty_token:
@@ -604,12 +592,10 @@ package_search_flag_exact-term_description:
   other: Ensures that search results match search term exactly
 package_import_flag_filename_description:
   other: The file to import
-commit_message_added_package:
-  other: "Added package: {{.V0}}@{{.V1}}"
-commit_message_removed_package:
-  other: "Removed package: {{.V0}}"
-commit_message_updated_package:
-  other: "Updated package: {{.V0}} to {{.V1}}"
+commit_message_added:
+  other: "Added: {{.V0}}"
+commit_message_removed:
+  other: "Removed: {{.V0}}"
 commit_message_add_initial:
   other: Initialize project via the State Tool
 commit_reqstext_message:
@@ -642,56 +628,12 @@ package_name:
   other: Name
 package_version:
   other: Version
-package_added:
-  other: "Package added: [NOTICE]{{.V0}}[/RESET]"
-package_version_added:
-  other: "Package added: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
-bundle_added:
-  other: "[SUCCESS]✔ {{.V0}} Bundle successfully installed![/RESET]"
-bundle_version_added:
-  other: "[SUCCESS]✔ {{.V0}} Bundle @ version {{.V1}} successfully installed![/RESET]"
-language_updated:
-  other: "Language updated: [NOTICE]{{.V0}}[/RESET]"
-language_version_updated:
-  other: "Language updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
-err_package_updated:
-  other: Failed to update package
-err_bundle_updated:
-  other: Failed to update bundle
-package_updated:
-  other: "Package updated: [NOTICE]{{.V0}}[/RESET]"
-package_version_updated:
-  other: "Package updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
-bundle_updated:
-  other: "Bundle updated: [NOTICE]{{.V0}}[/RESET]"
-bundle_version_updated:
-  other: "Bundle updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
-err_package_removed:
-  other: Failed to remove package
 err_remove_requirement_not_found:
   other: Could not remove requirement '[ACTIONABLE]{{.V0}}[/RESET]', because it does not exist.
 err_remove_platform_not_found:
   other: Could not remove platform '[ACTIONABLE]{{.V0}}[/RESET]', because it does not exist.
-err_bundle_removed:
-  other: Failed to remove bundle
-err_packages_removed:
-  other: Failed to remove packages
-package_removed:
-  other: "Package uninstalled: [NOTICE]{{.V0}}[/RESET]"
-bundle_removed:
-  other: "Bundle uninstalled: [NOTICE]{{.V0}}[/RESET]"
 err_update_build_script:
   other: Could not update runtime build script
-raw_version_added:
-  other: "Package added: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
-raw_added:
-  other: "Package added: [NOTICE]{{.V0}}[/RESET]"
-raw_version_updated:
-  other: "Package updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
-raw_updated:
-  other: "Package updated: [NOTICE]{{.V0}}[/RESET]"
-raw_removed:
-  other: "Package removed: [NOTICE]{{.V0}}[/RESET]"
 notice_commit_build_script:
   other: |
     Your local build script has changes that should be committed. Please run '[ACTIONABLE]state commit[/RESET]' to do so.
@@ -860,10 +802,6 @@ languages_install_cmd_description:
   other: Update the language of a project
 arg_languages_install_description:
   other: The language to update in the form of <language>@<version>
-err_language_format:
-  other: The language and version provided is not formatting correctly. It must be in the form of <language>@<version>
-err_language_mismatch:
-  other: Cannot change languages. Only changes to the current project's language version are allowed
 err_no_recipes:
   other: No build recipes could be generated for the current project
 err_order_unknown:
@@ -939,7 +877,7 @@ err_arg_required:
 err_init_no_language:
   other: "A project has not been set using 'state use'. You must include the [NOTICE]language[/RESET] argument. For more help, run '[ACTIONABLE]state init --help[/RESET]'."
 platform_added:
-  other: "[NOTICE]{{.V0}}@{{.V1}}[/RESET] has been added."
+  other: "[NOTICE]{{.V0}}[/RESET] has been added."
 platform_removed:
   other: "[NOTICE]{{.V0}}@{{.V1}}[/RESET] has been removed."
 deploy_usable_path:
@@ -1145,23 +1083,25 @@ err_exec_recursion:
     To allow recursion, set [ACTIONABLE]{{.V1}}=true[/RESET]
 package_ingredient_alternatives:
   other: |
-    No results found for search term "[NOTICE]{{.V0}}[/RESET]". Did you mean:
+    No results found for search term {{.V0}}. Did you mean:
 
     {{.V1}}
 
-    Run "[ACTIONABLE]state search {{.V0}}[/RESET]" to see more suggestions.
+    Use "[ACTIONABLE]state search[/RESET]" to find more suggestions.
 package_ingredient_alternatives_nosuggest:
   other: |
-    No results found for search term "[NOTICE]{{.V0}}[/RESET]".
+    No results found for search term {{.V0}}.
+
+    Use "[ACTIONABLE]state search[/RESET]" to find alternatives.
+package_requirements_no_match:
+  other: |
+    No results found for following packages: {{.V0}}.
 
     Run "[ACTIONABLE]state search {{.V0}}[/RESET]" to find alternatives.
-package_ingredient_alternatives_nolang:
-  other: |
-    No results found for search term "[NOTICE]{{.V0}}[/RESET]".
-
-    This may be because you have not installed a language for your project. Install a language by running "[ACTIONABLE]state languages install <language-name>[/RESET]".
 progress_search:
-  other: "• Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalog"
+  other: "• Searching for packages in the ActiveState Catalog"
+progress_platform_search:
+  other: "• Searching for platform in the ActiveState Catalog"
 progress_cve_search:
   other: "• Checking for vulnerabilities (CVEs) on [ACTIONABLE]{{.V0}}[/RESET] and its dependencies"
 setup_runtime:
@@ -1526,11 +1466,6 @@ err_headless:
   other: Cannot operate on a headless project. Please visit {{.V0}} to convert your project and try again.
 notice_needs_buildscript_reset:
   other: Your project is missing its buildscript file. Please run '[ACTIONABLE]state reset LOCAL[/RESET]' to recreate it.
-
-err_initial_no_requirement:
-  other: |
-    Could not find compatible requirement for initial commit. Please ensure that you are trying to install a valid package.
-    To check for available packages run '[ACTIONABLE]state search <package_name>[/RESET]'.
 manifest_deprecation_warning:
   other: |
     [WARNING]Warning:[/RESET] This command is deprecated. Please use '[ACTIONABLE]state manifest[/RESET]' instead.
@@ -1592,3 +1527,33 @@ flag_state_upgrade_expand_description:
   other: Show individual transitive dependency changes rather than a summary
 flag_state_upgrade_ts_description:
   other: Manually specify the timestamp to 'upgrade' to. Can be either 'now' or RFC3339 formatted timestamp.
+platform_add_not_found:
+  other: Could not find a platform matching your criteria
+err_uninstall_nomatch:
+  other: "The following package(s) could not be found in your project: {{.V0}}"
+err_uninstall_multimatch:
+  other: |
+    The following terms match multiple requirements in your project: [ACTIONABLE]{{.V0}}[/RESET].
+    Please specify the requirement to uninstall by using its full namespace.
+    To view the namespace of your project requirements run: [ACTIONABLE]state manifest[/RESET].
+err_uninstall_platform_nomatch:
+  other: "The specified platform does not exist in your project"
+err_uninstall_platform_multimatch:
+  other: |
+    The platform query you provided matches multiple platforms in your project.
+    Please specify the platform to uninstall by using its version and bit-width. 
+    To view the platforms your project uses run: [ACTIONABLE]state platforms[/RESET].
+progress_requirements:
+  other: "• Updating requirements"
+progress_platforms:
+  other: "• Updating platforms"
+prompt_pkgop_ingredient:
+  other: Multiple Matches
+prompt_pkgop_ingredient_msg:
+  other: "Your query for [ACTIONABLE]{{.V0}}[/RESET] has multiple matches. Which one would you like to use?"
+install_report_added:
+  other: "Added: [NOTICE]{{.V0}}[/RESET]"
+install_report_updated:
+  other: "Updated: [NOTICE]{{.V0}}[/RESET]"
+install_report_removed:
+  other: "Removed: [NOTICE]{{.V0}}[/RESET]"

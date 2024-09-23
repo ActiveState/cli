@@ -347,7 +347,11 @@ func TestUpdatePlatform(t *testing.T) {
 			script, err := UnmarshalBuildExpression(data, nil)
 			assert.NoError(t, err)
 
-			err = script.UpdatePlatform(tt.args.operation, tt.args.platform)
+			if tt.args.operation == types.OperationAdded {
+				err = script.AddPlatform(tt.args.platform)
+			} else {
+				err = script.RemovePlatform(tt.args.platform)
+			}
 			if err != nil {
 				if tt.wantErr {
 					return
