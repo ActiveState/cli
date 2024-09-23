@@ -24,13 +24,17 @@ func supportsHardLinks(path string) (supported bool) {
 	}()
 
 	target := filepath.Join(path, linkTarget)
-	if !fileutils.TargetExists(target) {
-		err := fileutils.Touch(target)
-		if err != nil {
-			multilog.Error("Error touching target: %v", err)
-			return false
-		}
+	err := fileutils.Touch(target)
+	if err != nil {
+		multilog.Error("Error touching target: %v", err)
+		return false
 	}
+	defer func() {
+		err := os.Remove(target)
+		if err != nil {
+			multilog.Error("Error removing target: %v", err)
+		}
+	}()
 
 	lnk := filepath.Join(path, link)
 	if fileutils.TargetExists(lnk) {
@@ -42,9 +46,15 @@ func supportsHardLinks(path string) (supported bool) {
 	}
 
 	logging.Debug("Attempting to link '%s' to '%s'", lnk, target)
-	err := smartlink.Link(target, lnk)
+	err = smartlink.Link(target, lnk)
 	if err != nil {
 		logging.Debug("Test link creation failed: %v", err)
+		return false
 	}
-	return err == nil
+	err = os.Remove(lnk)
+	if err != nil {
+		multilog.Error("Error removing link: %v", err)
+	}
+
+	return true
 }
