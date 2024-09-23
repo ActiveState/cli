@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/localcommit"
@@ -15,6 +16,16 @@ import (
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 )
+
+type primeable interface {
+	primer.Outputer
+	primer.Prompter
+	primer.Projecter
+	primer.Auther
+	primer.Configurer
+	primer.Analyticer
+	primer.SvcModeler
+}
 
 // Languages manages the listing execution context.
 type Languages struct {
