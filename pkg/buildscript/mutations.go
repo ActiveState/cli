@@ -1,6 +1,8 @@
 package buildscript
 
 import (
+	"errors"
+
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -15,15 +17,15 @@ func (b *BuildScript) UpdateRequirement(operation types.Operation, requirement t
 	var err error
 	switch operation {
 	case types.OperationAdded:
-		err = b.addRequirement(requirement)
+		err = b.AddRequirement(requirement)
 	case types.OperationRemoved:
-		err = b.removeRequirement(requirement)
+		err = b.RemoveRequirement(requirement)
 	case types.OperationUpdated:
-		err = b.removeRequirement(requirement)
+		err = b.RemoveRequirement(requirement)
 		if err != nil {
 			break
 		}
-		err = b.addRequirement(requirement)
+		err = b.AddRequirement(requirement)
 	default:
 		return errs.New("Unsupported operation")
 	}
@@ -33,7 +35,11 @@ func (b *BuildScript) UpdateRequirement(operation types.Operation, requirement t
 	return nil
 }
 
-func (b *BuildScript) addRequirement(requirement types.Requirement) error {
+func (b *BuildScript) AddRequirement(requirement types.Requirement) error {
+	if err := b.RemoveRequirement(requirement); err != nil && !errors.As(err, ptr.To(&RequirementNotFoundError{})) {
+		return errs.Wrap(err, "Could not remove requirement")
+	}
+
 	// Use object form for now, and then transform it into function form later.
 	obj := []*Assignment{
 		{requirementNameKey, newString(requirement.Name)},
@@ -72,34 +78,44 @@ type RequirementNotFoundError struct {
 	*locale.LocalizedError // for legacy non-user-facing error usages
 }
 
-func (b *BuildScript) removeRequirement(requirement types.Requirement) error {
+// RemoveRequirement will remove any matching requirement. Note that it only operates on the Name and Namespace fields.
+// It will not verify if revision or version match.
+func (b *BuildScript) RemoveRequirement(requirement types.Requirement) error {
 	requirementsNode, err := b.getRequirementsNode()
 	if err != nil {
 		return errs.Wrap(err, "Could not get requirements node")
 	}
 
-	var found bool
+	match := false
 	for i, req := range *requirementsNode.List {
 		if req.FuncCall == nil || req.FuncCall.Name != reqFuncName {
 			continue
 		}
 
 		for _, arg := range req.FuncCall.Arguments {
-			if arg.Assignment.Key == requirementNameKey && strValue(arg.Assignment.Value) == requirement.Name {
-				list := *requirementsNode.List
-				list = append(list[:i], list[i+1:]...)
-				requirementsNode.List = &list
-				found = true
-				break
+			if arg.Assignment.Key == requirementNameKey {
+				match = strValue(arg.Assignment.Value) == requirement.Name
+				if !match || requirement.Namespace == "" {
+					break
+				}
+			}
+			if requirement.Namespace != "" && arg.Assignment.Key == requirementNamespaceKey {
+				match = strValue(arg.Assignment.Value) == requirement.Namespace
+				if !match {
+					break
+				}
 			}
 		}
 
-		if found {
+		if match {
+			list := *requirementsNode.List
+			list = append(list[:i], list[i+1:]...)
+			requirementsNode.List = &list
 			break
 		}
 	}
 
-	if !found {
+	if !match {
 		return &RequirementNotFoundError{
 			requirement.Name,
 			locale.NewInputError("err_remove_requirement_not_found", "", requirement.Name),
@@ -109,23 +125,7 @@ func (b *BuildScript) removeRequirement(requirement types.Requirement) error {
 	return nil
 }
 
-func (b *BuildScript) UpdatePlatform(operation types.Operation, platformID strfmt.UUID) error {
-	var err error
-	switch operation {
-	case types.OperationAdded:
-		err = b.addPlatform(platformID)
-	case types.OperationRemoved:
-		err = b.removePlatform(platformID)
-	default:
-		return errs.New("Unsupported operation")
-	}
-	if err != nil {
-		return errs.Wrap(err, "Could not update BuildScript's platform")
-	}
-	return nil
-}
-
-func (b *BuildScript) addPlatform(platformID strfmt.UUID) error {
+func (b *BuildScript) AddPlatform(platformID strfmt.UUID) error {
 	platformsNode, err := b.getPlatformsNode()
 	if err != nil {
 		return errs.Wrap(err, "Could not get platforms node")
@@ -143,7 +143,7 @@ type PlatformNotFoundError struct {
 	*locale.LocalizedError // for legacy non-user-facing error usages
 }
 
-func (b *BuildScript) removePlatform(platformID strfmt.UUID) error {
+func (b *BuildScript) RemovePlatform(platformID strfmt.UUID) error {
 	platformsNode, err := b.getPlatformsNode()
 	if err != nil {
 		return errs.Wrap(err, "Could not get platforms node")

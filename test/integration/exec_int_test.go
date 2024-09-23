@@ -161,7 +161,7 @@ func (suite *ExecIntegrationTestSuite) TestExeBatArguments() {
 		suite.T().Skip("This test is only for windows")
 	}
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")

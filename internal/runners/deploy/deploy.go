@@ -182,7 +182,7 @@ func (d *Deploy) install(params *Params, commitID strfmt.UUID) (rerr error) {
 	pg := progress.NewRuntimeProgressIndicator(d.output)
 	defer rtutils.Closer(pg.Close, &rerr)
 
-	if _, err := runtime_runbit.Update(d.prime, trigger.TriggerDeploy, runtime_runbit.WithTargetDir(params.Path)); err != nil {
+	if _, err := runtime_runbit.Update(d.prime, trigger.TriggerDeploy, runtime_runbit.WithTargetDir(params.Path), runtime_runbit.WithIgnoreAsync()); err != nil {
 		return locale.WrapError(err, "err_deploy_runtime_err", "Could not initialize runtime")
 	}
 

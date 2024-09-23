@@ -154,8 +154,6 @@ func (b *BuildPlan) hydrateWithIngredients(artifact *Artifact, platformID *strfm
 	err := b.raw.WalkViaSteps([]strfmt.UUID{artifact.ArtifactID}, raw.TagSource,
 		func(node interface{}, parent *raw.Artifact) error {
 			switch v := node.(type) {
-			case *raw.Artifact:
-				return nil // We've already got our artifacts
 			case *raw.Source:
 				// logging.Debug("Walking source '%s (%s)'", v.Name, v.NodeID)
 
@@ -193,7 +191,11 @@ func (b *BuildPlan) hydrateWithIngredients(artifact *Artifact, platformID *strfm
 
 				return nil
 			default:
-				return errs.New("unexpected node type '%T': %#v", v, v)
+				if a, ok := v.(*raw.Artifact); ok && a.NodeID == artifact.ArtifactID {
+					return nil // continue
+				}
+				// Source ingredients are only relevant when they link DIRECTLY to the artifact
+				return raw.WalkInterrupt{}
 			}
 
 			return nil
@@ -212,7 +214,7 @@ func (b *BuildPlan) sanityCheck() error {
 	// Ensure all artifacts have an associated ingredient
 	// If this fails either the API is bugged or the hydrate logic is bugged
 	for _, a := range b.Artifacts() {
-		if len(a.Ingredients) == 0 {
+		if raw.IsStateToolMimeType(a.MimeType) && len(a.Ingredients) == 0 {
 			return errs.New("artifact '%s (%s)' does not have an ingredient", a.ArtifactID, a.DisplayName)
 		}
 	}

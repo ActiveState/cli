@@ -1,6 +1,8 @@
 package buildplan
 
-import "github.com/ActiveState/cli/pkg/buildplan/raw"
+import (
+	"github.com/ActiveState/cli/pkg/buildplan/raw"
+)
 
 // createMockArtifactWithCycles creates a mock artifact with a cycle.
 // Unfortunately go doesn't support circular variable initialization, so we have to do it manually.
@@ -9,6 +11,7 @@ import "github.com/ActiveState/cli/pkg/buildplan/raw"
 //
 // The artifact cycle is:
 // 00000000-0000-0000-0000-000000000001
+//
 //	-> 00000000-0000-0000-0000-000000000002
 //	  -> 00000000-0000-0000-0000-000000000003
 //	    -> 00000000-0000-0000-0000-000000000001 (Cycle back to the first artifact)
@@ -46,6 +49,7 @@ func createMockArtifactWithCycles() *Artifact {
 // createMockArtifactWithRuntimeDeps creates a mock artifact with runtime dependencies.
 // The dependencies are:
 // 00000000-0000-0000-0000-000000000001
+//
 //	-> 00000000-0000-0000-0000-000000000002 (child)
 //	  -> 00000000-0000-0000-0000-000000000003 (child)
 func createMockArtifactWithRuntimeDeps() *Artifact {
@@ -81,6 +85,7 @@ func createMockArtifactWithRuntimeDeps() *Artifact {
 // createMockArtifactWithBuildTimeDeps creates a mock artifact with build time dependencies.
 // The dependencies are:
 // 00000000-0000-0000-0000-000000000001
+//
 //	-> 00000000-0000-0000-0000-000000000002 (child)
 //	  -> 00000000-0000-0000-0000-000000000003 (child)
 func createMockArtifactWithBuildTimeDeps() *Artifact {
@@ -108,6 +113,7 @@ func createMockArtifactWithBuildTimeDeps() *Artifact {
 // createIngredientWithRuntimeDeps creates a mock ingredient with runtime dependencies.
 // The dependencies are:
 // 00000000-0000-0000-0000-000000000010 (Ingredient0010)
+//
 //	-> 00000000-0000-0000-0000-000000000001 (Artifact0001)
 //	  -> 00000000-0000-0000-0000-000000000002 (Artifact child of Artifact0001)
 //	    -> 00000000-0000-0000-0000-000000000020 (Ingredient0020)
@@ -181,6 +187,7 @@ func createIngredientWithRuntimeDeps() *Ingredient {
 //
 // The ingredient cycle is:
 // 00000000-0000-0000-0000-000000000010 (Ingredient0010)
+//
 //	-> 00000000-0000-0000-0000-000000000001 (Artifact0001)
 //	  -> 00000000-0000-0000-0000-000000000002 (Child of Artifact0001)
 //	    -> 00000000-0000-0000-0000-000000000020 (Ingredient0020)

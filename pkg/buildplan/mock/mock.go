@@ -1,24 +1,25 @@
-package raw
+package mock
 
 import (
+	"github.com/ActiveState/cli/pkg/buildplan/raw"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/go-openapi/strfmt"
 )
 
-var buildWithSourceFromStep = &Build{
-	Terminals: []*NamedTarget{
+var BuildWithSourceFromStep = &raw.Build{
+	Terminals: []*raw.NamedTarget{
 		{
 			Tag: "platform:00000000-0000-0000-0000-000000000001",
 			// Step 1: Traversal starts here, this one points to an artifact
 			NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000002"},
 		},
 	},
-	Steps: []*Step{
+	Steps: []*raw.Step{
 		{
 			// Step 4: From here we can find which other nodes are linked to this one
 			StepID:  "00000000-0000-0000-0000-000000000003",
 			Outputs: []string{"00000000-0000-0000-0000-000000000002"},
-			Inputs: []*NamedTarget{
+			Inputs: []*raw.NamedTarget{
 				// Step 5: Now we know which nodes are responsible for producing the output
 				{Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000004"}},
 			},
@@ -27,13 +28,13 @@ var buildWithSourceFromStep = &Build{
 			// Step 8: Same as step 4
 			StepID:  "00000000-0000-0000-0000-000000000005",
 			Outputs: []string{"00000000-0000-0000-0000-000000000004"},
-			Inputs: []*NamedTarget{
+			Inputs: []*raw.NamedTarget{
 				// Step 9: Same as step 5
 				{Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000006"}},
 			},
 		},
 	},
-	Artifacts: []*Artifact{
+	Artifacts: []*raw.Artifact{
 		{
 			// Step 2: We got an artifact, but there may be more hiding behind this one
 			NodeID:      "00000000-0000-0000-0000-000000000002",
@@ -49,7 +50,7 @@ var buildWithSourceFromStep = &Build{
 			GeneratedBy: "00000000-0000-0000-0000-000000000005",
 		},
 	},
-	Sources: []*Source{
+	Sources: []*raw.Source{
 		{
 			// Step 10: We have our ingredient
 			NodeID: "00000000-0000-0000-0000-000000000006",
@@ -57,14 +58,14 @@ var buildWithSourceFromStep = &Build{
 	},
 }
 
-var buildWithSourceFromGeneratedBy = &Build{
-	Terminals: []*NamedTarget{
+var BuildWithSourceFromGeneratedBy = &raw.Build{
+	Terminals: []*raw.NamedTarget{
 		{
 			Tag:     "platform:00000000-0000-0000-0000-000000000001",
 			NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000002", "00000000-0000-0000-0000-000000000004"},
 		},
 	},
-	Artifacts: []*Artifact{
+	Artifacts: []*raw.Artifact{
 		{
 			NodeID:      "00000000-0000-0000-0000-000000000002",
 			DisplayName: "installer",
@@ -76,30 +77,30 @@ var buildWithSourceFromGeneratedBy = &Build{
 			GeneratedBy: "00000000-0000-0000-0000-000000000004",
 		},
 	},
-	Sources: []*Source{
+	Sources: []*raw.Source{
 		{
 			NodeID: "00000000-0000-0000-0000-000000000004",
 		},
 	},
 }
 
-var buildWithBuildDeps = &Build{
-	Terminals: []*NamedTarget{
+var BuildWithBuildDeps = &raw.Build{
+	Terminals: []*raw.NamedTarget{
 		{
 			Tag:     "platform:00000000-0000-0000-0000-000000000001",
 			NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000002"},
 		},
 	},
-	Steps: []*Step{
+	Steps: []*raw.Step{
 		{
 			StepID:  "00000000-0000-0000-0000-000000000003",
 			Outputs: []string{"00000000-0000-0000-0000-000000000002"},
-			Inputs: []*NamedTarget{
+			Inputs: []*raw.NamedTarget{
 				{Tag: "deps", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000004"}},
 			},
 		},
 	},
-	Artifacts: []*Artifact{
+	Artifacts: []*raw.Artifact{
 		{
 			NodeID:      "00000000-0000-0000-0000-000000000002",
 			DisplayName: "installer",
@@ -111,21 +112,21 @@ var buildWithBuildDeps = &Build{
 			GeneratedBy: "00000000-0000-0000-0000-000000000006",
 		},
 	},
-	Sources: []*Source{
+	Sources: []*raw.Source{
 		{
 			NodeID: "00000000-0000-0000-0000-000000000006",
 		},
 	},
 }
 
-var buildWithRuntimeDeps = &Build{
-	Terminals: []*NamedTarget{
+var BuildWithRuntimeDeps = &raw.Build{
+	Terminals: []*raw.NamedTarget{
 		{
 			Tag:     "platform:00000000-0000-0000-0000-000000000001",
 			NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000002"},
 		},
 	},
-	Artifacts: []*Artifact{
+	Artifacts: []*raw.Artifact{
 		{
 			NodeID:      "00000000-0000-0000-0000-000000000002",
 			DisplayName: "installer",
@@ -142,7 +143,7 @@ var buildWithRuntimeDeps = &Build{
 			GeneratedBy: "00000000-0000-0000-0000-000000000008",
 		},
 	},
-	Sources: []*Source{
+	Sources: []*raw.Source{
 		{
 			NodeID: "00000000-0000-0000-0000-000000000006",
 		},
@@ -152,23 +153,30 @@ var buildWithRuntimeDeps = &Build{
 	},
 }
 
-var buildWithRuntimeDepsViaSrc = &Build{
-	Terminals: []*NamedTarget{
+var BuildWithRuntimeDepsViaSrc = &raw.Build{
+	Terminals: []*raw.NamedTarget{
 		{
 			Tag:     "platform:00000000-0000-0000-0000-000000000001",
 			NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000002"},
 		},
 	},
-	Steps: []*Step{
+	Steps: []*raw.Step{
 		{
 			StepID:  "00000000-0000-0000-0000-000000000003",
 			Outputs: []string{"00000000-0000-0000-0000-000000000002"},
-			Inputs: []*NamedTarget{
+			Inputs: []*raw.NamedTarget{
 				{Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000007"}},
 			},
 		},
+		{
+			StepID:  "00000000-0000-0000-0000-000000000008",
+			Outputs: []string{"00000000-0000-0000-0000-000000000007"},
+			Inputs: []*raw.NamedTarget{
+				{Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000009"}},
+			},
+		},
 	},
-	Artifacts: []*Artifact{
+	Artifacts: []*raw.Artifact{
 		{
 			NodeID:              "00000000-0000-0000-0000-000000000002",
 			DisplayName:         "installer",
@@ -183,45 +191,124 @@ var buildWithRuntimeDepsViaSrc = &Build{
 			GeneratedBy: "00000000-0000-0000-0000-000000000008",
 		},
 	},
-	Sources: []*Source{
+	Sources: []*raw.Source{
 		{
-			NodeID: "00000000-0000-0000-0000-000000000006",
-		},
-		{
-			NodeID: "00000000-0000-0000-0000-000000000009",
+			"00000000-0000-0000-0000-000000000009",
+			raw.IngredientSource{
+				IngredientID: "00000000-0000-0000-0000-000000000009",
+			},
 		},
 	},
 }
 
-// buildWithRuntimeDepsViaSrcCycle is a build with a cycle in the runtime dependencies.
-// The cycle is as follows:
-// 00000000-0000-0000-0000-000000000002 (Terminal Artifact)
-//   -> 00000000-0000-0000-0000-000000000003 (Generated by Step)
-//     -> 00000000-0000-0000-0000-000000000007 (Step Input Artifact)
-//       -> 00000000-0000-0000-0000-000000000008 (Generated by Step)
-//         -> 00000000-0000-0000-0000-000000000010 (Step Input Artifact)
-//           -> 00000000-0000-0000-0000-000000000011 (Generated by Step)
-//             -> 00000000-0000-0000-0000-000000000013 (Step Input Artifact)
-//               -> 00000000-0000-0000-0000-000000000002 (Runtime dependency Artifact - Generates Cycle)
-var buildWithRuntimeDepsViaSrcCycle = &Build{
-	Terminals: []*NamedTarget{
+var BuildWithCommonRuntimeDepsViaSrc = &raw.Build{
+	Terminals: []*raw.NamedTarget{
 		{
 			Tag:     "platform:00000000-0000-0000-0000-000000000001",
 			NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000002"},
 		},
 	},
-	Steps: []*Step{
+	Steps: []*raw.Step{
+		{
+			StepID:  "00000000-0000-0000-0000-000000000008",
+			Outputs: []string{"00000000-0000-0000-0000-000000000007"},
+			Inputs: []*raw.NamedTarget{
+				{Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000009"}},
+			},
+		},
+		{
+			StepID:  "00000000-0000-0000-0000-0000000000011",
+			Outputs: []string{"00000000-0000-0000-0000-000000000010"},
+			Inputs: []*raw.NamedTarget{
+				{Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000013"}},
+			},
+		},
+		{
+			StepID:  "00000000-0000-0000-0000-0000000000101",
+			Outputs: []string{"00000000-0000-0000-0000-000000000100"},
+			Inputs: []*raw.NamedTarget{
+				{Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000103"}},
+			},
+		},
+	},
+	Artifacts: []*raw.Artifact{
+		{
+			NodeID:      "00000000-0000-0000-0000-000000000007",
+			DisplayName: "pkgOne",
+			MimeType:    types.XActiveStateArtifactMimeType,
+			GeneratedBy: "00000000-0000-0000-0000-000000000008",
+			RuntimeDependencies: []strfmt.UUID{
+				"00000000-0000-0000-0000-000000000100",
+			},
+		},
+		{
+			NodeID:      "00000000-0000-0000-0000-000000000010",
+			DisplayName: "pkgTwo",
+			MimeType:    types.XActiveStateArtifactMimeType,
+			GeneratedBy: "00000000-0000-0000-0000-0000000000011",
+			RuntimeDependencies: []strfmt.UUID{
+				"00000000-0000-0000-0000-000000000100",
+			},
+		},
+		{
+			NodeID:      "00000000-0000-0000-0000-000000000100",
+			DisplayName: "pkgThatsCommonDep",
+			MimeType:    types.XActiveStateArtifactMimeType,
+			GeneratedBy: "00000000-0000-0000-0000-0000000000101",
+		},
+	},
+	Sources: []*raw.Source{
+		{
+			"00000000-0000-0000-0000-000000000009",
+			raw.IngredientSource{
+				IngredientID: "00000000-0000-0000-0000-000000000009",
+			},
+		},
+		{
+			"00000000-0000-0000-0000-000000000013",
+			raw.IngredientSource{
+				IngredientID: "00000000-0000-0000-0000-000000000013",
+			},
+		},
+		{
+			"00000000-0000-0000-0000-000000000103",
+			raw.IngredientSource{
+				IngredientID: "00000000-0000-0000-0000-000000000103",
+			},
+		},
+	},
+}
+
+// BuildWithRuntimeDepsViaSrcCycle is a build with a cycle in the runtime dependencies.
+// The cycle is as follows:
+// 00000000-0000-0000-0000-000000000002 (Terminal Artifact)
+//
+//	-> 00000000-0000-0000-0000-000000000003 (Generated by Step)
+//	  -> 00000000-0000-0000-0000-000000000007 (Step Input Artifact)
+//	    -> 00000000-0000-0000-0000-000000000008 (Generated by Step)
+//	      -> 00000000-0000-0000-0000-000000000010 (Step Input Artifact)
+//	        -> 00000000-0000-0000-0000-000000000011 (Generated by Step)
+//	          -> 00000000-0000-0000-0000-000000000013 (Step Input Artifact)
+//	            -> 00000000-0000-0000-0000-000000000002 (Runtime dependency Artifact - Generates Cycle)
+var BuildWithRuntimeDepsViaSrcCycle = &raw.Build{
+	Terminals: []*raw.NamedTarget{
+		{
+			Tag:     "platform:00000000-0000-0000-0000-000000000001",
+			NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000002"},
+		},
+	},
+	Steps: []*raw.Step{
 		{
 			StepID:  "00000000-0000-0000-0000-000000000003",
 			Outputs: []string{"00000000-0000-0000-0000-000000000002"},
-			Inputs: []*NamedTarget{
+			Inputs: []*raw.NamedTarget{
 				{Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000007"}},
 			},
 		},
 		{
 			StepID:  "00000000-0000-0000-0000-000000000008",
 			Outputs: []string{"00000000-0000-0000-0000-000000000007"},
-			Inputs: []*NamedTarget{
+			Inputs: []*raw.NamedTarget{
 				{Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000010"}},
 			},
 		},
@@ -230,12 +317,12 @@ var buildWithRuntimeDepsViaSrcCycle = &Build{
 			Outputs: []string{
 				"00000000-0000-0000-0000-000000000010",
 			},
-			Inputs: []*NamedTarget{
+			Inputs: []*raw.NamedTarget{
 				{Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000013"}},
 			},
 		},
 	},
-	Artifacts: []*Artifact{
+	Artifacts: []*raw.Artifact{
 		{
 			NodeID:      "00000000-0000-0000-0000-000000000002",
 			DisplayName: "installer",
@@ -262,7 +349,7 @@ var buildWithRuntimeDepsViaSrcCycle = &Build{
 			GeneratedBy:         "00000000-0000-0000-0000-000000000011",
 		},
 	},
-	Sources: []*Source{
+	Sources: []*raw.Source{
 		{
 			NodeID: "00000000-0000-0000-0000-000000000006",
 		},

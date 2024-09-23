@@ -1,6 +1,8 @@
 package raw
 
 import (
+	"errors"
+
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -14,6 +16,12 @@ type WalkNodeContext struct {
 	ParentArtifact *Artifact
 	tag            StepInputTag
 	lookup         map[strfmt.UUID]interface{}
+}
+
+type WalkInterrupt struct{}
+
+func (w WalkInterrupt) Error() string {
+	return "interrupt walk"
 }
 
 // WalkViaSteps walks the graph and reports on nodes it encounters
@@ -39,6 +47,9 @@ func (b *Build) walkNodeViaSteps(node interface{}, parent *Artifact, tag StepInp
 	lookup := b.LookupMap()
 
 	if err := walk(node, parent); err != nil {
+		if errors.As(err, &WalkInterrupt{}) {
+			return nil
+		}
 		return errs.Wrap(err, "error walking over node")
 	}
 

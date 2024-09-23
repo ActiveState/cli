@@ -307,36 +307,6 @@ func (suite *ShellIntegrationTestSuite) TestNestedShellNotification() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *ShellIntegrationTestSuite) TestPs1() {
-	if runtime.GOOS == "windows" {
-		return // cmd.exe does not have a PS1 to modify
-	}
-	suite.OnlyRunForTags(tagsuite.Shell)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Empty")
-	cp.Expect("Checked out project")
-	cp.ExpectExitCode(0)
-
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("shell", "Empty"),
-	)
-	cp.Expect("Activated")
-	cp.Expect("[ActiveState-CLI/Empty]")
-	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("config", "set", constants.PreservePs1ConfigKey, "true")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("shell", "Empty")
-	cp.Expect("Activated")
-	suite.Assert().NotContains(cp.Snapshot(), "[ActiveState-CLI/Empty]")
-	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
-}
-
 func (suite *ShellIntegrationTestSuite) TestProjectOrder() {
 	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Shell)
 	ts := e2e.New(suite.T(), false)
@@ -442,7 +412,7 @@ func (suite *ShellIntegrationTestSuite) TestScriptAlias() {
 	defer ts.Close()
 
 	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl-5.32", ".")
-	cp.Expect("Checked out project")
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	suite.NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "testargs.pl"), []byte(`

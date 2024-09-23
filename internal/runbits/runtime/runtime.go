@@ -49,6 +49,7 @@ type Opts struct {
 	Archive  *checkout.Archive
 
 	ValidateBuildscript bool
+	IgnoreAsync         bool
 }
 
 type SetOpt func(*Opts)
@@ -88,6 +89,12 @@ func WithoutBuildscriptValidation() SetOpt {
 func WithArchive(archive *checkout.Archive) SetOpt {
 	return func(opts *Opts) {
 		opts.Archive = archive
+	}
+}
+
+func WithIgnoreAsync() SetOpt {
+	return func(opts *Opts) {
+		opts.IgnoreAsync = true
 	}
 }
 
@@ -216,7 +223,7 @@ func Update(
 
 	// Async runtimes should still do everything up to the actual update itself, because we still want to raise
 	// any errors regarding solves, buildscripts, etc.
-	if prime.Config().GetBool(constants.AsyncRuntimeConfig) {
+	if prime.Config().GetBool(constants.AsyncRuntimeConfig) && !opts.IgnoreAsync {
 		logging.Debug("Skipping runtime update due to async runtime")
 		return rt, nil
 	}

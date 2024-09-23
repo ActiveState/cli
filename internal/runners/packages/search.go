@@ -56,7 +56,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 
 		ns = model.NewNamespacePkgOrBundle(language, nstype)
 	} else {
-		ns = model.NewRawNamespace(params.Ingredient.Namespace)
+		ns = model.NewNamespaceRaw(params.Ingredient.Namespace)
 	}
 
 	ts, err := commits_runbit.ExpandTimeForProject(&params.Timestamp, s.auth, s.proj)
