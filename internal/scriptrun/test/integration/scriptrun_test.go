@@ -29,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -119,7 +120,7 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 	cfg.Set(constants.AsyncRuntimeConfig, true)
 
 	out := capturer.CaptureOutput(func() {
-		scriptRun := scriptrun.New(primer.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New()))
+		scriptRun := scriptrun.New(primer.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), model.NewSvcModel("")))
 		script, err := proj.ScriptByName("run")
 		require.NoError(t, err, "Error: "+errs.JoinMessage(err))
 		err = scriptRun.Run(script, nil)
