@@ -2,11 +2,8 @@ package buildplan
 
 import (
 	"encoding/json"
-	"fmt"
-	"time"
 	"sort"
 
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -35,33 +32,6 @@ func Unmarshal(data []byte) (*BuildPlan, error) {
 	b.raw = &rawBuild
 
 	b.sanitize()
-
-	// Sort buildplan slices to ensure consistency, because the API does not guarantee a consistent ordering
-	sort.Slice(b.raw.Sources, func(i, j int) bool { return b.raw.Sources[i].NodeID < b.raw.Sources[j].NodeID })
-	sort.Slice(b.raw.Steps, func(i, j int) bool { return b.raw.Steps[i].StepID < b.raw.Steps[j].StepID })
-	sort.Slice(b.raw.Artifacts, func(i, j int) bool { return b.raw.Artifacts[i].NodeID < b.raw.Artifacts[j].NodeID })
-	sort.Slice(b.raw.Terminals, func(i, j int) bool { return b.raw.Terminals[i].Tag < b.raw.Terminals[j].Tag })
-	sort.Slice(b.raw.ResolvedRequirements, func(i, j int) bool {
-		return b.raw.ResolvedRequirements[i].Source < b.raw.ResolvedRequirements[j].Source
-	})
-	for _, t := range b.raw.Terminals {
-		sort.Slice(t.NodeIDs, func(i, j int) bool { return t.NodeIDs[i] < t.NodeIDs[j] })
-	}
-	for _, a := range b.raw.Artifacts {
-		sort.Slice(a.RuntimeDependencies, func(i, j int) bool { return a.RuntimeDependencies[i] < a.RuntimeDependencies[j] })
-	}
-	for _, step := range b.raw.Steps {
-		sort.Slice(step.Inputs, func(i, j int) bool { return step.Inputs[i].Tag < step.Inputs[j].Tag })
-		sort.Slice(step.Outputs, func(i, j int) bool { return step.Outputs[i] < step.Outputs[j] })
-		for _, input := range step.Inputs {
-			sort.Slice(input.NodeIDs, func(i, j int) bool { return input.NodeIDs[i] < input.NodeIDs[j] })
-		}
-	}
-
-	v, _ := b.Marshal()
-	vs := string(v)
-	_ = vs
-	fileutils.WriteFile(fmt.Sprintf("/tmp/buildplan-%d.json", time.Now().Unix()), v)
 
 	if err := b.hydrate(); err != nil {
 		return nil, errs.Wrap(err, "error hydrating build plan")
