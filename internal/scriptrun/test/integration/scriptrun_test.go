@@ -353,6 +353,7 @@ project: "https://platform.activestate.com/ActiveState/project"
 scripts:
   - name: %s
     standalone: true
+    language: batch
     value: |
       echo "ARGS|%%1|%%2|%%3|%%4|"`, cmdName)
 	}
@@ -363,15 +364,12 @@ scripts:
 }
 
 func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []string) (string, error) {
-
 	auth, err := authentication.LegacyGet()
 	require.NoError(t, err)
 
 	pjfile := setupProjectWithScriptsExpectingArgs(t, tmplCmdName)
-
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
-
 	cfg, err := config.New()
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
@@ -384,7 +382,6 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 		}
 	})
 	require.NoError(t, outErr, "error capturing stdout")
-
 	return outStr, err
 }
 
