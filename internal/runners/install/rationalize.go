@@ -61,9 +61,32 @@ func (i *Install) rationalizeError(rerr *error) {
 }
 
 func (i *Install) getSuggestions(req *requirement, languages []model.Language) ([]string, error) {
-	ingredients, err := model.SearchIngredients(req.Requested.Namespace, req.Requested.Name, false, nil, i.prime.Auth())
-	if err != nil {
-		return []string{}, locale.WrapError(err, "err_package_ingredient_search", "Failed to resolve ingredient named: {{.V0}}", req.Requested.Name)
+	var namespaces []string
+
+	if req.Requested.Namespace == "" {
+		for _, language := range languages {
+			var ns string
+			switch i.nsType {
+			case model.NamespacePackage:
+				ns = model.NewNamespacePackage(language.Name).String()
+			case model.NamespaceBundle:
+				ns = model.NewNamespaceBundle(language.Name).String()
+			default:
+				continue
+			}
+			namespaces = append(namespaces, ns)
+		}
+	} else {
+		namespaces = []string{req.Requested.Namespace}
+	}
+
+	ingredients := make([]*model.IngredientAndVersion, 0)
+	for _, namespace := range namespaces {
+		results, err := model.SearchIngredients(namespace, req.Requested.Name, false, nil, i.prime.Auth())
+		if err != nil {
+			return nil, locale.WrapError(err, "err_package_ingredient_search", "Failed to resolve ingredient named: {{.V0}}", req.Requested.Name)
+		}
+		ingredients = append(ingredients, results...)
 	}
 
 	// Filter out irrelevant ingredients
