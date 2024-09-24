@@ -87,10 +87,10 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp = ts.Spawn("install", suite.extraPackage)
 	switch runtime.GOOS {
 	case "darwin":
-		cp.ExpectRe("added|being built", termtest.OptExpectTimeout(60*time.Second)) // while cold storage is off
+		cp.ExpectRe("Added|being built", termtest.OptExpectTimeout(60*time.Second)) // while cold storage is off
 		cp.Wait()
 	default:
-		cp.Expect("added", termtest.OptExpectTimeout(60*time.Second))
+		cp.Expect("Added", termtest.OptExpectTimeout(60*time.Second))
 		cp.ExpectExitCode(0)
 	}
 
@@ -129,10 +129,10 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	cp = ts.Spawn("install", suite.extraPackage)
 	switch runtime.GOOS {
 	case "darwin":
-		cp.ExpectRe("added|being built", termtest.OptExpectTimeout(60*time.Second)) // while cold storage is off
+		cp.ExpectRe("Added|being built", termtest.OptExpectTimeout(60*time.Second)) // while cold storage is off
 		cp.Wait()
 	default:
-		cp.Expect("added", termtest.OptExpectTimeout(60*time.Second))
+		cp.Expect("Added", termtest.OptExpectTimeout(60*time.Second))
 		cp.ExpectExitCode(0)
 	}
 
@@ -192,10 +192,10 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	)
 	switch runtime.GOOS {
 	case "darwin":
-		cp.ExpectRe("added|being built", e2e.RuntimeSourcingTimeoutOpt) // while cold storage is off
+		cp.ExpectRe("Added|being built", e2e.RuntimeSourcingTimeoutOpt) // while cold storage is off
 		cp.Wait()
 	default:
-		cp.Expect("added", e2e.RuntimeSourcingTimeoutOpt)
+		cp.Expect("Added", e2e.RuntimeSourcingTimeoutOpt)
 		cp.ExpectExitCode(0)
 	}
 
