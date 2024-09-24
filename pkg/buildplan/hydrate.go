@@ -55,7 +55,7 @@ func (b *BuildPlan) hydrate() error {
 		}
 		ingredient, ok := ingredientLookup[source.IngredientID]
 		if !ok {
-			return errs.New("missing ingredient for source ID: %s", req.Source)
+			continue
 		}
 		b.requirements = append(b.requirements, &Requirement{
 			Requirement: req.Requirement,
