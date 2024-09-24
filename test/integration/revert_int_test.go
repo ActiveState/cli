@@ -65,7 +65,7 @@ func (suite *RevertIntegrationTestSuite) TestRevertRemote() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "requests")
-	cp.Expect("Added: requests")
+	cp.Expect("Added: language/python/requests")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("revert", "REMOTE", "--non-interactive")
