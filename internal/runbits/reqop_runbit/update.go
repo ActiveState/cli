@@ -108,6 +108,9 @@ func UpdateAndReload(prime primeable, script *buildscript.BuildScript, oldCommit
 			}
 			return errs.Wrap(err, "Failed to refresh runtime")
 		}
+	} else {
+		prime.Output().Notice("") // blank line
+		prime.Output().Notice(locale.Tr("notice_async_runtime", constants.AsyncRuntimeConfig))
 	}
 
 	// Update commit ID

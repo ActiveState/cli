@@ -126,7 +126,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 
 	s.out.Notice(locale.Tr("operating_message", projectNamespace, projectDir))
 
-	rt, err := runtime_runbit.Update(s.prime, trigger, runtime_runbit.WithoutHeaders(), runtime_runbit.WithIgnoreAsync())
+	rt, err := runtime_runbit.Update(s.prime, trigger, runtime_runbit.WithoutHeaders())
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize runtime")
 	}

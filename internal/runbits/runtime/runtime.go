@@ -225,6 +225,8 @@ func Update(
 	// any errors regarding solves, buildscripts, etc.
 	if prime.Config().GetBool(constants.AsyncRuntimeConfig) && !opts.IgnoreAsync {
 		logging.Debug("Skipping runtime update due to async runtime")
+		prime.Output().Notice("") // blank line
+		prime.Output().Notice(locale.Tr("notice_async_runtime", constants.AsyncRuntimeConfig))
 		return rt, nil
 	}
 

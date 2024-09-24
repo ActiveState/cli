@@ -1448,6 +1448,9 @@ err_packages_update_runtime_init:
   other: Could not initialize runtime.
 pkg_already_uptodate:
   other: Dependencies for your project are already configured and installed.
+notice_async_runtime:
+  other: |
+    [WARNING]Warning:[/RESET] Skipping runtime sourcing since {{.V0}} is enabled. Please run '[ACTIONABLE]state refresh[/RESET]' to manually source the runtime.
 install_runtime:
   other: Sourcing Runtime
 install_runtime_info:
@@ -1541,7 +1544,7 @@ err_uninstall_platform_nomatch:
 err_uninstall_platform_multimatch:
   other: |
     The platform query you provided matches multiple platforms in your project.
-    Please specify the platform to uninstall by using its version and bit-width. 
+    Please specify the platform to uninstall by using its version and bit-width.
     To view the platforms your project uses run: [ACTIONABLE]state platforms[/RESET].
 progress_requirements:
   other: "• Updating requirements"
