@@ -1,8 +1,6 @@
 package manifest
 
 import (
-	"time"
-
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -10,10 +8,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/profile"
 	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
@@ -64,7 +60,6 @@ func NewManifest(prime primeable) *Manifest {
 
 func (m *Manifest) Run(params Params) (rerr error) {
 	defer rationalizeError(m.project, m.auth, &rerr)
-	defer profile.Measure("Manifest:Run", time.Now())
 
 	if m.project == nil {
 		return rationalize.ErrNoProject
@@ -72,32 +67,15 @@ func (m *Manifest) Run(params Params) (rerr error) {
 
 	m.out.Notice(locale.Tl("manifest_operating_on_project", "Operating on project: [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET]\n", m.project.Namespace().String(), m.project.Dir()))
 
-	commit, err := m.fetchCommit()
+	reqs, err := m.fetchRequirements()
 	if err != nil {
-		return errs.Wrap(err, "Could not fetch commit")
+		return errs.Wrap(err, "Could not fetch requirements")
 	}
 
-	// Manually verify our buildscript is up to date; this normally happens during updates
-	if m.prime.Config().GetBool(constants.OptinBuildscriptsConfig) {
-		bs, err := buildscript_runbit.ScriptFromProject(m.project)
-		if err != nil {
-			return errs.Wrap(err, "Failed to get buildscript")
-		}
-		isClean, err := bs.Equals(commit.BuildScript())
-		if err != nil {
-			return errs.Wrap(err, "Failed to compare buildscript")
-		}
-		if !isClean {
-			return runtime_runbit.ErrBuildScriptNeedsCommit
-		}
-	}
-
-	// Collect requirements and what they resolved to
-	reqs, err := commit.BuildScript().Requirements()
+	bpReqs, err := m.fetchBuildplanRequirements()
 	if err != nil {
-		return errs.Wrap(err, "Failed to get requirements")
+		return errs.Wrap(err, "Could not fetch artifacts")
 	}
-	bpReqs := commit.BuildPlan().RequestedIngredients()
 
 	vulns, err := m.fetchVulnerabilities(reqs, bpReqs)
 	if err != nil {
@@ -118,9 +96,36 @@ func (m *Manifest) Run(params Params) (rerr error) {
 	return nil
 }
 
-func (m *Manifest) fetchCommit() (*bpModel.Commit, error) {
-	defer profile.Measure("Manifest:fetchCommit", time.Now())
+func (m *Manifest) fetchRequirements() ([]buildscript.Requirement, error) {
+	var script *buildscript.BuildScript
+	if m.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		var err error
+		script, err = buildscript_runbit.ScriptFromProject(m.project)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get buildscript")
+		}
+	} else {
+		commitID, err := localcommit.Get(m.project.Dir())
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get commit ID")
+		}
 
+		bp := bpModel.NewBuildPlannerModel(m.auth)
+		script, err = bp.GetBuildScript(commitID.String())
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get remote build expr and time")
+		}
+	}
+
+	reqs, err := script.Requirements()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get requirements")
+	}
+
+	return reqs, nil
+}
+
+func (m *Manifest) fetchBuildplanRequirements() (buildplan.Ingredients, error) {
 	commitID, err := localcommit.Get(m.project.Dir())
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to get local commit")
@@ -128,15 +133,15 @@ func (m *Manifest) fetchCommit() (*bpModel.Commit, error) {
 
 	// Solve runtime
 	solveSpinner := output.StartSpinner(m.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
-	bpm := bpModel.NewBuildPlannerModel(m.auth, m.svcModel)
+	bpm := bpModel.NewBuildPlannerModel(m.auth)
 	commit, err := bpm.FetchCommit(commitID, m.project.Owner(), m.project.Name(), nil)
 	if err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))
-		return nil, errs.Wrap(err, "Failed to fetch commit")
+		return nil, errs.Wrap(err, "Failed to fetch build result")
 	}
 	solveSpinner.Stop(locale.T("progress_success"))
 
-	return commit, nil
+	return commit.BuildPlan().RequestedIngredients(), nil
 }
 
 func (m *Manifest) fetchVulnerabilities(reqs []buildscript.Requirement, bpReqs buildplan.Ingredients) (vulnerabilities, error) {
