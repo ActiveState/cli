@@ -14,13 +14,10 @@ const linkTarget = "__target__"
 const link = "__link__"
 
 func supportsHardLinks(path string) (supported bool) {
-	logging.Debug("Determining if hard links are supported for drive associated with '%s'", path)
 	defer func() {
-		log := "Yes they are"
 		if !supported {
-			log = "No they are not"
+			logging.Debug("Enforcing deployment via copy, as hardlinks are not supported")
 		}
-		logging.Debug(log)
 	}()
 
 	target := filepath.Join(path, linkTarget)
