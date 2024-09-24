@@ -211,14 +211,6 @@ func (b *BuildPlan) hydrateWithIngredients(artifact *Artifact, platformID *strfm
 // If there are duplicates we're likely to see failures down the chain if live, though that's by no means guaranteed.
 // Surfacing it here will make it easier to reason about the failure.
 func (b *BuildPlan) sanityCheck() error {
-	// Ensure all artifacts have an associated ingredient
-	// If this fails either the API is bugged or the hydrate logic is bugged
-	for _, a := range b.Artifacts() {
-		if raw.IsStateToolMimeType(a.MimeType) && len(a.Ingredients) == 0 {
-			return errs.New("artifact '%s (%s)' does not have an ingredient", a.ArtifactID, a.DisplayName)
-		}
-	}
-
 	// The remainder of sanity checks aren't checking for error conditions so much as they are checking for smoking guns
 	// If these fail then it's likely the API has changed in a backward incompatible way, or we broke something.
 	// In any case it does not necessarily mean runtime sourcing is broken.
