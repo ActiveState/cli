@@ -144,11 +144,7 @@ func (a Artifacts) ToIDSlice() []strfmt.UUID {
 func (a Artifacts) ToNameMap() ArtifactNameMap {
 	result := make(map[string]*Artifact, len(a))
 	for _, a := range a {
-		name := a.DisplayName
-		if len(a.Ingredients) == 0 {
-			name = a.Ingredients[0].Name
-		}
-		result[name] = a
+		result[a.Name()] = a
 	}
 	return result
 }
