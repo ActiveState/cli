@@ -77,8 +77,7 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 		}
 	}
 
-	names := addedRequirements(oldBuildPlan, newBuildPlan)
-	pg := output.StartSpinner(c.prime.Output(), locale.Tr("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
+	pg := output.StartSpinner(c.prime.Output(), locale.T("progress_cve_search"), constants.TerminalAnimationInterval)
 
 	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(c.prime.Auth(), ingredients)
 	if err != nil {
@@ -96,6 +95,7 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 	pg.Stop(locale.T("progress_unsafe"))
 	pg = nil
 
+	names := addedRequirements(oldBuildPlan, newBuildPlan)
 	vulnerabilities := model.CombineVulnerabilities(ingredientVulnerabilities, names...)
 
 	if c.prime.Prompt() == nil || !c.shouldPromptForSecurity(vulnerabilities) {
@@ -197,7 +197,7 @@ func (c *CveReport) summarizeCVEs(vulnerabilities model.VulnerableIngredientsByL
 	case vulnerabilities.CountPrimary == vulnerabilities.Count:
 		out.Print("  " + locale.Tr("warning_vulnerable_directonly", strconv.Itoa(vulnerabilities.Count)))
 	default:
-		out.Print("  " + locale.Tr("warning_vulnerable", strconv.Itoa(vulnerabilities.CountPrimary), strconv.Itoa(vulnerabilities.Count-vulnerabilities.CountPrimary)))
+		out.Print("  " + locale.Tr("warning_vulnerable", strconv.Itoa(vulnerabilities.Count), strconv.Itoa(vulnerabilities.CountPrimary), strconv.Itoa(vulnerabilities.Count-vulnerabilities.CountPrimary)))
 	}
 
 	printVulnerabilities := func(vulnerableIngredients model.VulnerableIngredientsByLevel, name, color string) {

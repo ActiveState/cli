@@ -571,7 +571,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_NoPrompt() {
 	// Note: this version has 2 direct vulnerabilities, and 3 indirect vulnerabilities, but since
 	// we're not prompting, we're only showing a single count.
 	cp = ts.Spawn("install", "urllib3@2.0.2")
-	cp.ExpectRe(`Warning: Dependency has .* vulnerabilities`, e2e.RuntimeSolvingTimeoutOpt)
+	cp.ExpectRe(`Warning: Found \d+ new vulnerabilities \(CVEs\).`, e2e.RuntimeSolvingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 
@@ -587,14 +587,14 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Prompt() {
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("config", "set", "security.prompt.level", "high")
+	cp = ts.Spawn("config", "set", constants.SecurityPromptLevelConfig, "high")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("config", "set", constants.SecurityPromptConfig, "true")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "urllib3@2.0.2", "--ts=2024-09-10T16:36:34.393Z")
-	cp.ExpectRe(`Warning: Dependency has .* vulnerabilities`, e2e.RuntimeSolvingTimeoutOpt)
+	cp.ExpectRe(`Warning: Found \d+ new vulnerabilities \(CVEs\): \d+ direct and \d+ indirect`, e2e.RuntimeSolvingTimeoutOpt)
 	cp.Expect("Do you want to continue")
 	cp.SendLine("y")
 	cp.ExpectExitCode(0)
@@ -616,7 +616,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Indirect() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "private/ActiveState-CLI-Testing/language/python/django_dep", "--ts=2024-09-10T16:36:34.393Z")
-	cp.ExpectRe(`Warning: Dependency has \d+ indirect known vulnerabilities`, e2e.RuntimeSolvingTimeoutOpt)
+	cp.ExpectRe(`Warning: Found \d+ new, indirect vulnerabilities`, e2e.RuntimeSolvingTimeoutOpt)
 	cp.Expect("Do you want to continue")
 	cp.SendLine("n")
 	cp.ExpectExitCode(1)

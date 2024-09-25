@@ -1103,7 +1103,7 @@ progress_search:
 progress_platform_search:
   other: "• Searching for platform in the ActiveState Catalog"
 progress_cve_search:
-  other: "• Checking for vulnerabilities (CVEs) on [ACTIONABLE]{{.V0}}[/RESET] and its dependencies"
+  other: "• Checking for vulnerabilities (CVEs) in your project and its dependencies"
 setup_runtime:
   other: "Setting Up Runtime"
 progress_solve:
@@ -1140,13 +1140,13 @@ unstable_feature_banner:
   other: "[NOTICE]Beta Feature: This feature is still in beta and may be unstable.[/RESET]\n"
 warning_vulnerable:
   other: |
-    [ERROR]Warning: Dependency has {{.V0}} direct and {{.V1}} indirect known vulnerabilities (CVEs)[/RESET]
+    [ERROR]Warning: Found {{.V0}} new vulnerabilities (CVEs): {{.V1}} direct and {{.V2}} indirect[/RESET]
 warning_vulnerable_indirectonly:
   other: |
-    [ERROR]Warning: Dependency has {{.V0}} indirect known vulnerabilities (CVEs)[/RESET]
+    [ERROR]Warning: Found {{.V0}} new, indirect vulnerabilities (CVEs)[/RESET]
 warning_vulnerable_directonly:
   other: |
-    [ERROR]Warning: Dependency has {{.V0}} known vulnerabilities (CVEs)[/RESET]
+    [ERROR]Warning: Found {{.V0}} new vulnerabilities (CVEs)[/RESET]
 cve_critical:
   other: Critical
 cve_high:
@@ -1161,7 +1161,7 @@ disable_prompting_vulnerabilities:
   other: To disable prompting for vulnerabilities run '[ACTIONABLE]state config set security.prompt.enabled false[/RESET]'.
 warning_vulnerable_short:
   other: |
-    [ERROR]Warning:[/RESET] Dependency has [ERROR]{{.V0}} known vulnerabilities (CVEs)[/RESET]. Severity: {{.V1}}. Run '[ACTIONABLE]state security[/RESET]' for more info.
+    [ERROR]Warning:[/RESET] Found [ERROR]{{.V0}} new vulnerabilities (CVEs)[/RESET]. Severity: {{.V1}}. Run '[ACTIONABLE]state security[/RESET]' for more info.
 prompt_continue_pkg_operation:
   other: |
     Do you want to continue installing this dependency despite its vulnerabilities?
@@ -1541,7 +1541,7 @@ err_uninstall_platform_nomatch:
 err_uninstall_platform_multimatch:
   other: |
     The platform query you provided matches multiple platforms in your project.
-    Please specify the platform to uninstall by using its version and bit-width. 
+    Please specify the platform to uninstall by using its version and bit-width.
     To view the platforms your project uses run: [ACTIONABLE]state platforms[/RESET].
 progress_requirements:
   other: "• Updating requirements"
