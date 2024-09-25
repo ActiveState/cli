@@ -57,7 +57,7 @@ func (c *client) Run(req gqlclient.Request, resp interface{}) error {
 const fetchCommitCacheExpiry = time.Hour * 12
 
 func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project, branch string, target *string) (*Commit, error) {
-	logging.Debug("FetchBuildResult, commitID: %s, owner: %s, project: %s", commitID, owner, project)
+	logging.Debug("FetchCommit, commitID: %s, owner: %s, project: %s", commitID, owner, project)
 	resp := &response.ProjectCommitResponse{}
 
 	cacheKey := strings.Join([]string{"FetchCommit", commitID.String(), owner, project, ptr.From(target, "")}, "-")

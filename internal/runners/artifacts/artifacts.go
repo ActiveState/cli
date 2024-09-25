@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	buildplanner_runbit "github.com/ActiveState/cli/internal/runbits/buildplanner"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -48,7 +47,6 @@ type Artifacts struct {
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
 	auth      *authentication.Auth
-	info      *checkoutinfo.CheckoutInfo
 }
 
 type StructuredOutput struct {
@@ -85,7 +83,6 @@ func New(p primeable) *Artifacts {
 		auth:      p.Auth(),
 		svcModel:  p.SvcModel(),
 		analytics: p.Analytics(),
-		info:      p.CheckoutInfo(),
 	}
 }
 

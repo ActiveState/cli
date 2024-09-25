@@ -7,10 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 type primeable interface {
@@ -26,20 +23,12 @@ type Params struct {
 }
 
 type Eval struct {
-	out     output.Outputer
-	project *project.Project
-	auth    *authentication.Auth
-	info    *checkoutinfo.CheckoutInfo
-	prime   primeable
+	prime primeable
 }
 
 func New(p primeable) *Eval {
 	return &Eval{
-		out:     p.Output(),
-		project: p.Project(),
-		auth:    p.Auth(),
-		info:    p.CheckoutInfo(),
-		prime:   p,
+		prime: p,
 	}
 }
 
@@ -49,6 +38,7 @@ func (e *Eval) Run(params *Params) (rerr error) {
 	out := e.prime.Output()
 	auth := e.prime.Auth()
 	proj := e.prime.Project()
+	info := e.prime.CheckoutInfo()
 
 	out.Notice(output.Title(locale.Tl("title_eval", "Evaluating target: {{.V0}}", params.Target)))
 
@@ -60,7 +50,7 @@ func (e *Eval) Run(params *Params) (rerr error) {
 		return rationalize.ErrNoProject
 	}
 
-	commitID, err := e.info.CommitID()
+	commitID, err := info.CommitID()
 	if err != nil {
 		return errs.Wrap(err, "Unable to get commit ID")
 	}

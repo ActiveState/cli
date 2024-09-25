@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	buildplanner_runbit "github.com/ActiveState/cli/internal/runbits/buildplanner"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -41,7 +40,6 @@ type Download struct {
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
 	auth      *authentication.Auth
-	info      *checkoutinfo.CheckoutInfo
 }
 
 func NewDownload(prime primeable) *Download {
@@ -52,7 +50,6 @@ func NewDownload(prime primeable) *Download {
 		analytics: prime.Analytics(),
 		svcModel:  prime.SvcModel(),
 		auth:      prime.Auth(),
-		info:      prime.CheckoutInfo(),
 	}
 }
 
