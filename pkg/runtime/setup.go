@@ -469,7 +469,7 @@ func (s *setup) install(id strfmt.UUID) (rerr error) {
 		if err := s.depot.DeployViaCopy(id, envDef.InstallDir, s.path); err != nil {
 			return errs.Wrap(err, "Could not deploy artifact via copy")
 		}
-		if s.supportsHardLinks {
+		if envDef.NeedsTransforms() {
 			if err := envDef.ApplyFileTransforms(s.path); err != nil {
 				return errs.Wrap(err, "Could not apply env transforms")
 			}
