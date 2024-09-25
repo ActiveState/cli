@@ -62,11 +62,12 @@ type Opts struct {
 type SetOpt func(*Opts)
 
 type setup struct {
-	path      string
-	opts      *Opts
-	depot     *depot
-	env       *envdef.Collection
-	buildplan *buildplan.BuildPlan
+	path              string
+	opts              *Opts
+	depot             *depot
+	supportsHardLinks bool
+	env               *envdef.Collection
+	buildplan         *buildplan.BuildPlan
 
 	// toBuild encompasses all artifacts that will need to be build for this runtime.
 	// This does NOT mean every artifact in the runtime closure if this is an update (as oppose to a fresh toInstall).
@@ -163,16 +164,17 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 	}
 
 	return &setup{
-		path:        path,
-		opts:        opts,
-		env:         env,
-		depot:       depot,
-		buildplan:   bp,
-		toBuild:     artifactsToBuild.ToIDMap(),
-		toDownload:  artifactsToDownload.ToIDMap(),
-		toUnpack:    artifactsToUnpack.ToIDMap(),
-		toInstall:   artifactsToInstall.ToIDMap(),
-		toUninstall: artifactsToUninstall,
+		path:              path,
+		opts:              opts,
+		env:               env,
+		depot:             depot,
+		supportsHardLinks: supportsHardLinks(depot.depotPath),
+		buildplan:         bp,
+		toBuild:           artifactsToBuild.ToIDMap(),
+		toDownload:        artifactsToDownload.ToIDMap(),
+		toUnpack:          artifactsToUnpack.ToIDMap(),
+		toInstall:         artifactsToInstall.ToIDMap(),
+		toUninstall:       artifactsToUninstall,
 	}, nil
 }
 
@@ -463,12 +465,14 @@ func (s *setup) install(id strfmt.UUID) (rerr error) {
 		return errs.Wrap(err, "Could not get env")
 	}
 
-	if envDef.NeedsTransforms() {
+	if envDef.NeedsTransforms() || !s.supportsHardLinks {
 		if err := s.depot.DeployViaCopy(id, envDef.InstallDir, s.path); err != nil {
 			return errs.Wrap(err, "Could not deploy artifact via copy")
 		}
-		if err := envDef.ApplyFileTransforms(s.path); err != nil {
-			return errs.Wrap(err, "Could not apply env transforms")
+		if envDef.NeedsTransforms() {
+			if err := envDef.ApplyFileTransforms(s.path); err != nil {
+				return errs.Wrap(err, "Could not apply env transforms")
+			}
 		}
 	} else {
 		if err := s.depot.DeployViaLink(id, envDef.InstallDir, s.path); err != nil {
