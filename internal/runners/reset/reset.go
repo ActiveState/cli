@@ -90,7 +90,7 @@ func (r *Reset) Run(params *Params) error {
 		commitID = *latestCommit
 
 	case strings.EqualFold(params.CommitID, local):
-		localCommitID, err := r.prime.CheckoutInfo().CommitID()
+		localCommitID, err := r.prime.CheckoutInfo().CommitIDForReset()
 		if err != nil {
 			return errs.Wrap(err, "Unable to get commit ID")
 		}
@@ -108,7 +108,7 @@ func (r *Reset) Run(params *Params) error {
 		}
 	}
 
-	localCommitID, err := r.prime.CheckoutInfo().CommitID()
+	localCommitID, err := r.prime.CheckoutInfo().CommitIDForReset()
 	var errInvalidCommitID *checkoutinfo.ErrInvalidCommitID
 	if err != nil && !errors.As(err, &errInvalidCommitID) {
 		return errs.Wrap(err, "Unable to get commit ID")

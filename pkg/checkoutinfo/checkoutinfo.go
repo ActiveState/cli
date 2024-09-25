@@ -72,10 +72,30 @@ func (c *CheckoutInfo) CommitID() (strfmt.UUID, error) {
 				return "", errs.Wrap(err, "Could not get commit ID from build script")
 			}
 			return commitID, nil
-		} else if !errors.Is(err, ErrBuildscriptNotExist) {
+		} else {
 			return "", errs.Wrap(err, "Could not get build script")
 		}
-		// Fall back on activestate.yaml.
+	}
+
+	// Read from activestate.yaml.
+	commitID := c.project.LegacyCommitID()
+	if !strfmt.IsUUID(commitID) {
+		return "", &ErrInvalidCommitID{commitID}
+	}
+
+	return strfmt.UUID(commitID), nil
+}
+
+// CommitIDForReset will return either the commit ID from the buildscript, or the commitID from
+// activestate.yaml, whichever one is valid.
+// This should only be called by `state reset` for the purposes of resetting the commitID.
+func (c *CheckoutInfo) CommitIDForReset() (strfmt.UUID, error) {
+	if c.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		if script, err := c.BuildScript(); err == nil {
+			if commitID, err2 := script.CommitID(); err2 == nil {
+				return commitID, nil
+			}
+		}
 	}
 
 	// Read from activestate.yaml.
