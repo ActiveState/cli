@@ -67,3 +67,10 @@ func RegisterOptionWithEvents(key string, t Type, defaultValue interface{}, get,
 func KnownOption(rule Option) bool {
 	return rule.isRegistered
 }
+
+func GetDefault(opt Option) interface{} {
+	if enum, ok := opt.Default.(*Enums); ok {
+		return enum.Default
+	}
+	return opt.Default
+}
