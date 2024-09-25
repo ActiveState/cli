@@ -200,11 +200,13 @@ var BuildWithInstallerDepsViaSrc = &raw.Build{
 		{
 			NodeID:      "00000000-0000-0000-0000-000000000007",
 			DisplayName: "pkgOne",
+			MimeType:    types.XActiveStateArtifactMimeType,
 			GeneratedBy: "00000000-0000-0000-0000-000000000008",
 		},
 		{
 			NodeID:      "00000000-0000-0000-0000-000000000010",
 			DisplayName: "pkgTwo",
+			MimeType:    types.XActiveStateArtifactMimeType,
 			GeneratedBy: "00000000-0000-0000-0000-000000000011",
 		},
 	},

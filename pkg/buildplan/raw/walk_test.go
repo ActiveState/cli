@@ -158,6 +158,7 @@ func TestRawBuild_walkNodesViaRuntimeDeps(t *testing.T) {
 			mock.BuildWithInstallerDepsViaSrc,
 			[]walkCall{
 				{"00000000-0000-0000-0000-000000000007", "Artifact", "00000000-0000-0000-0000-000000000002"},
+				{"00000000-0000-0000-0000-000000000010", "Artifact", "00000000-0000-0000-0000-000000000002"},
 			},
 			false,
 		},
