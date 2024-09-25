@@ -47,7 +47,7 @@ func FilterStateArtifacts() FilterArtifact {
 		internalIngredients := sliceutils.Filter(a.Ingredients, func(i *Ingredient) bool {
 			return i.Namespace == NamespaceInternal
 		})
-		if len(a.Ingredients) == len(internalIngredients) {
+		if len(a.Ingredients) > 0 && len(a.Ingredients) == len(internalIngredients) {
 			return false
 		}
 		if strings.Contains(a.URL, "as-builds/noop") {
