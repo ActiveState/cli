@@ -58,7 +58,7 @@ func (d *DeptreeByArtifacts) Run(params ArtifactParams) error {
 		return errs.Wrap(err, "Could not resolve namespace")
 	}
 
-	bpm := buildplanner.NewBuildPlannerModel(d.prime.Auth())
+	bpm := buildplanner.NewBuildPlannerModel(d.prime.Auth(), d.prime.SvcModel())
 	commit, err := bpm.FetchCommit(*ns.CommitID, ns.Owner, ns.Project, nil)
 	if err != nil {
 		return errs.Wrap(err, "Could not get remote build expr and time for provided commit")
