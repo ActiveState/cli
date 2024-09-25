@@ -76,6 +76,7 @@ func (suite *InstallIntegrationTestSuite) TestInstall_NoMatches_NoAlternatives()
 }
 
 func (suite *InstallIntegrationTestSuite) TestInstall_NoMatches_Alternatives() {
+	suite.T().Skip("Requires https://activestatef.atlassian.net/browse/DX-3074 to be resolved.")
 	suite.OnlyRunForTags(tagsuite.Install)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
