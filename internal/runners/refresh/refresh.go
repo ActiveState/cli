@@ -5,12 +5,14 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
@@ -80,6 +82,13 @@ func (r *Refresh) Run(params *Params) error {
 	needsUpdate, err := runtime_helpers.NeedsUpdate(proj, nil)
 	if err != nil {
 		return errs.Wrap(err, "could not determine if runtime needs update")
+	}
+
+	if r.config.GetBool(constants.OptinBuildscriptsConfig) {
+		_, err := buildscript_runbit.ScriptFromProject(proj)
+		if errors.Is(err, buildscript_runbit.ErrBuildscriptNotExist) {
+			return locale.WrapInputError(err, locale.T("notice_needs_buildscript_reset"))
+		}
 	}
 
 	if !needsUpdate {
