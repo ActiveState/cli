@@ -18,15 +18,21 @@ func TestBuildPlan_hydrateWithIngredients(t *testing.T) {
 	}{
 		{
 			"Ingredient solves for simple artifact > src hop",
-			&BuildPlan{raw: mock.BuildWithRuntimeDepsViaSrc},
+			&BuildPlan{raw: mock.BuildWithInstallerDepsViaSrc},
 			&Artifact{ArtifactID: "00000000-0000-0000-0000-000000000007"},
 			"00000000-0000-0000-0000-000000000009",
 		},
 		{
 			"Installer should not resolve to an ingredient as it doesn't have a direct source",
-			&BuildPlan{raw: mock.BuildWithRuntimeDepsViaSrc},
+			&BuildPlan{raw: mock.BuildWithInstallerDepsViaSrc},
 			&Artifact{ArtifactID: "00000000-0000-0000-0000-000000000002"},
 			"",
+		},
+		{
+			"State artifact should resolve to source even when hopping through a python wheel",
+			&BuildPlan{raw: mock.BuildWithStateArtifactThroughPyWheel},
+			&Artifact{ArtifactID: "00000000-0000-0000-0000-000000000002"},
+			"00000000-0000-0000-0000-000000000009",
 		},
 	}
 	for _, tt := range tests {
@@ -35,10 +41,17 @@ func TestBuildPlan_hydrateWithIngredients(t *testing.T) {
 			if err := b.hydrateWithIngredients(tt.inputArtifact, nil, map[strfmt.UUID]*Ingredient{}); err != nil {
 				t.Fatalf("hydrateWithIngredients() error = %v", errs.JoinMessage(err))
 			}
+
+			// Use string slice so testify doesn't just dump a bunch of pointer addresses on failure -.-
+			ingredients := []string{}
+			for _, i := range tt.inputArtifact.Ingredients {
+				ingredients = append(ingredients, i.IngredientID.String())
+			}
 			if tt.wantIngredient == "" {
-				require.Empty(t, tt.inputArtifact.Ingredients)
+				require.Empty(t, ingredients)
 				return
 			}
+
 			if len(tt.inputArtifact.Ingredients) != 1 {
 				t.Fatalf("expected 1 ingredient resolution, got %d", len(tt.inputArtifact.Ingredients))
 			}

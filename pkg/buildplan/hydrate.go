@@ -80,7 +80,7 @@ func (b *BuildPlan) hydrate() error {
 }
 
 func (b *BuildPlan) hydrateWithBuildClosure(nodeIDs []strfmt.UUID, platformID *strfmt.UUID, artifactLookup map[strfmt.UUID]*Artifact) error {
-	err := b.raw.WalkViaSteps(nodeIDs, raw.TagDependency, func(node interface{}, parent *raw.Artifact) error {
+	err := b.raw.WalkViaSteps(nodeIDs, raw.WalkViaDeps, func(node interface{}, parent *raw.Artifact) error {
 		switch v := node.(type) {
 		case *raw.Artifact:
 			// logging.Debug("Walking build closure artifact '%s (%s)'", v.DisplayName, v.NodeID)
@@ -151,51 +151,44 @@ func (b *BuildPlan) hydrateWithRuntimeClosure(nodeIDs []strfmt.UUID, platformID 
 }
 
 func (b *BuildPlan) hydrateWithIngredients(artifact *Artifact, platformID *strfmt.UUID, ingredientLookup map[strfmt.UUID]*Ingredient) error {
-	err := b.raw.WalkViaSteps([]strfmt.UUID{artifact.ArtifactID}, raw.TagSource,
+	err := b.raw.WalkViaSteps([]strfmt.UUID{artifact.ArtifactID}, raw.WalkViaSingleSource,
 		func(node interface{}, parent *raw.Artifact) error {
-			switch v := node.(type) {
-			case *raw.Source:
-				// logging.Debug("Walking source '%s (%s)'", v.Name, v.NodeID)
+			// logging.Debug("Walking source '%s (%s)'", v.Name, v.NodeID)
+			v, ok := node.(*raw.Source)
+			if !ok {
+				return nil // continue
+			}
 
-				// Ingredients aren't explicitly represented in buildplans. Technically all sources are ingredients
-				// but this may not always be true in the future. For our purposes we will initialize our own ingredients
-				// based on the source information, but we do not want to make the assumption in our logic that all
-				// sources are ingredients.
-				ingredient, ok := ingredientLookup[v.IngredientID]
-				if !ok {
-					ingredient = &Ingredient{
-						IngredientSource: &v.IngredientSource,
-						platforms:        []strfmt.UUID{},
-						Artifacts:        []*Artifact{},
-					}
-					b.ingredients = append(b.ingredients, ingredient)
-					ingredientLookup[v.IngredientID] = ingredient
+			// Ingredients aren't explicitly represented in buildplans. Technically all sources are ingredients
+			// but this may not always be true in the future. For our purposes we will initialize our own ingredients
+			// based on the source information, but we do not want to make the assumption in our logic that all
+			// sources are ingredients.
+			ingredient, ok := ingredientLookup[v.IngredientID]
+			if !ok {
+				ingredient = &Ingredient{
+					IngredientSource: &v.IngredientSource,
+					platforms:        []strfmt.UUID{},
+					Artifacts:        []*Artifact{},
 				}
+				b.ingredients = append(b.ingredients, ingredient)
+				ingredientLookup[v.IngredientID] = ingredient
+			}
 
-				// With multiple terminals it's possible we encounter the same combination multiple times.
-				// And an artifact usually only has one ingredient, so this is the cheapest lookup.
-				if !sliceutils.Contains(artifact.Ingredients, ingredient) {
-					artifact.Ingredients = append(artifact.Ingredients, ingredient)
-					ingredient.Artifacts = append(ingredient.Artifacts, artifact)
-				}
-				if platformID != nil {
-					ingredient.platforms = append(ingredient.platforms, *platformID)
-				}
+			// With multiple terminals it's possible we encounter the same combination multiple times.
+			// And an artifact usually only has one ingredient, so this is the cheapest lookup.
+			if !sliceutils.Contains(artifact.Ingredients, ingredient) {
+				artifact.Ingredients = append(artifact.Ingredients, ingredient)
+				ingredient.Artifacts = append(ingredient.Artifacts, artifact)
+			}
+			if platformID != nil {
+				ingredient.platforms = append(ingredient.platforms, *platformID)
+			}
 
-				if artifact.isBuildtimeDependency {
-					ingredient.IsBuildtimeDependency = true
-				}
-				if artifact.isRuntimeDependency {
-					ingredient.IsRuntimeDependency = true
-				}
-
-				return nil
-			default:
-				if a, ok := v.(*raw.Artifact); ok && a.NodeID == artifact.ArtifactID {
-					return nil // continue
-				}
-				// Source ingredients are only relevant when they link DIRECTLY to the artifact
-				return raw.WalkInterrupt{}
+			if artifact.isBuildtimeDependency {
+				ingredient.IsBuildtimeDependency = true
+			}
+			if artifact.isRuntimeDependency {
+				ingredient.IsRuntimeDependency = true
 			}
 
 			return nil

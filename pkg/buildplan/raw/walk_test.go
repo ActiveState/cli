@@ -24,7 +24,7 @@ func TestRawBuild_walkNodesViaSteps(t *testing.T) {
 	tests := []struct {
 		name      string
 		nodeIDs   []strfmt.UUID
-		tag       raw.StepInputTag
+		strategy  raw.WalkStrategy
 		build     *raw.Build
 		wantCalls []walkCall
 		wantErr   bool
@@ -32,7 +32,7 @@ func TestRawBuild_walkNodesViaSteps(t *testing.T) {
 		{
 			"Ingredient from step",
 			[]strfmt.UUID{"00000000-0000-0000-0000-000000000002"},
-			raw.TagSource,
+			raw.WalkViaSingleSource,
 			mock.BuildWithSourceFromStep,
 			[]walkCall{
 				{"00000000-0000-0000-0000-000000000002", "Artifact", ""},
@@ -44,7 +44,7 @@ func TestRawBuild_walkNodesViaSteps(t *testing.T) {
 		{
 			"Ingredient from generatedBy, multiple artifacts to same ingredient",
 			[]strfmt.UUID{"00000000-0000-0000-0000-000000000002", "00000000-0000-0000-0000-000000000003"},
-			raw.TagSource,
+			raw.WalkViaSingleSource,
 			mock.BuildWithSourceFromGeneratedBy,
 			[]walkCall{
 				{"00000000-0000-0000-0000-000000000002", "Artifact", ""},
@@ -55,9 +55,23 @@ func TestRawBuild_walkNodesViaSteps(t *testing.T) {
 			false,
 		},
 		{
+			"Multiple sources through installer artifact",
+			[]strfmt.UUID{"00000000-0000-0000-0000-000000000002"},
+			raw.WalkViaMultiSource,
+			mock.BuildWithInstallerDepsViaSrc,
+			[]walkCall{
+				{"00000000-0000-0000-0000-000000000002", "Artifact", ""},
+				{"00000000-0000-0000-0000-000000000007", "Artifact", "00000000-0000-0000-0000-000000000002"},
+				{"00000000-0000-0000-0000-000000000009", "Source", strfmt.UUID("00000000-0000-0000-0000-000000000007")},
+				{"00000000-0000-0000-0000-000000000010", "Artifact", "00000000-0000-0000-0000-000000000002"},
+				{"00000000-0000-0000-0000-000000000012", "Source", strfmt.UUID("00000000-0000-0000-0000-000000000010")},
+			},
+			false,
+		},
+		{
 			"Build time deps",
 			[]strfmt.UUID{"00000000-0000-0000-0000-000000000002"},
-			raw.TagDependency,
+			raw.WalkViaDeps,
 			mock.BuildWithBuildDeps,
 			[]walkCall{
 				{"00000000-0000-0000-0000-000000000002", "Artifact", ""},
@@ -93,7 +107,7 @@ func TestRawBuild_walkNodesViaSteps(t *testing.T) {
 				return nil
 			}
 
-			if err := tt.build.WalkViaSteps(tt.nodeIDs, tt.tag, walk); (err != nil) != tt.wantErr {
+			if err := tt.build.WalkViaSteps(tt.nodeIDs, tt.strategy, walk); (err != nil) != tt.wantErr {
 				t.Errorf("walkNodes() error = %v, wantErr %v", errs.JoinMessage(err), tt.wantErr)
 			}
 
@@ -140,8 +154,8 @@ func TestRawBuild_walkNodesViaRuntimeDeps(t *testing.T) {
 		},
 		{
 			"Runtime deps via src step",
-			mock.BuildWithRuntimeDepsViaSrc.Terminals[0].NodeIDs,
-			mock.BuildWithRuntimeDepsViaSrc,
+			mock.BuildWithInstallerDepsViaSrc.Terminals[0].NodeIDs,
+			mock.BuildWithInstallerDepsViaSrc,
 			[]walkCall{
 				{"00000000-0000-0000-0000-000000000007", "Artifact", "00000000-0000-0000-0000-000000000002"},
 			},
