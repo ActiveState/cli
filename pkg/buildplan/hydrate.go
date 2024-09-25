@@ -55,6 +55,8 @@ func (b *BuildPlan) hydrate() error {
 		}
 		ingredient, ok := ingredientLookup[source.IngredientID]
 		if !ok {
+			// It's possible that we haven't associated a source to an artifact if that source links to multiple artifacts.
+			// In this case we cannot determine which artifact relates to which source.
 			continue
 		}
 		b.requirements = append(b.requirements, &Requirement{
