@@ -83,7 +83,7 @@ func (c *Commit) Run() (rerr error) {
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit ID")
 	}
-	bp := buildplanner.NewBuildPlannerModel(c.prime.Auth())
+	bp := buildplanner.NewBuildPlannerModel(c.prime.Auth(), c.prime.SvcModel())
 	remoteScript, err := bp.GetBuildScript(localCommitID.String())
 	if err != nil {
 		return errs.Wrap(err, "Could not get remote build expr and time for provided commit")

@@ -38,6 +38,9 @@ type MessageInfo struct {
 	Placement MessagePlacementType `json:"placement"`
 }
 
+type Mutation struct {
+}
+
 type Organization struct {
 	URLname string `json:"URLname"`
 	Role    string `json:"role"`

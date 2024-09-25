@@ -88,7 +88,7 @@ func (u *Uninstall) Run(params Params) (rerr error) {
 
 	pj := u.prime.Project()
 	out := u.prime.Output()
-	bp := bpModel.NewBuildPlannerModel(u.prime.Auth())
+	bp := bpModel.NewBuildPlannerModel(u.prime.Auth(), u.prime.SvcModel())
 
 	// Verify input
 	if pj == nil {

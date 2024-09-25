@@ -47,6 +47,7 @@ type Configurable interface {
 }
 
 type Artifacts struct {
+	prime     primeable
 	out       output.Outputer
 	project   *project.Project
 	analytics analytics.Dispatcher
@@ -83,6 +84,7 @@ type structuredArtifact struct {
 
 func New(p primeable) *Artifacts {
 	return &Artifacts{
+		prime:     p,
 		out:       p.Output(),
 		project:   p.Project(),
 		auth:      p.Auth(),
@@ -116,7 +118,7 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 	}
 
 	bp, err := buildplanner_runbit.GetBuildPlan(
-		b.project, params.Namespace, params.CommitID, params.Target, b.auth, b.out)
+		params.Namespace, params.CommitID, params.Target, b.prime)
 	if err != nil {
 		return errs.Wrap(err, "Could not get buildplan")
 	}

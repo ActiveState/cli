@@ -55,7 +55,7 @@ func UpdateAndReload(prime primeable, script *buildscript.BuildScript, oldCommit
 	pj := prime.Project()
 	out := prime.Output()
 	cfg := prime.Config()
-	bp := buildplanner.NewBuildPlannerModel(prime.Auth())
+	bp := buildplanner.NewBuildPlannerModel(prime.Auth(), prime.SvcModel())
 
 	var pg *output.Spinner
 	defer func() {
@@ -123,7 +123,7 @@ func updateCommitID(prime primeable, commitID strfmt.UUID) error {
 	}
 
 	if prime.Config().GetBool(constants.OptinBuildscriptsConfig) {
-		bp := buildplanner.NewBuildPlannerModel(prime.Auth())
+		bp := buildplanner.NewBuildPlannerModel(prime.Auth(), prime.SvcModel())
 		script, err := bp.GetBuildScript(commitID.String())
 		if err != nil {
 			return errs.Wrap(err, "Could not get remote build expr and time")

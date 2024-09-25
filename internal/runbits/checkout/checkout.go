@@ -3,8 +3,6 @@ package checkout
 import (
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
@@ -15,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -30,17 +27,15 @@ type primeable interface {
 	primer.Analyticer
 	primer.Configurer
 	primer.Auther
+	primer.SvcModeler
 }
 
 // Checkout will checkout the given platform project at the given path
 // This includes cloning an associated repository and creating the activestate.yaml
 // It does not activate any environment
 type Checkout struct {
-	repo git.Repository
-	output.Outputer
-	config    *config.Instance
-	analytics analytics.Dispatcher
-	auth      *authentication.Auth
+	repo  git.Repository
+	prime primeable
 }
 
 type errCommitDoesNotBelong struct {
@@ -54,7 +49,7 @@ func (e errCommitDoesNotBelong) Error() string {
 var errNoCommitID = errs.New("commitID is nil")
 
 func New(repo git.Repository, prime primeable) *Checkout {
-	return &Checkout{repo, prime.Output(), prime.Config(), prime.Analytics(), prime.Auth()}
+	return &Checkout{repo, prime}
 }
 
 func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath string, noClone, bareCheckout bool) (_ string, rerr error) {
@@ -90,7 +85,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 
 		// Clone the related repo, if it is defined
 		if !noClone && repoURL != nil && *repoURL != "" {
-			err := r.repo.CloneProject(ns.Owner, ns.Project, path, r.Outputer, r.analytics)
+			err := r.repo.CloneProject(ns.Owner, ns.Project, path, r.prime.Output(), r.prime.Analytics())
 			if err != nil {
 				return "", locale.WrapError(err, "err_clone_project", "Could not clone associated git repository")
 			}
@@ -103,8 +98,8 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		return "", errs.Wrap(err, "Could not create project files")
 	}
 
-	if r.config.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript_runbit.Initialize(path, r.auth); err != nil {
+	if r.prime.Config().GetBool(constants.OptinBuildscriptsConfig) {
+		if err := buildscript_runbit.Initialize(path, r.prime.Auth(), r.prime.SvcModel()); err != nil {
 			return "", errs.Wrap(err, "Unable to initialize buildscript")
 		}
 	}
@@ -117,7 +112,7 @@ func (r *Checkout) fetchProject(
 
 	// If project does not exist at path then we must checkout
 	// the project and create the project file
-	pj, err := model.FetchProjectByName(ns.Owner, ns.Project, r.auth)
+	pj, err := model.FetchProjectByName(ns.Owner, ns.Project, r.prime.Auth())
 	if err != nil {
 		return "", "", nil, "", "", nil, locale.WrapError(err, "err_fetch_project", "", ns.String())
 	}
@@ -129,7 +124,7 @@ func (r *Checkout) fetchProject(
 	// Fetch the branch the given commitID is on.
 	case commitID != nil:
 		for _, b := range pj.Branches {
-			if belongs, err := model.CommitBelongsToBranch(ns.Owner, ns.Project, b.Label, *commitID, r.auth); err == nil && belongs {
+			if belongs, err := model.CommitBelongsToBranch(ns.Owner, ns.Project, b.Label, *commitID, r.prime.Auth()); err == nil && belongs {
 				branch = b
 				break
 			} else if err != nil {
@@ -162,7 +157,7 @@ func (r *Checkout) fetchProject(
 		return "", "", nil, "", "", nil, errNoCommitID
 	}
 
-	lang, err := getLanguage(*commitID, r.auth)
+	lang, err := getLanguage(*commitID, r.prime.Auth())
 	if err != nil {
 		return "", "", nil, "", "", nil, errs.Wrap(err, "Could not get language from commitID")
 	}
@@ -170,7 +165,7 @@ func (r *Checkout) fetchProject(
 
 	// Match the case of the organization.
 	// Otherwise the incorrect case will be written to the project file.
-	owners, err := model.FetchOrganizationsByIDs([]strfmt.UUID{pj.OrganizationID}, r.auth)
+	owners, err := model.FetchOrganizationsByIDs([]strfmt.UUID{pj.OrganizationID}, r.prime.Auth())
 	if err != nil {
 		return "", "", nil, "", "", nil, errs.Wrap(err, "Unable to get the project's org")
 	}
