@@ -60,7 +60,7 @@ func (a *Add) Run(params AddRunParams) (rerr error) {
 
 	pj := a.prime.Project()
 	out := a.prime.Output()
-	bp := bpModel.NewBuildPlannerModel(a.prime.Auth())
+	bp := bpModel.NewBuildPlannerModel(a.prime.Auth(), a.prime.SvcModel())
 
 	var pg *output.Spinner
 	defer func() {

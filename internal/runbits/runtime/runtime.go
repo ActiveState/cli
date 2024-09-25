@@ -195,7 +195,7 @@ func Update(
 		// Solve
 		solveSpinner := output.StartSpinner(prime.Output(), locale.T("progress_solve"), constants.TerminalAnimationInterval)
 
-		bpm := bpModel.NewBuildPlannerModel(prime.Auth())
+		bpm := bpModel.NewBuildPlannerModel(prime.Auth(), prime.SvcModel())
 		commit, err = bpm.FetchCommit(commitID, proj.Owner(), proj.Name(), nil)
 		if err != nil {
 			solveSpinner.Stop(locale.T("progress_fail"))

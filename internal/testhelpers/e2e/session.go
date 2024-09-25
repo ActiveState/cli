@@ -68,6 +68,18 @@ type Session struct {
 	ExecutorExe     string
 	spawned         []*SpawnedCmd
 	ignoreLogErrors bool
+	cache           keyCache
+}
+
+type keyCache map[string]string
+
+func (k keyCache) GetCache(key string) (string, error) {
+	return k[key], nil
+}
+
+func (k keyCache) SetCache(key, value string, _ time.Duration) error {
+	k[key] = value
+	return nil
 }
 
 var (
@@ -391,7 +403,7 @@ func (s *Session) PrepareProject(namespace, commitID string) {
 
 func (s *Session) PrepareProjectAndBuildScript(namespace, commitID string) {
 	s.PrepareProject(namespace, commitID)
-	bp := buildplanner.NewBuildPlannerModel(nil)
+	bp := buildplanner.NewBuildPlannerModel(nil, s.cache)
 	script, err := bp.GetBuildScript(commitID)
 	require.NoError(s.T, err)
 	b, err := script.Marshal()
@@ -714,6 +726,13 @@ func (s *Session) LogFiles() []string {
 	if err != nil {
 		fmt.Printf("Error walking log dir: %v", err)
 	}
+
+	// Sort by filename timestamp (filenames are `[executable]-[processid]-[timestamp].log`)
+	slices.SortFunc(result, func(a, b string) int {
+		aa := strings.Split(a, "-")
+		bb := strings.Split(b, "-")
+		return strings.Compare(bb[len(bb)-1], aa[len(aa)-1])
+	})
 
 	return result
 }
