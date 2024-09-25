@@ -21,7 +21,13 @@ import (
 
 func init() {
 	configMediator.RegisterOption(constants.SecurityPromptConfig, configMediator.Bool, true)
-	configMediator.RegisterOption(constants.SecurityPromptLevelConfig, configMediator.String, vulnModel.SeverityCritical)
+	severities := configMediator.NewEnum([]string{
+		vulnModel.SeverityCritical,
+		vulnModel.SeverityHigh,
+		vulnModel.SeverityMedium,
+		vulnModel.SeverityLow,
+	}, vulnModel.SeverityCritical)
+	configMediator.RegisterOption(constants.SecurityPromptLevelConfig, configMediator.Enum, severities)
 }
 
 type primeable interface {
@@ -224,6 +230,7 @@ func (c *CveReport) promptForSecurity() (bool, error) {
 	if err != nil {
 		return false, locale.WrapError(err, "err_pkgop_confirm", "Need a confirmation.")
 	}
+	c.prime.Output().Notice("") // Empty line
 
 	return confirm, nil
 }

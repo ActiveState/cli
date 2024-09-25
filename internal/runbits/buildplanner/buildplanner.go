@@ -5,12 +5,11 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
@@ -34,17 +33,29 @@ func (e *ErrCommitDoesNotExistInProject) Error() string {
 	return "Commit does not exist in project"
 }
 
+type primeable interface {
+	primer.Projecter
+	primer.Auther
+	primer.Outputer
+	primer.SvcModeler
+	primer.CheckoutInfoer
+}
+
 // GetCommit returns a commit from the given arguments. By default, the local commit for the
 // current project is returned, but a commit for a given commitID for the current project can be
 // returned, as can the commit for a remote project (and optional commitID).
 func GetCommit(
-	pj *project.Project,
 	namespace *project.Namespaced,
 	commitID string,
 	target string,
-	auth *authentication.Auth,
-	out output.Outputer,
-	info *checkoutinfo.CheckoutInfo) (commit *bpModel.Commit, rerr error) {
+	prime primeable,
+) (commit *bpModel.Commit, rerr error) {
+	pj := prime.Project()
+	out := prime.Output()
+	auth := prime.Auth()
+	svcm := prime.SvcModel()
+	info := prime.CheckoutInfo()
+
 	if pj == nil && !namespace.IsValid() {
 		return nil, rationalize.ErrNoProject
 	}
@@ -82,7 +93,7 @@ func GetCommit(
 			return nil, errs.Wrap(err, "Could not get commit ID")
 		}
 
-		bp := bpModel.NewBuildPlannerModel(auth)
+		bp := bpModel.NewBuildPlannerModel(auth, svcm)
 		commit, err = bp.FetchCommit(localCommitID, pj.Owner(), pj.Name(), pj.BranchName(), targetPtr)
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to fetch commit")
@@ -90,7 +101,7 @@ func GetCommit(
 
 	// Return buildplan from the given commitID for the current project.
 	case !namespaceProvided && commitIdProvided:
-		bp := bpModel.NewBuildPlannerModel(auth)
+		bp := bpModel.NewBuildPlannerModel(auth, svcm)
 		commit, err = bp.FetchCommit(commitUUID, pj.Owner(), pj.Name(), pj.BranchName(), targetPtr)
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to fetch commit")
@@ -114,7 +125,7 @@ func GetCommit(
 		}
 		commitUUID = *branchCommitUUID
 
-		bp := bpModel.NewBuildPlannerModel(auth)
+		bp := bpModel.NewBuildPlannerModel(auth, svcm)
 		commit, err = bp.FetchCommit(commitUUID, namespace.Owner, namespace.Project, branch.Label, targetPtr)
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to fetch commit")
@@ -132,7 +143,7 @@ func GetCommit(
 			return nil, errs.Wrap(err, "Could not grab branch for project")
 		}
 
-		bp := bpModel.NewBuildPlannerModel(auth)
+		bp := bpModel.NewBuildPlannerModel(auth, svcm)
 		commit, err = bp.FetchCommit(commitUUID, namespace.Owner, namespace.Project, branch.Label, targetPtr)
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to fetch commit")
@@ -176,14 +187,12 @@ func GetCommit(
 // current project can be returned, as can the buildplan for a remote project (and optional
 // commitID).
 func GetBuildPlan(
-	pj *project.Project,
 	namespace *project.Namespaced,
 	commitID string,
 	target string,
-	auth *authentication.Auth,
-	out output.Outputer,
-	info *checkoutinfo.CheckoutInfo) (bp *buildplan.BuildPlan, rerr error) {
-	commit, err := GetCommit(pj, namespace, commitID, target, auth, out, info)
+	prime primeable,
+) (bp *buildplan.BuildPlan, rerr error) {
+	commit, err := GetCommit(namespace, commitID, target, prime)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get commit")
 	}

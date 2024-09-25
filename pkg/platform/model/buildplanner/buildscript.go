@@ -1,7 +1,9 @@
 package buildplanner
 
 import (
+	"encoding/json"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -15,11 +17,30 @@ import (
 )
 
 func (b *BuildPlanner) GetBuildScript(owner, project, branch, commitID string) (*buildscript.BuildScript, error) {
-	logging.Debug("GetBuildExpression, commitID: %s", commitID)
+	logging.Debug("GetBuildScript, commitID: %s", commitID)
 	resp := &bpResp.BuildExpressionResponse{}
-	err := b.client.Run(request.BuildExpression(commitID), resp)
+
+	cacheKey := strings.Join([]string{"GetBuildScript", commitID}, "-")
+	respRaw, err := b.cache.GetCache(cacheKey)
 	if err != nil {
-		return nil, processBuildPlannerError(err, "failed to fetch build expression")
+		return nil, errs.Wrap(err, "failed to get cache")
+	}
+	if respRaw != "" {
+		if err := json.Unmarshal([]byte(respRaw), resp); err != nil {
+			return nil, errs.Wrap(err, "failed to unmarshal cache: %s", cacheKey)
+		}
+	} else {
+		err := b.client.Run(request.BuildExpression(commitID), resp)
+		if err != nil {
+			return nil, processBuildPlannerError(err, "failed to fetch build expression")
+		}
+		respBytes, err := json.Marshal(resp)
+		if err != nil {
+			return nil, errs.Wrap(err, "failed to marshal cache")
+		}
+		if err := b.cache.SetCache(cacheKey, string(respBytes), fetchCommitCacheExpiry); err != nil {
+			return nil, errs.Wrap(err, "failed to set cache")
+		}
 	}
 
 	if resp.Commit == nil {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -15,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -83,11 +85,18 @@ func (r *Refresh) Run(params *Params) error {
 		return errs.Wrap(err, "could not determine if runtime needs update")
 	}
 
+	if r.config.GetBool(constants.OptinBuildscriptsConfig) {
+		_, err := r.prime.CheckoutInfo().BuildScript()
+		if errors.Is(err, checkoutinfo.ErrBuildscriptNotExist) {
+			return locale.WrapInputError(err, locale.T("notice_needs_buildscript_reset"))
+		}
+	}
+
 	if !needsUpdate {
 		return locale.NewInputError("refresh_runtime_uptodate")
 	}
 
-	rti, err := runtime_runbit.Update(r.prime, trigger.TriggerRefresh, runtime_runbit.WithoutHeaders())
+	rti, err := runtime_runbit.Update(r.prime, trigger.TriggerRefresh, runtime_runbit.WithoutHeaders(), runtime_runbit.WithIgnoreAsync())
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime_new", "Could not update runtime for this project.")
 	}

@@ -95,7 +95,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 	}
 	r.out.Notice(locale.Tr("operating_message", r.project.NamespaceString(), r.project.Dir()))
 
-	bp := buildplanner.NewBuildPlannerModel(r.auth)
+	bp := buildplanner.NewBuildPlannerModel(r.auth, r.prime.SvcModel())
 	targetCommitID := commitID // the commit to revert the contents of, or the commit to revert to
 	revertParams := revertParams{
 		organization:   r.project.Owner(),

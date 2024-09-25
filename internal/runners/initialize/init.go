@@ -99,7 +99,7 @@ func New(prime primeable) *Initialize {
 // (i.e. `state use show`).
 // Error handling is not necessary because it's an input error to not include a language to
 // `state init`. We're just trying to infer one as a convenience to the user.
-func inferLanguage(config projectfile.ConfigGetter, auth *authentication.Auth) (string, string, bool) {
+func inferLanguage(config projectfile.ConfigGetter, auth *authentication.Auth, svcm *model.SvcModel) (string, string, bool) {
 	defaultProjectDir := config.GetString(constants.GlobalDefaultPrefname)
 	if defaultProjectDir == "" {
 		return "", "", false
@@ -108,7 +108,7 @@ func inferLanguage(config projectfile.ConfigGetter, auth *authentication.Auth) (
 	if err != nil {
 		return "", "", false
 	}
-	info := checkoutinfo.New(auth, config, defaultProj)
+	info := checkoutinfo.New(auth, config, defaultProj, svcm)
 	commitID, err := info.CommitID()
 	if err != nil {
 		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
@@ -182,7 +182,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 			languageVersion = langParts[1]
 		}
 	} else {
-		languageName, languageVersion, inferred = inferLanguage(r.config, r.auth)
+		languageName, languageVersion, inferred = inferLanguage(r.config, r.auth, r.svcModel)
 	}
 
 	if languageName == "" {
@@ -263,7 +263,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return errs.Wrap(err, "Unable to determine Platform ID from %s", sysinfo.OS().String())
 	}
 
-	bp := bpModel.NewBuildPlannerModel(r.auth)
+	bp := bpModel.NewBuildPlannerModel(r.auth, r.svcModel)
 	commitID, err := bp.CreateProject(&bpModel.CreateProjectParams{
 		Owner:       namespace.Owner,
 		Project:     namespace.Project,
@@ -283,7 +283,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	// Solve runtime
 	solveSpinner := output.StartSpinner(r.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
-	bpm := bpModel.NewBuildPlannerModel(r.auth)
+	bpm := bpModel.NewBuildPlannerModel(r.auth, r.svcModel)
 	commit, err := bpm.FetchCommit(commitID, r.prime.Project().Owner(), r.prime.Project().Name(), r.prime.Project().BranchName(), nil)
 	if err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))

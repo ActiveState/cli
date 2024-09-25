@@ -101,6 +101,10 @@ func (l *Log) Run(params *LogParams) (rerr error) {
 }
 
 func ignoreLogFile(logFile string) (bool, error) {
+	if strings.EqualFold(filepath.Base(logFile), logging.FileName()) {
+		return true, nil
+	}
+
 	file, err := os.Open(logFile)
 	if err != nil {
 		return false, errs.Wrap(err, "failed to open log file")

@@ -26,8 +26,8 @@ type Artifact struct {
 
 	Ingredients []*Ingredient `json:"-"` // While most artifacts only have a single ingredient, some artifacts such as installers can have multiple.
 
-	isRuntimeDependency   bool
-	isBuildtimeDependency bool
+	IsRuntimeDependency   bool
+	IsBuildtimeDependency bool
 
 	platforms []strfmt.UUID
 	children  []ArtifactRelation
@@ -144,11 +144,7 @@ func (a Artifacts) ToIDSlice() []strfmt.UUID {
 func (a Artifacts) ToNameMap() ArtifactNameMap {
 	result := make(map[string]*Artifact, len(a))
 	for _, a := range a {
-		name := a.DisplayName
-		if len(a.Ingredients) == 0 {
-			name = a.Ingredients[0].Name
-		}
-		result[name] = a
+		result[a.Name()] = a
 	}
 	return result
 }
@@ -239,7 +235,9 @@ func (as Artifacts) Dependencies(recursive bool, ignore *map[strfmt.UUID]struct{
 // Dependencies returns ALL dependencies that an artifact has, this covers runtime and build time dependencies.
 // It does not cover test dependencies as we have no use for them in the state tool.
 func (a *Artifact) Dependencies(recursive bool, ignore *map[strfmt.UUID]struct{}) Artifacts {
-	return a.dependencies(recursive, ignore, RuntimeRelation, BuildtimeRelation)
+	as := a.dependencies(recursive, ignore, RuntimeRelation, BuildtimeRelation)
+	as = sliceutils.UniqueByProperty(as, func(a *Artifact) any { return a.ArtifactID })
+	return as
 }
 
 func (a *Artifact) dependencies(recursive bool, maybeIgnore *map[strfmt.UUID]struct{}, relations ...Relation) Artifacts {

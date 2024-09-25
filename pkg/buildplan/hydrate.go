@@ -92,7 +92,7 @@ func (b *BuildPlan) hydrateWithBuildClosure(nodeIDs []strfmt.UUID, platformID *s
 			}
 
 			artifact.platforms = sliceutils.Unique(append(artifact.platforms, *platformID))
-			artifact.isBuildtimeDependency = true
+			artifact.IsBuildtimeDependency = true
 
 			if parent != nil {
 				parentArtifact, ok := artifactLookup[parent.NodeID]
@@ -137,7 +137,7 @@ func (b *BuildPlan) hydrateWithRuntimeClosure(nodeIDs []strfmt.UUID, platformID 
 			}
 
 			artifact.platforms = sliceutils.Unique(append(artifact.platforms, *platformID))
-			artifact.isRuntimeDependency = true
+			artifact.IsRuntimeDependency = true
 
 			return nil
 		default:
@@ -154,8 +154,6 @@ func (b *BuildPlan) hydrateWithIngredients(artifact *Artifact, platformID *strfm
 	err := b.raw.WalkViaSteps([]strfmt.UUID{artifact.ArtifactID}, raw.TagSource,
 		func(node interface{}, parent *raw.Artifact) error {
 			switch v := node.(type) {
-			case *raw.Artifact:
-				return nil // We've already got our artifacts
 			case *raw.Source:
 				// logging.Debug("Walking source '%s (%s)'", v.Name, v.NodeID)
 
@@ -184,16 +182,20 @@ func (b *BuildPlan) hydrateWithIngredients(artifact *Artifact, platformID *strfm
 					ingredient.platforms = append(ingredient.platforms, *platformID)
 				}
 
-				if artifact.isBuildtimeDependency {
+				if artifact.IsBuildtimeDependency {
 					ingredient.IsBuildtimeDependency = true
 				}
-				if artifact.isRuntimeDependency {
+				if artifact.IsRuntimeDependency {
 					ingredient.IsRuntimeDependency = true
 				}
 
 				return nil
 			default:
-				return errs.New("unexpected node type '%T': %#v", v, v)
+				if a, ok := v.(*raw.Artifact); ok && a.NodeID == artifact.ArtifactID {
+					return nil // continue
+				}
+				// Source ingredients are only relevant when they link DIRECTLY to the artifact
+				return raw.WalkInterrupt{}
 			}
 
 			return nil
@@ -212,7 +214,7 @@ func (b *BuildPlan) sanityCheck() error {
 	// Ensure all artifacts have an associated ingredient
 	// If this fails either the API is bugged or the hydrate logic is bugged
 	for _, a := range b.Artifacts() {
-		if len(a.Ingredients) == 0 {
+		if raw.IsStateToolMimeType(a.MimeType) && len(a.Ingredients) == 0 {
 			return errs.New("artifact '%s (%s)' does not have an ingredient", a.ArtifactID, a.DisplayName)
 		}
 	}

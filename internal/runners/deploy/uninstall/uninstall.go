@@ -21,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/checkoutinfo"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -35,6 +36,7 @@ type Uninstall struct {
 	subshell  subshell.SubShell
 	cfg       *config.Instance
 	analytics analytics.Dispatcher
+	svcm      *model.SvcModel
 }
 
 type primeable interface {
@@ -42,10 +44,11 @@ type primeable interface {
 	primer.Subsheller
 	primer.Configurer
 	primer.Analyticer
+	primer.SvcModeler
 }
 
 func NewDeployUninstall(prime primeable) *Uninstall {
-	return &Uninstall{prime.Output(), prime.Subshell(), prime.Config(), prime.Analytics()}
+	return &Uninstall{prime.Output(), prime.Subshell(), prime.Config(), prime.Analytics(), prime.SvcModel()}
 }
 
 func (u *Uninstall) Run(params *Params) error {
@@ -85,7 +88,7 @@ func (u *Uninstall) Run(params *Params) error {
 		return locale.WrapError(err, "err_deploy_uninstall_cannot_read_project", "Cannot read project at '{{.V0}}'", path)
 	}
 
-	info := checkoutinfo.New(nil, u.cfg, proj)
+	info := checkoutinfo.New(nil, u.cfg, proj, u.svcm)
 	commitID, err := info.CommitID()
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_uninstall_cannot_read_commit", "Cannot read commit ID from project at '{{.V0}}'", path)

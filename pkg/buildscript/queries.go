@@ -92,6 +92,23 @@ func (b *BuildScript) Requirements() ([]Requirement, error) {
 	return requirements, nil
 }
 
+// DependencyRequirements is identical to Requirements except that it only considers dependency type requirements,
+// which are the most common.
+// ONLY use this when you know you only need to care about dependencies.
+func (b *BuildScript) DependencyRequirements() ([]types.Requirement, error) {
+	reqs, err := b.Requirements()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get requirements")
+	}
+	var deps []types.Requirement
+	for _, req := range reqs {
+		if dep, ok := req.(DependencyRequirement); ok {
+			deps = append(deps, dep.Requirement)
+		}
+	}
+	return deps, nil
+}
+
 func (b *BuildScript) getRequirementsNode() (*Value, error) {
 	node, err := b.getSolveNode()
 	if err != nil {

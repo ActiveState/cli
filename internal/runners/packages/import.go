@@ -116,7 +116,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		return errs.Wrap(err, "Could not import changeset")
 	}
 
-	bp := buildplanner.NewBuildPlannerModel(auth)
+	bp := buildplanner.NewBuildPlannerModel(auth, i.prime.SvcModel())
 	bs, err := bp.GetBuildScript(proj.Owner(), proj.Name(), proj.BranchName(), localCommitId.String())
 	if err != nil {
 		return locale.WrapError(err, "err_cannot_get_build_expression", "Could not get build expression")

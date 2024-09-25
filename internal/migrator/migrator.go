@@ -9,10 +9,11 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-func NewMigrator(auth *authentication.Auth, cfg *config.Instance) projectfile.MigratorFunc {
+func NewMigrator(auth *authentication.Auth, cfg *config.Instance, svcm *model.SvcModel) projectfile.MigratorFunc {
 	return func(project *projectfile.Project, configVersion int) (v int, rerr error) {
 		defer func() {
 			if rerr != nil {
@@ -26,7 +27,7 @@ func NewMigrator(auth *authentication.Auth, cfg *config.Instance) projectfile.Mi
 			// have completed. Ensure you roll back any partial updates in the case of an error as they will need to be attempted again.
 			case 0:
 				logging.Debug("Attempting to create buildscript")
-				info := checkoutinfo.New(auth, cfg, project)
+				info := checkoutinfo.New(auth, cfg, project, svcm)
 				if err := info.InitializeBuildScript(strfmt.UUID(project.LegacyCommitID())); err != nil {
 					return v, errs.Wrap(err, "Failed to initialize buildscript")
 				}

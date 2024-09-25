@@ -30,6 +30,7 @@ type primeable interface {
 	primer.Auther
 	primer.Projecter
 	primer.Prompter
+	primer.SvcModeler
 	primer.CheckoutInfoer
 }
 
@@ -95,7 +96,7 @@ func (u *Upgrade) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Failed to get commit ID")
 	}
 
-	bpm := bpModel.NewBuildPlannerModel(u.prime.Auth())
+	bpm := bpModel.NewBuildPlannerModel(u.prime.Auth(), u.prime.SvcModel())
 	localCommit, err := bpm.FetchCommit(localCommitID, proj.Owner(), proj.Name(), proj.BranchName(), nil)
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch build result")
@@ -256,7 +257,7 @@ func (u *Upgrade) renderUserFacing(changes []structuredChange, expand bool) erro
 		})
 
 		needsDepRow := len(change.TransitiveDeps) > 0
-		needsNamespaceRow := strings.HasPrefix(change.Namespace, model.OrgNamespacePrefix)
+		needsNamespaceRow := strings.HasPrefix(change.Namespace, model.NamespaceOrg.Prefix())
 
 		if needsNamespaceRow {
 			treeSymbol := output.TreeEnd

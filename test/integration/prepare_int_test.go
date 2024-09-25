@@ -124,7 +124,7 @@ func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
 
 func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	suite.OnlyRunForTags(tagsuite.Prepare)
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	err := ts.ClearCache()
 	suite.Require().NoError(err)
 	defer ts.Close()
@@ -166,8 +166,9 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	cp = ts.Spawn("activate")
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("which python3")
-	cp.SendLine("python3 --version")
+	cp.SendLine("python3")
 	cp.Expect("ActiveState")
+	cp.SendLine("exit()") // exit from Python interpreter
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 

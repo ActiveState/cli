@@ -38,6 +38,9 @@ type MessageInfo struct {
 	Placement MessagePlacementType `json:"placement"`
 }
 
+type Mutation struct {
+}
+
 type Organization struct {
 	URLname string `json:"URLname"`
 	Role    string `json:"role"`
@@ -51,6 +54,9 @@ type ProcessInfo struct {
 type Project struct {
 	Namespace string   `json:"namespace"`
 	Locations []string `json:"locations"`
+}
+
+type Query struct {
 }
 
 type ReportRuntimeUsageResponse struct {

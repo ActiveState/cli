@@ -7,15 +7,20 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/99designs/gqlgen/graphql"
-	"github.com/99designs/gqlgen/graphql/errcode"
 	"github.com/vektah/gqlparser/v2/ast"
 	"github.com/vektah/gqlparser/v2/gqlerror"
+
+	"github.com/99designs/gqlgen/graphql"
+	"github.com/99designs/gqlgen/graphql/errcode"
 )
 
 // GET implements the GET side of the default HTTP transport
 // defined in https://github.com/APIs-guru/graphql-over-http#get
-type GET struct{}
+type GET struct {
+	// Map of all headers that are added to graphql response. If not
+	// set, only one header: Content-Type: application/json will be set.
+	ResponseHeaders map[string][]string
+}
 
 var _ graphql.Transport = GET{}
 
@@ -34,7 +39,7 @@ func (h GET) Do(w http.ResponseWriter, r *http.Request, exec graphql.GraphExecut
 		writeJsonError(w, err.Error())
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
+	writeHeaders(w, h.ResponseHeaders)
 
 	raw := &graphql.RawParams{
 		Query:         query.Get("query"),
@@ -79,7 +84,7 @@ func (h GET) Do(w http.ResponseWriter, r *http.Request, exec graphql.GraphExecut
 	writeJson(w, responses(ctx))
 }
 
-func jsonDecode(r io.Reader, val interface{}) error {
+func jsonDecode(r io.Reader, val any) error {
 	dec := json.NewDecoder(r)
 	dec.UseNumber()
 	return dec.Decode(val)

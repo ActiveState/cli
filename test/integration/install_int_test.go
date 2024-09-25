@@ -25,8 +25,25 @@ func (suite *InstallIntegrationTestSuite) TestInstall() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "trender")
-	cp.Expect("Package added")
+	cp.Expect("project has been updated")
 	cp.ExpectExitCode(0)
+}
+
+func (suite *InstallIntegrationTestSuite) TestInstallSuggest() {
+	suite.OnlyRunForTags(tagsuite.Install, tagsuite.Critical)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "djang")
+	cp.Expect("No results found", e2e.RuntimeSolvingTimeoutOpt)
+	cp.Expect("Did you mean")
+	cp.Expect("language/python/djang")
+	cp.ExpectExitCode(1)
 }
 
 func (suite *InstallIntegrationTestSuite) TestInstall_InvalidCommit() {
@@ -103,7 +120,7 @@ func (suite *InstallIntegrationTestSuite) TestInstall_Resolved() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "requests")
-	cp.Expect("Package added")
+	cp.Expect("project has been updated")
 	cp.ExpectExitCode(0)
 
 	// Run `state packages` to verify a full package version was resolved.

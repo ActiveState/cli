@@ -109,7 +109,8 @@ func RationalizeSolveError(proj *project.Project, auth *auth.Auth, rerr *error) 
 				*rerr = errs.NewUserFacing(locale.Tr(
 					"err_alternate_branches",
 					noMatchingPlatformErr.HostPlatform, noMatchingPlatformErr.HostArch,
-					proj.BranchName(), strings.Join(branches, "\n - ")))
+					proj.BranchName(), strings.Join(branches, "\n - ")),
+					errs.SetInput())
 				return
 			}
 		}

@@ -42,6 +42,22 @@ const (
 	inKey  = "in"
 )
 
+type PreUnmarshalerFunc func(map[string]interface{}) (map[string]interface{}, error)
+
+var preUnmarshalers map[string]PreUnmarshalerFunc
+
+func init() {
+	preUnmarshalers = make(map[string]PreUnmarshalerFunc)
+}
+
+// RegisterFunctionPreUnmarshaler registers a buildscript pre-unmarshaler for a buildexpression
+// function.
+// Pre-unmarshalers accept a JSON object of function arguments, transform those arguments as
+// necessary, and return a JSON object for final unmarshaling to buildscript.
+func RegisterFunctionPreUnmarshaler(name string, preUnmarshal PreUnmarshalerFunc) {
+	preUnmarshalers[name] = preUnmarshal
+}
+
 // UnmarshalBuildExpression returns a BuildScript constructed from the given build expression in
 // JSON format.
 // Build scripts and build expressions are almost identical, with the exception of the atTime field.
@@ -250,12 +266,21 @@ func unmarshalFuncCall(path []string, m map[string]interface{}) (*FuncCall, erro
 	var name string
 	var argsInterface interface{}
 	for key, value := range m {
-		_, ok := value.(map[string]interface{})
+		m, ok := value.(map[string]interface{})
 		if !ok {
 			return nil, errs.New("Incorrect argument format")
 		}
 
 		name = key
+
+		if preUnmarshal, exists := preUnmarshalers[name]; exists {
+			var err error
+			value, err = preUnmarshal(m)
+			if err != nil {
+				return nil, errs.Wrap(err, "Unable to pre-unmarshal function '%s'", name)
+			}
+		}
+
 		argsInterface = value
 	}
 

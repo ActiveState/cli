@@ -35,6 +35,7 @@ type DownloadParams struct {
 }
 
 type Download struct {
+	prime     primeable
 	out       output.Outputer
 	project   *project.Project
 	analytics analytics.Dispatcher
@@ -45,6 +46,7 @@ type Download struct {
 
 func NewDownload(prime primeable) *Download {
 	return &Download{
+		prime:     prime,
 		out:       prime.Output(),
 		project:   prime.Project(),
 		analytics: prime.Analytics(),
@@ -92,7 +94,7 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 	}
 
 	bp, err := buildplanner_runbit.GetBuildPlan(
-		d.project, params.Namespace, params.CommitID, target, d.auth, d.out, d.info)
+		params.Namespace, params.CommitID, target, d.prime)
 	if err != nil {
 		return errs.Wrap(err, "Could not get build plan map")
 	}

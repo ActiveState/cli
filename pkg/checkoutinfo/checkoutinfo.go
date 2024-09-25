@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 )
 
@@ -34,6 +35,7 @@ type CheckoutInfo struct {
 	auth    *authentication.Auth
 	cfg     configurer
 	project projecter
+	svcm    *model.SvcModel
 }
 
 var ErrBuildscriptNotExist = errors.New("Build script does not exist")
@@ -46,8 +48,8 @@ func (e ErrInvalidCommitID) Error() string {
 	return "invalid commit ID"
 }
 
-func New(auth *authentication.Auth, cfg configurer, project projecter) *CheckoutInfo {
-	return &CheckoutInfo{auth, cfg, project}
+func New(auth *authentication.Auth, cfg configurer, project projecter, svcm *model.SvcModel) *CheckoutInfo {
+	return &CheckoutInfo{auth, cfg, project, svcm}
 }
 
 func (c *CheckoutInfo) Owner() string {
@@ -87,7 +89,7 @@ func (c *CheckoutInfo) CommitID() (strfmt.UUID, error) {
 
 func (c *CheckoutInfo) BuildScript() (*buildscript.BuildScript, error) {
 	if !c.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		bp := buildplanner.NewBuildPlannerModel(c.auth)
+		bp := buildplanner.NewBuildPlannerModel(c.auth, c.svcm)
 		script, err := bp.GetBuildScript(c.Owner(), c.Name(), c.Branch(), c.project.LegacyCommitID())
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not get remote build script")
@@ -162,7 +164,7 @@ func (c *CheckoutInfo) SetCommitID(commitID strfmt.UUID) error {
 
 func (c *CheckoutInfo) InitializeBuildScript(commitID strfmt.UUID) error {
 	if c.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		buildplanner := buildplanner.NewBuildPlannerModel(c.auth)
+		buildplanner := buildplanner.NewBuildPlannerModel(c.auth, c.svcm)
 		script, err := buildplanner.GetBuildScript(c.Owner(), c.Name(), c.Branch(), commitID.String())
 		if err != nil {
 			return errs.Wrap(err, "Unable to get the remote build script")

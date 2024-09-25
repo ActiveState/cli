@@ -120,7 +120,7 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.NewInputError("err_identifier_branch_not_on_branch", "Commit does not belong to history for branch [ACTIONABLE]{{.V0}}[/RESET]", s.project.BranchName())
 	}
 
-	bp := buildplanner.NewBuildPlannerModel(s.auth)
+	bp := buildplanner.NewBuildPlannerModel(s.auth, s.svcModel)
 	script, err := bp.GetBuildScript(s.project.Owner(), s.project.Name(), s.project.BranchName(), identifier.CommitID().String())
 	if err != nil {
 		return errs.Wrap(err, "Could not get build script")

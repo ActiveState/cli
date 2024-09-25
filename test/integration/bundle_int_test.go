@@ -36,6 +36,24 @@ func (suite *BundleIntegrationTestSuite) TestBundle_project_name_noData() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *BundleIntegrationTestSuite) TestBundle_install_uninstall() {
+	suite.OnlyRunForTags(tagsuite.Bundle)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("bundles", "install", "python-module-build-support")
+	cp.Expect("project has been updated")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("bundles", "uninstall", "python-module-build-support")
+	cp.Expect("project has been updated")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *BundleIntegrationTestSuite) TestBundle_searchSimple() {
 	suite.OnlyRunForTags(tagsuite.Bundle)
 	ts := e2e.New(suite.T(), false)
@@ -73,16 +91,6 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 
 	cp = ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("bundles", "install", "Testing", "--output", "json")
-	cp.Expect(`"name":"Testing"`)
-	cp.ExpectExitCode(0)
-	AssertValidJSON(suite.T(), cp)
-
-	cp = ts.Spawn("bundles", "uninstall", "Testing", "-o", "editor")
-	cp.Expect(`"name":"Testing"`)
-	cp.ExpectExitCode(0)
-	AssertValidJSON(suite.T(), cp)
 }
 
 func TestBundleIntegrationTestSuite(t *testing.T) {

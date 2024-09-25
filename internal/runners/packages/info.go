@@ -55,7 +55,7 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	var ns *model.Namespace
 
 	if params.Package.Namespace != "" {
-		ns = ptr.To(model.NewRawNamespace(params.Package.Namespace))
+		ns = ptr.To(model.NewNamespaceRaw(params.Package.Namespace))
 	} else {
 		nsTypeV = &nstype
 	}

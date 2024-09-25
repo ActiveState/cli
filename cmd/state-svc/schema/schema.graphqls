@@ -88,6 +88,12 @@ type Query {
     fetchLogTail: String!
     getProcessesInUse(execDir: String!): [ProcessInfo!]!
     getJWT: JWT
+    hashGlobs(globs: [String!]!): String!
+    getCache(key: String!): String!
+}
+
+type Mutation {
+    setCache(key: String!, value: String!, expiry: Int!): Void
 }
 
 type ConfigChangedResponse {
@@ -98,3 +104,5 @@ type ProcessInfo {
     exe: String!
     pid: Int!
 }
+
+scalar Void
