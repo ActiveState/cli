@@ -913,6 +913,7 @@ type CreateParams struct {
 	Owner      string
 	Project    string
 	BranchName string
+	CommitID   string
 	Directory  string
 	Content    string
 	Language   string
@@ -950,6 +951,9 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		pjf.SetNamespace(params.Owner, params.Project)
 		if params.BranchName != "" {
 			pjf.SetBranch(params.BranchName)
+		}
+		if params.CommitID != "" {
+			pjf.SetLegacyCommitID(params.CommitID)
 		}
 		params.ProjectURL = pjf.String()
 	}

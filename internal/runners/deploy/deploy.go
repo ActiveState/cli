@@ -31,6 +31,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -180,9 +181,14 @@ func (d *Deploy) install(params *Params, commitID strfmt.UUID) (rerr error) {
 	}
 	d.prime.SetProject(proj)
 
-	err = d.prime.CheckoutInfo().InitializeBuildScript(commitID)
+	bp := buildplanner.NewBuildPlannerModel(d.prime.Auth(), d.prime.SvcModel())
+	script, err := bp.GetBuildScript(proj.Owner(), proj.Name(), proj.BranchName(), commitID.String())
 	if err != nil {
-		return errs.Wrap(err, "Could not initialize build script")
+		return errs.Wrap(err, "Unable to get the remote build script")
+	}
+	err = script.Write(params.Path)
+	if err != nil {
+		return errs.Wrap(err, "Failed to write buildscript")
 	}
 
 	pg := progress.NewRuntimeProgressIndicator(d.output)

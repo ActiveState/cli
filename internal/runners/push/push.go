@@ -199,19 +199,13 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		}
 
 		// Fetch the newly created project's default branch (for updating activestate.yaml with).
-		targetPjm, err = model.LegacyFetchProjectByName(targetNamespace.Owner, targetNamespace.Project)
+		targetPjm, err = model.FetchProjectByName(targetNamespace.Owner, targetNamespace.Project, r.prime.Auth())
 		if err != nil {
 			return errs.Wrap(err, "Failed to fetch newly created project")
 		}
 		branch, err = model.DefaultBranchForProject(targetPjm)
 		if err != nil {
 			return errs.Wrap(err, "Project has no default branch")
-		}
-
-		// Update the project's build script with the create project or push result.
-		err = r.prime.CheckoutInfo().InitializeBuildScript(commitID)
-		if err != nil {
-			return errs.Wrap(err, "Unable to update build script")
 		}
 
 		projectCreated = true
@@ -252,18 +246,27 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		}
 	}
 
-	// Write the project namespace to the as.yaml, if it changed
+	// Write the project namespace if it changed
 	if r.project.Owner() != targetNamespace.Owner || r.project.Name() != targetNamespace.Project {
 		if err := r.prime.CheckoutInfo().SetNamespace(targetNamespace.Owner, targetNamespace.Project); err != nil {
 			return errs.Wrap(err, "Could not set project namespace")
 		}
 	}
 
-	// Write the branch to the as.yaml, if it changed
+	// Write the branch if it changed
 	if branch.Label != r.project.BranchName() {
 		if err := r.prime.CheckoutInfo().SetBranch(branch.Label); err != nil {
 			return errs.Wrap(err, "Could not set branch")
 		}
+	}
+
+	// Write the commitID if it changed
+	if cid, err := r.prime.CheckoutInfo().CommitID(); err == nil && cid != commitID {
+		if err := r.prime.CheckoutInfo().SetCommitID(commitID); err != nil {
+			return errs.Wrap(err, "Could not set commit ID")
+		}
+	} else if err != nil {
+		return errs.Wrap(err, "Could not get commit ID")
 	}
 
 	projectfile.StoreProjectMapping(r.config, targetNamespace.String(), filepath.Dir(r.project.Source().Path()))

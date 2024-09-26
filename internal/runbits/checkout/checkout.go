@@ -13,10 +13,10 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/runbits/git"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -97,14 +97,14 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		return "", errs.Wrap(err, "Could not create project files")
 	}
 
-	pj, err := project.FromPath(path)
+	bp := buildplanner.NewBuildPlannerModel(r.prime.Auth(), r.prime.SvcModel())
+	script, err := bp.GetBuildScript(owner, proj, branchName, commitID.String())
 	if err != nil {
-		return "", errs.Wrap(err, "Could not read created project")
+		return "", errs.Wrap(err, "Unable to get the remote build script")
 	}
-
-	info := checkoutinfo.New(r.prime.Auth(), r.prime.Config(), pj, r.prime.SvcModel())
-	if err := info.InitializeBuildScript(*commitID); err != nil {
-		return "", errs.Wrap(err, "Unable to initialize build script")
+	err = script.Write(path)
+	if err != nil {
+		return "", errs.Wrap(err, "Failed to write buildscript")
 	}
 
 	return path, nil
@@ -187,6 +187,7 @@ func CreateProjectFiles(checkoutPath, cachePath, owner, name, branch, commitID, 
 			Owner:      owner,
 			Project:    name, // match case on the Platform
 			BranchName: branch,
+			CommitID:   commitID,
 			Directory:  checkoutPath,
 			Language:   language,
 			Cache:      cachePath,

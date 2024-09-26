@@ -126,7 +126,7 @@ func (r *Reset) Run(params *Params) error {
 	}
 
 	// Reset the build script.
-	if err := r.prime.CheckoutInfo().InitializeBuildScript(commitID); err != nil {
+	if err := r.prime.CheckoutInfo().SetCommitID(commitID); err != nil {
 		return errs.Wrap(err, "Unable to initialize buildscript")
 	}
 

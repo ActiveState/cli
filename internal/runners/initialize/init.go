@@ -217,12 +217,54 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	r.out.Notice(locale.T("initializing_project"))
 
+	logging.Debug("Creating Platform project")
+
+	platformID, err := model.PlatformNameToPlatformID(sysinfo.OS().String())
+	if err != nil {
+		return errs.Wrap(err, "Unable to determine Platform ID from %s", sysinfo.OS().String())
+	}
+
+	bp := bpModel.NewBuildPlannerModel(r.auth, r.svcModel)
+	commitID, err := bp.CreateProject(&bpModel.CreateProjectParams{
+		Owner:       namespace.Owner,
+		Project:     namespace.Project,
+		PlatformID:  strfmt.UUID(platformID),
+		Language:    lang.Requirement(),
+		Version:     version,
+		Private:     params.Private,
+		Description: locale.T("commit_message_add_initial"),
+	})
+	if err != nil {
+		return errs.Wrap(err, "Could not create project")
+	}
+
+	// Fetch the newly created project's default branch.
+	pj, err := model.FetchProjectByName(namespace.Owner, namespace.Project, r.auth)
+	if err != nil {
+		return errs.Wrap(err, "Failed to fetch newly created project")
+	}
+	branch, err := model.DefaultBranchForProject(pj)
+	if err != nil {
+		return errs.Wrap(err, "Project has no default branch")
+	}
+
+	script, err := bp.GetBuildScript(namespace.Owner, namespace.Project, branch.Label, commitID.String())
+	if err != nil {
+		return errs.Wrap(err, "Unable to get the remote build script")
+	}
+	err = script.Write(path)
+	if err != nil {
+		return errs.Wrap(err, "Failed to write buildscript")
+	}
+
 	createParams := &projectfile.CreateParams{
-		Owner:     namespace.Owner,
-		Project:   namespace.Project,
-		Language:  lang.String(),
-		Directory: path,
-		Private:   params.Private,
+		Owner:      namespace.Owner,
+		Project:    namespace.Project,
+		BranchName: branch.Label,
+		CommitID:   commitID.String(),
+		Language:   lang.String(),
+		Directory:  path,
+		Private:    params.Private,
 	}
 
 	pjfile, err := projectfile.Create(createParams)
@@ -255,31 +297,6 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return err
 	}
 	r.prime.SetProject(proj)
-
-	logging.Debug("Creating Platform project")
-
-	platformID, err := model.PlatformNameToPlatformID(sysinfo.OS().String())
-	if err != nil {
-		return errs.Wrap(err, "Unable to determine Platform ID from %s", sysinfo.OS().String())
-	}
-
-	bp := bpModel.NewBuildPlannerModel(r.auth, r.svcModel)
-	commitID, err := bp.CreateProject(&bpModel.CreateProjectParams{
-		Owner:       namespace.Owner,
-		Project:     namespace.Project,
-		PlatformID:  strfmt.UUID(platformID),
-		Language:    lang.Requirement(),
-		Version:     version,
-		Private:     params.Private,
-		Description: locale.T("commit_message_add_initial"),
-	})
-	if err != nil {
-		return errs.Wrap(err, "Could not create project")
-	}
-
-	if err := r.prime.CheckoutInfo().InitializeBuildScript(commitID); err != nil {
-		return errs.Wrap(err, "Unable to initialize buildscript")
-	}
 
 	// Solve runtime
 	solveSpinner := output.StartSpinner(r.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)

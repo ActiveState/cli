@@ -95,6 +95,33 @@ func (c *CheckoutInfo) CommitIDForReset() (strfmt.UUID, error) {
 	return strfmt.UUID(commitID), nil
 }
 
+func (c *CheckoutInfo) SetCommitID(commitID strfmt.UUID) error {
+	// Update commitID in activestate.yaml.
+	logging.Debug("Updating commitID in activestate.yaml")
+	if err := c.project.SetLegacyCommit(commitID.String()); err != nil {
+		return errs.Wrap(err, "Could not set commit ID")
+	}
+
+	if !c.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		return nil // buildscripts are not enabled, so nothing more to do
+	}
+
+	// Update commitID in Project field of build script.
+	logging.Debug("Updating commitID in buildscript")
+
+	bp := buildplanner.NewBuildPlannerModel(c.auth, c.svcm)
+	script, err := bp.GetBuildScript(c.project.Owner(), c.project.Name(), c.project.BranchName(), commitID.String())
+	if err != nil {
+		return errs.Wrap(err, "Unable to get the remote build script")
+	}
+	err = script.Write(c.project.Dir())
+	if err != nil {
+		return errs.Wrap(err, "Failed to write buildscript")
+	}
+
+	return nil
+}
+
 func (c *CheckoutInfo) BuildScript() (*buildscript.BuildScript, error) {
 	if !c.cfg.GetBool(constants.OptinBuildscriptsConfig) {
 		bp := buildplanner.NewBuildPlannerModel(c.auth, c.svcm)
@@ -149,35 +176,6 @@ func (c *CheckoutInfo) SetBranch(branch string) error {
 		return errs.Wrap(err, "Could not get build script")
 	}
 	script.SetProjectURL(c.project.URL())
-
-	return nil
-}
-
-func (c *CheckoutInfo) InitializeBuildScript(commitID strfmt.UUID) error {
-	if c.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		buildplanner := buildplanner.NewBuildPlannerModel(c.auth, c.svcm)
-		script, err := buildplanner.GetBuildScript(c.project.Owner(), c.project.Name(), c.project.BranchName(), commitID.String())
-		if err != nil {
-			return errs.Wrap(err, "Unable to get the remote build script")
-		}
-
-		scriptBytes, err := script.Marshal()
-		if err != nil {
-			return errs.Wrap(err, "Unable to marshal build script")
-		}
-
-		scriptPath := filepath.Join(c.project.Dir(), constants.BuildScriptFileName)
-		logging.Debug("Initializing build script at %s", scriptPath)
-		err = fileutils.WriteFile(scriptPath, scriptBytes)
-		if err != nil {
-			return errs.Wrap(err, "Unable to write build script")
-		}
-	}
-
-	// Update activestate.yaml.
-	if err := c.project.SetLegacyCommit(commitID.String()); err != nil {
-		return errs.Wrap(err, "Could not set commit ID")
-	}
 
 	return nil
 }
