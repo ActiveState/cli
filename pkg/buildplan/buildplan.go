@@ -37,9 +37,10 @@ func Unmarshal(data []byte) (*BuildPlan, error) {
 		return nil, errs.Wrap(err, "error hydrating build plan")
 	}
 
-	if len(b.artifacts) == 0 || len(b.ingredients) == 0 || len(b.platforms) == 0 {
-		return nil, errs.New("Buildplan unmarshalling failed as it got zero artifacts (%d), ingredients (%d) and or platforms (%d).",
-			len(b.artifacts), len(b.ingredients), len(b.platforms))
+	if len(b.artifacts) == 0 || len(b.platforms) == 0 {
+		// Ingredients are not considered here because certain builds (eg. camel) won't be able to relate to a single ingredient
+		return nil, errs.New("Buildplan unmarshalling failed as it got zero artifacts (%d) and/or platforms (%d).",
+			len(b.artifacts), len(b.platforms))
 	}
 
 	return b, nil

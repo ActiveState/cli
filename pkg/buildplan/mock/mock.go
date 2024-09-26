@@ -153,7 +153,8 @@ var BuildWithRuntimeDeps = &raw.Build{
 	},
 }
 
-var BuildWithRuntimeDepsViaSrc = &raw.Build{
+// BuildWithInstallerDepsViaSrc is a build that includes an installer which has two artifacts as its dependencies.
+var BuildWithInstallerDepsViaSrc = &raw.Build{
 	Terminals: []*raw.NamedTarget{
 		{
 			Tag:     "platform:00000000-0000-0000-0000-000000000001",
@@ -165,7 +166,12 @@ var BuildWithRuntimeDepsViaSrc = &raw.Build{
 			StepID:  "00000000-0000-0000-0000-000000000003",
 			Outputs: []string{"00000000-0000-0000-0000-000000000002"},
 			Inputs: []*raw.NamedTarget{
-				{Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000007"}},
+				{
+					Tag: "src", NodeIDs: []strfmt.UUID{
+						"00000000-0000-0000-0000-000000000007",
+						"00000000-0000-0000-0000-000000000010",
+					},
+				},
 			},
 		},
 		{
@@ -173,6 +179,13 @@ var BuildWithRuntimeDepsViaSrc = &raw.Build{
 			Outputs: []string{"00000000-0000-0000-0000-000000000007"},
 			Inputs: []*raw.NamedTarget{
 				{Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000009"}},
+			},
+		},
+		{
+			StepID:  "00000000-0000-0000-0000-000000000011",
+			Outputs: []string{"00000000-0000-0000-0000-000000000010"},
+			Inputs: []*raw.NamedTarget{
+				{Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000012"}},
 			},
 		},
 	},
@@ -188,6 +201,66 @@ var BuildWithRuntimeDepsViaSrc = &raw.Build{
 			NodeID:      "00000000-0000-0000-0000-000000000007",
 			DisplayName: "pkgOne",
 			MimeType:    types.XActiveStateArtifactMimeType,
+			GeneratedBy: "00000000-0000-0000-0000-000000000008",
+		},
+		{
+			NodeID:      "00000000-0000-0000-0000-000000000010",
+			DisplayName: "pkgTwo",
+			MimeType:    types.XActiveStateArtifactMimeType,
+			GeneratedBy: "00000000-0000-0000-0000-000000000011",
+		},
+	},
+	Sources: []*raw.Source{
+		{
+			"00000000-0000-0000-0000-000000000009",
+			raw.IngredientSource{
+				IngredientID: "00000000-0000-0000-0000-000000000009",
+			},
+		},
+		{
+			"00000000-0000-0000-0000-000000000012",
+			raw.IngredientSource{
+				IngredientID: "00000000-0000-0000-0000-000000000012",
+			},
+		},
+	},
+}
+
+// BuildWithStateArtifactThroughPyWheel is a build with a state tool artifact that has a python wheel as its dependency
+var BuildWithStateArtifactThroughPyWheel = &raw.Build{
+	Terminals: []*raw.NamedTarget{
+		{
+			Tag:     "platform:00000000-0000-0000-0000-000000000001",
+			NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000002"},
+		},
+	},
+	Steps: []*raw.Step{
+		{
+			StepID:  "00000000-0000-0000-0000-000000000003",
+			Outputs: []string{"00000000-0000-0000-0000-000000000002"},
+			Inputs: []*raw.NamedTarget{
+				{
+					Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000007"},
+				},
+			},
+		},
+		{
+			StepID:  "00000000-0000-0000-0000-000000000008",
+			Outputs: []string{"00000000-0000-0000-0000-000000000007"},
+			Inputs: []*raw.NamedTarget{
+				{Tag: "src", NodeIDs: []strfmt.UUID{"00000000-0000-0000-0000-000000000009"}},
+			},
+		},
+	},
+	Artifacts: []*raw.Artifact{
+		{
+			NodeID:      "00000000-0000-0000-0000-000000000002",
+			DisplayName: "pkgStateArtifact",
+			GeneratedBy: "00000000-0000-0000-0000-000000000003",
+		},
+		{
+			NodeID:      "00000000-0000-0000-0000-000000000007",
+			DisplayName: "pkgPyWheel",
 			GeneratedBy: "00000000-0000-0000-0000-000000000008",
 		},
 	},
