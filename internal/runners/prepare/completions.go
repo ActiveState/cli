@@ -35,7 +35,7 @@ func (c *Completions) Run(cmd *captain.Command) error {
 		return locale.WrapError(err, "err_prepare_completions", "Could not prepare completions")
 	}
 
-	c.out.Notice(locale.Tl("completions_success", "Completions have been written, please reload your shell."))
+	c.out.Notice(locale.Tl("completions_success", "Completions have been written. Please reload your shell."))
 
 	return nil
 }

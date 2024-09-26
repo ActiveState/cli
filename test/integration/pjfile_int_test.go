@@ -29,9 +29,7 @@ languages:
         platform: Windows10Label,Linux64Label
 `))
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("scripts"),
-	)
+	cp := ts.Spawn("scripts")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 }

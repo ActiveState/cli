@@ -55,20 +55,20 @@ scripts:
         exit 1
       fi
       if ! type "golangci-lint" &> /dev/null; then
-        echo "golangci-lint was not found on your PATH, installing .."
+        echo "golangci-lint was not found on your PATH. Installing .."
         go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1
       fi
       git config core.hooksPath .githooks
       if ! type "swagger" &> /dev/null; then
-        echo "swagger was not found on your PATH, installing .."
+        echo "swagger was not found on your PATH. Installing .."
         go install github.com/go-swagger/go-swagger/cmd/swagger@v0.27.0
       fi
       if ! type "actionlint" &> /dev/null; then
-        echo "actionlint was not found on your PATH, installing .."
+        echo "actionlint was not found on your PATH. Installing .."
         go install github.com/rhysd/actionlint/cmd/actionlint@v1.6.23
       fi
       if { [[ "$GOOS" == "windows" ]] || [[ "$OS" == "Windows_NT" ]]; } && ! type "goversioninfo" &> /dev/null; then
-        echo "goversioninfo was not found on your PATH, installing .."
+        echo "goversioninfo was not found on your PATH. Installing .."
         GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.0
       fi
   - name: install-deps-os
@@ -81,7 +81,7 @@ scripts:
     if: ne .Shell "cmd"
     value: |
       if { [[ "$GOOS" == "windows" ]] || [[ "$OS" == "Windows_NT" ]]; } && ! type "goversioninfo" &> /dev/null; then
-        echo "goversioninfo was not found on your PATH, installing .."
+        echo "goversioninfo was not found on your PATH. Installing .."
         GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.0
       fi
   - name: preprocess
@@ -319,7 +319,7 @@ scripts:
       build/state --help
   - name: debug
     language: bash
-    description: "Runs a remote debugger, that can be hooked into from your IDE, example usage: `state run debug activate` (will debug `state activate`)"
+    description: "Runs a remote debugger that can be hooked into from your IDE. Example usage: `state run debug activate` (will debug `state activate`)"
     standalone: true
     value: dlv debug --headless --listen=:2346 --api-version=2 github.com/ActiveState/cli/cmd/state -- $@
   - name: scripted

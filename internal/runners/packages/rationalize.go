@@ -49,7 +49,7 @@ func rationalizeError(auth *authentication.Auth, err *error) {
 			)
 		case types.NoChangeSinceLastCommitErrorType:
 			*err = errs.WrapUserFacing(*err,
-				locale.Tl("err_packages_exists", "That package is already installed."),
+				locale.Tl("err_packages_exist", "The requested package(s) is already installed."),
 				errs.SetInput(),
 			)
 		default:
@@ -63,6 +63,12 @@ func rationalizeError(auth *authentication.Auth, err *error) {
 	case errors.As(*err, &requirementNotFoundErr):
 		*err = errs.WrapUserFacing(*err,
 			locale.Tr("err_remove_requirement_not_found", requirementNotFoundErr.Name),
+			errs.SetInput(),
+		)
+
+	case errors.Is(*err, rationalize.ErrNotAuthenticated):
+		*err = errs.WrapUserFacing(*err,
+			locale.Tl("err_import_unauthenticated", "Could not import requirements into a private namespace because you are not authenticated. Please authenticate using '[ACTIONABLE]state auth[/RESET]' and try again."),
 			errs.SetInput(),
 		)
 	}

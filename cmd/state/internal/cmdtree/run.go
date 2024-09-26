@@ -28,7 +28,7 @@ func newRunCommand(prime *primer.Values) *captain.Command {
 		},
 		func(ccmd *captain.Command, args []string) error {
 			if name == "-h" || name == "--help" {
-				prime.Output().Print(ccmd.UsageText())
+				prime.Output().Print(ccmd.Help())
 				return nil
 			} else if name == "-v" || name == "--verbose" {
 				if len(args) > 1 {

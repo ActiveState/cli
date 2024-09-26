@@ -1,10 +1,12 @@
 package show
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/pkg/runtime_helpers"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constraints"
@@ -21,8 +23,6 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -147,11 +147,10 @@ func (s *Show) Run(params Params) error {
 	)
 
 	var projectDir string
-	var projectTarget string
 	if params.Remote != "" {
 		namespaced, err := project.ParseNamespace(params.Remote)
 		if err != nil {
-			return locale.WrapError(err, "err_show_parse_namespace", "Invalid remote argument, must be of the form <org/project>")
+			return locale.WrapError(err, "err_show_parse_namespace", "Invalid remote argument. It must be of the form <org/project>")
 		}
 
 		owner = namespaced.Owner
@@ -202,12 +201,11 @@ func (s *Show) Run(params Params) error {
 				return locale.WrapError(err, "err_show_projectdir", "Could not resolve project directory symlink")
 			}
 		}
-
-		projectTarget = target.NewProjectTarget(s.project, nil, "").Dir()
 	}
 
 	remoteProject, err := model.LegacyFetchProjectByName(owner, projectName)
-	if err != nil && errs.Matches(err, &model.ErrProjectNotFound{}) {
+	var errProjectNotFound *model.ErrProjectNotFound
+	if err != nil && errors.As(err, &errProjectNotFound) {
 		return locale.WrapError(err, "err_show_project_not_found", "Please run '[ACTIONABLE]state push[/RESET]' to synchronize this project with the ActiveState Platform.")
 	} else if err != nil {
 		return locale.WrapError(err, "err_show_get_project", "Could not get remote project details")
@@ -249,8 +247,8 @@ func (s *Show) Run(params Params) error {
 		rd.Location = projectDir
 	}
 
-	if projectTarget != "" {
-		rd.Executables = setup.ExecDir(projectTarget)
+	if params.Remote == "" {
+		rd.Executables = runtime_helpers.ExecutorPathFromProject(s.project)
 	}
 
 	outputData := outputData{
@@ -406,7 +404,7 @@ func secretsData(owner, project string, auth *authentication.Auth) (*secretOutpu
 	sec, err := secrets.DefsByProject(client, owner, project)
 	if err != nil {
 		logging.Debug("Could not get secret definitions, got failure: %s", err)
-		return nil, locale.WrapError(err, "err_show_get_secrets", "Could not get secret definitions, you may not be authorized to view secrets on this project")
+		return nil, locale.WrapError(err, "err_show_get_secrets", "Could not get secret definitions. You may not be authorized to view secrets on this project")
 	}
 
 	var userSecrets []string

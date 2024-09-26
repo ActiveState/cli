@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"net/url"
 	"time"
 
@@ -49,12 +50,15 @@ func AuthenticateWithInput(
 
 	err := AuthenticateWithCredentials(credentials, auth)
 	if err != nil {
+		var errTokenRequired *authentication.ErrTokenRequired
+		var errUnauthorized *authentication.ErrUnauthorized
+
 		switch {
-		case errs.Matches(err, &authentication.ErrTokenRequired{}):
+		case errors.As(err, &errTokenRequired):
 			if err := promptToken(credentials, out, prompt, auth); err != nil {
 				return errs.Wrap(err, "promptToken failed")
 			}
-		case errs.Matches(err, &authentication.ErrUnauthorized{}):
+		case errors.As(err, &errUnauthorized):
 			return locale.WrapError(err, "err_auth_failed")
 		default:
 			return locale.WrapError(err, "err_auth_failed_unknown_cause", "", err.Error())

@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
+	"github.com/ActiveState/cli/pkg/runtime/events"
 )
 
 type DotProgressDigester struct {
@@ -15,15 +15,15 @@ type DotProgressDigester struct {
 	success bool
 }
 
-// NewDotProgressIndicator prints dots at an interval while a runtime is being setup (during solve,
+// newDotProgressIndicator prints dots at an interval while a runtime is being setup (during solve,
 // download, and install steps).
 // The primary goal is to indicate to various CI systems (or during non-interactive mode) that
 // progress is being made.
-func NewDotProgressIndicator(out output.Outputer) *DotProgressDigester {
+func newDotProgressIndicator(out output.Outputer) *DotProgressDigester {
 	return &DotProgressDigester{out: out}
 }
 
-func (d *DotProgressDigester) Handle(event events.Eventer) error {
+func (d *DotProgressDigester) Handle(event events.Event) error {
 	switch event.(type) {
 	case events.Start:
 		d.spinner = output.StartSpinner(d.out, locale.T("setup_runtime"), time.Second)

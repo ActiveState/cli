@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/pkg/platform/api/errors"
 	"github.com/alecthomas/template"
 
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -19,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
-	"github.com/ActiveState/cli/pkg/platform"
 )
 
 // NewHTTPClient creates a new HTTP client that will retry requests and
@@ -46,11 +46,11 @@ func (r *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	resp, err := r.transport.RoundTrip(req)
 	if err != nil && resp != nil && resp.StatusCode == http.StatusForbidden && strings.EqualFold(resp.Header.Get("server"), "cloudfront") {
-		return nil, platform.NewCountryBlockedError()
+		return nil, api_errors.NewCountryBlockedError()
 	}
 
 	// This code block is for integration testing purposes only.
-	if os.Getenv(constants.PlatformApiPrintRequestsEnvVarName) != "" &&
+	if os.Getenv(constants.DebugServiceRequestsEnvVarName) != "" &&
 		(condition.OnCI() || condition.BuiltOnDevMachine()) {
 		logging.Debug("URL: %s\n", req.URL)
 		logging.Debug("User-Agent: %s\n", resp.Request.Header.Get("User-Agent"))

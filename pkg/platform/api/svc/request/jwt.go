@@ -8,8 +8,8 @@ func NewJWTRequest() *JWTRequest {
 }
 
 func (m *JWTRequest) Query() string {
-	return `query()  {
-		getJWT() {
+	return `query  {
+		getJWT {
 			token
 			user {
 				userID

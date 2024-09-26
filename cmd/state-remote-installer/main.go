@@ -123,7 +123,7 @@ func main() {
 		"state-installer",
 		"",
 		"Installs or updates the State Tool",
-		primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an),
+		primer.New(out, cfg, an),
 		[]*captain.Flag{ // The naming of these flags is slightly inconsistent due to backwards compatibility requirements
 			{
 				Name:        "channel",
@@ -215,6 +215,9 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	out.Print(locale.Tl("remote_install_status_running", "• Running Installer..."))
 	if params.nonInteractive {
 		args = append(args, "-n") // forward to installer
+	}
+	if params.force {
+		args = append(args, "--force") // forward to installer
 	}
 	env := []string{
 		constants.InstallerNoSubshell + "=true",

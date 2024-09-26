@@ -1,6 +1,7 @@
 package lockfile
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -105,7 +106,8 @@ func (pl *PidLock) WaitForLock(timeout time.Duration) error {
 	for {
 		err := pl.TryLock()
 		if err != nil {
-			if !errs.Matches(err, &AlreadyLockedError{}) {
+			var errAlreadyLocked *AlreadyLockedError
+			if !errors.As(err, &errAlreadyLocked) {
 				return errs.Wrap(err, "Could not acquire lock")
 			}
 

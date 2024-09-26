@@ -12,7 +12,7 @@ func syscallErrorCode(err error) int {
 	return -1
 }
 
-func (tt *TermTest) WaitIndefinitely() error {
+func (tt *TermTest) waitIndefinitely() error {
 	tt.opts.Logger.Println("WaitIndefinitely called")
 	defer tt.opts.Logger.Println("WaitIndefinitely closed")
 

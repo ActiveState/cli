@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/analytics/client/blackhole"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/scriptrun"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -75,7 +76,7 @@ scripts:
 	cfg, err := config.New()
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
-	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+	scriptRun := scriptrun.New(primer.New(proj, auth, outputhelper.NewCatcher(), subshell.New(cfg), cfg, blackhole.New()))
 	script, err := proj.ScriptByName("run")
 	require.NoError(t, err)
 	err = scriptRun.Run(script, []string{})
@@ -107,18 +108,18 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 	require.NoError(t, err)
 
 	os.Setenv("TEST_KEY_EXISTS", "true")
-	os.Setenv(constants.DisableRuntime, "true")
 	defer func() {
 		os.Unsetenv("TEST_KEY_EXISTS")
-		os.Unsetenv(constants.DisableRuntime)
 	}()
 
 	cfg, err := config.New()
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
 
+	cfg.Set(constants.AsyncRuntimeConfig, true)
+
 	out := capturer.CaptureOutput(func() {
-		scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+		scriptRun := scriptrun.New(primer.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New()))
 		script, err := proj.ScriptByName("run")
 		require.NoError(t, err, "Error: "+errs.JoinMessage(err))
 		err = scriptRun.Run(script, nil)
@@ -166,7 +167,7 @@ scripts:
 	defer func() { require.NoError(t, cfg.Close()) }()
 
 	out := outputhelper.NewCatcher()
-	scriptRun := scriptrun.New(auth, out, subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+	scriptRun := scriptrun.New(primer.New(auth, out, subshell.New(cfg), proj, cfg, blackhole.New()))
 	script, err := proj.ScriptByName("run")
 	fmt.Println(script)
 	require.NoError(t, err)
@@ -198,7 +199,7 @@ scripts:
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
 
-	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+	scriptRun := scriptrun.New(primer.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New()))
 	err = scriptRun.Run(nil, nil)
 	assert.Error(t, err, "No error occurred")
 }
@@ -228,7 +229,7 @@ scripts:
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
 
-	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+	scriptRun := scriptrun.New(primer.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New()))
 	script, err := proj.ScriptByName("run")
 	require.NoError(t, err)
 	err = scriptRun.Run(script, nil)
@@ -283,7 +284,7 @@ scripts:
 	require.NoError(t, err)
 
 	// Run the command.
-	scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+	scriptRun := scriptrun.New(primer.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New()))
 	script, err := proj.ScriptByName("run")
 	require.NoError(t, err)
 	err = scriptRun.Run(script, nil)
@@ -376,7 +377,7 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 	defer func() { require.NoError(t, cfg.Close()) }()
 
 	outStr, outErr := osutil.CaptureStdout(func() {
-		scriptRun := scriptrun.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
+		scriptRun := scriptrun.New(primer.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New()))
 		var script *project.Script
 		if script, err = proj.ScriptByName(cmdName); err == nil {
 			err = scriptRun.Run(script, cmdArgs)

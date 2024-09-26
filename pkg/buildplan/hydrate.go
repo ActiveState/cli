@@ -3,21 +3,19 @@ package buildplan
 import (
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildplan/raw"
-	"github.com/go-openapi/strfmt"
 )
 
 // hydrate will add additional information to the unmarshalled structures, based on the raw data that was unmarshalled.
 // For example, rather than having to walk the buildplan to find associations between artifacts and ingredients, this
 // will add this context straight on the relevant artifacts.
 func (b *BuildPlan) hydrate() error {
-	logging.Debug("Hydrating build plan")
-
 	artifactLookup := make(map[strfmt.UUID]*Artifact)
 	ingredientLookup := make(map[strfmt.UUID]*Ingredient)
 
@@ -57,12 +55,23 @@ func (b *BuildPlan) hydrate() error {
 		}
 		ingredient, ok := ingredientLookup[source.IngredientID]
 		if !ok {
-			return errs.New("missing ingredient for source ID: %s", req.Source)
+			// It's possible that we haven't associated a source to an artifact if that source links to multiple artifacts.
+			// In this case we cannot determine which artifact relates to which source.
+			continue
 		}
 		b.requirements = append(b.requirements, &Requirement{
 			Requirement: req.Requirement,
 			Ingredient:  ingredient,
 		})
+	}
+
+	// Detect Recipe ID
+	var result strfmt.UUID
+	for _, id := range b.raw.BuildLogIDs {
+		if result != "" && result.String() != id.ID {
+			return errs.New("Build plan contains multiple recipe IDs")
+		}
+		b.legacyRecipeID = strfmt.UUID(id.ID)
 	}
 
 	if err := b.sanityCheck(); err != nil {
@@ -73,7 +82,7 @@ func (b *BuildPlan) hydrate() error {
 }
 
 func (b *BuildPlan) hydrateWithBuildClosure(nodeIDs []strfmt.UUID, platformID *strfmt.UUID, artifactLookup map[strfmt.UUID]*Artifact) error {
-	err := b.raw.WalkViaSteps(nodeIDs, raw.TagDependency, func(node interface{}, parent *raw.Artifact) error {
+	err := b.raw.WalkViaSteps(nodeIDs, raw.WalkViaDeps, func(node interface{}, parent *raw.Artifact) error {
 		switch v := node.(type) {
 		case *raw.Artifact:
 			// logging.Debug("Walking build closure artifact '%s (%s)'", v.DisplayName, v.NodeID)
@@ -101,7 +110,6 @@ func (b *BuildPlan) hydrateWithBuildClosure(nodeIDs []strfmt.UUID, platformID *s
 		default:
 			return errs.New("unexpected node type '%T': %#v", v, v)
 		}
-		return nil
 	})
 	if err != nil {
 		return errs.Wrap(err, "error hydrating from build closure")
@@ -137,7 +145,6 @@ func (b *BuildPlan) hydrateWithRuntimeClosure(nodeIDs []strfmt.UUID, platformID 
 		default:
 			return errs.New("unexpected node type '%T': %#v", v, v)
 		}
-		return nil
 	})
 	if err != nil {
 		return errs.Wrap(err, "error hydrating from runtime closure")
@@ -146,49 +153,44 @@ func (b *BuildPlan) hydrateWithRuntimeClosure(nodeIDs []strfmt.UUID, platformID 
 }
 
 func (b *BuildPlan) hydrateWithIngredients(artifact *Artifact, platformID *strfmt.UUID, ingredientLookup map[strfmt.UUID]*Ingredient) error {
-	err := b.raw.WalkViaSteps([]strfmt.UUID{artifact.ArtifactID}, raw.TagSource,
+	err := b.raw.WalkViaSteps([]strfmt.UUID{artifact.ArtifactID}, raw.WalkViaSingleSource,
 		func(node interface{}, parent *raw.Artifact) error {
-			switch v := node.(type) {
-			case *raw.Artifact:
-				return nil // We've already got our artifacts
-			case *raw.Source:
-				// logging.Debug("Walking source '%s (%s)'", v.Name, v.NodeID)
+			// logging.Debug("Walking source '%s (%s)'", v.Name, v.NodeID)
+			v, ok := node.(*raw.Source)
+			if !ok {
+				return nil // continue
+			}
 
-				// Ingredients aren't explicitly represented in buildplans. Technically all sources are ingredients
-				// but this may not always be true in the future. For our purposes we will initialize our own ingredients
-				// based on the source information, but we do not want to make the assumption in our logic that all
-				// sources are ingredients.
-				ingredient, ok := ingredientLookup[v.IngredientID]
-				if !ok {
-					ingredient = &Ingredient{
-						IngredientSource: &v.IngredientSource,
-						platforms:        []strfmt.UUID{},
-						Artifacts:        []*Artifact{},
-					}
-					b.ingredients = append(b.ingredients, ingredient)
-					ingredientLookup[v.IngredientID] = ingredient
+			// Ingredients aren't explicitly represented in buildplans. Technically all sources are ingredients
+			// but this may not always be true in the future. For our purposes we will initialize our own ingredients
+			// based on the source information, but we do not want to make the assumption in our logic that all
+			// sources are ingredients.
+			ingredient, ok := ingredientLookup[v.IngredientID]
+			if !ok {
+				ingredient = &Ingredient{
+					IngredientSource: &v.IngredientSource,
+					platforms:        []strfmt.UUID{},
+					Artifacts:        []*Artifact{},
 				}
+				b.ingredients = append(b.ingredients, ingredient)
+				ingredientLookup[v.IngredientID] = ingredient
+			}
 
-				// With multiple terminals it's possible we encounter the same combination multiple times.
-				// And an artifact usually only has one ingredient, so this is the cheapest lookup.
-				if !sliceutils.Contains(artifact.Ingredients, ingredient) {
-					artifact.Ingredients = append(artifact.Ingredients, ingredient)
-					ingredient.Artifacts = append(ingredient.Artifacts, artifact)
-				}
-				if platformID != nil {
-					ingredient.platforms = append(ingredient.platforms, *platformID)
-				}
+			// With multiple terminals it's possible we encounter the same combination multiple times.
+			// And an artifact usually only has one ingredient, so this is the cheapest lookup.
+			if !sliceutils.Contains(artifact.Ingredients, ingredient) {
+				artifact.Ingredients = append(artifact.Ingredients, ingredient)
+				ingredient.Artifacts = append(ingredient.Artifacts, artifact)
+			}
+			if platformID != nil {
+				ingredient.platforms = append(ingredient.platforms, *platformID)
+			}
 
-				if artifact.isBuildtimeDependency {
-					ingredient.IsBuildtimeDependency = true
-				}
-				if artifact.isRuntimeDependency {
-					ingredient.IsRuntimeDependency = true
-				}
-
-				return nil
-			default:
-				return errs.New("unexpected node type '%T': %#v", v, v)
+			if artifact.isBuildtimeDependency {
+				ingredient.IsBuildtimeDependency = true
+			}
+			if artifact.isRuntimeDependency {
+				ingredient.IsRuntimeDependency = true
 			}
 
 			return nil
@@ -204,14 +206,6 @@ func (b *BuildPlan) hydrateWithIngredients(artifact *Artifact, platformID *strfm
 // If there are duplicates we're likely to see failures down the chain if live, though that's by no means guaranteed.
 // Surfacing it here will make it easier to reason about the failure.
 func (b *BuildPlan) sanityCheck() error {
-	// Ensure all artifacts have an associated ingredient
-	// If this fails either the API is bugged or the hydrate logic is bugged
-	for _, a := range b.Artifacts() {
-		if len(a.Ingredients) == 0 {
-			return errs.New("artifact '%s (%s)' does not have an ingredient", a.ArtifactID, a.DisplayName)
-		}
-	}
-
 	// The remainder of sanity checks aren't checking for error conditions so much as they are checking for smoking guns
 	// If these fail then it's likely the API has changed in a backward incompatible way, or we broke something.
 	// In any case it does not necessarily mean runtime sourcing is broken.

@@ -70,7 +70,7 @@ func newPublish(prime *primer.Values) *captain.Command {
 				Name: "depend",
 				Description: locale.Tl(
 					"author_upload_depend_description",
-					"Ingredient that this ingredient depends on, format as <namespace>/<name>[@<version>]. Can be set multiple times.",
+					"Ingredient that this ingredient depends on. Format as <namespace>/<name>[@<version>]. Can be set multiple times.",
 				),
 				Value: &params.Depends,
 			},
@@ -78,7 +78,7 @@ func newPublish(prime *primer.Values) *captain.Command {
 				Name: "depend-runtime",
 				Description: locale.Tl(
 					"author_upload_dependruntime_description",
-					"Ingredient that this ingredient depends on during runtime, format as <namespace>/<name>[@<version>]. Can be set multiple times.",
+					"Ingredient that this ingredient depends on during runtime. Format as <namespace>/<name>[@<version>]. Can be set multiple times.",
 				),
 				Value: &params.DependsRuntime,
 			},
@@ -86,7 +86,7 @@ func newPublish(prime *primer.Values) *captain.Command {
 				Name: "depend-build",
 				Description: locale.Tl(
 					"author_upload_dependbuild_description",
-					"Ingredient that this ingredient depends on during build, format as <namespace>/<name>[@<version>]. Can be set multiple times.",
+					"Ingredient that this ingredient depends on during build. Format as <namespace>/<name>[@<version>]. Can be set multiple times.",
 				),
 				Value: &params.DependsBuild,
 			},
@@ -94,7 +94,7 @@ func newPublish(prime *primer.Values) *captain.Command {
 				Name: "depend-test",
 				Description: locale.Tl(
 					"author_upload_dependtest_description",
-					"Ingredient that this ingredient depends on during tests, format as <namespace>/<name>[@<version>]. Can be set multiple times.",
+					"Ingredient that this ingredient depends on during tests. Format as <namespace>/<name>[@<version>]. Can be set multiple times.",
 				),
 				Value: &params.DependsTest,
 			},
@@ -102,7 +102,7 @@ func newPublish(prime *primer.Values) *captain.Command {
 				Name: "feature",
 				Description: locale.Tl(
 					"author_upload_feature_description",
-					"Feature that this ingredient provides, format as <namespace>/<name>[@<version>]. Can be set multiple times.",
+					"Feature that this ingredient provides. Format as <namespace>/<name>[@<version>]. Can be set multiple times.",
 				),
 				Value: &params.Features,
 			},

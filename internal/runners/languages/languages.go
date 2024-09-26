@@ -63,7 +63,7 @@ func (l *Languages) Run() error {
 			locale.WrapError(
 				err,
 				"err_languages_no_commitid",
-				"Your project runtime does not have a commit defined, you may need to run '[ACTIONABLE]state pull[/RESET]' first.",
+				"Your project runtime does not have a commit defined. You may need to run '[ACTIONABLE]state pull[/RESET]' first.",
 			),
 			locale.Tl(
 				"languages_no_commitid_help",

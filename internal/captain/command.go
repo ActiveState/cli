@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -32,6 +33,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
+
+type ErrNoChildren struct{ *locale.LocalizedError }
 
 func init() {
 	configMediator.RegisterOption(constants.UnstableConfig, configMediator.Bool, false)
@@ -206,7 +209,7 @@ func (c *Command) UsageText() string {
 }
 
 func (c *Command) Help() string {
-	return fmt.Sprintf("%s\n\n%s", c.cobra.Short, c.UsageText())
+	return strings.TrimRightFunc(fmt.Sprintf("%s\n\n%s", c.cobra.Short, c.UsageText()), unicode.IsSpace)
 }
 
 func (c *Command) ShortDescription() string {
@@ -215,6 +218,7 @@ func (c *Command) ShortDescription() string {
 
 func (c *Command) Execute(args []string) error {
 	defer profile.Measure("cobra:Execute", time.Now())
+	c.logArgs(args)
 	c.cobra.SetArgs(args)
 	err := c.cobra.Execute()
 	c.cobra.SetArgs(nil)
@@ -464,15 +468,19 @@ func (c *Command) AvailableChildren() []*Command {
 	return commands
 }
 
-func (c *Command) Find(args []string) (*Command, error) {
+func (c *Command) FindChild(args []string) (*Command, error) {
 	foundCobra, _, err := c.cobra.Find(args)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not find child command with args: %s", strings.Join(args, " "))
 	}
 	if cmd, ok := cobraMapping[foundCobra]; ok {
+		if cmd.parent == nil {
+			// Cobra returns the parent command if no child was found, but we don't want that.
+			return nil, nil
+		}
 		return cmd, nil
 	}
-	return nil, locale.NewError("err_captain_cmd_find", "Could not find child Command with args: {{.V0}}", strings.Join(args, " "))
+	return nil, &ErrNoChildren{locale.NewError("err_captain_cmd_find", "Could not find child Command with args: {{.V0}}", strings.Join(args, " "))}
 }
 
 func (c *Command) GenBashCompletions() (string, error) {
@@ -838,7 +846,14 @@ func (cmd *Command) Usage() error {
 		return errs.Wrap(err, "Could not execute template")
 	}
 
-	cmd.out.Print(out.String())
+	if writer := cmd.cobra.OutOrStdout(); writer != os.Stdout {
+		_, err := writer.Write(out.Bytes())
+		if err != nil {
+			return errs.Wrap(err, "Unable to write to cobra outWriter")
+		}
+	} else {
+		cmd.out.Print(strings.TrimRightFunc(out.String(), unicode.IsSpace))
+	}
 
 	return nil
 
@@ -868,4 +883,28 @@ func childCommands(cmd *Command) string {
 	}
 
 	return fmt.Sprintf("\n\nAvailable Commands:\n%s", table.Render())
+}
+
+func (c *Command) logArgs(args []string) {
+	child, err := c.FindChild(args)
+	if err != nil {
+		logging.Debug("Could not find child command, error: %v", err)
+	}
+
+	var logArgs []string
+	if child != nil {
+		logArgs = append(logArgs, child.commandNames(false)...)
+	}
+
+	logging.Debug("Args: %s, Flags: %s", logArgs, flags(args))
+}
+
+func flags(args []string) []string {
+	flags := []string{}
+	for _, arg := range args {
+		if strings.HasPrefix(arg, "-") || condition.InActiveStateCI() || condition.BuiltOnDevMachine() {
+			flags = append(flags, arg)
+		}
+	}
+	return flags
 }

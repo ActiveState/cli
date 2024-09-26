@@ -12,18 +12,22 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/commit"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
+	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	gqlmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
 
 type Revert struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	out       output.Outputer
 	prompt    prompt.Prompter
 	project   *project.Project
@@ -51,6 +55,7 @@ type primeable interface {
 
 func New(prime primeable) *Revert {
 	return &Revert{
+		prime,
 		prime.Output(),
 		prime.Prompt(),
 		prime.Project(),
@@ -156,7 +161,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Unable to set local commit")
 	}
 
-	_, err = runtime.SolveAndUpdate(r.auth, r.out, r.analytics, r.project, &revertCommit, target.TriggerRevert, r.svcModel, r.cfg, runtime.OptOrderChanged)
+	_, err = runtime_runbit.Update(r.prime, trigger.TriggerRevert)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
@@ -203,10 +208,10 @@ func (r *Revert) revertToCommit(params revertParams, bp *buildplanner.BuildPlann
 		Script:       bs,
 	}
 
-	newCommitID, err := bp.StageCommit(stageCommitParams)
+	newCommit, err := bp.StageCommit(stageCommitParams)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not stage commit")
 	}
 
-	return newCommitID, nil
+	return newCommit.CommitID, nil
 }

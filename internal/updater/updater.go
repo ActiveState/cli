@@ -187,10 +187,13 @@ func (u *UpdateInstaller) InstallBlocking(installTargetPath string, args ...stri
 		if rerr == nil {
 			return
 		}
+
+		var errInProgress *ErrorInProgress
+
 		switch {
 		case os.IsPermission(rerr):
 			u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, "Could not update the state tool due to insufficient permissions.")
-		case errs.Matches(rerr, &ErrorInProgress{}):
+		case errors.As(rerr, &errInProgress):
 			u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, anaConst.UpdateErrorInProgress)
 		default:
 			u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, anaConst.UpdateErrorInstallFailed)

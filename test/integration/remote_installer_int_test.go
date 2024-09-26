@@ -22,7 +22,7 @@ type RemoteInstallIntegrationTestSuite struct {
 
 func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 	suite.OnlyRunForTags(tagsuite.RemoteInstaller, tagsuite.Critical)
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	tests := []struct {

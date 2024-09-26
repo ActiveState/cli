@@ -1,11 +1,15 @@
 package integration
 
 import (
+	"bufio"
+	"encoding/json"
+	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -42,12 +46,9 @@ func (suite *ExportIntegrationTestSuite) TestExport_Env() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/Export", "5397f645-da8a-4591-b106-9d7fa99545fe")
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("export", "env"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect(`PATH: `, e2e.RuntimeSourcingTimeoutOpt)
+	ts.PrepareEmptyProject()
+	cp := ts.Spawn("export", "env")
+	cp.Expect(`PATH: `)
 	cp.ExpectExitCode(0)
 
 	suite.Assert().NotContains(cp.Output(), "ACTIVESTATE_ACTIVATED")
@@ -58,7 +59,12 @@ func (suite *ExportIntegrationTestSuite) TestExport_Log() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.ClearCache()
 
-	cp := ts.Spawn("export", "log")
+	// Populate the log file directory as the log file created by
+	// the export command will be ignored.
+	cp := ts.Spawn("--version")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("export", "log")
 	cp.Expect(filepath.Join(ts.Dirs.Config, "logs"))
 	cp.ExpectRe(`state-\d+`)
 	cp.Expect(".log")
@@ -71,20 +77,86 @@ func (suite *ExportIntegrationTestSuite) TestExport_Log() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *ExportIntegrationTestSuite) TestExport_LogIgnore() {
+	suite.OnlyRunForTags(tagsuite.Export)
+	ts := e2e.New(suite.T(), false)
+	defer ts.ClearCache()
+
+	cp := ts.Spawn("config", "--help")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "set", "--help")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("projects")
+	cp.ExpectExitCode(0)
+
+	suite.verifyLogIndex(ts, 0, "projects")
+	suite.verifyLogIndex(ts, 1, "config", "set")
+	suite.verifyLogIndex(ts, 2, "config")
+}
+
+func (suite *ExportIntegrationTestSuite) verifyLogIndex(ts *e2e.Session, index int, args ...string) {
+	cp := ts.Spawn("export", "log", "-i", strconv.Itoa(index), "--output", "json")
+	cp.ExpectExitCode(0)
+	data := cp.StrippedSnapshot()
+
+	type log struct {
+		LogFile string `json:"logFile"`
+	}
+
+	var l log
+	err := json.Unmarshal([]byte(data), &l)
+	suite.Require().NoError(err)
+
+	suite.verifyLogFile(l.LogFile, args...)
+}
+
+func (suite *ExportIntegrationTestSuite) verifyLogFile(logFile string, expectedArgs ...string) {
+	f, err := os.Open(logFile)
+	suite.Require().NoError(err)
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		if !strings.Contains(scanner.Text(), "Args: ") {
+			continue
+		}
+
+		for _, arg := range expectedArgs {
+			if !strings.Contains(scanner.Text(), arg) {
+				suite.Fail("Log file does not contain expected command: %s", arg)
+			}
+		}
+	}
+}
+
 func (suite *ExportIntegrationTestSuite) TestExport_Runtime() {
 	suite.OnlyRunForTags(tagsuite.Export)
 	ts := e2e.New(suite.T(), false)
 
-	ts.PrepareProject("ActiveState-CLI/Export", "5397f645-da8a-4591-b106-9d7fa99545fe")
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("export", "runtime"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	ts.PrepareEmptyProject()
+	cp := ts.Spawn("export", "runtime")
 	cp.Expect("Project Path: ")
 	cp.Expect("Runtime Path: ")
 	cp.Expect("Executables Path: ")
 	cp.Expect("Environment Variables:") // intentional lack of trailing space
-	cp.Expect(` - PATH: `, e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect(` - PATH: `)
+	cp.ExpectExitCode(0)
+}
+
+func (suite *ExportIntegrationTestSuite) TestExport_BuildPlan() {
+	suite.OnlyRunForTags(tagsuite.Export)
+	ts := e2e.New(suite.T(), false)
+
+	ts.PrepareEmptyProject()
+	cp := ts.Spawn("export", "buildplan")
+	cp.Expect("Resolving Dependencies")
+	cp.Expect(`{`)
+	cp.Expect(`"let":`)
+	cp.Expect(`"in":`)
+	cp.Expect(`"runtime":`)
+	cp.Expect(`"sources":`)
+	cp.Expect(`}`)
 	cp.ExpectExitCode(0)
 }
 
@@ -98,17 +170,10 @@ func (suite *ExportIntegrationTestSuite) TestJSON() {
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "."),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
+	ts.PrepareEmptyProject()
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("export", "env", "-o", "json"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
+	cp = ts.Spawn("export", "env", "-o", "json")
+	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
 	ts.LoginAsPersistentUser()
@@ -123,11 +188,15 @@ func (suite *ExportIntegrationTestSuite) TestJSON() {
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("export", "runtime", "-o", "json"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"))
+	cp = ts.Spawn("export", "runtime", "-o", "json")
 	cp.Expect(`{"project":"`)
 	cp.Expect(`"}}`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.Spawn("export", "buildplan", "-o", "json")
+	cp.Expect(`{"`)
+	cp.Expect(`}`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 }

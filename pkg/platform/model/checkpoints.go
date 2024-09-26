@@ -186,22 +186,6 @@ func CheckpointToPlatforms(requirements []*gqlModel.Requirement) []strfmt.UUID {
 	return result
 }
 
-// CheckpointToLanguage returns the language from a checkpoint
-func CheckpointToLanguage(requirements []*gqlModel.Requirement, auth *authentication.Auth) (*Language, error) {
-	for _, req := range requirements {
-		if !NamespaceMatch(req.Namespace, NamespaceLanguageMatch) {
-			continue
-		}
-		lang, err := FetchLanguageByDetails(req.Requirement, req.VersionConstraint, auth)
-		if err != nil {
-			return nil, err
-		}
-		return lang, nil
-	}
-
-	return nil, locale.NewError("err_fetch_languages")
-}
-
 func PlatformNameToPlatformID(name string) (string, error) {
 	name = strings.ToLower(name)
 	if name == "darwin" {

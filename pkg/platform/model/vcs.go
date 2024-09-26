@@ -254,7 +254,7 @@ func BranchCommitID(ownerName, projectName, branchName string) (*strfmt.UUID, er
 	if branch.CommitID == nil {
 		return nil, locale.NewInputError(
 			"err_project_no_commit",
-			"Your project does not have any commits yet, head over to {{.V0}} to set up your project.", api.GetPlatformURL(fmt.Sprintf("%s/%s", ownerName, projectName)).String())
+			"Your project does not have any commits yet. Head over to {{.V0}} to set up your project.", api.GetPlatformURL(fmt.Sprintf("%s/%s", ownerName, projectName)).String())
 	}
 
 	return branch.CommitID, nil
@@ -888,10 +888,18 @@ func GetCommitWithinCommitHistory(currentCommitID, targetCommitID strfmt.UUID, a
 // This function exists primarily as an existence check because the buildplanner API currently
 // accepts a query for a org/project#commitID even if commitID does not belong to org/project.
 // See DS-1705 (yes, DS, not DX).
-func GetCommitWithinProjectHistory(commitID strfmt.UUID, owner, name string, auth *authentication.Auth) (*mono_models.Commit, error) {
+func GetCommitWithinProjectHistory(commitID strfmt.UUID, owner, name string, localCommitID *strfmt.UUID, auth *authentication.Auth) (*mono_models.Commit, error) {
 	commit, err := GetCommit(commitID, auth)
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get commit")
+	}
+
+	if localCommitID != nil {
+		if ok, err := CommitWithinCommitHistory(*localCommitID, commitID, auth); err == nil && ok {
+			return commit, nil
+		} else if err != nil {
+			return nil, errs.Wrap(err, "Unable to determine if commit exists in local history")
+		}
 	}
 
 	branches, err := BranchesForProject(owner, name)

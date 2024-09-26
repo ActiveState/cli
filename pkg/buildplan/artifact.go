@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildplan/raw"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
@@ -52,7 +51,6 @@ func (a *Artifact) Name() string {
 	if len(a.Ingredients) == 1 {
 		return a.Ingredients[0].Name
 	}
-	logging.Debug("Using displayname because artifact has %d ingredients", len(a.Ingredients))
 	return a.DisplayName
 }
 
@@ -126,11 +124,7 @@ func (a Artifacts) ToIDSlice() []strfmt.UUID {
 func (a Artifacts) ToNameMap() ArtifactNameMap {
 	result := make(map[string]*Artifact, len(a))
 	for _, a := range a {
-		name := a.DisplayName
-		if len(a.Ingredients) == 0 {
-			name = a.Ingredients[0].Name
-		}
-		result[name] = a
+		result[a.Name()] = a
 	}
 	return result
 }
@@ -165,16 +159,35 @@ func (as Artifacts) RuntimeDependencies(recursive bool) Artifacts {
 	seen := make(map[strfmt.UUID]struct{})
 	dependencies := Artifacts{}
 	for _, a := range as {
-		dependencies = append(dependencies, a.runtimeDependencies(recursive, seen)...)
+		dependencies = append(dependencies, a.dependencies(recursive, seen, RuntimeRelation)...)
 	}
 	return dependencies
 }
 
 func (a *Artifact) RuntimeDependencies(recursive bool) Artifacts {
-	return a.runtimeDependencies(recursive, make(map[strfmt.UUID]struct{}))
+	return a.dependencies(recursive, make(map[strfmt.UUID]struct{}), RuntimeRelation)
 }
 
-func (a *Artifact) runtimeDependencies(recursive bool, seen map[strfmt.UUID]struct{}) Artifacts {
+// Dependencies returns ALL dependencies that an artifact has, this covers runtime and build time dependencies.
+// It does not cover test dependencies as we have no use for them in the state tool.
+func (as Artifacts) Dependencies(recursive bool) Artifacts {
+	seen := make(map[strfmt.UUID]struct{})
+	dependencies := Artifacts{}
+	for _, a := range as {
+		dependencies = append(dependencies, a.dependencies(recursive, seen, RuntimeRelation, BuildtimeRelation)...)
+	}
+	return dependencies
+}
+
+// Dependencies returns ALL dependencies that an artifact has, this covers runtime and build time dependencies.
+// It does not cover test dependencies as we have no use for them in the state tool.
+func (a *Artifact) Dependencies(recursive bool) Artifacts {
+	as := a.dependencies(recursive, make(map[strfmt.UUID]struct{}), RuntimeRelation, BuildtimeRelation)
+	as = sliceutils.UniqueByProperty(as, func(a *Artifact) any { return a.ArtifactID })
+	return as
+}
+
+func (a *Artifact) dependencies(recursive bool, seen map[strfmt.UUID]struct{}, relations ...Relation) Artifacts {
 	// Guard against recursion, this shouldn't really be possible but we don't know how the buildplan might evolve
 	// so better safe than sorry.
 	if _, ok := seen[a.ArtifactID]; ok {
@@ -184,12 +197,19 @@ func (a *Artifact) runtimeDependencies(recursive bool, seen map[strfmt.UUID]stru
 
 	dependencies := Artifacts{}
 	for _, ac := range a.children {
-		if ac.Relation != RuntimeRelation {
+		related := len(relations) == 0
+		for _, relation := range relations {
+			if ac.Relation == relation {
+				related = true
+			}
+		}
+		if !related {
 			continue
 		}
+
 		dependencies = append(dependencies, ac.Artifact)
 		if recursive {
-			dependencies = append(dependencies, ac.Artifact.RuntimeDependencies(recursive)...)
+			dependencies = append(dependencies, ac.Artifact.dependencies(recursive, seen, relations...)...)
 		}
 	}
 	return dependencies
