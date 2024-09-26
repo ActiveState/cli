@@ -137,6 +137,9 @@ func (d *depot) Path(id strfmt.UUID) string {
 // necessary information. Writing externally is preferred because otherwise the depot would need a lot of specialized
 // logic that ultimately don't really need to be a concern of the depot.
 func (d *depot) Put(id strfmt.UUID) error {
+	d.fsMutex.Lock()
+	defer d.fsMutex.Unlock()
+
 	if !fileutils.TargetExists(d.Path(id)) {
 		return errs.New("could not put %s, as dir does not exist: %s", id, d.Path(id))
 	}
