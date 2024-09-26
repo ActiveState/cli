@@ -197,6 +197,13 @@ func (p *Project) Name() string {
 	return p.projectfile.Name()
 }
 
+// SetNamespace sets the project namespace.
+// Do not call this. Use checkoutinfo.SetNamespace() instead.
+// This method should ONLY be called by checkoutinfo.
+func (p *Project) SetNamespace(owner, project string) error {
+	return p.projectfile.SetNamespace(owner, project)
+}
+
 func (p *Project) Private() bool {
 	return p.Source().Private
 }
@@ -204,6 +211,13 @@ func (p *Project) Private() bool {
 // BranchName returns the project branch name
 func (p *Project) BranchName() string {
 	return p.projectfile.BranchName()
+}
+
+// SetBranch sets the project branch name.
+// Do not call this. Use checkoutinfo.SetBranch() instead.
+// This method should ONLY be called by checkoutinfo.
+func (p *Project) SetBranch(branch string) error {
+	return p.projectfile.SetBranch(branch)
 }
 
 // Path returns the project path

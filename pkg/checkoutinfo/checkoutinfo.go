@@ -29,6 +29,8 @@ type projecter interface {
 	SetLegacyCommit(string) error
 	Dir() string
 	URL() string
+	SetNamespace(string, string) error
+	SetBranch(string) error
 }
 
 type CheckoutInfo struct {
@@ -52,38 +54,24 @@ func New(auth *authentication.Auth, cfg configurer, project projecter, svcm *mod
 	return &CheckoutInfo{auth, cfg, project, svcm}
 }
 
-func (c *CheckoutInfo) Owner() string {
-	return c.project.Owner()
-}
-
-func (c *CheckoutInfo) Name() string {
-	return c.project.Name()
-}
-
-func (c *CheckoutInfo) Branch() string {
-	return c.project.BranchName()
-}
-
 func (c *CheckoutInfo) CommitID() (strfmt.UUID, error) {
-	if c.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		if script, err := c.BuildScript(); err == nil {
-			commitID, err2 := script.CommitID()
-			if err2 != nil {
-				return "", errs.Wrap(err, "Could not get commit ID from build script")
-			}
-			return commitID, nil
-		} else {
-			return "", errs.Wrap(err, "Could not get build script")
+	if !c.cfg.GetBool(constants.OptinBuildscriptsConfig) {
+		commitID := c.project.LegacyCommitID()
+		if !strfmt.IsUUID(commitID) {
+			return "", &ErrInvalidCommitID{commitID}
 		}
+		return strfmt.UUID(commitID), nil
 	}
 
-	// Read from activestate.yaml.
-	commitID := c.project.LegacyCommitID()
-	if !strfmt.IsUUID(commitID) {
-		return "", &ErrInvalidCommitID{commitID}
+	script, err := c.BuildScript()
+	if err != nil {
+		return "", errs.Wrap(err, "Could not get build script")
 	}
-
-	return strfmt.UUID(commitID), nil
+	commitID, err := script.CommitID()
+	if err != nil {
+		return "", errs.Wrap(err, "Could not get commit ID from build script")
+	}
+	return commitID, nil
 }
 
 // CommitIDForReset will return either the commit ID from the buildscript, or the commitID from
@@ -110,7 +98,7 @@ func (c *CheckoutInfo) CommitIDForReset() (strfmt.UUID, error) {
 func (c *CheckoutInfo) BuildScript() (*buildscript.BuildScript, error) {
 	if !c.cfg.GetBool(constants.OptinBuildscriptsConfig) {
 		bp := buildplanner.NewBuildPlannerModel(c.auth, c.svcm)
-		script, err := bp.GetBuildScript(c.Owner(), c.Name(), c.Branch(), c.project.LegacyCommitID())
+		script, err := bp.GetBuildScript(c.project.Owner(), c.project.Name(), c.project.BranchName(), c.project.LegacyCommitID())
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not get remote build script")
 		}
@@ -133,6 +121,36 @@ func (c *CheckoutInfo) BuildScript() (*buildscript.BuildScript, error) {
 	}
 
 	return script, nil
+}
+
+func (c *CheckoutInfo) SetNamespace(owner, project string) error {
+	err := c.project.SetNamespace(owner, project)
+	if err != nil {
+		return errs.Wrap(err, "Could not set project namespace")
+	}
+
+	script, err := c.BuildScript()
+	if err != nil {
+		return errs.Wrap(err, "Could not get build script")
+	}
+	script.SetProjectURL(c.project.URL())
+
+	return nil
+}
+
+func (c *CheckoutInfo) SetBranch(branch string) error {
+	err := c.project.SetBranch(branch)
+	if err != nil {
+		return errs.Wrap(err, "Could not set project branch")
+	}
+
+	script, err := c.BuildScript()
+	if err != nil {
+		return errs.Wrap(err, "Could not get build script")
+	}
+	script.SetProjectURL(c.project.URL())
+
+	return nil
 }
 
 func (c *CheckoutInfo) SetCommitID(commitID strfmt.UUID) error {
@@ -185,7 +203,7 @@ func (c *CheckoutInfo) SetCommitID(commitID strfmt.UUID) error {
 func (c *CheckoutInfo) InitializeBuildScript(commitID strfmt.UUID) error {
 	if c.cfg.GetBool(constants.OptinBuildscriptsConfig) {
 		buildplanner := buildplanner.NewBuildPlannerModel(c.auth, c.svcm)
-		script, err := buildplanner.GetBuildScript(c.Owner(), c.Name(), c.Branch(), commitID.String())
+		script, err := buildplanner.GetBuildScript(c.project.Owner(), c.project.Name(), c.project.BranchName(), commitID.String())
 		if err != nil {
 			return errs.Wrap(err, "Unable to get the remote build script")
 		}

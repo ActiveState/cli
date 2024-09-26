@@ -107,6 +107,7 @@ type primeable interface {
 	primer.Outputer
 	primer.Configurer
 	primer.Prompter
+	primer.SvcModeler
 }
 
 func NewParams() *Params {

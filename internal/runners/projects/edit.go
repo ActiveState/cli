@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -42,6 +43,7 @@ type Edit struct {
 	out    output.Outputer
 	prompt prompt.Prompter
 	config configGetter
+	svcm   *model.SvcModel
 }
 
 func NewEdit(prime primeable) *Edit {
@@ -50,6 +52,7 @@ func NewEdit(prime primeable) *Edit {
 		out:    prime.Output(),
 		prompt: prime.Prompt(),
 		config: prime.Config(),
+		svcm:   prime.SvcModel(),
 	}
 }
 
@@ -148,7 +151,8 @@ func (e *Edit) editLocalCheckout(owner, checkout string, params *EditParams) err
 		return errs.Wrap(err, "Could not get projectfile at %s", checkout)
 	}
 
-	err = pjFile.SetNamespace(owner, params.ProjectName)
+	info := checkoutinfo.New(e.auth, e.config, pjFile, e.svcm)
+	err = info.SetNamespace(owner, params.ProjectName)
 	if err != nil {
 		return errs.Wrap(err, "Could not set project namespace at %s", checkout)
 	}
