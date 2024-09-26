@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/executors"
 	"github.com/go-openapi/strfmt"
 	"golang.org/x/net/context"
@@ -163,6 +164,9 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 		}
 	}
 
+	logging.Debug("artifactsToBuild: %d, artifactsToDownload: %d, artifactsToUnpack: %d, artifactsToInstall: %d, artifactsToUninstall: %d",
+		len(artifactsToBuild), len(artifactsToDownload), len(artifactsToUnpack), len(artifactsToInstall), len(artifactsToUninstall))
+
 	return &setup{
 		path:              path,
 		opts:              opts,
@@ -216,6 +220,8 @@ func (s *setup) RunAndWait() (rerr error) {
 }
 
 func (s *setup) update() error {
+	logging.Debug("update")
+
 	if err := fileutils.MkdirUnlessExists(filepath.Join(s.path, configDir)); err != nil {
 		return errs.Wrap(err, "Could not create runtime config dir")
 	}
@@ -228,7 +234,10 @@ func (s *setup) update() error {
 	// Note: if there are artifacts to download, s.toUnpack == s.toDownload, and downloaded artifacts
 	// are unpacked in the same step.
 	wp := workerpool.New(maxConcurrency)
+	n := 0
 	for _, a := range s.toUnpack { // iterate over unpack as downloads will not be set if installing from archive
+		n++
+		logging.Debug("Scheduling build ready handler %d/%d", n, len(s.toUnpack))
 		s.onArtifactBuildReady(blog, a, func() {
 			wp.Submit(func() error {
 				if err := s.obtain(a); err != nil {
@@ -239,6 +248,7 @@ func (s *setup) update() error {
 		})
 	}
 
+	logging.Debug("Build ready: %v", s.buildplan.IsBuildReady())
 	// Wait for build to finish
 	if !s.buildplan.IsBuildReady() && len(s.toBuild) > 0 {
 		if err := blog.Wait(context.Background()); err != nil {

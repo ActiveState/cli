@@ -429,5 +429,8 @@ Artifact Build Failed.
 			}
 
 		}
+		if verboseLogging {
+			logging.Debug("Event handled")
+		}
 	}
 }
