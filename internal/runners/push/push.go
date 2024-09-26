@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -36,7 +35,6 @@ type Push struct {
 	project *project.Project
 	prompt  prompt.Prompter
 	auth    *authentication.Auth
-	info    *checkoutinfo.CheckoutInfo
 }
 
 type PushParams struct {
@@ -54,7 +52,7 @@ type primeable interface {
 }
 
 func NewPush(prime primeable) *Push {
-	return &Push{prime, prime.Config(), prime.Output(), prime.Project(), prime.Prompt(), prime.Auth(), prime.CheckoutInfo()}
+	return &Push{prime, prime.Config(), prime.Output(), prime.Project(), prime.Prompt(), prime.Auth()}
 }
 
 type intention uint16
@@ -96,7 +94,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 	}
 	r.out.Notice(locale.Tr("operating_message", r.project.NamespaceString(), r.project.Dir()))
 
-	commitID, err := r.info.CommitID() // The commit we want to push
+	commitID, err := r.prime.CheckoutInfo().CommitID() // The commit we want to push
 	if err != nil {
 		// Note: should not get here, as verifyInput() ensures there is a local commit
 		return errs.Wrap(err, "Unable to get commit ID")
@@ -210,8 +208,8 @@ func (r *Push) Run(params PushParams) (rerr error) {
 			return errs.Wrap(err, "Project has no default branch")
 		}
 
-		// Update the project's commitID with the create project or push result.
-		err = r.info.SetCommitID(commitID)
+		// Update the project's build script with the create project or push result.
+		err = r.prime.CheckoutInfo().InitializeBuildScript(commitID)
 		if err != nil {
 			return errs.Wrap(err, "Unable to update build script")
 		}
@@ -289,7 +287,7 @@ func (r *Push) verifyInput() error {
 		return rationalize.ErrNoProject
 	}
 
-	commitID, err := r.info.CommitID()
+	commitID, err := r.prime.CheckoutInfo().CommitID()
 	if err != nil {
 		return errs.Wrap(err, "Unable to get commit ID")
 	}
@@ -327,7 +325,7 @@ func (r *Push) promptNamespace() (*project.Namespaced, error) {
 	}
 
 	var name string
-	commitID, err := r.info.CommitID()
+	commitID, err := r.prime.CheckoutInfo().CommitID()
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get commit ID")
 	}

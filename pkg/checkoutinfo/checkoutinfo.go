@@ -153,53 +153,6 @@ func (c *CheckoutInfo) SetBranch(branch string) error {
 	return nil
 }
 
-func (c *CheckoutInfo) SetCommitID(commitID strfmt.UUID) error {
-	// Update commitID in activestate.yaml.
-	logging.Debug("Updating commitID in activestate.yaml")
-	if err := c.project.SetLegacyCommit(commitID.String()); err != nil {
-		return errs.Wrap(err, "Could not set commit ID")
-	}
-
-	if !c.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		return nil // buildscripts are not enabled, so nothing more to do
-	}
-
-	// Update commitID in Project field of build script.
-	logging.Debug("Updating commitID in buildscript")
-	buildscriptPath := filepath.Join(c.project.Dir(), constants.BuildScriptFileName)
-
-	if !fileutils.FileExists(buildscriptPath) {
-		return c.InitializeBuildScript(commitID)
-	}
-
-	data, err := fileutils.ReadFile(buildscriptPath)
-	if err != nil {
-		return errs.Wrap(err, "Could not read build script for updating")
-	}
-
-	script, err := buildscript.Unmarshal(data)
-	if err != nil {
-		if errors.Is(err, buildscript.ErrOutdatedAtTime) {
-			return nil // likely running `state reset LOCAL`, so ignore this error
-		}
-		return errs.Wrap(err, "Could not unmarshal build script")
-	}
-
-	script.SetProjectURL(c.project.URL())
-
-	data, err = script.Marshal()
-	if err != nil {
-		return errs.Wrap(err, "Could not marshal updated build script")
-	}
-
-	err = fileutils.WriteFile(buildscriptPath, data)
-	if err != nil {
-		return errs.Wrap(err, "Could not write updated build script")
-	}
-
-	return nil
-}
-
 func (c *CheckoutInfo) InitializeBuildScript(commitID strfmt.UUID) error {
 	if c.cfg.GetBool(constants.OptinBuildscriptsConfig) {
 		buildplanner := buildplanner.NewBuildPlannerModel(c.auth, c.svcm)
