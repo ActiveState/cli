@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 )
 
@@ -16,6 +15,7 @@ type primeable interface {
 	primer.Auther
 	primer.Projecter
 	primer.SvcModeler
+	primer.CheckoutInfoer
 }
 
 type Params struct {
@@ -49,7 +49,7 @@ func (e *Eval) Run(params *Params) (rerr error) {
 		return rationalize.ErrNoProject
 	}
 
-	commitID, err := localcommit.Get(proj.Dir())
+	commitID, err := e.prime.CheckoutInfo().CommitID()
 	if err != nil {
 		return errs.Wrap(err, "Unable to get commit ID")
 	}

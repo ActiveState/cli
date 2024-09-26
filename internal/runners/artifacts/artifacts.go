@@ -31,6 +31,7 @@ type primeable interface {
 	primer.SvcModeler
 	primer.Configurer
 	primer.Analyticer
+	primer.CheckoutInfoer
 }
 
 type Params struct {

@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalizers"
 	"github.com/ActiveState/cli/internal/runbits/reqop_runbit"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -59,9 +58,9 @@ func (a *Remove) Run(params RemoveRunParams) (rerr error) {
 	pg = output.StartSpinner(out, locale.T("progress_platforms"), constants.TerminalAnimationInterval)
 
 	// Grab local commit info
-	localCommitID, err := localcommit.Get(pj.Dir())
+	localCommitID, err := a.prime.CheckoutInfo().CommitID()
 	if err != nil {
-		return errs.Wrap(err, "Unable to get local commit")
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 	oldCommit, err := bp.FetchCommit(localCommitID, pj.Owner(), pj.Name(), nil)
 	if err != nil {

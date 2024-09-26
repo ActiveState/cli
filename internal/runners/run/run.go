@@ -43,6 +43,7 @@ type primeable interface {
 	primer.Configurer
 	primer.SvcModeler
 	primer.Analyticer
+	primer.CheckoutInfoer
 }
 
 // New constructs a new instance of Run.
@@ -76,7 +77,7 @@ func (r *Run) Run(name string, args []string) error {
 	r.out.Notice(output.Title(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", name)))
 
 	if r.auth.Authenticated() {
-		checker.RunCommitsBehindNotifier(r.proj, r.out, r.auth)
+		checker.RunCommitsBehindNotifier(r.proj, r.out, r.auth, r.prime.CheckoutInfo())
 	}
 
 	script, err := r.proj.ScriptByName(name)

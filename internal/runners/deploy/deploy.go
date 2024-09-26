@@ -71,6 +71,7 @@ type primeable interface {
 	primer.Analyticer
 	primer.SvcModeler
 	primer.Projecter
+	primer.CheckoutInfoer
 }
 
 func NewDeploy(step Step, prime primeable) *Deploy {

@@ -30,17 +30,19 @@ type InfoRunParams struct {
 
 // Info manages the information execution context.
 type Info struct {
-	out  output.Outputer
-	proj *project.Project
-	auth *authentication.Auth
+	prime primeable
+	out   output.Outputer
+	proj  *project.Project
+	auth  *authentication.Auth
 }
 
 // NewInfo prepares an information execution context for use.
 func NewInfo(prime primeable) *Info {
 	return &Info{
-		out:  prime.Output(),
-		proj: prime.Project(),
-		auth: prime.Auth(),
+		prime: prime,
+		out:   prime.Output(),
+		proj:  prime.Project(),
+		auth:  prime.Auth(),
 	}
 }
 
@@ -58,7 +60,7 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	}
 
 	if nsTypeV != nil {
-		language, err := targetedLanguage(params.Language, i.proj, i.auth)
+		language, err := targetedLanguage(params.Language, i.prime)
 		if err != nil {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", *nsTypeV))
 		}
@@ -71,7 +73,7 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 		normalized = params.Package.Name
 	}
 
-	ts, err := commits_runbit.ExpandTimeForProject(&params.Timestamp, i.auth, i.proj)
+	ts, err := commits_runbit.ExpandTimeForProject(&params.Timestamp, i.auth, i.proj, i.prime.CheckoutInfo())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get timestamp from params")
 	}

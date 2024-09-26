@@ -23,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
@@ -105,6 +104,7 @@ type primeable interface {
 	primer.Configurer
 	primer.SvcModeler
 	primer.Analyticer
+	primer.CheckoutInfoer
 }
 
 func Update(
@@ -147,7 +147,7 @@ func Update(
 		commitID = opts.Commit.CommitID
 	}
 	if commitID == "" {
-		commitID, err = localcommit.Get(proj.Dir())
+		commitID, err = prime.CheckoutInfo().CommitID()
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to get local commit")
 		}
@@ -169,7 +169,7 @@ func Update(
 		}
 	}()
 
-	rtHash, err := runtime_helpers.Hash(proj, &commitID)
+	rtHash, err := runtime_helpers.Hash(prime, &commitID)
 	if err != nil {
 		ah.fire(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeCache, nil)
 		return nil, errs.Wrap(err, "Failed to get runtime hash")

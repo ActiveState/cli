@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -39,6 +38,7 @@ type primeable interface {
 	primer.Auther
 	primer.Outputer
 	primer.SvcModeler
+	primer.CheckoutInfoer
 }
 
 // GetCommit returns a commit from the given arguments. By default, the local commit for the
@@ -54,6 +54,7 @@ func GetCommit(
 	out := prime.Output()
 	auth := prime.Auth()
 	svcm := prime.SvcModel()
+	info := prime.CheckoutInfo()
 
 	if pj == nil && !namespace.IsValid() {
 		return nil, rationalize.ErrNoProject
@@ -87,9 +88,9 @@ func GetCommit(
 	switch {
 	// Return the buildplan from this runtime.
 	case !namespaceProvided && !commitIdProvided:
-		localCommitID, err := localcommit.Get(pj.Path())
+		localCommitID, err := info.CommitID()
 		if err != nil {
-			return nil, errs.Wrap(err, "Could not get local commit")
+			return nil, errs.Wrap(err, "Could not get commit ID")
 		}
 
 		bp := bpModel.NewBuildPlannerModel(auth, svcm)
@@ -154,9 +155,9 @@ func GetCommit(
 		owner = pj.Owner()
 		name = pj.Name()
 		nsString = pj.NamespaceString()
-		commitID, err := localcommit.Get(pj.Path())
+		commitID, err := info.CommitID()
 		if err != nil {
-			return nil, errs.Wrap(err, "Could not get local commit")
+			return nil, errs.Wrap(err, "Could not get commit ID")
 		}
 		localCommitID = &commitID
 	}

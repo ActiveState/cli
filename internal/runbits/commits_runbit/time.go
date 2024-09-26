@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/pkg/buildscript"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -40,14 +40,14 @@ func ExpandTime(ts *captain.TimeValue, auth *authentication.Auth) (time.Time, er
 
 // ExpandTimeForProject is the same as ExpandTime except that it ensures the returned time is either the same or
 // later than that of the most recent commit.
-func ExpandTimeForProject(ts *captain.TimeValue, auth *authentication.Auth, proj *project.Project) (time.Time, error) {
+func ExpandTimeForProject(ts *captain.TimeValue, auth *authentication.Auth, proj *project.Project, info *checkoutinfo.CheckoutInfo) (time.Time, error) {
 	timestamp, err := ExpandTime(ts, auth)
 	if err != nil {
 		return time.Time{}, errs.Wrap(err, "Unable to expand time")
 	}
 
 	if proj != nil {
-		commitID, err := localcommit.Get(proj.Dir())
+		commitID, err := info.CommitID()
 		if err != nil {
 			return time.Time{}, errs.Wrap(err, "Unable to get commit ID")
 		}

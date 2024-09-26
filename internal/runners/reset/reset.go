@@ -16,7 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -52,6 +52,7 @@ type primeable interface {
 	primer.Configurer
 	primer.Analyticer
 	primer.SvcModeler
+	primer.CheckoutInfoer
 }
 
 func New(prime primeable) *Reset {
@@ -80,10 +81,10 @@ func (r *Reset) Run(params *Params) error {
 		if err != nil {
 			return locale.WrapError(err, "err_reset_latest_commit", "Could not get latest commit ID")
 		}
-		localCommitID, err := localcommit.Get(r.project.Dir())
-		var errInvalidCommitID *localcommit.ErrInvalidCommitID
+		localCommitID, err := r.prime.CheckoutInfo().CommitID()
+		var errInvalidCommitID *checkoutinfo.ErrInvalidCommitID
 		if err != nil && !errors.As(err, &errInvalidCommitID) {
-			return errs.Wrap(err, "Unable to get local commit")
+			return errs.Wrap(err, "Unable to get commit ID")
 		}
 		if *latestCommit == localCommitID {
 			return locale.NewInputError("err_reset_latest", "You are already on the latest commit")
@@ -91,9 +92,9 @@ func (r *Reset) Run(params *Params) error {
 		commitID = *latestCommit
 
 	case strings.EqualFold(params.CommitID, local):
-		localCommitID, err := localcommit.Get(r.project.Dir())
+		localCommitID, err := r.prime.CheckoutInfo().CommitID()
 		if err != nil {
-			return errs.Wrap(err, "Unable to get local commit")
+			return errs.Wrap(err, "Unable to get commit ID")
 		}
 		commitID = localCommitID
 
@@ -109,10 +110,10 @@ func (r *Reset) Run(params *Params) error {
 		}
 	}
 
-	localCommitID, err := localcommit.Get(r.project.Dir())
-	var errInvalidCommitID *localcommit.ErrInvalidCommitID
+	localCommitID, err := r.prime.CheckoutInfo().CommitID()
+	var errInvalidCommitID *checkoutinfo.ErrInvalidCommitID
 	if err != nil && !errors.As(err, &errInvalidCommitID) {
-		return errs.Wrap(err, "Unable to get local commit")
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 	r.out.Notice(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", commitID.String()))
 	if commitID != localCommitID {
@@ -126,7 +127,7 @@ func (r *Reset) Run(params *Params) error {
 		}
 	}
 
-	err = localcommit.Set(r.project.Dir(), commitID.String())
+	err = r.prime.CheckoutInfo().SetCommitID(commitID)
 	if err != nil {
 		return errs.Wrap(err, "Unable to set local commit")
 	}
@@ -134,7 +135,7 @@ func (r *Reset) Run(params *Params) error {
 	// Ensure the buildscript exists. Normally we should never do this, but reset is used for resetting from a corrupted
 	// state, so it is appropriate.
 	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript_runbit.Initialize(r.project.Dir(), r.auth, r.svcModel); err != nil {
+		if err := buildscript_runbit.Initialize(r.project.Dir(), r.auth, r.svcModel, r.prime.CheckoutInfo()); err != nil {
 			return errs.Wrap(err, "Unable to initialize buildscript")
 		}
 	}

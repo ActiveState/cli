@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -48,6 +47,7 @@ type primeable interface {
 	primer.Prompter
 	primer.Auther
 	primer.SvcModeler
+	primer.CheckoutInfoer
 }
 
 func NewPush(prime primeable) *Push {
@@ -93,10 +93,10 @@ func (r *Push) Run(params PushParams) (rerr error) {
 	}
 	r.out.Notice(locale.Tr("operating_message", r.project.NamespaceString(), r.project.Dir()))
 
-	commitID, err := localcommit.Get(r.project.Dir()) // The commit we want to push
+	commitID, err := r.prime.CheckoutInfo().CommitID() // The commit we want to push
 	if err != nil {
 		// Note: should not get here, as verifyInput() ensures there is a local commit
-		return errs.Wrap(err, "Unable to get local commit")
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 
 	// Detect target namespace if possible
@@ -198,7 +198,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		}
 
 		// Update the project's commitID with the create project or push result.
-		if err := localcommit.Set(r.project.Dir(), commitID.String()); err != nil {
+		if err := r.prime.CheckoutInfo().SetCommitID(commitID); err != nil {
 			return errs.Wrap(err, "Unable to create local commit file")
 		}
 
@@ -285,9 +285,9 @@ func (r *Push) verifyInput() error {
 		return rationalize.ErrNoProject
 	}
 
-	commitID, err := localcommit.Get(r.project.Dir())
+	commitID, err := r.prime.CheckoutInfo().CommitID()
 	if err != nil {
-		return errs.Wrap(err, "Unable to get local commit")
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 	if commitID == "" {
 		return errNoCommit
@@ -323,9 +323,9 @@ func (r *Push) promptNamespace() (*project.Namespaced, error) {
 	}
 
 	var name string
-	commitID, err := localcommit.Get(r.project.Dir())
+	commitID, err := r.prime.CheckoutInfo().CommitID()
 	if err != nil {
-		return nil, errs.Wrap(err, "Unable to get local commit")
+		return nil, errs.Wrap(err, "Unable to get commit ID")
 	}
 	if lang, err := model.FetchLanguageForCommit(commitID, r.auth); err == nil {
 		name = lang.Name

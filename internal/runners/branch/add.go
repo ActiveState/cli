@@ -6,13 +6,13 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 type Add struct {
+	prime   primeable
 	out     output.Outputer
 	project *project.Project
 	auth    *authentication.Auth
@@ -24,6 +24,7 @@ type AddParams struct {
 
 func NewAdd(prime primeable) *Add {
 	return &Add{
+		prime:   prime,
 		out:     prime.Output(),
 		project: prime.Project(),
 		auth:    prime.Auth(),
@@ -53,9 +54,9 @@ func (a *Add) Run(params AddParams) error {
 		return locale.WrapError(err, "err_fetch_branch", "", localBranch)
 	}
 
-	commitID, err := localcommit.Get(a.project.Dir())
+	commitID, err := a.prime.CheckoutInfo().CommitID()
 	if err != nil {
-		return errs.Wrap(err, "Unable to get local commit")
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 
 	err = model.UpdateBranchTracking(branchID, commitID, branch.BranchID, model.TrackingIgnore, a.auth)

@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/example"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -27,6 +26,7 @@ type primeable interface {
 	primer.Outputer
 	primer.Auther
 	primer.Projecter
+	primer.CheckoutInfoer
 }
 
 // Params defines the parameters needed to execute a given runner. These
@@ -48,6 +48,7 @@ func NewParams() *Params {
 // Hello defines the app-level dependencies that are accessible within the Run
 // function.
 type Hello struct {
+	prime   primeable
 	out     output.Outputer
 	project *project.Project
 	auth    *authentication.Auth
@@ -57,6 +58,7 @@ type Hello struct {
 // implementation of primeable.
 func New(p primeable) *Hello {
 	return &Hello{
+		prime:   p,
 		out:     p.Output(),
 		project: p.Project(),
 		auth:    p.Auth(),
@@ -121,7 +123,7 @@ func (h *Hello) Run(params *Params) (rerr error) {
 	}
 
 	// Grab data from the platform.
-	commitMsg, err := currentCommitMessage(h.project, h.auth)
+	commitMsg, err := currentCommitMessage(h.prime)
 	if err != nil {
 		err = errs.Wrap(
 			err, "Cannot get commit message",
@@ -145,12 +147,16 @@ func (h *Hello) Run(params *Params) (rerr error) {
 // is obtained. Since it is a sort of construction function that has some
 // complexity, it is helpful to provide localized error context. Secluding this
 // sort of logic is helpful to keep the subhandlers clean.
-func currentCommitMessage(proj *project.Project, auth *authentication.Auth) (string, error) {
+func currentCommitMessage(prime primeable) (string, error) {
+	proj := prime.Project()
+	auth := prime.Auth()
+	info := prime.CheckoutInfo()
+
 	if proj == nil {
 		return "", errs.New("Cannot determine which project to use")
 	}
 
-	commitId, err := localcommit.Get(proj.Dir())
+	commitId, err := info.CommitID()
 	if err != nil {
 		return "", errs.Wrap(err, "Cannot determine which commit to use")
 	}

@@ -5,7 +5,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
@@ -42,9 +41,9 @@ func resolveNamespace(inputNs *project.Namespaced, inputCommitID string, prime p
 			ns.CommitID = branch.CommitID
 		} else {
 			var err error
-			commitID, err = localcommit.Get(proj.Dir())
+			commitID, err = prime.CheckoutInfo().CommitID()
 			if err != nil {
-				return nil, errs.Wrap(err, "Unable to get local commit ID")
+				return nil, errs.Wrap(err, "Unable to get commit ID ID")
 			}
 			ns.CommitID = &commitID
 		}

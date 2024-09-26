@@ -28,7 +28,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -66,6 +65,7 @@ type primeable interface {
 	primer.Configurer
 	primer.SvcModeler
 	primer.Analyticer
+	primer.CheckoutInfoer
 }
 
 func NewActivate(prime primeable) *Activate {
@@ -146,9 +146,9 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 	}
 
 	if proj != nil {
-		commitID, err := localcommit.Get(proj.Dir())
+		commitID, err := r.prime.CheckoutInfo().CommitID()
 		if err != nil {
-			return errs.Wrap(err, "Unable to get local commit")
+			return errs.Wrap(err, "Unable to get commit ID")
 		}
 		if cid := params.Namespace.CommitID; cid != nil && *cid != commitID {
 			return locale.NewInputError("err_activate_commit_id_mismatch")
@@ -196,9 +196,9 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		}
 	}
 
-	commitID, err := localcommit.Get(proj.Dir())
+	commitID, err := r.prime.CheckoutInfo().CommitID()
 	if err != nil {
-		return errs.Wrap(err, "Unable to get local commit")
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 	if commitID == "" {
 		err := locale.NewInputError("err_project_no_commit", "Your project does not have a commit ID. Please run [ACTIONIABLE]'state push'[/RESET] first.", model.ProjectURL(proj.Owner(), proj.Name(), ""))

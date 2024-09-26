@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -27,17 +26,19 @@ type SearchRunParams struct {
 
 // Search manages the searching execution context.
 type Search struct {
-	out  output.Outputer
-	proj *project.Project
-	auth *authentication.Auth
+	prime primeable
+	out   output.Outputer
+	proj  *project.Project
+	auth  *authentication.Auth
 }
 
 // NewSearch prepares a searching execution context for use.
 func NewSearch(prime primeable) *Search {
 	return &Search{
-		out:  prime.Output(),
-		proj: prime.Project(),
-		auth: prime.Auth(),
+		prime: prime,
+		out:   prime.Output(),
+		proj:  prime.Project(),
+		auth:  prime.Auth(),
 	}
 }
 
@@ -49,7 +50,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 
 	var ns model.Namespace
 	if params.Ingredient.Namespace == "" {
-		language, err := targetedLanguage(params.Language, s.proj, s.auth)
+		language, err := targetedLanguage(params.Language, s.prime)
 		if err != nil {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
 		}
@@ -59,7 +60,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 		ns = model.NewNamespaceRaw(params.Ingredient.Namespace)
 	}
 
-	ts, err := commits_runbit.ExpandTimeForProject(&params.Timestamp, s.auth, s.proj)
+	ts, err := commits_runbit.ExpandTimeForProject(&params.Timestamp, s.auth, s.proj, s.prime.CheckoutInfo())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get timestamp from params")
 	}
@@ -113,7 +114,11 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	return nil
 }
 
-func targetedLanguage(languageOpt string, proj *project.Project, auth *authentication.Auth) (string, error) {
+func targetedLanguage(languageOpt string, prime primeable) (string, error) {
+	proj := prime.Project()
+	auth := prime.Auth()
+	info := prime.CheckoutInfo()
+
 	if languageOpt != "" {
 		return languageOpt, nil
 	}
@@ -124,9 +129,9 @@ func targetedLanguage(languageOpt string, proj *project.Project, auth *authentic
 		)
 	}
 
-	commitID, err := localcommit.Get(proj.Dir())
+	commitID, err := info.CommitID()
 	if err != nil {
-		return "", errs.Wrap(err, "Unable to get local commit")
+		return "", errs.Wrap(err, "Unable to get commit ID")
 	}
 	lang, err := model.LanguageByCommit(commitID, auth)
 	if err != nil {

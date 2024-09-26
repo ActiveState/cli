@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -34,6 +33,7 @@ type ListRunParams struct {
 
 // List manages the listing execution context.
 type List struct {
+	prime     primeable
 	out       output.Outputer
 	project   *project.Project
 	analytics analytics.Dispatcher
@@ -45,6 +45,7 @@ type List struct {
 // NewList prepares a list execution context for use.
 func NewList(prime primeable) *List {
 	return &List{
+		prime:     prime,
 		out:       prime.Output(),
 		project:   prime.Project(),
 		analytics: prime.Analytics(),
@@ -89,7 +90,7 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
 	default:
-		commitID, err = targetFromProjectFile(l.project)
+		commitID, err = targetFromProjectFile(l.prime)
 		if err != nil {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
@@ -205,14 +206,17 @@ func targetFromProject(projectString string) (*strfmt.UUID, error) {
 	return branch.CommitID, nil
 }
 
-func targetFromProjectFile(proj *project.Project) (*strfmt.UUID, error) {
+func targetFromProjectFile(prime primeable) (*strfmt.UUID, error) {
+	proj := prime.Project()
+	info := prime.CheckoutInfo()
+
 	logging.Debug("commit from project file")
 	if proj == nil {
 		return nil, rationalize.ErrNoProject
 	}
-	commit, err := localcommit.Get(proj.Dir())
+	commit, err := info.CommitID()
 	if err != nil {
-		return nil, errs.Wrap(err, "Unable to get local commit")
+		return nil, errs.Wrap(err, "Unable to get commit ID")
 	}
 	if commit == "" {
 		logging.Debug("latest commit used as fallback selection")

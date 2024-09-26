@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -43,6 +42,7 @@ type primeable interface {
 	primer.Configurer
 	primer.Analyticer
 	primer.SvcModeler
+	primer.CheckoutInfoer
 }
 
 type identifier interface {
@@ -119,7 +119,7 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.NewInputError("err_identifier_branch_not_on_branch", "Commit does not belong to history for branch [ACTIONABLE]{{.V0}}[/RESET]", s.project.BranchName())
 	}
 
-	err = localcommit.Set(s.project.Dir(), identifier.CommitID().String())
+	err = s.prime.CheckoutInfo().SetCommitID(identifier.CommitID())
 	if err != nil {
 		return errs.Wrap(err, "Unable to set local commit")
 	}

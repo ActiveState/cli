@@ -37,10 +37,13 @@ type primeable interface {
 	primer.Configurer
 	primer.Analyticer
 	primer.SvcModeler
+	primer.Projecter
+	primer.CheckoutInfoer
 }
 
 // Prepare manages the prepare execution context.
 type Prepare struct {
+	prime     primeable
 	out       output.Outputer
 	subshell  subshell.SubShell
 	cfg       *config.Instance
@@ -51,6 +54,7 @@ type Prepare struct {
 // New prepares a prepare execution context for use.
 func New(prime primeable) *Prepare {
 	return &Prepare{
+		prime:     prime,
 		out:       prime.Output(),
 		subshell:  prime.Subshell(),
 		cfg:       prime.Config(),
@@ -71,13 +75,14 @@ func (r *Prepare) resetExecutors() error {
 	if err != nil {
 		return errs.Wrap(err, "Could not get project from its directory")
 	}
+	r.prime.SetProject(proj)
 
 	rt, err := runtime_helpers.FromProject(proj)
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize runtime for project.")
 	}
 
-	rtHash, err := runtime_helpers.Hash(proj, nil)
+	rtHash, err := runtime_helpers.Hash(r.prime, nil)
 	if err != nil {
 		return errs.Wrap(err, "Could not get runtime hash")
 	}

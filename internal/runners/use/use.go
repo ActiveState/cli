@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -37,6 +36,7 @@ type primeable interface {
 	primer.SvcModeler
 	primer.Analyticer
 	primer.Projecter
+	primer.CheckoutInfoer
 }
 
 type Use struct {
@@ -81,9 +81,9 @@ func (u *Use) Run(params *Params) error {
 
 	u.prime.SetProject(proj)
 
-	commitID, err := localcommit.Get(proj.Dir())
+	commitID, err := u.prime.CheckoutInfo().CommitID()
 	if err != nil {
-		return errs.Wrap(err, "Unable to get local commit")
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 
 	if cid := params.Namespace.CommitID; cid != nil && *cid != commitID {

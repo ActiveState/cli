@@ -33,6 +33,7 @@ type primeable interface {
 	primer.Configurer
 	primer.Analyticer
 	primer.SvcModeler
+	primer.CheckoutInfoer
 }
 
 // ScriptRun manages the context required to run a script.

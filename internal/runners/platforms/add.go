@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalizers"
 	"github.com/ActiveState/cli/internal/runbits/reqop_runbit"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -39,6 +38,7 @@ type primeable interface {
 	primer.Configurer
 	primer.Analyticer
 	primer.SvcModeler
+	primer.CheckoutInfoer
 }
 
 // NewAdd prepares an add execution context for use.
@@ -72,9 +72,9 @@ func (a *Add) Run(params AddRunParams) (rerr error) {
 	pg = output.StartSpinner(out, locale.T("progress_platform_search"), constants.TerminalAnimationInterval)
 
 	// Grab local commit info
-	localCommitID, err := localcommit.Get(pj.Dir())
+	localCommitID, err := a.prime.CheckoutInfo().CommitID()
 	if err != nil {
-		return errs.Wrap(err, "Unable to get local commit")
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 	oldCommit, err := bp.FetchCommit(localCommitID, pj.Owner(), pj.Name(), nil)
 	if err != nil {
@@ -91,7 +91,7 @@ func (a *Add) Run(params AddRunParams) (rerr error) {
 	pg = nil
 
 	// Resolve timestamp, commit and languages used for current project.
-	ts, err := commits_runbit.ExpandTimeForProject(nil, a.prime.Auth(), pj)
+	ts, err := commits_runbit.ExpandTimeForProject(nil, a.prime.Auth(), pj, a.prime.CheckoutInfo())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get timestamp from params")
 	}

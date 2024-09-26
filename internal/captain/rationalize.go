@@ -7,11 +7,11 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/buildscript"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 )
 
 func rationalizeError(err *error) {
-	var errInvalidCommitID *localcommit.ErrInvalidCommitID
+	var errInvalidCommitID *checkoutinfo.ErrInvalidCommitID
 
 	switch {
 	case err == nil:

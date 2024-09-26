@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildscript"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -30,6 +29,7 @@ type primeable interface {
 	primer.Configurer
 	primer.Analyticer
 	primer.SvcModeler
+	primer.CheckoutInfoer
 }
 
 // Params tracks the info required for running Uninstall.
@@ -111,9 +111,9 @@ func (u *Uninstall) Run(params Params) (rerr error) {
 	pg = output.StartSpinner(out, locale.T("progress_requirements"), constants.TerminalAnimationInterval)
 
 	// Grab local commit info
-	localCommitID, err := localcommit.Get(u.prime.Project().Dir())
+	localCommitID, err := u.prime.CheckoutInfo().CommitID()
 	if err != nil {
-		return errs.Wrap(err, "Unable to get local commit")
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 	oldCommit, err := bp.FetchCommit(localCommitID, pj.Owner(), pj.Name(), nil)
 	if err != nil {

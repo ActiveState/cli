@@ -24,6 +24,7 @@ type primeable interface {
 	primer.Projecter
 	primer.Analyticer
 	primer.SvcModeler
+	primer.CheckoutInfoer
 }
 
 type ArtifactParams struct {

@@ -6,7 +6,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -15,17 +14,19 @@ import (
 
 // List manages the listing execution context.
 type List struct {
-	out  output.Outputer
-	proj *project.Project
-	auth *authentication.Auth
+	prime primeable
+	out   output.Outputer
+	proj  *project.Project
+	auth  *authentication.Auth
 }
 
 // NewList prepares a list execution context for use.
 func NewList(prime primeable) *List {
 	return &List{
-		out:  prime.Output(),
-		proj: prime.Project(),
-		auth: prime.Auth(),
+		prime: prime,
+		out:   prime.Output(),
+		proj:  prime.Project(),
+		auth:  prime.Auth(),
 	}
 }
 
@@ -37,9 +38,9 @@ func (l *List) Run() error {
 		return rationalize.ErrNoProject
 	}
 
-	commitID, err := localcommit.Get(l.proj.Dir())
+	commitID, err := l.prime.CheckoutInfo().CommitID()
 	if err != nil {
-		return errs.Wrap(err, "Unable to get local commit")
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 
 	targetCommitID, err := targetedCommitID(commitID.String(), l.proj.Name(), l.proj.Owner(), l.proj.BranchName())

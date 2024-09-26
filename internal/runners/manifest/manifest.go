@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/buildscript"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -27,6 +26,7 @@ type primeable interface {
 	primer.Analyticer
 	primer.SvcModeler
 	primer.Configurer
+	primer.CheckoutInfoer
 }
 
 type Params struct {
@@ -105,7 +105,7 @@ func (m *Manifest) fetchRequirements() ([]buildscript.Requirement, error) {
 			return nil, errs.Wrap(err, "Could not get buildscript")
 		}
 	} else {
-		commitID, err := localcommit.Get(m.project.Dir())
+		commitID, err := m.prime.CheckoutInfo().CommitID()
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not get commit ID")
 		}
@@ -126,7 +126,7 @@ func (m *Manifest) fetchRequirements() ([]buildscript.Requirement, error) {
 }
 
 func (m *Manifest) fetchBuildplanRequirements() (buildplan.Ingredients, error) {
-	commitID, err := localcommit.Get(m.project.Dir())
+	commitID, err := m.prime.CheckoutInfo().CommitID()
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to get local commit")
 	}

@@ -36,6 +36,7 @@ type primeable interface {
 	primer.SvcModeler
 	primer.Analyticer
 	primer.Projecter
+	primer.CheckoutInfoer
 }
 
 type Refresh struct {
@@ -79,7 +80,7 @@ func (r *Refresh) Run(params *Params) error {
 
 	r.out.Notice(locale.Tr("operating_message", proj.NamespaceString(), proj.Dir()))
 
-	needsUpdate, err := runtime_helpers.NeedsUpdate(proj, nil)
+	needsUpdate, err := runtime_helpers.NeedsUpdate(r.prime, nil)
 	if err != nil {
 		return errs.Wrap(err, "could not determine if runtime needs update")
 	}

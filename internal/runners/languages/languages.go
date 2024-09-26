@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -25,10 +24,12 @@ type primeable interface {
 	primer.Configurer
 	primer.Analyticer
 	primer.SvcModeler
+	primer.CheckoutInfoer
 }
 
 // Languages manages the listing execution context.
 type Languages struct {
+	prime     primeable
 	out       output.Outputer
 	project   *project.Project
 	analytics analytics.Dispatcher
@@ -40,6 +41,7 @@ type Languages struct {
 // NewLanguages prepares a list execution context for use.
 func NewLanguages(prime primeable) *Languages {
 	return &Languages{
+		prime,
 		prime.Output(),
 		prime.Project(),
 		prime.Analytics(),
@@ -68,7 +70,7 @@ func (l *Languages) Run() error {
 		return rationalize.ErrNoProject
 	}
 
-	commitID, err := localcommit.Get(l.project.Dir())
+	commitID, err := l.prime.CheckoutInfo().CommitID()
 	if err != nil {
 		return errs.AddTips(
 			locale.WrapError(

@@ -25,7 +25,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -70,6 +70,7 @@ type primeable interface {
 	primer.Analyticer
 	primer.SvcModeler
 	primer.Projecter
+	primer.CheckoutInfoer
 }
 
 type errProjectExists struct {
@@ -108,9 +109,9 @@ func inferLanguage(config projectfile.ConfigGetter, auth *authentication.Auth) (
 	if err != nil {
 		return "", "", false
 	}
-	commitID, err := localcommit.Get(defaultProj.Dir())
+	commitID, err := checkoutinfo.New(defaultProj.Source()).CommitID()
 	if err != nil {
-		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
+		multilog.Error("Unable to get commit ID: %v", errs.JoinMessage(err))
 		return "", "", false
 	}
 	if commitID == "" {
@@ -276,12 +277,12 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return errs.Wrap(err, "Could not create project")
 	}
 
-	if err := localcommit.Set(proj.Dir(), commitID.String()); err != nil {
+	if err := r.prime.CheckoutInfo().SetCommitID(commitID); err != nil {
 		return errs.Wrap(err, "Unable to create local commit file")
 	}
 
 	if r.config.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript_runbit.Initialize(proj.Dir(), r.auth, r.svcModel); err != nil {
+		if err := buildscript_runbit.Initialize(proj.Dir(), r.auth, r.svcModel, r.prime.CheckoutInfo()); err != nil {
 			return errs.Wrap(err, "Unable to initialize buildscript")
 		}
 	}

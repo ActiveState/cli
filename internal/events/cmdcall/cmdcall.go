@@ -21,6 +21,7 @@ type primeable interface {
 	primer.Configurer
 	primer.Analyticer
 	primer.SvcModeler
+	primer.CheckoutInfoer
 }
 
 // CmdCall manages dependencies for the handling of events triggered by command

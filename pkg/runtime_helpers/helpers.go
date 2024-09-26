@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/runtime"
 	"github.com/go-openapi/strfmt"
@@ -22,6 +22,11 @@ with certain concepts, like projects, we still want convenience layers for inter
 of projects.
 */
 
+type primeable interface {
+	primer.Projecter
+	primer.CheckoutInfoer
+}
+
 func FromProject(proj *project.Project) (*runtime.Runtime, error) {
 	targetDir := TargetDirFromProject(proj)
 	rt, err := runtime.New(targetDir)
@@ -31,13 +36,13 @@ func FromProject(proj *project.Project) (*runtime.Runtime, error) {
 	return rt, nil
 }
 
-func NeedsUpdate(proj *project.Project, overrideCommitID *strfmt.UUID) (bool, error) {
-	rt, err := FromProject(proj)
+func NeedsUpdate(prime primeable, overrideCommitID *strfmt.UUID) (bool, error) {
+	rt, err := FromProject(prime.Project())
 	if err != nil {
 		return false, errs.Wrap(err, "Could not obtain runtime")
 	}
 
-	hash, err := Hash(proj, overrideCommitID)
+	hash, err := Hash(prime, overrideCommitID)
 	if err != nil {
 		return false, errs.Wrap(err, "Could not get hash")
 	}
@@ -45,11 +50,14 @@ func NeedsUpdate(proj *project.Project, overrideCommitID *strfmt.UUID) (bool, er
 	return hash != rt.Hash(), nil
 }
 
-func Hash(proj *project.Project, overrideCommitID *strfmt.UUID) (string, error) {
+func Hash(prime primeable, overrideCommitID *strfmt.UUID) (string, error) {
+	proj := prime.Project()
+	info := prime.CheckoutInfo()
+
 	var err error
 	var commitID strfmt.UUID
 	if overrideCommitID == nil {
-		commitID, err = localcommit.Get(proj.Dir())
+		commitID, err = info.CommitID()
 		if err != nil {
 			return "", errs.Wrap(err, "Failed to get local commit")
 		}

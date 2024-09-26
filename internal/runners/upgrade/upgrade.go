@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/table"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -32,6 +31,7 @@ type primeable interface {
 	primer.Projecter
 	primer.Prompter
 	primer.SvcModeler
+	primer.CheckoutInfoer
 }
 
 type Params struct {
@@ -91,7 +91,7 @@ func (u *Upgrade) Run(params *Params) (rerr error) {
 	}()
 
 	// Collect "before" buildplan
-	localCommitID, err := localcommit.Get(proj.Dir())
+	localCommitID, err := u.prime.CheckoutInfo().CommitID()
 	if err != nil {
 		return errs.Wrap(err, "Failed to get local commit")
 	}
@@ -157,7 +157,7 @@ func (u *Upgrade) Run(params *Params) (rerr error) {
 		}
 	}
 
-	if err := localcommit.Set(u.prime.Project().Dir(), bumpedCommit.CommitID.String()); err != nil {
+	if err := u.prime.CheckoutInfo().SetCommitID(bumpedCommit.CommitID); err != nil {
 		return errs.Wrap(err, "Failed to set local commit")
 	}
 

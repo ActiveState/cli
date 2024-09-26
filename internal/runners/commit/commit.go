@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 )
@@ -25,6 +24,7 @@ type primeable interface {
 	primer.SvcModeler
 	primer.Configurer
 	primer.Prompter
+	primer.CheckoutInfoer
 }
 
 type Commit struct {
@@ -79,9 +79,9 @@ func (c *Commit) Run() (rerr error) {
 	}
 
 	// Get equivalent build script for current state of the project
-	localCommitID, err := localcommit.Get(proj.Dir())
+	localCommitID, err := c.prime.CheckoutInfo().CommitID()
 	if err != nil {
-		return errs.Wrap(err, "Unable to get local commit ID")
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 	bp := buildplanner.NewBuildPlannerModel(c.prime.Auth(), c.prime.SvcModel())
 	remoteScript, err := bp.GetBuildScript(localCommitID.String())
@@ -117,8 +117,8 @@ func (c *Commit) Run() (rerr error) {
 	}
 
 	// Update local commit ID
-	if err := localcommit.Set(proj.Dir(), stagedCommit.CommitID.String()); err != nil {
-		return errs.Wrap(err, "Could not set local commit ID")
+	if err := c.prime.CheckoutInfo().SetCommitID(stagedCommit.CommitID); err != nil {
+		return errs.Wrap(err, "Could not set commit ID")
 	}
 
 	// Update our local build expression to match the committed one. This allows our API a way to ensure forward compatibility.

@@ -913,6 +913,7 @@ type CreateParams struct {
 	Owner      string
 	Project    string
 	BranchName string
+	CommitID   string
 	Directory  string
 	Content    string
 	Language   string
@@ -953,6 +954,10 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 
 		if params.BranchName != "" {
 			q.Set("branch", params.BranchName)
+		}
+
+		if params.CommitID != "" {
+			q.Set("commitID", params.CommitID)
 		}
 
 		u.RawQuery = q.Encode()

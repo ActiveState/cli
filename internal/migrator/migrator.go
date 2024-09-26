@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -29,7 +30,8 @@ func NewMigrator(auth *authentication.Auth, cfg *config.Instance, svcm *model.Sv
 			case 0:
 				if cfg.GetBool(constants.OptinBuildscriptsConfig) {
 					logging.Debug("Creating buildscript")
-					if err := buildscript_runbit.Initialize(filepath.Dir(project.Path()), auth, svcm); err != nil {
+					info := checkoutinfo.New(project)
+					if err := buildscript_runbit.Initialize(filepath.Dir(project.Path()), auth, svcm, info); err != nil {
 						return v, errs.Wrap(err, "Failed to initialize buildscript")
 					}
 				}

@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/runbits/git"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -28,6 +27,8 @@ type primeable interface {
 	primer.Configurer
 	primer.Auther
 	primer.SvcModeler
+	primer.Projecter
+	primer.CheckoutInfoer
 }
 
 // Checkout will checkout the given platform project at the given path
@@ -99,7 +100,12 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	}
 
 	if r.prime.Config().GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript_runbit.Initialize(path, r.prime.Auth(), r.prime.SvcModel()); err != nil {
+		pj, err := project.FromPath(path)
+		if err != nil {
+			return "", errs.Wrap(err, "Could not read project file")
+		}
+		r.prime.SetProject(pj)
+		if err := buildscript_runbit.Initialize(path, r.prime.Auth(), r.prime.SvcModel(), r.prime.CheckoutInfo()); err != nil {
 			return "", errs.Wrap(err, "Unable to initialize buildscript")
 		}
 	}
@@ -184,6 +190,7 @@ func CreateProjectFiles(checkoutPath, cachePath, owner, name, branch, commitID, 
 			Owner:      owner,
 			Project:    name, // match case on the Platform
 			BranchName: branch,
+			CommitID:   commitID,
 			Directory:  checkoutPath,
 			Language:   language,
 			Cache:      cachePath,
@@ -194,10 +201,6 @@ func CreateProjectFiles(checkoutPath, cachePath, owner, name, branch, commitID, 
 			}
 			return errs.Wrap(err, "Could not create projectfile")
 		}
-	}
-
-	if err := localcommit.Set(checkoutPath, commitID); err != nil {
-		return errs.Wrap(err, "Could not create local commit file")
 	}
 
 	return nil

@@ -23,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -48,6 +47,7 @@ type primeable interface {
 	primer.SvcModeler
 	primer.Analyticer
 	primer.Projecter
+	primer.CheckoutInfoer
 }
 
 type Checkout struct {
@@ -142,7 +142,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 	var buildPlan *buildplan.BuildPlan
 	rtOpts := []runtime_runbit.SetOpt{}
 	if archive == nil {
-		commitID, err := localcommit.Get(proj.Path())
+		commitID, err := u.prime.CheckoutInfo().CommitID()
 		if err != nil {
 			return errs.Wrap(err, "Could not get local commit")
 		}

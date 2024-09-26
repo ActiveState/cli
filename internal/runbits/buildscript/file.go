@@ -9,9 +9,8 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/buildscript"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -42,12 +41,7 @@ func ScriptFromFile(path string) (*buildscript.BuildScript, error) {
 	return buildscript.Unmarshal(data)
 }
 
-type primeable interface {
-	primer.Auther
-	primer.SvcModeler
-}
-
-func Initialize(path string, auth *authentication.Auth, svcm *model.SvcModel) error {
+func Initialize(path string, auth *authentication.Auth, svcm *model.SvcModel, info *checkoutinfo.CheckoutInfo) error {
 	scriptPath := filepath.Join(path, constants.BuildScriptFileName)
 	script, err := ScriptFromFile(scriptPath)
 	if err == nil {
@@ -58,7 +52,7 @@ func Initialize(path string, auth *authentication.Auth, svcm *model.SvcModel) er
 	}
 
 	logging.Debug("Build script does not exist. Creating one.")
-	commitId, err := localcommit.Get(path)
+	commitId, err := info.CommitID()
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the local commit ID")
 	}
