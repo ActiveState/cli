@@ -111,7 +111,7 @@ func (m *Manifest) fetchRequirements() ([]buildscript.Requirement, error) {
 		}
 
 		bp := bpModel.NewBuildPlannerModel(m.auth, m.svcModel)
-		script, err = bp.GetBuildScript(commitID.String())
+		script, err = bp.GetBuildScript(m.prime.Project().Owner(), m.prime.Project().Name(), m.prime.Project().BranchName(), commitID.String())
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not get remote build expr and time")
 		}
@@ -134,7 +134,7 @@ func (m *Manifest) fetchBuildplanRequirements() (buildplan.Ingredients, error) {
 	// Solve runtime
 	solveSpinner := output.StartSpinner(m.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
 	bpm := bpModel.NewBuildPlannerModel(m.auth, m.svcModel)
-	commit, err := bpm.FetchCommit(commitID, m.project.Owner(), m.project.Name(), nil)
+	commit, err := bpm.FetchCommit(commitID, m.project.Owner(), m.project.Name(), m.project.BranchName(), nil)
 	if err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))
 		return nil, errs.Wrap(err, "Failed to fetch build result")

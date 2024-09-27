@@ -69,6 +69,7 @@ func UpdateAndReload(prime primeable, script *buildscript.BuildScript, oldCommit
 	commitParams := buildplanner.StageCommitParams{
 		Owner:        pj.Owner(),
 		Project:      pj.Name(),
+		Branch:       pj.BranchName(),
 		ParentCommit: string(oldCommit.CommitID),
 		Description:  commitMsg,
 		Script:       script,
@@ -128,7 +129,7 @@ func updateCommitID(prime primeable, commitID strfmt.UUID) error {
 
 	if prime.Config().GetBool(constants.OptinBuildscriptsConfig) {
 		bp := buildplanner.NewBuildPlannerModel(prime.Auth(), prime.SvcModel())
-		script, err := bp.GetBuildScript(commitID.String())
+		script, err := bp.GetBuildScript(prime.Project().Owner(), prime.Project().Name(), prime.Project().BranchName(), commitID.String())
 		if err != nil {
 			return errs.Wrap(err, "Could not get remote build expr and time")
 		}

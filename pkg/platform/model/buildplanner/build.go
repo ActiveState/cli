@@ -56,7 +56,7 @@ func (c *client) Run(req gqlclient.Request, resp interface{}) error {
 
 const fetchCommitCacheExpiry = time.Hour * 12
 
-func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, target *string) (*Commit, error) {
+func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project, branch string, target *string) (*Commit, error) {
 	logging.Debug("FetchCommit, commitID: %s, owner: %s, project: %s", commitID, owner, project)
 	resp := &response.ProjectCommitResponse{}
 
@@ -104,7 +104,7 @@ func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, 
 		return nil, errs.Wrap(err, "failed to unmarshal build plan")
 	}
 
-	script, err := buildscript.UnmarshalBuildExpression(commit.Expression, buildScriptCheckoutInfo(owner, project, commitID.String(), time.Time(commit.AtTime)))
+	script, err := buildscript.UnmarshalBuildExpression(commit.Expression, buildScriptCheckoutInfo(owner, project, branch, commitID.String(), time.Time(commit.AtTime)))
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}

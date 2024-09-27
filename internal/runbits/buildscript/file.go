@@ -58,7 +58,7 @@ func Initialize(path string, auth *authentication.Auth, svcm *model.SvcModel, in
 	}
 
 	buildplanner := buildplanner.NewBuildPlannerModel(auth, svcm)
-	script, err = buildplanner.GetBuildScript(commitId.String())
+	script, err = buildplanner.GetBuildScript(info.Owner(), info.Name(), info.Branch(), commitId.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the remote build expression and time")
 	}

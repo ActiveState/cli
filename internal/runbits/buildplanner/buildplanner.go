@@ -94,7 +94,7 @@ func GetCommit(
 		}
 
 		bp := bpModel.NewBuildPlannerModel(auth, svcm)
-		commit, err = bp.FetchCommit(localCommitID, pj.Owner(), pj.Name(), targetPtr)
+		commit, err = bp.FetchCommit(localCommitID, pj.Owner(), pj.Name(), pj.BranchName(), targetPtr)
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to fetch commit")
 		}
@@ -102,7 +102,7 @@ func GetCommit(
 	// Return buildplan from the given commitID for the current project.
 	case !namespaceProvided && commitIdProvided:
 		bp := bpModel.NewBuildPlannerModel(auth, svcm)
-		commit, err = bp.FetchCommit(commitUUID, pj.Owner(), pj.Name(), targetPtr)
+		commit, err = bp.FetchCommit(commitUUID, pj.Owner(), pj.Name(), pj.BranchName(), targetPtr)
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to fetch commit")
 		}
@@ -126,15 +126,25 @@ func GetCommit(
 		commitUUID = *branchCommitUUID
 
 		bp := bpModel.NewBuildPlannerModel(auth, svcm)
-		commit, err = bp.FetchCommit(commitUUID, namespace.Owner, namespace.Project, targetPtr)
+		commit, err = bp.FetchCommit(commitUUID, namespace.Owner, namespace.Project, branch.Label, targetPtr)
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to fetch commit")
 		}
 
 	// Return the buildplan for the given commitID of the given project.
 	case namespaceProvided && commitIdProvided:
+		pj, err := model.FetchProjectByName(namespace.Owner, namespace.Project, auth)
+		if err != nil {
+			return nil, locale.WrapExternalError(err, "err_fetch_project", "", namespace.String())
+		}
+
+		branch, err := model.DefaultBranchForProject(pj)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not grab branch for project")
+		}
+
 		bp := bpModel.NewBuildPlannerModel(auth, svcm)
-		commit, err = bp.FetchCommit(commitUUID, namespace.Owner, namespace.Project, targetPtr)
+		commit, err = bp.FetchCommit(commitUUID, namespace.Owner, namespace.Project, branch.Label, targetPtr)
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to fetch commit")
 		}

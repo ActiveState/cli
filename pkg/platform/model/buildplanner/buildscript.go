@@ -3,7 +3,6 @@ package buildplanner
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -15,28 +14,29 @@ import (
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-func buildScriptCheckoutInfo(owner, project, commitID string, atTime time.Time) *buildscript.CheckoutInfo {
+func buildScriptCheckoutInfo(owner, project, branch, commitID string, atTime time.Time) *buildscript.CheckoutInfo {
 	// Note: cannot use api.GetPlatformURL() due to import cycle.
 	host := constants.DefaultAPIHost
 	if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
 		host = hostOverride
 	}
-	u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", host, owner, project))
+	pjf := projectfile.NewProjectField()
+	err := pjf.LoadProject(fmt.Sprintf("https://%s/%s/%s", host, owner, project))
 	if err != nil {
-		multilog.Error("url parse for project URL failed: %w", err)
+		multilog.Error("Unable to load project: %v", err)
 		return nil
 	}
-	q := u.Query()
-	q.Set("commitID", commitID)
-	u.RawQuery = q.Encode()
-	projectURL := u.String()
-
-	return &buildscript.CheckoutInfo{projectURL, atTime}
+	if branch != "" {
+		pjf.SetBranch(branch)
+	}
+	pjf.SetLegacyCommitID(commitID)
+	return &buildscript.CheckoutInfo{pjf.String(), atTime}
 }
 
-func (b *BuildPlanner) GetBuildScript(commitID string) (*buildscript.BuildScript, error) {
+func (b *BuildPlanner) GetBuildScript(owner, project, branch, commitID string) (*buildscript.BuildScript, error) {
 	logging.Debug("GetBuildScript, commitID: %s", commitID)
 	resp := &bpResp.BuildExpressionResponse{}
 
@@ -75,7 +75,7 @@ func (b *BuildPlanner) GetBuildScript(commitID string) (*buildscript.BuildScript
 		return nil, errs.New("Commit does not contain expression")
 	}
 
-	script, err := buildscript.UnmarshalBuildExpression(resp.Commit.Expression, buildScriptCheckoutInfo("", "", "", time.Time(resp.Commit.AtTime)))
+	script, err := buildscript.UnmarshalBuildExpression(resp.Commit.Expression, buildScriptCheckoutInfo(owner, project, branch, commitID, time.Time(resp.Commit.AtTime)))
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}

@@ -92,7 +92,7 @@ func (l *Languages) Run() error {
 
 	// Fetch commit and buildplan, which will give us access to ingredients, and ingredients can be languages..
 	bpm := bpModel.NewBuildPlannerModel(l.auth, l.svcModel)
-	commit, err := bpm.FetchCommit(commitID, l.project.Owner(), l.project.Name(), nil)
+	commit, err := bpm.FetchCommit(commitID, l.project.Owner(), l.project.Name(), l.project.BranchName(), nil)
 	if err != nil {
 		return errs.Wrap(err, "could not fetch commit")
 	}

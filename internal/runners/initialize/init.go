@@ -290,7 +290,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	// Solve runtime
 	solveSpinner := output.StartSpinner(r.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
 	bpm := bpModel.NewBuildPlannerModel(r.auth, r.svcModel)
-	commit, err := bpm.FetchCommit(commitID, r.prime.Project().Owner(), r.prime.Project().Name(), nil)
+	commit, err := bpm.FetchCommit(commitID, r.prime.Project().Owner(), r.prime.Project().Name(), r.prime.Project().BranchName(), nil)
 	if err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))
 		logging.Debug("Deleting remotely created project due to runtime setup error")
