@@ -63,7 +63,7 @@ func (a *Remove) Run(params RemoveRunParams) (rerr error) {
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
-	oldCommit, err := bp.FetchCommit(localCommitID, pj.Owner(), pj.Name(), nil)
+	oldCommit, err := bp.FetchCommit(localCommitID, pj.Owner(), pj.Name(), pj.BranchName(), nil)
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch old build result")
 	}

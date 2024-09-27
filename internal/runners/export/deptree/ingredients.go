@@ -47,7 +47,7 @@ func (d *DeptreeByIngredients) Run(params IngredientParams) error {
 	}
 
 	bpm := buildplanner.NewBuildPlannerModel(d.prime.Auth(), d.prime.SvcModel())
-	commit, err := bpm.FetchCommit(*ns.CommitID, ns.Owner, ns.Project, nil)
+	commit, err := bpm.FetchCommit(*ns.CommitID, ns.Owner, ns.Project, "", nil)
 	if err != nil {
 		return errs.Wrap(err, "Could not get remote build expr and time for provided commit")
 	}

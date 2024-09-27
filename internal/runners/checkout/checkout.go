@@ -150,7 +150,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		// Solve runtime
 		solveSpinner := output.StartSpinner(u.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
 		bpm := bpModel.NewBuildPlannerModel(u.auth, u.svcModel)
-		commit, err := bpm.FetchCommit(commitID, proj.Owner(), proj.Name(), nil)
+		commit, err := bpm.FetchCommit(commitID, proj.Owner(), proj.Name(), proj.BranchName(), nil)
 		if err != nil {
 			solveSpinner.Stop(locale.T("progress_fail"))
 			return errs.Wrap(err, "Failed to fetch build result")

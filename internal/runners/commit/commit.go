@@ -84,7 +84,7 @@ func (c *Commit) Run() (rerr error) {
 		return errs.Wrap(err, "Unable to get local commit ID")
 	}
 	bp := buildplanner.NewBuildPlannerModel(c.prime.Auth(), c.prime.SvcModel())
-	remoteScript, err := bp.GetBuildScript(localCommitID.String())
+	remoteScript, err := bp.GetBuildScript(proj.Owner(), proj.Name(), proj.BranchName(), localCommitID.String())
 	if err != nil {
 		return errs.Wrap(err, "Could not get remote build expr and time for provided commit")
 	}
@@ -109,6 +109,7 @@ func (c *Commit) Run() (rerr error) {
 	stagedCommit, err := bp.StageCommit(buildplanner.StageCommitParams{
 		Owner:        proj.Owner(),
 		Project:      proj.Name(),
+		Branch:       proj.BranchName(),
 		ParentCommit: localCommitID.String(),
 		Script:       script,
 	})
@@ -122,7 +123,7 @@ func (c *Commit) Run() (rerr error) {
 	}
 
 	// Update our local build expression to match the committed one. This allows our API a way to ensure forward compatibility.
-	newScript, err := bp.GetBuildScript(stagedCommit.CommitID.String())
+	newScript, err := bp.GetBuildScript(proj.Owner(), proj.Name(), proj.BranchName(), stagedCommit.CommitID.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the remote build script")
 	}
@@ -141,13 +142,13 @@ func (c *Commit) Run() (rerr error) {
 	}()
 
 	// Solve runtime
-	rtCommit, err := bp.FetchCommit(stagedCommit.CommitID, proj.Owner(), proj.Name(), nil)
+	rtCommit, err := bp.FetchCommit(stagedCommit.CommitID, proj.Owner(), proj.Name(), proj.BranchName(), nil)
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch staged commit")
 	}
 
 	// Get old buildplan.
-	oldCommit, err := bp.FetchCommit(localCommitID, proj.Owner(), proj.Name(), nil)
+	oldCommit, err := bp.FetchCommit(localCommitID, proj.Owner(), proj.Name(), proj.BranchName(), nil)
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch old commit")
 	}

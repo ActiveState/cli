@@ -102,6 +102,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 	revertParams := revertParams{
 		organization:   r.project.Owner(),
 		project:        r.project.Name(),
+		branch:         r.project.BranchName(),
 		parentCommitID: latestCommit.String(),
 		revertCommitID: commitID,
 	}
@@ -181,6 +182,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 type revertParams struct {
 	organization   string
 	project        string
+	branch         string
 	parentCommitID string
 	revertCommitID string
 }
@@ -195,7 +197,7 @@ func (r *Revert) revertCommit(params revertParams, bp *buildplanner.BuildPlanner
 }
 
 func (r *Revert) revertToCommit(params revertParams, bp *buildplanner.BuildPlanner) (strfmt.UUID, error) {
-	bs, err := bp.GetBuildScript(params.revertCommitID)
+	bs, err := bp.GetBuildScript(r.prime.Project().Owner(), r.prime.Project().Name(), r.prime.Project().BranchName(), params.revertCommitID)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get build expression")
 	}
@@ -203,6 +205,7 @@ func (r *Revert) revertToCommit(params revertParams, bp *buildplanner.BuildPlann
 	stageCommitParams := buildplanner.StageCommitParams{
 		Owner:        params.organization,
 		Project:      params.project,
+		Branch:       params.branch,
 		ParentCommit: params.parentCommitID,
 		Description:  locale.Tl("revert_commit_description", "Revert to commit {{.V0}}", params.revertCommitID),
 		Script:       bs,
