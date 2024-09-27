@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -97,7 +98,8 @@ func (m *Move) updateLocalCheckout(checkout string, params *MoveParams) error {
 		return errs.Wrap(err, "Could not get projectfile at %s", checkout)
 	}
 
-	err = pjFile.SetNamespace(params.NewOwner, params.Namespace.Project)
+	info := checkoutinfo.New(pjFile)
+	err = info.SetNamespace(params.NewOwner, params.Namespace.Project)
 	if err != nil {
 		return errs.Wrap(err, "Could not set project namespace at %s", checkout)
 	}

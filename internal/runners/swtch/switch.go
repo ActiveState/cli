@@ -105,7 +105,7 @@ func (s *Switch) Run(params SwitchParams) error {
 	}
 
 	if id, ok := identifier.(branchIdentifier); ok {
-		err = s.project.Source().SetBranch(id.branch.Label)
+		err = s.prime.CheckoutInfo().SetBranch(id.branch.Label)
 		if err != nil {
 			return locale.WrapError(err, "err_switch_set_branch", "Could not update branch")
 		}

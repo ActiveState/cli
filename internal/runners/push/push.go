@@ -252,14 +252,14 @@ func (r *Push) Run(params PushParams) (rerr error) {
 
 	// Write the project namespace to the as.yaml, if it changed
 	if r.project.Owner() != targetNamespace.Owner || r.project.Name() != targetNamespace.Project {
-		if err := r.project.Source().SetNamespace(targetNamespace.Owner, targetNamespace.Project); err != nil {
+		if err := r.prime.CheckoutInfo().SetNamespace(targetNamespace.Owner, targetNamespace.Project); err != nil {
 			return errs.Wrap(err, "Could not set project namespace in project file")
 		}
 	}
 
 	// Write the branch to the as.yaml, if it changed
 	if branch.Label != r.project.BranchName() {
-		if err := r.project.Source().SetBranch(branch.Label); err != nil {
+		if err := r.prime.CheckoutInfo().SetBranch(branch.Label); err != nil {
 			return errs.Wrap(err, "Could not set branch")
 		}
 	}

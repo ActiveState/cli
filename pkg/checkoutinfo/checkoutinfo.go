@@ -17,6 +17,8 @@ type projectfiler interface {
 	Name() string
 	BranchName() string
 	LegacyCommitID() string
+	SetNamespace(string, string) error
+	SetBranch(string) error
 	SetLegacyCommit(string) error
 }
 
@@ -52,6 +54,14 @@ func (c *CheckoutInfo) CommitID() (strfmt.UUID, error) {
 		return "", &ErrInvalidCommitID{commitID}
 	}
 	return strfmt.UUID(commitID), nil
+}
+
+func (c *CheckoutInfo) SetNamespace(owner, project string) error {
+	return c.project.SetNamespace(owner, project)
+}
+
+func (c *CheckoutInfo) SetBranch(branch string) error {
+	return c.project.SetBranch(branch)
 }
 
 func (c *CheckoutInfo) SetCommitID(commitID strfmt.UUID) error {

@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/pkg/checkoutinfo"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -96,7 +97,8 @@ func EnsureCorrectProject(owner, name, projectFilePath, repoURL string, out outp
 
 	if !(strings.EqualFold(proj.Owner(), owner)) || !(strings.EqualFold(proj.Name(), name)) {
 		out.Notice(locale.Tr("warning_git_project_mismatch", repoURL, project.NewNamespace(owner, name, "").String(), constants.DocumentationURLMismatch))
-		err = proj.Source().SetNamespace(owner, name)
+		info := checkoutinfo.New(projectFile)
+		err = info.SetNamespace(owner, name)
 		if err != nil {
 			return locale.WrapError(err, "err_git_update_mismatch", "Could not update projectfile namespace")
 		}
