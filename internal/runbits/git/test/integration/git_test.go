@@ -12,9 +12,11 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	runbitsGit "github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/project"
@@ -80,7 +82,9 @@ func (suite *GitTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *GitTestSuite) TestEnsureCorrectProject() {
-	err := runbitsGit.EnsureCorrectProject("test-owner", "test-project", filepath.Join(suite.dir, constants.ConfigFileName), "test-repo", outputhelper.NewCatcher(), blackhole.New())
+	cfg, err := config.NewCustom(suite.dir, singlethread.New(), true)
+	suite.NoError(err, "could not create config")
+	err = runbitsGit.EnsureCorrectProject("test-owner", "test-project", filepath.Join(suite.dir, constants.ConfigFileName), "test-repo", outputhelper.NewCatcher(), blackhole.New(), cfg)
 	suite.NoError(err, "projectfile URL should contain owner and name")
 }
 
@@ -89,7 +93,9 @@ func (suite *GitTestSuite) TestEnsureCorrectProject_Missmatch() {
 	name := "bad-project"
 	projectPath := filepath.Join(suite.dir, constants.ConfigFileName)
 	actualCatcher := outputhelper.NewCatcher()
-	err := runbitsGit.EnsureCorrectProject(owner, name, projectPath, "test-repo", actualCatcher, blackhole.New())
+	cfg, err := config.NewCustom(suite.dir, singlethread.New(), true)
+	suite.NoError(err, "could not create config")
+	err = runbitsGit.EnsureCorrectProject(owner, name, projectPath, "test-repo", actualCatcher, blackhole.New(), cfg)
 	suite.NoError(err)
 
 	proj, err := project.Parse(projectPath)

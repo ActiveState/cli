@@ -23,7 +23,7 @@ type projecter interface {
 	Name() string
 }
 
-var ErrBuildscriptNotExist = errors.New("Build script does not exist")
+var ErrBuildscriptNotExist = checkoutinfo.ErrBuildscriptNotExist
 
 func ScriptFromProject(proj projecter) (*buildscript.BuildScript, error) {
 	path := filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName)
@@ -47,11 +47,11 @@ func Initialize(path string, auth *authentication.Auth, svcm *model.SvcModel, in
 	if err == nil {
 		return nil // nothing to do, buildscript already exists
 	}
-	if !errors.Is(err, os.ErrNotExist) {
+	if !errors.Is(err, os.ErrNotExist) && !errors.Is(err, buildscript.ErrOutdatedAtTime) {
 		return errs.Wrap(err, "Could not read build script from file")
 	}
 
-	logging.Debug("Build script does not exist. Creating one.")
+	logging.Debug("Build script does not exist or is outdated. Creating one.")
 	commitId, err := info.CommitID()
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the local commit ID")

@@ -1,7 +1,16 @@
 package checkoutinfo
 
 import (
+	"errors"
+	"os"
+	"path/filepath"
+
 	"github.com/go-openapi/strfmt"
+
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/pkg/buildscript"
 )
 
 type ErrInvalidCommitID struct {
@@ -20,14 +29,23 @@ type projectfiler interface {
 	SetNamespace(string, string) error
 	SetBranch(string) error
 	SetLegacyCommit(string) error
+	Dir() string
+	URL() string
+}
+
+type configurer interface {
+	GetBool(string) bool
 }
 
 type CheckoutInfo struct {
 	project projectfiler
+	config  configurer
 }
 
-func New(project projectfiler) *CheckoutInfo {
-	return &CheckoutInfo{project}
+var ErrBuildscriptNotExist = errors.New("Build script does not exist")
+
+func New(project projectfiler, config configurer) *CheckoutInfo {
+	return &CheckoutInfo{project, config}
 }
 
 // Owner returns the project owner from activestate.yaml.
@@ -57,13 +75,62 @@ func (c *CheckoutInfo) CommitID() (strfmt.UUID, error) {
 }
 
 func (c *CheckoutInfo) SetNamespace(owner, project string) error {
-	return c.project.SetNamespace(owner, project)
+	err := c.project.SetNamespace(owner, project)
+	if err != nil {
+		return errs.Wrap(err, "Unable to update project")
+	}
+	return c.updateBuildScriptProject()
 }
 
 func (c *CheckoutInfo) SetBranch(branch string) error {
-	return c.project.SetBranch(branch)
+	err := c.project.SetBranch(branch)
+	if err != nil {
+		return errs.Wrap(err, "Unable to update project")
+	}
+	return c.updateBuildScriptProject()
 }
 
 func (c *CheckoutInfo) SetCommitID(commitID strfmt.UUID) error {
-	return c.project.SetLegacyCommit(commitID.String())
+	err := c.project.SetLegacyCommit(commitID.String())
+	if err != nil {
+		return errs.Wrap(err, "Unable to update project")
+	}
+	return c.updateBuildScriptProject()
+}
+
+func (c *CheckoutInfo) updateBuildScriptProject() error {
+	if !c.config.GetBool(constants.OptinBuildscriptsConfig) {
+		return nil
+	}
+
+	// Note: cannot use functions from buildscript_runbit due to import cycle.
+	scriptPath := filepath.Join(c.project.Dir(), constants.BuildScriptFileName)
+	data, err := fileutils.ReadFile(scriptPath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return errs.Pack(err, ErrBuildscriptNotExist)
+		}
+		return errs.Wrap(err, "Could not read build script from file")
+	}
+
+	script, err := buildscript.Unmarshal(data)
+	if err != nil {
+		return errs.Wrap(err, "Could not unmarshal build script")
+	}
+
+	if c.project.URL() == script.Project() {
+		return nil //nothing to update
+	}
+	script.SetProject(c.project.URL())
+
+	data, err = script.Marshal()
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal build script")
+	}
+
+	if err := fileutils.WriteFile(scriptPath, data); err != nil {
+		return errs.Wrap(err, "Could not write build script to file")
+	}
+
+	return nil
 }

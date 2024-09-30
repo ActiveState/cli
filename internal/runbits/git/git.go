@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -22,7 +23,7 @@ import (
 
 // Repository is the interface used to represent a version control system repository
 type Repository interface {
-	CloneProject(owner, name, path string, out output.Outputer, an analytics.Dispatcher) error
+	CloneProject(owner, name, path string, out output.Outputer, an analytics.Dispatcher, cfg *config.Instance) error
 }
 
 // NewRepo returns a new repository
@@ -36,7 +37,7 @@ type Repo struct {
 
 // CloneProject will attempt to clone the associalted public git repository
 // for the project identified by <owner>/<name> to the given directory
-func (r *Repo) CloneProject(owner, name, path string, out output.Outputer, an analytics.Dispatcher) error {
+func (r *Repo) CloneProject(owner, name, path string, out output.Outputer, an analytics.Dispatcher, cfg *config.Instance) error {
 	project, err := model.LegacyFetchProjectByName(owner, name)
 	if err != nil {
 		return locale.WrapError(err, "err_git_fetch_project", "Could not fetch project details")
@@ -67,7 +68,7 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer, an an
 		return errs.AddTips(err, tipMsg)
 	}
 
-	err = EnsureCorrectProject(owner, name, filepath.Join(tempDir, constants.ConfigFileName), *project.RepoURL, out, an)
+	err = EnsureCorrectProject(owner, name, filepath.Join(tempDir, constants.ConfigFileName), *project.RepoURL, out, an, cfg)
 	if err != nil {
 		return locale.WrapError(err, "err_git_ensure_project", "Could not ensure that the activestate.yaml in the cloned repository matches the project you are activating.")
 	}
@@ -80,7 +81,7 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer, an an
 	return nil
 }
 
-func EnsureCorrectProject(owner, name, projectFilePath, repoURL string, out output.Outputer, an analytics.Dispatcher) error {
+func EnsureCorrectProject(owner, name, projectFilePath, repoURL string, out output.Outputer, an analytics.Dispatcher, cfg *config.Instance) error {
 	if !fileutils.FileExists(projectFilePath) {
 		return nil
 	}
@@ -97,7 +98,7 @@ func EnsureCorrectProject(owner, name, projectFilePath, repoURL string, out outp
 
 	if !(strings.EqualFold(proj.Owner(), owner)) || !(strings.EqualFold(proj.Name(), name)) {
 		out.Notice(locale.Tr("warning_git_project_mismatch", repoURL, project.NewNamespace(owner, name, "").String(), constants.DocumentationURLMismatch))
-		info := checkoutinfo.New(projectFile)
+		info := checkoutinfo.New(projectFile, cfg)
 		err = info.SetNamespace(owner, name)
 		if err != nil {
 			return locale.WrapError(err, "err_git_update_mismatch", "Could not update projectfile namespace")

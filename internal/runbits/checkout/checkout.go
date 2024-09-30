@@ -86,7 +86,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 
 		// Clone the related repo, if it is defined
 		if !noClone && repoURL != nil && *repoURL != "" {
-			err := r.repo.CloneProject(ns.Owner, ns.Project, path, r.prime.Output(), r.prime.Analytics())
+			err := r.repo.CloneProject(ns.Owner, ns.Project, path, r.prime.Output(), r.prime.Analytics(), r.prime.Config())
 			if err != nil {
 				return "", locale.WrapError(err, "err_clone_project", "Could not clone associated git repository")
 			}

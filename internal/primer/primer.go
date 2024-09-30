@@ -67,14 +67,14 @@ func New(values ...any) *Values {
 			}
 		}
 	}
-	result.checkoutinfo = checkoutinfo.New(result.projectfile)
+	result.checkoutinfo = checkoutinfo.New(result.projectfile, result.config)
 	return result
 }
 
 func (v *Values) SetProject(p *project.Project) {
 	v.project = p
 	v.projectfile = p.Source()
-	v.checkoutinfo = checkoutinfo.New(v.projectfile)
+	v.checkoutinfo = checkoutinfo.New(v.projectfile, v.config)
 }
 
 type Projecter interface {

@@ -149,7 +149,7 @@ func (e *Edit) editLocalCheckout(owner, checkout string, params *EditParams) err
 		return errs.Wrap(err, "Could not get projectfile at %s", checkout)
 	}
 
-	info := checkoutinfo.New(pjFile)
+	info := checkoutinfo.New(pjFile, e.config)
 	err = info.SetNamespace(owner, params.ProjectName)
 	if err != nil {
 		return errs.Wrap(err, "Could not set project namespace at %s", checkout)

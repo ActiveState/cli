@@ -98,7 +98,7 @@ func (m *Move) updateLocalCheckout(checkout string, params *MoveParams) error {
 		return errs.Wrap(err, "Could not get projectfile at %s", checkout)
 	}
 
-	info := checkoutinfo.New(pjFile)
+	info := checkoutinfo.New(pjFile, m.config)
 	err = info.SetNamespace(params.NewOwner, params.Namespace.Project)
 	if err != nil {
 		return errs.Wrap(err, "Could not set project namespace at %s", checkout)

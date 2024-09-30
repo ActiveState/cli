@@ -85,7 +85,7 @@ func (u *Uninstall) Run(params *Params) error {
 		return locale.WrapError(err, "err_deploy_uninstall_cannot_read_project", "Cannot read project at '{{.V0}}'", path)
 	}
 
-	commitID, err := checkoutinfo.New(proj.Source()).CommitID()
+	commitID, err := checkoutinfo.New(proj.Source(), u.cfg).CommitID()
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_uninstall_cannot_read_commit", "Cannot read commit ID from project at '{{.V0}}'", path)
 	}

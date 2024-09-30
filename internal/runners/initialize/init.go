@@ -109,7 +109,7 @@ func inferLanguage(config projectfile.ConfigGetter, auth *authentication.Auth) (
 	if err != nil {
 		return "", "", false
 	}
-	commitID, err := checkoutinfo.New(defaultProj.Source()).CommitID()
+	commitID, err := checkoutinfo.New(defaultProj.Source(), config).CommitID()
 	if err != nil {
 		multilog.Error("Unable to get commit ID: %v", errs.JoinMessage(err))
 		return "", "", false

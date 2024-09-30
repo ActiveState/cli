@@ -127,17 +127,17 @@ func (r *Reset) Run(params *Params) error {
 		}
 	}
 
-	err = r.prime.CheckoutInfo().SetCommitID(commitID)
-	if err != nil {
-		return errs.Wrap(err, "Unable to set local commit")
-	}
-
 	// Ensure the buildscript exists. Normally we should never do this, but reset is used for resetting from a corrupted
 	// state, so it is appropriate.
 	if r.cfg.GetBool(constants.OptinBuildscriptsConfig) {
 		if err := buildscript_runbit.Initialize(r.project.Dir(), r.auth, r.svcModel, r.prime.CheckoutInfo()); err != nil {
 			return errs.Wrap(err, "Unable to initialize buildscript")
 		}
+	}
+
+	err = r.prime.CheckoutInfo().SetCommitID(commitID)
+	if err != nil {
+		return errs.Wrap(err, "Unable to set local commit")
 	}
 
 	_, err = runtime_runbit.Update(r.prime, trigger.TriggerReset, runtime_runbit.WithoutBuildscriptValidation())
