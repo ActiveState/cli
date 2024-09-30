@@ -30,7 +30,7 @@ func TestRawRepresentation(t *testing.T) {
 	script, err := Unmarshal([]byte(
 		testCheckoutInfo + `
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = ["linux", "windows"],
 	requirements = [
 		Req(name = "python", namespace = "language"),
@@ -52,7 +52,7 @@ main = runtime
 		Assignments: []*assignment{
 			{"runtime", &value{
 				FuncCall: &funcCall{"solve", []*value{
-					{Assignment: &assignment{"at_time", &value{Ident: ptr.To(`at_time`)}}},
+					{Assignment: &assignment{"at_time", &value{Ident: ptr.To(`TIME`)}}},
 					{Assignment: &assignment{
 						"platforms", &value{List: &[]*value{
 							{Str: ptr.To(`linux`)},
@@ -99,7 +99,7 @@ func TestComplex(t *testing.T) {
 	script, err := Unmarshal([]byte(
 		testCheckoutInfo + `
 linux_runtime = solve(
-		at_time = at_time,
+		at_time = TIME,
 		requirements=[
 			Req(name = "python", namespace = "language")
 		],
@@ -107,7 +107,7 @@ linux_runtime = solve(
 )
 
 win_runtime = solve(
-		at_time = at_time,
+		at_time = TIME,
 		requirements=[
 			Req(name = "perl", namespace = "language")
 		],
@@ -130,7 +130,7 @@ main = merge(
 		Assignments: []*assignment{
 			{"linux_runtime", &value{
 				FuncCall: &funcCall{"solve", []*value{
-					{Assignment: &assignment{"at_time", &value{Ident: ptr.To(`at_time`)}}},
+					{Assignment: &assignment{"at_time", &value{Ident: ptr.To(`TIME`)}}},
 					{Assignment: &assignment{
 						"requirements", &value{List: &[]*value{
 							{FuncCall: &funcCall{
@@ -149,7 +149,7 @@ main = merge(
 			}},
 			{"win_runtime", &value{
 				FuncCall: &funcCall{"solve", []*value{
-					{Assignment: &assignment{"at_time", &value{Ident: ptr.To(`at_time`)}}},
+					{Assignment: &assignment{"at_time", &value{Ident: ptr.To(`TIME`)}}},
 					{Assignment: &assignment{
 						"requirements", &value{List: &[]*value{
 							{FuncCall: &funcCall{
@@ -183,7 +183,7 @@ func TestComplexVersions(t *testing.T) {
 	script, err := Unmarshal([]byte(
 		checkoutInfo + `
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = ["96b7e6f2-bebf-564c-bc1c-f04482398f38", "96b7e6f2-bebf-564c-bc1c-f04482398f38"],
 	requirements = [
 		Req(name = "python", namespace = "language"),
@@ -206,7 +206,7 @@ main = runtime
 		Assignments: []*assignment{
 			{"runtime", &value{
 				FuncCall: &funcCall{"solve", []*value{
-					{Assignment: &assignment{"at_time", &value{Ident: ptr.To(`at_time`)}}},
+					{Assignment: &assignment{"at_time", &value{Ident: ptr.To(`TIME`)}}},
 					{Assignment: &assignment{
 						"platforms", &value{List: &[]*value{
 							{Str: ptr.To(`96b7e6f2-bebf-564c-bc1c-f04482398f38`)},

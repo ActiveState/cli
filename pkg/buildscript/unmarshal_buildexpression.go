@@ -67,15 +67,19 @@ func (b *BuildScript) UnmarshalBuildExpression(data []byte) error {
 	b.raw.Assignments = assignments
 
 	// Extract the 'at_time' from the solve node, if it exists, and change its value to be a
-	// reference to "$at_time", which is how we want to show it in AScript format.
-	if atTimeNode, err := b.getSolveAtTimeValue(); err == nil && atTimeNode.Str != nil && !strings.HasPrefix(*atTimeNode.Str, `$`) {
-		atTime, err := strfmt.ParseDateTime(*atTimeNode.Str)
-		if err != nil {
-			return errs.Wrap(err, "Invalid timestamp: %s", *atTimeNode.Str)
+	// reference to "TIME", which is how we want to show it in AScript format.
+	if atTimeNode, err := b.getSolveAtTimeValue(); err == nil {
+		if atTimeNode.Str != nil && !strings.HasPrefix(*atTimeNode.Str, `$`) {
+			atTime, err := strfmt.ParseDateTime(*atTimeNode.Str)
+			if err != nil {
+				return errs.Wrap(err, "Invalid timestamp: %s", *atTimeNode.Str)
+			}
+			atTimeNode.Str = nil
+			atTimeNode.Ident = ptr.To("TIME")
+			b.atTime = ptr.To(time.Time(atTime))
+		} else if atTimeNode.Ident != nil && *atTimeNode.Ident == "at_time" {
+			atTimeNode.Ident = ptr.To("TIME")
 		}
-		atTimeNode.Str = nil
-		atTimeNode.Ident = ptr.To("at_time")
-		b.atTime = ptr.To(time.Time(atTime))
 	} else if err != nil {
 		return errs.Wrap(err, "Could not get at_time node")
 	}

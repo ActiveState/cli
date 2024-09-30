@@ -69,7 +69,12 @@ func (v *value) MarshalJSON() ([]byte, error) {
 		}
 		return json.Marshal(m)
 	case v.Ident != nil:
-		return json.Marshal("$" + *v.Ident)
+		name := *v.Ident
+		switch name {
+		case "TIME":
+			name = "at_time" // build expression uses this variable name
+		}
+		return json.Marshal("$" + name)
 	}
 	return json.Marshal([]*value{}) // participle does not create v.List if it's empty
 }

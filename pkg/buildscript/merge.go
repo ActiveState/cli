@@ -85,7 +85,7 @@ func isAutoMergePossible(scriptA *BuildScript, scriptB *BuildScript) bool {
 }
 
 // getComparableJson returns a comparable JSON map[string]interface{} structure for the given build
-// script. The map will not have a "requirements" field, nor will it have an "at_time" field.
+// script. The map will not have a "requirements" field.
 func getComparableJson(script *BuildScript) (map[string]interface{}, error) {
 	data, err := script.MarshalBuildExpression()
 	if err != nil {
@@ -103,7 +103,6 @@ func getComparableJson(script *BuildScript) (map[string]interface{}, error) {
 		return nil, errs.New("'let' key is not a JSON object")
 	}
 	deleteKey(&letMap, "requirements")
-	deleteKey(&letMap, "at_time")
 
 	return m, nil
 }
