@@ -15,7 +15,7 @@ func TestMergeAdd(t *testing.T) {
 	scriptA, err := Unmarshal([]byte(
 		checkoutInfoString(testProject, mergeATime) + `
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 		"12345",
 		"67890"
@@ -33,7 +33,7 @@ main = runtime
 	scriptB, err := Unmarshal([]byte(
 		checkoutInfoString(testProject, mergeBTime) + `
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 		"12345",
 		"67890"
@@ -65,7 +65,7 @@ main = runtime
 	assert.Equal(t,
 		checkoutInfoString(testProject, mergeBTime)+`
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 		"12345",
 		"67890"
@@ -84,7 +84,7 @@ func TestMergeRemove(t *testing.T) {
 	scriptA, err := Unmarshal([]byte(
 		checkoutInfoString(testProject, mergeBTime) + `
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 		"12345",
 		"67890"
@@ -103,7 +103,7 @@ main = runtime
 	scriptB, err := Unmarshal([]byte(
 		checkoutInfoString(testProject, mergeATime) + `
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 		"12345",
 		"67890"
@@ -134,7 +134,7 @@ main = runtime
 	assert.Equal(t,
 		checkoutInfoString(testProject, mergeBTime)+`
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 		"12345",
 		"67890"
@@ -152,7 +152,7 @@ func TestMergeConflict(t *testing.T) {
 	scriptA, err := Unmarshal([]byte(
 		checkoutInfoString(testProject, mergeATime) + `
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 		"12345",
 		"67890"
@@ -169,7 +169,7 @@ main = runtime
 	scriptB, err := Unmarshal([]byte(
 		checkoutInfoString(testProject, mergeATime) + `
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 		"12345"
 	],

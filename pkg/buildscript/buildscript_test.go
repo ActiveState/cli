@@ -15,7 +15,7 @@ runtime = state_tool_artifacts(
 	src = sources
 )
 sources = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 		"12345",
 		"67890"
