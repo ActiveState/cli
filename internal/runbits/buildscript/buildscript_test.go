@@ -25,7 +25,7 @@ func TestDiff(t *testing.T) {
 	script, err := buildscript.Unmarshal([]byte(
 		checkoutInfo(testProject, testTime) + `
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 		"12345",
 		"67890"
@@ -50,7 +50,7 @@ main = runtime`))
 	require.NoError(t, err)
 	assert.Equal(t, checkoutInfo(testProject, testTime)+`
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 <<<<<<< local
 		"77777",
@@ -99,7 +99,7 @@ runtime = state_tool_artifacts_v1(
 	src = sources
 )
 sources = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 		"78977bc8-0f32-519d-80f3-9043f059398c",
 		"7c998ec2-7491-4e75-be4d-8885800ef5f2",
