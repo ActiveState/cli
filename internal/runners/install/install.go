@@ -91,7 +91,7 @@ func (i *Install) Run(params Params) (rerr error) {
 
 	pj := i.prime.Project()
 	out := i.prime.Output()
-	bp := bpModel.NewBuildPlannerModel(i.prime.Auth())
+	bp := bpModel.NewBuildPlannerModel(i.prime.Auth(), i.prime.SvcModel())
 
 	// Verify input
 	if pj == nil {

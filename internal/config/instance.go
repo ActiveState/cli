@@ -185,11 +185,7 @@ func (i *Instance) Get(key string) interface{} {
 		return result
 	}
 	if opt := mediator.GetOption(key); mediator.KnownOption(opt) {
-		default_ := opt.Default
-		if enum, ok := default_.(*mediator.Enums); ok {
-			return enum.Default
-		}
-		return default_
+		return mediator.GetDefault(opt)
 	}
 	return nil
 }

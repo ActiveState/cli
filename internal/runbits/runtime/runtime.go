@@ -195,7 +195,7 @@ func Update(
 		// Solve
 		solveSpinner := output.StartSpinner(prime.Output(), locale.T("progress_solve"), constants.TerminalAnimationInterval)
 
-		bpm := bpModel.NewBuildPlannerModel(prime.Auth())
+		bpm := bpModel.NewBuildPlannerModel(prime.Auth(), prime.SvcModel())
 		commit, err = bpm.FetchCommit(commitID, proj.Owner(), proj.Name(), nil)
 		if err != nil {
 			solveSpinner.Stop(locale.T("progress_fail"))
@@ -225,6 +225,8 @@ func Update(
 	// any errors regarding solves, buildscripts, etc.
 	if prime.Config().GetBool(constants.AsyncRuntimeConfig) && !opts.IgnoreAsync {
 		logging.Debug("Skipping runtime update due to async runtime")
+		prime.Output().Notice("") // blank line
+		prime.Output().Notice(locale.Tr("notice_async_runtime", constants.AsyncRuntimeConfig))
 		return rt, nil
 	}
 

@@ -1448,6 +1448,9 @@ err_packages_update_runtime_init:
   other: Could not initialize runtime.
 pkg_already_uptodate:
   other: Dependencies for your project are already configured and installed.
+notice_async_runtime:
+  other: |
+    [WARNING]Warning:[/RESET] Skipping runtime sourcing since {{.V0}} is enabled. Please run '[ACTIONABLE]state refresh[/RESET]' to manually source the runtime.
 install_runtime:
   other: Sourcing Runtime
 install_runtime_info:

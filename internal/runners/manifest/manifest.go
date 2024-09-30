@@ -110,7 +110,7 @@ func (m *Manifest) fetchRequirements() ([]buildscript.Requirement, error) {
 			return nil, errs.Wrap(err, "Could not get commit ID")
 		}
 
-		bp := bpModel.NewBuildPlannerModel(m.auth)
+		bp := bpModel.NewBuildPlannerModel(m.auth, m.svcModel)
 		script, err = bp.GetBuildScript(commitID.String())
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not get remote build expr and time")
@@ -133,7 +133,7 @@ func (m *Manifest) fetchBuildplanRequirements() (buildplan.Ingredients, error) {
 
 	// Solve runtime
 	solveSpinner := output.StartSpinner(m.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
-	bpm := bpModel.NewBuildPlannerModel(m.auth)
+	bpm := bpModel.NewBuildPlannerModel(m.auth, m.svcModel)
 	commit, err := bpm.FetchCommit(commitID, m.project.Owner(), m.project.Name(), nil)
 	if err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))
