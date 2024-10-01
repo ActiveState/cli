@@ -283,6 +283,7 @@ func unmarshalFuncCall(path []string, m map[string]interface{}) (*FuncCall, erro
 		}
 
 		argsInterface = value
+		break // technically this is not needed since there's only one element in m
 	}
 
 	args := []*Value{}
