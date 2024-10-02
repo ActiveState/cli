@@ -33,19 +33,15 @@ type projectfiler interface {
 	URL() string
 }
 
-type configurer interface {
-	GetBool(string) bool
-}
-
 type CheckoutInfo struct {
-	project projectfiler
-	config  configurer
+	project           projectfiler
+	optinBuildScripts bool
 }
 
 var ErrBuildscriptNotExist = errors.New("Build script does not exist")
 
-func New(project projectfiler, config configurer) *CheckoutInfo {
-	return &CheckoutInfo{project, config}
+func New(project projectfiler, optinBuildScripts bool) *CheckoutInfo {
+	return &CheckoutInfo{project, optinBuildScripts}
 }
 
 // Owner returns the project owner from activestate.yaml.
@@ -99,11 +95,10 @@ func (c *CheckoutInfo) SetCommitID(commitID strfmt.UUID) error {
 }
 
 func (c *CheckoutInfo) updateBuildScriptProject() error {
-	if !c.config.GetBool(constants.OptinBuildscriptsConfig) {
+	if !c.optinBuildScripts {
 		return nil
 	}
 
-	// Note: cannot use functions from buildscript_runbit due to import cycle.
 	scriptPath := filepath.Join(c.project.Dir(), constants.BuildScriptFileName)
 	data, err := fileutils.ReadFile(scriptPath)
 	if err != nil {

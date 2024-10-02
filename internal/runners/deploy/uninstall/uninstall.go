@@ -6,9 +6,10 @@ import (
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/analytics/constants"
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/locale"
@@ -85,7 +86,7 @@ func (u *Uninstall) Run(params *Params) error {
 		return locale.WrapError(err, "err_deploy_uninstall_cannot_read_project", "Cannot read project at '{{.V0}}'", path)
 	}
 
-	commitID, err := checkoutinfo.New(proj.Source(), u.cfg).CommitID()
+	commitID, err := checkoutinfo.New(proj.Source(), u.cfg.GetBool(constants.OptinBuildscriptsConfig)).CommitID()
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_uninstall_cannot_read_commit", "Cannot read commit ID from project at '{{.V0}}'", path)
 	}
@@ -106,7 +107,7 @@ func (u *Uninstall) Run(params *Params) error {
 		return locale.WrapError(err, "err_deploy_uninstall", "Unable to remove deployed runtime at '{{.V0}}'", path)
 	}
 
-	u.analytics.Event(constants.CatRuntimeUsage, constants.ActRuntimeDelete, &dimensions.Values{
+	u.analytics.Event(anaConst.CatRuntimeUsage, anaConst.ActRuntimeDelete, &dimensions.Values{
 		Trigger:          ptr.To(trigger.TriggerDeploy.String()),
 		CommitID:         ptr.To(commitID.String()),
 		ProjectNameSpace: ptr.To(proj.Namespace().String()),

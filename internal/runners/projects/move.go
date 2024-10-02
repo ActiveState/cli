@@ -1,6 +1,7 @@
 package projects
 
 import (
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -98,7 +99,7 @@ func (m *Move) updateLocalCheckout(checkout string, params *MoveParams) error {
 		return errs.Wrap(err, "Could not get projectfile at %s", checkout)
 	}
 
-	info := checkoutinfo.New(pjFile, m.config)
+	info := checkoutinfo.New(pjFile, m.config.GetBool(constants.OptinBuildscriptsConfig))
 	err = info.SetNamespace(params.NewOwner, params.Namespace.Project)
 	if err != nil {
 		return errs.Wrap(err, "Could not set project namespace at %s", checkout)

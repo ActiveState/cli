@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
@@ -67,14 +68,14 @@ func New(values ...any) *Values {
 			}
 		}
 	}
-	result.checkoutinfo = checkoutinfo.New(result.projectfile, result.config)
+	result.checkoutinfo = checkoutinfo.New(result.projectfile, result.config.GetBool(constants.OptinBuildscriptsConfig))
 	return result
 }
 
 func (v *Values) SetProject(p *project.Project) {
 	v.project = p
 	v.projectfile = p.Source()
-	v.checkoutinfo = checkoutinfo.New(v.projectfile, v.config)
+	v.checkoutinfo = checkoutinfo.New(v.projectfile, v.config.GetBool(constants.OptinBuildscriptsConfig))
 }
 
 type Projecter interface {
