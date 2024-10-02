@@ -1,6 +1,9 @@
 package auth
 
 import (
+	"os"
+
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -89,6 +92,14 @@ func (a *Auth) authenticate(params *AuthParams) error {
 
 	if params.Token != "" {
 		return auth.AuthenticateWithToken(params.Token, a.Auth)
+	}
+
+	if apiKey := os.Getenv(constants.APIKeyEnvVarName); apiKey != "" {
+		err := auth.AuthenticateWithToken(apiKey, a.Auth)
+		if err != nil {
+			return locale.WrapError(err, "err_auth_api_key", "Failed to authenticate with [ACTIONABLE]{{.V0}}[/RESET] environment variable", constants.APIKeyEnvVarName)
+		}
+		return nil
 	}
 
 	if params.NonInteractive {
