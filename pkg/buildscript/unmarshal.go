@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
 const atTimeKey = "at_time"
@@ -47,6 +48,8 @@ func Unmarshal(data []byte) (*BuildScript, error) {
 		return nil, ErrOutdatedAtTime
 	}
 
+	var project string
+	var atTimePtr *time.Time
 	if raw.Info != nil {
 		info := checkoutInfo{}
 
@@ -57,14 +60,14 @@ func Unmarshal(data []byte) (*BuildScript, error) {
 				"Could not parse checkout information in the buildscript. The parser produced the following error: {{.V0}}", err.Error())
 		}
 
-		raw.CheckoutInfo.Project = info.Project
+		project = info.Project
 
 		atTime, err := strfmt.ParseDateTime(info.Time)
 		if err != nil {
 			return nil, errs.Wrap(err, "Invalid timestamp: %s", info.Time)
 		}
-		raw.CheckoutInfo.AtTime = time.Time(atTime)
+		atTimePtr = ptr.To(time.Time(atTime))
 	}
 
-	return &BuildScript{raw}, nil
+	return &BuildScript{raw, project, atTimePtr}, nil
 }

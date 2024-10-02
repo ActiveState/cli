@@ -11,27 +11,29 @@ import (
 // Instead this package should facilitate the use-case of the consuming code through convenience
 // methods that are easy to understand and work with.
 type BuildScript struct {
-	raw *rawBuildScript
+	raw     *rawBuildScript
+	project string
+	atTime  *time.Time
 }
 
 func New() (*BuildScript, error) {
-	return UnmarshalBuildExpression([]byte(emptyBuildExpression), nil)
+	return UnmarshalBuildExpression([]byte(emptyBuildExpression), "", nil)
 }
 
 func (b *BuildScript) Project() string {
-	return b.raw.CheckoutInfo.Project
+	return b.project
 }
 
 func (b *BuildScript) SetProject(url string) {
-	b.raw.CheckoutInfo.Project = url
+	b.project = url
 }
 
-func (b *BuildScript) AtTime() time.Time {
-	return b.raw.CheckoutInfo.AtTime
+func (b *BuildScript) AtTime() *time.Time {
+	return b.atTime
 }
 
 func (b *BuildScript) SetAtTime(t time.Time) {
-	b.raw.CheckoutInfo.AtTime = t
+	b.atTime = &t
 }
 
 func (b *BuildScript) Equals(other *BuildScript) (bool, error) {
