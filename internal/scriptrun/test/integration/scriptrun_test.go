@@ -120,7 +120,8 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 	cfg.Set(constants.AsyncRuntimeConfig, true)
 
 	out := capturer.CaptureOutput(func() {
-		scriptRun := scriptrun.New(primer.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), model.NewSvcModel("")))
+		port := ":12345" // pick a high number that doesn't require admin privileges
+		scriptRun := scriptrun.New(primer.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), model.NewSvcModel(port)))
 		script, err := proj.ScriptByName("run")
 		require.NoError(t, err, "Error: "+errs.JoinMessage(err))
 		err = scriptRun.Run(script, nil)
