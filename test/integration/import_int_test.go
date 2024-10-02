@@ -113,7 +113,7 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 		cp.ExpectExitCode(0)
 
 		cp = ts.Spawn("import", "requirements.txt")
-		cp.Expect("already installed")
+		cp.Expect("no changes")
 		cp.ExpectNotExitCode(0)
 	})
 
