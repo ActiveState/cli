@@ -2,10 +2,8 @@ package buildscript
 
 import (
 	"testing"
-	"time"
 
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -43,9 +41,7 @@ main = runtime
 `))
 	require.NoError(t, err)
 
-	atTimeStrfmt, err := strfmt.ParseDateTime("2000-01-01T00:00:00.000Z")
-	require.NoError(t, err)
-	atTime := time.Time(atTimeStrfmt)
+	assert.Contains(t, *script.raw.Info, "2000-01-01T00:00:00.000Z")
 
 	assert.Equal(t, &rawBuildScript{
 		Info: ptr.To(testCheckoutInfo[2 : len(testCheckoutInfo)-3]),
@@ -89,7 +85,6 @@ main = runtime
 			}},
 			{"main", &Value{Ident: ptr.To("runtime")}},
 		},
-		CheckoutInfo: CheckoutInfo{testProject, atTime},
 	}, script.raw)
 }
 
@@ -119,9 +114,7 @@ main = merge(
 `))
 	require.NoError(t, err)
 
-	atTimeStrfmt, err := strfmt.ParseDateTime("2000-01-01T00:00:00.000Z")
-	require.NoError(t, err)
-	atTime := time.Time(atTimeStrfmt)
+	assert.Contains(t, *script.raw.Info, "2000-01-01T00:00:00.000Z")
 
 	assert.Equal(t, &rawBuildScript{
 		Info: ptr.To(testCheckoutInfo[2 : len(testCheckoutInfo)-3]),
@@ -170,7 +163,6 @@ main = merge(
 					{FuncCall: &FuncCall{"tar_installer", []*Value{{Ident: ptr.To("linux_runtime")}}}},
 				}}}},
 		},
-		CheckoutInfo: CheckoutInfo{testProject, atTime},
 	}, script.raw)
 }
 
@@ -193,9 +185,7 @@ main = runtime
 `))
 	require.NoError(t, err)
 
-	atTimeStrfmt, err := strfmt.ParseDateTime("2023-04-27T17:30:05.999Z")
-	require.NoError(t, err)
-	atTime := time.Time(atTimeStrfmt)
+	assert.Contains(t, *script.raw.Info, "2023-04-27T17:30:05.999Z")
 
 	assert.Equal(t, &rawBuildScript{
 		Info: ptr.To(checkoutInfo[2 : len(checkoutInfo)-3]),
@@ -266,6 +256,5 @@ main = runtime
 			}},
 			{"main", &Value{Ident: ptr.To("runtime")}},
 		},
-		CheckoutInfo: CheckoutInfo{testProject, atTime},
 	}, script.raw)
 }

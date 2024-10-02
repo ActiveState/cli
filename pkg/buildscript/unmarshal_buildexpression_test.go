@@ -86,7 +86,7 @@ func TestUnmarshalBuildExpression(t *testing.T) {
 			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "buildscript", "testdata", tt.args.filename))
 			assert.NoError(t, err)
 
-			_, err = UnmarshalBuildExpression(data, nil)
+			_, err = UnmarshalBuildExpression(data, "", nil)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
 				return

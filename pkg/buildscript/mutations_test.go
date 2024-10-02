@@ -264,7 +264,7 @@ func TestUpdateRequirements(t *testing.T) {
 			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "buildscript", "testdata", tt.args.filename))
 			assert.NoError(t, err)
 
-			script, err := UnmarshalBuildExpression(data, nil)
+			script, err := UnmarshalBuildExpression(data, "", nil)
 			assert.NoError(t, err)
 
 			err = script.UpdateRequirement(tt.args.operation, tt.args.requirement.Requirement)
@@ -344,7 +344,7 @@ func TestUpdatePlatform(t *testing.T) {
 			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "buildscript", "testdata", tt.args.filename))
 			assert.NoError(t, err)
 
-			script, err := UnmarshalBuildExpression(data, nil)
+			script, err := UnmarshalBuildExpression(data, "", nil)
 			assert.NoError(t, err)
 
 			if tt.args.operation == types.OperationAdded {

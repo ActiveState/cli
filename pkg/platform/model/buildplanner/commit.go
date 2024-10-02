@@ -46,7 +46,7 @@ func (b *BuildPlanner) StageCommit(params StageCommitParams) (*Commit, error) {
 	}
 
 	// With the updated build expression call the stage commit mutation
-	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, params.Description, ptr.To(script.AtTime()), expression)
+	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, params.Description, script.AtTime(), expression)
 	resp := &response.StageCommitResult{}
 	if err := b.client.Run(request, resp); err != nil {
 		return nil, processBuildPlannerError(err, "failed to stage commit")
@@ -83,7 +83,7 @@ func (b *BuildPlanner) StageCommit(params StageCommitParams) (*Commit, error) {
 		return nil, errs.Wrap(err, "failed to unmarshal build plan")
 	}
 
-	stagedScript, err := buildscript.UnmarshalBuildExpression(resp.Commit.Expression, buildScriptCheckoutInfo(params.Owner, params.Project, params.Branch, resp.Commit.CommitID.String(), time.Time(resp.Commit.AtTime)))
+	stagedScript, err := buildscript.UnmarshalBuildExpression(resp.Commit.Expression, projectField(params.Owner, params.Project, params.Branch, resp.Commit.CommitID.String()), ptr.To(time.Time(resp.Commit.AtTime)))
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}

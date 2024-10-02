@@ -11,13 +11,14 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-func buildScriptCheckoutInfo(owner, project, branch, commitID string, atTime time.Time) *buildscript.CheckoutInfo {
+func projectField(owner, project, branch, commitID string) string {
 	// Note: cannot use api.GetPlatformURL() due to import cycle.
 	host := constants.DefaultAPIHost
 	if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
@@ -27,13 +28,13 @@ func buildScriptCheckoutInfo(owner, project, branch, commitID string, atTime tim
 	err := pjf.LoadProject(fmt.Sprintf("https://%s/%s/%s", host, owner, project))
 	if err != nil {
 		multilog.Error("Unable to load project: %v", err)
-		return nil
+		return ""
 	}
 	if branch != "" {
 		pjf.SetBranch(branch)
 	}
 	pjf.SetLegacyCommitID(commitID)
-	return &buildscript.CheckoutInfo{pjf.String(), atTime}
+	return pjf.String()
 }
 
 func (b *BuildPlanner) GetBuildScript(owner, project, branch, commitID string) (*buildscript.BuildScript, error) {
@@ -75,7 +76,7 @@ func (b *BuildPlanner) GetBuildScript(owner, project, branch, commitID string) (
 		return nil, errs.New("Commit does not contain expression")
 	}
 
-	script, err := buildscript.UnmarshalBuildExpression(resp.Commit.Expression, buildScriptCheckoutInfo(owner, project, branch, commitID, time.Time(resp.Commit.AtTime)))
+	script, err := buildscript.UnmarshalBuildExpression(resp.Commit.Expression, projectField(owner, project, branch, commitID), ptr.To(time.Time(resp.Commit.AtTime)))
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}

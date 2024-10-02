@@ -110,7 +110,7 @@ func TestRequirements(t *testing.T) {
 			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "buildscript", "testdata", tt.args.filename))
 			assert.NoError(t, err)
 
-			script, err := UnmarshalBuildExpression(data, nil)
+			script, err := UnmarshalBuildExpression(data, "", nil)
 			assert.NoError(t, err)
 
 			got, err := script.Requirements()
@@ -164,7 +164,7 @@ func TestRevision(t *testing.T) {
 			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "buildscript", "testdata", tt.args.filename))
 			assert.NoError(t, err)
 
-			script, err := UnmarshalBuildExpression(data, nil)
+			script, err := UnmarshalBuildExpression(data, "", nil)
 			assert.NoError(t, err)
 
 			got, err := script.Requirements()

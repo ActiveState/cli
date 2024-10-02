@@ -1,15 +1,9 @@
 package buildscript
 
-import (
-	"time"
-)
-
 // Tagged fields will be filled in by Participle.
 type rawBuildScript struct {
 	Info        *string       `parser:"(RawString @RawString RawString)?"`
 	Assignments []*Assignment `parser:"@@+"`
-
-	CheckoutInfo CheckoutInfo // set after initial read
 }
 
 type Assignment struct {
@@ -36,9 +30,4 @@ type Null struct {
 type FuncCall struct {
 	Name      string   `parser:"@Ident"`
 	Arguments []*Value `parser:"'(' @@ (',' @@)* ','? ')'"`
-}
-
-type CheckoutInfo struct {
-	Project string
-	AtTime  time.Time
 }

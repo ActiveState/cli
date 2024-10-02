@@ -63,8 +63,8 @@ func RegisterFunctionPreUnmarshaler(name string, preUnmarshal PreUnmarshalerFunc
 // Build scripts and build expressions are almost identical, with the exception of the atTime field.
 // Build expressions ALWAYS set at_time to `$at_time`, which refers to the timestamp on the commit,
 // while buildscripts encode this timestamp as part of their definition. For this reason we have
-// to supply the timestamp as a separate argument (as part of checkoutinfo).
-func UnmarshalBuildExpression(data []byte, checkoutInfo *CheckoutInfo) (*BuildScript, error) {
+// to supply the timestamp as a separate argument.
+func UnmarshalBuildExpression(data []byte, project string, atTime *time.Time) (*BuildScript, error) {
 	expr := make(map[string]interface{})
 	err := json.Unmarshal(data, &expr)
 	if err != nil {
@@ -82,28 +82,27 @@ func UnmarshalBuildExpression(data []byte, checkoutInfo *CheckoutInfo) (*BuildSc
 		return nil, errs.Wrap(err, "Could not parse assignments")
 	}
 
-	script := &BuildScript{&rawBuildScript{Assignments: assignments}}
+	script := &BuildScript{&rawBuildScript{Assignments: assignments}, project, atTime}
 
 	// Extract the 'at_time' from the solve node, if it exists, and change its value to be a
 	// reference to "TIME", which is how we want to show it in AScript format.
 	if atTimeNode, err := script.getSolveAtTimeValue(); err == nil {
 		if atTimeNode.Str != nil && !strings.HasPrefix(*atTimeNode.Str, `$`) {
-			atTime, err := strfmt.ParseDateTime(*atTimeNode.Str)
+			nodeTime, err := strfmt.ParseDateTime(*atTimeNode.Str)
 			if err != nil {
 				return nil, errs.Wrap(err, "Invalid timestamp: %s", *atTimeNode.Str)
 			}
 			atTimeNode.Str = nil
 			atTimeNode.Ident = ptr.To("TIME")
-			script.raw.CheckoutInfo.AtTime = time.Time(atTime)
+			if atTime == nil {
+				// Only set the script time if one wasn't provided.
+				script.atTime = ptr.To(time.Time(nodeTime))
+			}
 		} else if atTimeNode.Ident != nil && *atTimeNode.Ident == "at_time" {
 			atTimeNode.Ident = ptr.To("TIME")
 		}
 	} else if err != nil {
 		return nil, errs.Wrap(err, "Could not get at_time node")
-	}
-
-	if checkoutInfo != nil {
-		script.raw.CheckoutInfo = *checkoutInfo
 	}
 
 	// If the requirements are in legacy object form, e.g.
