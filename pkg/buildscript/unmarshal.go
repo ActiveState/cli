@@ -55,7 +55,7 @@ func Unmarshal(data []byte) (*BuildScript, error) {
 
 		err := yaml.Unmarshal([]byte(strings.Trim(*raw.Info, "`\n")), &info)
 		if err != nil {
-			return nil, locale.NewExternalError(
+			return nil, locale.NewInputError(
 				"err_buildscript_checkoutinfo",
 				"Could not parse checkout information in the buildscript. The parser produced the following error: {{.V0}}", err.Error())
 		}
