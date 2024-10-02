@@ -78,12 +78,14 @@ func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, 
 			}
 			return nil, err
 		}
-		respBytes, err := json.Marshal(resp)
-		if err != nil {
-			return nil, errs.Wrap(err, "failed to marshal cache")
-		}
-		if err := b.cache.SetCache(cacheKey, string(respBytes), fetchCommitCacheExpiry); err != nil {
-			return nil, errs.Wrap(err, "failed to set cache")
+		if resp.Project.Commit.Build.Status == raw.Completed {
+			respBytes, err := json.Marshal(resp)
+			if err != nil {
+				return nil, errs.Wrap(err, "failed to marshal cache")
+			}
+			if err := b.cache.SetCache(cacheKey, string(respBytes), fetchCommitCacheExpiry); err != nil {
+				return nil, errs.Wrap(err, "failed to set cache")
+			}
 		}
 	}
 
