@@ -133,18 +133,8 @@ func GetCommit(
 
 	// Return the buildplan for the given commitID of the given project.
 	case namespaceProvided && commitIdProvided:
-		pj, err := model.FetchProjectByName(namespace.Owner, namespace.Project, auth)
-		if err != nil {
-			return nil, locale.WrapExternalError(err, "err_fetch_project", "", namespace.String())
-		}
-
-		branch, err := model.DefaultBranchForProject(pj)
-		if err != nil {
-			return nil, errs.Wrap(err, "Could not grab branch for project")
-		}
-
 		bp := bpModel.NewBuildPlannerModel(auth, svcm)
-		commit, err = bp.FetchCommit(commitUUID, namespace.Owner, namespace.Project, branch.Label, targetPtr)
+		commit, err = bp.FetchCommit(commitUUID, namespace.Owner, namespace.Project, "", targetPtr)
 		if err != nil {
 			return nil, errs.Wrap(err, "Failed to fetch commit")
 		}
