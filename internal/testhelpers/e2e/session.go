@@ -190,7 +190,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	require.NoError(t, err)
 	env := sandboxedTestEnvironment(t, dirs, updatePath, extraEnv...)
 
-	session := &Session{Dirs: dirs, Env: env, retainDirs: retainDirs, T: t}
+	session := &Session{Dirs: dirs, Env: env, retainDirs: retainDirs, T: t, cache: keyCache{}}
 
 	// Mock installation directory
 	exe, svcExe, execExe := executablePaths(t)
