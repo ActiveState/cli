@@ -10,13 +10,13 @@ import (
 func newConfigCommand(prime *primer.Values) *captain.Command {
 	return captain.NewCommand(
 		"config",
-		locale.Tl("config_title", "Config"),
+		locale.Tl("config_title", "Listing Configuration Keys and Values"),
 		locale.Tl("config_description", "Manage the State Tool configuration"),
 		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
-			runner, err := config.NewConfig(prime)
+			runner, err := config.NewList(prime)
 			if err != nil {
 				return err
 			}

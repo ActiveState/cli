@@ -190,6 +190,10 @@ func (i *Instance) Get(key string) interface{} {
 	return nil
 }
 
+func (i *Instance) Default(key string) interface{} {
+	return mediator.GetDefault(mediator.GetOption(key))
+}
+
 // GetString retrieves a string for a given key
 func (i *Instance) GetString(key string) string {
 	return cast.ToString(i.Get(key))
@@ -218,6 +222,28 @@ func (i *Instance) AllKeys() []string {
 		keys = append(keys, key)
 	}
 	return keys
+}
+
+// AllValues returns all of the current config keys and values
+func (i *Instance) AllValues() map[string]interface{} {
+	rows, err := i.db.Query(`SELECT key, value FROM config`)
+	if err != nil {
+		multilog.Error("config:AllValues query failed: %s", errs.JoinMessage(err))
+		return nil
+	}
+	defer rows.Close()
+
+	values := make(map[string]interface{})
+	for rows.Next() {
+		var key string
+		var value string
+		if err := rows.Scan(&key, &value); err != nil {
+			multilog.Error("config:AllValues scan failed: %s", errs.JoinMessage(err))
+			return nil
+		}
+		values[key] = value
+	}
+	return values
 }
 
 // GetStringMapStringSlice retrieves a map of string slices for a given key
