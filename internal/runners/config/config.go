@@ -30,38 +30,66 @@ func NewList(prime primeable) (*List, error) {
 	}, nil
 }
 
-type report struct {
+type configData struct {
 	Key     string `locale:"key,Key"`
 	Value   string `locale:"value,Value"`
 	Default string `locale:"default,Default"`
 }
 
+type configOutput struct {
+	out     output.Outputer
+	cfg     *config.Instance
+	options []mediator.Option
+	data    []configData
+}
+
+func (c *configOutput) MarshalOutput(format output.Format) interface{} {
+	if format != output.PlainFormatName {
+		return c.data
+	}
+
+	c.out.Print(struct {
+		Data []configData `opts:"table,hideDash,omitKey"`
+	}{c.data})
+	c.out.Print("")
+	c.out.Print(locale.T("config_get_help"))
+	c.out.Print(locale.T("config_set_help"))
+
+	return output.Suppress
+}
+
+func (c *configOutput) MarshalStructured(format output.Format) interface{} {
+	return c.data
+}
+
 func (c *List) Run(usageFunc func() error) error {
 	registered := mediator.AllRegistered()
-
 	sort.SliceStable(registered, func(i, j int) bool {
 		return registered[i].Name < registered[j].Name
 	})
 
-	var reports []report
+	var data []configData
 	for _, opt := range registered {
 		configuredValue := c.cfg.Get(opt.Name)
-		reports = append(reports, report{
-			Key:     fmt.Sprintf("[CYAN]%s[/RESET]", opt.Name),
+		data = append(data, configData{
+			Key:     formatKey(opt.Name),
 			Value:   formatValue(opt, configuredValue),
 			Default: formatDefault(mediator.GetDefault(opt)),
 		})
 	}
 
-	c.out.Print(struct {
-		Reports []report `opts:"table,hideDash,omitKey"`
-	}{reports})
-
-	c.out.Print("")
-	c.out.Print(locale.T("config_get_help"))
-	c.out.Print(locale.T("config_set_help"))
+	c.out.Print(&configOutput{
+		out:     c.out,
+		cfg:     c.cfg,
+		options: registered,
+		data:    data,
+	})
 
 	return nil
+}
+
+func formatKey(key string) string {
+	return fmt.Sprintf("[CYAN]%s[/RESET]", key)
 }
 
 func formatValue(opt mediator.Option, value interface{}) string {
