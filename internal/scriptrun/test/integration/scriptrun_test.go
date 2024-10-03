@@ -90,7 +90,7 @@ scripts:
 func (suite *ScriptRunSuite) TestEnvIsSet() {
 	suite.OnlyRunForTags(tagsuite.Scripts)
 	t := suite.T()
-	ts := e2e.New(suite.T(), false)
+	ts := e2e.New(t, false)
 	defer ts.Close()
 
 	if runtime.GOOS == "windows" {
