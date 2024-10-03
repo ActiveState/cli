@@ -122,10 +122,6 @@ func UpdateAndReload(prime primeable, script *buildscript.BuildScript, oldCommit
 }
 
 func updateCommitID(prime primeable, commitID strfmt.UUID) error {
-	if err := localcommit.Set(prime.Project().Dir(), commitID.String()); err != nil {
-		return locale.WrapError(err, "err_package_update_commit_id")
-	}
-
 	if prime.Config().GetBool(constants.OptinBuildscriptsConfig) {
 		bp := buildplanner.NewBuildPlannerModel(prime.Auth(), prime.SvcModel())
 		script, err := bp.GetBuildScript(prime.Project().Owner(), prime.Project().Name(), prime.Project().BranchName(), commitID.String())
@@ -137,6 +133,10 @@ func updateCommitID(prime primeable, commitID strfmt.UUID) error {
 		if err != nil {
 			return locale.WrapError(err, "err_update_build_script")
 		}
+	}
+
+	if err := localcommit.Set(prime.Project().Dir(), commitID.String()); err != nil {
+		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
 	return nil

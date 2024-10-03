@@ -1,8 +1,13 @@
 package localcommit
 
 import (
+	"path/filepath"
+
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
@@ -58,6 +63,44 @@ func Set(pjpath, commitID string) error {
 
 	if err := proj.SetLegacyCommit(commitID); err != nil {
 		return errs.Wrap(err, "Could not set commit ID")
+	}
+
+	// Instead of passing a config around, test for buildscript presence. If it exists, assume
+	// buildscripts are enabled and update its Project field.
+	if fileutils.FileExists(filepath.Join(proj.Dir(), constants.BuildScriptFileName)) {
+		if err := updateBuildScript(proj); err != nil {
+			return errs.Wrap(err, "Could not update build script")
+		}
+	}
+
+	return nil
+}
+
+func updateBuildScript(pj *project.Project) error {
+	scriptPath := filepath.Join(pj.Dir(), constants.BuildScriptFileName)
+
+	data, err := fileutils.ReadFile(scriptPath)
+	if err != nil {
+		return errs.Wrap(err, "Could not read build script from file")
+	}
+
+	script, err := buildscript.Unmarshal(data)
+	if err != nil {
+		return errs.Wrap(err, "Could not unmarshal build script")
+	}
+
+	if pj.URL() == script.Project() {
+		return nil //nothing to update
+	}
+	script.SetProject(pj.URL())
+
+	data, err = script.Marshal()
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal build script")
+	}
+
+	if err := fileutils.WriteFile(scriptPath, data); err != nil {
+		return errs.Wrap(err, "Could not write build script to file")
 	}
 
 	return nil

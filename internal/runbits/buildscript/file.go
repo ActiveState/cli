@@ -54,11 +54,11 @@ func Initialize(proj projecter, auth *authentication.Auth, svcm *model.SvcModel)
 	if err == nil {
 		return nil // nothing to do, buildscript already exists
 	}
-	if !errors.Is(err, os.ErrNotExist) {
+	if !errors.Is(err, os.ErrNotExist) && !errors.Is(err, buildscript.ErrOutdatedAtTime) {
 		return errs.Wrap(err, "Could not read build script from file")
 	}
 
-	logging.Debug("Build script does not exist. Creating one.")
+	logging.Debug("Build script does not exist or is outdated. Creating one or updating it.")
 	commitId, err := localcommit.Get(proj.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the local commit ID")

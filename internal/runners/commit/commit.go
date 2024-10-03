@@ -117,11 +117,6 @@ func (c *Commit) Run() (rerr error) {
 		return errs.Wrap(err, "Could not update project to reflect build script changes.")
 	}
 
-	// Update local commit ID
-	if err := localcommit.Set(proj.Dir(), stagedCommit.CommitID.String()); err != nil {
-		return errs.Wrap(err, "Could not set local commit ID")
-	}
-
 	// Update our local build expression to match the committed one. This allows our API a way to ensure forward compatibility.
 	newScript, err := bp.GetBuildScript(proj.Owner(), proj.Name(), proj.BranchName(), stagedCommit.CommitID.String())
 	if err != nil {
@@ -129,6 +124,11 @@ func (c *Commit) Run() (rerr error) {
 	}
 	if err := buildscript_runbit.Update(proj, newScript); err != nil {
 		return errs.Wrap(err, "Could not update local build script")
+	}
+
+	// Update local commit ID
+	if err := localcommit.Set(proj.Dir(), stagedCommit.CommitID.String()); err != nil {
+		return errs.Wrap(err, "Could not set local commit ID")
 	}
 
 	pg.Stop(locale.T("progress_success"))
