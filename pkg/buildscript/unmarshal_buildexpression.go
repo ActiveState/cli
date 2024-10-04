@@ -13,7 +13,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/sliceutils"
 )
@@ -128,12 +127,6 @@ const (
 
 func unmarshalAssignments(path []string, m map[string]interface{}) ([]*Assignment, error) {
 	path = append(path, ctxAssignments)
-	defer func() {
-		_, _, err := sliceutils.Pop(path)
-		if err != nil {
-			multilog.Error("Could not pop context: %v", err)
-		}
-	}()
 
 	assignments := []*Assignment{}
 	for key, valueInterface := range m {
@@ -160,12 +153,6 @@ func unmarshalAssignments(path []string, m map[string]interface{}) ([]*Assignmen
 
 func unmarshalValue(path []string, valueInterface interface{}) (*Value, error) {
 	path = append(path, ctxValue)
-	defer func() {
-		_, _, err := sliceutils.Pop(path)
-		if err != nil {
-			multilog.Error("Could not pop context: %v", err)
-		}
-	}()
 
 	value := &Value{}
 
@@ -236,12 +223,6 @@ func unmarshalValue(path []string, valueInterface interface{}) (*Value, error) {
 
 func isAp(path []string, value map[string]interface{}) bool {
 	path = append(path, ctxIsAp)
-	defer func() {
-		_, _, err := sliceutils.Pop(path)
-		if err != nil {
-			multilog.Error("Could not pop context: %v", err)
-		}
-	}()
 
 	_, hasIn := value[inKey]
 	return !hasIn || sliceutils.Contains(path, ctxAssignments)
@@ -249,12 +230,6 @@ func isAp(path []string, value map[string]interface{}) bool {
 
 func unmarshalFuncCall(path []string, m map[string]interface{}) (*FuncCall, error) {
 	path = append(path, ctxFuncCall)
-	defer func() {
-		_, _, err := sliceutils.Pop(path)
-		if err != nil {
-			multilog.Error("Could not pop context: %v", err)
-		}
-	}()
 
 	// m is a mapping of function name to arguments. There should only be one
 	// set of arguments. Since the arguments are key-value pairs, it should be
@@ -317,12 +292,6 @@ func unmarshalFuncCall(path []string, m map[string]interface{}) (*FuncCall, erro
 
 func unmarshalIn(path []string, inValue interface{}) (*Value, error) {
 	path = append(path, ctxIn)
-	defer func() {
-		_, _, err := sliceutils.Pop(path)
-		if err != nil {
-			multilog.Error("Could not pop context: %v", err)
-		}
-	}()
 
 	in := &Value{}
 
