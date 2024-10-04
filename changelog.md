@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.46.0
+
+### Added
+
+* Added the `state export buildplan` command, which as the name implies exports the buildplan for a project commit.
+* We now show dependency and CVE information when running `state commit` and `state import`, just like we do for
+  `state install`.
+* We now show CVE information when running `state checkout`.
+* When working with complex buildscripts that use ingredient revisions or more complex build rules we will now report
+  on these in `state manifest`.
+* We now support CycloneDX and SPDX SBOMs for `state import`.
+* We now provide unstable support for powershell when running `state shell` and other commands that interact with the
+  shell.
+
+### Changed
+
+* Runtime installations will now use a central artifact depot, and will use symlinks on mac/linux and hardlinks on
+  windows to deploy them for your various runtime. Reducing disk usage, and increasing installation speeds.
+    * We may still copy instead of link artifacts if the artifact in question requires runtime specific modifications.
+* Streamlined the UI for sourcing runtimes, it should now be consistent across commands.
+* We now also show dependency information when updating requirements.
+* When running `state export log` with the `-i` (index) flag we no longer consider logs for the current command.
+
+### Fixed
+
+* Running `state init` with a language version specific to the minor version would sometimes not resolve the language.
+* `state manifest` would sometimes not show the resolved version.
+* Missing CVE information for languages in `state manifest`.
+* Uninstalling state tool would leave you in a broken state that required manual intervention if and when the uninstall
+  failed halfway through.
+* We would sometimes redundantly show available update information.
+* Uninstalling State Tool on Windows would leave behind start menu shortcuts.
+* Progress indication when solving and creating a commit (eg. when running `state install`) would sometimes overlap.
+* Made several improvements to dependency calculations, which should give user a more accurate picture of what
+  dependencies were brought in by a given change.
+    * This only affects UI/UX. It does not imply any build or runtime functionality.
+* Many localization and error message improvements and additions to help guide users to solutions.
+
 ## 0.45.0
 
 ### Added
