@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if git diff --name-only --cached | grep -q buildscript.as; then
+	echo "Running 'state commit', as buildscript.as is being committed."
+	tmpfile=`mktemp -t activestate.XXXX`
+	state commit --non-interactive 2> >(tee "$tmpfile" >&2)
+	if [[ $? -ne 0 ]] && ! grep -q 'no new changes' "$tmpfile"; then
+		rm $tmpfile
+		echo "Attempting to abort git commit process."
+		exit 1
+	fi
+	rm $tmpfile
+	# Update the buildscript.as being committed.
+	git add buildscript.as
+	echo "Continuing git commit process."
+fi
