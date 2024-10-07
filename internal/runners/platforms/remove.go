@@ -73,7 +73,7 @@ func (a *Remove) Run(params RemoveRunParams) (rerr error) {
 
 	// Prepare updated buildscript
 	script := oldCommit.BuildScript()
-	platforms, err := script.Platforms()
+	platforms, err := script.Platforms("")
 	if err != nil {
 		return errs.Wrap(err, "Failed to get platforms")
 	}

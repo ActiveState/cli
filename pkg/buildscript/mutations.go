@@ -61,7 +61,7 @@ func (b *BuildScript) AddRequirement(requirement types.Requirement) error {
 		obj = append(obj, &Assignment{requirementVersionRequirementsKey, &Value{List: &values}})
 	}
 
-	requirementsNode, err := b.getRequirementsNode()
+	requirementsNode, err := b.getRequirementsNode("")
 	if err != nil {
 		return errs.Wrap(err, "Could not get requirements node")
 	}
@@ -81,7 +81,7 @@ type RequirementNotFoundError struct {
 // RemoveRequirement will remove any matching requirement. Note that it only operates on the Name and Namespace fields.
 // It will not verify if revision or version match.
 func (b *BuildScript) RemoveRequirement(requirement types.Requirement) error {
-	requirementsNode, err := b.getRequirementsNode()
+	requirementsNode, err := b.getRequirementsNode("")
 	if err != nil {
 		return errs.Wrap(err, "Could not get requirements node")
 	}
@@ -126,7 +126,7 @@ func (b *BuildScript) RemoveRequirement(requirement types.Requirement) error {
 }
 
 func (b *BuildScript) AddPlatform(platformID strfmt.UUID) error {
-	platformsNode, err := b.getPlatformsNode()
+	platformsNode, err := b.getPlatformsNode("")
 	if err != nil {
 		return errs.Wrap(err, "Could not get platforms node")
 	}
@@ -144,7 +144,7 @@ type PlatformNotFoundError struct {
 }
 
 func (b *BuildScript) RemovePlatform(platformID strfmt.UUID) error {
-	platformsNode, err := b.getPlatformsNode()
+	platformsNode, err := b.getPlatformsNode("")
 	if err != nil {
 		return errs.Wrap(err, "Could not get platforms node")
 	}

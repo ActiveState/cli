@@ -165,7 +165,7 @@ func (u *Uninstall) renderUserFacing(reqs requirements) {
 func (u *Uninstall) resolveRequirements(script *buildscript.BuildScript, pkgs captain.PackagesValue) (requirements, error) {
 	result := requirements{}
 
-	reqs, err := script.DependencyRequirements()
+	reqs, err := script.DependencyRequirements("")
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get requirements")
 	}

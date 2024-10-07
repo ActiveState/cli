@@ -12,6 +12,7 @@ import (
 const (
 	solveFuncName       = "solve"
 	solveLegacyFuncName = "solve_legacy"
+	srcKey              = "src"
 	requirementsKey     = "requirements"
 	platformsKey        = "platforms"
 )
@@ -43,8 +44,10 @@ type UnknownRequirement struct {
 
 func (r UnknownRequirement) IsRequirement() {}
 
-func (b *BuildScript) Requirements() ([]Requirement, error) {
-	requirementsNode, err := b.getRequirementsNode()
+// Returns the requirements for the given target.
+// If the given target is the empty string, uses the default target (i.e. the name assigned to 'main').
+func (b *BuildScript) Requirements(target string) ([]Requirement, error) {
+	requirementsNode, err := b.getRequirementsNode(target)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get requirements node")
 	}
@@ -95,8 +98,8 @@ func (b *BuildScript) Requirements() ([]Requirement, error) {
 // DependencyRequirements is identical to Requirements except that it only considers dependency type requirements,
 // which are the most common.
 // ONLY use this when you know you only need to care about dependencies.
-func (b *BuildScript) DependencyRequirements() ([]types.Requirement, error) {
-	reqs, err := b.Requirements()
+func (b *BuildScript) DependencyRequirements(target string) ([]types.Requirement, error) {
+	reqs, err := b.Requirements(target)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get requirements")
 	}
@@ -109,8 +112,8 @@ func (b *BuildScript) DependencyRequirements() ([]types.Requirement, error) {
 	return deps, nil
 }
 
-func (b *BuildScript) getRequirementsNode() (*Value, error) {
-	node, err := b.getSolveNode()
+func (b *BuildScript) getRequirementsNode(target string) (*Value, error) {
+	node, err := b.getSolveNode(target)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get solve node")
 	}
@@ -147,7 +150,23 @@ func getVersionRequirements(v *Value) []types.VersionRequirement {
 	return reqs
 }
 
-func (b *BuildScript) getSolveNode() (*Value, error) {
+func isSolveFuncName(name string) bool {
+	return name == solveFuncName || name == solveLegacyFuncName
+}
+
+func (b *BuildScript) getTargetNode(target string) (*Value, error) {
+	if target == "" {
+		for _, assignment := range b.raw.Assignments {
+			if assignment.Key != mainKey {
+				continue
+			}
+			if assignment.Value.Ident != nil {
+				target = *assignment.Value.Ident
+				break
+			}
+		}
+	}
+
 	var search func([]*Assignment) *Value
 	search = func(assignments []*Assignment) *Value {
 		var nextLet []*Assignment
@@ -157,7 +176,13 @@ func (b *BuildScript) getSolveNode() (*Value, error) {
 				continue
 			}
 
-			if f := a.Value.FuncCall; f != nil && (f.Name == solveFuncName || f.Name == solveLegacyFuncName) {
+			if a.Key == target && a.Value.FuncCall != nil {
+				return a.Value
+			}
+
+			if f := a.Value.FuncCall; target == "" && f != nil && isSolveFuncName(f.Name) {
+				// This is coming from a complex build expression with no straightforward way to determine
+				// a default target. Fall back on a top-level solve node.
 				return a.Value
 			}
 		}
@@ -169,15 +194,45 @@ func (b *BuildScript) getSolveNode() (*Value, error) {
 
 		return nil
 	}
+
 	if node := search(b.raw.Assignments); node != nil {
 		return node, nil
+	}
+	return nil, errNodeNotFound
+}
+
+func (b *BuildScript) getSolveNode(target string) (*Value, error) {
+	node, err := b.getTargetNode(target)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get target node")
+	}
+
+	// If the target is the solve function, we're done.
+	if isSolveFuncName(node.FuncCall.Name) {
+		return node, nil
+	}
+
+	// Otherwise, the "src" key contains a reference to the solve node. Look over the build expression
+	// again for that referenced node.
+	for _, arg := range node.FuncCall.Arguments {
+		if arg.Assignment == nil {
+			continue
+		}
+		a := arg.Assignment
+		if a.Key == srcKey && a.Value.Ident != nil {
+			node, err := b.getSolveNode(*a.Value.Ident)
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not get solve node from target")
+			}
+			return node, nil
+		}
 	}
 
 	return nil, errNodeNotFound
 }
 
-func (b *BuildScript) getSolveAtTimeValue() (*Value, error) {
-	node, err := b.getSolveNode()
+func (b *BuildScript) getSolveAtTimeValue(target string) (*Value, error) {
+	node, err := b.getSolveNode(target)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get solve node")
 	}
@@ -191,8 +246,8 @@ func (b *BuildScript) getSolveAtTimeValue() (*Value, error) {
 	return nil, errValueNotFound
 }
 
-func (b *BuildScript) Platforms() ([]strfmt.UUID, error) {
-	node, err := b.getPlatformsNode()
+func (b *BuildScript) Platforms(target string) ([]strfmt.UUID, error) {
+	node, err := b.getPlatformsNode(target)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get platform node")
 	}
@@ -204,8 +259,8 @@ func (b *BuildScript) Platforms() ([]strfmt.UUID, error) {
 	return list, nil
 }
 
-func (b *BuildScript) getPlatformsNode() (*Value, error) {
-	node, err := b.getSolveNode()
+func (b *BuildScript) getPlatformsNode(target string) (*Value, error) {
+	node, err := b.getSolveNode(target)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get solve node")
 	}
