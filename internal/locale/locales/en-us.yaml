@@ -1560,3 +1560,9 @@ install_report_updated:
   other: "Updated: [NOTICE]{{.V0}}[/RESET]"
 install_report_removed:
   other: "Removed: [NOTICE]{{.V0}}[/RESET]"
+err_marshalbuildexp_src_missing:
+  other: "Your buildscript contains an ingredient function that's missing the 'src' argument"
+err_marshalbuildexp_src_invalid_type:
+  other: "Your buildscript contains an ingredient function that has an invalid value for the 'src' argument"
+err_marshalbuildexp_src_item_invalid_type:
+  other: "Your buildscript contains an ingredient function that has an invalid value for the 'src' argument entry or entries"
