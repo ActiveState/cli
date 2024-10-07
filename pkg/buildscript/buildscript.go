@@ -3,7 +3,9 @@ package buildscript
 import (
 	"time"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/brunoga/deep"
 )
 
 // BuildScript is what we want consuming code to work with. This specifically makes the raw
