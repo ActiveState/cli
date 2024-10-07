@@ -15,6 +15,37 @@ type rawBuildScript struct {
 	AtTime *time.Time // set after initial read
 }
 
+func (r *rawBuildScript) FuncCalls() []*FuncCall {
+	result := []*FuncCall{}
+	for _, a := range r.Assignments {
+		result = append(result, a.Value.funcCalls()...)
+	}
+	return result
+}
+
+// funcCalls will return all function calls recursively under the given value.
+func (v *Value) funcCalls() []*FuncCall {
+	result := []*FuncCall{}
+	switch {
+	case v.FuncCall != nil:
+		result = append(result, v.FuncCall)
+		for _, arg := range v.FuncCall.Arguments {
+			result = append(result, arg.funcCalls()...)
+		}
+	case v.List != nil:
+		for _, v := range *v.List {
+			result = append(result, v.funcCalls()...)
+		}
+	case v.Assignment != nil:
+		result = append(result, v.Assignment.Value.funcCalls()...)
+	case v.Object != nil:
+		for _, a := range *v.Object {
+			result = append(result, a.Value.funcCalls()...)
+		}
+	}
+	return result
+}
+
 type Assignment struct {
 	Key   string `parser:"@Ident '='"`
 	Value *Value `parser:"@@"`
