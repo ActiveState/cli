@@ -43,86 +43,66 @@ const (
 	inKey  = "in"
 )
 
-type PreUnmarshalerFunc func(map[string]interface{}) (map[string]interface{}, error)
-
-var preUnmarshalers map[string]PreUnmarshalerFunc
-
-func init() {
-	preUnmarshalers = make(map[string]PreUnmarshalerFunc)
-}
-
-// RegisterFunctionPreUnmarshaler registers a buildscript pre-unmarshaler for a buildexpression
-// function.
-// Pre-unmarshalers accept a JSON object of function arguments, transform those arguments as
-// necessary, and return a JSON object for final unmarshaling to buildscript.
-func RegisterFunctionPreUnmarshaler(name string, preUnmarshal PreUnmarshalerFunc) {
-	preUnmarshalers[name] = preUnmarshal
-}
-
 // UnmarshalBuildExpression returns a BuildScript constructed from the given build expression in
 // JSON format.
 // Build scripts and build expressions are almost identical, with the exception of the atTime field.
 // Build expressions ALWAYS set at_time to `$at_time`, which refers to the timestamp on the commit,
 // while buildscripts encode this timestamp as part of their definition. For this reason we have
 // to supply the timestamp as a separate argument.
-func UnmarshalBuildExpression(data []byte, atTime *time.Time) (*BuildScript, error) {
+func (b *BuildScript) UnmarshalBuildExpression(data []byte) error {
 	expr := make(map[string]interface{})
 	err := json.Unmarshal(data, &expr)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not unmarshal build expression")
+		return errs.Wrap(err, "Could not unmarshal build expression")
 	}
 
 	let, ok := expr[letKey].(map[string]interface{})
 	if !ok {
-		return nil, errs.New("Invalid build expression: 'let' value is not an object")
+		return errs.New("Invalid build expression: 'let' value is not an object")
 	}
 
 	var path []string
 	assignments, err := unmarshalAssignments(path, let)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not parse assignments")
+		return errs.Wrap(err, "Could not parse assignments")
 	}
-
-	script := &BuildScript{&rawBuildScript{Assignments: assignments}}
+	b.raw.Assignments = assignments
 
 	// Extract the 'at_time' from the solve node, if it exists, and change its value to be a
 	// reference to "$at_time", which is how we want to show it in AScript format.
-	if atTimeNode, err := script.getSolveAtTimeValue(); err == nil && atTimeNode.Str != nil && !strings.HasPrefix(strValue(atTimeNode), `$`) {
+	if atTimeNode, err := b.getSolveAtTimeValue(); err == nil && atTimeNode.Str != nil && !strings.HasPrefix(strValue(atTimeNode), `$`) {
 		atTime, err := strfmt.ParseDateTime(strValue(atTimeNode))
 		if err != nil {
-			return nil, errs.Wrap(err, "Invalid timestamp: %s", strValue(atTimeNode))
+			return errs.Wrap(err, "Invalid timestamp: %s", strValue(atTimeNode))
 		}
 		atTimeNode.Str = nil
 		atTimeNode.Ident = ptr.To("at_time")
-		script.raw.AtTime = ptr.To(time.Time(atTime))
+		b.raw.AtTime = ptr.To(time.Time(atTime))
 	} else if err != nil {
-		return nil, errs.Wrap(err, "Could not get at_time node")
-	}
-
-	if atTime != nil {
-		script.raw.AtTime = atTime
+		return errs.Wrap(err, "Could not get at_time node")
 	}
 
 	// If the requirements are in legacy object form, e.g.
 	//   requirements = [{"name": "<name>", "namespace": "<name>"}, {...}, ...]
 	// then transform them into function call form for the AScript format, e.g.
 	//   requirements = [Req(name = "<name>", namespace = "<name>"), Req(...), ...]
-	requirements, err := script.getRequirementsNode()
+	requirements, err := b.getRequirementsNode()
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not get requirements node")
+		return errs.Wrap(err, "Could not get requirements node")
 	}
 	if isLegacyRequirementsList(requirements) {
 		requirements.List = transformRequirements(requirements).List
 	}
 
-	return script, nil
+
+	return nil
 }
 
 const (
 	ctxAssignments = "assignments"
 	ctxValue       = "value"
 	ctxFuncCall    = "funcCall"
-	ctxIsAp        = "isAp"
+	ctxFuncDef     = "funcDef"
 	ctxIn          = "in"
 )
 
@@ -184,7 +164,7 @@ func unmarshalValue(path []string, valueInterface interface{}) (*Value, error) {
 				continue
 			}
 
-			if isAp(path, val.(map[string]interface{})) {
+			if isFuncCall(path, val.(map[string]interface{})) {
 				f, err := unmarshalFuncCall(path, v)
 				if err != nil {
 					return nil, errs.Wrap(err, "Could not parse '%s' function's value: %v", key, v)
@@ -234,8 +214,8 @@ func unmarshalValue(path []string, valueInterface interface{}) (*Value, error) {
 	return value, nil
 }
 
-func isAp(path []string, value map[string]interface{}) bool {
-	path = append(path, ctxIsAp)
+func isFuncCall(path []string, value map[string]interface{}) bool {
+	path = append(path, ctxFuncDef)
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
 		if err != nil {
@@ -247,7 +227,7 @@ func isAp(path []string, value map[string]interface{}) bool {
 	return !hasIn || sliceutils.Contains(path, ctxAssignments)
 }
 
-func unmarshalFuncCall(path []string, m map[string]interface{}) (*FuncCall, error) {
+func unmarshalFuncCall(path []string, funcCall map[string]interface{}) (*FuncCall, error) {
 	path = append(path, ctxFuncCall)
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
@@ -259,29 +239,19 @@ func unmarshalFuncCall(path []string, m map[string]interface{}) (*FuncCall, erro
 	// m is a mapping of function name to arguments. There should only be one
 	// set of arguments. Since the arguments are key-value pairs, it should be
 	// a map[string]interface{}.
-	if len(m) > 1 {
+	if len(funcCall) > 1 {
 		return nil, errs.New("Function call has more than one argument mapping")
 	}
 
 	// Look in the given object for the function's name and argument mapping.
 	var name string
 	var argsInterface interface{}
-	for key, value := range m {
-		m, ok := value.(map[string]interface{})
-		if !ok {
+	for key, value := range funcCall {
+		if _, ok := value.(map[string]interface{}); !ok {
 			return nil, errs.New("Incorrect argument format")
 		}
 
 		name = key
-
-		if preUnmarshal, exists := preUnmarshalers[name]; exists {
-			var err error
-			value, err = preUnmarshal(m)
-			if err != nil {
-				return nil, errs.Wrap(err, "Unable to pre-unmarshal function '%s'", name)
-			}
-		}
-
 		argsInterface = value
 		break // technically this is not needed since there's only one element in m
 	}

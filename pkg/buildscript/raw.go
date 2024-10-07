@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/brunoga/deep"
 )
 
 // Tagged fields will be filled in by Participle.
@@ -13,6 +14,13 @@ type rawBuildScript struct {
 	Assignments []*Assignment `parser:"@@+"`
 
 	AtTime *time.Time // set after initial read
+}
+
+// clone is meant to facilitate making modifications to functions at marshal time. The idea is that these modifications
+// are only intended to be made for the purpose of marshalling, meaning we do not want to mutate the original object.
+// This is an antipattern, but addressing it requires significant refactoring that we're not committing to atm.
+func (r *rawBuildScript) clone() (*rawBuildScript, error) {
+	return deep.Copy(r)
 }
 
 func (r *rawBuildScript) FuncCalls() []*FuncCall {

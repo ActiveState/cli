@@ -14,8 +14,27 @@ type BuildScript struct {
 	raw *rawBuildScript
 }
 
-func New() (*BuildScript, error) {
-	return UnmarshalBuildExpression([]byte(emptyBuildExpression), nil)
+func init() {
+	// Guard against emptyBuildExpression having parsing issues
+	if !condition.BuiltViaCI() || condition.InActiveStateCI() {
+		err := New().UnmarshalBuildExpression([]byte(emptyBuildExpression))
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func Create() *BuildScript {
+	bs := New()
+	// We don't handle unmarshalling errors here, see the init function for that.
+	// Since the empty build expression is a constant there's really no need to error check this each time.
+	_ = bs.UnmarshalBuildExpression([]byte(emptyBuildExpression))
+	return bs
+}
+
+func New() *BuildScript {
+	bs := Create()
+	return bs
 }
 
 func (b *BuildScript) AtTime() *time.Time {
@@ -39,14 +58,9 @@ func (b *BuildScript) Equals(other *BuildScript) (bool, error) {
 }
 
 func (b *BuildScript) Clone() (*BuildScript, error) {
-	m, err := b.Marshal()
+	bb, err := deep.Copy(b)
 	if err != nil {
-		return nil, errs.Wrap(err, "unable to marshal this buildscript")
+		return nil, errs.Wrap(err, "unable to clone buildscript")
 	}
-
-	u, err := Unmarshal(m)
-	if err != nil {
-		return nil, errs.Wrap(err, "unable to unmarshal buildscript")
-	}
-	return u, nil
+	return bb, nil
 }

@@ -5,11 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-openapi/strfmt"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/go-openapi/strfmt"
 )
 
 const (
@@ -21,36 +20,17 @@ const (
 	requirementComparatorKey          = "comparator"
 )
 
-type MarshalerFunc func([]*Value) ([]byte, error)
-
-var marshalers map[string]MarshalerFunc
-
-func init() {
-	marshalers = make(map[string]MarshalerFunc)
-	RegisterFunctionMarshaler("Req", marshalReq) // marshal into legacy object format for now
-}
-
-// RegisterFunctionMarshaler registers a buildexpression marshaler for a buildscript function.
-// Marshalers accept a buildscript Value, and marshals it to buildexpression JSON (e.g. an object).
-func RegisterFunctionMarshaler(name string, marshalJSON MarshalerFunc) {
-	marshalers[name] = marshalJSON
-}
-
-// MarshalJSON returns this structure as a build expression in JSON format, suitable for sending to
-// the Platform.
+// MarshalBuildExpression returns this structure as a build expression in JSON format, suitable for sending to the Platform.
 func (b *BuildScript) MarshalBuildExpression() ([]byte, error) {
-	return json.MarshalIndent(b, "", "  ")
-}
+	raw, err := b.raw.clone()
+	if err != nil {
+		return nil, errs.Wrap(err, "Cannot clone raw build script")
+	}
 
-// Note: all of the MarshalJSON functions are named the way they are because Go's JSON package
-// specifically looks for them.
 
-// MarshalJSON returns this structure as a build expression in JSON format, suitable for sending to
-// the Platform.
-func (b *BuildScript) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
 	let := make(map[string]interface{})
-	for _, assignment := range b.raw.Assignments {
+	for _, assignment := range raw.Assignments {
 		key := assignment.Key
 		value := assignment.Value
 		switch key {
@@ -72,6 +52,9 @@ func (b *BuildScript) MarshalJSON() ([]byte, error) {
 	m[letKey] = let
 	return json.Marshal(m)
 }
+
+// Note: all of the MarshalJSON functions are named the way they are because Go's JSON package
+// specifically looks for them.
 
 func (a *Assignment) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
@@ -106,8 +89,8 @@ func (v *Value) MarshalJSON() ([]byte, error) {
 }
 
 func (f *FuncCall) MarshalJSON() ([]byte, error) {
-	if marshalJSON, exists := marshalers[f.Name]; exists {
-		return marshalJSON(f.Arguments)
+	if f.Name == reqFuncName {
+		return marshalReq(f)
 	}
 
 	m := make(map[string]interface{})
@@ -130,7 +113,11 @@ func (f *FuncCall) MarshalJSON() ([]byte, error) {
 // marshalReq translates a Req() function into its equivalent buildexpression requirement object.
 // This is needed until buildexpressions support functions as requirements. Once they do, we can
 // remove this method entirely.
-func marshalReq(args []*Value) ([]byte, error) {
+func marshalReq(fn *FuncCall) ([]byte, error) {
+	if fn.Name == reqFuncName {
+		return marshalReq(fn.Arguments[0].FuncCall)
+	}
+	args := fn.Arguments
 	requirement := make(map[string]interface{})
 
 	for _, arg := range args {
