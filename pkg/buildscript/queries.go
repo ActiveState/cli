@@ -109,7 +109,7 @@ func (b *BuildScript) DependencyRequirements() ([]types.Requirement, error) {
 	return deps, nil
 }
 
-func (b *BuildScript) getRequirementsNode() (*Value, error) {
+func (b *BuildScript) getRequirementsNode() (*value, error) {
 	node, err := b.getSolveNode()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get solve node")
@@ -124,7 +124,7 @@ func (b *BuildScript) getRequirementsNode() (*Value, error) {
 	return nil, errNodeNotFound
 }
 
-func getVersionRequirements(v *Value) []types.VersionRequirement {
+func getVersionRequirements(v *value) []types.VersionRequirement {
 	reqs := []types.VersionRequirement{}
 
 	switch v.FuncCall.Name {
@@ -147,10 +147,10 @@ func getVersionRequirements(v *Value) []types.VersionRequirement {
 	return reqs
 }
 
-func (b *BuildScript) getSolveNode() (*Value, error) {
-	var search func([]*Assignment) *Value
-	search = func(assignments []*Assignment) *Value {
-		var nextLet []*Assignment
+func (b *BuildScript) getSolveNode() (*value, error) {
+	var search func([]*assignment) *value
+	search = func(assignments []*assignment) *value {
+		var nextLet []*assignment
 		for _, a := range assignments {
 			if a.Key == letKey {
 				nextLet = *a.Value.Object // nested 'let' to search next
@@ -176,7 +176,7 @@ func (b *BuildScript) getSolveNode() (*Value, error) {
 	return nil, errNodeNotFound
 }
 
-func (b *BuildScript) getSolveAtTimeValue() (*Value, error) {
+func (b *BuildScript) getSolveAtTimeValue() (*value, error) {
 	node, err := b.getSolveNode()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get solve node")
@@ -204,7 +204,7 @@ func (b *BuildScript) Platforms() ([]strfmt.UUID, error) {
 	return list, nil
 }
 
-func (b *BuildScript) getPlatformsNode() (*Value, error) {
+func (b *BuildScript) getPlatformsNode() (*value, error) {
 	node, err := b.getSolveNode()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get solve node")

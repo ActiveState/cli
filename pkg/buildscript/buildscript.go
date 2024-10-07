@@ -66,3 +66,29 @@ func (b *BuildScript) Clone() (*BuildScript, error) {
 	}
 	return bb, nil
 }
+
+// FuncCall is the exportable version of funcCall, because we do not want to expose low level buildscript functionality
+// outside of the buildscript package.
+type FuncCall struct {
+	fc *funcCall
+}
+
+func (f FuncCall) Argument(name string) any {
+	for _, a := range f.fc.Arguments {
+		if a.Assignment == nil || a.Assignment.Key != name {
+			continue
+		}
+		return a.Assignment.Value.Value()
+	}
+	return nil
+}
+
+func (b *BuildScript) FunctionCalls(name string) []FuncCall {
+	result := []FuncCall{}
+	for _, f := range b.raw.FuncCalls() {
+		if f.Name == name {
+			result = append(result, FuncCall{f})
+		}
+	}
+	return result
+}

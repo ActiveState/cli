@@ -41,24 +41,24 @@ func (b *BuildScript) AddRequirement(requirement types.Requirement) error {
 	}
 
 	// Use object form for now, and then transform it into function form later.
-	obj := []*Assignment{
+	obj := []*assignment{
 		{requirementNameKey, newString(requirement.Name)},
 		{requirementNamespaceKey, newString(requirement.Namespace)},
 	}
 
 	if requirement.Revision != nil {
-		obj = append(obj, &Assignment{requirementRevisionKey, &Value{Number: ptr.To(float64(*requirement.Revision))}})
+		obj = append(obj, &assignment{requirementRevisionKey, &value{Number: ptr.To(float64(*requirement.Revision))}})
 	}
 
 	if requirement.VersionRequirement != nil {
-		values := []*Value{}
+		values := []*value{}
 		for _, req := range requirement.VersionRequirement {
-			values = append(values, &Value{Object: &[]*Assignment{
+			values = append(values, &value{Object: &[]*assignment{
 				{requirementComparatorKey, newString(req[requirementComparatorKey])},
 				{requirementVersionKey, newString(req[requirementVersionKey])},
 			}})
 		}
-		obj = append(obj, &Assignment{requirementVersionRequirementsKey, &Value{List: &values}})
+		obj = append(obj, &assignment{requirementVersionRequirementsKey, &value{List: &values}})
 	}
 
 	requirementsNode, err := b.getRequirementsNode()
@@ -67,7 +67,7 @@ func (b *BuildScript) AddRequirement(requirement types.Requirement) error {
 	}
 
 	list := *requirementsNode.List
-	list = append(list, transformRequirement(&Value{Object: &obj}))
+	list = append(list, transformRequirement(&value{Object: &obj}))
 	requirementsNode.List = &list
 
 	return nil
