@@ -27,16 +27,6 @@ func (b *BuildScript) MarshalBuildExpression() ([]byte, error) {
 		return nil, errs.Wrap(err, "Cannot clone raw build script")
 	}
 
-	// Invoke processors, which may modify function calls
-	for _, fn := range raw.FuncCalls() {
-		if processors, ok := b.processors[fn.Name]; ok {
-			for _, processor := range processors {
-				if err := processor.ToBuildExpression(b, fn); err != nil {
-					return nil, errs.Wrap(err, "Custom marshaler for '%s' function failed", fn.Name)
-				}
-			}
-		}
-	}
 
 	m := make(map[string]interface{})
 	let := make(map[string]interface{})

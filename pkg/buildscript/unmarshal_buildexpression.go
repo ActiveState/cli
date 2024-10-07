@@ -94,16 +94,6 @@ func (b *BuildScript) UnmarshalBuildExpression(data []byte) error {
 		requirements.List = transformRequirements(requirements).List
 	}
 
-	// Invoke processors, which may modify function calls
-	for _, fn := range b.raw.FuncCalls() {
-		if processors, ok := DefaultProcessors[fn.Name]; ok {
-			for _, processor := range processors {
-				if err := processor.FromBuildExpression(b, fn); err != nil {
-					return errs.Wrap(err, "Custom marshaler for '%s' function failed", fn.Name)
-				}
-			}
-		}
-	}
 
 	return nil
 }

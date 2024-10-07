@@ -17,10 +17,6 @@ const atTimeKey = "at_time"
 
 // Unmarshal returns a structured form of the given AScript (on-disk format).
 func Unmarshal(data []byte) (*BuildScript, error) {
-	return UnmarshalWithProcessors(data, DefaultProcessors)
-}
-
-func UnmarshalWithProcessors(data []byte, processors FuncProcessorMap) (*BuildScript, error) {
 	parser, err := participle.Build[rawBuildScript]()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create parser for build script")
@@ -54,5 +50,5 @@ func UnmarshalWithProcessors(data []byte, processors FuncProcessorMap) (*BuildSc
 		break
 	}
 
-	return &BuildScript{raw, processors}, nil
+	return &BuildScript{raw}, nil
 }

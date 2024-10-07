@@ -75,11 +75,9 @@ type Null struct {
 	Null string `parser:"'null'"`
 }
 
-type Values []*Value
-
 type FuncCall struct {
-	Name      string `parser:"@Ident"`
-	Arguments Values `parser:"'(' @@ (',' @@)* ','? ')'"`
+	Name      string   `parser:"@Ident"`
+	Arguments []*Value `parser:"'(' @@ (',' @@)* ','? ')'"`
 }
 
 // newString is a convenience function for constructing a string Value from an unquoted string.

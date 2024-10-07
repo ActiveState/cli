@@ -37,8 +37,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcctl"
-	"github.com/ActiveState/cli/pkg/buildscript"
-	"github.com/ActiveState/cli/pkg/buildscript/processors/ingredient"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -212,7 +210,6 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		pjNamespace = pj.Namespace().String()
 	}
 
-	// Analytics
 	an := anAsync.New(anaConst.SrcStateTool, svcmodel, cfg, auth, out, pjNamespace)
 	defer func() {
 		if err := events.WaitForEvents(time.Second, an.Wait); err != nil {
@@ -236,13 +233,8 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		logging.Debug("Could not register secrets expander: %v", err)
 	}
 
-	prime := primer.New(pj, out, auth, prompter, sshell, conditional, cfg, ipcClient, svcmodel, an)
-
-	// Register buildscript functions
-	buildscript.RegisterDefaultProcessor(ingredient.NewProcessor(prime))
-
 	// Run the actual command
-	cmds := cmdtree.New(prime, args...)
+	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, ipcClient, svcmodel, an), args...)
 
 	childCmd, err := cmds.Command().FindChild(args[1:])
 	if err != nil {

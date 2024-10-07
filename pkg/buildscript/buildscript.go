@@ -3,9 +3,7 @@ package buildscript
 import (
 	"time"
 
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/brunoga/deep"
 )
 
 // BuildScript is what we want consuming code to work with. This specifically makes the raw
@@ -13,8 +11,7 @@ import (
 // Instead this package should facilitate the use-case of the consuming code through convenience
 // methods that are easy to understand and work with.
 type BuildScript struct {
-	raw        *rawBuildScript
-	processors FuncProcessorMap
+	raw *rawBuildScript
 }
 
 func init() {
@@ -36,12 +33,7 @@ func Create() *BuildScript {
 }
 
 func New() *BuildScript {
-	return NewWithProcessors(DefaultProcessors)
-}
-
-func NewWithProcessors(processors FuncProcessorMap) *BuildScript {
 	bs := Create()
-	bs.processors = processors
 	return bs
 }
 
