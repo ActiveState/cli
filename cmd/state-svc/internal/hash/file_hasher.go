@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 	"time"
 
@@ -29,11 +30,18 @@ func NewFileHasher() *FileHasher {
 	}
 }
 
-func (fh *FileHasher) HashFiles(files []string) (_ string, rerr error) {
+func (fh *FileHasher) HashFiles(wd string, files []string) (_ string, rerr error) {
 	sort.Strings(files)
 
 	hasher := xxhash.New()
 	for _, f := range files {
+		if !filepath.IsAbs(f) {
+			af, err := filepath.Abs(filepath.Join(wd, f))
+			if err != nil {
+				return "", errs.Wrap(err, "Could not get absolute path for file: %s", f)
+			}
+			f = af
+		}
 		file, err := os.Open(f)
 		if err != nil {
 			return "", errs.Wrap(err, "Could not open file: %s", file.Name())

@@ -88,7 +88,7 @@ type Query {
     fetchLogTail: String!
     getProcessesInUse(execDir: String!): [ProcessInfo!]!
     getJWT: JWT
-    hashGlobs(globs: [String!]!): String!
+    hashGlobs(wd: String!, globs: [String!]!): String!
     getCache(key: String!): String!
 }
 

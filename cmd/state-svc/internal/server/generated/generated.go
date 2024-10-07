@@ -13,7 +13,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
-	graphql1 "github.com/ActiveState/cli/cmd/state-svc/internal/graphqltypes"
+	"github.com/ActiveState/cli/cmd/state-svc/internal/graphqltypes"
 	"github.com/ActiveState/cli/internal/graph"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -105,7 +105,7 @@ type ComplexityRoot struct {
 		GetCache           func(childComplexity int, key string) int
 		GetJwt             func(childComplexity int) int
 		GetProcessesInUse  func(childComplexity int, execDir string) int
-		HashGlobs          func(childComplexity int, globs []string) int
+		HashGlobs          func(childComplexity int, wd string, globs []string) int
 		Projects           func(childComplexity int) int
 		ReportRuntimeUsage func(childComplexity int, pid int, exec string, source string, dimensionsJSON string) int
 		Version            func(childComplexity int) int
@@ -136,7 +136,7 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	SetCache(ctx context.Context, key string, value string, expiry int) (*graphql1.Void, error)
+	SetCache(ctx context.Context, key string, value string, expiry int) (*graphqltypes.Void, error)
 }
 type QueryResolver interface {
 	Version(ctx context.Context) (*graph.Version, error)
@@ -149,7 +149,7 @@ type QueryResolver interface {
 	FetchLogTail(ctx context.Context) (string, error)
 	GetProcessesInUse(ctx context.Context, execDir string) ([]*graph.ProcessInfo, error)
 	GetJwt(ctx context.Context) (*graph.Jwt, error)
-	HashGlobs(ctx context.Context, globs []string) (string, error)
+	HashGlobs(ctx context.Context, wd string, globs []string) (string, error)
 	GetCache(ctx context.Context, key string) (string, error)
 }
 
@@ -427,7 +427,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.HashGlobs(childComplexity, args["globs"].([]string)), true
+		return e.complexity.Query.HashGlobs(childComplexity, args["wd"].(string), args["globs"].([]string)), true
 
 	case "Query.projects":
 		if e.complexity.Query.Projects == nil {
@@ -726,7 +726,7 @@ type Query {
     fetchLogTail: String!
     getProcessesInUse(execDir: String!): [ProcessInfo!]!
     getJWT: JWT
-    hashGlobs(globs: [String!]!): String!
+    hashGlobs(wd: String!, globs: [String!]!): String!
     getCache(key: String!): String!
 }
 
@@ -947,15 +947,24 @@ func (ec *executionContext) field_Query_getProcessesInUse_args(ctx context.Conte
 func (ec *executionContext) field_Query_hashGlobs_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 []string
-	if tmp, ok := rawArgs["globs"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("globs"))
-		arg0, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
+	var arg0 string
+	if tmp, ok := rawArgs["wd"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("wd"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["globs"] = arg0
+	args["wd"] = arg0
+	var arg1 []string
+	if tmp, ok := rawArgs["globs"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("globs"))
+		arg1, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["globs"] = arg1
 	return args, nil
 }
 
@@ -1732,9 +1741,9 @@ func (ec *executionContext) _Mutation_setCache(ctx context.Context, field graphq
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*graphql1.Void)
+	res := resTmp.(*graphqltypes.Void)
 	fc.Result = res
-	return ec.marshalOVoid2ᚖgithubᚗcomᚋActiveStateᚋcliᚋcmdᚋstateᚑsvcᚋinternalᚋgraphqlᚐVoid(ctx, field.Selections, res)
+	return ec.marshalOVoid2ᚖgithubᚗcomᚋActiveStateᚋcliᚋcmdᚋstateᚑsvcᚋinternalᚋgraphqltypesᚐVoid(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_setCache(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2587,7 +2596,7 @@ func (ec *executionContext) _Query_hashGlobs(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().HashGlobs(rctx, fc.Args["globs"].([]string))
+		return ec.resolvers.Query().HashGlobs(rctx, fc.Args["wd"].(string), fc.Args["globs"].([]string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7002,16 +7011,16 @@ func (ec *executionContext) marshalOVersion2ᚖgithubᚗcomᚋActiveStateᚋcli�
 	return ec._Version(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOVoid2ᚖgithubᚗcomᚋActiveStateᚋcliᚋcmdᚋstateᚑsvcᚋinternalᚋgraphqlᚐVoid(ctx context.Context, v interface{}) (*graphql1.Void, error) {
+func (ec *executionContext) unmarshalOVoid2ᚖgithubᚗcomᚋActiveStateᚋcliᚋcmdᚋstateᚑsvcᚋinternalᚋgraphqltypesᚐVoid(ctx context.Context, v interface{}) (*graphqltypes.Void, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var res = new(graphql1.Void)
+	var res = new(graphqltypes.Void)
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOVoid2ᚖgithubᚗcomᚋActiveStateᚋcliᚋcmdᚋstateᚑsvcᚋinternalᚋgraphqlᚐVoid(ctx context.Context, sel ast.SelectionSet, v *graphql1.Void) graphql.Marshaler {
+func (ec *executionContext) marshalOVoid2ᚖgithubᚗcomᚋActiveStateᚋcliᚋcmdᚋstateᚑsvcᚋinternalᚋgraphqltypesᚐVoid(ctx context.Context, sel ast.SelectionSet, v *graphqltypes.Void) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

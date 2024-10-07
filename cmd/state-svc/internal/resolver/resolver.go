@@ -308,7 +308,7 @@ func (r *Resolver) GetJwt(ctx context.Context) (*graph.Jwt, error) {
 	return jwt, nil
 }
 
-func (r *Resolver) HashGlobs(ctx context.Context, globs []string) (string, error) {
+func (r *Resolver) HashGlobs(ctx context.Context, wd string, globs []string) (string, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
 	var files []string
@@ -320,7 +320,7 @@ func (r *Resolver) HashGlobs(ctx context.Context, globs []string) (string, error
 		files = append(files, matches...)
 	}
 
-	return r.fileHasher.HashFiles(files)
+	return r.fileHasher.HashFiles(wd, files)
 }
 
 func (r *Resolver) GetCache(ctx context.Context, key string) (string, error) {
