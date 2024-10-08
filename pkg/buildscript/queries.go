@@ -155,7 +155,7 @@ func isSolveFuncName(name string) bool {
 	return name == solveFuncName || name == solveLegacyFuncName
 }
 
-func (b *BuildScript) getTargetNode(target ...string) (*Value, error) {
+func (b *BuildScript) getTargetSolveNode(target ...string) (*Value, error) {
 	if len(target) == 0 {
 		for _, assignment := range b.raw.Assignments {
 			if assignment.Key != mainKey {
@@ -203,7 +203,7 @@ func (b *BuildScript) getTargetNode(target ...string) (*Value, error) {
 }
 
 func (b *BuildScript) getSolveNode(target ...string) (*Value, error) {
-	node, err := b.getTargetNode(target...)
+	node, err := b.getTargetSolveNode(target...)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get target node")
 	}
