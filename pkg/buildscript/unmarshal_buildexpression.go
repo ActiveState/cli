@@ -102,18 +102,6 @@ func UnmarshalBuildExpression(data []byte, atTime *time.Time) (*BuildScript, err
 		script.raw.AtTime = atTime
 	}
 
-	// If the requirements are in legacy object form, e.g.
-	//   requirements = [{"name": "<name>", "namespace": "<name>"}, {...}, ...]
-	// then transform them into function call form for the AScript format, e.g.
-	//   requirements = [Req(name = "<name>", namespace = "<name>"), Req(...), ...]
-	requirements, err := script.getRequirementsNode()
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get requirements node")
-	}
-	if isLegacyRequirementsList(requirements) {
-		requirements.List = transformRequirements(requirements).List
-	}
-
 	return script, nil
 }
 
@@ -269,6 +257,13 @@ func unmarshalFuncCall(path []string, m map[string]interface{}) (*FuncCall, erro
 			value, err := unmarshalValue(path, valueInterface)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse '%s' function's argument '%s': %v", name, key, valueInterface)
+			}
+			if key == requirementsKey && isSolveFuncName(name) && isLegacyRequirementsList(value) {
+				// If the requirements are in legacy object form, e.g.
+				//   requirements = [{"name": "<name>", "namespace": "<name>"}, {...}, ...]
+				// then transform them into function call form for the AScript format, e.g.
+				//   requirements = [Req(name = "<name>", namespace = "<name>"), Req(...), ...]
+				value.List = transformRequirements(value).List
 			}
 			args = append(args, &Value{Assignment: &Assignment{key, value}})
 		}
