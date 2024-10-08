@@ -85,6 +85,7 @@ func GetDefault(opt Option) interface{} {
 	return opt.Default
 }
 
+// AllRegistered returns all registered options, excluding hidden ones
 func AllRegistered() []Option {
 	var opts []Option
 	for _, opt := range registry {
