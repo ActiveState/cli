@@ -113,7 +113,7 @@ func TestRequirements(t *testing.T) {
 			script, err := UnmarshalBuildExpression(data, nil)
 			assert.NoError(t, err)
 
-			got, err := script.Requirements("")
+			got, err := script.Requirements()
 			assert.NoError(t, err)
 
 			gotReqs := []types.Requirement{}
@@ -167,7 +167,7 @@ func TestRevision(t *testing.T) {
 			script, err := UnmarshalBuildExpression(data, nil)
 			assert.NoError(t, err)
 
-			got, err := script.Requirements("")
+			got, err := script.Requirements()
 			assert.NoError(t, err)
 
 			gotReqs := []RevisionRequirement{}

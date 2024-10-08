@@ -76,7 +76,7 @@ func FetchLanguagesForCommit(commitID strfmt.UUID, auth *authentication.Auth) ([
 // FetchLanguagesForBuildScript fetches a list of language names for the given buildscript
 func FetchLanguagesForBuildScript(script *buildscript.BuildScript) ([]Language, error) {
 	languages := []Language{}
-	reqs, err := script.DependencyRequirements("")
+	reqs, err := script.DependencyRequirements()
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to get dependency requirements")
 	}

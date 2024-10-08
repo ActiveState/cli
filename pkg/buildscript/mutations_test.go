@@ -277,7 +277,7 @@ func TestUpdateRequirements(t *testing.T) {
 				return
 			}
 
-			got, err := script.Requirements("")
+			got, err := script.Requirements()
 			assert.NoError(t, err)
 
 			gotReqs := []DependencyRequirement{}
@@ -361,7 +361,7 @@ func TestUpdatePlatform(t *testing.T) {
 				return
 			}
 
-			got, err := script.Platforms("")
+			got, err := script.Platforms()
 			assert.NoError(t, err)
 
 			sort.Slice(got, func(i, j int) bool { return got[i] < got[j] })

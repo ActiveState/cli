@@ -117,7 +117,7 @@ func (m *Manifest) fetchRequirements() ([]buildscript.Requirement, error) {
 		}
 	}
 
-	reqs, err := script.Requirements("")
+	reqs, err := script.Requirements()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get requirements")
 	}

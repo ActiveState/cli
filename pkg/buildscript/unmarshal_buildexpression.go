@@ -87,7 +87,7 @@ func UnmarshalBuildExpression(data []byte, atTime *time.Time) (*BuildScript, err
 
 	// Extract the 'at_time' from the solve node, if it exists, and change its value to be a
 	// reference to "$at_time", which is how we want to show it in AScript format.
-	if atTimeNode, err := script.getSolveAtTimeValue(""); err == nil && atTimeNode.Str != nil && !strings.HasPrefix(strValue(atTimeNode), `$`) {
+	if atTimeNode, err := script.getSolveAtTimeValue(); err == nil && atTimeNode.Str != nil && !strings.HasPrefix(strValue(atTimeNode), `$`) {
 		atTime, err := strfmt.ParseDateTime(strValue(atTimeNode))
 		if err != nil {
 			return nil, errs.Wrap(err, "Invalid timestamp: %s", strValue(atTimeNode))
