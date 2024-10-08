@@ -65,8 +65,7 @@ func FilterSuccessfulArtifacts() FilterArtifact {
 
 func FilterFailedArtifacts() FilterArtifact {
 	return func(a *Artifact) bool {
-		return a.Status == types.ArtifactBlocked ||
-			a.Status == types.ArtifactFailedTransiently ||
+		return a.Status == types.ArtifactFailedTransiently ||
 			a.Status == types.ArtifactFailedPermanently
 	}
 }
