@@ -128,5 +128,5 @@ func (a *Activation) Close() error {
 // IsActivated returns whether or not this process is being run in an activated
 // state. This can be this specific process, or one of it's parents.
 func IsActivated(cfg Configurable) bool {
-	return ActivationPID(cfg) != -1
+	return ActivationPID(cfg) != -1 && os.Getenv(constants.ActivatedStateEnvVarName) != ""
 }
