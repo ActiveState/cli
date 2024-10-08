@@ -43,25 +43,6 @@ type configOutput struct {
 	data    []configData
 }
 
-func (c *configOutput) MarshalOutput(format output.Format) interface{} {
-	if format != output.PlainFormatName {
-		return c.data
-	}
-
-	c.out.Print(struct {
-		Data []configData `opts:"table,hideDash,omitKey"`
-	}{c.data})
-	c.out.Print("")
-	c.out.Print(locale.T("config_get_help"))
-	c.out.Print(locale.T("config_set_help"))
-
-	return output.Suppress
-}
-
-func (c *configOutput) MarshalStructured(format output.Format) interface{} {
-	return c.data
-}
-
 func (c *List) Run(usageFunc func() error) error {
 	registered := mediator.AllRegistered()
 	sort.SliceStable(registered, func(i, j int) bool {
@@ -109,15 +90,11 @@ func formatValue(opt mediator.Option, value interface{}) string {
 		v = v[:100] + "..."
 	}
 
-	if isDefault(value, opt.Default) {
+	if value == opt.Default {
 		return fmt.Sprintf("[GREEN]%s[/RESET]", v)
 	}
 
 	return fmt.Sprintf("[BOLD][RED]%s*[/RESET]", v)
-}
-
-func isDefault[T comparable](configured, defaultValue T) bool {
-	return configured == defaultValue
 }
 
 func formatDefault[T any](defaultValue T) string {
@@ -126,4 +103,23 @@ func formatDefault[T any](defaultValue T) string {
 		v = "\"\""
 	}
 	return fmt.Sprintf("[DISABLED]%s[/RESET]", v)
+}
+
+func (c *configOutput) MarshalOutput(format output.Format) interface{} {
+	if format != output.PlainFormatName {
+		return c.data
+	}
+
+	c.out.Print(struct {
+		Data []configData `opts:"table,hideDash,omitKey"`
+	}{c.data})
+	c.out.Print("")
+	c.out.Print(locale.T("config_get_help"))
+	c.out.Print(locale.T("config_set_help"))
+
+	return output.Suppress
+}
+
+func (c *configOutput) MarshalStructured(format output.Format) interface{} {
+	return c.data
 }
