@@ -71,9 +71,10 @@ func (c *List) renderUserFacing(configData []structuredConfigData) error {
 	tbl := table.New(locale.Ts("Key", "Value", "Default"))
 	tbl.HideDash = true
 	for _, config := range configData {
+		v := formatValue(config.opt, config.Value)
 		tbl.AddRow([]string{
 			fmt.Sprintf("[CYAN]%s[/RESET]", config.Key),
-			colorizeValue(cfg, config.opt, config.Value),
+			colorizeValue(cfg, config.opt, v),
 			fmt.Sprintf("[DISABLED]%s[/RESET]", formatValue(config.opt, config.Default)),
 		})
 	}
@@ -86,12 +87,10 @@ func (c *List) renderUserFacing(configData []structuredConfigData) error {
 	return nil
 }
 
-func colorizeValue(cfg *config.Instance, opt mediator.Option, value interface{}) string {
-	v := formatValue(opt, value)
-
+func colorizeValue(cfg *config.Instance, opt mediator.Option, value string) string {
 	var tags []string
 	if opt.Type == mediator.Bool {
-		if v == "true" {
+		if value == "true" {
 			tags = append(tags, "[GREEN]")
 		} else {
 			tags = append(tags, "[RED]")
@@ -100,14 +99,14 @@ func colorizeValue(cfg *config.Instance, opt mediator.Option, value interface{})
 
 	if cfg.IsSet(opt.Name) {
 		tags = append(tags, "[BOLD]")
-		v = v + "*"
+		value = value + "*"
 	}
 
 	if len(tags) > 0 {
-		return fmt.Sprintf("%s%s[/RESET]", strings.Join(tags, ""), v)
+		return fmt.Sprintf("%s%s[/RESET]", strings.Join(tags, ""), value)
 	}
 
-	return v
+	return value
 }
 
 func formatValue(opt mediator.Option, value interface{}) string {
