@@ -9,6 +9,7 @@ import (
 	mediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/table"
 )
 
 type List struct {
@@ -30,17 +31,11 @@ func NewList(prime primeable) (*List, error) {
 	}, nil
 }
 
-type configData struct {
-	Key     string `locale:"key,Key"`
-	Value   string `locale:"value,Value"`
-	Default string `locale:"default,Default"`
-}
-
-type configOutput struct {
-	out     output.Outputer
-	cfg     *config.Instance
-	options []mediator.Option
-	data    []configData
+type structuredConfigData struct {
+	Key     string      `json:"key"`
+	Value   interface{} `json:"value"`
+	Default interface{} `json:"default"`
+	opt     mediator.Option
 }
 
 func (c *List) Run(usageFunc func() error) error {
@@ -49,22 +44,43 @@ func (c *List) Run(usageFunc func() error) error {
 		return registered[i].Name < registered[j].Name
 	})
 
-	var data []configData
+	var data []structuredConfigData
 	for _, opt := range registered {
 		configuredValue := c.cfg.Get(opt.Name)
-		data = append(data, configData{
-			Key:     formatKey(opt.Name),
-			Value:   formatValue(opt, configuredValue),
-			Default: formatDefault(mediator.GetDefault(opt)),
+		data = append(data, structuredConfigData{
+			Key:     opt.Name,
+			Value:   configuredValue,
+			Default: mediator.GetDefault(opt),
+			opt:     opt,
 		})
 	}
 
-	c.out.Print(&configOutput{
-		out:     c.out,
-		cfg:     c.cfg,
-		options: registered,
-		data:    data,
-	})
+	if c.out.Type().IsStructured() {
+		c.out.Print(output.Structured(data))
+	} else {
+		if err := c.renderUserFacing(data); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *List) renderUserFacing(configData []structuredConfigData) error {
+	tbl := table.New(locale.Ts("Key", "Value", "Default"))
+	tbl.HideDash = true
+	for _, config := range configData {
+		tbl.AddRow([]string{
+			formatKey(config.Key),
+			formatValue(config.opt, config.Value),
+			formatDefault(config.Default),
+		})
+	}
+
+	c.out.Print(tbl.Render())
+	c.out.Print("")
+	c.out.Print(locale.T("config_get_help"))
+	c.out.Print(locale.T("config_set_help"))
 
 	return nil
 }
@@ -90,36 +106,17 @@ func formatValue(opt mediator.Option, value interface{}) string {
 		v = v[:100] + "..."
 	}
 
-	if value == opt.Default {
+	if value == mediator.GetDefault(opt) {
 		return fmt.Sprintf("[GREEN]%s[/RESET]", v)
 	}
 
 	return fmt.Sprintf("[BOLD][RED]%s*[/RESET]", v)
 }
 
-func formatDefault[T any](defaultValue T) string {
+func formatDefault(defaultValue interface{}) string {
 	v := fmt.Sprintf("%v", defaultValue)
 	if v == "" {
 		v = "\"\""
 	}
 	return fmt.Sprintf("[DISABLED]%s[/RESET]", v)
-}
-
-func (c *configOutput) MarshalOutput(format output.Format) interface{} {
-	if format != output.PlainFormatName {
-		return c.data
-	}
-
-	c.out.Print(struct {
-		Data []configData `opts:"table,hideDash,omitKey"`
-	}{c.data})
-	c.out.Print("")
-	c.out.Print(locale.T("config_get_help"))
-	c.out.Print(locale.T("config_set_help"))
-
-	return output.Suppress
-}
-
-func (c *configOutput) MarshalStructured(format output.Format) interface{} {
-	return c.data
 }
