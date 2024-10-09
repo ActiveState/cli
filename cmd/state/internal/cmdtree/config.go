@@ -20,7 +20,7 @@ func newConfigCommand(prime *primer.Values) *captain.Command {
 			if err != nil {
 				return err
 			}
-			return runner.Run(ccmd.Usage)
+			return runner.Run()
 		}).SetGroup(UtilsGroup).SetSupportsStructuredOutput()
 }
 

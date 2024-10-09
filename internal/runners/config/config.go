@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"sort"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/locale"
@@ -13,8 +13,7 @@ import (
 )
 
 type List struct {
-	out output.Outputer
-	cfg *config.Instance
+	prime primeable
 }
 
 type primeable interface {
@@ -26,8 +25,7 @@ type primeable interface {
 
 func NewList(prime primeable) (*List, error) {
 	return &List{
-		out: prime.Output(),
-		cfg: prime.Config(),
+		prime: prime,
 	}, nil
 }
 
@@ -38,15 +36,15 @@ type structuredConfigData struct {
 	opt     mediator.Option
 }
 
-func (c *List) Run(usageFunc func() error) error {
-	registered := mediator.AllRegistered()
-	sort.SliceStable(registered, func(i, j int) bool {
-		return registered[i].Name < registered[j].Name
-	})
+func (c *List) Run() error {
+	registered := mediator.Registered()
+
+	cfg := c.prime.Config()
+	out := c.prime.Output()
 
 	var data []structuredConfigData
 	for _, opt := range registered {
-		configuredValue := c.cfg.Get(opt.Name)
+		configuredValue := cfg.Get(opt.Name)
 		data = append(data, structuredConfigData{
 			Key:     opt.Name,
 			Value:   configuredValue,
@@ -55,8 +53,8 @@ func (c *List) Run(usageFunc func() error) error {
 		})
 	}
 
-	if c.out.Type().IsStructured() {
-		c.out.Print(output.Structured(data))
+	if out.Type().IsStructured() {
+		out.Print(output.Structured(data))
 	} else {
 		if err := c.renderUserFacing(data); err != nil {
 			return err
@@ -67,56 +65,68 @@ func (c *List) Run(usageFunc func() error) error {
 }
 
 func (c *List) renderUserFacing(configData []structuredConfigData) error {
+	cfg := c.prime.Config()
+	out := c.prime.Output()
+
 	tbl := table.New(locale.Ts("Key", "Value", "Default"))
 	tbl.HideDash = true
 	for _, config := range configData {
 		tbl.AddRow([]string{
-			formatKey(config.Key),
-			formatValue(config.opt, config.Value),
-			formatDefault(config.Default),
+			fmt.Sprintf("[CYAN]%s[/RESET]", config.Key),
+			colorizeValue(cfg, config.opt, config.Value),
+			fmt.Sprintf("[DISABLED]%s[/RESET]", formatValue(config.opt, config.Default)),
 		})
 	}
 
-	c.out.Print(tbl.Render())
-	c.out.Print("")
-	c.out.Print(locale.T("config_get_help"))
-	c.out.Print(locale.T("config_set_help"))
+	out.Print(tbl.Render())
+	out.Print("")
+	out.Print(locale.T("config_get_help"))
+	out.Print(locale.T("config_set_help"))
 
 	return nil
 }
 
-func formatKey(key string) string {
-	return fmt.Sprintf("[CYAN]%s[/RESET]", key)
+func colorizeValue(cfg *config.Instance, opt mediator.Option, value interface{}) string {
+	v := formatValue(opt, value)
+
+	var tags []string
+	if opt.Type == mediator.Bool {
+		if v == "true" {
+			tags = append(tags, "[GREEN]")
+		} else {
+			tags = append(tags, "[RED]")
+		}
+	}
+
+	if cfg.IsSet(opt.Name) {
+		tags = append(tags, "[BOLD]")
+		v = v + "*"
+	}
+
+	if len(tags) > 0 {
+		return fmt.Sprintf("%s%s[/RESET]", strings.Join(tags, ""), v)
+	}
+
+	return v
 }
 
 func formatValue(opt mediator.Option, value interface{}) string {
-	var v string
 	switch opt.Type {
-	case mediator.Enum:
-		return fmt.Sprintf("\"%s\"", value)
+	case mediator.Enum, mediator.String:
+		return formatString(fmt.Sprintf("%v", value))
 	default:
-		v = fmt.Sprintf("%v", value)
+		return fmt.Sprintf("%v", value)
 	}
+}
 
-	if v == "" {
+func formatString(value string) string {
+	if value == "" {
 		return "\"\""
 	}
 
-	if len(v) > 100 {
-		v = v[:100] + "..."
+	if len(value) > 100 {
+		value = value[:100] + "..."
 	}
 
-	if value == mediator.GetDefault(opt) {
-		return fmt.Sprintf("[GREEN]%s[/RESET]", v)
-	}
-
-	return fmt.Sprintf("[BOLD][RED]%s*[/RESET]", v)
-}
-
-func formatDefault(defaultValue interface{}) string {
-	v := fmt.Sprintf("%v", defaultValue)
-	if v == "" {
-		v = "\"\""
-	}
-	return fmt.Sprintf("[DISABLED]%s[/RESET]", v)
+	return fmt.Sprintf("\"%s\"", value)
 }

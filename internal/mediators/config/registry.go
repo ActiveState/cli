@@ -1,5 +1,7 @@
 package config
 
+import "sort"
+
 type Type int
 
 const (
@@ -85,8 +87,8 @@ func GetDefault(opt Option) interface{} {
 	return opt.Default
 }
 
-// AllRegistered returns all registered options, excluding hidden ones
-func AllRegistered() []Option {
+// Registered returns all registered options, excluding hidden ones
+func Registered() []Option {
 	var opts []Option
 	for _, opt := range registry {
 		if opt.isHidden {
@@ -94,5 +96,8 @@ func AllRegistered() []Option {
 		}
 		opts = append(opts, opt)
 	}
+	sort.SliceStable(opts, func(i, j int) bool {
+		return opts[i].Name < opts[j].Name
+	})
 	return opts
 }
