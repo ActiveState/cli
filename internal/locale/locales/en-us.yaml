@@ -1518,6 +1518,12 @@ version:
   other: Version
 license:
   other: License
+key:
+  other: Key
+value:
+  other: Value
+default:
+  other: Default
 vulnerabilities:
   other: Vulnerabilities (CVEs)
 dependency_row:
@@ -1560,3 +1566,7 @@ install_report_updated:
   other: "Updated: [NOTICE]{{.V0}}[/RESET]"
 install_report_removed:
   other: "Removed: [NOTICE]{{.V0}}[/RESET]"
+config_get_help:
+  other: "To GET the value for a specific config key run '[ACTIONABLE]state config get <key>[/RESET]'"
+config_set_help:
+  other: "To SET the value for a specific config key run '[ACTIONABLE]state config set <key> <value>[/RESET]'"

@@ -180,6 +180,8 @@ func colorize(ct ColorTheme, writer io.Writer, arg string) {
 		ct.Warning(writer)
 	case `ERROR`:
 		ct.Error(writer)
+	case `BOLD`:
+		ct.Bold(writer)
 	case `DISABLED`:
 		ct.Disabled(writer)
 	case `ACTIONABLE`:

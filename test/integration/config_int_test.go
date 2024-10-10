@@ -88,6 +88,33 @@ func (suite *ConfigIntegrationTestSuite) TestJSON() {
 	AssertValidJSON(suite.T(), cp)
 }
 
+func (suite *ConfigIntegrationTestSuite) TestList() {
+	suite.OnlyRunForTags(tagsuite.Config)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("config")
+	cp.Expect("Key")
+	cp.Expect("Value")
+	cp.Expect("Default")
+	cp.Expect("optin.buildscripts")
+	cp.Expect("false")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "set", "optin.buildscripts", "true")
+	cp.Expect("Successfully")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config")
+	cp.Expect("Key")
+	cp.Expect("Value")
+	cp.Expect("Default")
+	cp.Expect("optin.buildscripts")
+	cp.Expect("true*")
+	cp.ExpectExitCode(0)
+
+	suite.Require().NotContains(cp.Snapshot(), constants.AsyncRuntimeConfig)
+}
 func TestConfigIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ConfigIntegrationTestSuite))
 }
