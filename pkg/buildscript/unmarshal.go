@@ -50,5 +50,15 @@ func Unmarshal(data []byte) (*BuildScript, error) {
 		break
 	}
 
+	// Verify there are no duplicate key assignments.
+	// This is primarily to catch duplicate solve nodes for a given target.
+	seen := make(map[string]bool)
+	for _, assignment := range raw.Assignments {
+		if _, exists := seen[assignment.Key]; exists {
+			return nil, locale.NewInputError(locale.Tl("err_buildscript_duplicate_keys", "Build script has duplicate '{{.V0}}' assignments", assignment.Key))
+		}
+		seen[assignment.Key] = true
+	}
+
 	return &BuildScript{raw}, nil
 }
