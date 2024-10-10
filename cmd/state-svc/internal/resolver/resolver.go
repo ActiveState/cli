@@ -3,6 +3,7 @@ package resolver
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime/debug"
@@ -83,7 +84,9 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 
 		err := auth.Sync()
 		if err != nil {
-			if _, ok := err.(*authentication.ErrInvalidToken); ok {
+			var errInvalidToken *authentication.ErrInvalidToken
+			if errors.As(err, &errInvalidToken) {
+				logging.Debug("Invalid token, skipping token sync in the future")
 				validToken = false
 			}
 			return nil, errs.Wrap(err, "Failed to sync auth in poller")
