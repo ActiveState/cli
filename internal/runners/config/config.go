@@ -71,10 +71,9 @@ func (c *List) renderUserFacing(configData []structuredConfigData) error {
 	tbl := table.New(locale.Ts("Key", "Value", "Default"))
 	tbl.HideDash = true
 	for _, config := range configData {
-		v := formatValue(config.opt, config.Value)
 		tbl.AddRow([]string{
 			fmt.Sprintf("[CYAN]%s[/RESET]", config.Key),
-			colorizeValue(cfg, config.opt, v),
+			renderConfigValue(cfg, config.opt),
 			fmt.Sprintf("[DISABLED]%s[/RESET]", formatValue(config.opt, config.Default)),
 		})
 	}
@@ -87,16 +86,18 @@ func (c *List) renderUserFacing(configData []structuredConfigData) error {
 	return nil
 }
 
-func colorizeValue(cfg *config.Instance, opt mediator.Option, value string) string {
+func renderConfigValue(cfg *config.Instance, opt mediator.Option) string {
+	configured := cfg.Get(opt.Name)
 	var tags []string
 	if opt.Type == mediator.Bool {
-		if value == "true" {
+		if configured == true {
 			tags = append(tags, "[GREEN]")
 		} else {
 			tags = append(tags, "[RED]")
 		}
 	}
 
+	value := formatValue(opt, configured)
 	if cfg.IsSet(opt.Name) {
 		tags = append(tags, "[BOLD]")
 		value = value + "*"
