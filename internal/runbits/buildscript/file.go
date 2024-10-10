@@ -9,9 +9,11 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 )
 
@@ -40,7 +42,12 @@ func ScriptFromFile(path string) (*buildscript.BuildScript, error) {
 	return buildscript.Unmarshal(data)
 }
 
-func Initialize(path string, auth *authentication.Auth) error {
+type primeable interface {
+	primer.Auther
+	primer.SvcModeler
+}
+
+func Initialize(path string, auth *authentication.Auth, svcm *model.SvcModel) error {
 	scriptPath := filepath.Join(path, constants.BuildScriptFileName)
 	script, err := ScriptFromFile(scriptPath)
 	if err == nil {
@@ -56,7 +63,7 @@ func Initialize(path string, auth *authentication.Auth) error {
 		return errs.Wrap(err, "Unable to get the local commit ID")
 	}
 
-	buildplanner := buildplanner.NewBuildPlannerModel(auth)
+	buildplanner := buildplanner.NewBuildPlannerModel(auth, svcm)
 	script, err = buildplanner.GetBuildScript(commitId.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the remote build expression and time")

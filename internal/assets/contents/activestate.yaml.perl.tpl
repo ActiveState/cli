@@ -34,7 +34,7 @@ scripts:
             my (%entries) = @_;
             while ((my $from, my $to) = each(%entries)) {
                 if ($ARGV[0] eq $from) {
-                    printf("Shimming command to 'state %s', to configure this shim edit the following file:\n${project.path()}/activestate.yaml\n\n", $to);
+                    printf("Shimming command to 'state %s'. To configure this shim, edit the following file:\n${project.path()}/activestate.yaml\n\n", $to);
                     system("state", $to, @ARGV[1 .. $#ARGV]);
                     exit($?);
                 }

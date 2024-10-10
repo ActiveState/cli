@@ -8,7 +8,7 @@ func NewFetchLogTail() *FetchLogTail {
 }
 
 func (r *FetchLogTail) Query() string {
-	return `query() {
+	return `query {
 		fetchLogTail
 	}`
 }

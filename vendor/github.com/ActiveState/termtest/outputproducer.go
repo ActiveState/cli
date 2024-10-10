@@ -54,8 +54,7 @@ func (o *outputProducer) listen(r io.Reader, w io.Writer, appendBuffer func([]by
 	for {
 		o.opts.Logger.Println("listen: loop")
 		if err := o.processNextRead(br, w, appendBuffer, size); err != nil {
-			if errors.Is(err, ptyEOF) {
-				o.opts.Logger.Println("listen: reached EOF")
+			if errors.Is(err, PtyEOF) {
 				return nil
 			} else {
 				return fmt.Errorf("could not poll reader: %w", err)
@@ -64,7 +63,7 @@ func (o *outputProducer) listen(r io.Reader, w io.Writer, appendBuffer func([]by
 	}
 }
 
-var ptyEOF = errors.New("pty closed")
+var PtyEOF = errors.New("pty closed")
 
 func (o *outputProducer) processNextRead(r io.Reader, w io.Writer, appendBuffer func([]byte, bool) error, size int) error {
 	o.opts.Logger.Printf("processNextRead started with size: %d\n", size)
@@ -78,6 +77,7 @@ func (o *outputProducer) processNextRead(r io.Reader, w io.Writer, appendBuffer 
 		pathError := &fs.PathError{}
 		if errors.Is(errRead, fs.ErrClosed) || errors.Is(errRead, io.EOF) || (runtime.GOOS == "linux" && errors.As(errRead, &pathError)) {
 			isEOF = true
+			o.opts.Logger.Println("reached EOF")
 		}
 	}
 
@@ -96,7 +96,8 @@ func (o *outputProducer) processNextRead(r io.Reader, w io.Writer, appendBuffer 
 
 	if errRead != nil {
 		if isEOF {
-			return errors.Join(errRead, ptyEOF)
+			o.closeConsumers(PtyEOF)
+			return errors.Join(errRead, PtyEOF)
 		}
 		return fmt.Errorf("could not read pty output: %w", errRead)
 	}
@@ -194,6 +195,19 @@ func (o *outputProducer) processDirtyOutput(output []byte, cursorPos int, cleanU
 	return append(append(alreadyCleanedOutput, processedOutput...), unprocessedOutput...), processedCursorPos, newCleanUptoPos, nil
 }
 
+func (o *outputProducer) closeConsumers(reason error) {
+	o.opts.Logger.Println("closing consumers")
+	defer o.opts.Logger.Println("closed consumers")
+
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+
+	for n := 0; n < len(o.consumers); n++ {
+		o.consumers[n].Stop(reason)
+		o.consumers = append(o.consumers[:n], o.consumers[n+1:]...)
+	}
+}
+
 func (o *outputProducer) flushConsumers() error {
 	o.opts.Logger.Println("flushing consumers")
 	defer o.opts.Logger.Println("flushed consumers")
@@ -238,12 +252,12 @@ func (o *outputProducer) flushConsumers() error {
 	return nil
 }
 
-func (o *outputProducer) addConsumer(tt *TermTest, consume consumer, opts ...SetConsOpt) (*outputConsumer, error) {
+func (o *outputProducer) addConsumer(consume consumer, opts ...SetConsOpt) (*outputConsumer, error) {
 	o.opts.Logger.Printf("adding consumer")
 	defer o.opts.Logger.Printf("added consumer")
 
 	opts = append(opts, OptConsInherit(o.opts))
-	listener := newOutputConsumer(tt, consume, opts...)
+	listener := newOutputConsumer(consume, opts...)
 	o.consumers = append(o.consumers, listener)
 
 	if err := o.flushConsumers(); err != nil {

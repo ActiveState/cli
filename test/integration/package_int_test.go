@@ -1,20 +1,15 @@
 package integration
 
 import (
-	"fmt"
-	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/testhelpers/suite"
-	"github.com/ActiveState/termtest"
-
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/termtest"
 )
 
 type PackageIntegrationTestSuite struct {
@@ -267,128 +262,36 @@ func (suite *PackageIntegrationTestSuite) TestPackage_info() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *PackageIntegrationTestSuite) TestPackage_detached_operation() {
-	suite.OnlyRunForTags(tagsuite.Package)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out project")
-	cp.ExpectExitCode(0)
-
-	suite.Run("install non-existing", func() {
-		cp := ts.Spawn("install", "json")
-		cp.Expect("No results found for search term")
-		cp.Expect("json2")
-		cp.Wait()
-	})
-
-	suite.Run("install", func() {
-		cp := ts.Spawn("install", "dateparser@0.7.2")
-		cp.ExpectRe("(?:Package added|being built)", termtest.OptExpectTimeout(30*time.Second))
-		cp.Wait()
-	})
-
-	suite.Run("install (update)", func() {
-		cp := ts.Spawn("install", "dateparser@0.7.6")
-		cp.ExpectRe("(?:Package updated|being built)", termtest.OptExpectTimeout(50*time.Second))
-		cp.Wait()
-	})
-
-	suite.Run("uninstall", func() {
-		cp := ts.Spawn("uninstall", "dateparser")
-		cp.ExpectRe("(?:Package uninstalled|being built)", termtest.OptExpectTimeout(30*time.Second))
-		cp.Wait()
-	})
-}
-
-func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
-	suite.OnlyRunForTags(tagsuite.Package)
-	if runtime.GOOS == "darwin" {
-		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
-		return
-	}
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	user := ts.CreateNewUser()
-	namespace := fmt.Sprintf("%s/%s", user.Username, "python3-pkgtest")
-
-	cp := ts.Spawn("fork", "ActiveState-CLI/Packages", "--org", user.Username, "--name", "python3-pkgtest")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("checkout", namespace, ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out project")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("history", "--output=json")
-	cp.ExpectExitCode(0)
-
-	suite.Run("install", func() {
-		cp := ts.Spawn("install", "urllib3@1.25.6")
-		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", user.Username))
-		cp.ExpectRe("(?:Package added|being built)", termtest.OptExpectTimeout(30*time.Second))
-		cp.Wait()
-	})
-
-	suite.Run("install (update)", func() {
-		cp := ts.Spawn("install", "urllib3@1.25.8")
-		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", user.Username))
-		cp.ExpectRe("(?:Package updated|being built)", termtest.OptExpectTimeout(30*time.Second))
-		cp.Wait()
-	})
-
-	suite.Run("uninstall", func() {
-		cp := ts.Spawn("uninstall", "urllib3")
-		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", user.Username))
-		cp.ExpectRe("(?:Package uninstalled|being built)", termtest.OptExpectTimeout(30*time.Second))
-		cp.Wait()
-	})
-}
-
 func (suite *PackageIntegrationTestSuite) TestPackage_operation_multiple() {
 	suite.OnlyRunForTags(tagsuite.Package)
-	if runtime.GOOS == "darwin" {
-		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
-		return
-	}
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	user := ts.CreateNewUser()
-	namespace := fmt.Sprintf("%s/%s", user.Username, "python3-pkgtest")
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
 
-	cp := ts.Spawn("fork", "ActiveState-CLI/Packages", "--org", user.Username, "--name", "python3-pkgtest")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("checkout", namespace, ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out project")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("history", "--output=json")
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "requests", "urllib3@1.25.6")
-		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", user.Username))
-		cp.ExpectRe("(?:Package added|being built)", termtest.OptExpectTimeout(30*time.Second))
+		cp.Expect("Operating on project ActiveState-CLI/small-python")
+		cp.Expect("Added: language/python/requests", termtest.OptExpectTimeout(2*time.Minute)) // Extra time because 2 packages
+		cp.Expect("Added: language/python/urllib3")
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.8")
-		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", user.Username))
-		cp.ExpectRe("(?:Package updated|being built)", termtest.OptExpectTimeout(30*time.Second))
+		cp.Expect("Operating on project ActiveState-CLI/small-python")
+		cp.Expect("Updated: language/python/urllib3", e2e.RuntimeSolvingTimeoutOpt)
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "requests", "urllib3")
-		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", user.Username))
-		cp.ExpectRe("(?:Package uninstalled|being built)", termtest.OptExpectTimeout(30*time.Second))
+		cp.Expect("Operating on project ActiveState-CLI/small-python")
+		cp.Expect("Removed: language/python/requests", e2e.RuntimeSolvingTimeoutOpt)
+		cp.Expect("Removed: language/python/urllib3")
 		cp.Wait()
 	})
 }
@@ -399,16 +302,13 @@ func (suite *PackageIntegrationTestSuite) TestPackage_Duplicate() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out project")
+	ts.PrepareEmptyProject()
+
+	cp := ts.Spawn("install", "shared/zlib") // install
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("install", "requests") // install
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("install", "requests") // install again
-	cp.Expect("already installed")
+	cp = ts.Spawn("install", "shared/zlib") // install again
+	cp.Expect(" no changes")
 	cp.ExpectNotExitCode(0)
 	ts.IgnoreLogErrors()
 
@@ -430,6 +330,36 @@ scripts:
 	ts.PrepareCommitIdFile("a9d0bc88-585a-49cf-89c1-6c07af781cff")
 }
 
+func (suite *PackageIntegrationTestSuite) TestPackage_Install() {
+	suite.OnlyRunForTags(tagsuite.Package)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "requests")
+	cp.Expect("project has been updated")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *PackageIntegrationTestSuite) TestPackage_Uninstall() {
+	suite.OnlyRunForTags(tagsuite.Package)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI-Testing/small-python-with-pkg", "a2115792-2620-4217-89ed-b596c8c11ce3")
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("uninstall", "requests")
+	cp.Expect("project has been updated")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
 	suite.OnlyRunForTags(tagsuite.Package)
 
@@ -439,13 +369,37 @@ func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("uninstall", "doesNotExist")
-	cp.Expect("does not exist")
+	cp.Expect("could not be found")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 
 	if strings.Count(cp.Snapshot(), " x ") != 2 { // 2 because "Creating commit x Failed" is also printed
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
 	}
+}
+
+func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDupeMatch() {
+	suite.OnlyRunForTags(tagsuite.Package)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI-Testing/duplicate-pkg-name", "e5a15d59-9192-446a-a133-9f4c2ebe0898")
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("uninstall", "oauth")
+	cp.Expect("match multiple requirements")
+	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
+
+	if strings.Count(cp.Snapshot(), " x ") != 2 { // 2 because "Creating commit x Failed" is also printed
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
+	}
+
+	cp = ts.Spawn("uninstall", "language/python/oauth")
+	cp.Expect("project has been updated")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) TestJSON() {
@@ -458,16 +412,12 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	cp.ExpectExitCode(0)
 	// AssertValidJSON(suite.T(), cp) // currently too large to fit terminal window to validate
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/Packages-Perl", "."),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-	cp.Expect("Checked out project")
+	ts.PrepareProject("ActiveState-CLI/Packages-Perl", "b2feab96-f700-47a3-85ef-2ec44c390c6b")
+
+	cp = ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "Text-CSV", "-o", "json"),
-	)
+	cp = ts.Spawn("install", "Text-CSV", "-o", "json")
 	cp.Expect(`{"name":"Text-CSV"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
@@ -477,63 +427,10 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("uninstall", "Text-CSV", "-o", "json"),
-	)
+	cp = ts.Spawn("uninstall", "Text-CSV", "-o", "json")
 	cp.Expect(`{"name":"Text-CSV"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
-}
-
-func (suite *PackageIntegrationTestSuite) TestNormalize() {
-	suite.OnlyRunForTags(tagsuite.Package)
-	if runtime.GOOS == "darwin" {
-		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
-		return
-	}
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	dir := filepath.Join(ts.Dirs.Work, "normalized")
-	suite.Require().NoError(fileutils.Mkdir(dir))
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "."),
-		e2e.OptWD(dir),
-	)
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out project")
-	cp.ExpectExitCode(0)
-
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "Charset_normalizer"),
-		e2e.OptWD(dir),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	// Even though we are not sourcing a runtime it can still take time to resolve
-	// the dependencies and create the commit
-	cp.Expect("charset-normalizer", e2e.RuntimeSourcingTimeoutOpt)
-	cp.Expect("is different")
-	cp.Expect("Charset_normalizer")
-	cp.ExpectExitCode(0)
-
-	anotherDir := filepath.Join(ts.Dirs.Work, "not-normalized")
-	suite.Require().NoError(fileutils.Mkdir(anotherDir))
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "."),
-		e2e.OptWD(anotherDir),
-	)
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out project")
-	cp.ExpectExitCode(0)
-
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "charset-normalizer"),
-		e2e.OptWD(anotherDir),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect("charset-normalizer", e2e.RuntimeSourcingTimeoutOpt)
-	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
-	suite.NotContains(cp.Output(), "is different")
 }
 
 func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
@@ -541,15 +438,12 @@ func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out project")
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "pytest@999.9999.9999"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp = ts.Spawn("install", "pytest@999.9999.9999")
 	// User facing error from build planner
 	// We only assert the state tool curated part of the error as the underlying build planner error may change
 	cp.Expect("Could not plan build")
@@ -562,18 +456,15 @@ func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out project")
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "pytest") // install
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "pytest@999.9999.9999"),      // update
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
-	)
+	cp = ts.Spawn("install", "pytest@999.9999.9999") // update
 	// User facing error from build planner
 	// We only assert the state tool curated part of the error as the underlying build planner error may change
 	cp.Expect("Could not plan build")
@@ -586,9 +477,9 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out project")
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "pytest@7.3.2") // install
@@ -604,11 +495,8 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 	cp.Expect("7.3.2")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "pytest@7.4.0"),              // update
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
-	)
-	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
+	cp = ts.Spawn("install", "pytest@7.4.0") // update
+	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("history")
 	cp.Expect("pytest")
@@ -626,22 +514,12 @@ func (suite *PackageIntegrationTestSuite) TestRuby() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI-Testing/Ruby", "."),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	ts.PrepareProject("ActiveState-CLI-Testing/Ruby", "72fadc10-ed8c-4be6-810b-b3de6e017c57")
+
+	cp := ts.Spawn("install", "rake")
 	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "rake"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
-
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("exec", "rake", "--", "--version"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp = ts.Spawn("exec", "rake", "--", "--version")
 	cp.ExpectRe(`rake, version \d+\.\d+\.\d+`)
 	cp.ExpectExitCode(0)
 }
@@ -656,8 +534,7 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDock
 	ts.LoginAsPersistentUser() // needed for Enterprise-tier features
 
 	cp := ts.Spawn("checkout", "ActiveState-CLI/Python-OfflineInstaller-Docker", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out project")
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 
@@ -666,16 +543,13 @@ func (suite *PackageIntegrationTestSuite) TestResolved() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out project")
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "requests"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.ExpectExitCode(0)
+	cp = ts.Spawn("install", "requests")
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.Spawn("packages")
 	cp.Expect("Auto →")
@@ -689,16 +563,15 @@ func (suite *PackageIntegrationTestSuite) TestCVE_NoPrompt() {
 
 	ts.LoginAsPersistentUser()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out project")
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "urllib3@2.0.2"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect("Warning: Dependency has 2 known vulnerabilities")
+	// Note: this version has 2 direct vulnerabilities, and 3 indirect vulnerabilities, but since
+	// we're not prompting, we're only showing a single count.
+	cp = ts.Spawn("install", "urllib3@2.0.2")
+	cp.ExpectRe(`Warning: Dependency has .* vulnerabilities`, e2e.RuntimeSolvingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 
@@ -709,27 +582,21 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Prompt() {
 
 	ts.LoginAsPersistentUser()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out project")
+	ts.PrepareProject("ActiveState-CLi/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("config", "set", "security.prompt.level", "high")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("config", "set", "security.prompt.enabled", "true")
+	cp = ts.Spawn("config", "set", constants.SecurityPromptConfig, "true")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "urllib3@2.0.2"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect("Warning: Dependency has 2 known vulnerabilities")
+	cp = ts.Spawn("install", "urllib3@2.0.2", "--ts=2024-09-10T16:36:34.393Z")
+	cp.ExpectRe(`Warning: Dependency has .* vulnerabilities`, e2e.RuntimeSolvingTimeoutOpt)
 	cp.Expect("Do you want to continue")
 	cp.SendLine("y")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("config", "set", "security.prompt.enabled", "false")
 	cp.ExpectExitCode(0)
 }
 
@@ -740,16 +607,16 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Indirect() {
 
 	ts.LoginAsPersistentUser()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out project")
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "private/ActiveState-CLI-Testing/language/python/django_dep", "--ts=now"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.ExpectRe(`Warning: Dependency has \d indirect known vulnerabilities`, e2e.RuntimeSourcingTimeoutOpt)
+	cp = ts.Spawn("config", "set", constants.SecurityPromptConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "private/ActiveState-CLI-Testing/language/python/django_dep", "--ts=2024-09-10T16:36:34.393Z")
+	cp.ExpectRe(`Warning: Dependency has \d+ indirect known vulnerabilities`, e2e.RuntimeSolvingTimeoutOpt)
 	cp.Expect("Do you want to continue")
 	cp.SendLine("n")
 	cp.ExpectExitCode(1)
@@ -764,14 +631,9 @@ func (suite *PackageIntegrationTestSuite) TestChangeSummary() {
 	cp.Expect("Successfully set")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
-	cp.Expect("Checked out")
-	cp.ExpectExitCode(0)
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "requests@2.31.0"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp = ts.Spawn("install", "requests@2.31.0")
 	cp.Expect("Resolving Dependencies")
 	cp.Expect("Done")
 	cp.Expect("Installing requests@2.31.0 includes 4 direct dependencies")
@@ -779,7 +641,29 @@ func (suite *PackageIntegrationTestSuite) TestChangeSummary() {
 	cp.Expect("├─ ")
 	cp.Expect("├─ ")
 	cp.Expect("└─ ")
-	cp.Expect("Package added: requests", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Added: language/python/requests", e2e.RuntimeSolvingTimeoutOpt)
+	cp.ExpectExitCode(0)
+}
+
+func (suite *PackageIntegrationTestSuite) TestChangeSummaryShowsAddedForUpdate() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.Expect("Successfully set")
+	cp.ExpectExitCode(0)
+
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+
+	cp = ts.Spawn("install", "jinja2@2.0")
+	cp.Expect("Added: language/python/jinja2")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "jinja2@3.1.4")
+	cp.Expect("Installing jinja2@3.1.4 includes 1 direct dep")
+	cp.Expect("└─ markupsafe@2.1.5")
+	cp.Expect("Updated: language/python/jinja2")
 	cp.ExpectExitCode(0)
 }
 

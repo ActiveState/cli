@@ -1,6 +1,8 @@
 package graph
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 type VersionResponse struct {
 	Version Version `json:"version"`

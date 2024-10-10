@@ -41,7 +41,7 @@ func newUpdateLockCommand(prime *primer.Values, globals *globalOptions) *captain
 	cmd := captain.NewCommand(
 		"lock",
 		locale.Tl("lock_title", "Lock the State Tool version"),
-		locale.Tl("lock_description", "Lock the State Tool at the current version, this disables automatic updates."),
+		locale.Tl("lock_description", "Lock the State Tool at the current version. This disables automatic updates."),
 		prime,
 		[]*captain.Flag{
 			{

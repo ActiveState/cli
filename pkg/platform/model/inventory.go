@@ -1,7 +1,7 @@
 package model
 
 import (
-	"fmt"
+	"errors"
 	"regexp"
 	"runtime"
 	"sort"
@@ -205,6 +205,7 @@ func searchIngredientsNamespace(ns string, name string, includeVersions bool, ex
 	}
 	params.SetLimit(&limit)
 	params.SetHTTPClient(api.NewHTTPClient())
+	params.WithTimeout(60 * time.Second)
 
 	if ts != nil {
 		dt := strfmt.DateTime(*ts)
@@ -319,15 +320,10 @@ func FetchPlatformsForCommit(commitID strfmt.UUID, auth *authentication.Auth) ([
 	return platforms, nil
 }
 
-func FilterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID, cfg Configurable) ([]strfmt.UUID, error) {
+func FilterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID, preferredLibcVersion string) ([]strfmt.UUID, error) {
 	runtimePlatforms, err := FetchPlatforms()
 	if err != nil {
 		return nil, err
-	}
-
-	libcVersion, err := fetchLibcVersion(cfg)
-	if err != nil {
-		return nil, errs.Wrap(err, "failed to fetch libc version")
 	}
 
 	var pids []strfmt.UUID
@@ -349,7 +345,7 @@ func FilterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID,
 			}
 
 			if rtPf.LibcVersion != nil && rtPf.LibcVersion.Version != nil {
-				if libcVersion != "" && libcVersion != *rtPf.LibcVersion.Version {
+				if preferredLibcVersion != "" && preferredLibcVersion != *rtPf.LibcVersion.Version {
 					continue
 				}
 				// Convert the libc version to a major-minor float and map it to the platform ID for
@@ -383,7 +379,7 @@ func FilterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID,
 	}
 
 	if len(pids) == 0 && len(fallback) == 0 {
-		return nil, &ErrNoMatchingPlatform{hostPlatform, hostArch, libcVersion}
+		return nil, &ErrNoMatchingPlatform{hostPlatform, hostArch, preferredLibcVersion}
 	} else if len(pids) == 0 {
 		pids = fallback
 	}
@@ -458,42 +454,66 @@ func FetchPlatformByUID(uid strfmt.UUID) (*Platform, error) {
 	return nil, nil
 }
 
-func FetchPlatformByDetails(name, version string, word int, auth *authentication.Auth) (*Platform, error) {
+var ErrPlatformNotFound = errors.New("could not find platform matching provided criteria")
+
+func FetchPlatformByDetails(name, version string, bitwidth int) (*Platform, error) {
+	platformID, err := PlatformNameToPlatformID(name)
+	if err != nil {
+		return nil, errs.Wrap(err, "platform id from name failed")
+	}
+
 	runtimePlatforms, err := FetchPlatforms()
 	if err != nil {
 		return nil, err
 	}
 
-	lower := strings.ToLower
-
+	// Prioritize the platform that we record as default
 	for _, rtPf := range runtimePlatforms {
-		if rtPf.Kernel == nil || rtPf.Kernel.Name == nil {
+		if rtPf.PlatformID.String() != platformID {
 			continue
 		}
-		if lower(*rtPf.Kernel.Name) != lower(name) {
-			continue
+		if IsPlatformMatch(rtPf, name, version, bitwidth) {
+			return rtPf, nil
 		}
-
-		if rtPf.KernelVersion == nil || rtPf.KernelVersion.Version == nil {
-			continue
-		}
-		if lower(*rtPf.KernelVersion.Version) != lower(version) {
-			continue
-		}
-
-		if rtPf.CPUArchitecture == nil {
-			continue
-		}
-		if rtPf.CPUArchitecture.BitWidth == nil || *rtPf.CPUArchitecture.BitWidth != strconv.Itoa(word) {
-			continue
-		}
-
-		return rtPf, nil
+		break
 	}
 
-	details := fmt.Sprintf("%s %d %s", name, word, version)
+	// Return the first platform whose criteria match
+	for _, rtPf := range runtimePlatforms {
+		if IsPlatformMatch(rtPf, name, version, bitwidth) {
+			return rtPf, nil
+		}
+	}
 
-	return nil, locale.NewExternalError("err_unsupported_platform", "", details)
+	return nil, ErrPlatformNotFound
+}
+
+func IsPlatformMatch(platform *Platform, name, version string, bitwidth int) bool {
+	var platformID string
+	if version == "" && bitwidth == 0 {
+		var err error
+		platformID, err = PlatformNameToPlatformID(name)
+		if err != nil || platformID == "" {
+			return false
+		}
+		return platform.PlatformID.String() == platformID
+	}
+
+	if platform.Kernel == nil || platform.Kernel.Name == nil ||
+		!strings.EqualFold(*platform.Kernel.Name, name) {
+		return false
+	}
+	if version != "" && (platform.KernelVersion == nil || platform.KernelVersion.Version == nil ||
+		!strings.EqualFold(*platform.KernelVersion.Version, version)) {
+		return false
+	}
+	if bitwidth != 0 && (platform.CPUArchitecture == nil ||
+		platform.CPUArchitecture.BitWidth == nil ||
+		!strings.EqualFold(*platform.CPUArchitecture.BitWidth, strconv.Itoa(bitwidth))) {
+		return false
+	}
+
+	return true
 }
 
 func FetchLanguageForCommit(commitID strfmt.UUID, auth *authentication.Auth) (*Language, error) {
@@ -505,21 +525,6 @@ func FetchLanguageForCommit(commitID strfmt.UUID, auth *authentication.Auth) (*L
 		return &Language{}, nil
 	}
 	return &langs[0], nil
-}
-
-func FetchLanguageByDetails(name, version string, auth *authentication.Auth) (*Language, error) {
-	languages, err := FetchLanguages(auth)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, language := range languages {
-		if language.Name == name && language.Version == version {
-			return &language, nil
-		}
-	}
-
-	return nil, locale.NewInputError("err_language_not_found", "", name, version)
 }
 
 func FetchLanguageVersions(name string, auth *authentication.Auth) ([]string, error) {
@@ -660,8 +665,8 @@ func FetchNormalizedName(namespace Namespace, name string, auth *authentication.
 	return *res.Payload.NormalizedNames[0].Normalized, nil
 }
 
-func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID, cfg Configurable) (strfmt.UUID, error) {
-	platformIDs, err := FilterPlatformIDs(hostPlatform, runtime.GOARCH, platforms, cfg)
+func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID, preferredLibcVersion string) (strfmt.UUID, error) {
+	platformIDs, err := FilterPlatformIDs(hostPlatform, runtime.GOARCH, platforms, preferredLibcVersion)
 	if err != nil {
 		return "", errs.Wrap(err, "filterPlatformIDs failed")
 	}

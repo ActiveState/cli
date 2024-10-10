@@ -10,8 +10,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/mash/go-tempfile-suffix"
+
+	"github.com/ActiveState/cli/internal/installation/storage"
 
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/colorize"
@@ -20,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/project"
@@ -53,10 +53,6 @@ var (
 		"user_autostart_env",
 	}
 )
-
-func init() {
-	configMediator.RegisterOption(constants.PreservePs1ConfigKey, configMediator.Bool, false)
-}
 
 // Configurable defines an interface to store and get configuration data
 type Configurable interface {
@@ -106,8 +102,6 @@ func WriteRcFile(rcTemplateName string, path string, data RcIdentification, env 
 		return errs.Wrap(err, "Templating failure")
 	}
 
-	logging.Debug("Writing to %s:\n%s", path, out.String())
-
 	return fileutils.AppendToFile(path, []byte(fileutils.LineEnd+out.String()))
 }
 
@@ -121,7 +115,6 @@ func WriteRcData(data string, path string, identification RcIdentification) erro
 	}
 
 	data = identification.Start + fileutils.LineEnd + data + fileutils.LineEnd + identification.Stop
-	logging.Debug("Writing to %s:\n%s", path, data)
 	return fileutils.AppendToFile(path, []byte(fileutils.LineEnd+data))
 }
 
@@ -217,9 +210,8 @@ func SetupShellRcFile(rcFileName, templateName string, env map[string]string, na
 
 	var out bytes.Buffer
 	rcData := map[string]interface{}{
-		"Env":         env,
-		"Project":     projectValue,
-		"PreservePs1": cfg.GetBool(constants.PreservePs1ConfigKey),
+		"Env":     env,
+		"Project": projectValue,
 	}
 	err = t.Execute(&out, rcData)
 	if err != nil {
@@ -332,6 +324,7 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	rcData := map[string]interface{}{
 		"Owner":       prj.Owner(),
 		"Name":        prj.Name(),
+		"Project":     prj.NamespaceString(),
 		"Env":         actualEnv,
 		"WD":          wd,
 		"UserScripts": userScripts,
@@ -339,7 +332,6 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 		"ExecName":    constants.CommandName,
 		"ActivatedMessage": colorize.ColorizedOrStrip(locale.Tl("project_activated",
 			"[SUCCESS]✔ Project \"{{.V0}}\" Has Been Activated[/RESET]", prj.Namespace().String()), isConsole),
-		"PreservePs1": cfg.GetBool(constants.PreservePs1ConfigKey),
 	}
 
 	currExec := osutils.Executable()
@@ -368,6 +360,22 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	t := template.New("rcfile")
 	t.Funcs(map[string]interface{}{
 		"splitLines": func(v string) []string { return strings.Split(v, "\n") },
+		"escapePwsh": func(v string) string {
+			// Conver unicode characters
+			result := ""
+			for _, char := range v {
+				if char < 128 {
+					result += string(char)
+				} else {
+					result += fmt.Sprintf("$([char]0x%04x)", char)
+				}
+			}
+
+			// Escape special characters
+			result = strings.ReplaceAll(result, "`", "``")
+			result = strings.ReplaceAll(result, "\"", "`\"")
+			return result
+		},
 	})
 
 	t, err = t.Parse(string(tpl))
@@ -391,8 +399,6 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to write to output buffer.")
 	}
-
-	logging.Debug("Using project RC: (%s) %s", tmpFile.Name(), o.String())
 
 	return tmpFile, nil
 }

@@ -3,6 +3,7 @@ package model
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/go-openapi/strfmt"
 
@@ -64,6 +65,27 @@ func FetchLanguagesForCommit(commitID strfmt.UUID, auth *authentication.Auth) ([
 			lang := Language{
 				Name:    requirement.Requirement,
 				Version: version,
+			}
+			languages = append(languages, lang)
+		}
+	}
+
+	return languages, nil
+}
+
+// FetchLanguagesForBuildScript fetches a list of language names for the given buildscript
+func FetchLanguagesForBuildScript(script *buildscript.BuildScript) ([]Language, error) {
+	languages := []Language{}
+	reqs, err := script.DependencyRequirements()
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to get dependency requirements")
+	}
+
+	for _, requirement := range reqs {
+		if NamespaceMatch(requirement.Namespace, NamespaceLanguageMatch) {
+			lang := Language{
+				Name:    requirement.Name,
+				Version: BuildPlannerVersionConstraintsToString(requirement.VersionRequirement),
 			}
 			languages = append(languages, lang)
 		}
@@ -186,33 +208,12 @@ func CheckpointToPlatforms(requirements []*gqlModel.Requirement) []strfmt.UUID {
 	return result
 }
 
-// CheckpointToLanguage returns the language from a checkpoint
-func CheckpointToLanguage(requirements []*gqlModel.Requirement, auth *authentication.Auth) (*Language, error) {
-	for _, req := range requirements {
-		if !NamespaceMatch(req.Namespace, NamespaceLanguageMatch) {
-			continue
-		}
-		lang, err := FetchLanguageByDetails(req.Requirement, req.VersionConstraint, auth)
-		if err != nil {
-			return nil, err
-		}
-		return lang, nil
-	}
-
-	return nil, locale.NewError("err_fetch_languages")
-}
-
 func PlatformNameToPlatformID(name string) (string, error) {
 	name = strings.ToLower(name)
 	if name == "darwin" {
 		name = "macos"
 	}
-	id, err := hostPlatformToPlatformID(name)
-	return id, err
-}
-
-func hostPlatformToPlatformID(os string) (string, error) {
-	switch strings.ToLower(os) {
+	switch strings.ToLower(name) {
 	case strings.ToLower(sysinfo.Linux.String()):
 		return constants.LinuxBit64UUID, nil
 	case strings.ToLower(sysinfo.Mac.String()):
@@ -220,7 +221,7 @@ func hostPlatformToPlatformID(os string) (string, error) {
 	case strings.ToLower(sysinfo.Windows.String()):
 		return constants.Win10Bit64UUID, nil
 	default:
-		return "", locale.NewExternalError("err_unsupported_platform", "", os)
+		return "", ErrPlatformNotFound
 	}
 }
 

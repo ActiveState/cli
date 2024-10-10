@@ -37,6 +37,12 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newOpenCommand(prime),
 	)
 
+	deptree := newExportDepTreeCommand(prime)
+	deptree.AddChildren(
+		newExportDepTreeArtifactsCommand(prime),
+		newExportDepTreeIngredientsCommand(prime),
+	)
+
 	exportCmd := newExportCommand(prime)
 	exportCmd.AddChildren(
 		newJWTCommand(prime),
@@ -48,6 +54,8 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newExportEnvCommand(prime),
 		newExportLogCommand(prime),
 		newExportRuntimeCommand(prime),
+		newExportBuildPlanCommand(prime),
+		deptree,
 	)
 
 	platformsCmd := newPlatformsCommand(prime)
@@ -213,6 +221,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newEvalCommand(prime),
 		newManifestCommmand(prime),
 		artifactsCmd,
+		newUpgradeCommand(prime),
 	)
 
 	return &CmdTree{

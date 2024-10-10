@@ -7,6 +7,9 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/rtutils/singlethread"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/stretchr/testify/require"
 	"github.com/thoas/go-funk"
@@ -104,7 +107,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 			if runtime.GOOS == "windows" {
 				cmd = "powershell.exe"
-				opts = append(opts, e2e.OptAppendEnv("SHELL="))
+				opts = append(opts,
+					e2e.OptAppendEnv("SHELL="),
+					e2e.OptAppendEnv(constants.OverrideShellEnvVarName+"="),
+				)
 			}
 			cp := ts.SpawnCmdWithOpts(cmd, opts...)
 			cp.Expect("Preparing Installer for State Tool Package Manager")
@@ -137,12 +143,19 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			suite.assertAnalytics(ts)
 			suite.DirExists(ts.Dirs.Config)
 
+			// Clear configured shell.
+			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+			suite.Require().NoError(err)
+			err = cfg.Set(subshell.ConfigKeyShell, "")
+			suite.Require().NoError(err)
+
 			// Verify that can install overtop
 			if runtime.GOOS != "windows" {
 				cp = ts.SpawnCmdWithOpts("bash", e2e.OptArgs(argsPlain...))
 			} else {
 				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.OptArgs(argsPlain...),
 					e2e.OptAppendEnv("SHELL="),
+					e2e.OptAppendEnv(constants.OverrideShellEnvVarName+"="),
 				)
 			}
 			cp.Expect("successfully installed")

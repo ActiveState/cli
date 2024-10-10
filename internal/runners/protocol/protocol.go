@@ -58,7 +58,7 @@ func (p *Protocol) Run(params Params) error {
 	}
 
 	if parsed.Fragment != "" && parsed.Fragment != "replace" {
-		return locale.NewError("err_protocol_flag", "Invalid URL fragment, the only supported URL fragment is 'replace'")
+		return locale.NewError("err_protocol_flag", "Invalid URL fragment. The only supported URL fragment is 'replace'")
 	}
 
 	// Execute state command

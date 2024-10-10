@@ -124,7 +124,7 @@ func getDarwinProductVersion() (string, error) {
 
 	version, err := exec.Command("sw_vers", "-productVersion").Output()
 	if err != nil {
-		return "", locale.WrapError(err, "Could not detect your OS version, error received: %s", err.Error())
+		return "", locale.WrapError(err, "Could not detect your OS version. Error received: %s", err.Error())
 	}
 	return string(bytes.TrimSpace(version)), nil
 }

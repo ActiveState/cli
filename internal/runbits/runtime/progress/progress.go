@@ -3,21 +3,23 @@ package progress
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/go-openapi/strfmt"
 	"github.com/vbauerster/mpb/v7"
 	"golang.org/x/net/context"
+
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/runtime/events"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 )
 
 type step struct {
@@ -33,7 +35,8 @@ func (s step) String() string {
 var (
 	StepBuild    = step{"build", locale.T("building"), 10000} // the priority is high because the artifact progress bars need to fit in between the steps
 	StepDownload = step{"download", locale.T("downloading"), 20000}
-	StepInstall  = step{"install", locale.T("installing"), 30000}
+	StepUnpack   = step{"unpack", locale.T("unpacking"), 30000}
+	StepInstall  = step{"install", locale.T("installing"), 40000}
 )
 
 type artifactStepID string
@@ -55,21 +58,20 @@ type ProgressDigester struct {
 	mainProgress *mpb.Progress
 	buildBar     *bar
 	downloadBar  *bar
+	unpackBar    *bar
 	installBar   *bar
 	solveSpinner *output.Spinner
 	artifactBars map[artifactStepID]*bar
-
-	// Artifact name lookup map
-	artifacts map[strfmt.UUID]string
 
 	// Recipe that we're performing progress for
 	recipeID strfmt.UUID
 
 	// Track the totals required as the bars for these are only initialized for the first artifact received, at which
 	// time we won't have the totals unless we previously recorded them.
-	buildsExpected    map[strfmt.UUID]struct{}
-	downloadsExpected map[strfmt.UUID]struct{}
-	installsExpected  map[strfmt.UUID]struct{}
+	buildsExpected    buildplan.ArtifactIDMap
+	downloadsExpected buildplan.ArtifactIDMap
+	unpacksExpected   buildplan.ArtifactIDMap
+	installsExpected  buildplan.ArtifactIDMap
 
 	// Debug properties used to reduce the number of log entries generated
 	dbgEventLog []string
@@ -88,7 +90,18 @@ type ProgressDigester struct {
 	success bool
 }
 
-func NewProgressIndicator(w io.Writer, out output.Outputer) *ProgressDigester {
+func NewRuntimeProgressIndicator(out output.Outputer) events.Handler {
+	var w io.Writer = os.Stdout
+	if out.Type() != output.PlainFormatName {
+		w = nil
+	}
+	if out.Config().Interactive {
+		return newProgressIndicator(w, out)
+	}
+	return newDotProgressIndicator(out)
+}
+
+func newProgressIndicator(w io.Writer, out output.Outputer) *ProgressDigester {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &ProgressDigester{
 		mainProgress: mpb.NewWithContext(
@@ -98,7 +111,6 @@ func NewProgressIndicator(w io.Writer, out output.Outputer) *ProgressDigester {
 			mpb.WithRefreshRate(refreshRate),
 		),
 
-		artifacts:    map[strfmt.UUID]string{},
 		artifactBars: map[artifactStepID]*bar{},
 
 		cancelMpb:    cancel,
@@ -110,7 +122,7 @@ func NewProgressIndicator(w io.Writer, out output.Outputer) *ProgressDigester {
 	}
 }
 
-func (p *ProgressDigester) Handle(ev events.Eventer) error {
+func (p *ProgressDigester) Handle(ev events.Event) error {
 	p.dbgEventLog = append(p.dbgEventLog, fmt.Sprintf("%T", ev))
 
 	p.mutex.Lock()
@@ -125,8 +137,6 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 	switch v := ev.(type) {
 
 	case events.Start:
-		logging.Debug("Initialize Event: %#v", v)
-
 		// Ensure Start event is first.. because otherwise the prints below will cause output to be malformed.
 		if p.buildBar != nil || p.downloadBar != nil || p.installBar != nil || p.solveSpinner != nil {
 			return errs.New("Received Start event after bars were already initialized, event log: %v", p.dbgEventLog)
@@ -140,11 +150,11 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		}
 
 		p.recipeID = v.RecipeID
-		p.artifacts = v.Artifacts
 
-		p.buildsExpected = sliceutils.ToLookupMap(v.ArtifactsToBuild)
-		p.downloadsExpected = sliceutils.ToLookupMap(v.ArtifactsToDownload)
-		p.installsExpected = sliceutils.ToLookupMap(v.ArtifactsToInstall)
+		p.buildsExpected = v.ArtifactsToBuild
+		p.downloadsExpected = v.ArtifactsToDownload
+		p.unpacksExpected = v.ArtifactsToUnpack
+		p.installsExpected = v.ArtifactsToInstall
 
 		if len(v.ArtifactsToBuild)+len(v.ArtifactsToDownload)+len(v.ArtifactsToInstall) == 0 {
 			p.out.Notice(locale.T("progress_nothing_to_do"))
@@ -154,29 +164,6 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 
 	case events.Success:
 		p.success = true
-
-	case events.SolveStart:
-		p.out.Notice(locale.T("setup_runtime"))
-		p.solveSpinner = output.StartSpinner(p.out, locale.T("progress_solve"), refreshRate)
-
-	case events.SolveError:
-		if p.solveSpinner == nil {
-			return errs.New("SolveError called before solveBar was initialized")
-		}
-		p.solveSpinner.Stop(locale.T("progress_fail"))
-		p.solveSpinner = nil
-
-	case events.SolveSuccess:
-		if p.solveSpinner == nil {
-			return errs.New("SolveSuccess called before solveBar was initialized")
-		}
-		p.solveSpinner.Stop(locale.T("progress_success"))
-		p.solveSpinner = nil
-
-	case events.BuildSkipped:
-		if p.buildBar != nil {
-			return errs.New("BuildSkipped called, but buildBar was initialized.. this should not happen as they should be mutually exclusive")
-		}
 
 	case events.BuildStarted:
 		if p.buildBar != nil {
@@ -225,7 +212,6 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		if p.buildBar.Current() == p.buildBar.total {
 			return errs.New("Build bar is already complete, this should not happen")
 		}
-		delete(p.buildsExpected, v.ArtifactID)
 		p.buildBar.Increment()
 
 	case events.ArtifactDownloadStarted:
@@ -243,11 +229,6 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 			return errs.Wrap(err, "Failed to add or update artifact bar")
 		}
 
-	case events.ArtifactDownloadSkipped:
-		initDownloadBar()
-		delete(p.downloadsExpected, v.ArtifactID)
-		p.downloadBar.Increment()
-
 	case events.ArtifactDownloadSuccess:
 		if p.downloadBar == nil {
 			return errs.New("ArtifactDownloadSuccess called before downloadBar was initialized")
@@ -261,26 +242,49 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		if p.downloadBar.Current() == p.downloadBar.total {
 			return errs.New("Download bar is already complete, this should not happen")
 		}
-		delete(p.downloadsExpected, v.ArtifactID)
 		p.downloadBar.Increment()
+
+	case events.ArtifactUnpackStarted:
+		if p.unpackBar == nil {
+			p.unpackBar = p.addTotalBar(locale.Tl("progress_unpacking", "Unpacking"), int64(len(p.unpacksExpected)), mpb.BarPriority(StepUnpack.priority))
+		}
+		if _, ok := p.unpacksExpected[v.ArtifactID]; !ok {
+			return errs.New("ArtifactUnpackStarted called for an artifact that was not expected: %s", v.ArtifactID.String())
+		}
+		if err := p.addArtifactBar(v.ArtifactID, StepUnpack, int64(v.TotalSize), true); err != nil {
+			return errs.Wrap(err, "Failed to add or update artifact unpack bar")
+		}
+
+	case events.ArtifactUnpackProgress:
+		if _, ok := p.unpacksExpected[v.ArtifactID]; !ok {
+			return errs.New("ArtifactUnpackSuccess called for an artifact that was not expected: %s", v.ArtifactID.String())
+		}
+		if err := p.updateArtifactBar(v.ArtifactID, StepUnpack, v.IncrementBySize); err != nil {
+			return errs.Wrap(err, "Failed to add or update artifact unpack bar")
+		}
+
+	case events.ArtifactUnpackSuccess:
+		if p.unpackBar == nil {
+			return errs.New("ArtifactUnpackSuccess called before unpackBar was initialized")
+		}
+		if _, ok := p.unpacksExpected[v.ArtifactID]; !ok {
+			return errs.New("ArtifactUnpackSuccess called for an artifact that was not expected: %s", v.ArtifactID.String())
+		}
+		if err := p.dropArtifactBar(v.ArtifactID, StepUnpack); err != nil {
+			return errs.Wrap(err, "Failed to drop unpack bar")
+		}
+		if p.unpackBar.Current() == p.unpackBar.total {
+			return errs.New("Unpack bar is already complete, this should not happen")
+		}
+		p.unpackBar.Increment()
 
 	case events.ArtifactInstallStarted:
 		if p.installBar == nil {
-			p.installBar = p.addTotalBar(locale.Tl("progress_building", "Installing"), int64(len(p.installsExpected)), mpb.BarPriority(StepInstall.priority))
+			p.installBar = p.addTotalBar(locale.Tl("progress_installing", "Installing"), int64(len(p.installsExpected)), mpb.BarPriority(StepInstall.priority))
 		}
 		if _, ok := p.installsExpected[v.ArtifactID]; !ok {
-			return errs.New("ArtifactInstallStarted called for an artifact that was not expected: %s", v.ArtifactID.String())
+			return errs.New("ArtifactUnpackStarted called for an artifact that was not expected: %s", v.ArtifactID.String())
 		}
-		if err := p.addArtifactBar(v.ArtifactID, StepInstall, int64(v.TotalSize), true); err != nil {
-			return errs.Wrap(err, "Failed to add or update artifact bar")
-		}
-
-	case events.ArtifactInstallSkipped:
-		if p.installBar == nil {
-			return errs.New("ArtifactInstallSkipped called before installBar was initialized, artifact ID: %s", v.ArtifactID.String())
-		}
-		delete(p.installsExpected, v.ArtifactID)
-		p.installBar.Increment()
 
 	case events.ArtifactInstallSuccess:
 		if p.installBar == nil {
@@ -289,19 +293,10 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		if _, ok := p.installsExpected[v.ArtifactID]; !ok {
 			return errs.New("ArtifactInstallSuccess called for an artifact that was not expected: %s", v.ArtifactID.String())
 		}
-		if err := p.dropArtifactBar(v.ArtifactID, StepInstall); err != nil {
-			return errs.Wrap(err, "Failed to drop install bar")
-		}
 		if p.installBar.Current() == p.installBar.total {
 			return errs.New("Install bar is already complete, this should not happen")
 		}
-		delete(p.installsExpected, v.ArtifactID)
 		p.installBar.Increment()
-
-	case events.ArtifactInstallProgress:
-		if err := p.updateArtifactBar(v.ArtifactID, StepInstall, v.IncrementBySize); err != nil {
-			return errs.Wrap(err, "Failed to add or update artifact bar")
-		}
 
 	}
 
@@ -349,18 +344,7 @@ func (p *ProgressDigester) Close() error {
 				}()))
 			}
 
-			multilog.Error(`
-Timed out waiting for progress bars to close. Recipe: %s
-Progress bars status:
-%s
-Still expecting:
- - Builds: %v
- - Downloads: %v
- - Installs: %v`,
-				p.recipeID.String(),
-				strings.Join(debugMsg, "\n"),
-				p.buildsExpected, p.downloadsExpected, p.installsExpected,
-			)
+			multilog.Error(`Timed out waiting for progress bars to close. %s`, strings.Join(debugMsg, "\n"))
 
 			/* https://activestatef.atlassian.net/browse/DX-1831
 			if pending > 0 {

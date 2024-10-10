@@ -7,20 +7,10 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/ActiveState/termtest"
-	"github.com/go-openapi/strfmt"
-	"github.com/google/uuid"
-	"github.com/phayes/permbits"
-	"github.com/stretchr/testify/require"
-
-	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
@@ -34,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/strutils"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -42,7 +33,21 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/termtest"
+	"github.com/go-openapi/strfmt"
+	"github.com/google/uuid"
+	"github.com/phayes/permbits"
+	"github.com/stretchr/testify/require"
+)
+
+var (
+	RuntimeSolvingTimeoutOpt       = termtest.OptExpectTimeout(1 * time.Minute)
+	RuntimeSourcingTimeoutOpt      = termtest.OptExpectTimeout(3 * time.Minute)
+	RuntimeBuildSourcingTimeoutOpt = termtest.OptExpectTimeout(6 * time.Minute)
 )
 
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
@@ -63,6 +68,18 @@ type Session struct {
 	ExecutorExe     string
 	spawned         []*SpawnedCmd
 	ignoreLogErrors bool
+	cache           keyCache
+}
+
+type keyCache map[string]string
+
+func (k keyCache) GetCache(key string) (string, error) {
+	return k[key], nil
+}
+
+func (k keyCache) SetCache(key, value string, _ time.Duration) error {
+	k[key] = value
+	return nil
 }
 
 var (
@@ -173,7 +190,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	require.NoError(t, err)
 	env := sandboxedTestEnvironment(t, dirs, updatePath, extraEnv...)
 
-	session := &Session{Dirs: dirs, Env: env, retainDirs: retainDirs, T: t}
+	session := &Session{Dirs: dirs, Env: env, retainDirs: retainDirs, T: t, cache: keyCache{}}
 
 	// Mock installation directory
 	exe, svcExe, execExe := executablePaths(t)
@@ -184,7 +201,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
 	require.NoError(session.T, err)
 
-	cfg, err := config.New()
+	cfg, err := config.NewCustom(dirs.Config, singlethread.New(), true)
 	require.NoError(session.T, err)
 
 	if err := cfg.Set(constants.SecurityPromptConfig, false); err != nil {
@@ -211,6 +228,26 @@ func (s *Session) Spawn(args ...string) *SpawnedCmd {
 	return s.SpawnCmdWithOpts(s.Exe, OptArgs(args...))
 }
 
+// SpawnDebuggerWithOpts will spawn a state tool command with the dlv debugger in remote debugging port.
+// It uses the default dlv port of `2345`. It has been tested in Goland (intellij), see instructions here:
+// https://www.jetbrains.com/help/go/attach-to-running-go-processes-with-debugger.html#step-3-create-the-remote-run-debug-configuration-on-the-client-computer
+// Note remote debugging seems a bit unreliable. I've found it works best to start the test code first, and once it is
+// running then start the remote debugger. When I launch the remote debugger first it often doesn't take. But even
+// when using this trickery it may at times not work; try restarting goland, your machine, or dlv.
+func (s *Session) SpawnDebuggerWithOpts(opts ...SpawnOptSetter) *SpawnedCmd {
+	spawnOpts := s.newSpawnOpts(opts...)
+	args := slices.Clone(spawnOpts.Args)
+
+	workDir := spawnOpts.Dir
+	spawnOpts.Args = []string{"debug", "--wd", workDir, "--headless", "--listen=:2345", "--api-version=2", "github.com/ActiveState/cli/cmd/state", "--"}
+	spawnOpts.Args = append(spawnOpts.Args, args...)
+	spawnOpts.Dir = environment.GetRootPathUnsafe()
+
+	return s.SpawnCmdWithOpts("dlv", func(opts *SpawnOpts) {
+		*opts = spawnOpts
+	})
+}
+
 // SpawnWithOpts spawns the state tool executable to be tested with arguments
 func (s *Session) SpawnWithOpts(opts ...SpawnOptSetter) *SpawnedCmd {
 	return s.SpawnCmdWithOpts(s.Exe, opts...)
@@ -233,33 +270,7 @@ func (s *Session) SpawnShellWithOpts(shell Shell, opts ...SpawnOptSetter) *Spawn
 // SpawnCmdWithOpts executes an executable in a pseudo-terminal for integration tests
 // Arguments and other parameters can be specified by specifying SpawnOptSetter
 func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *SpawnedCmd {
-	spawnOpts := NewSpawnOpts()
-	spawnOpts.Env = s.Env
-	spawnOpts.Dir = s.Dirs.Work
-
-	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
-		termtest.OptErrorHandler(func(tt *termtest.TermTest, err error) error {
-			s.T.Fatal(s.DebugMessage(errs.JoinMessage(err)))
-			return err
-		}),
-		termtest.OptDefaultTimeout(defaultTimeout),
-		termtest.OptCols(140),
-		termtest.OptRows(30), // Needs to be able to accommodate most JSON output
-	)
-
-	// TTYs output newlines in two steps: '\r' (CR) to move the caret to the beginning of the line,
-	// and '\n' (LF) to move the caret one line down. Terminal emulators do the same thing, so the
-	// raw terminal output will contain "\r\n". Since our multi-line expectation messages often use
-	// '\n', normalize line endings to that for convenience, regardless of platform ('\n' for Linux
-	// and macOS, "\r\n" for Windows).
-	// More info: https://superuser.com/a/1774370
-	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
-		termtest.OptNormalizedLineEnds(true),
-	)
-
-	for _, optSet := range optSetters {
-		optSet(&spawnOpts)
-	}
+	spawnOpts := s.newSpawnOpts(optSetters...)
 
 	var shell string
 	var args []string
@@ -321,6 +332,38 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 	return spawn
 }
 
+func (s *Session) newSpawnOpts(optSetters ...SpawnOptSetter) SpawnOpts {
+	spawnOpts := NewSpawnOpts()
+	spawnOpts.Env = s.Env
+	spawnOpts.Dir = s.Dirs.Work
+
+	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
+		termtest.OptErrorHandler(func(tt *termtest.TermTest, err error) error {
+			s.T.Fatal(s.DebugMessage(errs.JoinMessage(err)))
+			return err
+		}),
+		termtest.OptDefaultTimeout(defaultTimeout),
+		termtest.OptCols(140),
+		termtest.OptRows(30), // Needs to be able to accommodate most JSON output
+	)
+
+	// TTYs output newlines in two steps: '\r' (CR) to move the caret to the beginning of the line,
+	// and '\n' (LF) to move the caret one line down. Terminal emulators do the same thing, so the
+	// raw terminal output will contain "\r\n". Since our multi-line expectation messages often use
+	// '\n', normalize line endings to that for convenience, regardless of platform ('\n' for Linux
+	// and macOS, "\r\n" for Windows).
+	// More info: https://superuser.com/a/1774370
+	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
+		termtest.OptNormalizedLineEnds(true),
+	)
+
+	for _, optSet := range optSetters {
+		optSet(&spawnOpts)
+	}
+
+	return spawnOpts
+}
+
 // PrepareActiveStateYAML creates an activestate.yaml in the session's work directory from the
 // given YAML contents.
 func (s *Session) PrepareActiveStateYAML(contents string) {
@@ -342,6 +385,13 @@ func (s *Session) CommitID() string {
 	return pjfile.LegacyCommitID()
 }
 
+// PrepareEmptyProject creates a checkout of the empty ActiveState-CLI/Empty project without using
+// `state checkout`.
+func (s *Session) PrepareEmptyProject() {
+	s.PrepareActiveStateYAML(fmt.Sprintf("project: https://%s/%s", constants.DefaultAPIHost, "ActiveState-CLI/Empty"))
+	s.PrepareCommitIdFile("6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8")
+}
+
 // PrepareProject creates a very simple activestate.yaml file for the given org/project and, if a
 // commit ID is given, an .activestate/commit file.
 func (s *Session) PrepareProject(namespace, commitID string) {
@@ -353,7 +403,7 @@ func (s *Session) PrepareProject(namespace, commitID string) {
 
 func (s *Session) PrepareProjectAndBuildScript(namespace, commitID string) {
 	s.PrepareProject(namespace, commitID)
-	bp := buildplanner.NewBuildPlannerModel(nil)
+	bp := buildplanner.NewBuildPlannerModel(nil, s.cache)
 	script, err := bp.GetBuildScript(commitID)
 	require.NoError(s.T, err)
 	b, err := script.Marshal()
@@ -454,6 +504,7 @@ func (s *Session) DeleteUUIDProjects(org string) {
 func (s *Session) DebugMessage(prefix string) string {
 	var sectionStart, sectionEnd string
 	sectionStart = "\n=== "
+	sectionEnd = "\n/==\n"
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		sectionStart = "##[group]"
 		sectionEnd = "##[endgroup]"
@@ -463,27 +514,36 @@ func (s *Session) DebugMessage(prefix string) string {
 		prefix = prefix + "\n"
 	}
 
-	output := map[string]string{}
+	output := []string{}
 	for _, spawn := range s.spawned {
 		name := spawn.Cmd().String()
 		if spawn.opts.HideCmdArgs {
 			name = spawn.Cmd().Path
 		}
-		output[name] = strings.TrimSpace(spawn.Snapshot())
+		out := spawn.Output()
+		if strings.Contains(out, "panic") || strings.Contains(out, "goroutine") {
+			// If we encountered a panic it's unlikely the snapshot has enough information to be useful, so in this
+			// case we include the full output. Which we don't normally do as it is just the dump of pty data, and
+			// tends to be overly verbose and difficult to grok.
+			output = append(output, fmt.Sprintf("Snapshot for Cmd '%s':\n%s", name, strings.TrimSpace(out)))
+		} else {
+			output = append(output, fmt.Sprintf("Snapshot for Cmd '%s':\n%s", name, strings.TrimSpace(spawn.Snapshot())))
+		}
+	}
+
+	logs := []string{}
+	for name, log := range s.DebugLogs() {
+		logs = append(logs, fmt.Sprintf("Log for '%s':\n%s", name, log))
 	}
 
 	v, err := strutils.ParseTemplate(`
 {{.Prefix}}Stack:
 {{.Stacktrace}}
-{{range $title, $value := .Outputs}}
-{{$.A}}Snapshot for Cmd '{{$title}}':
-{{$value}}
-{{$.Z}}
+{{range $value := .Outputs}}
+{{$.A}}{{$value}}{{$.Z}}
 {{end}}
-{{range $title, $value := .Logs}}
-{{$.A}}Log '{{$title}}':
-{{$value}}
-{{$.Z}}
+{{range $value := .Logs}}
+{{$.A}}{{$value}}{{$.Z}}
 {{else}}
 No logs
 {{end}}
@@ -491,7 +551,7 @@ No logs
 		"Prefix":     prefix,
 		"Stacktrace": stacktrace.Get().String(),
 		"Outputs":    output,
-		"Logs":       s.DebugLogs(),
+		"Logs":       logs,
 		"A":          sectionStart,
 		"Z":          sectionEnd,
 	}, nil)
@@ -667,6 +727,13 @@ func (s *Session) LogFiles() []string {
 		fmt.Printf("Error walking log dir: %v", err)
 	}
 
+	// Sort by filename timestamp (filenames are `[executable]-[processid]-[timestamp].log`)
+	slices.SortFunc(result, func(a, b string) int {
+		aa := strings.Split(a, "-")
+		bb := strings.Split(b, "-")
+		return strings.Compare(bb[len(bb)-1], aa[len(aa)-1])
+	})
+
 	return result
 }
 
@@ -728,8 +795,8 @@ func (s *Session) detectLogErrors() {
 			continue
 		}
 		if contents := string(fileutils.ReadFileUnsafe(path)); errorOrPanicRegex.MatchString(contents) {
-			s.T.Errorf("%sFound error and/or panic in log file %s\nIf this was expected, call session.IgnoreLogErrors() to avoid this check\nLog contents:\n%s%s",
-				sectionStart, path, contents, sectionEnd)
+			s.T.Errorf(s.DebugMessage(fmt.Sprintf("%sFound error and/or panic in log file %s\nIf this was expected, call session.IgnoreLogErrors() to avoid this check\nLog contents:\n%s%s",
+				sectionStart, path, contents, sectionEnd)))
 		}
 	}
 }

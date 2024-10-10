@@ -18,11 +18,9 @@ func (suite *HelloIntegrationTestSuite) TestHello() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
-	cp.Expect("Checked out project")
-	cp.ExpectExitCode(0)
+	ts.PrepareEmptyProject()
 
-	cp = ts.Spawn("_hello", "Person")
+	cp := ts.Spawn("_hello", "Person")
 	cp.Expect("Hello, Person!")
 	cp.ExpectExitCode(0)
 
@@ -32,7 +30,7 @@ func (suite *HelloIntegrationTestSuite) TestHello() {
 	ts.IgnoreLogErrors()
 
 	cp = ts.Spawn("_hello", "Person", "--extra")
-	cp.Expect("Project: ActiveState-CLI/small-python")
+	cp.Expect("Project: ActiveState-CLI/Empty")
 	cp.Expect("Current commit message:")
 	cp.ExpectExitCode(0)
 

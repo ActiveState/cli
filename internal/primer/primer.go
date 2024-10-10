@@ -1,9 +1,13 @@
 package primer
 
 import (
+	"fmt"
+
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constraints"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -28,31 +32,50 @@ type Values struct {
 	analytics   analytics.Dispatcher
 }
 
-func New(
-	project *project.Project, output output.Outputer, auth *authentication.Auth, prompt prompt.Prompter,
-	subshell subshell.SubShell, conditional *constraints.Conditional, config *config.Instance,
-	ipComm svcctl.IPCommunicator, svcModel *model.SvcModel, an analytics.Dispatcher) *Values {
+func New(values ...any) *Values {
+	result := &Values{}
+	for _, v := range values {
+		switch typed := v.(type) {
+		case *project.Project:
+			result.project = typed
+			result.projectfile = typed.Source()
+		case output.Outputer:
+			result.output = typed
+		case *authentication.Auth:
+			result.auth = typed
+		case prompt.Prompter:
+			result.prompt = typed
+		case subshell.SubShell:
+			result.subshell = typed
+		case *constraints.Conditional:
+			result.conditional = typed
+		case *config.Instance:
+			result.config = typed
+		case svcctl.IPCommunicator:
+			result.ipComm = typed
+		case *model.SvcModel:
+			result.svcModel = typed
+		case analytics.Dispatcher:
+			result.analytics = typed
+		default:
+			if condition.BuiltOnDevMachine() || condition.InActiveStateCI() {
+				panic(fmt.Sprintf("invalid type %T", v))
+			} else {
+				multilog.Critical("Primer passed invalid type: %T", v)
+			}
+		}
+	}
+	return result
+}
 
-	v := &Values{
-		output:      output,
-		auth:        auth,
-		prompt:      prompt,
-		subshell:    subshell,
-		conditional: conditional,
-		config:      config,
-		ipComm:      ipComm,
-		svcModel:    svcModel,
-		analytics:   an,
-	}
-	if project != nil {
-		v.project = project
-		v.projectfile = project.Source()
-	}
-	return v
+func (v *Values) SetProject(p *project.Project) {
+	v.project = p
+	v.projectfile = p.Source()
 }
 
 type Projecter interface {
 	Project() *project.Project
+	SetProject(p *project.Project)
 }
 
 type Projectfiler interface {

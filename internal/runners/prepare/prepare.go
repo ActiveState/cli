@@ -1,6 +1,7 @@
 package prepare
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"runtime"
@@ -15,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -23,11 +23,9 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	rt "github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/runtime_helpers"
 	"github.com/thoas/go-funk"
 )
 
@@ -69,28 +67,26 @@ func (r *Prepare) resetExecutors() error {
 	}
 
 	logging.Debug("Reset default project at %s", defaultProjectDir)
-	defaultTargetDir := target.ProjectDirToTargetDir(defaultProjectDir, storage.CachePath())
-
 	proj, err := project.FromPath(defaultProjectDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not get project from its directory")
 	}
 
-	commitID, err := localcommit.Get(proj.Dir())
-	if err != nil {
-		return errs.Wrap(err, "Unable to get local commit")
-	}
-
-	run, err := rt.New(target.NewCustomTarget(proj.Owner(), proj.Name(), commitID, defaultTargetDir, target.TriggerResetExec), r.analytics, r.svcModel, nil, r.cfg, r.out)
+	rt, err := runtime_helpers.FromProject(proj)
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize runtime for project.")
 	}
 
-	if !run.NeedsUpdate() {
-		return nil // project was never set up, so no executors to reset
+	rtHash, err := runtime_helpers.Hash(proj, nil)
+	if err != nil {
+		return errs.Wrap(err, "Could not get runtime hash")
 	}
 
-	if err := globaldefault.SetupDefaultActivation(r.subshell, r.cfg, run, proj); err != nil {
+	if rtHash == rt.Hash() || !rt.HasCache() {
+		return nil
+	}
+
+	if err := globaldefault.SetupDefaultActivation(r.subshell, r.cfg, rt, proj); err != nil {
 		return errs.Wrap(err, "Failed to rewrite the executors.")
 	}
 
@@ -110,14 +106,15 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 	}
 
 	if err := prepareCompletions(cmd, r.subshell); err != nil {
-		if !errs.Matches(err, &ErrorNotSupported{}) && !os.IsPermission(err) {
-			r.reportError(locale.Tl("err_prepare_generate_completions", "Could not generate completions script, error received: {{.V0}}.", err.Error()), err)
+		var errNotSupported *ErrorNotSupported
+		if !errors.As(err, &errNotSupported) && !os.IsPermission(err) {
+			r.reportError(locale.Tl("err_prepare_generate_completions", "Could not generate completions script. Error received: {{.V0}}.", err.Error()), err)
 		}
 	}
 
 	logging.Debug("Reset global executors")
 	if err := r.resetExecutors(); err != nil {
-		r.reportError(locale.Tl("err_reset_executor", "Could not reset global executors, error received: {{.V0}}", errs.JoinMessage(err)), err)
+		r.reportError(locale.Tl("err_reset_executor", "Could not reset global executors. Error received: {{.V0}}", errs.JoinMessage(err)), err)
 	}
 
 	// OS specific preparations
@@ -130,7 +127,7 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 	}
 
 	if err := updateConfigKey(r.cfg, oldGlobalDefaultPrefname, constants.GlobalDefaultPrefname); err != nil {
-		r.reportError(locale.Tl("err_prepare_config", "Could not update stale config keys, error recieved: {{.V0}}", errs.JoinMessage(err)), err)
+		r.reportError(locale.Tl("err_prepare_config", "Could not update stale config keys. Error recieved: {{.V0}}", errs.JoinMessage(err)), err)
 	}
 
 	return nil
@@ -179,6 +176,8 @@ func InstalledPreparedFiles() ([]string, error) {
 	} else if path != "" {
 		files = append(files, path)
 	}
+
+	files = append(files, extraInstalledPreparedFiles()...)
 
 	return files, nil
 }

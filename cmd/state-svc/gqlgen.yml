@@ -59,3 +59,5 @@ models:
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
+  Void:
+    model: github.com/ActiveState/cli/cmd/state-svc/internal/graphql.Void

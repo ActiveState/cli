@@ -1,11 +1,17 @@
 package subshell
 
 import (
+	"errors"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/shirou/gopsutil/v3/process"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -17,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/subshell/fish"
+	"github.com/ActiveState/cli/internal/subshell/pwsh"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/subshell/tcsh"
 	"github.com/ActiveState/cli/internal/subshell/zsh"
@@ -99,6 +106,8 @@ func New(cfg sscommon.Configurable) SubShell {
 		subs = &fish.SubShell{}
 	case cmd.Name:
 		subs = &cmd.SubShell{}
+	case pwsh.Name:
+		subs = &pwsh.SubShell{}
 	default:
 		rollbar.Error("subshell.DetectShell did not return a known name: %s", name)
 		switch runtime.GOOS {
@@ -113,7 +122,7 @@ func New(cfg sscommon.Configurable) SubShell {
 
 	logging.Debug("Using binary: %s", path)
 	subs.SetBinary(path)
-	
+
 	err := subs.SetEnv(osutils.EnvSliceToMap(os.Environ()))
 	if err != nil {
 		// We cannot error here, but this error will resurface when activating a runtime, so we can
@@ -175,20 +184,24 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 		}
 	}()
 
-	binary = os.Getenv("SHELL")
-	if binary == "" && runtime.GOOS == "windows" {
-		binary = os.Getenv("ComSpec")
+	if os.Getenv(constants.OverrideShellEnvVarName) != "" {
+		binary = os.Getenv(constants.OverrideShellEnvVarName)
+	}
+
+	if binary == "" {
+		binary = detectShellParent()
 	}
 
 	if binary == "" {
 		binary = configured
 	}
+
 	if binary == "" {
-		if runtime.GOOS == "windows" {
-			binary = "cmd.exe"
-		} else {
-			binary = "bash"
-		}
+		binary = os.Getenv(SHELL_ENV_VAR)
+	}
+
+	if binary == "" {
+		binary = OS_DEFAULT
 	}
 
 	path := resolveBinaryPath(binary)
@@ -204,7 +217,7 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 	}
 
 	isKnownShell := false
-	for _, ssName := range []string{bash.Name, cmd.Name, fish.Name, tcsh.Name, zsh.Name} {
+	for _, ssName := range []string{bash.Name, cmd.Name, fish.Name, tcsh.Name, zsh.Name, pwsh.Name} {
 		if name == ssName {
 			isKnownShell = true
 			break
@@ -213,7 +226,7 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 
 	if !isKnownShell {
 		logging.Debug("Unsupported shell: %s, defaulting to OS default.", name)
-		if !strings.EqualFold(name, "powershell") && name != "sh" {
+		if name != "sh" {
 			rollbar.Error("Unsupported shell: %s", name) // we just want to know what this person is using
 		}
 		switch runtime.GOOS {
@@ -230,4 +243,26 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 	}
 
 	return name, path
+}
+
+func detectShellParent() string {
+	p, err := process.NewProcess(int32(os.Getppid()))
+	if err != nil && !errors.As(err, ptr.To(&os.PathError{})) {
+		multilog.Error("Failed to get parent process: %s", errs.JoinMessage(err))
+	}
+
+	for p != nil && p.Pid != 0 {
+		name, err := p.Name()
+		if err == nil {
+			if strings.Contains(name, string(filepath.Separator)) {
+				name = path.Base(name)
+			}
+			if supportedShellName(name) {
+				return name
+			}
+		}
+		p, _ = p.Parent()
+	}
+
+	return ""
 }

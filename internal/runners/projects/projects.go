@@ -9,10 +9,9 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/runtime_helpers"
 )
 
 // Holds a union of project and organization parameters.
@@ -23,13 +22,12 @@ type projectWithOrg struct {
 	Executables    []string `json:"executables,omitempty"`
 }
 
-func newProjectWithOrg(name, org string, checkouts []string) projectWithOrg {
+func newProjectWithOrg(prime primeable, name, org string, checkouts []string) projectWithOrg {
 	p := projectWithOrg{Name: name, Organization: org, LocalCheckouts: checkouts}
 	for _, checkout := range checkouts {
 		var execDir string
 		if proj, err := project.FromPath(checkout); err == nil {
-			projectTarget := target.NewProjectTarget(proj, nil, "")
-			execDir = setup.ExecDir(projectTarget.Dir())
+			execDir = runtime_helpers.ExecutorPathFromProject(proj)
 		} else {
 			multilog.Error("Unable to get project %s from checkout: %v", checkout, err)
 		}
@@ -64,16 +62,16 @@ func (o *projectsOutput) MarshalOutput(f output.Format) interface{} {
 			}
 			execDir := v.Executables[i]
 			if execDir != "" {
-				checkouts = append(checkouts, locale.Tl("projects_local_checkout_exec", " ├─ Local Checkout → {{.V0}}", checkout))
+				checkouts = append(checkouts, locale.Tl("projects_local_checkout_exec", " {{.V0}} Local Checkout → {{.V1}}", output.TreeMid, checkout))
 				if f == output.PlainFormatName {
 					// Show executable path below checkout path for plain text output.
-					checkouts = append(checkouts, locale.Tl("projects_executables", " └─ Executables → {{.V0}}", execDir))
+					checkouts = append(checkouts, locale.Tl("projects_executables", " {{.V0}} Executables → {{.V1}}", output.TreeEnd, execDir))
 				} else {
 					// Show executables in a separate table.
 					executables = append(executables, execDir)
 				}
 			} else {
-				checkouts = append(checkouts, locale.Tl("projects_local_checkout", " └─ Local Checkout → {{.V0}}", checkout))
+				checkouts = append(checkouts, locale.Tl("projects_local_checkout", " {{.V0}} Local Checkout → {{.V1}}", output.TreeEnd, checkout))
 			}
 		}
 		r = append(r, projectOutputPlain{v.Name, v.Organization, strings.Join(checkouts, "\n"), strings.Join(executables, "\n")})
@@ -95,6 +93,10 @@ type Params struct {
 }
 
 type Projects struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	auth   *authentication.Auth
 	out    output.Outputer
 	config configGetter
@@ -112,14 +114,11 @@ func NewParams() *Params {
 }
 
 func NewProjects(prime primeable) *Projects {
-	return newProjects(prime.Auth(), prime.Output(), prime.Config())
-}
-
-func newProjects(auth *authentication.Auth, out output.Outputer, config configGetter) *Projects {
 	return &Projects{
-		auth,
-		out,
-		config,
+		prime,
+		prime.Auth(),
+		prime.Output(),
+		prime.Config(),
 	}
 }
 
@@ -133,7 +132,7 @@ func (r *Projects) Run(params *Params) error {
 			multilog.Error("Invalid project namespace stored to config mapping: %s", namespace)
 			continue
 		}
-		projects = append(projects, newProjectWithOrg(ns.Project, ns.Owner, checkouts))
+		projects = append(projects, newProjectWithOrg(r.prime, ns.Project, ns.Owner, checkouts))
 	}
 
 	sort.SliceStable(projects, func(i, j int) bool {

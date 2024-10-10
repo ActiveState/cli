@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
+
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/analytics/constants"
@@ -52,13 +55,24 @@ func (s *Set) Run(params SetParams) error {
 		if err != nil {
 			return locale.WrapInputError(err, "Invalid integer value")
 		}
+	case configMediator.Enum:
+		enums, ok := option.Default.(*configMediator.Enums)
+		if !ok {
+			return errs.New("Programming error: config key '%s' was registered as an enum, but the default was not an enum", params.Key.String())
+		}
+		if !funk.Contains(enums.Options, params.Value) {
+			return locale.NewInputError(
+				"err_config_set_enum_invalid_value", "Invalid value '{{.V0}}': expected one of: {{.V1}}",
+				params.Value, strings.Join(enums.Options, ", "))
+		}
+		value = params.Value
 	default:
 		value = params.Value
 	}
 
 	value, err := option.SetEvent(value)
 	if err != nil {
-		return locale.WrapError(err, "err_config_set_event", "Could not store config value, if this continues to happen please contact support.")
+		return locale.WrapError(err, "err_config_set_event", "Could not store config value. If this continues to happen please contact support.")
 	}
 
 	key := params.Key.String()

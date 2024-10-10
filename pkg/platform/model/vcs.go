@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -83,7 +84,7 @@ const (
 	NamespaceCamelFlagsMatch = `^camel-flags$`
 
 	// NamespaceOrgMatch is the namespace used for org specific requirements
-	NamespaceOrgMatch = `^org\/`
+	NamespaceOrgMatch = `^private\/`
 
 	// NamespaceBuildFlagsMatch is the namespace used for passing build flags
 	NamespaceBuildFlagsMatch = `^build-flags$`
@@ -134,13 +135,17 @@ var (
 	NamespaceBundle   = NamespaceType{"bundle", "bundles", NamespaceBundlesMatch}
 	NamespaceLanguage = NamespaceType{"language", "", NamespaceLanguageMatch}
 	NamespacePlatform = NamespaceType{"platform", "", NamespacePlatformMatch}
-	NamespaceOrg      = NamespaceType{"org", "org", NamespaceOrgMatch}
+	NamespaceOrg      = NamespaceType{"org", "private/", NamespaceOrgMatch}
 	NamespaceRaw      = NamespaceType{"raw", "", ""}
 	NamespaceBlank    = NamespaceType{"", "", ""}
 )
 
 func (t NamespaceType) String() string {
 	return t.name
+}
+
+func (t NamespaceType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.String())
 }
 
 func (t NamespaceType) Prefix() string {
@@ -169,6 +174,18 @@ func (n Namespace) String() string {
 	return n.value
 }
 
+func ParseNamespace(ns string) Namespace {
+	if ns == "" {
+		return Namespace{NamespaceBlank, ns}
+	}
+	for _, n := range []NamespaceType{NamespacePackage, NamespaceBundle, NamespaceLanguage, NamespacePlatform, NamespaceOrg} {
+		if NamespaceMatch(ns, n.Matchable()) {
+			return Namespace{n, ns}
+		}
+	}
+	return Namespace{nsType: NamespaceRaw, value: ns}
+}
+
 func NewNamespacePkgOrBundle(language string, nstype NamespaceType) Namespace {
 	if nstype == NamespaceBundle {
 		return NewNamespaceBundle(language)
@@ -181,7 +198,7 @@ func NewNamespacePackage(language string) Namespace {
 	return Namespace{NamespacePackage, fmt.Sprintf("language/%s", language)}
 }
 
-func NewRawNamespace(value string) Namespace {
+func NewNamespaceRaw(value string) Namespace {
 	return Namespace{NamespaceRaw, value}
 }
 
@@ -204,19 +221,24 @@ func NewNamespacePlatform() Namespace {
 	return Namespace{NamespacePlatform, "platform"}
 }
 
-func NewOrgNamespace(orgName string) Namespace {
+func NewNamespaceOrg(orgName string) Namespace {
 	return Namespace{
 		nsType: NamespaceOrg,
-		value:  fmt.Sprintf("private/%s", orgName),
+		value:  NamespaceOrg.prefix + "/" + orgName,
 	}
 }
 
 func LanguageFromNamespace(ns string) string {
-	values := strings.Split(ns, "/")
-	if len(values) != 2 {
-		return ""
+	matchables := []NamespaceMatchable{
+		NamespacePackage.Matchable(),
+		NamespaceBundle.Matchable(),
 	}
-	return values[1]
+	for _, m := range matchables {
+		if NamespaceMatch(ns, m) {
+			return strings.Split(ns, "/")[1]
+		}
+	}
+	return ""
 }
 
 // FilterSupportedIngredients filters a list of ingredients, returning only those that are currently supported (such that they can be built) by the Platform
@@ -254,7 +276,7 @@ func BranchCommitID(ownerName, projectName, branchName string) (*strfmt.UUID, er
 	if branch.CommitID == nil {
 		return nil, locale.NewInputError(
 			"err_project_no_commit",
-			"Your project does not have any commits yet, head over to {{.V0}} to set up your project.", api.GetPlatformURL(fmt.Sprintf("%s/%s", ownerName, projectName)).String())
+			"Your project does not have any commits yet. Head over to {{.V0}} to set up your project.", api.GetPlatformURL(fmt.Sprintf("%s/%s", ownerName, projectName)).String())
 	}
 
 	return branch.CommitID, nil
@@ -542,7 +564,7 @@ func UpdateProjectBranchCommitWithModel(pjm *mono_models.Project, branchName str
 
 // CommitInitial creates a root commit for a new branch
 func CommitInitial(hostPlatform string, langName, langVersion string, auth *authentication.Auth) (strfmt.UUID, error) {
-	platformID, err := hostPlatformToPlatformID(hostPlatform)
+	platformID, err := PlatformNameToPlatformID(hostPlatform)
 	if err != nil {
 		return "", err
 	}
@@ -647,19 +669,6 @@ func (cs indexedCommits) countBetween(first, last string) (int, error) {
 	}
 
 	return ct, nil
-}
-
-func ResolveRequirementNameAndVersion(name, version string, word int, namespace Namespace, auth *authentication.Auth) (string, string, error) {
-	if namespace.Type() == NamespacePlatform {
-		platform, err := FetchPlatformByDetails(name, version, word, auth)
-		if err != nil {
-			return "", "", errs.Wrap(err, "Could not fetch platform")
-		}
-		name = platform.PlatformID.String()
-		version = ""
-	}
-
-	return name, version, nil
 }
 
 func ChangesetFromRequirements(op Operation, reqs []*gqlModel.Requirement) Changeset {
@@ -888,10 +897,18 @@ func GetCommitWithinCommitHistory(currentCommitID, targetCommitID strfmt.UUID, a
 // This function exists primarily as an existence check because the buildplanner API currently
 // accepts a query for a org/project#commitID even if commitID does not belong to org/project.
 // See DS-1705 (yes, DS, not DX).
-func GetCommitWithinProjectHistory(commitID strfmt.UUID, owner, name string, auth *authentication.Auth) (*mono_models.Commit, error) {
+func GetCommitWithinProjectHistory(commitID strfmt.UUID, owner, name string, localCommitID *strfmt.UUID, auth *authentication.Auth) (*mono_models.Commit, error) {
 	commit, err := GetCommit(commitID, auth)
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get commit")
+	}
+
+	if localCommitID != nil {
+		if ok, err := CommitWithinCommitHistory(*localCommitID, commitID, auth); err == nil && ok {
+			return commit, nil
+		} else if err != nil {
+			return nil, errs.Wrap(err, "Unable to determine if commit exists in local history")
+		}
 	}
 
 	branches, err := BranchesForProject(owner, name)

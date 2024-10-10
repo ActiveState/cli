@@ -20,9 +20,30 @@ func (suite *InstallIntegrationTestSuite) TestInstall() {
 	defer ts.Close()
 
 	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
-	cp := ts.SpawnWithOpts(e2e.OptArgs("install", "trender"), e2e.OptAppendEnv(constants.DisableRuntime+"=false"))
-	cp.Expect("Package added", e2e.RuntimeSourcingTimeoutOpt)
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "trender")
+	cp.Expect("project has been updated")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *InstallIntegrationTestSuite) TestInstallSuggest() {
+	suite.OnlyRunForTags(tagsuite.Install, tagsuite.Critical)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "djang")
+	cp.Expect("No results found", e2e.RuntimeSolvingTimeoutOpt)
+	cp.Expect("Did you mean")
+	cp.Expect("language/python/djang")
+	cp.ExpectExitCode(1)
 }
 
 func (suite *InstallIntegrationTestSuite) TestInstall_InvalidCommit() {
@@ -31,7 +52,7 @@ func (suite *InstallIntegrationTestSuite) TestInstall_InvalidCommit() {
 	defer ts.Close()
 
 	ts.PrepareProject("ActiveState-CLI/small-python", "malformed-commit-id")
-	cp := ts.SpawnWithOpts(e2e.OptArgs("install", "trender"))
+	cp := ts.Spawn("install", "trender")
 	cp.Expect("invalid commit ID")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
@@ -43,7 +64,7 @@ func (suite *InstallIntegrationTestSuite) TestInstall_NoMatches_NoAlternatives()
 	defer ts.Close()
 
 	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
-	cp := ts.SpawnWithOpts(e2e.OptArgs("install", "I-dont-exist"))
+	cp := ts.Spawn("install", "I-dont-exist")
 	cp.Expect("No results found for search term")
 	cp.Expect("find alternatives") // This verifies no alternatives were found
 	cp.ExpectExitCode(1)
@@ -55,14 +76,15 @@ func (suite *InstallIntegrationTestSuite) TestInstall_NoMatches_NoAlternatives()
 }
 
 func (suite *InstallIntegrationTestSuite) TestInstall_NoMatches_Alternatives() {
+	suite.T().Skip("Requires https://activestatef.atlassian.net/browse/DX-3074 to be resolved.")
 	suite.OnlyRunForTags(tagsuite.Install)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
-	cp := ts.SpawnWithOpts(e2e.OptArgs("install", "database"))
+	cp := ts.Spawn("install", "database")
 	cp.Expect("No results found for search term")
-	cp.Expect("did you mean") // This verifies alternatives were found
+	cp.Expect("Did you mean") // This verifies alternatives were found
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 
@@ -77,11 +99,9 @@ func (suite *InstallIntegrationTestSuite) TestInstall_BuildPlannerError() {
 	defer ts.Close()
 
 	ts.PrepareProject("ActiveState-CLI/small-python", "d8f26b91-899c-4d50-8310-2c338786aa0f")
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("install", "trender@999.0"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect("Could not plan build, platform responded with", e2e.RuntimeSourcingTimeoutOpt)
+
+	cp := ts.Spawn("install", "trender@999.0")
+	cp.Expect("Could not plan build. Platform responded with")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 
@@ -96,11 +116,12 @@ func (suite *InstallIntegrationTestSuite) TestInstall_Resolved() {
 	defer ts.Close()
 
 	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("install", "requests"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect("Package added", e2e.RuntimeSourcingTimeoutOpt)
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "requests")
+	cp.Expect("project has been updated")
 	cp.ExpectExitCode(0)
 
 	// Run `state packages` to verify a full package version was resolved.

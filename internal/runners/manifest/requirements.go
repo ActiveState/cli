@@ -1,10 +1,12 @@
 package manifest
 
 import (
+	"fmt"
+
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/buildplan"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
+	"github.com/ActiveState/cli/pkg/buildscript"
 	platformModel "github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -16,24 +18,45 @@ type requirement struct {
 }
 
 type requirements struct {
-	Requirements []*requirement `json:"requirements"`
+	Requirements        []requirement                    `json:"requirements"`
+	UnknownRequirements []buildscript.UnknownRequirement `json:"unknown_requirements,omitempty"`
+	expand              bool                             // Whether to show requirements by their full namespace
 }
 
-func newRequirements(reqs []types.Requirement, bpReqs buildplan.Ingredients, vulns vulnerabilities) requirements {
-	var result []*requirement
+func newRequirements(reqs []buildscript.Requirement, bpReqs buildplan.Ingredients, vulns vulnerabilities, shortRevIDs bool, expand bool) requirements {
+	var knownReqs []requirement
+	var unknownReqs []buildscript.UnknownRequirement
 	for _, req := range reqs {
-		result = append(result, &requirement{
-			Name:            req.Name,
-			Namespace:       processNamespace(req.Namespace),
-			ResolvedVersion: resolveVersion(req, bpReqs),
-			Vulnerabilities: vulns.getVulnerability(req.Name, req.Namespace),
-		})
+		switch r := req.(type) {
+		case buildscript.DependencyRequirement:
+			knownReqs = append(knownReqs, requirement{
+				Name:            r.Name,
+				Namespace:       r.Namespace,
+				ResolvedVersion: resolveVersion(r.Requirement, bpReqs),
+				Vulnerabilities: vulns.get(r.Name, r.Namespace),
+			})
+		case buildscript.RevisionRequirement:
+			revID := r.RevisionID.String()
+			if shortRevIDs && len(revID) > 8 {
+				revID = revID[0:8]
+			}
+			knownReqs = append(knownReqs, requirement{
+				Name:            r.Name,
+				ResolvedVersion: &resolvedVersion{Requested: revID},
+			})
+		case buildscript.UnknownRequirement:
+			unknownReqs = append(unknownReqs, r)
+		}
 	}
 
-	return requirements{Requirements: result}
+	return requirements{
+		Requirements:        knownReqs,
+		UnknownRequirements: unknownReqs,
+		expand:              expand,
+	}
 }
 
-func (o requirements) MarshalOutput(_ output.Format) interface{} {
+func (o requirements) Print(out output.Outputer) {
 	type requirementOutput struct {
 		Name            string `locale:"manifest_name,Name"`
 		Version         string `locale:"manifest_version,Version"`
@@ -44,24 +67,41 @@ func (o requirements) MarshalOutput(_ output.Format) interface{} {
 
 	var requirementsOutput []*requirementOutput
 	for _, req := range o.Requirements {
+		name := req.Name
+		if o.expand && req.Namespace != "" {
+			name = req.Namespace + "/" + req.Name
+		}
 		requirementOutput := &requirementOutput{
-			Name:            locale.Tl("manifest_name", "[ACTIONABLE]{{.V0}}[/RESET]", req.Name),
+			Name:            fmt.Sprintf("[ACTIONABLE]%s[/RESET]", name),
 			Version:         req.ResolvedVersion.String(),
 			Vulnerabilities: req.Vulnerabilities.String(),
 		}
 
-		if req.Namespace != "" {
-			requirementOutput.Namespace = locale.Tl("manifest_namespace", " └─ [DISABLED]namespace:[/RESET] [CYAN]{{.V0}}[/RESET]", req.Namespace)
+		if isCustomNamespace(req.Namespace) {
+			requirementOutput.Namespace = locale.Tr("namespace_row", output.TreeEnd, req.Namespace)
 		}
 
 		requirementsOutput = append(requirementsOutput, requirementOutput)
 	}
 
-	return struct {
-		Requirements []*requirementOutput `locale:"," opts:"hideDash"`
+	out.Print("") // blank line
+	out.Print(struct {
+		Requirements []*requirementOutput `locale:"," opts:"hideDash,omitKey"`
 	}{
 		Requirements: requirementsOutput,
+	})
+
+	if len(o.UnknownRequirements) > 0 {
+		out.Notice("")
+		out.Notice(locale.Tt("warn_additional_requirements"))
+		out.Notice("")
+		out.Print(struct {
+			Requirements []buildscript.UnknownRequirement `locale:"," opts:"hideDash,omitKey"`
+		}{
+			Requirements: o.UnknownRequirements,
+		})
 	}
+
 }
 
 func (o requirements) MarshalStructured(f output.Format) interface{} {
@@ -74,14 +114,6 @@ func (o requirements) MarshalStructured(f output.Format) interface{} {
 	}
 
 	return o
-}
-
-func processNamespace(namespace string) string {
-	if !isCustomNamespace(namespace) {
-		return ""
-	}
-
-	return namespace
 }
 
 func isCustomNamespace(ns string) bool {

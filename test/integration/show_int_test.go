@@ -24,13 +24,7 @@ func (suite *ShowIntegrationTestSuite) TestShow() {
 
 	suite.PrepareProject(ts)
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("activate"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.ExpectInput(e2e.RuntimeSourcingTimeoutOpt)
-
-	cp = ts.Spawn("show")
+	cp := ts.Spawn("show")
 	cp.Expect(`Name`)
 	cp.Expect(`Show`)
 	cp.Expect(`Organization`)
@@ -65,7 +59,7 @@ func (suite *ShowIntegrationTestSuite) TestShowWithoutBranch() {
 
 	ts.PrepareProject("cli-integration-tests/Show", "e8f3b07b-502f-4763-83c1-763b9b952e18")
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("show"))
+	cp := ts.Spawn("show")
 	cp.ExpectExitCode(0)
 
 	contents, err := fileutils.ReadFile(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
@@ -105,12 +99,9 @@ func (suite *ShowIntegrationTestSuite) TestJSON() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out")
-	cp.ExpectExitCode(0)
+	suite.PrepareProject(ts)
 
-	cp = ts.Spawn("show", "-o", "json")
+	cp := ts.Spawn("show", "-o", "json")
 	cp.Expect(`"project_url":`)
 	cp.Expect(`"name":`)
 	cp.Expect(`"platforms":`)

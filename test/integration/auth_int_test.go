@@ -46,11 +46,11 @@ func (suite *AuthIntegrationTestSuite) TestAuthToken() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn(tagsuite.Auth, "--token", e2e.PersistentToken, "-n")
+	cp := ts.Spawn("auth", "--token", e2e.PersistentToken, "-n")
 	cp.Expect("logged in", termtest.OptExpectTimeout(40*time.Second))
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn(tagsuite.Auth, "--non-interactive")
+	cp = ts.Spawn("auth", "--non-interactive")
 	cp.Expect("logged in", termtest.OptExpectTimeout(40*time.Second))
 	cp.ExpectExitCode(0)
 
@@ -59,7 +59,7 @@ func (suite *AuthIntegrationTestSuite) TestAuthToken() {
 }
 
 func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, username, password string) {
-	cp := ts.Spawn(tagsuite.Auth, "--prompt")
+	cp := ts.Spawn("auth", "--prompt")
 	cp.Expect("username:")
 	cp.SendLine(username)
 	cp.Expect("password:")
@@ -68,20 +68,20 @@ func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, usernam
 	cp.ExpectExitCode(0)
 
 	// still logged in?
-	c2 := ts.Spawn(tagsuite.Auth)
+	c2 := ts.Spawn("auth")
 	c2.Expect("You are logged in")
 	c2.ExpectExitCode(0)
 }
 
 func (suite *AuthIntegrationTestSuite) loginFlags(ts *e2e.Session, username string) {
-	cp := ts.Spawn(tagsuite.Auth, "--username", username, "--password", "bad-password")
-	cp.Expect("You are not authorized, did you provide valid login credentials?")
+	cp := ts.Spawn("auth", "--username", username, "--password", "bad-password")
+	cp.Expect("You are not authorized. Did you provide valid login credentials?")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 }
 
 func (suite *AuthIntegrationTestSuite) ensureLogout(ts *e2e.Session) {
-	cp := ts.Spawn(tagsuite.Auth, "--prompt")
+	cp := ts.Spawn("auth", "--prompt")
 	cp.Expect("username:")
 	cp.SendCtrlC()
 }
@@ -101,7 +101,7 @@ func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 
 	expected := string(data)
 	ts.LoginAsPersistentUser()
-	cp := ts.Spawn(tagsuite.Auth, "--output", method)
+	cp := ts.Spawn("auth", "--output", method)
 	cp.Expect(`"}`)
 	cp.ExpectExitCode(0)
 	suite.Contains(cp.Output(), string(expected))

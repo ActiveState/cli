@@ -228,7 +228,7 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 
 func (suite *SvcIntegrationTestSuite) TestLogRotation() {
 	suite.OnlyRunForTags(tagsuite.Service)
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	logDir := filepath.Join(ts.Dirs.Config, "logs")

@@ -35,7 +35,7 @@ func newEventsLogCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        "follow",
 				Shorthand:   "f",
-				Description: locale.Tl("tail_f_description", "Don't stop when end of file is reached, wait for additional data."),
+				Description: locale.Tl("tail_f_description", "Don't stop when end of file is reached. Wait for additional data."),
 				Value:       &params.Follow,
 			},
 		},

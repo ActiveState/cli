@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
-	"github.com/ActiveState/termtest"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
@@ -23,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	helperSuite "github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 )
 
 type AnalyticsIntegrationTestSuite struct {
@@ -40,7 +39,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 
 	/* TEST SETUP */
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	namespace := "ActiveState-CLI/Alternate-Python"
@@ -54,7 +53,6 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 	sleepTime = sleepTime + (sleepTime / 2)
 
 	env := []string{
-		constants.DisableRuntime + "=false",
 		fmt.Sprintf("%s=%d", constants.HeartbeatIntervalEnvVarName, heartbeatInterval),
 	}
 
@@ -78,7 +76,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 
 	cp.Expect("Creating a Virtual Environment")
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
-	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
+	cp.ExpectInput()
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events
 
@@ -144,7 +142,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 			if e.Dimensions == nil || e.Dimensions.Trigger == nil {
 				return false
 			}
-			return (*e.Dimensions.Trigger) == target.TriggerExecutor.String()
+			return (*e.Dimensions.Trigger) == trigger.TriggerExecutor.String()
 		})
 		suite.Require().Equal(1, countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt, anaConst.SrcExecutor),
 			ts.DebugMessage("Should have a runtime attempt, events:\n"+suite.summarizeEvents(executorEvents)))
@@ -213,7 +211,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestExecEvents() {
 
 	/* TEST SETUP */
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	namespace := "ActiveState-CLI/Alternate-Python"
@@ -227,7 +225,6 @@ func (suite *AnalyticsIntegrationTestSuite) TestExecEvents() {
 	sleepTime = sleepTime + (sleepTime / 2)
 
 	env := []string{
-		constants.DisableRuntime + "=false",
 		fmt.Sprintf("%s=%d", constants.HeartbeatIntervalEnvVarName, heartbeatInterval),
 	}
 
@@ -383,7 +380,7 @@ func parseAnalyticsEvents(suite TestingSuiteForAnalytics, ts *e2e.Session) []rep
 func (suite *AnalyticsIntegrationTestSuite) TestSend() {
 	suite.OnlyRunForTags(tagsuite.Analytics, tagsuite.Critical)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
@@ -417,7 +414,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestSend() {
 func (suite *AnalyticsIntegrationTestSuite) TestSequenceAndFlags() {
 	suite.OnlyRunForTags(tagsuite.Analytics)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	cp := ts.Spawn("--version")
@@ -442,7 +439,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestSequenceAndFlags() {
 func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 	suite.OnlyRunForTags(tagsuite.Analytics)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
@@ -468,21 +465,20 @@ func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
 	suite.OnlyRunForTags(tagsuite.Analytics)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	ts.PrepareProject("ActiveState-CLI/test", "9090c128-e948-4388-8f7f-96e2c1e00d98")
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "ActiveState-CLI/Alternate-Python"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-		e2e.OptAppendEnv(constants.DisableActivateEventsEnvVarName+"=false"),
 		e2e.OptWD(ts.Dirs.Work),
+		e2e.OptAppendEnv(constants.DisableActivateEventsEnvVarName+"=false"),
 	)
 
 	cp.Expect("Creating a Virtual Environment")
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
-	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
+	cp.ExpectInput()
 
 	cp.SendLine("python3 --version")
 	cp.Expect("Python 3.")
@@ -514,18 +510,19 @@ func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
 func (suite *AnalyticsIntegrationTestSuite) TestHeapEvents() {
 	suite.OnlyRunForTags(tagsuite.Analytics)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	ts.LoginAsPersistentUser()
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("activate", "ActiveState-CLI/Alternate-Python"),
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("activate", "ActiveState-CLI/Alternate-Python"),
 		e2e.OptWD(ts.Dirs.Work),
 	)
 
 	cp.Expect("Creating a Virtual Environment")
-	cp.Expect("Activated")
-	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectInput()
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events
 
@@ -556,17 +553,19 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeapEvents() {
 func (suite *AnalyticsIntegrationTestSuite) TestConfigEvents() {
 	suite.OnlyRunForTags(tagsuite.Analytics, tagsuite.Config)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("config", "set", "optin.unstable", "false"),
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("config", "set", "optin.unstable", "false"),
 		e2e.OptWD(ts.Dirs.Work),
 	)
 	cp.Expect("Successfully set config key")
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events
 
-	cp = ts.SpawnWithOpts(e2e.OptArgs("config", "set", "optin.unstable", "true"),
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("config", "set", "optin.unstable", "true"),
 		e2e.OptWD(ts.Dirs.Work),
 	)
 	cp.Expect("Successfully set config key")
@@ -603,7 +602,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestConfigEvents() {
 func (suite *AnalyticsIntegrationTestSuite) TestCIAndInteractiveDimensions() {
 	suite.OnlyRunForTags(tagsuite.Analytics)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	for _, interactive := range []bool{true, false} {
@@ -612,7 +611,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestCIAndInteractiveDimensions() {
 			if !interactive {
 				args = append(args, "--non-interactive")
 			}
-			cp := ts.SpawnWithOpts(e2e.OptArgs(args...))
+			cp := ts.Spawn(args...)
 			cp.Expect("ActiveState CLI")
 			cp.ExpectExitCode(0)
 

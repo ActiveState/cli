@@ -24,12 +24,12 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 	case types.NotFoundErrorType:
 		return &CommitError{
 			commit.Type, commit.Message,
-			locale.NewInputError("err_buildplanner_commit_not_found", "Could not find commit, received message: {{.V0}}", commit.Message),
+			locale.NewInputError("err_buildplanner_commit_not_found", "Could not find commit. Received message: {{.V0}}", commit.Message),
 		}
 	case types.ParseErrorType:
 		return &CommitError{
 			commit.Type, commit.Message,
-			locale.NewInputError("err_buildplanner_parse_error", "The platform failed to parse the build expression, received message: {{.V0}}. Path: {{.V1}}", commit.Message, commit.ParseError.Path),
+			locale.NewInputError("err_buildplanner_parse_error", "The platform failed to parse the build expression. Received message: {{.V0}}. Path: {{.V1}}", commit.Message, commit.ParseError.Path),
 		}
 	case types.ValidationErrorType:
 		var subErrorMessages []string
@@ -39,17 +39,17 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 		if len(subErrorMessages) > 0 {
 			return &CommitError{
 				commit.Type, commit.Message,
-				locale.NewInputError("err_buildplanner_validation_error_sub_messages", "The platform encountered a validation error, received message: {{.V0}}, with sub errors: {{.V1}}", commit.Message, strings.Join(subErrorMessages, ", ")),
+				locale.NewInputError("err_buildplanner_validation_error_sub_messages", "The platform encountered a validation error. Received message: {{.V0}}, with sub errors: {{.V1}}", commit.Message, strings.Join(subErrorMessages, ", ")),
 			}
 		}
 		return &CommitError{
 			commit.Type, commit.Message,
-			locale.NewInputError("err_buildplanner_validation_error", "The platform encountered a validation error, received message: {{.V0}}", commit.Message),
+			locale.NewInputError("err_buildplanner_validation_error", "The platform encountered a validation error. Received message: {{.V0}}", commit.Message),
 		}
 	case types.ForbiddenErrorType:
 		return &CommitError{
 			commit.Type, commit.Message,
-			locale.NewInputError("err_buildplanner_forbidden", "Operation forbidden: {{.V0}}, received message: {{.V1}}", commit.Operation, commit.Message),
+			locale.NewInputError("err_buildplanner_forbidden", "Operation forbidden: {{.V0}}. Received message: {{.V1}}", commit.Operation, commit.Message),
 		}
 	case types.HeadOnBranchMovedErrorType:
 		return errs.Wrap(&CommitError{

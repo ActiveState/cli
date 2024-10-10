@@ -17,12 +17,13 @@ import (
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	buildplanner_runbit "github.com/ActiveState/cli/internal/runbits/buildplanner"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	rtProgress "github.com/ActiveState/cli/pkg/platform/runtime/setup/events/progress"
 	"github.com/ActiveState/cli/pkg/project"
+	rtProgress "github.com/ActiveState/cli/pkg/runtime/events/progress"
 )
 
 type DownloadParams struct {
@@ -34,6 +35,7 @@ type DownloadParams struct {
 }
 
 type Download struct {
+	prime     primeable
 	out       output.Outputer
 	project   *project.Project
 	analytics analytics.Dispatcher
@@ -44,6 +46,7 @@ type Download struct {
 
 func NewDownload(prime primeable) *Download {
 	return &Download{
+		prime:     prime,
 		out:       prime.Output(),
 		project:   prime.Project(),
 		analytics: prime.Analytics(),
@@ -54,11 +57,14 @@ func NewDownload(prime primeable) *Download {
 }
 
 type errArtifactExists struct {
-	error
 	Path string
 }
 
-func rationalizeDownloadError(err *error, auth *authentication.Auth) {
+func (e errArtifactExists) Error() string {
+	return "artifact exists"
+}
+
+func rationalizeDownloadError(proj *project.Project, auth *authentication.Auth, err *error) {
 	var artifactExistsErr *errArtifactExists
 
 	switch {
@@ -71,12 +77,12 @@ func rationalizeDownloadError(err *error, auth *authentication.Auth) {
 			errs.SetInput())
 
 	default:
-		rationalizeCommonError(err, auth)
+		rationalizeCommonError(proj, auth, err)
 	}
 }
 
 func (d *Download) Run(params *DownloadParams) (rerr error) {
-	defer rationalizeDownloadError(&rerr, d.auth)
+	defer rationalizeDownloadError(d.project, d.auth, &rerr)
 
 	if d.project != nil && !params.Namespace.IsValid() {
 		d.out.Notice(locale.Tr("operating_message", d.project.NamespaceString(), d.project.Dir()))
@@ -87,8 +93,8 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 		target = params.Target
 	}
 
-	bp, err := getBuildPlan(
-		d.project, params.Namespace, params.CommitID, target, d.auth, d.out)
+	bp, err := buildplanner_runbit.GetBuildPlan(
+		params.Namespace, params.CommitID, target, d.prime)
 	if err != nil {
 		return errs.Wrap(err, "Could not get build plan map")
 	}
@@ -136,7 +142,7 @@ func (d *Download) downloadArtifact(artifact *buildplan.Artifact, targetDir stri
 
 	downloadPath := filepath.Join(targetDir, basename)
 	if fileutils.TargetExists(downloadPath) {
-		return &errArtifactExists{Path: downloadPath}
+		return &errArtifactExists{downloadPath}
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

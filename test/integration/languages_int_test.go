@@ -3,11 +3,9 @@ package integration
 import (
 	"regexp"
 	"testing"
-	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
-	"github.com/ActiveState/termtest"
 	goversion "github.com/hashicorp/go-version"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -51,17 +49,18 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 
 	ts.PrepareProject("ActiveState-CLI/Languages", "1eb82b25-a564-42ee-a7d4-d51d2ea73cd5")
 
-	ts.LoginAsPersistentUser()
-
 	cp := ts.Spawn("languages")
-	cp.Expect("Name")
+	cp.Expect("Name", e2e.RuntimeSolvingTimeoutOpt) // Cached solves are often slow too
 	cp.Expect("python")
 	cp.ExpectExitCode(0)
 
+	cp = ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
 	cp = ts.Spawn("languages", "install", "python@3.9.16")
-	cp.Expect("Language updated: python@3.9.16")
+	cp.Expect("project has been updated")
 	// This can take a little while
-	cp.ExpectExitCode(0, termtest.OptExpectTimeout(60*time.Second))
+	cp.ExpectExitCode(0, e2e.RuntimeSolvingTimeoutOpt)
 
 	cp = ts.Spawn("languages")
 	cp.Expect("Name")
@@ -84,12 +83,9 @@ func (suite *LanguagesIntegrationTestSuite) TestJSON() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out")
-	cp.ExpectExitCode(0)
+	ts.PrepareProject("ActiveState-CLI/Python3", "971e48e4-7f9b-44e6-ad48-86cd03ffc12d")
 
-	cp = ts.Spawn("languages", "-o", "json")
+	cp := ts.Spawn("languages", "-o", "json")
 	cp.Expect(`[{"name":"python","version":`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
@@ -120,14 +116,14 @@ func (suite *LanguagesIntegrationTestSuite) TestWildcards() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out")
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
 	// Test explicit wildcard.
 	cp = ts.Spawn("languages", "install", "python@3.9.x")
-	cp.Expect("Language updated: python@3.9.x")
+	cp.Expect("Updated: language/python@3.9.x")
 	cp.ExpectExitCode(0)
 	cp = ts.Spawn("history")
 	cp.Expect("→ >=3.9,<3.10")
@@ -139,7 +135,7 @@ func (suite *LanguagesIntegrationTestSuite) TestWildcards() {
 
 	// Test implicit wildcard.
 	cp = ts.Spawn("languages", "install", "python@3.9")
-	cp.Expect("Language updated: python@3.9")
+	cp.Expect("Updated: language/python@3.9.x")
 	cp.ExpectExitCode(0)
 	cp = ts.Spawn("history")
 	cp.Expect("→ >=3.9,<3.10")
@@ -147,10 +143,7 @@ func (suite *LanguagesIntegrationTestSuite) TestWildcards() {
 
 	// Test non-matching version.
 	// Enable the runtime to actually solve the build and invalidate the version.
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("languages", "install", "python@100"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp = ts.Spawn("languages", "install", "python@100")
 	cp.Expect("Failed")
 	cp.ExpectNotExitCode(0)
 }

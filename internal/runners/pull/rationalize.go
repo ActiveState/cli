@@ -27,7 +27,7 @@ func rationalizeError(err *error) {
 		case types.NoCommonBaseFoundType:
 			*err = errs.WrapUserFacing(*err,
 				locale.Tl("err_pull_no_common_base",
-					"Could not merge, no common base found between local and remote commits",
+					"Could not merge. No common base found between local and remote commits",
 				),
 				errs.SetInput(),
 			)
@@ -44,7 +44,7 @@ func rationalizeError(err *error) {
 		default:
 			*err = errs.WrapUserFacing(*err,
 				locale.Tl("err_pull_no_common_base",
-					"Could not merge, recieved error message: {{.V0}}",
+					"Could not merge. Recieved error message: {{.V0}}",
 					mergeCommitErr.Error(),
 				),
 			)

@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"gopkg.in/yaml.v3"
@@ -106,8 +105,21 @@ func Wrap(wrapTarget error, message string, args ...interface{}) *WrapperError {
 }
 
 // Pack creates a new error that packs the given errors together, allowing for multiple errors to be returned
-func Pack(err error, errs ...error) error {
-	return &PackedErrors{append([]error{err}, errs...)}
+// This accepts nil errors, and will return nil if all errors passed in are also nil.
+func Pack(errs ...error) error {
+	var errsNonNil []error
+	for _, err := range errs {
+		if err != nil {
+			errsNonNil = append(errsNonNil, err)
+		}
+	}
+	if len(errsNonNil) == 0 {
+		return nil
+	}
+	if len(errsNonNil) == 1 {
+		return errsNonNil[0]
+	}
+	return &PackedErrors{errsNonNil}
 }
 
 // encodeErrorForJoin will recursively encode an error into a format that can be marshalled in a way that is easily
@@ -180,39 +192,6 @@ func AddTips(err error, tips ...string) error {
 }
 
 var errorType = reflect.TypeOf((*error)(nil)).Elem()
-
-// Matches is an analog for errors.As that just checks whether err matches the given type, so you can do:
-// errs.Matches(err, &ErrStruct{})
-// Without having to first assign it to a variable
-// This is useful if you ONLY care about the bool return value and not about setting the variable
-func Matches(err error, target interface{}) bool {
-	if target == nil {
-		panic("errors: target cannot be nil")
-	}
-
-	// Guard against miss-use of this function
-	if _, ok := target.(*WrapperError); ok {
-		if condition.BuiltOnDevMachine() || condition.InActiveStateCI() {
-			panic("target cannot be a WrapperError, you probably want errors.Is")
-		}
-	}
-
-	val := reflect.ValueOf(target)
-	targetType := val.Type()
-	if targetType.Kind() != reflect.Interface && !targetType.Implements(errorType) {
-		panic("errors: *target must be interface or implement error")
-	}
-	errs := Unpack(err)
-	for _, err := range errs {
-		if reflect.TypeOf(err).AssignableTo(targetType) {
-			return true
-		}
-		if x, ok := err.(interface{ As(interface{}) bool }); ok && x.As(&target) {
-			return true
-		}
-	}
-	return false
-}
 
 func IsAny(err error, errs ...error) bool {
 	for _, e := range errs {

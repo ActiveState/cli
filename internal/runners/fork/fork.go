@@ -41,7 +41,7 @@ func New(prime primeable) *Fork {
 
 func (f *Fork) Run(params *Params) error {
 	if !f.auth.Authenticated() {
-		return locale.NewInputError("err_auth_required", "Authentication is required, please authenticate by running 'state auth'")
+		return locale.NewInputError("err_auth_required", "Authentication is required. Please authenticate by running 'state auth'")
 	}
 
 	target := &project.Namespaced{

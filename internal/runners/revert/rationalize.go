@@ -32,14 +32,14 @@ func rationalizeError(err *error) {
 		case types.NoChangeSinceLastCommitErrorType:
 			*err = errs.WrapUserFacing(*err,
 				locale.Tl("err_revert_no_change",
-					"Could not revert commit, no changes since last commit",
+					"Could not revert commit. No changes since last commit",
 				),
 				errs.SetInput(),
 			)
 		default:
 			*err = errs.WrapUserFacing(*err,
 				locale.Tl("err_revert_not_found",
-					"Could not revert commit, recieved error message: {{.V0}}",
+					"Could not revert commit. Received error message: {{.V0}}",
 					revertCommitError.Error(),
 				),
 			)

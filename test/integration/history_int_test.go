@@ -1,7 +1,6 @@
 package integration
 
 import (
-	"path/filepath"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -19,17 +18,9 @@ func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.LoginAsPersistentUser()
+	ts.PrepareProject("ActiveState-CLI/History", "b5b327f8-468e-4999-a23e-8bee886e6b6d")
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/History")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out")
-	cp.ExpectExitCode(0)
-
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("history"),
-		e2e.OptWD(filepath.Join(ts.Dirs.Work, "History")),
-	)
+	cp := ts.Spawn("history")
 	cp.Expect("Operating on project")
 	cp.Expect("ActiveState-CLI/History")
 	cp.Expect("Commit")
@@ -56,12 +47,9 @@ func (suite *HistoryIntegrationTestSuite) TestJSON() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/History", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out")
-	cp.ExpectExitCode(0)
+	ts.PrepareProject("ActiveState-CLI/History", "b5b327f8-468e-4999-a23e-8bee886e6b6d")
 
-	cp = ts.Spawn("history", "-o", "json")
+	cp := ts.Spawn("history", "-o", "json")
 	cp.Expect(`[{"hash":`)
 	cp.Expect(`"changes":[{`)
 	cp.Expect(`"operation":"updated"`)
