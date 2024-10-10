@@ -35,7 +35,7 @@ func Create() *BuildScript {
 }
 
 func New() *BuildScript {
-	bs := Create()
+	bs := &BuildScript{raw: &rawBuildScript{}}
 	return bs
 }
 

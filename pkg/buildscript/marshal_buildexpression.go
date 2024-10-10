@@ -113,9 +113,6 @@ func (f *funcCall) MarshalJSON() ([]byte, error) {
 // This is needed until buildexpressions support functions as requirements. Once they do, we can
 // remove this method entirely.
 func marshalReq(fn *funcCall) ([]byte, error) {
-	if fn.Name == reqFuncName {
-		return marshalReq(fn.Arguments[0].FuncCall)
-	}
 	args := fn.Arguments
 	requirement := make(map[string]interface{})
 
