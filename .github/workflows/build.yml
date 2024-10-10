@@ -55,7 +55,7 @@ jobs:
     # === OS Specific Steps ===
     steps:
       -
-        name: Test Install Download
+        name: Test Install Download - HEY GITHUB, WAKE UP!!!
         shell: bash
         run: curl -q https://platform.activestate.com/dl/cli/install.sh
 
