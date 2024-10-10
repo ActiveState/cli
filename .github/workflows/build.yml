@@ -57,8 +57,8 @@ jobs:
       -
         name: Test Install Download
         shell: bash
-        value: curl -q https://platform.activestate.com/dl/cli/install.sh
-        
+        run: curl -q https://platform.activestate.com/dl/cli/install.sh
+
       - # === Disable Windows Defender as it slows things down significantly ===
         name: Disabling Windows Defender
         if: runner.os == 'Windows'
