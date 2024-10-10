@@ -73,21 +73,76 @@ type FuncCall struct {
 	fc *funcCall
 }
 
-func (f FuncCall) Argument(name string) any {
+func (f *FuncCall) MarshalJSON() ([]byte, error) {
+	return f.fc.MarshalJSON()
+}
+
+func (f *FuncCall) Argument(name string) any {
 	for _, a := range f.fc.Arguments {
 		if a.Assignment == nil || a.Assignment.Key != name {
 			continue
 		}
-		return a.Assignment.Value.Value()
+		return exportValue(a.Assignment.Value)
 	}
 	return nil
 }
 
-func (b *BuildScript) FunctionCalls(name string) []FuncCall {
-	result := []FuncCall{}
+// SetArgument will update the given argument, or add it if it does not exist
+func (f *FuncCall) SetArgument(k string, v *value) {
+	for i, a := range f.fc.Arguments {
+		if a.Assignment == nil || a.Assignment.Key != k {
+			continue
+		}
+		f.fc.Arguments[i].Assignment.Value = v
+		return
+	}
+
+	// Arg doesn't exist; append it instead
+	f.fc.Arguments = append(f.fc.Arguments, &value{Assignment: &assignment{Key: k, Value: v}})
+
+	return
+}
+
+func (f *FuncCall) UnsetArgument(k string) {
+	for i, a := range f.fc.Arguments {
+		if a.Assignment == nil || a.Assignment.Key != k {
+			continue
+		}
+		f.fc.Arguments = append(f.fc.Arguments[:i], f.fc.Arguments[i+1:]...)
+		return
+	}
+}
+
+// Value turns a standard type into a buildscript compatible type
+func Value[T string | float64 | []string | []float64](inputv T) *value {
+	v := &value{}
+	switch vt := any(inputv).(type) {
+	case string:
+		v.Str = &vt
+	case float64:
+		v.Number = &vt
+	case []string:
+		strValues := make([]*value, len(vt))
+		for i, s := range vt {
+			strValues[i] = &value{Str: &s}
+		}
+		v.List = &strValues
+	case []float64:
+		numValues := make([]*value, len(vt))
+		for i, n := range vt {
+			numValues[i] = &value{Number: &n}
+		}
+		v.List = &numValues
+	}
+
+	return v
+}
+
+func (b *BuildScript) FunctionCalls(name string) []*FuncCall {
+	result := []*FuncCall{}
 	for _, f := range b.raw.FuncCalls() {
 		if f.Name == name {
-			result = append(result, FuncCall{f})
+			result = append(result, &FuncCall{f})
 		}
 	}
 	return result

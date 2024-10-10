@@ -1,8 +1,11 @@
 package buildscript
 
 import (
+	"errors"
+	"fmt"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -49,37 +52,23 @@ func (b *BuildScript) Requirements() ([]Requirement, error) {
 		return nil, errs.Wrap(err, "Could not get requirements node")
 	}
 
+	return exportRequirements(requirementsNode), nil
+}
+
+func exportRequirements(v *value) []Requirement {
+	if v.List == nil {
+		logging.Error("exportRequirements called with value that does not have a list")
+		return nil
+	}
 	var requirements []Requirement
-	for _, req := range *requirementsNode.List {
+	for _, req := range *v.List {
 		if req.FuncCall == nil {
 			continue
 		}
 
 		switch req.FuncCall.Name {
-		case reqFuncName:
-			var r DependencyRequirement
-			for _, arg := range req.FuncCall.Arguments {
-				switch arg.Assignment.Key {
-				case requirementNameKey:
-					r.Name = strValue(arg.Assignment.Value)
-				case requirementNamespaceKey:
-					r.Namespace = strValue(arg.Assignment.Value)
-				case requirementVersionKey:
-					r.VersionRequirement = getVersionRequirements(arg.Assignment.Value)
-				}
-			}
-			requirements = append(requirements, r)
-		case revFuncName:
-			var r RevisionRequirement
-			for _, arg := range req.FuncCall.Arguments {
-				switch arg.Assignment.Key {
-				case requirementNameKey:
-					r.Name = strValue(arg.Assignment.Value)
-				case requirementRevisionIDKey:
-					r.RevisionID = strfmt.UUID(strValue(arg.Assignment.Value))
-				}
-			}
-			requirements = append(requirements, r)
+		case reqFuncName, revFuncName:
+			requirements = append(requirements, parseRequirement(req))
 		default:
 			requirements = append(requirements, UnknownRequirement{
 				Name:  req.FuncCall.Name,
@@ -89,7 +78,68 @@ func (b *BuildScript) Requirements() ([]Requirement, error) {
 
 	}
 
-	return requirements, nil
+	return requirements
+}
+
+func parseRequirement(req *value) Requirement {
+	if req.FuncCall == nil {
+		return nil
+	}
+	switch req.FuncCall.Name {
+	case reqFuncName:
+		var r DependencyRequirement
+		for _, arg := range req.FuncCall.Arguments {
+			switch arg.Assignment.Key {
+			case requirementNameKey:
+				r.Name = strValue(arg.Assignment.Value)
+			case requirementNamespaceKey:
+				r.Namespace = strValue(arg.Assignment.Value)
+			case requirementVersionKey:
+				r.VersionRequirement = getVersionRequirements(arg.Assignment.Value)
+			}
+		}
+		return r
+	case revFuncName:
+		var r RevisionRequirement
+		for _, arg := range req.FuncCall.Arguments {
+			switch arg.Assignment.Key {
+			case requirementNameKey:
+				r.Name = strValue(arg.Assignment.Value)
+			case requirementRevisionIDKey:
+				r.RevisionID = strfmt.UUID(strValue(arg.Assignment.Value))
+			}
+		}
+		return r
+	default:
+		return nil
+	}
+}
+
+func exportValue(v *value) any {
+	switch {
+	case v.FuncCall != nil:
+		if req := parseRequirement(v); req != nil {
+			return req
+		}
+		return &FuncCall{v.FuncCall}
+	case v.List != nil:
+		result := []any{}
+		for _, value := range *v.List {
+			result = append(result, exportValue(value))
+		}
+		return result
+	case v.Str != nil:
+		return strValue(v)
+	case v.Number != nil:
+		return *v.Number
+	case v.Null != nil:
+		return nil
+	case v.Assignment != nil:
+		return v.Assignment
+	case v.Object != nil:
+		return v.Object
+	}
+	return errors.New(fmt.Sprintf("unknown value type: %#v", v))
 }
 
 // DependencyRequirements is identical to Requirements except that it only considers dependency type requirements,

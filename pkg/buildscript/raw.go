@@ -1,8 +1,6 @@
 package buildscript
 
 import (
-	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -71,27 +69,6 @@ type value struct {
 	Assignment *assignment    `parser:"| @@"`                        // only in FuncCall
 	Object     *[]*assignment `parser:"| '{' @@ (',' @@)* ','? '}'"` // only in List
 	Ident      *string        `parser:"| @Ident"`                    // only in FuncCall or Assignment
-}
-
-// Value conveniently returns the property that holds the actual value
-func (v *value) Value() interface{} {
-	switch {
-	case v.FuncCall != nil:
-		return v.FuncCall
-	case v.List != nil:
-		return *v.List
-	case v.Str != nil:
-		return strValue(v)
-	case v.Number != nil:
-		return *v.Number
-	case v.Null != nil:
-		return nil
-	case v.Assignment != nil:
-		return v.Assignment
-	case v.Object != nil:
-		return v.Object
-	}
-	return errors.New(fmt.Sprintf("unknown value type: %#v", v))
 }
 
 type null struct {
