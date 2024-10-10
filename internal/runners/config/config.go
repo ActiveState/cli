@@ -79,9 +79,9 @@ func (c *List) renderUserFacing(configData []structuredConfigData) error {
 	}
 
 	out.Print(tbl.Render())
-	out.Print("")
-	out.Print(locale.T("config_get_help"))
-	out.Print(locale.T("config_set_help"))
+	out.Notice("")
+	out.Notice(locale.T("config_get_help"))
+	out.Notice(locale.T("config_set_help"))
 
 	return nil
 }
