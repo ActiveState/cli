@@ -27,3 +27,7 @@ type GetProcessesInUseResponse struct {
 type GetJWTResponse struct {
 	Payload json.RawMessage `json:"getJWT"`
 }
+
+type HashGlobsResponse struct {
+	Response GlobResult `json:"hashGlobs"`
+}

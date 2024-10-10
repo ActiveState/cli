@@ -63,6 +63,17 @@ type ComplexityRoot struct {
 		Received func(childComplexity int) int
 	}
 
+	GlobFileResult struct {
+		Hash    func(childComplexity int) int
+		Path    func(childComplexity int) int
+		Pattern func(childComplexity int) int
+	}
+
+	GlobResult struct {
+		Files func(childComplexity int) int
+		Hash  func(childComplexity int) int
+	}
+
 	JWT struct {
 		Token func(childComplexity int) int
 		User  func(childComplexity int) int
@@ -149,7 +160,7 @@ type QueryResolver interface {
 	FetchLogTail(ctx context.Context) (string, error)
 	GetProcessesInUse(ctx context.Context, execDir string) ([]*graph.ProcessInfo, error)
 	GetJwt(ctx context.Context) (*graph.Jwt, error)
-	HashGlobs(ctx context.Context, wd string, globs []string) (string, error)
+	HashGlobs(ctx context.Context, wd string, globs []string) (*graph.GlobResult, error)
 	GetCache(ctx context.Context, key string) (string, error)
 }
 
@@ -220,6 +231,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ConfigChangedResponse.Received(childComplexity), true
+
+	case "GlobFileResult.hash":
+		if e.complexity.GlobFileResult.Hash == nil {
+			break
+		}
+
+		return e.complexity.GlobFileResult.Hash(childComplexity), true
+
+	case "GlobFileResult.path":
+		if e.complexity.GlobFileResult.Path == nil {
+			break
+		}
+
+		return e.complexity.GlobFileResult.Path(childComplexity), true
+
+	case "GlobFileResult.pattern":
+		if e.complexity.GlobFileResult.Pattern == nil {
+			break
+		}
+
+		return e.complexity.GlobFileResult.Pattern(childComplexity), true
+
+	case "GlobResult.files":
+		if e.complexity.GlobResult.Files == nil {
+			break
+		}
+
+		return e.complexity.GlobResult.Files(childComplexity), true
+
+	case "GlobResult.hash":
+		if e.complexity.GlobResult.Hash == nil {
+			break
+		}
+
+		return e.complexity.GlobResult.Hash(childComplexity), true
 
 	case "JWT.token":
 		if e.complexity.JWT.Token == nil {
@@ -715,6 +761,17 @@ type JWT {
     user: User!
 }
 
+type GlobFileResult {
+    pattern: String!
+    path: String!
+    hash: String!
+}
+
+type GlobResult {
+    files: [GlobFileResult!]!
+    hash: String!
+}
+
 type Query {
     version: Version
     availableUpdate(desiredChannel: String!, desiredVersion: String!): AvailableUpdate
@@ -726,7 +783,7 @@ type Query {
     fetchLogTail: String!
     getProcessesInUse(execDir: String!): [ProcessInfo!]!
     getJWT: JWT
-    hashGlobs(wd: String!, globs: [String!]!): String!
+    hashGlobs(wd: String!, globs: [String!]!): GlobResult!
     getCache(key: String!): String!
 }
 
@@ -1351,6 +1408,234 @@ func (ec *executionContext) fieldContext_ConfigChangedResponse_received(_ contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GlobFileResult_pattern(ctx context.Context, field graphql.CollectedField, obj *graph.GlobFileResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GlobFileResult_pattern(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Pattern, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GlobFileResult_pattern(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GlobFileResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GlobFileResult_path(ctx context.Context, field graphql.CollectedField, obj *graph.GlobFileResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GlobFileResult_path(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Path, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GlobFileResult_path(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GlobFileResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GlobFileResult_hash(ctx context.Context, field graphql.CollectedField, obj *graph.GlobFileResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GlobFileResult_hash(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Hash, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GlobFileResult_hash(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GlobFileResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GlobResult_files(ctx context.Context, field graphql.CollectedField, obj *graph.GlobResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GlobResult_files(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Files, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*graph.GlobFileResult)
+	fc.Result = res
+	return ec.marshalNGlobFileResult2ᚕᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐGlobFileResultᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GlobResult_files(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GlobResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "pattern":
+				return ec.fieldContext_GlobFileResult_pattern(ctx, field)
+			case "path":
+				return ec.fieldContext_GlobFileResult_path(ctx, field)
+			case "hash":
+				return ec.fieldContext_GlobFileResult_hash(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GlobFileResult", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GlobResult_hash(ctx context.Context, field graphql.CollectedField, obj *graph.GlobResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GlobResult_hash(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Hash, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GlobResult_hash(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GlobResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2608,9 +2893,9 @@ func (ec *executionContext) _Query_hashGlobs(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*graph.GlobResult)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNGlobResult2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐGlobResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_hashGlobs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2620,7 +2905,13 @@ func (ec *executionContext) fieldContext_Query_hashGlobs(ctx context.Context, fi
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "files":
+				return ec.fieldContext_GlobResult_files(ctx, field)
+			case "hash":
+				return ec.fieldContext_GlobResult_hash(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GlobResult", field.Name)
 		},
 	}
 	defer func() {
@@ -5241,6 +5532,99 @@ func (ec *executionContext) _ConfigChangedResponse(ctx context.Context, sel ast.
 	return out
 }
 
+var globFileResultImplementors = []string{"GlobFileResult"}
+
+func (ec *executionContext) _GlobFileResult(ctx context.Context, sel ast.SelectionSet, obj *graph.GlobFileResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, globFileResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GlobFileResult")
+		case "pattern":
+			out.Values[i] = ec._GlobFileResult_pattern(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "path":
+			out.Values[i] = ec._GlobFileResult_path(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "hash":
+			out.Values[i] = ec._GlobFileResult_hash(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var globResultImplementors = []string{"GlobResult"}
+
+func (ec *executionContext) _GlobResult(ctx context.Context, sel ast.SelectionSet, obj *graph.GlobResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, globResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GlobResult")
+		case "files":
+			out.Values[i] = ec._GlobResult_files(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "hash":
+			out.Values[i] = ec._GlobResult_hash(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var jWTImplementors = []string{"JWT"}
 
 func (ec *executionContext) _JWT(ctx context.Context, sel ast.SelectionSet, obj *graph.Jwt) graphql.Marshaler {
@@ -6353,6 +6737,74 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNGlobFileResult2ᚕᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐGlobFileResultᚄ(ctx context.Context, sel ast.SelectionSet, v []*graph.GlobFileResult) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNGlobFileResult2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐGlobFileResult(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNGlobFileResult2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐGlobFileResult(ctx context.Context, sel ast.SelectionSet, v *graph.GlobFileResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._GlobFileResult(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNGlobResult2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐGlobResult(ctx context.Context, sel ast.SelectionSet, v graph.GlobResult) graphql.Marshaler {
+	return ec._GlobResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNGlobResult2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐGlobResult(ctx context.Context, sel ast.SelectionSet, v *graph.GlobResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._GlobResult(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
