@@ -1518,6 +1518,12 @@ version:
   other: Version
 license:
   other: License
+key:
+  other: Key
+value:
+  other: Value
+default:
+  other: Default
 vulnerabilities:
   other: Vulnerabilities (CVEs)
 dependency_row:

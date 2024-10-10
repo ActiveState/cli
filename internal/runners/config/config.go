@@ -68,7 +68,7 @@ func (c *List) renderUserFacing(configData []structuredConfigData) error {
 	cfg := c.prime.Config()
 	out := c.prime.Output()
 
-	tbl := table.New(locale.Ts("Key", "Value", "Default"))
+	tbl := table.New(locale.Ts("key", "value", "default"))
 	tbl.HideDash = true
 	for _, config := range configData {
 		tbl.AddRow([]string{
