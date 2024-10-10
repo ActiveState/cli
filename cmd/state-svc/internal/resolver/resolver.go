@@ -71,10 +71,24 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 		pollRate = overrideInt
 	}
 
+	validToken := true
 	pollAuth := poller.New(time.Duration(int64(time.Millisecond)*pollRate), func() (interface{}, error) {
-		if auth.SyncRequired() {
-			return nil, auth.Sync()
+		if !validToken {
+			return nil, nil
 		}
+
+		if !auth.SyncRequired() {
+			return nil, nil
+		}
+
+		err := auth.Sync()
+		if err != nil {
+			if _, ok := err.(*authentication.ErrInvalidToken); ok {
+				validToken = false
+			}
+			return nil, errs.Wrap(err, "Failed to sync auth in poller")
+		}
+
 		return nil, nil
 	})
 
