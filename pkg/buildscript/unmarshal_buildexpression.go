@@ -146,7 +146,7 @@ func unmarshalValue(path []string, valueInterface interface{}) (*value, error) {
 		}
 	}()
 
-	value := &value{}
+	result := &value{}
 
 	switch v := valueInterface.(type) {
 	case map[string]interface{}:
@@ -168,17 +168,17 @@ func unmarshalValue(path []string, valueInterface interface{}) (*value, error) {
 				if err != nil {
 					return nil, errs.Wrap(err, "Could not parse '%s' function's value: %v", key, v)
 				}
-				value.FuncCall = f
+				result.FuncCall = f
 			}
 		}
 
 		// It's not a function call, but an object.
-		if value.FuncCall == nil {
+		if result.FuncCall == nil {
 			object, err := unmarshalAssignments(path, v)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse object: %v", v)
 			}
-			value.Object = &object
+			result.Object = &object
 		}
 
 	case []interface{}:
@@ -190,27 +190,27 @@ func unmarshalValue(path []string, valueInterface interface{}) (*value, error) {
 			}
 			values = append(values, value)
 		}
-		value.List = &values
+		result.List = &values
 
 	case string:
 		if sliceutils.Contains(path, ctxIn) || strings.HasPrefix(v, "$") {
-			value.Ident = ptr.To(strings.TrimPrefix(v, "$"))
+			result.Ident = ptr.To(strings.TrimPrefix(v, "$"))
 		} else {
-			value.Str = ptr.To(strconv.Quote(v)) // quoting is mandatory
+			result.Str = ptr.To(strconv.Quote(v)) // quoting is mandatory
 		}
 
 	case float64:
-		value.Number = ptr.To(v)
+		result.Number = ptr.To(v)
 
 	case nil:
-		value.Null = &null{}
+		result.Null = &null{}
 
 	default:
 		logging.Debug("Unknown type: %T at path %s", v, strings.Join(path, "."))
-		value.Null = &null{}
+		result.Null = &null{}
 	}
 
-	return value, nil
+	return result, nil
 }
 
 func isFuncCall(path []string, value map[string]interface{}) bool {
@@ -226,7 +226,7 @@ func isFuncCall(path []string, value map[string]interface{}) bool {
 	return !hasIn || sliceutils.Contains(path, ctxAssignments)
 }
 
-func unmarshalFuncCall(path []string, funcCall map[string]interface{}) (*funcCall, error) {
+func unmarshalFuncCall(path []string, fc map[string]interface{}) (*funcCall, error) {
 	path = append(path, ctxFuncCall)
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
@@ -238,14 +238,14 @@ func unmarshalFuncCall(path []string, funcCall map[string]interface{}) (*funcCal
 	// m is a mapping of function name to arguments. There should only be one
 	// set of arguments. Since the arguments are key-value pairs, it should be
 	// a map[string]interface{}.
-	if len(funcCall) > 1 {
+	if len(fc) > 1 {
 		return nil, errs.New("Function call has more than one argument mapping")
 	}
 
 	// Look in the given object for the function's name and argument mapping.
 	var name string
 	var argsInterface interface{}
-	for key, value := range funcCall {
+	for key, value := range fc {
 		if _, ok := value.(map[string]interface{}); !ok {
 			return nil, errs.New("Incorrect argument format")
 		}
@@ -260,11 +260,11 @@ func unmarshalFuncCall(path []string, funcCall map[string]interface{}) (*funcCal
 	switch v := argsInterface.(type) {
 	case map[string]interface{}:
 		for key, valueInterface := range v {
-			value, err := unmarshalValue(path, valueInterface)
+			uv, err := unmarshalValue(path, valueInterface)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse '%s' function's argument '%s': %v", name, key, valueInterface)
 			}
-			args = append(args, &value{Assignment: &assignment{key, value}})
+			args = append(args, &value{Assignment: &assignment{key, uv}})
 		}
 		sort.SliceStable(args, func(i, j int) bool { return args[i].Assignment.Key < args[j].Assignment.Key })
 
@@ -350,16 +350,16 @@ func transformRequirement(req *value) *value {
 
 	for _, arg := range *req.Object {
 		key := arg.Key
-		value := arg.Value
+		v := arg.Value
 
 		// Transform the version value from the requirement object.
 		if key == requirementVersionRequirementsKey {
 			key = requirementVersionKey
-			value = &value{funcCall: transformVersion(arg)}
+			v = &value{FuncCall: transformVersion(arg)}
 		}
 
 		// Add the argument to the function transformation.
-		args = append(args, &value{Assignment: &assignment{key, value}})
+		args = append(args, &value{Assignment: &assignment{key, v}})
 	}
 
 	return &value{FuncCall: &funcCall{reqFuncName, args}}
