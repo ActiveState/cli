@@ -3,7 +3,6 @@ package resolver
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"os"
 	"path/filepath"
 	"runtime/debug"
@@ -72,26 +71,10 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 		pollRate = overrideInt
 	}
 
-	validToken := true
 	pollAuth := poller.New(time.Duration(int64(time.Millisecond)*pollRate), func() (interface{}, error) {
-		if !validToken {
-			return nil, nil
+		if auth.SyncRequired() {
+			return nil, auth.Sync()
 		}
-
-		if !auth.SyncRequired() {
-			return nil, nil
-		}
-
-		err := auth.Sync()
-		if err != nil {
-			var errInvalidToken *authentication.ErrInvalidToken
-			if errors.As(err, &errInvalidToken) {
-				logging.Debug("Invalid token, skipping token sync in the future")
-				validToken = false
-			}
-			return nil, errs.Wrap(err, "Failed to sync auth in poller")
-		}
-
 		return nil, nil
 	})
 

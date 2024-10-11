@@ -47,6 +47,7 @@ type Auth struct {
 	client      *mono_client.Mono
 	clientAuth  *runtime.ClientAuthInfoWriter
 	bearerToken string
+	envToken    string
 	user        *mono_models.User
 	cfg         Configurable
 	lastRenewal *time.Time
@@ -95,6 +96,7 @@ func New(cfg Configurable) *Auth {
 	auth := &Auth{
 		cfg:         cfg,
 		jwtLifetime: jwtLifetime,
+		envToken:    os.Getenv(constants.APIKeyEnvVarName),
 	}
 
 	return auth
@@ -102,12 +104,14 @@ func New(cfg Configurable) *Auth {
 
 func (s *Auth) SyncRequired() bool {
 	expectAuth := s.AvailableAPIToken() != ""
+	logging.Debug("SyncRequired: expectAuth=%v, Authenticated=%v", expectAuth, s.Authenticated())
 	return expectAuth != s.Authenticated()
 }
 
 // Sync will ensure that the authenticated state is in sync with what is in the config database.
 // This is mainly useful if you want to instrument the auth package without creating unnecessary API calls.
 func (s *Auth) Sync() error {
+	logging.Debug("Syncing authentication state")
 	defer profile.Measure("auth:Sync", time.Now())
 
 	if token := s.AvailableAPIToken(); token != "" {
@@ -116,6 +120,7 @@ func (s *Auth) Sync() error {
 			return errs.Wrap(err, "Failed to authenticate with API token")
 		}
 	} else {
+		logging.Debug("No API token available, resetting session")
 		// Ensure properties aren't out of sync
 		s.resetSession()
 	}
@@ -314,9 +319,12 @@ func (s *Auth) AuthenticateWithToken(token string) error {
 		Token: token,
 	})
 	if err != nil {
-		return &ErrInvalidToken{
-			locale.WrapError(err, "err_invalid_token", "Invalid API token"),
+		var invalidTokenErr *ErrInvalidToken
+		if errors.As(err, &invalidTokenErr) && s.envToken != "" {
+			logging.Debug("Invalid token, clearing stored token")
+			s.envToken = ""
 		}
+		return locale.WrapError(err, "err_invalid_token", "Invalid API token")
 	}
 
 	return nil
@@ -478,10 +486,11 @@ func (s *Auth) NewAPIKey(name string) (string, error) {
 }
 
 func (s *Auth) AvailableAPIToken() (v string) {
-	if tkn := os.Getenv(constants.APIKeyEnvVarName); tkn != "" {
+	if s.envToken != "" {
 		logging.Debug("Using API token passed via env var")
-		return tkn
+		return s.envToken
 	}
+
 	return s.cfg.GetString(ApiTokenConfigKey)
 }
 
