@@ -7,13 +7,6 @@ import (
 	"regexp"
 	"strings"
 
-	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
-	"github.com/ActiveState/cli/internal/runbits/errors"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
-	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/sysinfo"
-	"github.com/go-openapi/strfmt"
-
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -25,15 +18,21 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
+	"github.com/ActiveState/cli/internal/runbits/errors"
+	"github.com/ActiveState/cli/internal/runbits/org"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/sysinfo"
+	"github.com/go-openapi/strfmt"
 )
 
 // RunParams stores run func parameters.
@@ -48,6 +47,10 @@ type RunParams struct {
 
 // Initialize stores scope-related dependencies.
 type Initialize struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	auth      *authentication.Auth
 	config    Configurable
 	out       output.Outputer
@@ -66,14 +69,16 @@ type primeable interface {
 	primer.Outputer
 	primer.Analyticer
 	primer.SvcModeler
+	primer.Projecter
 }
 
 type errProjectExists struct {
-	error
 	path string
 }
 
-var errNoOwner = errs.New("Could not find organization")
+func (e errProjectExists) Error() string {
+	return "project file already exists"
+}
 
 var errNoLanguage = errs.New("No language specified")
 
@@ -87,7 +92,7 @@ func (e errUnrecognizedLanguage) Error() string {
 
 // New returns a prepared ptr to Initialize instance.
 func New(prime primeable) *Initialize {
-	return &Initialize{prime.Auth(), prime.Config(), prime.Output(), prime.Analytics(), prime.SvcModel()}
+	return &Initialize{prime, prime.Auth(), prime.Config(), prime.Output(), prime.Analytics(), prime.SvcModel()}
 }
 
 // inferLanguage tries to infer a reasonable default language from the project currently in use
@@ -119,6 +124,8 @@ func inferLanguage(config projectfile.ConfigGetter, auth *authentication.Auth) (
 }
 
 func (r *Initialize) Run(params *RunParams) (rerr error) {
+	defer func() { runtime_runbit.RationalizeSolveError(r.prime.Project(), r.auth, &rerr) }()
+
 	logging.Debug("Init: %s %v", params.Namespace, params.Private)
 
 	var (
@@ -152,10 +159,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	}
 
 	if fileutils.TargetExists(filepath.Join(path, constants.ConfigFileName)) {
-		return &errProjectExists{
-			error: errs.New("Project file already exists"),
-			path:  path,
-		}
+		return &errProjectExists{path}
 	}
 
 	err := fileutils.MkdirUnlessExists(path)
@@ -203,7 +207,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
-	resolvedOwner, err = r.getOwner(paramOwner)
+	resolvedOwner, err = org.Get(paramOwner, r.auth, r.config)
 	if err != nil {
 		return errs.Wrap(err, "Unable to determine owner")
 	}
@@ -249,6 +253,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	if err != nil {
 		return err
 	}
+	r.prime.SetProject(proj)
 
 	logging.Debug("Creating Platform project")
 
@@ -257,8 +262,8 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return errs.Wrap(err, "Unable to determine Platform ID from %s", sysinfo.OS().String())
 	}
 
-	bp := buildplanner.NewBuildPlannerModel(r.auth)
-	commitID, err := bp.CreateProject(&buildplanner.CreateProjectParams{
+	bp := bpModel.NewBuildPlannerModel(r.auth)
+	commitID, err := bp.CreateProject(&bpModel.CreateProjectParams{
 		Owner:       namespace.Owner,
 		Project:     namespace.Project,
 		PlatformID:  strfmt.UUID(platformID),
@@ -268,7 +273,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		Description: locale.T("commit_message_add_initial"),
 	})
 	if err != nil {
-		return locale.WrapError(err, "err_init_commit", "Could not create project")
+		return errs.Wrap(err, "Could not create project")
 	}
 
 	if err := localcommit.Set(proj.Dir(), commitID.String()); err != nil {
@@ -281,30 +286,35 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
-	rti, commit, err := runtime.Solve(r.auth, r.out, r.analytics, proj, &commitID, target.TriggerInit, r.svcModel, r.config, runtime.OptNoIndent)
+	// Solve runtime
+	solveSpinner := output.StartSpinner(r.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
+	bpm := bpModel.NewBuildPlannerModel(r.auth)
+	commit, err := bpm.FetchCommit(commitID, r.prime.Project().Owner(), r.prime.Project().Name(), nil)
 	if err != nil {
+		solveSpinner.Stop(locale.T("progress_fail"))
 		logging.Debug("Deleting remotely created project due to runtime setup error")
 		err2 := model.DeleteProject(namespace.Owner, namespace.Project, r.auth)
 		if err2 != nil {
 			multilog.Error("Error deleting remotely created project after runtime setup error: %v", errs.JoinMessage(err2))
 			return locale.WrapError(err, "err_init_refresh_delete_project", "Could not setup runtime after init, and could not delete newly created Platform project. Please delete it manually before trying again")
 		}
-		return errs.Wrap(err, "Could not initialize runtime")
+		return errs.Wrap(err, "Failed to fetch build result")
 	}
-	dependencies.OutputSummary(r.out, commit.BuildPlan().RequestedArtifacts())
-	err = runtime.UpdateByReference(rti, commit, r.auth, proj, r.out, r.config, runtime.OptNone)
+	solveSpinner.Stop(locale.T("progress_success"))
+
+	// When running `state init` we want to show all of the dependencies that will be installed.
+	dependencies.OutputSummary(r.out, commit.BuildPlan().Artifacts())
+	rti, err := runtime_runbit.Update(r.prime, trigger.TriggerInit, runtime_runbit.WithCommit(commit))
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime after init")
 	}
+	executorsPath := rti.Env(false).ExecutorsPath
 
 	projectfile.StoreProjectMapping(r.config, namespace.String(), filepath.Dir(proj.Source().Path()))
 
-	projectTarget := target.NewProjectTarget(proj, nil, "").Dir()
-	executables := setup.ExecDir(projectTarget)
-
-	initSuccessMsg := locale.Tr("init_success", namespace.String(), path, executables)
+	initSuccessMsg := locale.Tr("init_success", namespace.String(), path, executorsPath)
 	if !strings.EqualFold(paramOwner, resolvedOwner) {
-		initSuccessMsg = locale.Tr("init_success_resolved_owner", namespace.String(), path, executables)
+		initSuccessMsg = locale.Tr("init_success_resolved_owner", namespace.String(), path, executorsPath)
 	}
 
 	r.out.Print(output.Prepare(
@@ -316,7 +326,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}{
 			namespace.String(),
 			path,
-			executables,
+			executorsPath,
 		},
 	))
 
@@ -389,48 +399,6 @@ func deriveVersion(lang language.Language, version string, auth *authentication.
 	}
 
 	return version, nil
-}
-
-func (i *Initialize) getOwner(desiredOwner string) (string, error) {
-	orgs, err := model.FetchOrganizations(i.auth)
-	if err != nil {
-		return "", errs.Wrap(err, "Unable to get the user's writable orgs")
-	}
-
-	// Prefer the desired owner if it's valid
-	if desiredOwner != "" {
-		// Match the case of the organization.
-		// Otherwise the incorrect case will be written to the project file.
-		for _, org := range orgs {
-			if strings.EqualFold(org.URLname, desiredOwner) {
-				return org.URLname, nil
-			}
-		}
-		// Return desiredOwner for error reporting
-		return desiredOwner, errNoOwner
-	}
-
-	// Use the last used namespace if it's valid
-	lastUsed := i.config.GetString(constants.LastUsedNamespacePrefname)
-	if lastUsed != "" {
-		ns, err := project.ParseNamespace(lastUsed)
-		if err != nil {
-			return "", errs.Wrap(err, "Unable to parse last used namespace")
-		}
-
-		for _, org := range orgs {
-			if strings.EqualFold(org.URLname, ns.Owner) {
-				return org.URLname, nil
-			}
-		}
-	}
-
-	// Use the first org if there is one
-	if len(orgs) > 0 {
-		return orgs[0].URLname, nil
-	}
-
-	return "", errNoOwner
 }
 
 func (i *Initialize) getProjectName(desiredProject string, lang string) string {

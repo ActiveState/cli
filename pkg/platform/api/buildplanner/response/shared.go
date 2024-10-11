@@ -23,10 +23,10 @@ func (e *BuildPlannerError) InputError() bool {
 	return true
 }
 
-// LocalizedError returns the error message to be displayed to the user.
+// LocaleError returns the error message to be displayed to the user.
 // This function is added so that BuildPlannerErrors will be displayed
 // to the user
-func (e *BuildPlannerError) LocalizedError() string {
+func (e *BuildPlannerError) LocaleError() string {
 	return e.Error()
 }
 

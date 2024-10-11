@@ -2,6 +2,7 @@ package rtwatcher
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"runtime/debug"
 	"strconv"
@@ -81,7 +82,8 @@ func (w *Watcher) check() {
 	for i := range w.watching {
 		e := w.watching[i] // Must use index, because we are deleting indexes further down
 		running, err := e.IsRunning()
-		if err != nil && !errs.Matches(err, &processError{}) {
+		var errProcess *processError
+		if err != nil && !errors.As(err, &errProcess) {
 			multilog.Error("Could not check if runtime process is running: %s", errs.JoinMessage(err))
 			// Don't return yet, the conditional below still needs to clear this entry
 		}
@@ -110,7 +112,8 @@ func (w *Watcher) GetProcessesInUse(execDir string) []entry {
 			continue
 		}
 		isRunning, err := proc.IsRunning()
-		if err != nil && !errs.Matches(err, &processError{}) {
+		var errProcess *processError
+		if err != nil && !errors.As(err, &errProcess) {
 			multilog.Error("Could not check if runtime process is running: %s", errs.JoinMessage(err))
 			// Any errors should not affect fetching which processes are currently in use. We just won't
 			// include this one in the list.

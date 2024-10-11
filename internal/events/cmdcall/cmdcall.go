@@ -42,7 +42,7 @@ func New(p primeable, cmdList string) *CmdCall {
 		subshell:  p.Subshell(),
 		cmdList:   cmdList,
 		p:         p,
-		scriptrun: scriptrun.New(p.Auth(), p.Output(), p.Subshell(), p.Project(), p.Config(), p.Analytics(), p.SvcModel()),
+		scriptrun: scriptrun.New(p),
 	}
 }
 

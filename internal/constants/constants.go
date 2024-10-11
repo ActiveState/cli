@@ -49,6 +49,9 @@ const LogBuildVerboseEnvVarName = "ACTIVESTATE_CLI_BUILD_VERBOSE"
 // DisableRuntime is the env var used to disable downloading of runtimes, useful for CI or testing
 const DisableRuntime = "ACTIVESTATE_CLI_DISABLE_RUNTIME"
 
+// DisableBuildscriptDirtyCheck is the env var used to disable the check for dirty buildscripts
+const DisableBuildscriptDirtyCheck = "ACTIVESTATE_CLI_DISABLE_BS_DIRTY_CHECK"
+
 // DisableUpdates is the env var used to disable automatic updates
 const DisableUpdates = "ACTIVESTATE_CLI_DISABLE_UPDATES"
 
@@ -58,8 +61,8 @@ const DisableLanguageTemplates = "ACTIVESTATE_CLI_DISABLE_LANGUAGE_TEMPLATES"
 // UpdateChannelEnvVarName is the env var that is used to override which channel to pull the update from
 const UpdateChannelEnvVarName = "ACTIVESTATE_CLI_UPDATE_CHANNEL"
 
-// InstallBuildDependencies is the env var that is used to override whether to install build dependencies
-const InstallBuildDependencies = "ACTIVESTATE_CLI_INSTALL_BUILD_DEPENDENCIES"
+// InstallBuildDependenciesEnvVarName is the env var that is used to override whether to install build dependencies
+const InstallBuildDependenciesEnvVarName = "ACTIVESTATE_CLI_INSTALL_BUILD_DEPENDENCIES"
 
 // InternalConfigFileNameLegacy is effectively the same as InternalConfigName, but includes our preferred extension
 const InternalConfigFileNameLegacy = "config.yaml"
@@ -185,26 +188,10 @@ const DisableActivateEventsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ACTIVATE_EVENTS
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
 
 // APIUpdateURL is the URL for our update files
-const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/state"
+const APIUpdateURL = "https://state-tool.activestate.com/update/state"
 
 // APIArtifactURL is the URL for downloading artifacts
 const APIArtifactURL = "https://s3.ca-central-1.amazonaws.com/cli-artifacts/"
-
-// ArtifactFile is the name of the artifact json file contained within artifacts
-const ArtifactFile = "artifact.json"
-
-// ArtifactArchiveName is the standardized name of an artifact archive
-const ArtifactArchiveName = "artifact.tar.gz"
-
-// ArtifactCacheFileName is the standardized name of an artifact cache file
-const ArtifactCacheFileName = "artifact_cache.json"
-
-// ArtifactMetaDir is the directory in which we store meta information about artifacts
-const ArtifactMetaDir = "artifacts"
-
-// ArtifactCacheSizeEnvVarName is the maximum size in MB of the artifact cache.
-// The default is 500MB.
-const ArtifactCacheSizeEnvVarName = "ACTIVESTATE_ARTIFACT_CACHE_SIZE_MB"
 
 // DefaultNamespaceDomain is the domain used when no namespace is given and one has to be constructed
 const DefaultNamespaceDomain = "github.com"
@@ -346,40 +333,6 @@ const (
 	MacBit64UUID   = "46a5b48f-226a-4696-9746-ba4d50d661c2"
 	ValidZeroUUID  = "00000000-0000-0000-0000-000000000000"
 )
-
-// ActivePythonDistsDir represents the base name of a directory where ActivePython dists will be installed under.
-const ActivePythonDistsDir = "python"
-
-// RuntimeInstallDirs represents the directory within a distribution archive where the distribution exists.
-const RuntimeInstallDirs = "INSTALLDIR,perl"
-
-// RuntimeMetaFile is the json file that holds meta information about our runtime
-const RuntimeMetaFile = "metadata.json"
-
-// RuntimeDefinitionFilename is the filename for runtime meta data bundled with artifacts, if they are built by the alternative builder
-const RuntimeDefinitionFilename = "runtime.json"
-
-// LocalRuntimeEnvironmentDirectory is the directory (relative to the installation of a runtime build) where runtime definition files are stored
-const LocalRuntimeEnvironmentDirectory = "_runtime_store"
-
-// LocalRuntimeTempDirectory is the directory (relative to the installation of a runtime build) where temp files are stored
-const LocalRuntimeTempDirectory = "_runtime_temp"
-
-// RuntimeInstallationCompleteMarker is created after all artifacts have been installed
-// Check for existence of this file to ensure that the installation has not been interrupted prematurely.
-const RuntimeInstallationCompleteMarker = "completed"
-
-// RuntimeBuildEngineStore contains the name of the build engine that was used to create this runtime
-const RuntimeBuildEngineStore = "build_engine"
-
-// RuntimeRecipeStore contains a serialization of the recipe used to create this build
-const RuntimeRecipeStore = "recipe"
-
-// RuntimeBuildPlanStore containts a serialization of the build plan used to create this build
-const RuntimeBuildPlanStore = "build_plan"
-
-// BuildScriptStore holds the cached buildscript for the current project.
-const BuildScriptStore = "build_script"
 
 // StateToolMarketingPage links to the marketing page for the state tool
 const StateToolMarketingPage = "https://www.activestate.com/products/platform/state-tool/"
@@ -529,16 +482,11 @@ const AnalyticsPixelOverrideEnv = "ACTIVESTATE_CLI_ANALYTICS_PIXEL"
 // TerminalAnimationInterval is the interval we use for terminal animations
 const TerminalAnimationInterval = 150 * time.Millisecond
 
-// RuntimeSetupWaitEnvVarName is only used for an integration test to pause installation and wait
-// for Ctrl+C.
-const RuntimeSetupWaitEnvVarName = "ACTIVESTATE_CLI_RUNTIME_SETUP_WAIT"
-
-// PlatformApiRequestRequestsEnvVarName is only used for an integration test to print some Platform
-// API request info.
-const PlatformApiPrintRequestsEnvVarName = "ACTIVESTATE_CLI_PLATFORM_API_PRINT_REQUESTS"
-
 // ActiveStateCIEnvVarName is the environment variable set when running in an ActiveState CI environment.
 const ActiveStateCIEnvVarName = "ACTIVESTATE_CI"
 
 // OverrideSandbox is the environment variable to set when overriding the sandbox for integration tests.
 const OverrideSandbox = "ACTIVESTATE_TEST_OVERRIDE_SANDBOX"
+
+// PlatformPrivateNamespace is the namespace for private packages.
+const PlatformPrivateNamespace = "private"

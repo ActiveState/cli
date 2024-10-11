@@ -1,6 +1,7 @@
 package cve
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -71,7 +72,8 @@ func (r *Cve) Run(params *Params) error {
 
 	vulnerabilities, err := r.fetchVulnerabilities(*params.Namespace)
 	if err != nil {
-		if errs.Matches(err, &model.ErrProjectNotFound{}) {
+		var errProjectNotFound *model.ErrProjectNotFound
+		if errors.As(err, &errProjectNotFound) {
 			return locale.WrapExternalError(err, "cve_mediator_resp_not_found", "That project was not found")
 		}
 		return locale.WrapError(err, "cve_mediator_resp", "Failed to retrieve vulnerability information")

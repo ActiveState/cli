@@ -368,7 +368,7 @@ func (s *Auth) Logout() error {
 	err := s.cfg.Set(ApiTokenConfigKey, "")
 	if err != nil {
 		multilog.Error("Could not clear apiToken in config")
-		return locale.WrapError(err, "err_logout_cfg", "Could not update config, if this persists please try running '[ACTIONABLE]state clean config[/RESET]'.")
+		return locale.WrapError(err, "err_logout_cfg", "Could not update config. If this persists please try running '[ACTIONABLE]state clean config[/RESET]'.")
 	}
 
 	s.resetSession()

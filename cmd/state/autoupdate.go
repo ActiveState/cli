@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -37,10 +39,10 @@ func init() {
 	configMediator.RegisterOption(constants.AutoUpdateConfigKey, configMediator.Bool, !condition.IsLTS())
 }
 
-func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an analytics.Dispatcher, out output.Outputer) (bool, error) {
+func autoUpdate(svc *model.SvcModel, args []string, childCmd *captain.Command, cfg *config.Instance, an analytics.Dispatcher, out output.Outputer) (bool, error) {
 	profile.Measure("autoUpdate", time.Now())
 
-	if !shouldRunAutoUpdate(args, cfg, an) {
+	if !shouldRunAutoUpdate(args, childCmd, cfg, an, out) {
 		return false, nil
 	}
 
@@ -72,7 +74,8 @@ func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an ana
 
 	err = up.InstallBlocking("")
 	if err != nil {
-		if errs.Matches(err, &updater.ErrorInProgress{}) {
+		var errInProgress *updater.ErrorInProgress
+		if errors.As(err, &errInProgress) {
 			return false, nil // ignore
 		}
 		if os.IsPermission(err) {
@@ -86,10 +89,14 @@ func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an ana
 
 	code, err := relaunch(args)
 	if err != nil {
+		var errStateExe *ErrStateExe
+		var errExecuteRelaunch *ErrExecuteRelaunch
+
 		var msg string
-		if errs.Matches(err, &ErrStateExe{}) {
+		switch {
+		case errors.As(err, &errStateExe):
 			msg = anaConst.UpdateErrorExecutable
-		} else if errs.Matches(err, &ErrExecuteRelaunch{}) {
+		case errors.As(err, &errExecuteRelaunch):
 			msg = anaConst.UpdateErrorRelaunch
 		}
 		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.UpdateLabelFailed, &dimensions.Values{
@@ -109,11 +116,23 @@ func isEnabled(cfg *config.Instance) bool {
 	return cfg.GetBool(constants.AutoUpdateConfigKey)
 }
 
-func shouldRunAutoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher) bool {
+func shouldRunAutoUpdate(args []string, childCmd *captain.Command, cfg *config.Instance, an analytics.Dispatcher, out output.Outputer) bool {
 	shouldUpdate := true
 	label := anaConst.UpdateLabelTrue
 
 	switch {
+	// The command explicitly skips auto update checks.
+	case childCmd != nil && childCmd.SkipChecks():
+		logging.Debug("Not running auto update because the child command explicitly skips auto update checks")
+		shouldUpdate = false
+		label = anaConst.UpdateLabelSkipChecks
+
+	// Running in structured-output mode.
+	case out.Type().IsStructured():
+		logging.Debug("Not running auto update because we're running in structured output (JSON) mode")
+		shouldUpdate = false
+		label = anaConst.UpdateLabelStructuredOutput
+
 	// In a forward
 	case os.Getenv(constants.ForwardedStateEnvVarName) == "true":
 		logging.Debug("Not running auto updates because we're in a forward")

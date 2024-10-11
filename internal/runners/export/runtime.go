@@ -11,15 +11,18 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/runtime"
+	"github.com/ActiveState/cli/pkg/runtime_helpers"
 )
 
 type Runtime struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	out       output.Outputer
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
@@ -34,6 +37,7 @@ type RuntimeParams struct {
 
 func NewRuntime(prime primeable) *Runtime {
 	return &Runtime{
+		prime,
 		prime.Output(),
 		prime.Analytics(),
 		prime.SvcModel(),
@@ -52,7 +56,7 @@ func (e *ErrProjectNotFound) Error() string {
 }
 
 func (e *Runtime) Run(params *RuntimeParams) (rerr error) {
-	defer rationalizeError(&rerr)
+	defer rationalizeError(&rerr, e.auth)
 
 	proj := e.project
 	if params.Path != "" {
@@ -68,19 +72,14 @@ func (e *Runtime) Run(params *RuntimeParams) (rerr error) {
 
 	e.out.Notice(locale.Tr("export_runtime_statement", proj.NamespaceString(), proj.Dir()))
 
-	rt, err := runtime.SolveAndUpdate(e.auth, e.out, e.analytics, proj, nil, target.TriggerExport, e.svcModel, e.cfg, runtime.OptMinimalUI)
+	rt, err := runtime_helpers.FromProject(proj)
 	if err != nil {
 		return errs.Wrap(err, "Could not get runtime to export for")
 	}
 
 	projectDir := proj.Dir()
-	runtimeDir := rt.Target().Dir()
-	execDir := setup.ExecDir(runtimeDir)
-
-	env, err := rt.Env(false, true)
-	if err != nil {
-		return errs.Wrap(err, "Could not get runtime environment")
-	}
+	runtimeDir := rt.Path()
+	execDir := runtime.ExecutorsPath(runtimeDir)
 
 	contents, err := assets.ReadFileBytes("list_map.tpl")
 	if err != nil {
@@ -90,6 +89,9 @@ func (e *Runtime) Run(params *RuntimeParams) (rerr error) {
 	if err != nil {
 		return errs.Wrap(err, "Could not parse env template for output")
 	}
+
+	env := rt.Env(false).VariablesWithExecutors
+
 	var envOutput strings.Builder
 	err = tmpl.Execute(&envOutput, env)
 	if err != nil {

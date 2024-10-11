@@ -178,7 +178,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
 
-	cp.ExpectInput()
+	cp.ExpectInput(e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("state command-does-not-exist")
 	cp.ExpectInput()
 	cp.SendLine("exit")

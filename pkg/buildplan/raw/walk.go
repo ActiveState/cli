@@ -1,25 +1,38 @@
 package raw
 
 import (
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/go-openapi/strfmt"
+
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 )
 
 type walkFunc func(node interface{}, parent *Artifact) error
 
-type WalkNodeContext struct {
-	Node           interface{}
-	ParentArtifact *Artifact
-	tag            StepInputTag
-	lookup         map[strfmt.UUID]interface{}
+type WalkStrategy struct {
+	tag               StepInputTag
+	stopAtMultiSource bool // If true, we will stop walking if the artifact relates to multiple sources (eg. installer, docker img)
 }
+
+var (
+	WalkViaSingleSource = WalkStrategy{
+		TagSource,
+		true,
+	}
+	WalkViaMultiSource = WalkStrategy{
+		TagSource,
+		false,
+	}
+	WalkViaDeps = WalkStrategy{
+		TagDependency,
+		false,
+	}
+)
 
 // WalkViaSteps walks the graph and reports on nodes it encounters
 // Note that the same node can be encountered multiple times if it is referenced in the graph multiple times.
 // In this case the context around the node may be different, even if the node itself isn't.
-func (b *Build) WalkViaSteps(nodeIDs []strfmt.UUID, inputTag StepInputTag, walk walkFunc) error {
+func (b *Build) WalkViaSteps(nodeIDs []strfmt.UUID, strategy WalkStrategy, walk walkFunc) error {
 	lookup := b.LookupMap()
 
 	for _, nodeID := range nodeIDs {
@@ -27,7 +40,7 @@ func (b *Build) WalkViaSteps(nodeIDs []strfmt.UUID, inputTag StepInputTag, walk 
 		if !ok {
 			return errs.New("node ID '%s' does not exist in lookup table", nodeID)
 		}
-		if err := b.walkNodeViaSteps(node, nil, inputTag, walk); err != nil {
+		if err := b.walkNodeViaSteps(node, nil, strategy, walk); err != nil {
 			return errs.Wrap(err, "could not recurse over node IDs")
 		}
 	}
@@ -35,7 +48,7 @@ func (b *Build) WalkViaSteps(nodeIDs []strfmt.UUID, inputTag StepInputTag, walk 
 	return nil
 }
 
-func (b *Build) walkNodeViaSteps(node interface{}, parent *Artifact, tag StepInputTag, walk walkFunc) error {
+func (b *Build) walkNodeViaSteps(node interface{}, parent *Artifact, strategy WalkStrategy, walk walkFunc) error {
 	lookup := b.LookupMap()
 
 	if err := walk(node, parent); err != nil {
@@ -63,15 +76,20 @@ func (b *Build) walkNodeViaSteps(node interface{}, parent *Artifact, tag StepInp
 	// tool, but it's technically possible to happen if someone requested a builder as part of their order.
 	_, isSource = generatedByNode.(*Source)
 	if isSource {
-		if err := b.walkNodeViaSteps(generatedByNode, ar, tag, walk); err != nil {
+		if err := b.walkNodeViaSteps(generatedByNode, ar, strategy, walk); err != nil {
 			return errs.Wrap(err, "error walking source from generatedBy")
 		}
 		return nil // Sources are at the end of the recursion.
 	}
 
-	nodeIDs, err := b.inputNodeIDsFromStep(ar, tag)
+	nodeIDs, err := b.inputNodeIDsFromStep(ar, strategy.tag)
 	if err != nil {
 		return errs.Wrap(err, "error walking over step inputs")
+	}
+
+	// Stop if the next step has multiple input node ID's; this means we cannot determine a single source
+	if strategy.stopAtMultiSource && len(nodeIDs) > 1 {
+		return nil
 	}
 
 	for _, id := range nodeIDs {
@@ -80,7 +98,7 @@ func (b *Build) walkNodeViaSteps(node interface{}, parent *Artifact, tag StepInp
 		if !ok {
 			return errs.New("node ID '%s' does not exist in lookup table", id)
 		}
-		if err := b.walkNodeViaSteps(subNode, ar, tag, walk); err != nil {
+		if err := b.walkNodeViaSteps(subNode, ar, strategy, walk); err != nil {
 			return errs.Wrap(err, "error iterating over %s", id)
 		}
 	}
@@ -120,6 +138,7 @@ func (b *Build) inputNodeIDsFromStep(ar *Artifact, tag StepInputTag) ([]strfmt.U
 
 func (b *Build) WalkViaRuntimeDeps(nodeIDs []strfmt.UUID, walk walkFunc) error {
 	lookup := b.LookupMap()
+	visited := make(map[strfmt.UUID]bool)
 
 	for _, id := range nodeIDs {
 		node, ok := lookup[id]
@@ -127,7 +146,7 @@ func (b *Build) WalkViaRuntimeDeps(nodeIDs []strfmt.UUID, walk walkFunc) error {
 			return errs.New("node ID '%s' does not exist in lookup table", id)
 		}
 
-		if err := b.walkNodeViaRuntimeDeps(node, nil, walk); err != nil {
+		if err := b.walkNodeViaRuntimeDeps(node, nil, visited, walk); err != nil {
 			return errs.Wrap(err, "error walking over runtime dep %s", id)
 		}
 	}
@@ -135,17 +154,24 @@ func (b *Build) WalkViaRuntimeDeps(nodeIDs []strfmt.UUID, walk walkFunc) error {
 	return nil
 }
 
-func (b *Build) walkNodeViaRuntimeDeps(node interface{}, parent *Artifact, walk walkFunc) error {
+func (b *Build) walkNodeViaRuntimeDeps(node interface{}, parent *Artifact, visited map[strfmt.UUID]bool, walk walkFunc) error {
 	lookup := b.LookupMap()
 
 	ar, ok := node.(*Artifact)
 	if !ok {
-		// Technically this should never happen, but because we allow evaluating any part of a buildscript we can
-		// encounter scenarios where we have top level sources. In this case we can simply skip them, because the
-		// remaining top level nodes still cover our use-cases.
-		logging.Debug("node '%#v' is not an artifact, skipping", node)
+		// This can only happen in two scenarios that we're aware of:
+		// 1. Because we allow evaluating any part of a buildscript we can encounter scenarios where we have top level
+		// sources.
+		// 2. We are dealing with an old camel build.
+		// In these cases we can simply skip them, because the remaining top level nodes still cover our use-cases.
 		return nil
 	}
+
+	// If we detect a cycle we should stop
+	if visited[ar.NodeID] {
+		return nil
+	}
+	visited[ar.NodeID] = true
 
 	// Only state tool artifacts are considered to be a runtime dependency
 	if IsStateToolMimeType(ar.MimeType) {
@@ -167,7 +193,7 @@ func (b *Build) walkNodeViaRuntimeDeps(node interface{}, parent *Artifact, walk 
 			if !ok {
 				return errs.New("step node ID '%s' does not exist in lookup table", id)
 			}
-			if err := b.walkNodeViaRuntimeDeps(subNode, ar, walk); err != nil {
+			if err := b.walkNodeViaRuntimeDeps(subNode, ar, visited, walk); err != nil {
 				return errs.Wrap(err, "error walking over runtime dep %s", id)
 			}
 		}
@@ -177,7 +203,7 @@ func (b *Build) walkNodeViaRuntimeDeps(node interface{}, parent *Artifact, walk 
 			if !ok {
 				return errs.New("node ID '%s' does not exist in lookup table", id)
 			}
-			if err := b.walkNodeViaRuntimeDeps(subNode, ar, walk); err != nil {
+			if err := b.walkNodeViaRuntimeDeps(subNode, ar, visited, walk); err != nil {
 				return errs.Wrap(err, "error walking over runtime dep %s", id)
 			}
 		}

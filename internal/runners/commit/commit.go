@@ -3,21 +3,18 @@ package commit
 import (
 	"errors"
 
-	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
+	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/internal/runbits/cves"
+	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 type primeable interface {
@@ -27,26 +24,15 @@ type primeable interface {
 	primer.Analyticer
 	primer.SvcModeler
 	primer.Configurer
+	primer.Prompter
 }
 
 type Commit struct {
-	out       output.Outputer
-	proj      *project.Project
-	auth      *authentication.Auth
-	analytics analytics.Dispatcher
-	svcModel  *model.SvcModel
-	cfg       *config.Instance
+	prime primeable
 }
 
 func New(p primeable) *Commit {
-	return &Commit{
-		out:       p.Output(),
-		proj:      p.Project(),
-		auth:      p.Auth(),
-		analytics: p.Analytics(),
-		svcModel:  p.SvcModel(),
-		cfg:       p.Config(),
-	}
+	return &Commit{p}
 }
 
 var ErrNoChanges = errors.New("buildscript has no changes")
@@ -64,13 +50,13 @@ func rationalizeError(err *error) {
 			"Your buildscript contains no new changes. No commit necessary.",
 		), errs.SetInput())
 
-	case errs.Matches(*err, buildscript_runbit.ErrBuildscriptNotExist):
+	case errors.Is(*err, buildscript_runbit.ErrBuildscriptNotExist):
 		*err = errs.WrapUserFacing(*err, locale.T("err_buildscript_not_exist"))
 
 	// We communicate buildplanner errors verbatim as the intend is that these are curated by the buildplanner
 	case errors.As(*err, &buildPlannerErr):
 		*err = errs.WrapUserFacing(*err,
-			buildPlannerErr.LocalizedError(),
+			buildPlannerErr.LocaleError(),
 			errs.SetIf(buildPlannerErr.InputError(), errs.SetInput()))
 	}
 }
@@ -78,22 +64,26 @@ func rationalizeError(err *error) {
 func (c *Commit) Run() (rerr error) {
 	defer rationalizeError(&rerr)
 
-	if c.proj == nil {
+	proj := c.prime.Project()
+	if proj == nil {
 		return rationalize.ErrNoProject
 	}
 
+	out := c.prime.Output()
+	out.Notice(locale.Tr("operating_message", proj.NamespaceString(), proj.Dir()))
+
 	// Get buildscript.as representation
-	script, err := buildscript_runbit.ScriptFromProject(c.proj)
+	script, err := buildscript_runbit.ScriptFromProject(proj)
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
 	}
 
 	// Get equivalent build script for current state of the project
-	localCommitID, err := localcommit.Get(c.proj.Dir())
+	localCommitID, err := localcommit.Get(proj.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit ID")
 	}
-	bp := buildplanner.NewBuildPlannerModel(c.auth)
+	bp := buildplanner.NewBuildPlannerModel(c.prime.Auth())
 	remoteScript, err := bp.GetBuildScript(localCommitID.String())
 	if err != nil {
 		return errs.Wrap(err, "Could not get remote build expr and time for provided commit")
@@ -109,16 +99,16 @@ func (c *Commit) Run() (rerr error) {
 		return ErrNoChanges
 	}
 
-	pg := output.StartSpinner(c.out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
+	pg := output.StartSpinner(out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
 	defer func() {
 		if pg != nil {
-			pg.Stop(locale.T("progress_fail") + "\n")
+			pg.Stop(locale.T("progress_fail"))
 		}
 	}()
 
-	stagedCommitID, err := bp.StageCommit(buildplanner.StageCommitParams{
-		Owner:        c.proj.Owner(),
-		Project:      c.proj.Name(),
+	stagedCommit, err := bp.StageCommit(buildplanner.StageCommitParams{
+		Owner:        proj.Owner(),
+		Project:      proj.Name(),
 		ParentCommit: localCommitID.String(),
 		Script:       script,
 	})
@@ -127,35 +117,66 @@ func (c *Commit) Run() (rerr error) {
 	}
 
 	// Update local commit ID
-	if err := localcommit.Set(c.proj.Dir(), stagedCommitID.String()); err != nil {
+	if err := localcommit.Set(proj.Dir(), stagedCommit.CommitID.String()); err != nil {
 		return errs.Wrap(err, "Could not set local commit ID")
 	}
 
 	// Update our local build expression to match the committed one. This allows our API a way to ensure forward compatibility.
-	newScript, err := bp.GetBuildScript(stagedCommitID.String())
+	newScript, err := bp.GetBuildScript(stagedCommit.CommitID.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the remote build script")
 	}
-	if err := buildscript_runbit.Update(c.proj, newScript); err != nil {
+	if err := buildscript_runbit.Update(proj, newScript); err != nil {
 		return errs.Wrap(err, "Could not update local build script")
 	}
 
-	pg.Stop(locale.T("progress_success") + "\n")
+	pg.Stop(locale.T("progress_success"))
 	pg = nil
 
-	c.out.Print(output.Prepare(
+	pgSolve := output.StartSpinner(out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
+	defer func() {
+		if pgSolve != nil {
+			pgSolve.Stop(locale.T("progress_fail"))
+		}
+	}()
+
+	// Solve runtime
+	rtCommit, err := bp.FetchCommit(stagedCommit.CommitID, proj.Owner(), proj.Name(), nil)
+	if err != nil {
+		return errs.Wrap(err, "Could not fetch staged commit")
+	}
+
+	// Get old buildplan.
+	oldCommit, err := bp.FetchCommit(localCommitID, proj.Owner(), proj.Name(), nil)
+	if err != nil {
+		return errs.Wrap(err, "Failed to fetch old commit")
+	}
+
+	pgSolve.Stop(locale.T("progress_success"))
+	pgSolve = nil
+
+	// Output dependency list.
+	dependencies.OutputChangeSummary(out, rtCommit.BuildPlan(), oldCommit.BuildPlan())
+
+	// Report CVEs.
+	if err := cves.NewCveReport(c.prime).Report(rtCommit.BuildPlan(), oldCommit.BuildPlan()); err != nil {
+		return errs.Wrap(err, "Could not report CVEs")
+	}
+
+	out.Notice("") // blank line
+	out.Print(output.Prepare(
 		locale.Tl(
 			"commit_success",
-			"", stagedCommitID.String(), c.proj.NamespaceString(),
+			"", stagedCommit.CommitID.String(), proj.NamespaceString(),
 		),
 		&struct {
 			Namespace string `json:"namespace"`
 			Path      string `json:"path"`
 			CommitID  string `json:"commit_id"`
 		}{
-			c.proj.NamespaceString(),
-			c.proj.Dir(),
-			stagedCommitID.String(),
+			proj.NamespaceString(),
+			proj.Dir(),
+			stagedCommit.CommitID.String(),
 		},
 	))
 

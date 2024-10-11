@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -21,41 +20,26 @@ func (suite *RefreshIntegrationTestSuite) TestRefresh() {
 
 	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI/Branches", "main", "35af7414-b44b-4fd7-aa93-2ecad337ed2b")
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("refresh"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect("Setting Up Runtime")
+	cp := ts.Spawn("refresh")
 	cp.Expect("Runtime updated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("exec", "--", "python3", "-c", "import requests"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp = ts.Spawn("exec", "--", "python3", "-c", "import requests")
 	cp.Expect("ModuleNotFoundError")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 
 	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI/Branches", "secondbranch", "46c83477-d580-43e2-a0c6-f5d3677517f1")
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("refresh"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect("Setting Up Runtime")
+	cp = ts.Spawn("refresh")
 	cp.Expect("Runtime updated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("exec", "--", "python3", "-c", "import requests"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp = ts.Spawn("exec", "--", "python3", "-c", "import requests")
 	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.Spawn("refresh")
-	suite.Assert().NotContains(cp.Output(), "Setting Up Runtime", "Unchanged runtime should not refresh")
-	cp.Expect("Runtime updated")
-	cp.ExpectExitCode(0)
+	cp.Expect("already up to date")
+	cp.ExpectExitCode(1)
 }
 
 func (suite *RefreshIntegrationTestSuite) TestJSON() {
@@ -63,14 +47,14 @@ func (suite *RefreshIntegrationTestSuite) TestJSON() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI/Branches", "main", "35af7414-b44b-4fd7-aa93-2ecad337ed2b")
+	ts.PrepareEmptyProject()
 
 	cp := ts.Spawn("refresh", "-o", "json")
 	cp.Expect(`"namespace":`)
 	cp.Expect(`"path":`)
 	cp.Expect(`"executables":`)
 	cp.ExpectExitCode(0)
-	// AssertValidJSON(suite.T(), cp) // cannot assert here due to "Skipping runtime setup" notice
+	AssertValidJSON(suite.T(), cp)
 }
 
 func (suite *RefreshIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session, namespace, branch, commitID string) {

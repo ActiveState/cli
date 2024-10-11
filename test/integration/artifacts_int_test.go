@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runners/artifacts"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/termtest"
@@ -29,16 +28,8 @@ func (suite *ArtifactsIntegrationTestSuite) TestArtifacts() {
 
 	ts.PrepareProject("ActiveState-CLI/Python-With-Custom-Builds", "993454c7-6613-4b1a-8981-1cee43cc249e")
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("refresh"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
-
-	// In order to reuse the runtime cache and reduce test time we run the rest in subtests
-
 	suite.Run("no flags", func() {
-		cp = ts.Spawn("artifacts")
+		cp := ts.Spawn("artifacts")
 		cp.Expect("Operating on project ActiveState-CLI/Python-With-Custom-Builds, located at")
 		cp.Expect("CentOS")
 		cp.Expect("Docker Image")
@@ -53,7 +44,7 @@ func (suite *ArtifactsIntegrationTestSuite) TestArtifacts() {
 	})
 
 	suite.Run("--all flag", func() {
-		cp = ts.Spawn("artifacts", "--all")
+		cp := ts.Spawn("artifacts", "--all")
 		cp.Expect("CentOS")
 		cp.Expect("Docker Image")
 		cp.Expect("Installer")
@@ -69,12 +60,11 @@ func (suite *ArtifactsIntegrationTestSuite) TestArtifacts() {
 	})
 
 	suite.Run("json without flags", func() {
-		cp = ts.SpawnWithOpts(e2e.OptArgs("artifacts", "--output=json"), e2e.OptTermTest(termtest.OptRows(100)))
+		cp := ts.SpawnWithOpts(e2e.OptArgs("artifacts", "--output=json"), e2e.OptTermTest(termtest.OptRows(100)))
 		cp.ExpectExitCode(0)
 
 		output := artifacts.StructuredOutput{}
-		out := strings.TrimLeft(cp.StrippedSnapshot(), locale.T("notice_runtime_disabled"))
-		suite.Require().NoError(json.Unmarshal([]byte(out), &output), ts.DebugMessage(""))
+		suite.Require().NoError(json.Unmarshal([]byte(cp.StrippedSnapshot()), &output), ts.DebugMessage(""))
 
 		suite.Equal(3, len(output.Platforms))
 		for _, platform := range output.Platforms {
@@ -86,12 +76,11 @@ func (suite *ArtifactsIntegrationTestSuite) TestArtifacts() {
 	})
 
 	suite.Run("json with --all flag", func() {
-		cp = ts.SpawnWithOpts(e2e.OptArgs("artifacts", "--output=json", "--all"), e2e.OptTermTest(termtest.OptRows(500)))
+		cp := ts.SpawnWithOpts(e2e.OptArgs("artifacts", "--output=json", "--all"), e2e.OptTermTest(termtest.OptRows(500)))
 		cp.ExpectExitCode(0)
 
 		output := artifacts.StructuredOutput{}
-		out := strings.TrimLeft(cp.StrippedSnapshot(), locale.T("notice_runtime_disabled"))
-		suite.Require().NoError(json.Unmarshal([]byte(out), &output), ts.DebugMessage(""))
+		suite.Require().NoError(json.Unmarshal([]byte(cp.StrippedSnapshot()), &output), ts.DebugMessage(""))
 
 		suite.Equal(3, len(output.Platforms))
 		for _, platform := range output.Platforms {
@@ -161,12 +150,6 @@ func (suite *ArtifactsIntegrationTestSuite) TestArtifacts_Download() {
 
 	ts.PrepareProject("ActiveState-CLI/Python-With-Custom-Builds", "993454c7-6613-4b1a-8981-1cee43cc249e")
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("refresh"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
-
 	var buildID string
 	if runtime.GOOS == "windows" {
 		// On Windows we need the specific build ID as the terminal buffer is not
@@ -177,11 +160,9 @@ func (suite *ArtifactsIntegrationTestSuite) TestArtifacts_Download() {
 	}
 	suite.Require().NotEmpty(buildID)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("artifacts", "dl", buildID, "."),
-	)
+	cp := ts.Spawn("artifacts", "dl", buildID, ".")
 	cp.Expect("Operating on project ActiveState-CLI/Python-With-Custom-Builds, located at")
-	cp.Expect("Downloaded bzip2", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Downloaded bzip2")
 	cp.ExpectExitCode(0)
 	require.FileExists(suite.T(), filepath.Join(ts.Dirs.Work, "bzip2-1.0.8.tar.gz"), ts.DebugMessage(""))
 }
@@ -202,7 +183,7 @@ func (suite *ArtifactsIntegrationTestSuite) TestArtifacts_Download_Remote() {
 	suite.Require().NotEmpty(buildID)
 
 	cp := ts.Spawn("artifacts", "dl", buildID, ".", "--namespace", "ActiveState-CLI/Python-With-Custom-Builds")
-	cp.Expect("Downloaded bzip2", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Downloaded bzip2")
 	suite.Assert().NotContains(cp.Snapshot(), "Operating on project")
 	cp.ExpectExitCode(0)
 	require.FileExists(suite.T(), filepath.Join(ts.Dirs.Work, "bzip2-1.0.8.tar.gz"))
@@ -214,9 +195,7 @@ func (suite *ArtifactsIntegrationTestSuite) extractBuildID(ts *e2e.Session, name
 		args = append(args, "--namespace", namespace)
 	}
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs(args...),
-	)
+	cp := ts.Spawn(args...)
 	cp.Expect(`"}`)
 	cp.ExpectExitCode(0)
 

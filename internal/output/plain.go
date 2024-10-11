@@ -39,6 +39,8 @@ const (
 	OmitEmpty PlainOpts = "omitEmpty"
 	// HideDash hides the dash in table output
 	HideDash PlainOpts = "hideDash"
+	// OmitKey hides the current struct key from output, its value is still printed
+	OmitKey PlainOpts = "omitKey"
 )
 
 // Plain is our plain outputer, it uses reflect to marshal the data.
@@ -195,19 +197,16 @@ func sprintStruct(value interface{}) (string, error) {
 			return sprintTable(true, false, slice)
 		}
 
-		if funk.Contains(field.opts, string(HideDash)) {
-			slice, err := asSlice(field.value)
-			if err != nil {
-				return "", err
-			}
-			return sprintTable(false, true, slice)
-		}
-
 		stringValue, err := sprint(field.value, field.opts)
 		if err != nil {
 			return "", err
 		}
 		if stringValue == nilText {
+			continue
+		}
+
+		if funk.Contains(field.opts, string(OmitKey)) {
+			result = append(result, stringValue)
 			continue
 		}
 

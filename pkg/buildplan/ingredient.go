@@ -11,7 +11,7 @@ type Ingredient struct {
 
 	IsBuildtimeDependency bool
 	IsRuntimeDependency   bool
-	Artifacts             []*Artifact
+	Artifacts             Artifacts
 
 	platforms []strfmt.UUID
 }
@@ -56,6 +56,40 @@ func (i Ingredients) ToNameMap() IngredientNameMap {
 		result[ig.Name] = ig
 	}
 	return result
+}
+
+// CommonRuntimeDependencies returns the set of runtime dependencies that are common between all ingredients.
+// For example, given a set of python ingredients this will return at the very least the python language ingredient.
+func (i Ingredients) CommonRuntimeDependencies() Ingredients {
+	var is []ingredientsWithRuntimeDeps
+	for _, ig := range i {
+		is = append(is, ig)
+	}
+	return commonRuntimeDependencies(is)
+}
+
+type ingredientsWithRuntimeDeps interface {
+	RuntimeDependencies(recursive bool) Ingredients
+}
+
+func commonRuntimeDependencies(i []ingredientsWithRuntimeDeps) Ingredients {
+	counts := map[strfmt.UUID]int{}
+	common := Ingredients{}
+
+	for _, ig := range i {
+		runtimeDeps := ig.RuntimeDependencies(true)
+		for _, rd := range runtimeDeps {
+			if _, ok := counts[rd.IngredientID]; !ok {
+				counts[rd.IngredientID] = 0
+			}
+			counts[rd.IngredientID]++
+			if counts[rd.IngredientID] == 2 { // only append on 2; we don't want dupes
+				common = append(common, rd)
+			}
+		}
+	}
+
+	return common
 }
 
 func (i *Ingredient) RuntimeDependencies(recursive bool) Ingredients {

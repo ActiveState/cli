@@ -177,7 +177,7 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 	_, hasMarshaller := err.(output.Marshaller)
 
 	cmdName := cmd.Name()
-	childCmd, findErr := cmd.Find(os.Args[1:])
+	childCmd, findErr := cmd.FindChild(os.Args[1:])
 	if findErr != nil {
 		logging.Error("Could not find child command: %v", findErr)
 	}

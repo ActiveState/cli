@@ -8,7 +8,6 @@ import (
 	"path"
 	"time"
 
-	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -68,13 +67,6 @@ func (ri *ReqsImport) Changeset(data []byte, lang string) ([]*mono_models.Commit
 	reqPayload := &TranslationReqMsg{
 		Data:     string(data),
 		Language: lang,
-	}
-	if lang == "" {
-		// The endpoint requires a valid language name. It is not present in the requirements read and
-		// returned. When coupled with "unformatted=true", the language has no bearing on the
-		// translation, so just pick one.
-		reqPayload.Language = language.Python3.Requirement()
-		reqPayload.Unformatted = true
 	}
 	respPayload := &TranslationRespMsg{}
 

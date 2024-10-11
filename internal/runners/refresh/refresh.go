@@ -1,23 +1,27 @@
 package refresh
 
 import (
+	"errors"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/runtime_helpers"
 )
 
 type Params struct {
@@ -31,9 +35,14 @@ type primeable interface {
 	primer.Configurer
 	primer.SvcModeler
 	primer.Analyticer
+	primer.Projecter
 }
 
 type Refresh struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	auth      *authentication.Auth
 	prompt    prompt.Prompter
 	out       output.Outputer
@@ -44,6 +53,7 @@ type Refresh struct {
 
 func New(prime primeable) *Refresh {
 	return &Refresh{
+		prime,
 		prime.Auth(),
 		prime.Prompt(),
 		prime.Output(),
@@ -58,18 +68,39 @@ func (r *Refresh) Run(params *Params) error {
 
 	proj, err := findproject.FromInputByPriority("", params.Namespace, r.config, r.prompt)
 	if err != nil {
-		if errs.Matches(err, &projectfile.ErrorNoDefaultProject{}) {
+		var errNoDefaultProject *projectfile.ErrorNoDefaultProject
+		if errors.As(err, &errNoDefaultProject) {
 			return locale.WrapError(err, "err_use_default_project_does_not_exist")
 		}
 		return rationalize.ErrNoProject
 	}
 
-	rti, err := runtime.SolveAndUpdate(r.auth, r.out, r.analytics, proj, nil, target.TriggerRefresh, r.svcModel, r.config, runtime.OptMinimalUI)
+	r.prime.SetProject(proj)
+
+	r.out.Notice(locale.Tr("operating_message", proj.NamespaceString(), proj.Dir()))
+
+	needsUpdate, err := runtime_helpers.NeedsUpdate(proj, nil)
+	if err != nil {
+		return errs.Wrap(err, "could not determine if runtime needs update")
+	}
+
+	if r.config.GetBool(constants.OptinBuildscriptsConfig) {
+		_, err := buildscript_runbit.ScriptFromProject(proj)
+		if errors.Is(err, buildscript_runbit.ErrBuildscriptNotExist) {
+			return locale.WrapInputError(err, locale.T("notice_needs_buildscript_reset"))
+		}
+	}
+
+	if !needsUpdate {
+		return locale.NewInputError("refresh_runtime_uptodate")
+	}
+
+	rti, err := runtime_runbit.Update(r.prime, trigger.TriggerRefresh, runtime_runbit.WithoutHeaders(), runtime_runbit.WithIgnoreAsync())
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime_new", "Could not update runtime for this project.")
 	}
 
-	execDir := setup.ExecDir(rti.Target().Dir())
+	execDir := rti.Env(false).ExecutorsPath
 	r.out.Print(output.Prepare(
 		locale.Tr("refresh_project_statement", proj.NamespaceString(), proj.Dir(), execDir),
 		&struct {
