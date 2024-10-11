@@ -2,6 +2,7 @@ package commit
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/ActiveState/cli/pkg/buildscript"
@@ -198,6 +199,12 @@ func TestIngredientCall_resolveDependencies(t *testing.T) {
 			if !tt.wantErr(t, err, fmt.Sprintf("resolveDependencies()")) {
 				return
 			}
+			sort.Slice(tt.want, func(i, j int) bool {
+				return tt.want[i].Name < tt.want[j].Name
+			})
+			sort.Slice(got, func(i, j int) bool {
+				return got[i].Name < got[j].Name
+			})
 			assert.Equalf(t, tt.want, got, "resolveDependencies()")
 		})
 	}
