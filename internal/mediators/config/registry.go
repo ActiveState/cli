@@ -1,5 +1,7 @@
 package config
 
+import "sort"
+
 type Type int
 
 const (
@@ -29,6 +31,7 @@ type Option struct {
 	GetEvent     Event
 	SetEvent     Event
 	isRegistered bool
+	isHidden     bool
 }
 
 type Registry map[string]Option
@@ -49,19 +52,28 @@ func NewEnum(options []string, default_ string) *Enums {
 func GetOption(key string) Option {
 	rule, ok := registry[key]
 	if !ok {
-		return Option{key, String, "", EmptyEvent, EmptyEvent, false}
+		return Option{key, String, "", EmptyEvent, EmptyEvent, false, false}
 	}
 	return rule
 }
 
 // Registers a config option without get/set events.
 func RegisterOption(key string, t Type, defaultValue interface{}) {
-	RegisterOptionWithEvents(key, t, defaultValue, EmptyEvent, EmptyEvent)
+	registerOption(key, t, defaultValue, EmptyEvent, EmptyEvent, false)
+}
+
+// Registers a hidden config option without get/set events.
+func RegisterHiddenOption(key string, t Type, defaultValue interface{}) {
+	registerOption(key, t, defaultValue, EmptyEvent, EmptyEvent, true)
 }
 
 // Registers a config option with get/set events.
 func RegisterOptionWithEvents(key string, t Type, defaultValue interface{}, get, set Event) {
-	registry[key] = Option{key, t, defaultValue, get, set, true}
+	registerOption(key, t, defaultValue, get, set, false)
+}
+
+func registerOption(key string, t Type, defaultValue interface{}, get, set Event, hidden bool) {
+	registry[key] = Option{key, t, defaultValue, get, set, true, hidden}
 }
 
 func KnownOption(rule Option) bool {
@@ -73,4 +85,19 @@ func GetDefault(opt Option) interface{} {
 		return enum.Default
 	}
 	return opt.Default
+}
+
+// Registered returns all registered options, excluding hidden ones
+func Registered() []Option {
+	var opts []Option
+	for _, opt := range registry {
+		if opt.isHidden {
+			continue
+		}
+		opts = append(opts, opt)
+	}
+	sort.SliceStable(opts, func(i, j int) bool {
+		return opts[i].Name < opts[j].Name
+	})
+	return opts
 }

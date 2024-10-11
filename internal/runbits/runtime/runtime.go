@@ -35,7 +35,7 @@ import (
 )
 
 func init() {
-	configMediator.RegisterOption(constants.AsyncRuntimeConfig, configMediator.Bool, false)
+	configMediator.RegisterHiddenOption(constants.AsyncRuntimeConfig, configMediator.Bool, false)
 }
 
 type Opts struct {
