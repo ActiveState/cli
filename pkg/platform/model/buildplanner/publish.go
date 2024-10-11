@@ -14,11 +14,11 @@ func (b *BuildPlanner) Publish(vars request.PublishVariables, filepath string) (
 	res := graphModel.PublishResponse{}
 
 	if err := b.client.Run(pr, &res); err != nil {
-		return nil, errs.Wrap(err, "", err.Error())
+		return nil, errs.Wrap(err, "Publish failed")
 	}
 
 	if res.Result.Error != "" {
-		return nil, errs.New("API responded with error: {{.V0}}", res.Result.Error)
+		return nil, errs.New("API responded with error: %s", res.Result.Error)
 	}
 
 	return &res.Result, nil
