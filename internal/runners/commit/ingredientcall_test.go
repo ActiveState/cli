@@ -60,7 +60,6 @@ main = ingredient(
 `
 
 func Test_hashFuncCall(t *testing.T) {
-
 	type args struct {
 		script string
 		seed   string
@@ -76,7 +75,7 @@ func Test_hashFuncCall(t *testing.T) {
 				script: simpleScript,
 				seed:   "",
 			},
-			"6fa602bc516a918e",
+			"6a7c7bd03f10e832",
 		},
 		{
 			"Simple Altered",
@@ -84,7 +83,7 @@ func Test_hashFuncCall(t *testing.T) {
 				script: simpleAlteredScript,
 				seed:   "",
 			},
-			"b74d9b5cf2e6b0ee",
+			"1471d1796a57e938",
 		},
 		{
 			"Simple With Seed",
@@ -92,7 +91,7 @@ func Test_hashFuncCall(t *testing.T) {
 				script: simpleScript,
 				seed:   "seed",
 			},
-			"9a9915a8bf84c7ad",
+			"a9c1a37b5dd6f0d6",
 		},
 	}
 	for _, tt := range tests {
