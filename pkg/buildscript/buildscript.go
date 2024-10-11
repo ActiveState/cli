@@ -1,6 +1,8 @@
 package buildscript
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/ActiveState/cli/internal/condition"
@@ -77,6 +79,8 @@ func (f *FuncCall) MarshalJSON() ([]byte, error) {
 	return f.fc.MarshalJSON()
 }
 
+// Argument returns the value of the given argument, or nil if it does not exist
+// You will still need to cast the value to the correct type.
 func (f *FuncCall) Argument(name string) any {
 	for _, a := range f.fc.Arguments {
 		if a.Assignment == nil || a.Assignment.Key != name {
@@ -103,6 +107,7 @@ func (f *FuncCall) SetArgument(k string, v *value) {
 	return
 }
 
+// UnsetArgument will remove the given argument, if it exists
 func (f *FuncCall) UnsetArgument(k string) {
 	for i, a := range f.fc.Arguments {
 		if a.Assignment == nil || a.Assignment.Key != k {
@@ -114,6 +119,7 @@ func (f *FuncCall) UnsetArgument(k string) {
 }
 
 // Value turns a standard type into a buildscript compatible type
+// Intended for use with functions like SetArgument.
 func Value[T string | float64 | []string | []float64](inputv T) *value {
 	v := &value{}
 	switch vt := any(inputv).(type) {
@@ -138,6 +144,38 @@ func Value[T string | float64 | []string | []float64](inputv T) *value {
 	return v
 }
 
+// exportValue takes a raw buildscript value and turns it into an externally consumable one
+// Note not all value types are currently fully supported. For example assignments and objects currently are
+// passed as the raw type, which can't be cast externally as they are private types.
+// We'll want to update these as the use-cases for them become more clear.
+func exportValue(v *value) any {
+	switch {
+	case v.FuncCall != nil:
+		if req := parseRequirement(v); req != nil {
+			return req
+		}
+		return &FuncCall{v.FuncCall}
+	case v.List != nil:
+		result := []any{}
+		for _, value := range *v.List {
+			result = append(result, exportValue(value))
+		}
+		return result
+	case v.Str != nil:
+		return strValue(v)
+	case v.Number != nil:
+		return *v.Number
+	case v.Null != nil:
+		return nil
+	case v.Assignment != nil:
+		return v.Assignment
+	case v.Object != nil:
+		return v.Object
+	}
+	return errors.New(fmt.Sprintf("unknown value type: %#v", v))
+}
+
+// FunctionCalls will return all function calls that match the given name, regardless of where they occur.
 func (b *BuildScript) FunctionCalls(name string) []*FuncCall {
 	result := []*FuncCall{}
 	for _, f := range b.raw.FuncCalls() {

@@ -1,8 +1,6 @@
 package buildscript
 
 import (
-	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/logging"
@@ -117,33 +115,6 @@ func parseRequirement(req *value) Requirement {
 	default:
 		return nil
 	}
-}
-
-func exportValue(v *value) any {
-	switch {
-	case v.FuncCall != nil:
-		if req := parseRequirement(v); req != nil {
-			return req
-		}
-		return &FuncCall{v.FuncCall}
-	case v.List != nil:
-		result := []any{}
-		for _, value := range *v.List {
-			result = append(result, exportValue(value))
-		}
-		return result
-	case v.Str != nil:
-		return strValue(v)
-	case v.Number != nil:
-		return *v.Number
-	case v.Null != nil:
-		return nil
-	case v.Assignment != nil:
-		return v.Assignment
-	case v.Object != nil:
-		return v.Object
-	}
-	return errors.New(fmt.Sprintf("unknown value type: %#v", v))
 }
 
 // DependencyRequirements is identical to Requirements except that it only considers dependency type requirements,

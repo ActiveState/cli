@@ -27,6 +27,8 @@ type invalidDepsValueType struct{ error }
 
 type invalidDepValueType struct{ error }
 
+// IngredientCall is used to evaluate ingredient() function calls and publishes the ingredient in question if it is not
+// already published.
 type IngredientCall struct {
 	prime    primeable
 	script   *buildscript.BuildScript
@@ -47,6 +49,8 @@ func NewIngredientCall(
 	}
 }
 
+// Resolve will check if the ingredient call refers to an existing ingredient, and if not will create it and update
+// the buildscript accordingly.
 func (i *IngredientCall) Resolve() error {
 	hash, hashedFiles, err := i.calculateHash()
 	if err != nil {
@@ -58,9 +62,11 @@ func (i *IngredientCall) Resolve() error {
 		return errs.Wrap(err, "Could not check if ingredient call is cached")
 	}
 	if cached {
+		// Ingredient already exists, nothing to do
 		return nil
 	}
 
+	// Creative tar.gz with all the references files for this ingredient
 	files := []string{}
 	for _, f := range hashedFiles {
 		files = append(files, f.Path)
@@ -71,6 +77,7 @@ func (i *IngredientCall) Resolve() error {
 	}
 	defer os.Remove(tmpFile)
 
+	// Parse buildscript dependencies
 	deps, err := i.resolveDependencies()
 	if err != nil {
 		return errs.Wrap(err, "Could not resolve dependencies")
@@ -94,6 +101,8 @@ func (i *IngredientCall) Resolve() error {
 	return nil
 }
 
+// calculateHash will calculate a hash based on the files references in the ingredient as well as the ingredient
+// rule itself. The ingredient is considered dirty when either the files or the rule itself has changed.
 func (i *IngredientCall) calculateHash() (string, []*graph.GlobFileResult, error) {
 	src := i.funcCall.Argument("src")
 	patterns, ok := src.([]string)
@@ -113,8 +122,9 @@ func (i *IngredientCall) calculateHash() (string, []*graph.GlobFileResult, error
 	return hash, hashed.Files, nil
 }
 
+// hashFuncCall will calculate the individual hash of the ingredient function call itself.
+// The hash argument is excluded from this calculation.
 func hashFuncCall(fc *buildscript.FuncCall, seed string) (string, error) {
-	// Combine file hash with function call hash
 	// We clone the function call here because the (potentially old) hash itself should not be used to calculate the hash
 	// and unsetting it should not propagate beyond the context of this function.
 	fcc, err := deep.Copy(fc)
@@ -134,6 +144,8 @@ func hashFuncCall(fc *buildscript.FuncCall, seed string) (string, error) {
 	return hash, nil
 }
 
+// resolveDependencies iterates over the different dependency arguments the ingredient function supports and resolves
+// them into the appropriate types used by our models.
 func (i *IngredientCall) resolveDependencies() ([]request.PublishVariableDep, error) {
 	result := []request.PublishVariableDep{}
 	for key, typ := range map[string]request.DependencyType{
@@ -151,6 +163,7 @@ func (i *IngredientCall) resolveDependencies() ([]request.PublishVariableDep, er
 	return result, nil
 }
 
+// resolveDependenciesByKey turns ingredient dependencies into the appropriate types used by our models
 func (i *IngredientCall) resolveDependenciesByKey(key string, typ request.DependencyType) ([]request.PublishVariableDep, error) {
 	deps := []request.PublishVariableDep{}
 	bsDeps := i.funcCall.Argument(key)
@@ -182,10 +195,9 @@ func (i *IngredientCall) resolveDependenciesByKey(key string, typ request.Depend
 	return deps, nil
 }
 
+// isCached checks against our local cache to see if we've already handled this file hash, and if no local cache
+// exists checks against the platform ingredient API.
 func (i *IngredientCall) isCached(hash string) (bool, error) {
-	// Check against our local cache to see if we've already handled this file hash
-	// Technically we don't need this because the SearchIngredients call below already verifies this, but searching
-	// ingredients is slow, and local cache is FAST.
 	cacheValue, err := i.prime.SvcModel().GetCache(fmt.Sprintf(cacheKeyFiles, hash))
 	if err != nil {
 		return false, errs.Wrap(err, "Could not get build script cache")
@@ -208,6 +220,7 @@ func (i *IngredientCall) isCached(hash string) (bool, error) {
 	return false, nil // If we made it this far it means we did not find any existing cache entry; so it's dirty
 }
 
+// Update our local cache saying we've handled this hash, allowing for faster cache checks than using the platform api
 func (i *IngredientCall) setCached(hash string) {
 	err := i.prime.SvcModel().SetCache(fmt.Sprintf(cacheKeyFiles, hash), hash, time.Hour*24*7)
 	if err != nil {
