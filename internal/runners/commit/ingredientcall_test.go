@@ -14,7 +14,7 @@ const simpleScript = `
 main = ingredient(
 	src = ["*/**.py", "pyproject.toml"],
 	hash = "<old hash>",
-	deps = [
+	runtime_deps = [
 		Req(name="python", namespace="language", version=Eq(value="3.7.10"))
 	]
 )
@@ -24,22 +24,38 @@ const simpleAlteredScript = `
 main = ingredient(
 	src = ["*/**.py", "pyproject.toml"],
 	hash = "<old hash>",
-	deps = [
+	runtime_deps = [
 		Req(name="python", namespace="language", version=Eq(value="3.7.10")),
 		Req(name="python-module-builder", namespace="builder", version=Gt(value="0")),
 	]
 )
 `
 
+const depTypesScript = `
+main = ingredient(
+	src = ["*/**.py", "pyproject.toml"],
+	hash = "<old hash>",
+	runtime_deps = [
+		Req(name="runtimedep", namespace="language", version=Eq(value="1.0"))
+	],
+	build_deps = [
+		Req(name="builddep", namespace="language", version=Eq(value="2.0"))
+	],
+	test_deps = [
+		Req(name="testdep", namespace="language", version=Eq(value="3.0"))
+	],
+)
+`
+
 const invalidDepsScript = `
 main = ingredient(
-	deps = "I should be a slice"
+	runtime_deps = "I should be a slice"
 )
 `
 
 const invalidDepScript = `
 main = ingredient(
-	deps = [ "I should be a Req" ]
+	runtime_deps = [ "I should be a Req" ]
 )
 `
 
@@ -115,6 +131,41 @@ func TestIngredientCall_resolveDependencies(t *testing.T) {
 						Name:                "python",
 						Namespace:           "language",
 						VersionRequirements: "3.7.10",
+						Type:                request.DependencyTypeRuntime,
+					},
+					Conditions: []request.Dependency{},
+				},
+			},
+			assert.NoError,
+		},
+		{
+			"All Types",
+			depTypesScript,
+			[]request.PublishVariableDep{
+				{
+					Dependency: request.Dependency{
+						Name:                "runtimedep",
+						Namespace:           "language",
+						VersionRequirements: "1.0",
+						Type:                request.DependencyTypeRuntime,
+					},
+					Conditions: []request.Dependency{},
+				},
+				{
+					Dependency: request.Dependency{
+						Name:                "builddep",
+						Namespace:           "language",
+						VersionRequirements: "2.0",
+						Type:                request.DependencyTypeBuild,
+					},
+					Conditions: []request.Dependency{},
+				},
+				{
+					Dependency: request.Dependency{
+						Name:                "testdep",
+						Namespace:           "language",
+						VersionRequirements: "3.0",
+						Type:                request.DependencyTypeTest,
 					},
 					Conditions: []request.Dependency{},
 				},

@@ -135,8 +135,25 @@ func hashFuncCall(fc *buildscript.FuncCall, seed string) (string, error) {
 }
 
 func (i *IngredientCall) resolveDependencies() ([]request.PublishVariableDep, error) {
+	result := []request.PublishVariableDep{}
+	for key, typ := range map[string]request.DependencyType{
+		"runtime_deps": request.DependencyTypeRuntime,
+		"build_deps":   request.DependencyTypeBuild,
+		"test_deps":    request.DependencyTypeTest,
+	} {
+		deps, err := i.resolveDependenciesByKey(key, typ)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not resolve %s", key)
+		}
+		result = append(result, deps...)
+	}
+
+	return result, nil
+}
+
+func (i *IngredientCall) resolveDependenciesByKey(key string, typ request.DependencyType) ([]request.PublishVariableDep, error) {
 	deps := []request.PublishVariableDep{}
-	bsDeps := i.funcCall.Argument("deps")
+	bsDeps := i.funcCall.Argument(key)
 	if bsDeps == nil {
 		return deps, nil
 	}
@@ -156,6 +173,7 @@ func (i *IngredientCall) resolveDependencies() ([]request.PublishVariableDep, er
 				Name:                req.Name,
 				Namespace:           req.Namespace,
 				VersionRequirements: model.BuildPlannerVersionConstraintsToString(req.VersionRequirement),
+				Type:                typ,
 			},
 			[]request.Dependency{},
 		})
