@@ -1,9 +1,6 @@
 package auth
 
 import (
-	"os"
-
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -95,8 +92,8 @@ func (a *Auth) authenticate(params *AuthParams) error {
 		return auth.AuthenticateWithToken(params.Token, a.Auth)
 	}
 
-	if apiKey := os.Getenv(constants.APIKeyEnvVarName); apiKey != "" {
-		err := auth.AuthenticateWithToken(apiKey, a.Auth)
+	if token := a.Auth.AvailableAPIToken(); token != "" {
+		err := auth.AuthenticateWithToken(token, a.Auth)
 		if err != nil {
 			return errs.Wrap(err, "Failed to authenticate with API key")
 		}
