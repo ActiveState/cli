@@ -49,7 +49,7 @@ func (b *BuildScript) MarshalBuildExpression() ([]byte, error) {
 		let[key] = value
 	}
 	m[letKey] = let
-	return json.Marshal(m)
+	return json.MarshalIndent(m, "", "  ")
 }
 
 // Note: all of the MarshalJSON functions are named the way they are because Go's JSON package
