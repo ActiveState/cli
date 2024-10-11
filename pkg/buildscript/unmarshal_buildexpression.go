@@ -13,7 +13,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/sliceutils"
 )
@@ -82,18 +81,6 @@ func (b *BuildScript) UnmarshalBuildExpression(data []byte) error {
 		return errs.Wrap(err, "Could not get at_time node")
 	}
 
-	// If the requirements are in legacy object form, e.g.
-	//   requirements = [{"name": "<name>", "namespace": "<name>"}, {...}, ...]
-	// then transform them into function call form for the AScript format, e.g.
-	//   requirements = [Req(name = "<name>", namespace = "<name>"), Req(...), ...]
-	requirements, err := b.getRequirementsNode()
-	if err != nil {
-		return errs.Wrap(err, "Could not get requirements node")
-	}
-	if isLegacyRequirementsList(requirements) {
-		requirements.List = transformRequirements(requirements).List
-	}
-
 	return nil
 }
 
@@ -107,12 +94,6 @@ const (
 
 func unmarshalAssignments(path []string, m map[string]interface{}) ([]*assignment, error) {
 	path = append(path, ctxAssignments)
-	defer func() {
-		_, _, err := sliceutils.Pop(path)
-		if err != nil {
-			multilog.Error("Could not pop context: %v", err)
-		}
-	}()
 
 	assignments := []*assignment{}
 	for key, valueInterface := range m {
@@ -139,12 +120,6 @@ func unmarshalAssignments(path []string, m map[string]interface{}) ([]*assignmen
 
 func unmarshalValue(path []string, valueInterface interface{}) (*value, error) {
 	path = append(path, ctxValue)
-	defer func() {
-		_, _, err := sliceutils.Pop(path)
-		if err != nil {
-			multilog.Error("Could not pop context: %v", err)
-		}
-	}()
 
 	result := &value{}
 
@@ -215,12 +190,6 @@ func unmarshalValue(path []string, valueInterface interface{}) (*value, error) {
 
 func isFuncCall(path []string, value map[string]interface{}) bool {
 	path = append(path, ctxFuncDef)
-	defer func() {
-		_, _, err := sliceutils.Pop(path)
-		if err != nil {
-			multilog.Error("Could not pop context: %v", err)
-		}
-	}()
 
 	_, hasIn := value[inKey]
 	return !hasIn || sliceutils.Contains(path, ctxAssignments)
@@ -228,12 +197,6 @@ func isFuncCall(path []string, value map[string]interface{}) bool {
 
 func unmarshalFuncCall(path []string, fc map[string]interface{}) (*funcCall, error) {
 	path = append(path, ctxFuncCall)
-	defer func() {
-		_, _, err := sliceutils.Pop(path)
-		if err != nil {
-			multilog.Error("Could not pop context: %v", err)
-		}
-	}()
 
 	// m is a mapping of function name to arguments. There should only be one
 	// set of arguments. Since the arguments are key-value pairs, it should be
@@ -264,6 +227,13 @@ func unmarshalFuncCall(path []string, fc map[string]interface{}) (*funcCall, err
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse '%s' function's argument '%s': %v", name, key, valueInterface)
 			}
+			if key == requirementsKey && isSolveFuncName(name) && isLegacyRequirementsList(uv) {
+				// If the requirements are in legacy object form, e.g.
+				//   requirements = [{"name": "<name>", "namespace": "<name>"}, {...}, ...]
+				// then transform them into function call form for the AScript format, e.g.
+				//   requirements = [Req(name = "<name>", namespace = "<name>"), Req(...), ...]
+				uv.List = transformRequirements(uv).List
+			}
 			args = append(args, &value{Assignment: &assignment{key, uv}})
 		}
 		sort.SliceStable(args, func(i, j int) bool { return args[i].Assignment.Key < args[j].Assignment.Key })
@@ -286,12 +256,6 @@ func unmarshalFuncCall(path []string, fc map[string]interface{}) (*funcCall, err
 
 func unmarshalIn(path []string, inValue interface{}) (*value, error) {
 	path = append(path, ctxIn)
-	defer func() {
-		_, _, err := sliceutils.Pop(path)
-		if err != nil {
-			multilog.Error("Could not pop context: %v", err)
-		}
-	}()
 
 	in := &value{}
 

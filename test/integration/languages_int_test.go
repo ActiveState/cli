@@ -3,11 +3,9 @@ package integration
 import (
 	"regexp"
 	"testing"
-	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
-	"github.com/ActiveState/termtest"
 	goversion "github.com/hashicorp/go-version"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -52,7 +50,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	ts.PrepareProject("ActiveState-CLI/Languages", "1eb82b25-a564-42ee-a7d4-d51d2ea73cd5")
 
 	cp := ts.Spawn("languages")
-	cp.Expect("Name", termtest.OptExpectTimeout(60*time.Second)) // Cached solves are often slow too
+	cp.Expect("Name", e2e.RuntimeSolvingTimeoutOpt) // Cached solves are often slow too
 	cp.Expect("python")
 	cp.ExpectExitCode(0)
 
@@ -62,7 +60,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	cp = ts.Spawn("languages", "install", "python@3.9.16")
 	cp.Expect("project has been updated")
 	// This can take a little while
-	cp.ExpectExitCode(0, termtest.OptExpectTimeout(60*time.Second))
+	cp.ExpectExitCode(0, e2e.RuntimeSolvingTimeoutOpt)
 
 	cp = ts.Spawn("languages")
 	cp.Expect("Name")
