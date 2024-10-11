@@ -104,14 +104,12 @@ func New(cfg Configurable) *Auth {
 
 func (s *Auth) SyncRequired() bool {
 	expectAuth := s.AvailableAPIToken() != ""
-	logging.Debug("SyncRequired: expectAuth=%v, Authenticated=%v", expectAuth, s.Authenticated())
 	return expectAuth != s.Authenticated()
 }
 
 // Sync will ensure that the authenticated state is in sync with what is in the config database.
 // This is mainly useful if you want to instrument the auth package without creating unnecessary API calls.
 func (s *Auth) Sync() error {
-	logging.Debug("Syncing authentication state")
 	defer profile.Measure("auth:Sync", time.Now())
 
 	if token := s.AvailableAPIToken(); token != "" {
@@ -120,7 +118,6 @@ func (s *Auth) Sync() error {
 			return errs.Wrap(err, "Failed to authenticate with API token")
 		}
 	} else {
-		logging.Debug("No API token available, resetting session")
 		// Ensure properties aren't out of sync
 		s.resetSession()
 	}
@@ -260,7 +257,7 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 			if credentials.Token != "" {
 				return errs.AddTips(&ErrInvalidToken{locale.WrapExternalError(err, "err_invalid_token")}, tips...)
 			}
-			return errs.AddTips(&ErrInvalidToken{locale.WrapExternalError(err, "err_invalid_credentials")}, tips...)
+			return errs.AddTips(locale.WrapExternalError(err, "err_invalid_credentials"), tips...)
 		default:
 			if os.IsTimeout(err) {
 				return locale.NewExternalError("err_api_auth_timeout", "Timed out waiting for authentication response. Please try again.")
@@ -323,8 +320,9 @@ func (s *Auth) AuthenticateWithToken(token string) error {
 		if errors.As(err, &invalidTokenErr) && s.envToken != "" {
 			logging.Debug("Invalid token, clearing stored token")
 			s.envToken = ""
+			return errs.Wrap(err, "Invalid API token")
 		}
-		return locale.WrapError(err, "err_invalid_token", "Invalid API token")
+		return errs.Wrap(err, "Failed to authenticate with token")
 	}
 
 	return nil
