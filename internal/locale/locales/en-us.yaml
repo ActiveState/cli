@@ -1560,3 +1560,7 @@ install_report_updated:
   other: "Updated: [NOTICE]{{.V0}}[/RESET]"
 install_report_removed:
   other: "Removed: [NOTICE]{{.V0}}[/RESET]"
+err_commit_invalid_deps_value_type:
+  other: "Your buildscript contains an ingredient() function call with an invalid value type for its dependencies"
+err_commit_invalid_dep_value_type:
+  other: "Your buildscript contains an ingredient() function call with an invalid value type for one of its dependencies"

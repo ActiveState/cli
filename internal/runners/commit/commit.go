@@ -58,6 +58,13 @@ func rationalizeError(err *error) {
 		*err = errs.WrapUserFacing(*err,
 			buildPlannerErr.LocaleError(),
 			errs.SetIf(buildPlannerErr.InputError(), errs.SetInput()))
+
+	case errors.As(*err, &invalidDepsValueType{}):
+		*err = errs.WrapUserFacing(*err, locale.T("err_commit_invalid_deps_value_type"), errs.SetInput())
+
+	case errors.As(*err, &invalidDepValueType{}):
+		*err = errs.WrapUserFacing(*err, locale.T("err_commit_invalid_dep_value_type"), errs.SetInput())
+
 	}
 }
 
@@ -76,6 +83,12 @@ func (c *Commit) Run() (rerr error) {
 	script, err := buildscript_runbit.ScriptFromProject(proj)
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
+	}
+
+	for _, fc := range script.FunctionCalls("ingredient") {
+		if err := NewIngredientCall(c.prime, script, fc).Resolve(); err != nil {
+			return errs.Wrap(err, "Could not resolve ingredient")
+		}
 	}
 
 	// Get equivalent build script for current state of the project

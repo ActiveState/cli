@@ -23,15 +23,37 @@ import (
 const namespaceSuffixFiles = "files"
 const cacheKeyFiles = "buildscript-file-%s"
 
-func (c *Commit) resolveIngredientCall(script *buildscript.BuildScript, fc *buildscript.FuncCall) error {
-	hash, hashedFiles, err := c.hashIngredientCall(fc)
+type invalidDepsValueType struct{ error }
+
+type invalidDepValueType struct{ error }
+
+type IngredientCall struct {
+	prime    primeable
+	script   *buildscript.BuildScript
+	funcCall *buildscript.FuncCall
+	ns       model.Namespace
+}
+
+func NewIngredientCall(
+	prime primeable,
+	script *buildscript.BuildScript,
+	funcCall *buildscript.FuncCall,
+) *IngredientCall {
+	return &IngredientCall{
+		prime:    prime,
+		script:   script,
+		funcCall: funcCall,
+		ns:       model.NewNamespaceOrg(prime.Project().Owner(), namespaceSuffixFiles),
+	}
+}
+
+func (i *IngredientCall) Resolve() error {
+	hash, hashedFiles, err := i.calculateHash()
 	if err != nil {
 		return errs.Wrap(err, "Could not hash ingredient call")
 	}
 
-	ns := model.NewNamespaceOrg(c.prime.Project().Owner(), namespaceSuffixFiles)
-
-	cached, err := c.isIngredientCallCached(script.AtTime(), ns, hash)
+	cached, err := i.isCached(hash)
 	if err != nil {
 		return errs.Wrap(err, "Could not check if ingredient call is cached")
 	}
@@ -49,16 +71,16 @@ func (c *Commit) resolveIngredientCall(script *buildscript.BuildScript, fc *buil
 	}
 	defer os.Remove(tmpFile)
 
-	deps, err := c.resolveDependencies(fc)
+	deps, err := i.resolveDependencies()
 	if err != nil {
 		return errs.Wrap(err, "Could not resolve dependencies")
 	}
 
 	// Publish ingredient
-	bpm := buildplanner.NewBuildPlannerModel(c.prime.Auth(), c.prime.SvcModel())
+	bpm := buildplanner.NewBuildPlannerModel(i.prime.Auth(), i.prime.SvcModel())
 	_, err = bpm.Publish(request.PublishVariables{
 		Name:         hash,
-		Namespace:    ns.String(),
+		Namespace:    i.ns.String(),
 		Dependencies: deps,
 	}, tmpFile)
 	if err != nil {
@@ -66,54 +88,56 @@ func (c *Commit) resolveIngredientCall(script *buildscript.BuildScript, fc *buil
 	}
 
 	// Add/update hash argument on the buildscript ingredient function call
-	fc.SetArgument("hash", buildscript.Value(hash))
-	c.setIngredientCallCached(hash)
+	i.funcCall.SetArgument("hash", buildscript.Value(hash))
+	i.setCached(hash)
 
 	return nil
 }
 
-func (c *Commit) hashIngredientCall(fc *buildscript.FuncCall) (string, []*graph.GlobFileResult, error) {
-	src := fc.Argument("src")
+func (i *IngredientCall) calculateHash() (string, []*graph.GlobFileResult, error) {
+	src := i.funcCall.Argument("src")
 	patterns, ok := src.([]string)
 	if !ok {
 		return "", nil, errors.New("src argument is not a []string")
 	}
-	hashed, err := c.prime.SvcModel().HashGlobs(c.prime.Project().Dir(), patterns)
+	hashed, err := i.prime.SvcModel().HashGlobs(i.prime.Project().Dir(), patterns)
 	if err != nil {
 		return "", nil, errs.Wrap(err, "Could not hash globs")
 	}
 
-	// Combine file hash with function call hash
-	fcc, err := deep.Copy(fc)
+	hash, err := hashFuncCall(i.funcCall, hashed.Hash)
 	if err != nil {
-		return "", nil, errs.Wrap(err, "Could not copy function call")
+		return "", nil, errs.Wrap(err, "Could not hash function call")
 	}
-	fcc.UnsetArgument("hash") // The (potentially old) hash itself should not be used to calculate the hash
-
-	fcb, err := json.Marshal(fcc)
-	if err != nil {
-		return "", nil, errs.Wrap(err, "Could not marshal function call")
-	}
-	hasher := xxhash.New()
-	hasher.Write([]byte(hashed.Hash))
-	hasher.Write(fcb)
-	hash := fmt.Sprintf("%016x", hasher.Sum64())
 
 	return hash, hashed.Files, nil
 }
 
-type invalidDepsValueType struct {
-	error
+func hashFuncCall(fc *buildscript.FuncCall, seed string) (string, error) {
+	// Combine file hash with function call hash
+	// We clone the function call here because the (potentially old) hash itself should not be used to calculate the hash
+	// and unsetting it should not propagate beyond the context of this function.
+	fcc, err := deep.Copy(fc)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not copy function call")
+	}
+	fcc.UnsetArgument("hash")
+
+	fcb, err := json.Marshal(fcc)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not marshal function call")
+	}
+	hasher := xxhash.New()
+	hasher.Write([]byte(seed))
+	hasher.Write(fcb)
+	hash := fmt.Sprintf("%016x", hasher.Sum64())
+	return hash, nil
 }
 
-type invalidDepValueType struct {
-	error
-}
-
-func (c *Commit) resolveDependencies(fc *buildscript.FuncCall) ([]request.PublishVariableDep, error) {
+func (i *IngredientCall) resolveDependencies() ([]request.PublishVariableDep, error) {
 	deps := []request.PublishVariableDep{}
-	bsDeps := fc.Argument("deps")
-	if bsDeps != nil {
+	bsDeps := i.funcCall.Argument("deps")
+	if bsDeps == nil {
 		return deps, nil
 	}
 
@@ -140,11 +164,11 @@ func (c *Commit) resolveDependencies(fc *buildscript.FuncCall) ([]request.Publis
 	return deps, nil
 }
 
-func (c *Commit) isIngredientCallCached(atTime *time.Time, ns model.Namespace, hash string) (bool, error) {
+func (i *IngredientCall) isCached(hash string) (bool, error) {
 	// Check against our local cache to see if we've already handled this file hash
 	// Technically we don't need this because the SearchIngredients call below already verifies this, but searching
 	// ingredients is slow, and local cache is FAST.
-	cacheValue, err := c.prime.SvcModel().GetCache(fmt.Sprintf(cacheKeyFiles, hash))
+	cacheValue, err := i.prime.SvcModel().GetCache(fmt.Sprintf(cacheKeyFiles, hash))
 	if err != nil {
 		return false, errs.Wrap(err, "Could not get build script cache")
 	}
@@ -154,7 +178,7 @@ func (c *Commit) isIngredientCallCached(atTime *time.Time, ns model.Namespace, h
 	}
 
 	// Check against API to see if we've already published this file hash
-	ingredients, err := model.SearchIngredientsStrict(ns.String(), hash, true, false, atTime, c.prime.Auth())
+	ingredients, err := model.SearchIngredientsStrict(i.ns.String(), hash, true, false, i.script.AtTime(), i.prime.Auth())
 	if err != nil {
 		return false, errs.Wrap(err, "Could not search ingredients")
 	}
@@ -166,8 +190,8 @@ func (c *Commit) isIngredientCallCached(atTime *time.Time, ns model.Namespace, h
 	return false, nil // If we made it this far it means we did not find any existing cache entry; so it's dirty
 }
 
-func (c *Commit) setIngredientCallCached(hash string) {
-	err := c.prime.SvcModel().SetCache(fmt.Sprintf(cacheKeyFiles, hash), hash, time.Hour*24*7)
+func (i *IngredientCall) setCached(hash string) {
+	err := i.prime.SvcModel().SetCache(fmt.Sprintf(cacheKeyFiles, hash), hash, time.Hour*24*7)
 	if err != nil {
 		logging.Warning("Could not set build script cache: %s", errs.JoinMessage(err))
 	}
