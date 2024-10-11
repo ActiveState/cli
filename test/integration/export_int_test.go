@@ -152,10 +152,8 @@ func (suite *ExportIntegrationTestSuite) TestExport_BuildPlan() {
 	cp := ts.Spawn("export", "buildplan")
 	cp.Expect("Resolving Dependencies")
 	cp.Expect(`{`)
-	cp.Expect(`"let":`)
-	cp.Expect(`"in":`)
-	cp.Expect(`"runtime":`)
-	cp.Expect(`"sources":`)
+	cp.Expect(`"buildPlanID":`)
+	cp.Expect(`"terminals":`)
 	cp.Expect(`}`)
 	cp.ExpectExitCode(0)
 }
