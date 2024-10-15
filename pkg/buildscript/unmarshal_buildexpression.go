@@ -81,6 +81,18 @@ func (b *BuildScript) UnmarshalBuildExpression(data []byte) error {
 		return errs.Wrap(err, "Could not get at_time node")
 	}
 
+	// If the requirements are in legacy object form, e.g.
+	//   requirements = [{"name": "<name>", "namespace": "<name>"}, {...}, ...]
+	// then transform them into function call form for the AScript format, e.g.
+	//   requirements = [Req(name = "<name>", namespace = "<name>"), Req(...), ...]
+	requirements, err := b.getRequirementsNode()
+	if err != nil {
+		return errs.Wrap(err, "Could not get requirements node")
+	}
+	if isLegacyRequirementsList(requirements) {
+		requirements.List = transformRequirements(requirements).List
+	}
+
 	return nil
 }
 
@@ -226,13 +238,6 @@ func unmarshalFuncCall(path []string, fc map[string]interface{}) (*funcCall, err
 			uv, err := unmarshalValue(path, valueInterface)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse '%s' function's argument '%s': %v", name, key, valueInterface)
-			}
-			if key == requirementsKey && isSolveFuncName(name) && isLegacyRequirementsList(uv) {
-				// If the requirements are in legacy object form, e.g.
-				//   requirements = [{"name": "<name>", "namespace": "<name>"}, {...}, ...]
-				// then transform them into function call form for the AScript format, e.g.
-				//   requirements = [Req(name = "<name>", namespace = "<name>"), Req(...), ...]
-				uv.List = transformRequirements(uv).List
 			}
 			args = append(args, &value{Assignment: &assignment{key, uv}})
 		}
