@@ -58,7 +58,7 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 
 				for _, i := range a.Ingredients { // added package, not updated/requested package
 					dependencies = append(dependencies, i)
-					directDependencies = append(dependencies, i)
+					directDependencies = append(directDependencies, i)
 				}
 				break
 
@@ -68,6 +68,7 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 
 	dependencies = sliceutils.UniqueByProperty(dependencies, func(i *buildplan.Ingredient) any { return i.IngredientID })
 	directDependencies = sliceutils.UniqueByProperty(directDependencies, func(i *buildplan.Ingredient) any { return i.IngredientID })
+	addedLocale = sliceutils.Unique(addedLocale)
 	commonDependencies := directDependencies.CommonRuntimeDependencies().ToIDMap()
 	numIndirect := len(dependencies) - len(directDependencies) - len(commonDependencies)
 
