@@ -22,6 +22,7 @@ const showUpdatedPackages = true
 // dependencies being installed for the requested packages, if any.
 func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan) {
 	requested := newBuildPlan.RequestedArtifacts().ToIDMap()
+	logging.Debug("requested: %v", requested)
 
 	addedString := []string{}
 	addedLocale := []string{}
@@ -58,7 +59,7 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 
 				for _, i := range a.Ingredients { // added package, not updated/requested package
 					dependencies = append(dependencies, i)
-					directDependencies = append(directDependencies, i)
+					directDependencies = append(dependencies, i)
 				}
 				break
 
@@ -68,6 +69,7 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 
 	dependencies = sliceutils.UniqueByProperty(dependencies, func(i *buildplan.Ingredient) any { return i.IngredientID })
 	directDependencies = sliceutils.UniqueByProperty(directDependencies, func(i *buildplan.Ingredient) any { return i.IngredientID })
+	// Duplicate entries may occur when multiple artifacts share common dependencies.
 	addedLocale = sliceutils.Unique(addedLocale)
 	commonDependencies := directDependencies.CommonRuntimeDependencies().ToIDMap()
 	numIndirect := len(dependencies) - len(directDependencies) - len(commonDependencies)
