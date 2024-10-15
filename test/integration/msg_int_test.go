@@ -78,6 +78,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			// The base state command would also work, but it's output is more verbose and termtest likes to cut off content if it's too long
 			cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
 			cp.Expect(`This is a simple message`)
+			cp.Expect("ActiveState CLI by ActiveState Software Inc.")
 			cp.ExpectExitCode(0)
 
 			// Ensure message doesn't stick around when we run another command
