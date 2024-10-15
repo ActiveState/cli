@@ -39,14 +39,14 @@ func (b *BuildPlan) Run(params *BuildPlanParams) (rerr error) {
 		return errs.Wrap(err, "Could not get commit")
 	}
 
-	bytes, err := commit.BuildScript().MarshalBuildExpression()
+	bytes, err := commit.BuildPlan().Marshal()
 	if err != nil {
-		return errs.Wrap(err, "Could not marshal build expression")
+		return errs.Wrap(err, "Could not marshal build plan")
 	}
 	expr := make(map[string]interface{})
 	err = json.Unmarshal(bytes, &expr)
 	if err != nil {
-		return errs.Wrap(err, "Could not unmarshal build expression")
+		return errs.Wrap(err, "Could not unmarshal build plan")
 	}
 
 	out.Print(output.Prepare(string(bytes), expr))
