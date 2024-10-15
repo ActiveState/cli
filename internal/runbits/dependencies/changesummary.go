@@ -22,7 +22,6 @@ const showUpdatedPackages = true
 // dependencies being installed for the requested packages, if any.
 func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buildplan.BuildPlan) {
 	requested := newBuildPlan.RequestedArtifacts().ToIDMap()
-	logging.Debug("requested: %v", requested)
 
 	addedString := []string{}
 	addedLocale := []string{}
