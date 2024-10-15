@@ -22,8 +22,6 @@ func (suite *MsgIntegrationTestSuite) TestMessage_None() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	// We test on config as it just dumps help and has minimal output
-	// The base state command would also work, but it's output is more verbose and termtest likes to cut off content if it's too long
 	cp := ts.Spawn("--version")
 	cp.Expect("ActiveState CLI by ActiveState Software Inc.")
 	cp.ExpectExitCode(0)
@@ -74,8 +72,6 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "messages.json", []byte(tt.MessageJson), 0755)
 			suite.Require().NoError(err)
 
-			// We test on config as it just dumps help and has minimal output
-			// The base state command would also work, but it's output is more verbose and termtest likes to cut off content if it's too long
 			cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
 			cp.Expect(`This is a simple message`)
 			cp.Expect("ActiveState CLI by ActiveState Software Inc.")
@@ -108,8 +104,6 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic_PlacementAfter() {
 ]`, graph.MessagePlacementTypeAfterCmd)), 0755)
 	suite.Require().NoError(err)
 
-	// We test on config as it just dumps help and has minimal output
-	// The base state command would also work, but it's output is more verbose and termtest likes to cut off content if it's too long
 	cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
 	cp.Expect("ActiveState CLI by ActiveState Software Inc.")
 	cp.Expect(`This is a simple message`)
