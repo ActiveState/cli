@@ -89,7 +89,7 @@ func (fh *FileHasher) HashFiles(wd string, globs []string) (_ string, _ []hashed
 			})
 
 			// Incorporate the individual file hash into the overall hash in hex format
-			fmt.Fprintf(hasher, "%x", hash)
+			fmt.Fprintf(hasher, "%016x", hash)
 		}
 	}
 
