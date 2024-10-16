@@ -70,6 +70,7 @@ require (
 
 require (
 	github.com/ActiveState/graphql v0.0.0-20230719154233-6949037a6e48
+	github.com/brunoga/deep v1.2.4
 	github.com/cespare/xxhash v1.1.0
 	github.com/charmbracelet/bubbles v0.18.0
 	github.com/charmbracelet/bubbletea v0.25.0

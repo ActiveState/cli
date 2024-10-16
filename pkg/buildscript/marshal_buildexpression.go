@@ -5,11 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-openapi/strfmt"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/go-openapi/strfmt"
 )
 
 const (
@@ -21,36 +20,16 @@ const (
 	requirementComparatorKey          = "comparator"
 )
 
-type MarshalerFunc func([]*Value) ([]byte, error)
-
-var marshalers map[string]MarshalerFunc
-
-func init() {
-	marshalers = make(map[string]MarshalerFunc)
-	RegisterFunctionMarshaler("Req", marshalReq) // marshal into legacy object format for now
-}
-
-// RegisterFunctionMarshaler registers a buildexpression marshaler for a buildscript function.
-// Marshalers accept a buildscript Value, and marshals it to buildexpression JSON (e.g. an object).
-func RegisterFunctionMarshaler(name string, marshalJSON MarshalerFunc) {
-	marshalers[name] = marshalJSON
-}
-
-// MarshalJSON returns this structure as a build expression in JSON format, suitable for sending to
-// the Platform.
+// MarshalBuildExpression returns this structure as a build expression in JSON format, suitable for sending to the Platform.
 func (b *BuildScript) MarshalBuildExpression() ([]byte, error) {
-	return json.MarshalIndent(b, "", "  ")
-}
+	raw, err := b.raw.clone()
+	if err != nil {
+		return nil, errs.Wrap(err, "Cannot clone raw build script")
+	}
 
-// Note: all of the MarshalJSON functions are named the way they are because Go's JSON package
-// specifically looks for them.
-
-// MarshalJSON returns this structure as a build expression in JSON format, suitable for sending to
-// the Platform.
-func (b *BuildScript) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
 	let := make(map[string]interface{})
-	for _, assignment := range b.raw.Assignments {
+	for _, assignment := range raw.Assignments {
 		key := assignment.Key
 		value := assignment.Value
 		switch key {
@@ -70,16 +49,19 @@ func (b *BuildScript) MarshalJSON() ([]byte, error) {
 		let[key] = value
 	}
 	m[letKey] = let
-	return json.Marshal(m)
+	return json.MarshalIndent(m, "", "  ")
 }
 
-func (a *Assignment) MarshalJSON() ([]byte, error) {
+// Note: all of the MarshalJSON functions are named the way they are because Go's JSON package
+// specifically looks for them.
+
+func (a *assignment) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
 	m[a.Key] = a.Value
 	return json.Marshal(m)
 }
 
-func (v *Value) MarshalJSON() ([]byte, error) {
+func (v *value) MarshalJSON() ([]byte, error) {
 	switch {
 	case v.FuncCall != nil:
 		return json.Marshal(v.FuncCall)
@@ -102,12 +84,12 @@ func (v *Value) MarshalJSON() ([]byte, error) {
 	case v.Ident != nil:
 		return json.Marshal("$" + *v.Ident)
 	}
-	return json.Marshal([]*Value{}) // participle does not create v.List if it's empty
+	return json.Marshal([]*value{}) // participle does not create v.List if it's empty
 }
 
-func (f *FuncCall) MarshalJSON() ([]byte, error) {
-	if marshalJSON, exists := marshalers[f.Name]; exists {
-		return marshalJSON(f.Arguments)
+func (f *funcCall) MarshalJSON() ([]byte, error) {
+	if f.Name == reqFuncName {
+		return marshalReq(f)
 	}
 
 	m := make(map[string]interface{})
@@ -130,7 +112,8 @@ func (f *FuncCall) MarshalJSON() ([]byte, error) {
 // marshalReq translates a Req() function into its equivalent buildexpression requirement object.
 // This is needed until buildexpressions support functions as requirements. Once they do, we can
 // remove this method entirely.
-func marshalReq(args []*Value) ([]byte, error) {
+func marshalReq(fn *funcCall) ([]byte, error) {
+	args := fn.Arguments
 	requirement := make(map[string]interface{})
 
 	for _, arg := range args {
@@ -153,8 +136,8 @@ func marshalReq(args []*Value) ([]byte, error) {
 		// {"version_requirements": [{"comparator": "<op>", "version": "<version>"}]}
 		case assignment.Key == requirementVersionKey && assignment.Value.FuncCall != nil:
 			requirements := make([]interface{}, 0)
-			var addRequirement func(*FuncCall) error // recursive function for adding to requirements list
-			addRequirement = func(funcCall *FuncCall) error {
+			var addRequirement func(*funcCall) error // recursive function for adding to requirements list
+			addRequirement = func(funcCall *funcCall) error {
 				switch name := funcCall.Name; name {
 				case eqFuncName, neFuncName, gtFuncName, gteFuncName, ltFuncName, lteFuncName:
 					req := make(map[string]string)

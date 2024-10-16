@@ -3,6 +3,7 @@ package buildscript
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -49,37 +50,23 @@ func (b *BuildScript) Requirements() ([]Requirement, error) {
 		return nil, errs.Wrap(err, "Could not get requirements node")
 	}
 
+	return exportRequirements(requirementsNode), nil
+}
+
+func exportRequirements(v *value) []Requirement {
+	if v.List == nil {
+		logging.Error("exportRequirements called with value that does not have a list")
+		return nil
+	}
 	var requirements []Requirement
-	for _, req := range *requirementsNode.List {
+	for _, req := range *v.List {
 		if req.FuncCall == nil {
 			continue
 		}
 
 		switch req.FuncCall.Name {
-		case reqFuncName:
-			var r DependencyRequirement
-			for _, arg := range req.FuncCall.Arguments {
-				switch arg.Assignment.Key {
-				case requirementNameKey:
-					r.Name = strValue(arg.Assignment.Value)
-				case requirementNamespaceKey:
-					r.Namespace = strValue(arg.Assignment.Value)
-				case requirementVersionKey:
-					r.VersionRequirement = getVersionRequirements(arg.Assignment.Value)
-				}
-			}
-			requirements = append(requirements, r)
-		case revFuncName:
-			var r RevisionRequirement
-			for _, arg := range req.FuncCall.Arguments {
-				switch arg.Assignment.Key {
-				case requirementNameKey:
-					r.Name = strValue(arg.Assignment.Value)
-				case requirementRevisionIDKey:
-					r.RevisionID = strfmt.UUID(strValue(arg.Assignment.Value))
-				}
-			}
-			requirements = append(requirements, r)
+		case reqFuncName, revFuncName:
+			requirements = append(requirements, parseRequirement(req))
 		default:
 			requirements = append(requirements, UnknownRequirement{
 				Name:  req.FuncCall.Name,
@@ -89,7 +76,44 @@ func (b *BuildScript) Requirements() ([]Requirement, error) {
 
 	}
 
-	return requirements, nil
+	return requirements
+}
+
+// parseRequirement turns a raw *value representing a requirement into an externally consumable requirement type
+// It accepts any value as input. If the value does not represent a requirement it simply won't be acted on and a nill
+// will be returned.
+func parseRequirement(req *value) Requirement {
+	if req.FuncCall == nil {
+		return nil
+	}
+	switch req.FuncCall.Name {
+	case reqFuncName:
+		var r DependencyRequirement
+		for _, arg := range req.FuncCall.Arguments {
+			switch arg.Assignment.Key {
+			case requirementNameKey:
+				r.Name = strValue(arg.Assignment.Value)
+			case requirementNamespaceKey:
+				r.Namespace = strValue(arg.Assignment.Value)
+			case requirementVersionKey:
+				r.VersionRequirement = getVersionRequirements(arg.Assignment.Value)
+			}
+		}
+		return r
+	case revFuncName:
+		var r RevisionRequirement
+		for _, arg := range req.FuncCall.Arguments {
+			switch arg.Assignment.Key {
+			case requirementNameKey:
+				r.Name = strValue(arg.Assignment.Value)
+			case requirementRevisionIDKey:
+				r.RevisionID = strfmt.UUID(strValue(arg.Assignment.Value))
+			}
+		}
+		return r
+	default:
+		return nil
+	}
 }
 
 // DependencyRequirements is identical to Requirements except that it only considers dependency type requirements,
@@ -109,7 +133,7 @@ func (b *BuildScript) DependencyRequirements() ([]types.Requirement, error) {
 	return deps, nil
 }
 
-func (b *BuildScript) getRequirementsNode() (*Value, error) {
+func (b *BuildScript) getRequirementsNode() (*value, error) {
 	node, err := b.getSolveNode()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get solve node")
@@ -124,7 +148,7 @@ func (b *BuildScript) getRequirementsNode() (*Value, error) {
 	return nil, errNodeNotFound
 }
 
-func getVersionRequirements(v *Value) []types.VersionRequirement {
+func getVersionRequirements(v *value) []types.VersionRequirement {
 	reqs := []types.VersionRequirement{}
 
 	switch v.FuncCall.Name {
@@ -147,10 +171,10 @@ func getVersionRequirements(v *Value) []types.VersionRequirement {
 	return reqs
 }
 
-func (b *BuildScript) getSolveNode() (*Value, error) {
-	var search func([]*Assignment) *Value
-	search = func(assignments []*Assignment) *Value {
-		var nextLet []*Assignment
+func (b *BuildScript) getSolveNode() (*value, error) {
+	var search func([]*assignment) *value
+	search = func(assignments []*assignment) *value {
+		var nextLet []*assignment
 		for _, a := range assignments {
 			if a.Key == letKey {
 				nextLet = *a.Value.Object // nested 'let' to search next
@@ -176,7 +200,7 @@ func (b *BuildScript) getSolveNode() (*Value, error) {
 	return nil, errNodeNotFound
 }
 
-func (b *BuildScript) getSolveAtTimeValue() (*Value, error) {
+func (b *BuildScript) getSolveAtTimeValue() (*value, error) {
 	node, err := b.getSolveNode()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get solve node")
@@ -204,7 +228,7 @@ func (b *BuildScript) Platforms() ([]strfmt.UUID, error) {
 	return list, nil
 }
 
-func (b *BuildScript) getPlatformsNode() (*Value, error) {
+func (b *BuildScript) getPlatformsNode() (*value, error) {
 	node, err := b.getSolveNode()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get solve node")

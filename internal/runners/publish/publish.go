@@ -2,7 +2,6 @@ package publish
 
 import (
 	"errors"
-	"net/http"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -12,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -20,15 +18,13 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/pkg/platform/api"
-	graphModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/graphql"
 	"github.com/go-openapi/strfmt"
 	"gopkg.in/yaml.v3"
 )
@@ -56,7 +52,7 @@ type Runner struct {
 	out     output.Outputer
 	prompt  prompt.Prompter
 	project *project.Project
-	client  *gqlclient.Client
+	bp      *buildplanner.BuildPlanner
 }
 
 type primeable interface {
@@ -64,17 +60,17 @@ type primeable interface {
 	primer.Auther
 	primer.Projecter
 	primer.Prompter
+	primer.SvcModeler
 }
 
 func New(prime primeable) *Runner {
-	client := gqlclient.NewWithOpts(
-		api.GetServiceURL(api.ServiceBuildPlanner).String(), 0,
-		graphql.WithHTTPClient(http.DefaultClient),
-		graphql.UseMultipartForm(),
-	)
-	client.SetTokenProvider(prime.Auth())
-	client.EnableDebugLog()
-	return &Runner{auth: prime.Auth(), out: prime.Output(), prompt: prime.Prompt(), project: prime.Project(), client: client}
+	return &Runner{
+		auth:    prime.Auth(),
+		out:     prime.Output(),
+		prompt:  prime.Prompt(),
+		project: prime.Project(),
+		bp:      buildplanner.NewBuildPlannerModel(prime.Auth(), prime.SvcModel()),
+	}
 }
 
 type ParentIngredient struct {
@@ -125,7 +121,7 @@ func (r *Runner) Run(params *Params) error {
 	if params.Namespace != "" {
 		reqVars.Namespace = params.Namespace
 	} else if reqVars.Namespace == "" && r.project != nil && r.project.Owner() != "" {
-		reqVars.Namespace = model.NewNamespaceOrg(r.project.Owner()).String()
+		reqVars.Namespace = model.NewNamespaceOrg(r.project.Owner(), "").String()
 	}
 
 	// Name
@@ -242,30 +238,25 @@ Do you want to publish this ingredient?
 
 	r.out.Notice(locale.Tl("uploadingredient_uploading", "Publishing ingredient..."))
 
-	pr, err := request.Publish(reqVars, params.Filepath)
+	publishResult, err := r.bp.Publish(reqVars, params.Filepath)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not create publish request")
 	}
-	result := graphModel.PublishResult{}
 
-	if err := r.client.Run(pr, &result); err != nil {
-		return locale.WrapError(err, "err_uploadingredient_publish", "", err.Error())
+	if publishResult.Error != "" {
+		return locale.NewError("err_uploadingredient_publish_api", "API responded with error: {{.V0}}", publishResult.Error)
 	}
 
-	if result.Publish.Error != "" {
-		return locale.NewError("err_uploadingredient_publish_api", "API responded with error: {{.V0}}", result.Publish.Error)
-	}
+	logging.Debug("Published ingredient ID: %s", publishResult.IngredientID)
+	logging.Debug("Published ingredient version ID: %s", publishResult.IngredientVersionID)
+	logging.Debug("Published ingredient revision: %d", publishResult.Revision)
 
-	logging.Debug("Published ingredient ID: %s", result.Publish.IngredientID)
-	logging.Debug("Published ingredient version ID: %s", result.Publish.IngredientVersionID)
-	logging.Debug("Published ingredient revision: %d", result.Publish.Revision)
-
-	ingredientID := strfmt.UUID(result.Publish.IngredientID)
+	ingredientID := strfmt.UUID(publishResult.IngredientID)
 	publishedIngredient, err := model.FetchIngredient(&ingredientID, r.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingredient_fetch", "Unable to fetch newly published ingredient")
 	}
-	versionID := strfmt.UUID(result.Publish.IngredientVersionID)
+	versionID := strfmt.UUID(publishResult.IngredientVersionID)
 
 	latestTime, err := model.FetchLatestRevisionTimeStamp(r.auth)
 	if err != nil {
@@ -294,7 +285,7 @@ Do you want to publish this ingredient?
 			strconv.Itoa(int(*publishedVersion.Revision)),
 			ingTime.Format(time.RFC3339),
 		),
-		result.Publish,
+		publishResult,
 	))
 
 	return nil

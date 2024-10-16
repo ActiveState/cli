@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"os"
-	"path/filepath"
 	"runtime/debug"
 	"sort"
 	"strconv"
@@ -308,19 +307,26 @@ func (r *Resolver) GetJwt(ctx context.Context) (*graph.Jwt, error) {
 	return jwt, nil
 }
 
-func (r *Resolver) HashGlobs(ctx context.Context, globs []string) (string, error) {
+func (r *Resolver) HashGlobs(ctx context.Context, wd string, globs []string) (*graph.GlobResult, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
-	var files []string
-	for _, glob := range globs {
-		matches, err := filepath.Glob(glob)
-		if err != nil {
-			return "", errs.Wrap(err, "Could not match glob: %s", glob)
-		}
-		files = append(files, matches...)
+	hash, files, err := r.fileHasher.HashFiles(wd, globs)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not hash files")
 	}
 
-	return r.fileHasher.HashFiles(files)
+	result := &graph.GlobResult{
+		Hash: hash,
+	}
+	for _, f := range files {
+		result.Files = append(result.Files, &graph.GlobFileResult{
+			Pattern: f.Pattern,
+			Path:    f.Path,
+			Hash:    f.Hash,
+		})
+	}
+
+	return result, nil
 }
 
 func (r *Resolver) GetCache(ctx context.Context, key string) (string, error) {

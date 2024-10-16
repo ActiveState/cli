@@ -226,6 +226,17 @@ func (m *SvcModel) SetCache(key, value string, expiry time.Duration) error {
 	return nil
 }
 
+func (m *SvcModel) HashGlobs(wd string, globs []string) (*graph.GlobResult, error) {
+	defer profile.Measure("svc:HashGlobs", time.Now())
+
+	req := request.NewHashGlobs(wd, globs)
+	res := graph.HashGlobsResponse{}
+	if err := m.request(context.Background(), req, &res); err != nil {
+		return nil, errs.Wrap(err, "Error sending HashGlobs request to state-svc")
+	}
+	return &res.Response, errs.New("svcModel.HashGlobs() did not return an expected value")
+}
+
 func jsonFromMap(m map[string]interface{}) string {
 	d, err := json.Marshal(m)
 	if err != nil {

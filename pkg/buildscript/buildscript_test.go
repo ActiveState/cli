@@ -87,7 +87,8 @@ func TestRoundTripFromBuildScript(t *testing.T) {
 // expression and then immediately construct another build expression from that build script, the
 // build expressions are identical.
 func TestRoundTripFromBuildExpression(t *testing.T) {
-	script, err := UnmarshalBuildExpression(basicBuildExpression, nil)
+	script := New()
+	err := script.UnmarshalBuildExpression(basicBuildExpression)
 	require.NoError(t, err)
 
 	data, err := script.MarshalBuildExpression()
@@ -102,8 +103,9 @@ func TestExpressionToScript(t *testing.T) {
 	ts, err := time.Parse(strfmt.RFC3339Millis, atTime)
 	require.NoError(t, err)
 
-	script, err := UnmarshalBuildExpression(basicBuildExpression, &ts)
-	require.NoError(t, err)
+	script := New()
+	script.SetAtTime(ts)
+	require.NoError(t, script.UnmarshalBuildExpression(basicBuildExpression))
 
 	data, err := script.Marshal()
 	require.NoError(t, err)
