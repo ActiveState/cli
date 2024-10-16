@@ -14,7 +14,7 @@ func (b *BuildPlanner) Publish(vars request.PublishVariables, filepath string) (
 	res := graphModel.PublishResponse{}
 
 	if err := b.client.Run(pr, &res); err != nil {
-		return nil, errs.Wrap(err, "Publish failed")
+		return nil, processBuildPlannerError(err, "Publish failed")
 	}
 
 	if res.Result.Error != "" {
