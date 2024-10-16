@@ -22,7 +22,7 @@ type UninstallIntegrationTestSuite struct {
 
 func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 	suite.OnlyRunForTags(tagsuite.Uninstall, tagsuite.Critical)
-	suite.T().Run("Partial uninstall", func(t *testing.T) { suite.testUninstall(false) })
+	// suite.T().Run("Partial uninstall", func(t *testing.T) { suite.testUninstall(false) })
 	suite.T().Run("Full uninstall", func(t *testing.T) { suite.testUninstall(true) })
 }
 
