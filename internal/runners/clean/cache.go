@@ -3,6 +3,7 @@ package clean
 import (
 	"context"
 	"os"
+	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -11,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/svcctl"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/pkg/runtime_helpers"
 )
@@ -130,7 +130,7 @@ func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) err
 }
 
 func (c *Cache) checkPathInUse(path string) (bool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), model.SvcTimeoutMinimal)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	procs, err := c.prime.SvcModel().GetProcessesInUse(ctx, path)
