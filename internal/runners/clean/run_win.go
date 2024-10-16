@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	"github.com/ActiveState/cli/internal/assets"
@@ -143,7 +142,6 @@ func removeInstall(logFile string, params *UninstallParams, cfg *config.Instance
 
 func removePaths(logFile string, paths ...string) error {
 	logging.Debug("Removing paths: %v", paths)
-	fmt.Println("Removing paths:", strings.Join(paths, ", "))
 	scriptName := "removePaths"
 	scriptBlock, err := assets.ReadFileBytes(fmt.Sprintf("scripts/%s.bat", scriptName))
 	if err != nil {
