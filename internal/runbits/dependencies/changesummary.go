@@ -68,6 +68,8 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 
 	dependencies = sliceutils.UniqueByProperty(dependencies, func(i *buildplan.Ingredient) any { return i.IngredientID })
 	directDependencies = sliceutils.UniqueByProperty(directDependencies, func(i *buildplan.Ingredient) any { return i.IngredientID })
+	// Duplicate entries may occur when multiple artifacts share common dependencies.
+	addedLocale = sliceutils.Unique(addedLocale)
 	commonDependencies := directDependencies.CommonRuntimeDependencies().ToIDMap()
 	numIndirect := len(dependencies) - len(directDependencies) - len(commonDependencies)
 
