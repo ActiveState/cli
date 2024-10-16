@@ -113,7 +113,7 @@ func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) err
 		return errs.Wrap(err, "Failed to check if path is in use")
 	}
 	if inUse {
-		return locale.NewError("err_clean_in_use")
+		return locale.NewInputError("err_clean_in_use")
 	}
 
 	projectInstallPath, err := runtime_helpers.TargetDirFromProjectDir(projectDir)
