@@ -98,7 +98,7 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 	}
 	cp.SendLine("y")
 	if runtime.GOOS == "windows" {
-		cp.Expect("Deletion of State Tool has been scheduled.")
+		cp.Expect("Deletion of State Tool has been scheduled. Fail")
 	} else {
 		cp.Expect("Successfully removed State Tool and related files")
 	}
