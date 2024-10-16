@@ -151,6 +151,9 @@ github.com/aymanbagabas/go-osc52/v2
 # github.com/blang/semver v3.5.1+incompatible
 ## explicit
 github.com/blang/semver
+# github.com/brunoga/deep v1.2.4
+## explicit; go 1.20.0
+github.com/brunoga/deep
 # github.com/cespare/xxhash v1.1.0
 ## explicit
 github.com/cespare/xxhash

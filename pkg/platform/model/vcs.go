@@ -221,7 +221,12 @@ func NewNamespacePlatform() Namespace {
 	return Namespace{NamespacePlatform, "platform"}
 }
 
-func NewNamespaceOrg(orgName string) Namespace {
+func NewNamespaceOrg(orgName, suffix string) Namespace {
+	ns := orgName
+	if suffix != "" {
+		ns += "/" + suffix
+		ns = strings.ReplaceAll(ns, "//", "/")
+	}
 	return Namespace{
 		nsType: NamespaceOrg,
 		value:  NamespaceOrg.prefix + "/" + orgName,

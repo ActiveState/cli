@@ -42,95 +42,74 @@ const (
 	inKey  = "in"
 )
 
-type PreUnmarshalerFunc func(map[string]interface{}) (map[string]interface{}, error)
-
-var preUnmarshalers map[string]PreUnmarshalerFunc
-
-func init() {
-	preUnmarshalers = make(map[string]PreUnmarshalerFunc)
-}
-
-// RegisterFunctionPreUnmarshaler registers a buildscript pre-unmarshaler for a buildexpression
-// function.
-// Pre-unmarshalers accept a JSON object of function arguments, transform those arguments as
-// necessary, and return a JSON object for final unmarshaling to buildscript.
-func RegisterFunctionPreUnmarshaler(name string, preUnmarshal PreUnmarshalerFunc) {
-	preUnmarshalers[name] = preUnmarshal
-}
-
 // UnmarshalBuildExpression returns a BuildScript constructed from the given build expression in
 // JSON format.
 // Build scripts and build expressions are almost identical, with the exception of the atTime field.
 // Build expressions ALWAYS set at_time to `$at_time`, which refers to the timestamp on the commit,
 // while buildscripts encode this timestamp as part of their definition. For this reason we have
 // to supply the timestamp as a separate argument.
-func UnmarshalBuildExpression(data []byte, atTime *time.Time) (*BuildScript, error) {
+func (b *BuildScript) UnmarshalBuildExpression(data []byte) error {
 	expr := make(map[string]interface{})
 	err := json.Unmarshal(data, &expr)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not unmarshal build expression")
+		return errs.Wrap(err, "Could not unmarshal build expression")
 	}
 
 	let, ok := expr[letKey].(map[string]interface{})
 	if !ok {
-		return nil, errs.New("Invalid build expression: 'let' value is not an object")
+		return errs.New("Invalid build expression: 'let' value is not an object")
 	}
 
 	var path []string
 	assignments, err := unmarshalAssignments(path, let)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not parse assignments")
+		return errs.Wrap(err, "Could not parse assignments")
 	}
-
-	script := &BuildScript{&rawBuildScript{Assignments: assignments}}
+	b.raw.Assignments = assignments
 
 	// Extract the 'at_time' from the solve node, if it exists, and change its value to be a
 	// reference to "$at_time", which is how we want to show it in AScript format.
-	if atTimeNode, err := script.getSolveAtTimeValue(); err == nil && atTimeNode.Str != nil && !strings.HasPrefix(strValue(atTimeNode), `$`) {
+	if atTimeNode, err := b.getSolveAtTimeValue(); err == nil && atTimeNode.Str != nil && !strings.HasPrefix(strValue(atTimeNode), `$`) {
 		atTime, err := strfmt.ParseDateTime(strValue(atTimeNode))
 		if err != nil {
-			return nil, errs.Wrap(err, "Invalid timestamp: %s", strValue(atTimeNode))
+			return errs.Wrap(err, "Invalid timestamp: %s", strValue(atTimeNode))
 		}
 		atTimeNode.Str = nil
 		atTimeNode.Ident = ptr.To("at_time")
-		script.raw.AtTime = ptr.To(time.Time(atTime))
+		b.raw.AtTime = ptr.To(time.Time(atTime))
 	} else if err != nil {
-		return nil, errs.Wrap(err, "Could not get at_time node")
-	}
-
-	if atTime != nil {
-		script.raw.AtTime = atTime
+		return errs.Wrap(err, "Could not get at_time node")
 	}
 
 	// If the requirements are in legacy object form, e.g.
 	//   requirements = [{"name": "<name>", "namespace": "<name>"}, {...}, ...]
 	// then transform them into function call form for the AScript format, e.g.
 	//   requirements = [Req(name = "<name>", namespace = "<name>"), Req(...), ...]
-	requirements, err := script.getRequirementsNode()
+	requirements, err := b.getRequirementsNode()
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not get requirements node")
+		return errs.Wrap(err, "Could not get requirements node")
 	}
 	if isLegacyRequirementsList(requirements) {
 		requirements.List = transformRequirements(requirements).List
 	}
 
-	return script, nil
+	return nil
 }
 
 const (
 	ctxAssignments = "assignments"
 	ctxValue       = "value"
 	ctxFuncCall    = "funcCall"
-	ctxIsAp        = "isAp"
+	ctxFuncDef     = "funcDef"
 	ctxIn          = "in"
 )
 
-func unmarshalAssignments(path []string, m map[string]interface{}) ([]*Assignment, error) {
+func unmarshalAssignments(path []string, m map[string]interface{}) ([]*assignment, error) {
 	path = append(path, ctxAssignments)
 
-	assignments := []*Assignment{}
+	assignments := []*assignment{}
 	for key, valueInterface := range m {
-		var value *Value
+		var value *value
 		var err error
 		if key != inKey {
 			value, err = unmarshalValue(path, valueInterface)
@@ -142,7 +121,7 @@ func unmarshalAssignments(path []string, m map[string]interface{}) ([]*Assignmen
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not parse '%s' key's value: %v", key, valueInterface)
 		}
-		assignments = append(assignments, &Assignment{key, value})
+		assignments = append(assignments, &assignment{key, value})
 	}
 
 	sort.SliceStable(assignments, func(i, j int) bool {
@@ -151,10 +130,10 @@ func unmarshalAssignments(path []string, m map[string]interface{}) ([]*Assignmen
 	return assignments, nil
 }
 
-func unmarshalValue(path []string, valueInterface interface{}) (*Value, error) {
+func unmarshalValue(path []string, valueInterface interface{}) (*value, error) {
 	path = append(path, ctxValue)
 
-	value := &Value{}
+	result := &value{}
 
 	switch v := valueInterface.(type) {
 	case map[string]interface{}:
@@ -171,26 +150,26 @@ func unmarshalValue(path []string, valueInterface interface{}) (*Value, error) {
 				continue
 			}
 
-			if isAp(path, val.(map[string]interface{})) {
+			if isFuncCall(path, val.(map[string]interface{})) {
 				f, err := unmarshalFuncCall(path, v)
 				if err != nil {
 					return nil, errs.Wrap(err, "Could not parse '%s' function's value: %v", key, v)
 				}
-				value.FuncCall = f
+				result.FuncCall = f
 			}
 		}
 
 		// It's not a function call, but an object.
-		if value.FuncCall == nil {
+		if result.FuncCall == nil {
 			object, err := unmarshalAssignments(path, v)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse object: %v", v)
 			}
-			value.Object = &object
+			result.Object = &object
 		}
 
 	case []interface{}:
-		values := []*Value{}
+		values := []*value{}
 		for _, item := range v {
 			value, err := unmarshalValue(path, item)
 			if err != nil {
@@ -198,79 +177,69 @@ func unmarshalValue(path []string, valueInterface interface{}) (*Value, error) {
 			}
 			values = append(values, value)
 		}
-		value.List = &values
+		result.List = &values
 
 	case string:
 		if sliceutils.Contains(path, ctxIn) || strings.HasPrefix(v, "$") {
-			value.Ident = ptr.To(strings.TrimPrefix(v, "$"))
+			result.Ident = ptr.To(strings.TrimPrefix(v, "$"))
 		} else {
-			value.Str = ptr.To(strconv.Quote(v)) // quoting is mandatory
+			result.Str = ptr.To(strconv.Quote(v)) // quoting is mandatory
 		}
 
 	case float64:
-		value.Number = ptr.To(v)
+		result.Number = ptr.To(v)
 
 	case nil:
-		value.Null = &Null{}
+		result.Null = &null{}
 
 	default:
 		logging.Debug("Unknown type: %T at path %s", v, strings.Join(path, "."))
-		value.Null = &Null{}
+		result.Null = &null{}
 	}
 
-	return value, nil
+	return result, nil
 }
 
-func isAp(path []string, value map[string]interface{}) bool {
-	path = append(path, ctxIsAp)
+func isFuncCall(path []string, value map[string]interface{}) bool {
+	path = append(path, ctxFuncDef)
 
 	_, hasIn := value[inKey]
 	return !hasIn || sliceutils.Contains(path, ctxAssignments)
 }
 
-func unmarshalFuncCall(path []string, m map[string]interface{}) (*FuncCall, error) {
+func unmarshalFuncCall(path []string, fc map[string]interface{}) (*funcCall, error) {
 	path = append(path, ctxFuncCall)
 
 	// m is a mapping of function name to arguments. There should only be one
 	// set of arguments. Since the arguments are key-value pairs, it should be
 	// a map[string]interface{}.
-	if len(m) > 1 {
+	if len(fc) > 1 {
 		return nil, errs.New("Function call has more than one argument mapping")
 	}
 
 	// Look in the given object for the function's name and argument mapping.
 	var name string
 	var argsInterface interface{}
-	for key, value := range m {
-		m, ok := value.(map[string]interface{})
-		if !ok {
+	for key, value := range fc {
+		if _, ok := value.(map[string]interface{}); !ok {
 			return nil, errs.New("Incorrect argument format")
 		}
 
 		name = key
-
-		if preUnmarshal, exists := preUnmarshalers[name]; exists {
-			var err error
-			value, err = preUnmarshal(m)
-			if err != nil {
-				return nil, errs.Wrap(err, "Unable to pre-unmarshal function '%s'", name)
-			}
-		}
-
 		argsInterface = value
 		break // technically this is not needed since there's only one element in m
 	}
 
-	args := []*Value{}
+	args := []*value{}
 
 	switch v := argsInterface.(type) {
 	case map[string]interface{}:
 		for key, valueInterface := range v {
-			value, err := unmarshalValue(path, valueInterface)
+			uv, err := unmarshalValue(path, valueInterface)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse '%s' function's argument '%s': %v", name, key, valueInterface)
 			}
-			args = append(args, &Value{Assignment: &Assignment{key, value}})
+			args = append(args, &value{Assignment: &assignment{key, uv}})
 		}
 		sort.SliceStable(args, func(i, j int) bool { return args[i].Assignment.Key < args[j].Assignment.Key })
 
@@ -287,13 +256,13 @@ func unmarshalFuncCall(path []string, m map[string]interface{}) (*FuncCall, erro
 		return nil, errs.New("Function '%s' expected to be object or list", name)
 	}
 
-	return &FuncCall{Name: name, Arguments: args}, nil
+	return &funcCall{Name: name, Arguments: args}, nil
 }
 
-func unmarshalIn(path []string, inValue interface{}) (*Value, error) {
+func unmarshalIn(path []string, inValue interface{}) (*value, error) {
 	path = append(path, ctxIn)
 
-	in := &Value{}
+	in := &value{}
 
 	switch v := inValue.(type) {
 	case map[string]interface{}:
@@ -320,19 +289,19 @@ func unmarshalIn(path []string, inValue interface{}) (*Value, error) {
 //		{"name": "<name>", "namespace": "<namespace>"},
 //		...,
 //	]
-func isLegacyRequirementsList(value *Value) bool {
+func isLegacyRequirementsList(value *value) bool {
 	return len(*value.List) > 0 && (*value.List)[0].Object != nil
 }
 
 // transformRequirements transforms a build expression list of requirements in object form into a
 // list of requirements in function-call form, which is how requirements are represented in
 // buildscripts.
-func transformRequirements(reqs *Value) *Value {
-	newReqs := []*Value{}
+func transformRequirements(reqs *value) *value {
+	newReqs := []*value{}
 	for _, req := range *reqs.List {
 		newReqs = append(newReqs, transformRequirement(req))
 	}
-	return &Value{List: &newReqs}
+	return &value{List: &newReqs}
 }
 
 // transformRequirement transforms a build expression requirement in object form into a requirement
@@ -345,24 +314,24 @@ func transformRequirements(reqs *Value) *Value {
 // into something like
 //
 //	Req(name = "<name>", namespace = "<namespace>", version = <op>(value = "<version>"))
-func transformRequirement(req *Value) *Value {
-	args := []*Value{}
+func transformRequirement(req *value) *value {
+	args := []*value{}
 
 	for _, arg := range *req.Object {
 		key := arg.Key
-		value := arg.Value
+		v := arg.Value
 
 		// Transform the version value from the requirement object.
 		if key == requirementVersionRequirementsKey {
 			key = requirementVersionKey
-			value = &Value{FuncCall: transformVersion(arg)}
+			v = &value{FuncCall: transformVersion(arg)}
 		}
 
 		// Add the argument to the function transformation.
-		args = append(args, &Value{Assignment: &Assignment{key, value}})
+		args = append(args, &value{Assignment: &assignment{key, v}})
 	}
 
-	return &Value{FuncCall: &FuncCall{reqFuncName, args}}
+	return &value{FuncCall: &funcCall{reqFuncName, args}}
 }
 
 // transformVersion transforms a build expression version_requirements list in object form into
@@ -374,15 +343,15 @@ func transformRequirement(req *Value) *Value {
 // into something like
 //
 //	And(<op1>(value = "<version1>"), <op2>(value = "<version2>"))
-func transformVersion(requirements *Assignment) *FuncCall {
-	var funcs []*FuncCall
+func transformVersion(requirements *assignment) *funcCall {
+	var funcs []*funcCall
 	for _, constraint := range *requirements.Value.List {
-		f := &FuncCall{}
+		f := &funcCall{}
 		for _, o := range *constraint.Object {
 			switch o.Key {
 			case requirementVersionKey:
-				f.Arguments = []*Value{
-					{Assignment: &Assignment{"value", o.Value}},
+				f.Arguments = []*value{
+					{Assignment: &assignment{"value", o.Value}},
 				}
 			case requirementComparatorKey:
 				f.Name = cases.Title(language.English).String(strValue(o.Value))
@@ -399,17 +368,17 @@ func transformVersion(requirements *Assignment) *FuncCall {
 	// Iterate backwards over the requirements array and construct a binary tree of 'And()' functions.
 	// For example, given [Gt(value = "1.0"), Ne(value = "2.0"), Lt(value = "3.0")], produce:
 	//   And(left = Gt(value = "1.0"), right = And(left = Ne(value = "2.0"), right = Lt(value = "3.0")))
-	var f *FuncCall
+	var f *funcCall
 	for i := len(funcs) - 2; i >= 0; i-- {
-		right := &Value{FuncCall: funcs[i+1]}
+		right := &value{FuncCall: funcs[i+1]}
 		if f != nil {
-			right = &Value{FuncCall: f}
+			right = &value{FuncCall: f}
 		}
-		args := []*Value{
-			{Assignment: &Assignment{"left", &Value{FuncCall: funcs[i]}}},
-			{Assignment: &Assignment{"right", right}},
+		args := []*value{
+			{Assignment: &assignment{"left", &value{FuncCall: funcs[i]}}},
+			{Assignment: &assignment{"right", right}},
 		}
-		f = &FuncCall{andFuncName, args}
+		f = &funcCall{andFuncName, args}
 	}
 	return f
 }

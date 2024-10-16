@@ -7,7 +7,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
@@ -52,8 +51,9 @@ func (b *BuildPlanner) GetBuildScript(commitID string) (*buildscript.BuildScript
 		return nil, errs.New("Commit does not contain expression")
 	}
 
-	script, err := buildscript.UnmarshalBuildExpression(resp.Commit.Expression, ptr.To(time.Time(resp.Commit.AtTime)))
-	if err != nil {
+	script := buildscript.New()
+	script.SetAtTime(time.Time(resp.Commit.AtTime))
+	if err := script.UnmarshalBuildExpression(resp.Commit.Expression); err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}
 
