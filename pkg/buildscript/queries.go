@@ -79,6 +79,9 @@ func exportRequirements(v *value) []Requirement {
 	return requirements
 }
 
+// parseRequirement turns a raw *value representing a requirement into an externally consumable requirement type
+// It accepts any value as input. If the value does not represent a requirement it simply won't be acted on and a nill
+// will be returned.
 func parseRequirement(req *value) Requirement {
 	if req.FuncCall == nil {
 		return nil
