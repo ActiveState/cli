@@ -109,9 +109,6 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 		time.Sleep(2 * time.Second)
 	}
 
-	snapshot := cp.Snapshot()
-	fmt.Println(snapshot)
-
 	if all {
 		suite.NoDirExists(ts.Dirs.Cache, "Cache dir should not exist after full uninstall")
 		suite.NoDirExists(ts.Dirs.Config, "Config dir should not exist after full uninstall")
