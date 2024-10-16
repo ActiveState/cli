@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
@@ -160,19 +159,8 @@ func removePaths(logFile string, paths ...string) error {
 		return locale.WrapError(err, "err_clean_executable", "Could not get executable name")
 	}
 
-	var longPaths []string
-	for _, path := range paths {
-		longPath, err := fileutils.GetLongPathName(path)
-		if err != nil {
-			logging.Error("Could not get long path for %s: %s", path, err)
-			longPaths = append(longPaths, path)
-			continue
-		}
-		longPaths = append(longPaths, longPath)
-	}
-
 	args := []string{"/C", sf.Filename(), logFile, fmt.Sprintf("%d", os.Getpid()), filepath.Base(exe)}
-	args = append(args, longPaths...)
+	args = append(args, paths...)
 
 	_, err = osutils.ExecuteAndForget("cmd.exe", args)
 	if err != nil {

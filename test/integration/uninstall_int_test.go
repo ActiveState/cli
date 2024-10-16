@@ -22,7 +22,7 @@ type UninstallIntegrationTestSuite struct {
 
 func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 	suite.OnlyRunForTags(tagsuite.Uninstall, tagsuite.Critical)
-	// suite.T().Run("Partial uninstall", func(t *testing.T) { suite.testUninstall(false) })
+	suite.T().Run("Partial uninstall", func(t *testing.T) { suite.testUninstall(false) })
 	suite.T().Run("Full uninstall", func(t *testing.T) { suite.testUninstall(true) })
 }
 
@@ -98,7 +98,7 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 	}
 	cp.SendLine("y")
 	if runtime.GOOS == "windows" {
-		cp.Expect("Deletion of State Tool has been scheduled")
+		cp.Expect("Deletion of State Tool has been scheduled.")
 	} else {
 		cp.Expect("Successfully removed State Tool and related files")
 	}
