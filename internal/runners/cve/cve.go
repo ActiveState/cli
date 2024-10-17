@@ -194,9 +194,9 @@ func (rd *cveOutput) MarshalOutput(format output.Format) interface{} {
 		})
 
 		for i, d := range ap.Details {
-			bar := "├─"
+			bar := output.TreeMid
 			if i == len(ap.Details)-1 {
-				bar = "└─"
+				bar = output.TreeEnd
 			}
 			severity := d.Severity
 			if severity == "CRITICAL" {

@@ -230,7 +230,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 
 	cp := ts.Spawn("activate")
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
-	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
+	cp.ExpectInput()
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
 	cp.Expect("2")
@@ -291,7 +291,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Perl_Variable() {
 		e2e.OptAppendEnv("PERL_VERSION=does_not_exist"),
 	)
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
-	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
+	cp.ExpectInput()
 
 	cp.SendLine("perl -MEnglish -e 'print $PERL_VERSION'")
 	cp.Expect("v5.32.0")

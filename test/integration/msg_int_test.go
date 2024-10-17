@@ -22,10 +22,8 @@ func (suite *MsgIntegrationTestSuite) TestMessage_None() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	// We test on config as it just dumps help and has minimal output
-	// The base state command would also work, but it's output is more verbose and termtest likes to cut off content if it's too long
-	cp := ts.Spawn("config")
-	cp.Expect("Usage:")
+	cp := ts.Spawn("--version")
+	cp.Expect("ActiveState CLI by ActiveState Software Inc.")
 	cp.ExpectExitCode(0)
 
 	// Note: since message failures should fail silently without impacting the user we need to check
@@ -74,11 +72,9 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "messages.json", []byte(tt.MessageJson), 0755)
 			suite.Require().NoError(err)
 
-			// We test on config as it just dumps help and has minimal output
-			// The base state command would also work, but it's output is more verbose and termtest likes to cut off content if it's too long
-			cp := ts.SpawnWithOpts(e2e.OptArgs("config"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
+			cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
 			cp.Expect(`This is a simple message`)
-			cp.Expect("Usage:")
+			cp.Expect("ActiveState CLI by ActiveState Software Inc.")
 			cp.ExpectExitCode(0)
 
 			// Ensure message doesn't stick around when we run another command
@@ -108,10 +104,8 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic_PlacementAfter() {
 ]`, graph.MessagePlacementTypeAfterCmd)), 0755)
 	suite.Require().NoError(err)
 
-	// We test on config as it just dumps help and has minimal output
-	// The base state command would also work, but it's output is more verbose and termtest likes to cut off content if it's too long
-	cp := ts.SpawnWithOpts(e2e.OptArgs("config"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
-	cp.Expect("Usage:")
+	cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
+	cp.Expect("ActiveState CLI by ActiveState Software Inc.")
 	cp.Expect(`This is a simple message`)
 	cp.ExpectExitCode(0)
 }
@@ -131,19 +125,19 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic_InterruptPrompt() {
 ]`, graph.MessageInterruptTypePrompt)), 0755)
 	suite.Require().NoError(err)
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("config"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
 	cp.Expect(`This is a simple message`)
 	cp.Expect("Press ENTER to continue")
 	time.Sleep(time.Millisecond * 100)
-	suite.Require().NotContains(cp.Output(), "Usage:")
+	suite.Require().NotContains(cp.Output(), "ActiveState CLI by ActiveState Software Inc.")
 	cp.SendEnter()
-	cp.Expect("Usage:")
+	cp.Expect("ActiveState CLI by ActiveState Software Inc.")
 	cp.ExpectExitCode(0)
 
 	// Test that non-interactive does not prompt
-	cp = ts.SpawnWithOpts(e2e.OptArgs("config", "-n"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
+	cp = ts.SpawnCmdWithOpts("state", e2e.OptArgs("--version", "-n"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
 	cp.Expect(`This is a simple message`)
-	cp.Expect("Usage:")
+	cp.Expect("ActiveState CLI by ActiveState Software Inc.")
 	cp.ExpectExitCode(0)
 	suite.Require().NotContains(cp.Output(), "Press ENTER to continue")
 }
@@ -162,10 +156,10 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic_InterruptExit() {
 ]`, graph.MessageInterruptTypeExit)), 0755)
 	suite.Require().NoError(err)
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("config"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
 	cp.ExpectExitCode(1)
 	suite.Require().Contains(cp.Snapshot(), "This is a simple message")
-	suite.Require().NotContains(cp.Output(), "Usage:")
+	suite.Require().NotContains(cp.Output(), "ActiveState CLI by ActiveState Software Inc.")
 	ts.IgnoreLogErrors()
 }
 

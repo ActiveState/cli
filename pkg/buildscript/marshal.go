@@ -30,11 +30,11 @@ func (b *BuildScript) Marshal() ([]byte, error) {
 
 	if b.raw.AtTime != nil {
 		buf.WriteString(assignmentString(
-			&Assignment{atTimeKey, newString(b.raw.AtTime.Format(strfmt.RFC3339Millis))}))
+			&assignment{atTimeKey, newString(b.raw.AtTime.Format(strfmt.RFC3339Millis))}))
 		buf.WriteString("\n")
 	}
 
-	var main *Assignment
+	var main *assignment
 	for _, assignment := range b.raw.Assignments {
 		if assignment.Key == mainKey {
 			main = assignment
@@ -50,7 +50,7 @@ func (b *BuildScript) Marshal() ([]byte, error) {
 	return []byte(buf.String()), nil
 }
 
-func assignmentString(a *Assignment) string {
+func assignmentString(a *assignment) string {
 	return fmt.Sprintf("%s = %s", a.Key, valueString(a.Value))
 }
 
@@ -58,7 +58,7 @@ func indentByTab(s string) string {
 	return fmt.Sprintf("\t%s", strings.ReplaceAll(s, "\n", "\n\t"))
 }
 
-func valueString(v *Value) string {
+func valueString(v *value) string {
 	switch {
 	case v.FuncCall != nil:
 		return funcCallString(v.FuncCall)
@@ -118,7 +118,7 @@ var inlineFunctions = []string{
 	andFuncName,
 }
 
-func funcCallString(f *FuncCall) string {
+func funcCallString(f *funcCall) string {
 	var (
 		newline = "\n"
 		comma   = ","
@@ -142,7 +142,7 @@ func funcCallString(f *FuncCall) string {
 	return buf.String()
 }
 
-func argsToString(args []*Value, newline, comma string, indent func(string) string) string {
+func argsToString(args []*value, newline, comma string, indent func(string) string) string {
 	buf := bytes.Buffer{}
 	for i, argument := range args {
 		buf.WriteString(indent(valueString(argument)))

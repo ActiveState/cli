@@ -262,7 +262,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return errs.Wrap(err, "Unable to determine Platform ID from %s", sysinfo.OS().String())
 	}
 
-	bp := bpModel.NewBuildPlannerModel(r.auth)
+	bp := bpModel.NewBuildPlannerModel(r.auth, r.svcModel)
 	commitID, err := bp.CreateProject(&bpModel.CreateProjectParams{
 		Owner:       namespace.Owner,
 		Project:     namespace.Project,
@@ -281,14 +281,14 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	}
 
 	if r.config.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript_runbit.Initialize(proj.Dir(), r.auth); err != nil {
+		if err := buildscript_runbit.Initialize(proj.Dir(), r.auth, r.svcModel); err != nil {
 			return errs.Wrap(err, "Unable to initialize buildscript")
 		}
 	}
 
 	// Solve runtime
 	solveSpinner := output.StartSpinner(r.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
-	bpm := bpModel.NewBuildPlannerModel(r.auth)
+	bpm := bpModel.NewBuildPlannerModel(r.auth, r.svcModel)
 	commit, err := bpm.FetchCommit(commitID, r.prime.Project().Owner(), r.prime.Project().Name(), nil)
 	if err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))

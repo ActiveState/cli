@@ -30,7 +30,7 @@ func (suite *ResetIntegrationTestSuite) TestReset() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "shared/zlib")
-	cp.Expect("Package added")
+	cp.Expect("Added")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("history")

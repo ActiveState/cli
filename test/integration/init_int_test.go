@@ -123,11 +123,11 @@ func (suite *InitIntegrationTestSuite) TestInit_InferLanguageFromUse() {
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("checkout", "ActiveState-CLI/Python3")
+	cp = ts.Spawn("checkout", "ActiveState-CLI/small-python")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("use", "Python3")
+	cp = ts.Spawn("use", "small-python")
 	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 

@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/ActiveState/termtest"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -110,7 +113,7 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 		cp.ExpectExitCode(0)
 
 		cp = ts.Spawn("import", "requirements.txt")
-		cp.Expect("already installed")
+		cp.Expect("no changes")
 		cp.ExpectNotExitCode(0)
 	})
 
@@ -122,7 +125,7 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 		cp.ExpectExitCode(0)
 
 		cp = ts.Spawn("import", "requirements.txt")
-		cp.ExpectExitCode(0)
+		cp.ExpectExitCode(0, termtest.OptExpectTimeout(2*time.Minute)) // wait twice as long as a normal solve
 
 		cp = ts.Spawn("packages")
 		cp.Expect("coverage")

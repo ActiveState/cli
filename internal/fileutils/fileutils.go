@@ -17,6 +17,7 @@ import (
 	"unicode"
 
 	"github.com/gofrs/flock"
+	"github.com/labstack/gommon/random"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/assets"
@@ -870,10 +871,15 @@ func TempFileUnsafe(dir, pattern string) *os.File {
 	return f
 }
 
-func TempFilePathUnsafe(dir, pattern string) string {
-	f := TempFileUnsafe(dir, pattern)
-	defer f.Close()
-	return f.Name()
+func TempFilePath(dir, pattern string) string {
+	if dir == "" {
+		dir = os.TempDir()
+	}
+	fname := random.String(8, random.Alphanumeric)
+	if pattern != "" {
+		fname = fmt.Sprintf("%s-%s", fname, pattern)
+	}
+	return filepath.Join(dir, fname)
 }
 
 // TempDirUnsafe returns a temp path or panics if it cannot be created

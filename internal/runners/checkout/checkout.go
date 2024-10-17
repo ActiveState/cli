@@ -149,7 +149,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 
 		// Solve runtime
 		solveSpinner := output.StartSpinner(u.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
-		bpm := bpModel.NewBuildPlannerModel(u.auth)
+		bpm := bpModel.NewBuildPlannerModel(u.auth, u.svcModel)
 		commit, err := bpm.FetchCommit(commitID, proj.Owner(), proj.Name(), nil)
 		if err != nil {
 			solveSpinner.Stop(locale.T("progress_fail"))
@@ -174,7 +174,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 	if err := cves.NewCveReport(u.prime).Report(buildPlan, nil); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
 	}
-	
+
 	rti, err := runtime_runbit.Update(u.prime, trigger.TriggerCheckout, rtOpts...)
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime")
