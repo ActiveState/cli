@@ -37,11 +37,18 @@ mutation ($organization: String!, $project: String!, $private: Boolean!, $expr: 
 		... on ParseError {
 			__typename
 			message
-			path
+			subErrors {
+				message
+				buildExprPath
+			}
 		}
 		... on ValidationError {
 			__typename
 			message
+			subErrors {
+				message
+				buildExprPath
+			}
 		}
 		... on Forbidden {
 			__typename

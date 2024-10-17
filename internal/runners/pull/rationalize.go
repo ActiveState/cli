@@ -24,7 +24,7 @@ func rationalizeError(err *error) {
 	case errors.As(*err, &mergeCommitErr):
 		switch mergeCommitErr.Type {
 		// Custom target does not have a compatible history
-		case types.NoCommonBaseFoundType:
+		case types.NoCommonBaseFoundErrorType:
 			*err = errs.WrapUserFacing(*err,
 				locale.Tl("err_pull_no_common_base",
 					"Could not merge. No common base found between local and remote commits",

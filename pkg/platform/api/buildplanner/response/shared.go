@@ -85,7 +85,7 @@ func IsErrorResponse(errorType string) bool {
 		errorType == types.PlanningErrorType ||
 		errorType == types.MergeConflictType ||
 		errorType == types.FastForwardErrorType ||
-		errorType == types.NoCommonBaseFoundType ||
+		errorType == types.NoCommonBaseFoundErrorType ||
 		errorType == types.ValidationErrorType ||
 		errorType == types.MergeConflictErrorType ||
 		errorType == types.RevertConflictErrorType ||
@@ -101,6 +101,7 @@ type NotFoundError struct {
 }
 
 // ParseError is an error that occurred while parsing the build expression.
+// SubErrors are handled separately
 type ParseError struct {
 	Path string `json:"path"`
 }
@@ -111,7 +112,8 @@ type ForbiddenError struct {
 
 // Error contains an error message.
 type Error struct {
-	Message string `json:"message"`
+	Message   string            `json:"message"`
+	SubErrors []*BuildExprError `json:"subErrors"`
 }
 
 type TargetNotFoundError struct {

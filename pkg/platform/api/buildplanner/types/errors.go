@@ -14,11 +14,12 @@ const (
 	PlanningErrorType                 = "PlanningError"
 	MergeConflictType                 = "MergeConflict"
 	FastForwardErrorType              = "FastForwardError"
-	NoCommonBaseFoundType             = "NoCommonBaseFound"
+	NoCommonBaseFoundErrorType        = "NoCommonBaseFound"
 	ValidationErrorType               = "ValidationError"
 	MergeConflictErrorType            = "MergeConflict"
 	RevertConflictErrorType           = "RevertConflict"
 	CommitNotInTargetHistoryErrorType = "CommitNotInTargetHistory"
 	ComitHasNoParentErrorType         = "CommitHasNoParent"
 	TargetNotFoundErrorType           = "TargetNotFound"
+	InvalidInputErrorType             = "InvalidInput"
 )

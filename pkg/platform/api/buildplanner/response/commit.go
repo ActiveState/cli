@@ -54,7 +54,7 @@ func (c *ProjectCommitResponse) PostProcess() error {
 func ProcessBuildError(build *BuildResponse, fallbackMessage string) error {
 	logging.Debug("ProcessBuildError: build.Type=%s", build.Type)
 	if build.Type == types.PlanningErrorType {
-		return processPlanningError(build.Message, build.SubErrors)
+		return processPlanningError(build.Message, build.Error.SubErrors)
 	} else if build.Error == nil {
 		return errs.New(fallbackMessage)
 	}
@@ -133,9 +133,9 @@ type TargetNotFound struct {
 	PossibleTargets []string `json:"possibleTargets"`
 }
 
-type ValidationError struct {
-	SubErrors []*BuildExprError `json:"subErrors"`
-}
+// ValidationError represents a validation error that occurred during planning.
+// Contains message and subErrors which is handled separately
+type ValidationError struct{}
 
 // Commit contains the build and any errors.
 type Commit struct {

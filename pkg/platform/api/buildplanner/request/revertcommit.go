@@ -42,6 +42,10 @@ mutation ($organization: String!, $project: String!, $commitId: String!, $target
       targetCommitId
       conflictPaths
     }
+    ... on CommitNotInTargetHistory {
+      __typename
+      message
+    }
     ... on CommitHasNoParent {
       __typename
       message
@@ -54,11 +58,18 @@ mutation ($organization: String!, $project: String!, $commitId: String!, $target
     ... on ParseError {
       __typename
       message
-      path
+      subErrors {
+        message
+        buildExprPath
+      }
     }
     ... on ValidationError {
       __typename
       message
+      subErrors {
+        message
+        buildExprPath
+      }
     }
     ... on Forbidden {
       __typename
@@ -71,6 +82,10 @@ mutation ($organization: String!, $project: String!, $commitId: String!, $target
     ... on NoChangeSinceLastCommit {
       message
       commitId
+    }
+    ... on InvalidInput {
+      __typename
+      message
     }
   }
 }`
