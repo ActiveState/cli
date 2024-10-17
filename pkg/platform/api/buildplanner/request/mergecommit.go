@@ -48,10 +48,18 @@ mutation ($organization: String!, $project: String!, $targetRef: String!, $other
     ... on ParseError {
       __typename
       message
+      subErrors {
+        message
+        buildExprPath
+      }
     }
     ... on ValidationError {
       __typename
       message
+      subErrors {
+        message
+        buildExprPath
+      }
     }
     ... on Forbidden {
       __typename
@@ -67,6 +75,10 @@ mutation ($organization: String!, $project: String!, $targetRef: String!, $other
       __typename
       message
       commitId
+    }
+    ... on InvalidInput {
+      __typename
+      message
     }
   }
 }

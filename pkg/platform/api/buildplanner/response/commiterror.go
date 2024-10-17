@@ -27,9 +27,19 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 			locale.NewInputError("err_buildplanner_commit_not_found", "Could not find commit. Received message: {{.V0}}", commit.Message),
 		}
 	case types.ParseErrorType:
+		var subErrorMessages []string
+		for _, e := range commit.SubErrors {
+			subErrorMessages = append(subErrorMessages, e.Message)
+		}
+		if len(subErrorMessages) > 0 {
+			return &CommitError{
+				commit.Type, commit.Message,
+				locale.NewInputError("err_buildplanner_commit_parse_error_sub_messages", "The platform failed to parse the build expression. Received message: {{.V0}}, with sub errors: {{.V1}}", commit.Message, strings.Join(subErrorMessages, ", ")),
+			}
+		}
 		return &CommitError{
 			commit.Type, commit.Message,
-			locale.NewInputError("err_buildplanner_parse_error", "The platform failed to parse the build expression. Received message: {{.V0}}. Path: {{.V1}}", commit.Message, commit.ParseError.Path),
+			locale.NewInputError("err_buildplanner_commit_parse_error", "The platform failed to parse the build expression. Received message: {{.V0}}", commit.Message),
 		}
 	case types.ValidationErrorType:
 		var subErrorMessages []string
@@ -39,17 +49,17 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 		if len(subErrorMessages) > 0 {
 			return &CommitError{
 				commit.Type, commit.Message,
-				locale.NewInputError("err_buildplanner_validation_error_sub_messages", "The platform encountered a validation error. Received message: {{.V0}}, with sub errors: {{.V1}}", commit.Message, strings.Join(subErrorMessages, ", ")),
+				locale.NewInputError("err_buildplanner_commit_validation_error_sub_messages", "The platform encountered a validation error. Received message: {{.V0}}, with sub errors: {{.V1}}", commit.Message, strings.Join(subErrorMessages, ", ")),
 			}
 		}
 		return &CommitError{
 			commit.Type, commit.Message,
-			locale.NewInputError("err_buildplanner_validation_error", "The platform encountered a validation error. Received message: {{.V0}}", commit.Message),
+			locale.NewInputError("err_buildplanner_commit_validation_error", "The platform encountered a validation error. Received message: {{.V0}}", commit.Message),
 		}
 	case types.ForbiddenErrorType:
 		return &CommitError{
 			commit.Type, commit.Message,
-			locale.NewInputError("err_buildplanner_forbidden", "Operation forbidden: {{.V0}}. Received message: {{.V1}}", commit.Operation, commit.Message),
+			locale.NewInputError("err_buildplanner_forbidden", commit.Operation, commit.Message),
 		}
 	case types.HeadOnBranchMovedErrorType:
 		return errs.Wrap(&CommitError{
@@ -69,29 +79,79 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 type RevertCommitError struct {
 	Type    string
 	Message string
+	*locale.LocalizedError
 }
 
 func (m *RevertCommitError) Error() string { return m.Message }
 
 func ProcessRevertCommitError(rcErr *revertedCommit, fallbackMessage string) error {
-	if rcErr.Type != "" {
-		return &RevertCommitError{rcErr.Type, rcErr.Message}
+	if rcErr.Error == nil {
+		return errs.New(fallbackMessage)
 	}
-	return errs.New(fallbackMessage)
+
+	switch rcErr.Type {
+	case types.RevertConflictErrorType:
+		return &RevertCommitError{
+			rcErr.Type, rcErr.Message,
+			locale.NewInputError("err_buildplanner_revert_conflict", "The revert operation could not be completed due to a conflict. Received message: {{.V0}}", rcErr.Message),
+		}
+	case types.CommitNotInTargetHistoryErrorType:
+		return &RevertCommitError{
+			rcErr.Type, rcErr.Message,
+			locale.NewInputError("err_buildplanner_commit_revert_not_in_target_history", "The commit to revert is not in the target history. Received message: {{.V0}}", rcErr.Message),
+		}
+	case types.ComitHasNoParentErrorType:
+		return &RevertCommitError{
+			rcErr.Type, rcErr.Message,
+			locale.NewInputError("err_buildplanner_commit_revert_has_no_parent", "The commit to revert has no parent. Received message: {{.V0}}", rcErr.Message),
+		}
+	case types.InvalidInputErrorType:
+		return &RevertCommitError{
+			rcErr.Type, rcErr.Message,
+			locale.NewInputError("err_buildplanner_revert_invalid_input", "The input to the revert operation was invalid. Received message: {{.V0}}", rcErr.Message),
+		}
+	default:
+		return errs.New(fallbackMessage)
+	}
 }
 
 type MergedCommitError struct {
 	Type    string
 	Message string
+	*locale.LocalizedError
 }
 
 func (m *MergedCommitError) Error() string { return m.Message }
 
 func ProcessMergedCommitError(mcErr *mergedCommit, fallbackMessage string) error {
-	if mcErr.Type != "" {
-		return &MergedCommitError{mcErr.Type, mcErr.Message}
+	if mcErr.Error == nil {
+		return errs.New(fallbackMessage)
 	}
-	return errs.New(fallbackMessage)
+
+	switch mcErr.Type {
+	case types.MergeConflictErrorType:
+		return &MergedCommitError{
+			mcErr.Type, mcErr.Message,
+			locale.NewInputError("err_buildplanner_merge_conflict", "The platform encountered a merge conflict. Received message: {{.V0}}", mcErr.Message),
+		}
+	case types.FastForwardErrorType:
+		return &MergedCommitError{
+			mcErr.Type, mcErr.Message,
+			locale.NewInputError("err_buildplanner_merge_fast_forward_error", "The platform could not merge with the Fast Forward strategy. Received message: {{.V0}}", mcErr.Message),
+		}
+	case types.NoCommonBaseFoundErrorType:
+		return &MergedCommitError{
+			mcErr.Type, mcErr.Message,
+			locale.NewInputError("err_buildplanner_merge_no_common_base_found", "The platform could not find a common base for the merge. Received message: {{.V0}}", mcErr.Message),
+		}
+	case types.InvalidInputErrorType:
+		return &MergedCommitError{
+			mcErr.Type, mcErr.Message,
+			locale.NewInputError("err_buildplanner_merge_invalid_input", "The input to the merge commit mutation was invalid. Received message: {{.V0}}", mcErr.Message),
+		}
+	default:
+		return errs.New(fallbackMessage)
+	}
 }
 
 // HeadOnBranchMovedError represents an error that occurred because the head on

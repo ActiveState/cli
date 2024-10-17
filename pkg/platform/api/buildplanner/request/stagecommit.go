@@ -212,7 +212,10 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID!, $descri
     ... on ParseError {
       __typename
       message
-      path
+      subErrors {
+        message
+        buildExprPath
+      }
     }
     ... on Forbidden {
       __typename

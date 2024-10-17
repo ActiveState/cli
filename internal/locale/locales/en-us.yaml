@@ -1031,6 +1031,8 @@ buildplan_err_cropped:
   other: "Could not plan build. Platform responded with:\n{{.V0}}\n{{.V1}}"
 err_buildplanner_head_on_branch_moved:
   other: The branch you're trying to update has changed remotely. Please run '[ACTIONABLE]state pull[/RESET]'.
+err_buildplanner_forbidden:
+  other: "Operation forbidden: {{.V0}}. Received message: {{.V1}}"
 transient_solver_tip:
   other: You may want to retry this command if the failure was related to a resourcing or networking issue.
 warning_git_project_mismatch:
