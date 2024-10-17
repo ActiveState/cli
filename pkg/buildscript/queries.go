@@ -15,6 +15,7 @@ const (
 	solveFuncName       = "solve"
 	solveLegacyFuncName = "solve_legacy"
 	srcKey              = "src"
+	mergeKey            = "merge"
 	requirementsKey     = "requirements"
 	platformsKey        = "platforms"
 )
@@ -235,6 +236,26 @@ func (b *BuildScript) getSolveNode(targets ...string) (*value, error) {
 	// If the target is the solve function, we're done.
 	if isSolveFuncName(node.FuncCall.Name) {
 		return node, nil
+	}
+
+	// If the target is a merge call, then look at right and left branches (in reverse order since the
+	// right branch has precedence).
+	if node.FuncCall.Name == mergeKey {
+		for i := len(node.FuncCall.Arguments) - 1; i >= 0; i-- {
+			arg := node.FuncCall.Arguments[i]
+			if arg.Assignment == nil {
+				continue
+			}
+			a := arg.Assignment
+			if a.Value.Ident != nil {
+				if node, err := b.getSolveNode(*a.Value.Ident); err == nil {
+					return node, nil
+				}
+				// Note: ignore errors because either branch may not contain a solve node.
+				// We'll return an error if both branches do not contain a solve node.
+			}
+		}
+		return nil, errNodeNotFound
 	}
 
 	// Otherwise, the "src" key contains a reference to the solve node.
