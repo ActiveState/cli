@@ -85,7 +85,7 @@ func (c *Cache) removeCache(path string, force bool) error {
 		return errs.Wrap(err, "Failed to check if path is in use")
 	}
 	if inUse {
-		return locale.NewError("err_clean_in_use")
+		return locale.NewInputError("err_clean_in_use")
 	}
 
 	logging.Debug("Removing cache path: %s", path)
