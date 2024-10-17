@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -24,7 +25,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
+	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -184,7 +185,12 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		}
 	}
 
-	_, _, err = osutils.ExecuteAndPipeStd(exeTarget, args[1:], osutils.EnvMapToSlice(env))
+	// Sort the env so our PATH environment variable is interpreted first
+	envs := osutils.EnvMapToSlice(env)
+	sort.Slice(envs, func(i, j int) bool {
+		return envs[i] > envs[j]
+	})
+	_, _, err = osutils.ExecuteAndPipeStd(exeTarget, args[1:], envs)
 	if eerr, ok := err.(*exec.ExitError); ok {
 		return errs.Silence(errs.WrapExitCode(eerr, eerr.ExitCode()))
 	}
