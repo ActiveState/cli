@@ -42,8 +42,8 @@ func (b *BuildScript) AddRequirement(requirement types.Requirement) error {
 
 	// Use object form for now, and then transform it into function form later.
 	obj := []*assignment{
-		{requirementNameKey, newString(requirement.Name)},
-		{requirementNamespaceKey, newString(requirement.Namespace)},
+		{requirementNameKey, &value{Str: &requirement.Name}},
+		{requirementNamespaceKey, &value{Str: &requirement.Namespace}},
 	}
 
 	if requirement.Revision != nil {
@@ -54,8 +54,8 @@ func (b *BuildScript) AddRequirement(requirement types.Requirement) error {
 		values := []*value{}
 		for _, req := range requirement.VersionRequirement {
 			values = append(values, &value{Object: &[]*assignment{
-				{requirementComparatorKey, newString(req[requirementComparatorKey])},
-				{requirementVersionKey, newString(req[requirementVersionKey])},
+				{requirementComparatorKey, &value{Str: ptr.To(req[requirementComparatorKey])}},
+				{requirementVersionKey, &value{Str: ptr.To(req[requirementVersionKey])}},
 			}})
 		}
 		obj = append(obj, &assignment{requirementVersionRequirementsKey, &value{List: &values}})
@@ -94,13 +94,13 @@ func (b *BuildScript) RemoveRequirement(requirement types.Requirement) error {
 
 		for _, arg := range req.FuncCall.Arguments {
 			if arg.Assignment.Key == requirementNameKey {
-				match = strValue(arg.Assignment.Value) == requirement.Name
+				match = *arg.Assignment.Value.Str == requirement.Name
 				if !match || requirement.Namespace == "" {
 					break
 				}
 			}
 			if requirement.Namespace != "" && arg.Assignment.Key == requirementNamespaceKey {
-				match = strValue(arg.Assignment.Value) == requirement.Namespace
+				match = *arg.Assignment.Value.Str == requirement.Namespace
 				if !match {
 					break
 				}
@@ -132,7 +132,7 @@ func (b *BuildScript) AddPlatform(platformID strfmt.UUID) error {
 	}
 
 	list := *platformsNode.List
-	list = append(list, newString(platformID.String()))
+	list = append(list, &value{Str: ptr.To(platformID.String())})
 	platformsNode.List = &list
 
 	return nil
@@ -151,7 +151,7 @@ func (b *BuildScript) RemovePlatform(platformID strfmt.UUID) error {
 
 	var found bool
 	for i, value := range *platformsNode.List {
-		if value.Str != nil && strValue(value) == platformID.String() {
+		if value.Str != nil && *value.Str == platformID.String() {
 			list := *platformsNode.List
 			list = append(list[:i], list[i+1:]...)
 			platformsNode.List = &list

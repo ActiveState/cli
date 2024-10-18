@@ -3,12 +3,9 @@ package buildscript
 import (
 	"encoding/json"
 	"strings"
-	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/go-openapi/strfmt"
 )
 
 const (
@@ -33,16 +30,6 @@ func (b *BuildScript) MarshalBuildExpression() ([]byte, error) {
 		key := assignment.Key
 		value := assignment.Value
 		switch key {
-		case atTimeKey:
-			if value.Str == nil {
-				return nil, errs.New("String timestamp expected for '%s'", key)
-			}
-			atTime, err := strfmt.ParseDateTime(strValue(value))
-			if err != nil {
-				return nil, errs.Wrap(err, "Invalid timestamp: %s", strValue(value))
-			}
-			b.raw.AtTime = ptr.To(time.Time(atTime))
-			continue // do not include this custom assignment in the let block
 		case mainKey:
 			key = inKey // rename
 		}
@@ -68,7 +55,7 @@ func (v *value) MarshalJSON() ([]byte, error) {
 	case v.List != nil:
 		return json.Marshal(v.List)
 	case v.Str != nil:
-		return json.Marshal(strValue(v))
+		return json.Marshal(*v.Str)
 	case v.Number != nil:
 		return json.Marshal(*v.Number)
 	case v.Null != nil:
@@ -82,7 +69,12 @@ func (v *value) MarshalJSON() ([]byte, error) {
 		}
 		return json.Marshal(m)
 	case v.Ident != nil:
-		return json.Marshal("$" + *v.Ident)
+		name := *v.Ident
+		switch name {
+		case "TIME":
+			name = "at_time" // build expression uses this variable name
+		}
+		return json.Marshal("$" + name)
 	}
 	return json.Marshal([]*value{}) // participle does not create v.List if it's empty
 }
@@ -125,12 +117,12 @@ func marshalReq(fn *funcCall) ([]byte, error) {
 		switch {
 		// Marshal the name argument (e.g. name = "<name>") into {"name": "<name>"}
 		case assignment.Key == requirementNameKey && assignment.Value.Str != nil:
-			requirement[requirementNameKey] = strValue(assignment.Value)
+			requirement[requirementNameKey] = *assignment.Value.Str
 
 		// Marshal the namespace argument (e.g. namespace = "<namespace>") into
 		// {"namespace": "<namespace>"}
 		case assignment.Key == requirementNamespaceKey && assignment.Value.Str != nil:
-			requirement[requirementNamespaceKey] = strValue(assignment.Value)
+			requirement[requirementNamespaceKey] = *assignment.Value.Str
 
 		// Marshal the version argument (e.g. version = <op>(value = "<version>")) into
 		// {"version_requirements": [{"comparator": "<op>", "version": "<version>"}]}
@@ -143,10 +135,10 @@ func marshalReq(fn *funcCall) ([]byte, error) {
 					req := make(map[string]string)
 					req[requirementComparatorKey] = strings.ToLower(name)
 					if len(funcCall.Arguments) == 0 || funcCall.Arguments[0].Assignment == nil ||
-						funcCall.Arguments[0].Assignment.Value.Str == nil || strValue(funcCall.Arguments[0].Assignment.Value) == "value" {
+						funcCall.Arguments[0].Assignment.Value.Str == nil || *funcCall.Arguments[0].Assignment.Value.Str == "value" {
 						return errs.New(`Illegal argument for version comparator '%s': 'value = "<version>"' expected`, name)
 					}
-					req[requirementVersionKey] = strValue(funcCall.Arguments[0].Assignment.Value)
+					req[requirementVersionKey] = *funcCall.Arguments[0].Assignment.Value.Str
 					requirements = append(requirements, req)
 				case andFuncName:
 					if len(funcCall.Arguments) != 2 {

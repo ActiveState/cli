@@ -70,7 +70,7 @@ func (suite *ManifestIntegrationTestSuite) TestManifest_JSON() {
 }
 
 func (suite *ManifestIntegrationTestSuite) TestManifest_Advanced_Reqs() {
-	suite.OnlyRunForTags(tagsuite.Manifest)
+	suite.OnlyRunForTags(tagsuite.Manifest, tagsuite.BuildScripts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -81,8 +81,11 @@ func (suite *ManifestIntegrationTestSuite) TestManifest_Advanced_Reqs() {
 
 	ts.PrepareProject("ActiveState-CLI-Testing/Python-With-Custom-Reqs", "92ac7df2-0b0c-42f5-9b25-75b0cb4063f7")
 	bsf := filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName)
-	fileutils.WriteFile(bsf, []byte(fmt.Sprintf(`
-at_time = "2022-07-07T19:51:01.140Z"
+	fileutils.WriteFile(bsf, []byte(fmt.Sprintf(
+		"```\n"+
+			"Project: ActiveState-CLI-Testing/Python-With-Custom-Reqs\n"+
+			"Time: 2022-07-07T19:51:01.140Z\n"+
+			"```\n"+`
 runtime = state_tool_artifacts_v1(src = sources)
 sources = solve(
 	at_time = at_time,
