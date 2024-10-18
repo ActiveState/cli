@@ -138,6 +138,15 @@ func T(translationID string, args ...interface{}) string {
 	return translateFunction(translationID, args...)
 }
 
+// Ts aliases to T, but accepts a list of translationIDs to be translated
+func Ts(translationIDs ...string) []string {
+	result := []string{}
+	for _, id := range translationIDs {
+		result = append(result, T(id))
+	}
+	return result
+}
+
 // Tr is like T but it accepts string params that will be used as numbered params, eg. V0, V1, V2 etc
 func Tr(translationID string, values ...string) string {
 	return T(translationID, parseInput(values...))

@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -37,6 +38,19 @@ func (suite *ManifestIntegrationTestSuite) TestManifest() {
 	cp.Expect("auto → 5.9.0")
 	cp.Expect("None detected")
 	cp.ExpectExitCode(0)
+
+	// Ensure that `state manifest` utilized the cache (checkout should've warmed it)
+	logFile := ts.LogFiles()[0]
+	log := string(fileutils.ReadFileUnsafe(logFile))
+	matched := false
+	for _, line := range strings.Split(log, "\n") {
+		if strings.Contains(line, "GetCache FetchCommit-") {
+			suite.Require().Regexp(regexp.MustCompile(`FetchCommit-.*result size: [1-9]`), line)
+			matched = true
+			break
+		}
+	}
+	suite.Require().True(matched, "log file should contain a line with the FetchCommit call", log)
 }
 
 func (suite *ManifestIntegrationTestSuite) TestManifest_JSON() {
@@ -56,7 +70,7 @@ func (suite *ManifestIntegrationTestSuite) TestManifest_JSON() {
 }
 
 func (suite *ManifestIntegrationTestSuite) TestManifest_Advanced_Reqs() {
-	suite.OnlyRunForTags(tagsuite.Manifest)
+	suite.OnlyRunForTags(tagsuite.Manifest, tagsuite.BuildScripts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -67,8 +81,11 @@ func (suite *ManifestIntegrationTestSuite) TestManifest_Advanced_Reqs() {
 
 	ts.PrepareProject("ActiveState-CLI-Testing/Python-With-Custom-Reqs", "92ac7df2-0b0c-42f5-9b25-75b0cb4063f7")
 	bsf := filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName)
-	fileutils.WriteFile(bsf, []byte(fmt.Sprintf(`
-at_time = "2022-07-07T19:51:01.140Z"
+	fileutils.WriteFile(bsf, []byte(fmt.Sprintf(
+		"```\n"+
+			"Project: ActiveState-CLI-Testing/Python-With-Custom-Reqs\n"+
+			"Time: 2022-07-07T19:51:01.140Z\n"+
+			"```\n"+`
 runtime = state_tool_artifacts_v1(src = sources)
 sources = solve(
 	at_time = at_time,

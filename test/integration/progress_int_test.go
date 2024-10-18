@@ -19,16 +19,17 @@ func (suite *ProgressIntegrationTestSuite) TestProgress() {
 	defer ts.Close()
 
 	cp := ts.Spawn("checkout", "ActiveState-CLI/Empty")
+	cp.Expect("Resolving Dependencies")
+	cp.ExpectRe(`[^.]+?✔ Done`, e2e.RuntimeSolvingTimeoutOpt)
 	cp.Expect(locale.T("install_runtime"))
 	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
-	suite.Assert().NotContains(cp.Output(), "...")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("checkout", "ActiveState-CLI/Empty", "Empty2", "--non-interactive")
-	cp.Expect("...")
+	cp.Expect("Resolving Dependencies")
+	cp.ExpectRe(`\.+ ✔ Done`, e2e.RuntimeSolvingTimeoutOpt)
 	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
-
 }
 
 func TestProgressIntegrationTestSuite(t *testing.T) {

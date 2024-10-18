@@ -179,7 +179,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		}
 	}
 
-	projectfile.RegisterMigrator(migrator.NewMigrator(auth, cfg))
+	projectfile.RegisterMigrator(migrator.NewMigrator(auth, cfg, svcmodel))
 
 	// Retrieve project file
 	if os.Getenv("ACTIVESTATE_PROJECT") != "" {

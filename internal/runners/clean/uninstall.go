@@ -42,6 +42,7 @@ type primeable interface {
 	primer.Configurer
 	primer.IPCommunicator
 	primer.Analyticer
+	primer.SvcModeler
 }
 
 func NewUninstall(prime primeable) (*Uninstall, error) {

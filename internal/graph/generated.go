@@ -24,6 +24,17 @@ type ConfigChangedResponse struct {
 	Received bool `json:"received"`
 }
 
+type GlobFileResult struct {
+	Pattern string `json:"pattern"`
+	Path    string `json:"path"`
+	Hash    string `json:"hash"`
+}
+
+type GlobResult struct {
+	Files []*GlobFileResult `json:"files"`
+	Hash  string            `json:"hash"`
+}
+
 type Jwt struct {
 	Token string `json:"token"`
 	User  *User  `json:"user"`
@@ -36,6 +47,9 @@ type MessageInfo struct {
 	Repeat    MessageRepeatType    `json:"repeat"`
 	Interrupt MessageInterruptType `json:"interrupt"`
 	Placement MessagePlacementType `json:"placement"`
+}
+
+type Mutation struct {
 }
 
 type Organization struct {
@@ -51,6 +65,9 @@ type ProcessInfo struct {
 type Project struct {
 	Namespace string   `json:"namespace"`
 	Locations []string `json:"locations"`
+}
+
+type Query struct {
 }
 
 type ReportRuntimeUsageResponse struct {

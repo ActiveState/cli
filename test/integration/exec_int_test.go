@@ -8,7 +8,6 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -16,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/termtest"
 )
 
 type ExecIntegrationTestSuite struct {
@@ -161,7 +159,7 @@ func (suite *ExecIntegrationTestSuite) TestExeBatArguments() {
 		suite.T().Skip("This test is only for windows")
 	}
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
@@ -176,7 +174,7 @@ func (suite *ExecIntegrationTestSuite) TestExeBatArguments() {
 	inputs := []string{"a<b", "b>a", "hello world", "&whoami", "imnot|apipe", "%NotAppData%", "^NotEscaped", "(NotAGroup)"}
 	outputs := `"` + strings.Join(inputs, `" "`) + `"`
 	cp = ts.SpawnWithOpts(e2e.OptArgs(append([]string{"exec", reportBat, "--"}, inputs...)...))
-	cp.Expect(outputs, termtest.OptExpectTimeout(5*time.Second))
+	cp.Expect(outputs, e2e.RuntimeBuildSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 

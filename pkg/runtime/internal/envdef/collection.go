@@ -1,7 +1,9 @@
 package envdef
 
 import (
+	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -63,5 +65,29 @@ func (c *Collection) Environment(installPath string, inherit bool) (map[string]s
 		}
 	}
 	constants := NewConstants(installPath)
-	return result.ExpandVariables(constants).GetEnv(inherit), nil
+	env := result.ExpandVariables(constants).GetEnv(inherit)
+	promotePath(env)
+	return env, nil
+}
+
+// promotPath is a temporary fix to ensure that the PATH is interpreted correctly on Windows
+// Should be properly addressed by https://activestatef.atlassian.net/browse/DX-3030
+func promotePath(env map[string]string) {
+	if runtime.GOOS != "windows" {
+		return
+	}
+
+	PATH, exists := env["PATH"]
+	if !exists {
+		return
+	}
+
+	// If Path exists, prepend PATH values to it
+	Path, pathExists := env["Path"]
+	if !pathExists {
+		return
+	}
+
+	env["Path"] = PATH + string(os.PathListSeparator) + Path
+	delete(env, "PATH")
 }

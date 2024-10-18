@@ -155,7 +155,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		// If this call fails then we will try a recursive merge.
 		strategy := types.MergeCommitStrategyFastForward
 
-		bp := buildplanner.NewBuildPlannerModel(p.auth)
+		bp := buildplanner.NewBuildPlannerModel(p.auth, p.svcModel)
 		params := &buildplanner.MergeCommitParams{
 			Owner:     remoteProject.Owner,
 			Project:   remoteProject.Project,
@@ -233,7 +233,7 @@ func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *pr
 		namespace.String(), branchName, localCommit.String(), remoteCommit.String()),
 	)
 
-	bp := buildplanner.NewBuildPlannerModel(p.auth)
+	bp := buildplanner.NewBuildPlannerModel(p.auth, p.svcModel)
 	params := &buildplanner.MergeCommitParams{
 		Owner:     namespace.Owner,
 		Project:   namespace.Project,
@@ -269,7 +269,7 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	}
 
 	// Get the local and remote build expressions to merge.
-	bp := buildplanner.NewBuildPlannerModel(p.auth)
+	bp := buildplanner.NewBuildPlannerModel(p.auth, p.svcModel)
 	scriptB, err := bp.GetBuildScript(remoteCommit.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get buildexpression and time for remote commit")

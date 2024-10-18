@@ -32,6 +32,7 @@ const (
 	DeleteProjects  = "delete-uuid-projects"
 	Deploy          = "deploy"
 	Edit            = "edit"
+	Environment     = "environment"
 	Errors          = "error"
 	Events          = "events"
 	Exec            = "exec"
@@ -80,6 +81,7 @@ const (
 	Show            = "show"
 	Switch          = "switch"
 	Uninstall       = "uninstall"
+	Upgrade         = "upgrade"
 	Update          = "update"
 	Use             = "use"
 )

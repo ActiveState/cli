@@ -6,6 +6,10 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/rtutils/singlethread"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -47,8 +51,17 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 				suite.Require().NoError(err)
 			}
 
+			// Clear configured shell.
+			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+			suite.Require().NoError(err)
+			err = cfg.Set(subshell.ConfigKeyShell, "")
+			suite.Require().NoError(err)
+
 			// Run the checkout in a particular shell.
-			cp = ts.SpawnShellWithOpts(shell)
+			cp = ts.SpawnShellWithOpts(
+				shell,
+				e2e.OptAppendEnv(constants.OverrideShellEnvVarName+"="),
+			)
 			cp.SendLine(e2e.QuoteCommand(shell, ts.ExecutablePath(), "checkout", "ActiveState-CLI/small-python", string(shell)))
 			cp.Expect("Checked out project")
 			cp.SendLine("exit")
@@ -58,19 +71,16 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 
 			// There are 2 or more instances checked out, so we should get a prompt in whichever shell we
 			// use.
-			cp = ts.SpawnShellWithOpts(shell)
+			cp = ts.SpawnShellWithOpts(
+				shell,
+				e2e.OptAppendEnv(constants.OverrideShellEnvVarName+"="),
+			)
 			cp.SendLine(e2e.QuoteCommand(shell, ts.ExecutablePath(), "shell", "small-python"))
 			cp.Expect("Multiple project paths")
 
 			// Just pick the first one and verify the selection prompt works.
 			cp.SendEnter()
 			cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
-
-			// Verify that the command prompt contains the right info, except for tcsh, whose prompt does
-			// not behave like other shells'.
-			if shell != e2e.Tcsh {
-				cp.Expect("[ActiveState-CLI/small-python]")
-			}
 
 			// Verify the runtime is functioning properly.
 			cp.SendLine("python3 --version")

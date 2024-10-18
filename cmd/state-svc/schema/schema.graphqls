@@ -77,6 +77,17 @@ type JWT {
     user: User!
 }
 
+type GlobFileResult {
+    pattern: String!
+    path: String!
+    hash: String!
+}
+
+type GlobResult {
+    files: [GlobFileResult!]!
+    hash: String!
+}
+
 type Query {
     version: Version
     availableUpdate(desiredChannel: String!, desiredVersion: String!): AvailableUpdate
@@ -88,6 +99,12 @@ type Query {
     fetchLogTail: String!
     getProcessesInUse(execDir: String!): [ProcessInfo!]!
     getJWT: JWT
+    hashGlobs(wd: String!, globs: [String!]!): GlobResult!
+    getCache(key: String!): String!
+}
+
+type Mutation {
+    setCache(key: String!, value: String!, expiry: Int!): Void
 }
 
 type ConfigChangedResponse {
@@ -98,3 +115,5 @@ type ProcessInfo {
     exe: String!
     pid: Int!
 }
+
+scalar Void

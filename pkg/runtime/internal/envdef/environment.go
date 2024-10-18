@@ -8,8 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -125,6 +127,20 @@ func NewEnvironmentDefinition(fp string) (*EnvironmentDefinition, error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "could not unmarshal environment definition file: %s", fp)
 	}
+
+	if ignores := os.Getenv(constants.IgnoreEnvEnvVarName); ignores != "" {
+		ignore := make(map[string]bool)
+		for _, name := range strings.Split(ignores, ",") {
+			ignore[name] = true
+		}
+
+		// Remove any environment variables to ignore.
+		ed.Env = sliceutils.Filter(ed.Env, func(e EnvironmentVariable) bool {
+			_, exists := ignore[e.Name]
+			return !exists
+		})
+	}
+
 	return ed, nil
 }
 

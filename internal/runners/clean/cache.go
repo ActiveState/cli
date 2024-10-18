@@ -1,7 +1,9 @@
 package clean
 
 import (
+	"context"
 	"os"
+	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -15,6 +17,7 @@ import (
 )
 
 type Cache struct {
+	prime   primeable
 	output  output.Outputer
 	config  configurable
 	confirm promptable
@@ -28,11 +31,12 @@ type CacheParams struct {
 }
 
 func NewCache(prime primeable) *Cache {
-	return newCache(prime.Output(), prime.Config(), prime.Prompt(), prime.IPComm())
+	return newCache(prime, prime.Output(), prime.Config(), prime.Prompt(), prime.IPComm())
 }
 
-func newCache(output output.Outputer, cfg configurable, confirm promptable, ipComm svcctl.IPCommunicator) *Cache {
+func newCache(prime primeable, output output.Outputer, cfg configurable, confirm promptable, ipComm svcctl.IPCommunicator) *Cache {
 	return &Cache{
+		prime:   prime,
 		output:  output,
 		config:  cfg,
 		confirm: confirm,
@@ -76,9 +80,16 @@ func (c *Cache) removeCache(path string, force bool) error {
 		}
 	}
 
-	logging.Debug("Removing cache path: %s", path)
-	err := removeCache(c.path)
+	inUse, err := c.checkPathInUse(path)
 	if err != nil {
+		return errs.Wrap(err, "Failed to check if path is in use")
+	}
+	if inUse {
+		return locale.NewInputError("err_clean_in_use")
+	}
+
+	logging.Debug("Removing cache path: %s", path)
+	if err := removeCache(c.path); err != nil {
 		return errs.Wrap(err, "Failed to remove cache")
 	}
 
@@ -97,6 +108,14 @@ func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) err
 		}
 	}
 
+	inUse, err := c.checkPathInUse(projectDir)
+	if err != nil {
+		return errs.Wrap(err, "Failed to check if path is in use")
+	}
+	if inUse {
+		return locale.NewInputError("err_clean_in_use")
+	}
+
 	projectInstallPath, err := runtime_helpers.TargetDirFromProjectDir(projectDir)
 	if err != nil {
 		return errs.Wrap(err, "Failed to determine project install path")
@@ -108,4 +127,20 @@ func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) err
 	}
 
 	return nil
+}
+
+func (c *Cache) checkPathInUse(path string) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	procs, err := c.prime.SvcModel().GetProcessesInUse(ctx, path)
+	if err != nil {
+		return false, errs.Wrap(err, "Failed to get processes in use")
+	}
+
+	if len(procs) > 0 {
+		return true, nil
+	}
+
+	return false, nil
 }

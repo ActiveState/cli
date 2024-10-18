@@ -12,7 +12,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
-	"github.com/ActiveState/termtest"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
@@ -77,7 +76,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 
 	cp.Expect("Creating a Virtual Environment")
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
-	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
+	cp.ExpectInput()
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events
 
@@ -479,7 +478,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
 
 	cp.Expect("Creating a Virtual Environment")
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
-	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
+	cp.ExpectInput()
 
 	cp.SendLine("python3 --version")
 	cp.Expect("Python 3.")
@@ -522,8 +521,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeapEvents() {
 	)
 
 	cp.Expect("Creating a Virtual Environment")
-	cp.Expect("Activated")
-	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectInput()
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events
 
