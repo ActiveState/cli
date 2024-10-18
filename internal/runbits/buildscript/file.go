@@ -2,7 +2,6 @@ package buildscript_runbit
 
 import (
 	"errors"
-	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -22,9 +21,7 @@ import (
 // projecter is a union between project.Project and setup.Targeter
 type projecter interface {
 	Dir() string
-	Owner() string
-	Name() string
-	BranchName() string
+	URL() string
 }
 
 var ErrBuildscriptNotExist = errors.New("Build script does not exist")
@@ -87,37 +84,19 @@ func Initialize(proj projecter, auth *authentication.Auth, svcm *model.SvcModel)
 	return nil
 }
 
+// projectURL returns proj.URL(), but with the given, updated commitID.
 func projectURL(proj projecter, commitID string) (string, error) {
-	// Note: cannot use api.GetPlatformURL() due to import cycle.
-	host := constants.DefaultAPIHost
-	if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
-		host = hostOverride
-	}
-	u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", host, proj.Owner(), proj.Name()))
+	u, err := url.Parse(proj.URL())
 	if err != nil {
 		return "", errs.Wrap(err, "Unable to parse URL")
 	}
 	q := u.Query()
-	q.Set("branch", proj.BranchName())
 	q.Set("commitID", commitID)
 	u.RawQuery = q.Encode()
 	return u.String(), nil
 }
 
 func Update(proj projecter, newScript *buildscript.BuildScript) error {
-	script, err := ScriptFromProject(proj)
-	if err != nil {
-		return errs.Wrap(err, "Could not read build script")
-	}
-
-	equals, err := script.Equals(newScript)
-	if err != nil {
-		return errs.Wrap(err, "Could not compare build script")
-	}
-	if script != nil && equals {
-		return nil // no changes to write
-	}
-
 	// Update the new script's project field to match the current one, except for a new commit ID.
 	commitID, err := localcommit.Get(proj.Dir())
 	if err != nil {
