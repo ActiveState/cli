@@ -172,6 +172,8 @@ func (r *Runtime) getEnv(inherit bool) (map[string]string, map[string]string, er
 	return vars, execVars, nil
 }
 
+// promotPath is a temporary fix to ensure that the PATH is interpreted correctly on Windows
+// Should be properly addressed by https://activestatef.atlassian.net/browse/DX-3030
 func promotePath(env map[string]string) {
 	if runtime.GOOS != "windows" {
 		return
