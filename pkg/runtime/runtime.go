@@ -4,6 +4,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -165,7 +166,30 @@ func (r *Runtime) getEnv(inherit bool) (map[string]string, map[string]string, er
 		execVars["PATH"] += string(os.PathListSeparator) + vars["PATH"]
 	}
 
+	promotePath(vars)
+	promotePath(execVars)
+
 	return vars, execVars, nil
+}
+
+func promotePath(env map[string]string) {
+	if runtime.GOOS != "windows" {
+		return
+	}
+
+	PATH, exists := env["PATH"]
+	if !exists {
+		return
+	}
+
+	// If Path exists, prepend PATH values to it
+	Path, pathExists := env["Path"]
+	if !pathExists {
+		return
+	}
+
+	env["Path"] = PATH + string(os.PathListSeparator) + Path
+	delete(env, "PATH")
 }
 
 func (r *Runtime) Env(inherit bool) Environment {

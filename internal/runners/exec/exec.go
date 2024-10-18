@@ -184,7 +184,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		}
 	}
 
-	_, _, err = osutils.ExecuteAndPipeStd(exeTarget, args[1:], sortPaths(osutils.EnvMapToSlice(env)))
+	_, _, err = osutils.ExecuteAndPipeStd(exeTarget, args[1:], osutils.EnvMapToSlice(env))
 	if eerr, ok := err.(*exec.ExitError); ok {
 		return errs.Silence(errs.WrapExitCode(eerr, eerr.ExitCode()))
 	}
@@ -193,46 +193,6 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	}
 
 	return nil
-}
-
-// sortPaths the env so our PATH environment variable is interpreted first
-func sortPaths(env []string) []string {
-	if runtime.GOOS != "windows" {
-		return env
-	}
-
-	const (
-		windowsPathPrefix = "Path="
-		unixPathPrefix    = "PATH="
-	)
-
-	var windowsPathIndex, unixPathIndex = -1, -1
-	for i, e := range env {
-		switch {
-		case strings.HasPrefix(e, windowsPathPrefix):
-			windowsPathIndex = i
-		case strings.HasPrefix(e, unixPathPrefix):
-			unixPathIndex = i
-		}
-		if windowsPathIndex != -1 && unixPathIndex != -1 {
-			break
-		}
-	}
-
-	if windowsPathIndex == -1 || unixPathIndex == -1 {
-		return env
-	}
-
-	// Ensure Unix PATH is after Windows PATH
-	if windowsPathIndex > unixPathIndex {
-		env[windowsPathIndex], env[unixPathIndex] = env[unixPathIndex], env[windowsPathIndex]
-	}
-
-	for _, e := range env {
-		fmt.Println(e)
-	}
-
-	return env
 }
 
 func projectFromRuntimeDir(cfg projectfile.ConfigGetter, runtimeDir string) string {
