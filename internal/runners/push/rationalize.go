@@ -82,7 +82,7 @@ func rationalizeError(err *error) {
 				errs.SetTips(locale.T("err_tip_push_outdated")))
 
 			// Custom target does not have a compatible history
-		case types.NoCommonBaseFoundType:
+		case types.NoCommonBaseFoundErrorType:
 			*err = errs.WrapUserFacing(*err,
 				locale.T("err_push_target_invalid_history"),
 				errs.SetInput())
