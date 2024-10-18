@@ -662,7 +662,7 @@ func (suite *PackageIntegrationTestSuite) TestChangeSummaryShowsAddedForUpdate()
 
 	cp = ts.Spawn("install", "jinja2@3.1.4")
 	cp.Expect("Installing jinja2@3.1.4 includes 1 direct dep")
-	cp.Expect("└─ markupsafe@2.1.5")
+	cp.Expect("└─ markupsafe@3.0.1")
 	cp.Expect("Updated: language/python/jinja2")
 	cp.ExpectExitCode(0)
 }
