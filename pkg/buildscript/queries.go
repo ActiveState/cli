@@ -97,9 +97,9 @@ func parseRequirement(req *value) Requirement {
 		for _, arg := range req.FuncCall.Arguments {
 			switch arg.Assignment.Key {
 			case requirementNameKey:
-				r.Name = strValue(arg.Assignment.Value)
+				r.Name = *arg.Assignment.Value.Str
 			case requirementNamespaceKey:
-				r.Namespace = strValue(arg.Assignment.Value)
+				r.Namespace = *arg.Assignment.Value.Str
 			case requirementVersionKey:
 				r.VersionRequirement = getVersionRequirements(arg.Assignment.Value)
 			}
@@ -110,9 +110,9 @@ func parseRequirement(req *value) Requirement {
 		for _, arg := range req.FuncCall.Arguments {
 			switch arg.Assignment.Key {
 			case requirementNameKey:
-				r.Name = strValue(arg.Assignment.Value)
+				r.Name = *arg.Assignment.Value.Str
 			case requirementRevisionIDKey:
-				r.RevisionID = strfmt.UUID(strValue(arg.Assignment.Value))
+				r.RevisionID = strfmt.UUID(*arg.Assignment.Value.Str)
 			}
 		}
 		return r
@@ -161,7 +161,7 @@ func getVersionRequirements(v *value) []types.VersionRequirement {
 	case eqFuncName, neFuncName, gtFuncName, gteFuncName, ltFuncName, lteFuncName:
 		reqs = append(reqs, types.VersionRequirement{
 			requirementComparatorKey: strings.ToLower(v.FuncCall.Name),
-			requirementVersionKey:    strValue(v.FuncCall.Arguments[0].Assignment.Value),
+			requirementVersionKey:    *v.FuncCall.Arguments[0].Assignment.Value.Str,
 		})
 
 	// e.g. And(left = Gte(value = "1.0"), right = Lt(value = "2.0"))
@@ -305,7 +305,7 @@ func (b *BuildScript) Platforms(targets ...string) ([]strfmt.UUID, error) {
 
 	list := []strfmt.UUID{}
 	for _, value := range *node.List {
-		list = append(list, strfmt.UUID(strValue(value)))
+		list = append(list, strfmt.UUID(*value.Str))
 	}
 	return list, nil
 }

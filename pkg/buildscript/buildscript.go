@@ -16,6 +16,9 @@ import (
 // methods that are easy to understand and work with.
 type BuildScript struct {
 	raw *rawBuildScript
+
+	project string
+	atTime  *time.Time
 }
 
 func init() {
@@ -41,22 +44,43 @@ func New() *BuildScript {
 	return bs
 }
 
+func (b *BuildScript) Project() string {
+	return b.project
+}
+
+func (b *BuildScript) SetProject(url string) {
+	b.project = url
+}
+
 func (b *BuildScript) AtTime() *time.Time {
-	return b.raw.AtTime
+	return b.atTime
 }
 
 func (b *BuildScript) SetAtTime(t time.Time) {
-	b.raw.AtTime = &t
+	b.atTime = &t
 }
 
 func (b *BuildScript) Equals(other *BuildScript) (bool, error) {
-	myBytes, err := b.Marshal()
+	b2, err := b.Clone()
 	if err != nil {
-		return false, errs.New("Unable to marshal this buildscript: %s", errs.JoinMessage(err))
+		return false, errs.Wrap(err, "Unable to clone buildscript")
 	}
-	otherBytes, err := other.Marshal()
+	other2, err := other.Clone()
 	if err != nil {
-		return false, errs.New("Unable to marshal other buildscript: %s", errs.JoinMessage(err))
+		return false, errs.Wrap(err, "Unable to clone other buildscript")
+	}
+
+	// Do not compare project URLs.
+	b2.SetProject("")
+	other2.SetProject("")
+
+	myBytes, err := b2.Marshal()
+	if err != nil {
+		return false, errs.Wrap(err, "Unable to marshal this buildscript")
+	}
+	otherBytes, err := other2.Marshal()
+	if err != nil {
+		return false, errs.Wrap(err, "Unable to marshal other buildscript")
 	}
 	return string(myBytes) == string(otherBytes), nil
 }
@@ -162,7 +186,7 @@ func exportValue(v *value) any {
 		}
 		return result
 	case v.Str != nil:
-		return strValue(v)
+		return *v.Str
 	case v.Number != nil:
 		return *v.Number
 	case v.Null != nil:

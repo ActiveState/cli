@@ -42,6 +42,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	project := "https://platform.activestate.com/org/project?branch=main&commitID=00000000-0000-0000-0000-000000000000"
 	var atTime *time.Time
 	if len(os.Args) == (2 + argOffset) {
 		t, err := time.Parse(strfmt.RFC3339Millis, os.Args[1+argOffset])
@@ -52,6 +53,7 @@ func main() {
 	}
 
 	bs := buildscript.New()
+	bs.SetProject(project)
 	if atTime != nil {
 		bs.SetAtTime(*atTime)
 	}

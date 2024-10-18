@@ -281,7 +281,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	}
 
 	if r.config.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript_runbit.Initialize(proj.Dir(), r.auth, r.svcModel); err != nil {
+		if err := buildscript_runbit.Initialize(proj, r.auth, r.svcModel); err != nil {
 			return errs.Wrap(err, "Unable to initialize buildscript")
 		}
 	}

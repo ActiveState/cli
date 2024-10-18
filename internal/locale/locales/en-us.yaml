@@ -1371,6 +1371,8 @@ err_commit_id_invalid_given:
   other: "Invalid commit ID: '{{.V0}}'."
 err_commit_id_not_in_history:
   other: "The project '[ACTIONABLE]{{.V0}}[/RESET]' does not contain the provided commit: '[ACTIONABLE]{{.V1}}[/RESET]'."
+err_outdated_buildscript:
+  other: "[WARNING]Warning:[/RESET] You are using an outdated version of the buildscript. Please run '[ACTIONABLE]state reset LOCAL[/RESET]' in order to reinitialize your buildscript file."
 err_shortcutdir_writable:
   other: Could not continue as we don't have permission to create [ACTIONABLE]{{.V0}}[/RESET].
 move_prompt:

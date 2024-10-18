@@ -28,11 +28,12 @@ const (
 func (b *BuildScript) Marshal() ([]byte, error) {
 	buf := strings.Builder{}
 
-	if b.raw.AtTime != nil {
-		buf.WriteString(assignmentString(
-			&assignment{atTimeKey, newString(b.raw.AtTime.Format(strfmt.RFC3339Millis))}))
-		buf.WriteString("\n")
+	buf.WriteString("```\n")
+	buf.WriteString("Project: " + b.project + "\n")
+	if b.atTime != nil {
+		buf.WriteString("Time: " + b.atTime.Format(strfmt.RFC3339Millis) + "\n")
 	}
+	buf.WriteString("```\n\n")
 
 	var main *assignment
 	for _, assignment := range b.raw.Assignments {
@@ -77,7 +78,7 @@ func valueString(v *value) string {
 		return buf.String()
 
 	case v.Str != nil:
-		return *v.Str // keep quoted
+		return strconv.Quote(*v.Str)
 
 	case v.Number != nil:
 		return strconv.FormatFloat(*v.Number, 'G', -1, 64) // 64-bit float with minimum digits on display

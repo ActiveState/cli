@@ -1,7 +1,6 @@
 package buildscript
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -10,15 +9,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var atTime = "2000-01-01T00:00:00.000Z"
-
-var basicBuildScript = []byte(fmt.Sprintf(
-	`at_time = "%s"
+var basicBuildScript = []byte(
+	checkoutInfoString(testProject, testTime) + `
 runtime = state_tool_artifacts(
 	src = sources
 )
 sources = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 		"12345",
 		"67890"
@@ -29,7 +26,7 @@ sources = solve(
 	solver_version = null
 )
 
-main = runtime`, atTime))
+main = runtime`)
 
 var basicBuildExpression = []byte(`{
   "let": {
@@ -100,10 +97,11 @@ func TestRoundTripFromBuildExpression(t *testing.T) {
 // TestExpressionToScript tests that creating a build script from a given Platform build expression
 // and at time produces the expected result.
 func TestExpressionToScript(t *testing.T) {
-	ts, err := time.Parse(strfmt.RFC3339Millis, atTime)
+	ts, err := time.Parse(strfmt.RFC3339Millis, testTime)
 	require.NoError(t, err)
 
 	script := New()
+	script.SetProject(testProject)
 	script.SetAtTime(ts)
 	require.NoError(t, script.UnmarshalBuildExpression(basicBuildExpression))
 
@@ -123,4 +121,13 @@ func TestScriptToExpression(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, string(basicBuildExpression), string(data))
+}
+
+func TestOutdatedScript(t *testing.T) {
+	_, err := Unmarshal([]byte(
+		`at_time = "2000-01-01T00:00:00.000Z"
+	main = runtime
+	`))
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrOutdatedAtTime)
 }

@@ -99,7 +99,12 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	}
 
 	if r.prime.Config().GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript_runbit.Initialize(path, r.prime.Auth(), r.prime.SvcModel()); err != nil {
+		pjf, err := projectfile.FromPath(path)
+		if err != nil {
+			return "", errs.Wrap(err, "Unable to load project file")
+		}
+
+		if err := buildscript_runbit.Initialize(pjf, r.prime.Auth(), r.prime.SvcModel()); err != nil {
 			return "", errs.Wrap(err, "Unable to initialize buildscript")
 		}
 	}
