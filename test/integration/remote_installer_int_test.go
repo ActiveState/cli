@@ -143,7 +143,7 @@ func (s *RemoteInstallIntegrationTestSuite) setupTest(ts *e2e.Session) {
 	buildDir := fileutils.Join(root, "build")
 	installerExe := filepath.Join(buildDir, constants.StateRemoteInstallerCmd+osutils.ExeExtension)
 	if !fileutils.FileExists(installerExe) {
-		s.T().Fatal("E2E tests require a state-remote-installer binary. Run `state run build-installer`.")
+		s.T().Fatal("E2E tests require a state-remote-installer binary. Run `state run build-remote-installer`.")
 	}
 	s.remoteInstallerExe = ts.CopyExeToDir(installerExe, filepath.Join(ts.Dirs.Base, "installer"))
 }
