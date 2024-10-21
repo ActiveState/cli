@@ -2,14 +2,19 @@ package integration
 
 import (
 	"fmt"
+	"os/exec"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 
+	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -24,6 +29,25 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 	suite.OnlyRunForTags(tagsuite.RemoteInstaller, tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
+
+	// Setup running the remote installer in restricted powershell mode.
+	if runtime.GOOS == "windows" {
+		getPolicy := func() string {
+			policy, err := exec.Command("powershell.exe", "Get-ExecutionPolicy").CombinedOutput()
+			suite.Require().NoError(err, "error getting policy: "+string(policy))
+			return strings.TrimSpace(string(policy))
+		}
+		setPolicy := func(policy string) {
+			output, err := exec.Command("powershell.exe", "Set-ExecutionPolicy", "-ExecutionPolicy", policy).CombinedOutput()
+			suite.Require().NoError(err, "error setting policy: "+string(output))
+		}
+
+		policy := getPolicy()
+		defer setPolicy(policy)
+
+		setPolicy("Restricted")
+		suite.Assert().Equal("Restricted", getPolicy(), "should have set powershell policy to 'Restricted'")
+	}
 
 	tests := []struct {
 		Name    string
@@ -103,6 +127,13 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 				}
 			}
 			suite.Assert().True(sessionTokenFound, "sessionToken was not found in analytics")
+
+			// Verify a startup shortcut was created (we use powershell to create it).
+			if runtime.GOOS == "windows" {
+				shortcut, err := autostart.AutostartPath("", svcAutostart.Options)
+				suite.Require().NoError(err)
+				suite.Assert().FileExists(shortcut)
+			}
 		})
 	}
 }
