@@ -110,9 +110,7 @@ func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, 
 	if err := script.UnmarshalBuildExpression(commit.Expression); err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}
-	if script.AtTime() == nil {
-		script.SetAtTime(time.Time(commit.AtTime))
-	}
+	script.SetAtTime(time.Time(commit.AtTime))
 
 	return &Commit{commit, bp, script}, nil
 }
