@@ -41,7 +41,7 @@ func (b *BuildScript) MarshalBuildExpression() ([]byte, error) {
 			if err != nil {
 				return nil, errs.Wrap(err, "Invalid timestamp: %s", strValue(value))
 			}
-			b.atTime = ptr.To(time.Time(atTime))
+			b.raw.AtTime = ptr.To(time.Time(atTime))
 			continue // do not include this custom assignment in the let block
 		case mainKey:
 			key = inKey // rename

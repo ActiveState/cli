@@ -28,9 +28,9 @@ const (
 func (b *BuildScript) Marshal() ([]byte, error) {
 	buf := strings.Builder{}
 
-	if b.atTime != nil {
+	if b.raw.AtTime != nil {
 		buf.WriteString(assignmentString(
-			&assignment{atTimeKey, newString(b.atTime.Format(strfmt.RFC3339Millis))}))
+			&assignment{atTimeKey, newString(b.raw.AtTime.Format(strfmt.RFC3339Millis))}))
 		buf.WriteString("\n")
 	}
 
