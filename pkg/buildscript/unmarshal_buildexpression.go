@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"sort"
 	"strings"
-	"time"
 
-	"github.com/go-openapi/strfmt"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
@@ -70,13 +68,8 @@ func (b *BuildScript) UnmarshalBuildExpression(data []byte) error {
 	// reference to "TIME", which is how we want to show it in AScript format.
 	if atTimeNode, err := b.getSolveAtTimeValue(); err == nil {
 		if atTimeNode.Str != nil && !strings.HasPrefix(*atTimeNode.Str, `$`) {
-			atTime, err := strfmt.ParseDateTime(*atTimeNode.Str)
-			if err != nil {
-				return errs.Wrap(err, "Invalid timestamp: %s", *atTimeNode.Str)
-			}
 			atTimeNode.Str = nil
 			atTimeNode.Ident = ptr.To("TIME")
-			b.atTime = ptr.To(time.Time(atTime))
 		} else if atTimeNode.Ident != nil && *atTimeNode.Ident == "at_time" {
 			atTimeNode.Ident = ptr.To("TIME")
 		}
