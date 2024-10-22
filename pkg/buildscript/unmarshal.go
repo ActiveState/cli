@@ -32,6 +32,7 @@ func Unmarshal(data []byte) (*BuildScript, error) {
 	}
 
 	// Extract 'at_time' value from the list of assignments, if it exists.
+	var atTime *time.Time
 	for i, assignment := range raw.Assignments {
 		key := assignment.Key
 		value := assignment.Value
@@ -42,11 +43,11 @@ func Unmarshal(data []byte) (*BuildScript, error) {
 		if value.Str == nil {
 			break
 		}
-		atTime, err := strfmt.ParseDateTime(strValue(value))
+		parsedAtTime, err := strfmt.ParseDateTime(strValue(value))
 		if err != nil {
 			return nil, errs.Wrap(err, "Invalid timestamp: %s", strValue(value))
 		}
-		raw.AtTime = ptr.To(time.Time(atTime))
+		atTime = ptr.To(time.Time(parsedAtTime))
 		break
 	}
 
@@ -60,5 +61,5 @@ func Unmarshal(data []byte) (*BuildScript, error) {
 		seen[assignment.Key] = true
 	}
 
-	return &BuildScript{raw}, nil
+	return &BuildScript{raw, atTime}, nil
 }

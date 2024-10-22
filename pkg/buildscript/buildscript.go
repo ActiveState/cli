@@ -16,6 +16,8 @@ import (
 // methods that are easy to understand and work with.
 type BuildScript struct {
 	raw *rawBuildScript
+
+	atTime *time.Time // set after initial read
 }
 
 func init() {
@@ -42,11 +44,11 @@ func New() *BuildScript {
 }
 
 func (b *BuildScript) AtTime() *time.Time {
-	return b.raw.AtTime
+	return b.atTime
 }
 
 func (b *BuildScript) SetAtTime(t time.Time) {
-	b.raw.AtTime = &t
+	b.atTime = &t
 }
 
 func (b *BuildScript) Equals(other *BuildScript) (bool, error) {

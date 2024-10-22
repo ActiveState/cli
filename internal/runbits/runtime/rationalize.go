@@ -122,6 +122,8 @@ func RationalizeSolveError(proj *project.Project, auth *auth.Auth, rerr *error) 
 		)
 
 	// We communicate buildplanner errors verbatim as the intend is that these are curated by the buildplanner
+	// TODO: Maybe we should just forward any error message here?
+	// This could simplify the graphQL error handling.
 	case errors.As(*rerr, &buildPlannerErr):
 		*rerr = errs.WrapUserFacing(*rerr,
 			buildPlannerErr.LocaleError(),

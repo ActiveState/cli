@@ -5,9 +5,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
-	"github.com/go-openapi/strfmt"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
@@ -70,13 +68,8 @@ func (b *BuildScript) UnmarshalBuildExpression(data []byte) error {
 	// Extract the 'at_time' from the solve node, if it exists, and change its value to be a
 	// reference to "$at_time", which is how we want to show it in AScript format.
 	if atTimeNode, err := b.getSolveAtTimeValue(); err == nil && atTimeNode.Str != nil && !strings.HasPrefix(strValue(atTimeNode), `$`) {
-		atTime, err := strfmt.ParseDateTime(strValue(atTimeNode))
-		if err != nil {
-			return errs.Wrap(err, "Invalid timestamp: %s", strValue(atTimeNode))
-		}
 		atTimeNode.Str = nil
 		atTimeNode.Ident = ptr.To("at_time")
-		b.raw.AtTime = ptr.To(time.Time(atTime))
 	} else if err != nil {
 		return errs.Wrap(err, "Could not get at_time node")
 	}

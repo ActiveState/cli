@@ -3,7 +3,6 @@ package buildscript
 import (
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/brunoga/deep"
@@ -12,8 +11,6 @@ import (
 // Tagged fields will be filled in by Participle.
 type rawBuildScript struct {
 	Assignments []*assignment `parser:"@@+"`
-
-	AtTime *time.Time // set after initial read
 }
 
 // clone is meant to facilitate making modifications to functions at marshal time. The idea is that these modifications
