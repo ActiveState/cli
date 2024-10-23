@@ -1,8 +1,10 @@
 package buildplan
 
 import (
+	"os"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildplan/raw"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
@@ -44,9 +46,12 @@ const NamespaceInternal = "internal"
 
 func FilterStateArtifacts() FilterArtifact {
 	return func(a *Artifact) bool {
-		internalIngredients := sliceutils.Filter(a.Ingredients, func(i *Ingredient) bool {
-			return i.Namespace == NamespaceInternal
-		})
+		internalIngredients := []*Ingredient{}
+		if os.Getenv(constants.InstallInternalDependenciesEnvVarName) != "true" {
+			internalIngredients = sliceutils.Filter(a.Ingredients, func(i *Ingredient) bool {
+				return i.Namespace == NamespaceInternal
+			})
+		}
 		if len(a.Ingredients) > 0 && len(a.Ingredients) == len(internalIngredients) {
 			return false
 		}

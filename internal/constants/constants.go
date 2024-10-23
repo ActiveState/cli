@@ -64,6 +64,10 @@ const UpdateChannelEnvVarName = "ACTIVESTATE_CLI_UPDATE_CHANNEL"
 // InstallBuildDependenciesEnvVarName is the env var that is used to override whether to install build dependencies
 const InstallBuildDependenciesEnvVarName = "ACTIVESTATE_CLI_INSTALL_BUILD_DEPENDENCIES"
 
+// InstallInternalDependenciesEnvVarName is the env var that is used to override whether to install internal dependencies.
+// This is only used for test cases.
+const InstallInternalDependenciesEnvVarName = "ACTIVESTATE_CLI_INSTALL_INTERNAL_DEPENDENCIES"
+
 // InternalConfigFileNameLegacy is effectively the same as InternalConfigName, but includes our preferred extension
 const InternalConfigFileNameLegacy = "config.yaml"
 
