@@ -395,8 +395,10 @@ func (ed *EnvironmentDefinition) getEnvBasedOn(envLookup map[string]string) (map
 		if len(ev.Values) > 0 {
 			res[pev.Name] = pev.ValueString()
 			if pev.Name != osName {
-				// On Windows, delete the case-insensitive version. Our case-sensitive version has already
-				// processed the value of the case-insensitive version.
+				// On Windows, delete the redundant (case-insensitive) version that our case-sensitive
+				// version could conflict with. (Our version has already processed the value of the
+				// redundant version.)
+				// For example, delete "Path" while preserving our "PATH".
 				delete(res, osName)
 			}
 		}
