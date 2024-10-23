@@ -43,7 +43,10 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 		}
 
 		policy := getPolicy()
-		defer setPolicy(policy)
+		defer func() {
+			setPolicy(policy)
+			suite.Assert().Equal(policy, getPolicy(), "execution policy was not reset to '"+policy+"'; subsequent test results may be invalid")
+		}()
 
 		setPolicy("Restricted")
 		suite.Assert().Equal("Restricted", getPolicy(), "should have set powershell policy to 'Restricted'")
