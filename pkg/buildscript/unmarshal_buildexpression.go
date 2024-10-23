@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"sort"
 	"strings"
+	"time"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -12,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/sliceutils"
+	"github.com/go-openapi/strfmt"
 )
 
 // At this time, there is no way to ask the Platform for an empty build expression.
@@ -68,8 +70,14 @@ func (b *BuildScript) UnmarshalBuildExpression(data []byte) error {
 	// reference to "TIME", which is how we want to show it in AScript format.
 	if atTimeNode, err := b.getSolveAtTimeValue(); err == nil {
 		if atTimeNode.Str != nil && !strings.HasPrefix(*atTimeNode.Str, `$`) {
+			atTime, err := strfmt.ParseDateTime(*atTimeNode.Str)
+			if err != nil {
+				return errs.Wrap(err, "Invalid timestamp: %s", *atTimeNode.Str)
+			}
 			atTimeNode.Str = nil
 			atTimeNode.Ident = ptr.To("TIME")
+			// Preserve the original at_time found in the solve node.
+			b.solveAtTime = ptr.To(time.Time(atTime))
 		} else if atTimeNode.Ident != nil && *atTimeNode.Ident == "at_time" {
 			atTimeNode.Ident = ptr.To("TIME")
 		}

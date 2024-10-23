@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/brunoga/deep"
 )
 
@@ -19,6 +20,11 @@ type BuildScript struct {
 
 	project string
 	atTime  *time.Time
+
+	// solveAtTime is the original at_time found in the solve node.
+	// This is used to support the legacy use case where the at_time
+	// is found in the solve node.
+	solveAtTime *time.Time
 }
 
 func init() {
@@ -53,7 +59,12 @@ func (b *BuildScript) SetProject(url string) {
 }
 
 func (b *BuildScript) AtTime() *time.Time {
-	return b.atTime
+	// If the atTime is set, prefer that over the
+	// legacy solveAtTime.
+	if b.atTime != nil {
+		return b.atTime
+	}
+	return b.solveAtTime
 }
 
 func (b *BuildScript) SetAtTime(t time.Time) {
@@ -82,6 +93,7 @@ func (b *BuildScript) Equals(other *BuildScript) (bool, error) {
 	if err != nil {
 		return false, errs.Wrap(err, "Unable to marshal other buildscript")
 	}
+	logging.Debug("BuildScript.Equals, myBytes: %s, otherBytes: %s", string(myBytes), string(otherBytes))
 	return string(myBytes) == string(otherBytes), nil
 }
 
