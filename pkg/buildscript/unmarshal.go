@@ -2,10 +2,12 @@ package buildscript
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/alecthomas/participle/v2"
 	"github.com/go-openapi/strfmt"
+	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -15,9 +17,16 @@ import (
 
 const atTimeKey = "at_time"
 
+var ErrOutdatedAtTime = errs.New("outdated at_time on top")
+
+type checkoutInfo struct {
+	Project string `yaml:"Project"`
+	Time    string `yaml:"Time"`
+}
+
 // Unmarshal returns a structured form of the given AScript (on-disk format).
 func Unmarshal(data []byte) (*BuildScript, error) {
-	parser, err := participle.Build[rawBuildScript]()
+	parser, err := participle.Build[rawBuildScript](participle.Unquote())
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create parser for build script")
 	}
@@ -31,24 +40,44 @@ func Unmarshal(data []byte) (*BuildScript, error) {
 		return nil, locale.WrapError(err, "err_parse_buildscript_bytes", "Could not parse build script: {{.V0}}", err.Error())
 	}
 
-	// Extract 'at_time' value from the list of assignments, if it exists.
-	for i, assignment := range raw.Assignments {
-		key := assignment.Key
-		value := assignment.Value
-		if key != atTimeKey {
+	// If 'at_time' is among the list of assignments, this is an outdated build script, so error out.
+	for _, assignment := range raw.Assignments {
+		if assignment.Key != atTimeKey {
 			continue
 		}
-		raw.Assignments = append(raw.Assignments[:i], raw.Assignments[i+1:]...)
-		if value.Str == nil {
-			break
-		}
-		atTime, err := strfmt.ParseDateTime(strValue(value))
-		if err != nil {
-			return nil, errs.Wrap(err, "Invalid timestamp: %s", strValue(value))
-		}
-		raw.AtTime = ptr.To(time.Time(atTime))
-		break
+		return nil, ErrOutdatedAtTime
 	}
 
-	return &BuildScript{raw}, nil
+	// Verify there are no duplicate key assignments.
+	// This is primarily to catch duplicate solve nodes for a given target.
+	seen := make(map[string]bool)
+	for _, assignment := range raw.Assignments {
+		if _, exists := seen[assignment.Key]; exists {
+			return nil, locale.NewInputError(locale.Tl("err_buildscript_duplicate_keys", "Build script has duplicate '{{.V0}}' assignments", assignment.Key))
+		}
+		seen[assignment.Key] = true
+	}
+
+	var project string
+	var atTime *time.Time
+	if raw.Info != nil {
+		info := checkoutInfo{}
+
+		err := yaml.Unmarshal([]byte(strings.Trim(*raw.Info, "`\n")), &info)
+		if err != nil {
+			return nil, locale.NewInputError(
+				"err_buildscript_checkoutinfo",
+				"Could not parse checkout information in the buildscript. The parser produced the following error: {{.V0}}", err.Error())
+		}
+
+		project = info.Project
+
+		atTimeStr, err := strfmt.ParseDateTime(info.Time)
+		if err != nil {
+			return nil, errs.Wrap(err, "Invalid timestamp: %s", info.Time)
+		}
+		atTime = ptr.To(time.Time(atTimeStr))
+	}
+
+	return &BuildScript{raw, project, atTime}, nil
 }

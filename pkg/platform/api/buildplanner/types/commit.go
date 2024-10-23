@@ -1,6 +1,8 @@
 package types
 
 import (
+	"encoding/json"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
@@ -26,6 +28,10 @@ func (o Operation) String() string {
 	default:
 		return "unknown"
 	}
+}
+
+func (o *Operation) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.String())
 }
 
 func (o *Operation) Unmarshal(v string) error {

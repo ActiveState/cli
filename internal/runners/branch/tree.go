@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
@@ -17,9 +18,9 @@ type branchNode struct {
 type tree map[branchNode]tree
 
 const (
-	prefixLink string = "│"
-	prefixMid  string = "├─"
-	prefixEnd  string = "└─"
+	prefixLink string = output.TreeLink
+	prefixMid  string = output.TreeMid
+	prefixEnd  string = output.TreeEnd
 
 	branchFormatting      string = "[NOTICE]%s[/RESET]"
 	localBranchFormatting string = "[ACTIONABLE]%s[/RESET] [DISABLED](Current)[/RESET]"

@@ -52,10 +52,10 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 		expect expect
 	}
 
-	tempFile := fileutils.TempFilePathUnsafe("", "*.zip")
+	tempFile := fileutils.TempFilePath("", "*.zip")
 	defer os.Remove(tempFile)
 
-	tempFileInvalid := fileutils.TempFilePathUnsafe("", "*.notzip")
+	tempFileInvalid := fileutils.TempFilePath("", "*.notzip")
 	defer os.Remove(tempFileInvalid)
 
 	ts := e2e.New(suite.T(), false)

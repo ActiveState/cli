@@ -47,6 +47,7 @@ type Configurable interface {
 }
 
 type Artifacts struct {
+	prime     primeable
 	out       output.Outputer
 	project   *project.Project
 	analytics analytics.Dispatcher
@@ -83,6 +84,7 @@ type structuredArtifact struct {
 
 func New(p primeable) *Artifacts {
 	return &Artifacts{
+		prime:     p,
 		out:       p.Output(),
 		project:   p.Project(),
 		auth:      p.Auth(),
@@ -116,7 +118,7 @@ func (b *Artifacts) Run(params *Params) (rerr error) {
 	}
 
 	bp, err := buildplanner_runbit.GetBuildPlan(
-		b.project, params.Namespace, params.CommitID, params.Target, b.auth, b.out)
+		params.Namespace, params.CommitID, params.Target, b.prime)
 	if err != nil {
 		return errs.Wrap(err, "Could not get buildplan")
 	}
@@ -203,8 +205,8 @@ func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
 			switch {
 			case len(artifact.Errors) > 0:
 				b.out.Print(fmt.Sprintf("  • %s ([ERROR]%s[/RESET])", artifact.Name, locale.T("artifact_status_failed")))
-				b.out.Print(fmt.Sprintf("    ├─ %s: [ERROR]%s[/RESET]", locale.T("artifact_status_failed_message"), strings.Join(artifact.Errors, ": ")))
-				b.out.Print(fmt.Sprintf("    └─ %s: [ACTIONABLE]%s[/RESET]", locale.T("artifact_status_failed_log"), artifact.LogURL))
+				b.out.Print(fmt.Sprintf("    %s %s: [ERROR]%s[/RESET]", output.TreeMid, locale.T("artifact_status_failed_message"), strings.Join(artifact.Errors, ": ")))
+				b.out.Print(fmt.Sprintf("    %s %s: [ACTIONABLE]%s[/RESET]", output.TreeEnd, locale.T("artifact_status_failed_log"), artifact.LogURL))
 				continue
 			case artifact.status == types.ArtifactSkipped:
 				b.out.Print(fmt.Sprintf("  • %s ([NOTICE]%s[/RESET])", artifact.Name, locale.T("artifact_status_skipped")))
@@ -227,8 +229,8 @@ func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
 			switch {
 			case len(artifact.Errors) > 0:
 				b.out.Print(fmt.Sprintf("    • %s ([ERROR]%s[/RESET])", artifact.Name, locale.T("artifact_status_failed")))
-				b.out.Print(fmt.Sprintf("      ├─ %s: [ERROR]%s[/RESET]", locale.T("artifact_status_failed_message"), strings.Join(artifact.Errors, ": ")))
-				b.out.Print(fmt.Sprintf("      └─ %s: [ACTIONABLE]%s[/RESET]", locale.T("artifact_status_failed_log"), artifact.LogURL))
+				b.out.Print(fmt.Sprintf("      %s %s: [ERROR]%s[/RESET]", output.TreeMid, locale.T("artifact_status_failed_message"), strings.Join(artifact.Errors, ": ")))
+				b.out.Print(fmt.Sprintf("      %s %s: [ACTIONABLE]%s[/RESET]", output.TreeEnd, locale.T("artifact_status_failed_log"), artifact.LogURL))
 				continue
 			case artifact.status == types.ArtifactSkipped:
 				b.out.Print(fmt.Sprintf("    • %s ([NOTICE]%s[/RESET])", artifact.Name, locale.T("artifact_status_skipped")))

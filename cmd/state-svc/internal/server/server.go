@@ -10,7 +10,6 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
-	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -111,11 +110,7 @@ func newGraphServer(r *resolver.Resolver) *handler.Server {
 		return gqlErr
 	})
 	graphServer.AddTransport(&transport.Websocket{})
-	graphServer.SetQueryCache(lru.New(1000))
 	graphServer.Use(extension.Introspection{})
-	graphServer.Use(extension.AutomaticPersistedQuery{
-		Cache: lru.New(100),
-	})
 	return graphServer
 }
 

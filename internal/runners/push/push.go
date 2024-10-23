@@ -29,6 +29,7 @@ type configGetter interface {
 }
 
 type Push struct {
+	prime   primeable
 	config  configGetter
 	out     output.Outputer
 	project *project.Project
@@ -46,10 +47,11 @@ type primeable interface {
 	primer.Configurer
 	primer.Prompter
 	primer.Auther
+	primer.SvcModeler
 }
 
 func NewPush(prime primeable) *Push {
-	return &Push{prime.Config(), prime.Output(), prime.Project(), prime.Prompt(), prime.Auth()}
+	return &Push{prime, prime.Config(), prime.Output(), prime.Project(), prime.Prompt(), prime.Auth()}
 }
 
 type intention uint16
@@ -153,7 +155,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		}
 	}
 
-	bp := buildplanner.NewBuildPlannerModel(r.auth)
+	bp := buildplanner.NewBuildPlannerModel(r.auth, r.prime.SvcModel())
 	var branch *mono_models.Branch // the branch to write to as.yaml if it changed
 
 	// Create remote project

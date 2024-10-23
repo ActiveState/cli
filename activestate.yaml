@@ -48,6 +48,7 @@ constants:
 scripts:
   - name: install-deps-dev
     language: bash
+    standalone: true
     if: ne .Shell "cmd"
     value: |
       if ! type "go" &> /dev/null; then
@@ -73,11 +74,13 @@ scripts:
       fi
   - name: install-deps-os
     language: bash
+    standalone: true
     if: ne .OS.Name "Linux"
     description: Install OS specific deps
     value: ""
   - name: install-deps-ci
     language: bash
+    standalone: true
     if: ne .Shell "cmd"
     value: |
       if { [[ "$GOOS" == "windows" ]] || [[ "$OS" == "Windows_NT" ]]; } && ! type "goversioninfo" &> /dev/null; then
@@ -86,6 +89,7 @@ scripts:
       fi
   - name: preprocess
     language: bash
+    standalone: true
     description: Generates assets required by the project that aren't just specific to the build
     value: |
       set -e
@@ -97,6 +101,7 @@ scripts:
       fi
   - name: build
     language: bash
+    standalone: true
     description: Builds the project with the host OS as the target OS.
     value: |
       set -e
@@ -111,6 +116,7 @@ scripts:
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-for
     language: bash
+    standalone: true
     description: Builds the project with the specified OS as the target OS. (valid values darwin, linux, windows)
     value: |
       set -e
@@ -121,6 +127,7 @@ scripts:
       go build -tags "internal $GO_BUILD_TAGS" -o ${2} $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-svc
     language: bash
+    standalone: true
     description: Builds the state-svc daemon
     value: |
       set -e
@@ -136,6 +143,7 @@ scripts:
   - name: build-exec
     description: Builds the State Executor application
     language: bash
+    standalone: true
     value: |
       set -e
       $constants.SET_ENV
@@ -143,8 +151,8 @@ scripts:
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_EXEC_TARGET $constants.CLI_BUILDFLAGS $constants.EXECUTOR_PKGS
   - name: build-all
     description: Builds all our tools
-    standalone: true
     language: bash
+    standalone: true
     value: |
       set -e
       echo "Building State Tool"
@@ -159,6 +167,7 @@ scripts:
       $scripts.build-exec.path()
   - name: build-installer
     language: bash
+    standalone: true
     description: Builds the state-installer
     value: |
       set -e
@@ -167,13 +176,14 @@ scripts:
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $constants.INSTALLER_PKGS
   - name: build-remote-installer
     language: bash
+    standalone: true
     description: Builds the state-remote-installer
     value: |
       set -e
       $constants.SET_ENV
-      TARGET=$BUILD_REMOTE_INSTALLER_TARGET
+      TARGET=$constants.BUILD_REMOTE_INSTALLER_TARGET
       if [[ "$GOOS" == "windows" || "$OS" == "Windows_NT" ]]; then
-        TARGET="${BUILD_REMOTE_INSTALLER_TARGET}.exe"
+        TARGET="${constants.BUILD_REMOTE_INSTALLER_TARGET}.exe"
       fi
       GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.0
       cd cmd/state-remote-installer
@@ -181,12 +191,14 @@ scripts:
       go build -tags "$GO_BUILD_TAGS" -o ../../$BUILD_TARGET_DIR/$TARGET .
   - name: install
     language: bash
+    standalone: true
     description: Installs the current HEAD version into GOBIN
     value: |
       $constants.SET_ENV
       go install $constants.CLI_BUILDFLAGS $CLI_PKGS
   - name: deploy-updates
     language: bash
+    standalone: true
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
       set -e
@@ -232,17 +244,20 @@ scripts:
       cp installers/stop${constants.SCRIPT_EXT} $INSTALLERS_DIR/stop${constants.SCRIPT_EXT}
   - name: deploy-installers
     language: bash
+    standalone: true
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
       go run scripts/ci/s3-deployer/main.go build/installers us-east-1 state-tool update/state
   - name: deploy-remote-installer
     language: bash
+    standalone: true
     value: |
       set -e
       $constants.SET_ENV
       go run scripts/ci/s3-deployer/main.go $BUILD_TARGET_DIR/remote-installer us-east-1 state-tool remote-installer
   - name: build-workflow-assets
     language: bash
+    standalone: true
     description: Generates our github workflows
     value: |
       $scripts.build-for.path() "windows" ./.github/deps/Windows/bin/state.exe
@@ -254,6 +269,7 @@ scripts:
       GOOS=darwin go build -o .github/deps/macOS/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
   - name: update-workflow-assets
     language: bash
+    standalone: true
     description: Generates our github workflows
     value: |
       [ -z "${2}" ] && >&2 echo "Usage: update-workflow-assets [branch] [version]" && exit 1
@@ -286,12 +302,13 @@ scripts:
       rm -Rf $tmpDir
   - name: test
     language: bash
+    standalone: true
     description: Runs unit tests (not integration tests)
     value: |
       go test -v `go list ./... | grep -v integration | grep -v automation | grep -v expect | grep -v state-svc | grep -v state-offline` $@
-    standalone: true
   - name: integration-tests
     language: bash
+    standalone: true
     description: Runs integration tests.
     value: |
       unset ACTIVESTATE_ACTIVATED
@@ -300,6 +317,7 @@ scripts:
       go test `go list ./... | grep "${INTEGRATION_TEST_REGEX}"` -v "${@:1}" -timeout 20m
   - name: integration-tests-build-check
     language: bash
+    standalone: true
     description: Builds integration tests and removes the executable artifact(s).
     value: |
       out="x.test"
@@ -307,28 +325,31 @@ scripts:
       [ -f $out ] && rm $out
   - name: clean
     language: bash
+    standalone: true
     description: Cleans out the build dir.
     value: |
       go clean
       rm -Rf build
   - name: run
     language: bash
+    standalone: true
     description: Builds the State Tool and runs it with `--help`
     value: |
       $scripts.build.path()
       build/state --help
   - name: debug
     language: bash
-    description: "Runs a remote debugger that can be hooked into from your IDE. Example usage: `state run debug activate` (will debug `state activate`)"
     standalone: true
+    description: "Runs a remote debugger that can be hooked into from your IDE. Example usage: `state run debug activate` (will debug `state activate`)"
     value: dlv debug --headless --listen=:2346 --api-version=2 github.com/ActiveState/cli/cmd/state -- $@
   - name: scripted
     language: bash
-    description: "Runs a command via 'go run'"
     standalone: true
+    description: "Runs a command via 'go run'"
     value: go run github.com/ActiveState/cli/cmd/state $@
   - name: story-cleanup
     language: bash
+    standalone: true
     description: "Runs Python script to move old stories from primary project to storage project"
     value: |
       export PT_API_TOKEN=$secrets.project.PT_API_TOKEN
@@ -338,12 +359,14 @@ scripts:
       python3 ./scripts/story-cleanup/story-cleanup.py
   - name: lint
     language: bash
+    standalone: true
     description: "Runs linting for untracked and unstaged changes (if any), or staged changes"
     value: |
       golangci-lint run --new
       actionlint
   - name: lint-staged
     language: bash
+    standalone: true
     description: "Runs linting for staged changes (skipping untracked and unstaged-only files)"
     value: |
       golangci-lint run \
@@ -356,12 +379,14 @@ scripts:
       actionlint $actionfiles
   - name: lint-all
     language: bash
+    standalone: true
     description: "Runs linting for all files"
     value: |
       golangci-lint run --no-config
       actionlint
   - name: check-format
     language: bash
+    standalone: true
     description: "Checks if the code is formatted correctly"
     value: |
       set -e
@@ -392,6 +417,7 @@ scripts:
       fi
   - name: grab-mergecommits
     language: bash
+    standalone: true
     value: |
       export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
       export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
@@ -399,6 +425,7 @@ scripts:
       go run $project.path()/scripts/grab-mergecommits/main.go $1
   - name: target-version-pr
     language: bash
+    standalone: true
     value: |
       export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
       export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
@@ -406,6 +433,7 @@ scripts:
       go run $project.path()/scripts/ci/target-version-pr/main.go $1
   - name: create-version-pr
     language: bash
+    standalone: true
     value: |
       export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
       export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
@@ -413,6 +441,7 @@ scripts:
       go run $project.path()/scripts/create-version-pr/main.go $1
   - name: propagate-pr
     language: bash
+    standalone: true
     value: |
       export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
       export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
@@ -420,6 +449,7 @@ scripts:
       go run $project.path()/scripts/ci/propagate-pr/main.go $1
   - name: verify-pr
     language: bash
+    standalone: true
     value: |
       export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
       export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
@@ -427,6 +457,7 @@ scripts:
       go run $project.path()/scripts/ci/verify-pr/main.go $1
   - name: start-story
     language: bash
+    standalone: true
     value: |
       export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
       export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
@@ -434,6 +465,7 @@ scripts:
       go run $project.path()/scripts/start-story/main.go "$@"
   - name: ghapi
     language: bash
+    standalone: true
     value: |
       curl \
         -H "Accept: application/vnd.github+json" \
@@ -442,6 +474,7 @@ scripts:
   - name: benchmark-exec
     if: eq .OS.Name "Linux"
     language: bash
+    standalone: true
     description: "Benchmarks executable leveraging highly sensitive/accurate tooling"
     value: |
       # example usage:

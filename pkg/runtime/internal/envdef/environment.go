@@ -6,10 +6,13 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -125,6 +128,20 @@ func NewEnvironmentDefinition(fp string) (*EnvironmentDefinition, error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "could not unmarshal environment definition file: %s", fp)
 	}
+
+	if ignores := os.Getenv(constants.IgnoreEnvEnvVarName); ignores != "" {
+		ignore := make(map[string]bool)
+		for _, name := range strings.Split(ignores, ",") {
+			ignore[name] = true
+		}
+
+		// Remove any environment variables to ignore.
+		ed.Env = sliceutils.Filter(ed.Env, func(e EnvironmentVariable) bool {
+			_, exists := ignore[e.Name]
+			return !exists
+		})
+	}
+
 	return ed, nil
 }
 
@@ -328,19 +345,40 @@ func (ev *EnvironmentVariable) ValueString() string {
 		ev.Separator)
 }
 
-// GetEnvBasedOn returns the environment variable names and values defined by
+// getEnvBasedOn returns the environment variable names and values defined by
 // the EnvironmentDefinition.
 // If an environment variable is configured to inherit from the base
 // environment (`Inherit==true`), the base environment defined by the
 // `envLookup` method is joined with these environment variables.
 // This function is mostly used for testing. Use GetEnv() in production.
-func (ed *EnvironmentDefinition) GetEnvBasedOn(envLookup map[string]string) (map[string]string, error) {
+func (ed *EnvironmentDefinition) getEnvBasedOn(envLookup map[string]string) (map[string]string, error) {
 	res := maps.Clone(envLookup)
+
+	// On Windows, environment variable names are case-insensitive.
+	// For example, it uses "Path", but responds to "PATH" as well.
+	// This causes trouble with our environment merging, which will end up adding "PATH" (with the
+	// correct value) alongside "Path" (with the old value).
+	// In order to remedy this, track the OS-specific environment variable name and if it's
+	// modified/merged, replace it with our version (e.g. "Path" -> "PATH"). We do not use the OS name
+	// because we assume ours is the one that's used elsewhere in the codebase, and Windows will
+	// properly respond to a changed-case name anyway.
+	osEnvNames := map[string]string{}
+	if runtime.GOOS == "windows" {
+		for k := range envLookup {
+			osEnvNames[strings.ToLower(k)] = k
+		}
+	}
 
 	for _, ev := range ed.Env {
 		pev := &ev
+		osName := pev.Name
+		if runtime.GOOS == "windows" {
+			if name, ok := osEnvNames[strings.ToLower(osName)]; ok {
+				osName = name
+			}
+		}
+		osValue, hasOsValue := envLookup[osName]
 		if pev.Inherit {
-			osValue, hasOsValue := envLookup[pev.Name]
 			if hasOsValue {
 				osEv := ev
 				osEv.Values = []string{osValue}
@@ -348,15 +386,21 @@ func (ed *EnvironmentDefinition) GetEnvBasedOn(envLookup map[string]string) (map
 				pev, err = osEv.Merge(ev)
 				if err != nil {
 					return nil, err
-
 				}
 			}
-		} else if _, hasOsValue := envLookup[pev.Name]; hasOsValue {
+		} else if hasOsValue {
 			res[pev.Name] = "" // unset
 		}
 		// only add environment variable if at least one value is set (This allows us to remove variables from the environment.)
 		if len(ev.Values) > 0 {
 			res[pev.Name] = pev.ValueString()
+			if pev.Name != osName {
+				// On Windows, delete the redundant (case-insensitive) version that our case-sensitive
+				// version could conflict with. (Our version has already processed the value of the
+				// redundant version.)
+				// For example, delete "Path" while preserving our "PATH".
+				delete(res, osName)
+			}
 		}
 	}
 	return res, nil
@@ -372,7 +416,7 @@ func (ed *EnvironmentDefinition) GetEnv(inherit bool) map[string]string {
 	if inherit {
 		lookupEnv = osutils.EnvSliceToMap(os.Environ())
 	}
-	res, err := ed.GetEnvBasedOn(lookupEnv)
+	res, err := ed.getEnvBasedOn(lookupEnv)
 	if err != nil {
 		panic(fmt.Sprintf("Could not inherit OS environment variable: %v", err))
 	}

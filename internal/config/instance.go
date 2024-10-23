@@ -185,7 +185,7 @@ func (i *Instance) Get(key string) interface{} {
 		return result
 	}
 	if opt := mediator.GetOption(key); mediator.KnownOption(opt) {
-		return opt.Default
+		return mediator.GetDefault(opt)
 	}
 	return nil
 }

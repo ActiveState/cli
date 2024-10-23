@@ -32,14 +32,10 @@ func (b *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID, 
 	script := params.Script
 	if script == nil {
 		// Construct an initial buildexpression for the new project.
-		var err error
-		script, err = buildscript.New()
-		if err != nil {
-			return "", errs.Wrap(err, "Unable to create initial buildexpression")
-		}
+		script = buildscript.Create()
 
 		// Add the platform.
-		if err := script.UpdatePlatform(types.OperationAdded, params.PlatformID); err != nil {
+		if err := script.AddPlatform(params.PlatformID); err != nil {
 			return "", errs.Wrap(err, "Unable to add platform")
 		}
 

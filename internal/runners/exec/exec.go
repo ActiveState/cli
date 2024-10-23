@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 
@@ -126,7 +125,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 
 	s.out.Notice(locale.Tr("operating_message", projectNamespace, projectDir))
 
-	rt, err := runtime_runbit.Update(s.prime, trigger, runtime_runbit.WithoutHeaders(), runtime_runbit.WithIgnoreAsync())
+	rt, err := runtime_runbit.Update(s.prime, trigger, runtime_runbit.WithoutHeaders())
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize runtime")
 	}
@@ -155,9 +154,6 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 			return !v
 		}
 		exesOnPath := osutils.FilterExesOnPATH(exeTarget, env["PATH"], filter)
-		if runtime.GOOS == "windows" {
-			exesOnPath = append(exesOnPath, osutils.FilterExesOnPATH(exeTarget, env["Path"], filter)...)
-		}
 
 		if len(exesOnPath) > 0 {
 			exeTarget = exesOnPath[0]

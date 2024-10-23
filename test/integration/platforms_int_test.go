@@ -121,15 +121,33 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemoveLatest() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("platforms")
-	expectations := []string{
-		platform,
-		version,
-		"64",
-	}
-	for _, expectation := range expectations {
-		cp.Expect(expectation)
-	}
+	cp.Expect(platform)
+	cp.Expect(version)
+	cp.Expect("64")
+	cp.ExpectExitCode(0)
+}
 
+func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addNotFound() {
+	suite.OnlyRunForTags(tagsuite.Platforms)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareEmptyProject()
+
+	// OS name doesn't match
+	cp := ts.Spawn("platforms", "add", "bunnies")
+	cp.Expect("Could not find")
+	cp.ExpectExitCode(1)
+
+	// OS version doesn't match
+	cp = ts.Spawn("platforms", "add", "windows@99.99.99")
+	cp.Expect("Could not find")
+	cp.ExpectExitCode(1)
+
+	// bitwidth version doesn't match
+	cp = ts.Spawn("platforms", "add", "windows", "--bit-width=999")
+	cp.Expect("Could not find")
+	cp.ExpectExitCode(1)
 }
 
 func (suite *PlatformsIntegrationTestSuite) TestJSON() {

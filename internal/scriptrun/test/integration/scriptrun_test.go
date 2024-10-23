@@ -9,8 +9,11 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/analytics/client/blackhole"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/scriptrun"
+	"github.com/ActiveState/cli/internal/svcctl"
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/kami-zh/go-capturer"
@@ -29,6 +32,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -86,6 +90,8 @@ scripts:
 func (suite *ScriptRunSuite) TestEnvIsSet() {
 	suite.OnlyRunForTags(tagsuite.Scripts)
 	t := suite.T()
+	ts := e2e.New(t, false)
+	defer ts.Close()
 
 	if runtime.GOOS == "windows" {
 		// For some reason this test hangs on Windows when ran via CI. I cannot reproduce the issue when manually invoking the
@@ -118,8 +124,17 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 
 	cfg.Set(constants.AsyncRuntimeConfig, true)
 
+	ipcClient := svcctl.NewDefaultIPCClient()
+	var svcPort string
+
+	svcExec, err := installation.ServiceExecFromDir(ts.Dirs.Bin)
+	suite.Require().NoError(err, errs.JoinMessage(err))
+
+	svcPort, err = svcctl.EnsureExecStartedAndLocateHTTP(ipcClient, svcExec, "from test", nil)
+	suite.Require().NoError(err, errs.JoinMessage(err))
+
 	out := capturer.CaptureOutput(func() {
-		scriptRun := scriptrun.New(primer.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New()))
+		scriptRun := scriptrun.New(primer.New(auth, outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), model.NewSvcModel(svcPort)))
 		script, err := proj.ScriptByName("run")
 		require.NoError(t, err, "Error: "+errs.JoinMessage(err))
 		err = scriptRun.Run(script, nil)
@@ -353,6 +368,7 @@ project: "https://platform.activestate.com/ActiveState/project"
 scripts:
   - name: %s
     standalone: true
+    language: batch
     value: |
       echo "ARGS|%%1|%%2|%%3|%%4|"`, cmdName)
 	}
@@ -363,15 +379,12 @@ scripts:
 }
 
 func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []string) (string, error) {
-
 	auth, err := authentication.LegacyGet()
 	require.NoError(t, err)
 
 	pjfile := setupProjectWithScriptsExpectingArgs(t, tmplCmdName)
-
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
-
 	cfg, err := config.New()
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
@@ -384,7 +397,6 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 		}
 	})
 	require.NoError(t, outErr, "error capturing stdout")
-
 	return outStr, err
 }
 

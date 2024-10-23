@@ -25,7 +25,7 @@ func (c *Checkout) rationalizeError(err *error) {
 	case errors.As(*err, &errProjectNotFound):
 		*err = errs.WrapUserFacing(*err,
 			locale.Tr("err_api_project_not_found", errProjectNotFound.Organization, errProjectNotFound.Project),
-			errs.SetIf(!c.auth.Authenticated(), errs.SetTips(locale.T("tip_private_project_auth"))),
+			errs.SetIf(!c.prime.Auth().Authenticated(), errs.SetTips(locale.T("tip_private_project_auth"))),
 			errs.SetInput(),
 		)
 	case errors.As(*err, &errNoPermssion):

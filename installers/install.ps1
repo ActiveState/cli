@@ -147,6 +147,14 @@ function error([string] $msg)
     Write-Host $msg -ForegroundColor Red
 }
 
+function setShellOverride {
+    $parentProcess = Get-WmiObject Win32_Process | Where-Object { $_.ProcessId -eq $PID }
+    $parentProcessDetails = Get-WmiObject Win32_Process | Where-Object { $_.ProcessId -eq $parentProcess.ParentProcessId }
+    if ($parentProcessDetails.Name -eq "cmd" -or $parentProcessDetails.Name -eq "cmd.exe") {
+        [System.Environment]::SetEnvironmentVariable("ACTIVESTATE_CLI_SHELL_OVERRIDE", $parentProcessDetails.Name, "Process")
+    }
+}
+
 $version = $script:VERSION
 if (!$version) {
     # If the user did not specify a version, formulate a query to fetch the JSON info of the latest
@@ -248,6 +256,7 @@ $PSDefaultParameterValues['*:Encoding'] = 'utf8'
 
 # Run the installer.
 $env:ACTIVESTATE_SESSION_TOKEN = $script:SESSION_TOKEN_VALUE
+setShellOverride
 & $exePath $args --source-installer="install.ps1"
 $success = $?
 if (Test-Path env:ACTIVESTATE_SESSION_TOKEN)

@@ -161,3 +161,42 @@ func (suite *VCSTestSuite) TestVersionStringToConstraints() {
 func TestVCSTestSuite(t *testing.T) {
 	suite.Run(t, new(VCSTestSuite))
 }
+
+func TestParseNamespace(t *testing.T) {
+	tests := []struct {
+		ns   string
+		want NamespaceType
+	}{
+		{
+			"language/python",
+			NamespacePackage,
+		},
+		{
+			"bundles/python",
+			NamespaceBundle,
+		},
+		{
+			"language",
+			NamespaceLanguage,
+		},
+		{
+			"platform",
+			NamespacePlatform,
+		},
+		{
+			"private/org",
+			NamespaceOrg,
+		},
+		{
+			"raw/foo/bar",
+			NamespaceRaw,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.ns, func(t *testing.T) {
+			if got := ParseNamespace(tt.ns); got.Type().name != tt.want.name {
+				t.Errorf("ParseNamespace() = %v, want %v", got.Type().name, tt.want.name)
+			}
+		})
+	}
+}
