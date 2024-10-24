@@ -19,6 +19,11 @@ type BuildScript struct {
 
 	project string
 	atTime  *time.Time
+
+	// solveAtTime is the original at_time found in the solve node.
+	// This is used to support the legacy use case where the at_time
+	// is an actual time stamp and not a reference to the $at_time variable.
+	solveAtTime *time.Time
 }
 
 func init() {
@@ -53,7 +58,12 @@ func (b *BuildScript) SetProject(url string) {
 }
 
 func (b *BuildScript) AtTime() *time.Time {
-	return b.atTime
+	// If the atTime is set, prefer that over the
+	// legacy solveAtTime.
+	if b.atTime != nil {
+		return b.atTime
+	}
+	return b.solveAtTime
 }
 
 func (b *BuildScript) SetAtTime(t time.Time) {

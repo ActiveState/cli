@@ -79,5 +79,5 @@ func Unmarshal(data []byte) (*BuildScript, error) {
 		atTime = ptr.To(time.Time(atTimeStr))
 	}
 
-	return &BuildScript{raw, project, atTime}, nil
+	return &BuildScript{raw, project, atTime, nil}, nil
 }
