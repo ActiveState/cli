@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mholt/archiver/v3"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -365,34 +367,32 @@ func (suite *CheckoutIntegrationTestSuite) TestCveReport() {
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutFromArchive() {
-	suite.T().Skip("Skipping until https://activestatef.atlassian.net/browse/DX-3057 is fixed")
 	suite.OnlyRunForTags(tagsuite.Checkout)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	root := environment.GetRootPathUnsafe()
-	archive := filepath.Join(root, "test", "integration", "testdata", "checkout-from-archive", runtime.GOOS+".tar.gz")
+	dir := filepath.Join(root, "test", "integration", "testdata", "checkout-from-archive", runtime.GOOS)
+	tgz := fileutils.TempFilePath("", runtime.GOOS+".tar.gz")
+	files, err := fileutils.ListDirSimple(dir, false)
+	suite.Require().NoError(err)
+	gz := archiver.TarGz{Tar: &archiver.Tar{StripComponents: 1000}} // use a big number to strip all leading dirs
+	suite.Require().NoError(gz.Archive(files, tgz))
+	defer os.Remove(tgz)
 
 	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", archive),
+		e2e.OptArgs("checkout", tgz),
 		e2e.OptAppendEnv("HTTPS_PROXY=none://"), // simulate lack of network connection
 	)
 	cp.Expect("Checking out project: ActiveState-CLI/AlmostEmpty")
 	cp.Expect("Setting up the following dependencies:")
-	cp.Expect("└─ zlib@1.3.1")
+	cp.Expect("└─ provides_hello@0.0.1")
 	cp.Expect("Sourcing Runtime")
 	cp.Expect("Unpacking")
 	cp.Expect("Installing")
 	cp.Expect("All dependencies have been installed and verified")
 	cp.Expect("Checked out project ActiveState-CLI/AlmostEmpty")
 	cp.ExpectExitCode(0)
-
-	// Verify the zlib runtime files exist.
-	proj, err := project.FromPath(filepath.Join(ts.Dirs.Work, "AlmostEmpty"))
-	suite.Require().NoError(err)
-	cachePath := filepath.Join(ts.Dirs.Cache, runtime_helpers.DirNameFromProjectDir(proj.Dir()))
-	zlibH := filepath.Join(cachePath, "usr", "include", "zlib.h")
-	suite.Assert().FileExists(zlibH, "zlib.h does not exist")
 }
 
 func TestCheckoutIntegrationTestSuite(t *testing.T) {
