@@ -7,7 +7,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/brunoga/deep"
 )
 
@@ -93,7 +92,6 @@ func (b *BuildScript) Equals(other *BuildScript) (bool, error) {
 	if err != nil {
 		return false, errs.Wrap(err, "Unable to marshal other buildscript")
 	}
-	logging.Debug("BuildScript.Equals, myBytes: %s, otherBytes: %s", string(myBytes), string(otherBytes))
 	return string(myBytes) == string(otherBytes), nil
 }
 
