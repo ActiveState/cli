@@ -1,9 +1,13 @@
 package buildscript
 
 import (
+	"fmt"
+	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -92,6 +96,58 @@ func TestRoundTripFromBuildExpression(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, string(basicBuildExpression), string(data))
+}
+
+func TestRoundTripFromBuildExpressionWithLegacyAtTime(t *testing.T) {
+	wd, err := environment.GetRootPath()
+	require.NoError(t, err)
+
+	initialTimeStamp := "2024-10-15T16:37:06.260Z"
+	updatedTimeStamp := "2024-10-15T16:37:06.261Z"
+
+	data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "buildscript", "testdata", "buildexpression-roundtrip-legacy.json"))
+	require.NoError(t, err)
+
+	// The initial build expression does not use the new at_time format
+	assert.NotContains(t, string(data), "$at_time")
+	assert.Contains(t, string(data), initialTimeStamp)
+
+	script := New()
+	require.NoError(t, script.UnmarshalBuildExpression(data))
+
+	// Ensure that legacy at_time is preserved in the buildscript.
+	atTime := script.AtTime()
+	require.NotNil(t, atTime)
+	require.Equal(t, initialTimeStamp, atTime.Format(strfmt.RFC3339Millis))
+
+	data, err = script.MarshalBuildExpression()
+	require.NoError(t, err)
+
+	// When the build expression is unmarshalled it should now use the new at_time format
+	assert.Contains(t, string(data), "$at_time")
+	assert.NotContains(t, string(data), initialTimeStamp)
+
+	// Update the time in the build script
+	updatedTime, err := time.Parse(strfmt.RFC3339Millis, updatedTimeStamp)
+	require.NoError(t, err)
+	script.SetAtTime(updatedTime)
+
+	// The updated time should be reflected in the build script
+	require.Equal(t, updatedTime, *script.AtTime())
+
+	data, err = script.Marshal()
+	require.NoError(t, err)
+
+	// The marshalled build script should now contain the updated time
+	// in the Time block at the top of the script.
+	assert.Contains(t, string(data), updatedTimeStamp)
+	assert.NotContains(t, string(data), fmt.Sprintf("Time: %s", initialTimeStamp))
+
+	data, err = script.MarshalBuildExpression()
+	require.NoError(t, err)
+
+	// The build expression representation should now use the new at_time format
+	assert.Contains(t, string(data), "$at_time")
 }
 
 // TestExpressionToScript tests that creating a build script from a given Platform build expression

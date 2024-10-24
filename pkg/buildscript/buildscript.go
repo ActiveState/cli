@@ -23,7 +23,7 @@ type BuildScript struct {
 
 	// solveAtTime is the original at_time found in the solve node.
 	// This is used to support the legacy use case where the at_time
-	// is found in the solve node.
+	// is an actual time stamp and not a reference to the $at_time variable.
 	solveAtTime *time.Time
 }
 
