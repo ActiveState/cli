@@ -127,18 +127,30 @@ func TestRoundTripFromBuildExpressionWithLegacyAtTime(t *testing.T) {
 	assert.Contains(t, string(data), "$at_time")
 	assert.NotContains(t, string(data), initialTimeStamp)
 
-	// Update the time in the build script
+	// Update the time in the build script but don't override the existing time
 	updatedTime, err := time.Parse(strfmt.RFC3339Millis, updatedTimeStamp)
 	require.NoError(t, err)
-	script.SetAtTime(updatedTime)
+	script.SetAtTime(updatedTime, false)
 
 	// The updated time should be reflected in the build script
-	require.Equal(t, updatedTime, *script.AtTime())
+	require.Equal(t, initialTimeStamp, script.AtTime().Format(strfmt.RFC3339Millis))
 
 	data, err = script.Marshal()
 	require.NoError(t, err)
 
-	// The marshalled build script should now contain the updated time
+	// The marshalled build script should NOT contain the updated time
+	// in the Time block at the top of the script.
+	assert.Contains(t, string(data), initialTimeStamp)
+	assert.NotContains(t, string(data), fmt.Sprintf("Time: %s", updatedTime))
+
+	// Now override the time in the build script
+	script.SetAtTime(updatedTime, true)
+	require.Equal(t, updatedTimeStamp, script.AtTime().Format(strfmt.RFC3339Millis))
+
+	data, err = script.Marshal()
+	require.NoError(t, err)
+
+	// The marshalled build script should NOW contain the updated time
 	// in the Time block at the top of the script.
 	assert.Contains(t, string(data), updatedTimeStamp)
 	assert.NotContains(t, string(data), fmt.Sprintf("Time: %s", initialTimeStamp))
@@ -158,7 +170,7 @@ func TestExpressionToScript(t *testing.T) {
 
 	script := New()
 	script.SetProject(testProject)
-	script.SetAtTime(ts)
+	script.SetAtTime(ts, false)
 	require.NoError(t, script.UnmarshalBuildExpression(basicBuildExpression))
 
 	data, err := script.Marshal()

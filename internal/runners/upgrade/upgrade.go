@@ -111,7 +111,7 @@ func (u *Upgrade) Run(params *Params) (rerr error) {
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch latest timestamp")
 	}
-	bumpedBS.SetAtTime(ts)
+	bumpedBS.SetAtTime(ts, params.Timestamp.String() != "")
 
 	// Since our platform is commit based we need to create a commit for the "after" buildplan, even though we may not
 	// end up using it it the user doesn't confirm the upgrade.

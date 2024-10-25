@@ -77,7 +77,7 @@ func (b *BuildScript) UnmarshalBuildExpression(data []byte) error {
 			atTimeNode.Str = nil
 			atTimeNode.Ident = ptr.To("TIME")
 			// Preserve the original at_time found in the solve node.
-			b.solveAtTime = ptr.To(time.Time(atTime))
+			b.atTime = ptr.To(time.Time(atTime))
 		} else if atTimeNode.Ident != nil && *atTimeNode.Ident == "at_time" {
 			atTimeNode.Ident = ptr.To("TIME")
 		}
