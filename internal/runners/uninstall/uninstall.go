@@ -137,7 +137,7 @@ func (u *Uninstall) Run(params Params) (rerr error) {
 	pg = nil
 
 	// Update local checkout and source runtime changes
-	if err := reqop_runbit.UpdateAndReload(u.prime, script, oldCommit, locale.Tr("commit_message_added", params.Packages.String()), trigger.TriggerUninstall); err != nil {
+	if err := reqop_runbit.UpdateAndReload(u.prime, script, oldCommit, locale.Tr("commit_message_removed", params.Packages.String()), trigger.TriggerUninstall); err != nil {
 		return errs.Wrap(err, "Failed to update local checkout")
 	}
 
