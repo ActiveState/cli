@@ -128,6 +128,7 @@ type LoggingHandler interface {
 
 type standardHandler struct {
 	formatter Formatter
+	verbose   bool
 }
 
 func (l *standardHandler) SetFormatter(f Formatter) {
@@ -135,6 +136,7 @@ func (l *standardHandler) SetFormatter(f Formatter) {
 }
 
 func (l *standardHandler) SetVerbose(v bool) {
+	l.verbose = v
 }
 
 func (l *standardHandler) Output() io.Writer {
@@ -143,7 +145,9 @@ func (l *standardHandler) Output() io.Writer {
 
 // default handling interface - just
 func (l *standardHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
-	fmt.Fprintln(os.Stderr, l.formatter.Format(ctx, message, args...))
+	if l.verbose {
+		fmt.Fprintln(os.Stderr, l.formatter.Format(ctx, message, args...))
+	}
 	return nil
 }
 
@@ -158,6 +162,7 @@ func (l *standardHandler) Close() {}
 
 var currentHandler LoggingHandler = &standardHandler{
 	DefaultFormatter,
+	os.Getenv("VERBOSE") != "",
 }
 
 // Set the current handler of the library. We currently support one handler, but it might be nice to have more
