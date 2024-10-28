@@ -23,7 +23,7 @@ func (e *HomeDirNotFoundError) Error() string {
 	return homeDirNotFoundErrorMessage
 }
 
-func (e *HomeDirNotFoundError) LocalizedError() string {
+func (e *HomeDirNotFoundError) LocaleError() string {
 	return homeDirNotFoundErrorMessage
 }
 
