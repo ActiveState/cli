@@ -114,7 +114,6 @@ func (i *Install) Run(params Params) (rerr error) {
 	var oldCommit *bpModel.Commit
 	var reqs requirements
 	var ts time.Time
-	var override bool
 	{
 		pg = output.StartSpinner(out, locale.T("progress_search"), constants.TerminalAnimationInterval)
 
@@ -134,7 +133,6 @@ func (i *Install) Run(params Params) (rerr error) {
 		if err != nil {
 			return errs.Wrap(err, "Unable to get timestamp from params")
 		}
-		override = params.Timestamp.String() != ""
 
 		// Get languages used in current project
 		languages, err := model.FetchLanguagesForBuildScript(oldCommit.BuildScript())
@@ -155,7 +153,7 @@ func (i *Install) Run(params Params) (rerr error) {
 
 	// Prepare updated buildscript
 	script := oldCommit.BuildScript()
-	if err := prepareBuildScript(script, reqs, ts, override); err != nil {
+	if err := prepareBuildScript(script, reqs, ts); err != nil {
 		return errs.Wrap(err, "Could not prepare build script")
 	}
 
@@ -342,8 +340,8 @@ func (i *Install) renderUserFacing(reqs requirements) {
 	i.prime.Output().Notice("")
 }
 
-func prepareBuildScript(script *buildscript.BuildScript, requirements requirements, ts time.Time, override bool) error {
-	script.SetAtTime(ts, override)
+func prepareBuildScript(script *buildscript.BuildScript, requirements requirements, ts time.Time) error {
+	script.SetAtTime(ts, true)
 	for _, req := range requirements {
 		requirement := types.Requirement{
 			Namespace:          req.Resolved.Namespace,

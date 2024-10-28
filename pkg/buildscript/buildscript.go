@@ -56,6 +56,9 @@ func (b *BuildScript) AtTime() *time.Time {
 	return b.atTime
 }
 
+// SetAtTime sets the AtTime value, if the buildscript already has an AtTime value
+// and `override=false` then the value passed here will be discarded.
+// Override should in most cases only be true if we are making changes to the buildscript.
 func (b *BuildScript) SetAtTime(t time.Time, override bool) {
 	if b.atTime != nil && !override {
 		return
