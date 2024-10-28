@@ -55,7 +55,7 @@ func main() {
 	bs := buildscript.New()
 	bs.SetProject(project)
 	if atTime != nil {
-		bs.SetAtTime(*atTime)
+		bs.SetAtTime(*atTime, true)
 	}
 	err := bs.UnmarshalBuildExpression([]byte(input))
 	if err != nil {

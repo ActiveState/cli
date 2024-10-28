@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-openapi/strfmt"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/sliceutils"
+	"github.com/go-openapi/strfmt"
 )
 
 // At this time, there is no way to ask the Platform for an empty build expression.
@@ -76,6 +76,7 @@ func (b *BuildScript) UnmarshalBuildExpression(data []byte) error {
 			}
 			atTimeNode.Str = nil
 			atTimeNode.Ident = ptr.To("TIME")
+			// Preserve the original at_time found in the solve node.
 			b.atTime = ptr.To(time.Time(atTime))
 		} else if atTimeNode.Ident != nil && *atTimeNode.Ident == "at_time" {
 			atTimeNode.Ident = ptr.To("TIME")

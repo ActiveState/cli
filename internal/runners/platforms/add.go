@@ -98,7 +98,7 @@ func (a *Add) Run(params AddRunParams) (rerr error) {
 
 	// Prepare updated buildscript
 	script := oldCommit.BuildScript()
-	script.SetAtTime(ts)
+	script.SetAtTime(ts, true)
 	script.AddPlatform(*platform.PlatformID)
 
 	// Update local checkout and source runtime changes
