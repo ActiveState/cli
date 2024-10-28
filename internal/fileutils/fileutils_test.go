@@ -573,55 +573,6 @@ func TestResolveUniquePath(t *testing.T) {
 	})
 }
 
-func TestCaseSensitivePath(t *testing.T) {
-	tests := []struct {
-		dirName string
-		variant string
-	}{
-		{
-			"lowercase",
-			"LOWERCASE",
-		},
-		{
-			"UPPERCASE",
-			"uppercase",
-		},
-		{
-			"MiXeDcAse",
-			"mixedCase",
-		},
-		{
-			"{other~symbols!}",
-			"{OTHER~symbols!}",
-		},
-		{
-			"spéçïàl",
-			"spÉÇÏÀl",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.dirName, func(t *testing.T) {
-			testCaseSensitivePath(t, tt.dirName, tt.variant)
-		})
-	}
-}
-
-func testCaseSensitivePath(t *testing.T, dirName, variant string) {
-	dir, err := os.MkdirTemp("", dirName)
-	assert.NoError(t, err)
-
-	dir, err = GetLongPathName(dir)
-	assert.NoError(t, err)
-
-	searchPath := strings.Replace(dir, dirName, variant, -1)
-	found, err := CaseSensitivePath(searchPath)
-	assert.NoError(t, err)
-
-	if found != dir {
-		t.Fatalf("Found should match dir \nwant: %s \ngot: %s", dir, found)
-	}
-}
-
 func TestPathsMatch(t *testing.T) {
 	if runtime.GOOS != "darwin" {
 		t.Skip("PathsMatch is only tested on macOS")

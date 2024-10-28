@@ -27,11 +27,12 @@ func setup(t *testing.T) {
 func TestBash(t *testing.T) {
 	setup(t)
 
-	os.Setenv("SHELL", `C:\Program Files\bash.exe`)
+	shellPath := `C:\Program Files\Git\usr\bin\bash.exe`
+	os.Setenv("SHELL", shellPath)
 	cfg, err := config.New()
 	require.NoError(t, err)
 	subs := New(cfg)
-	assert.Equal(t, `C:\Program Files\bash.exe`, subs.Binary())
+	assert.Equal(t, shellPath, subs.Binary())
 
 }
 
@@ -39,11 +40,11 @@ func TestBashDontEscapeSpace(t *testing.T) {
 	setup(t)
 
 	// Reproduce bug in which paths are being incorrectly escaped on windows
-	os.Setenv("SHELL", `C:\Program\ Files\bash.exe`)
+	os.Setenv("SHELL", `C:\Program\ Files\Git\usr\bin\bash.exe`)
 	cfg, err := config.New()
 	require.NoError(t, err)
 	subs := New(cfg)
-	assert.Equal(t, `C:\Program Files\bash.exe`, subs.Binary())
+	assert.Equal(t, `C:\Program Files\Git\usr\bin\bash.exe`, subs.Binary())
 }
 
 func TestRunCommandError(t *testing.T) {

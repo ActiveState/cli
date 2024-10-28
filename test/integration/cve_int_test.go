@@ -80,16 +80,13 @@ func (suite *CveIntegrationTestSuite) TestJSON() {
 
 	ts.LoginAsPersistentUser()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out")
-	cp.ExpectExitCode(0)
+	ts.PrepareEmptyProject()
 
-	cp = ts.Spawn("cve", "-o", "editor")
+	cp := ts.Spawn("cve", "-o", "editor")
 	cp.Expect(`"project":`)
 	cp.Expect(`"commitID":`)
 	cp.ExpectExitCode(0)
-	// AssertValidJSON(suite.T(), cp) // report is too large to fit in terminal snapshot
+	AssertValidJSON(suite.T(), cp)
 }
 
 func TestCveIntegrationTestSuite(t *testing.T) {

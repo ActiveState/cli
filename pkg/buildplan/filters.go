@@ -47,7 +47,7 @@ func FilterStateArtifacts() FilterArtifact {
 		internalIngredients := sliceutils.Filter(a.Ingredients, func(i *Ingredient) bool {
 			return i.Namespace == NamespaceInternal
 		})
-		if len(a.Ingredients) == len(internalIngredients) {
+		if len(a.Ingredients) > 0 && len(a.Ingredients) == len(internalIngredients) {
 			return false
 		}
 		if strings.Contains(a.URL, "as-builds/noop") {
@@ -59,9 +59,29 @@ func FilterStateArtifacts() FilterArtifact {
 
 func FilterSuccessfulArtifacts() FilterArtifact {
 	return func(a *Artifact) bool {
-		return a.Status == types.ArtifactSucceeded ||
-			a.Status == types.ArtifactBlocked ||
-			a.Status == types.ArtifactStarted ||
-			a.Status == types.ArtifactReady
+		return a.Status == types.ArtifactSucceeded
 	}
+}
+
+func FilterFailedArtifacts() FilterArtifact {
+	return func(a *Artifact) bool {
+		return a.Status == types.ArtifactBlocked ||
+			a.Status == types.ArtifactFailedTransiently ||
+			a.Status == types.ArtifactFailedPermanently
+	}
+}
+
+func FilterNotBuild() FilterArtifact {
+	return func(a *Artifact) bool {
+		return a.Status != types.ArtifactSucceeded
+	}
+}
+
+type FilterOutIngredients struct {
+	Ingredients IngredientIDMap
+}
+
+func (f FilterOutIngredients) Filter(i *Ingredient) bool {
+	_, blacklist := f.Ingredients[i.IngredientID]
+	return !blacklist
 }

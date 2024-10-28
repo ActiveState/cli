@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/mholt/archiver/v3"
 
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -101,10 +102,10 @@ func (ua *Unarchiver) Unarchive(archiveStream io.Reader, archiveSize int64, dest
 			break
 		}
 		if err != nil {
-			return
+			return errs.Wrap(err, "error extracting next file")
 		}
 
-		//logging.Debug("Extracted %s File size: %d", f.Name(), f.Size())
+		// logging.Debug("Extracted %s File size: %d", f.Name(), f.Size())
 		ua.notifier(f.Name(), f.Size(), f.IsDir())
 	}
 

@@ -63,7 +63,7 @@ func main() {
 	cfg, err = config.New()
 	if err != nil {
 		multilog.Critical("Could not initialize config: %v", errs.JoinMessage(err))
-		fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))
+		fmt.Fprintf(os.Stderr, "Could not load config. If this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))
 		exitCode = 1
 		return
 	}
@@ -115,7 +115,7 @@ func run(cfg *config.Instance) error {
 		return runStart(out, "svc-start:mouse")
 	}
 
-	p := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an)
+	p := primer.New(out, cfg, an)
 
 	showVersion := false
 	cmd := captain.NewCommand(

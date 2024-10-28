@@ -15,7 +15,6 @@ type outputConsumer struct {
 	opts     *OutputConsumerOpts
 	isalive  bool
 	mutex    *sync.Mutex
-	tt       *TermTest
 }
 
 type OutputConsumerOpts struct {
@@ -37,7 +36,7 @@ func OptsConsTimeout(timeout time.Duration) func(o *OutputConsumerOpts) {
 	}
 }
 
-func newOutputConsumer(tt *TermTest, consume consumer, opts ...SetConsOpt) *outputConsumer {
+func newOutputConsumer(consume consumer, opts ...SetConsOpt) *outputConsumer {
 	oc := &outputConsumer{
 		consume: consume,
 		opts: &OutputConsumerOpts{
@@ -47,7 +46,6 @@ func newOutputConsumer(tt *TermTest, consume consumer, opts ...SetConsOpt) *outp
 		waiter:  make(chan error, 1),
 		isalive: true,
 		mutex:   &sync.Mutex{},
-		tt:      tt,
 	}
 
 	for _, optSetter := range opts {
@@ -83,6 +81,23 @@ func (e *outputConsumer) Report(buffer []byte) (int, error) {
 	return pos, err
 }
 
+type errConsumerStopped struct {
+	reason error
+}
+
+func (e errConsumerStopped) Error() string {
+	return fmt.Sprintf("consumer stopped, reason: %s", e.reason)
+}
+
+func (e errConsumerStopped) Unwrap() error {
+	return e.reason
+}
+
+func (e *outputConsumer) Stop(reason error) {
+	e.opts.Logger.Printf("stopping consumer, reason: %s\n", reason)
+	e.waiter <- errConsumerStopped{reason}
+}
+
 func (e *outputConsumer) wait() error {
 	e.opts.Logger.Println("started waiting")
 	defer e.opts.Logger.Println("stopped waiting")
@@ -103,11 +118,5 @@ func (e *outputConsumer) wait() error {
 		e.mutex.Lock()
 		e.opts.Logger.Println("Encountered timeout")
 		return fmt.Errorf("after %s: %w", e.opts.Timeout, TimeoutError)
-	case state := <-e.tt.Exited(true): // allow for output to be read first by first case in this select{}
-		e.mutex.Lock()
-		if state.Err != nil {
-			e.opts.Logger.Println("Encountered error waiting for process to exit: %s\n", state.Err.Error())
-		}
-		return fmt.Errorf("process exited (status: %d)", state.ProcessState.ExitCode())
 	}
 }

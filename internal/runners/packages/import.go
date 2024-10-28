@@ -1,37 +1,33 @@
 package packages
 
 import (
+	"fmt"
 	"os"
 
-	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits/cves"
+	"github.com/ActiveState/cli/internal/runbits/dependencies"
+	"github.com/ActiveState/cli/internal/runbits/org"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
+	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 const (
 	defaultImportFile = "requirements.txt"
 )
-
-type configurable interface {
-	keypairs.Configurable
-}
 
 // Confirmer describes the behavior required to prompt a user for confirmation.
 type Confirmer interface {
@@ -61,13 +57,7 @@ func NewImportRunParams() *ImportRunParams {
 
 // Import manages the importing execution context.
 type Import struct {
-	auth *authentication.Auth
-	out  output.Outputer
-	prompt.Prompter
-	proj      *project.Project
-	cfg       configurable
-	analytics analytics.Dispatcher
-	svcModel  *model.SvcModel
+	prime primeable
 }
 
 type primeable interface {
@@ -82,79 +72,102 @@ type primeable interface {
 
 // NewImport prepares an importation execution context for use.
 func NewImport(prime primeable) *Import {
-	return &Import{
-		prime.Auth(),
-		prime.Output(),
-		prime.Prompt(),
-		prime.Project(),
-		prime.Config(),
-		prime.Analytics(),
-		prime.SvcModel(),
-	}
+	return &Import{prime}
 }
 
 // Run executes the import behavior.
-func (i *Import) Run(params *ImportRunParams) error {
+func (i *Import) Run(params *ImportRunParams) (rerr error) {
+	defer rationalizeError(i.prime.Auth(), &rerr)
 	logging.Debug("ExecuteImport")
 
-	if i.proj == nil {
+	proj := i.prime.Project()
+	if proj == nil {
 		return rationalize.ErrNoProject
 	}
 
-	i.out.Notice(locale.Tr("operating_message", i.proj.NamespaceString(), i.proj.Dir()))
+	out := i.prime.Output()
+	out.Notice(locale.Tr("operating_message", proj.NamespaceString(), proj.Dir()))
 
 	if params.FileName == "" {
 		params.FileName = defaultImportFile
 	}
 
-	latestCommit, err := localcommit.Get(i.proj.Dir())
+	localCommitId, err := localcommit.Get(proj.Dir())
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_commit")
 	}
 
-	reqs, err := fetchCheckpoint(&latestCommit, i.auth)
+	auth := i.prime.Auth()
+	language, err := model.LanguageByCommit(localCommitId, auth)
 	if err != nil {
-		return locale.WrapError(err, "package_err_cannot_fetch_checkpoint")
+		return locale.WrapError(err, "err_import_language", "Unable to get language from project")
 	}
 
-	lang, err := model.CheckpointToLanguage(reqs, i.auth)
-	if err != nil {
-		return locale.WrapExternalError(err, "err_import_language", "Your project does not have a language associated with it, please add a language first.")
-	}
+	pg := output.StartSpinner(i.prime.Output(), locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
+	defer func() {
+		if pg != nil {
+			pg.Stop(locale.T("progress_fail"))
+		}
+	}()
 
-	changeset, err := fetchImportChangeset(reqsimport.Init(), params.FileName, lang.Name)
+	changeset, err := fetchImportChangeset(reqsimport.Init(), params.FileName, language.Name)
 	if err != nil {
 		return errs.Wrap(err, "Could not import changeset")
 	}
 
-	bp := buildplanner.NewBuildPlannerModel(i.auth)
-	bs, err := bp.GetBuildScript(latestCommit.String())
+	bp := buildplanner.NewBuildPlannerModel(auth)
+	bs, err := bp.GetBuildScript(localCommitId.String())
 	if err != nil {
 		return locale.WrapError(err, "err_cannot_get_build_expression", "Could not get build expression")
 	}
 
-	if err := applyChangeset(changeset, bs); err != nil {
+	if err := i.applyChangeset(changeset, bs); err != nil {
 		return locale.WrapError(err, "err_cannot_apply_changeset", "Could not apply changeset")
 	}
 
 	msg := locale.T("commit_reqstext_message")
-	commitID, err := bp.StageCommit(buildplanner.StageCommitParams{
-		Owner:        i.proj.Owner(),
-		Project:      i.proj.Name(),
-		ParentCommit: latestCommit.String(),
+	stagedCommit, err := bp.StageCommit(buildplanner.StageCommitParams{
+		Owner:        proj.Owner(),
+		Project:      proj.Name(),
+		ParentCommit: localCommitId.String(),
 		Description:  msg,
 		Script:       bs,
 	})
+	// Always update the local commit ID even if the commit fails to build
+	if stagedCommit != nil && stagedCommit.Commit != nil && stagedCommit.Commit.CommitID != "" {
+		if err := localcommit.Set(proj.Dir(), stagedCommit.CommitID.String()); err != nil {
+			return locale.WrapError(err, "err_package_update_commit_id")
+		}
+	}
 	if err != nil {
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
 
-	if err := localcommit.Set(i.proj.Dir(), commitID.String()); err != nil {
-		return locale.WrapError(err, "err_package_update_commit_id")
+	// Output change summary.
+	previousCommit, err := bp.FetchCommit(localCommitId, proj.Owner(), proj.Name(), nil)
+	if err != nil {
+		return errs.Wrap(err, "Failed to fetch build result for previous commit")
 	}
 
-	_, err = runtime.SolveAndUpdate(i.auth, i.out, i.analytics, i.proj, &commitID, target.TriggerImport, i.svcModel, i.cfg, runtime.OptOrderChanged)
-	return err
+	pg.Stop(locale.T("progress_success"))
+	pg = nil
+
+	dependencies.OutputChangeSummary(i.prime.Output(), stagedCommit.BuildPlan(), previousCommit.BuildPlan())
+
+	// Report CVEs.
+	if err := cves.NewCveReport(i.prime).Report(stagedCommit.BuildPlan(), previousCommit.BuildPlan()); err != nil {
+		return errs.Wrap(err, "Could not report CVEs")
+	}
+
+	out.Notice("") // blank line
+	_, err = runtime_runbit.Update(i.prime, trigger.TriggerImport, runtime_runbit.WithCommitID(stagedCommit.CommitID))
+	if err != nil {
+		return errs.Wrap(err, "Runtime update failed")
+	}
+
+	out.Notice(locale.Tl("import_finished", "Import Finished"))
+
+	return nil
 }
 
 func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model.Changeset, error) {
@@ -171,7 +184,7 @@ func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model
 	return changeset, err
 }
 
-func applyChangeset(changeset model.Changeset, bs *buildscript.BuildScript) error {
+func (i *Import) applyChangeset(changeset model.Changeset, bs *buildscript.BuildScript) error {
 	for _, change := range changeset {
 		var expressionOperation types.Operation
 		switch change.Operation {
@@ -183,9 +196,21 @@ func applyChangeset(changeset model.Changeset, bs *buildscript.BuildScript) erro
 			expressionOperation = types.OperationUpdated
 		}
 
+		namespace := change.Namespace
+		if namespace == "" {
+			if !i.prime.Auth().Authenticated() {
+				return rationalize.ErrNotAuthenticated
+			}
+			name, err := org.Get("", i.prime.Auth(), i.prime.Config())
+			if err != nil {
+				return errs.Wrap(err, "Unable to get an org for the user")
+			}
+			namespace = fmt.Sprintf("%s/%s", constants.PlatformPrivateNamespace, name)
+		}
+
 		req := types.Requirement{
 			Name:      change.Requirement,
-			Namespace: change.Namespace,
+			Namespace: namespace,
 		}
 
 		for _, constraint := range change.VersionConstraints {

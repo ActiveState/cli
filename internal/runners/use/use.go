@@ -16,12 +16,11 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -37,9 +36,14 @@ type primeable interface {
 	primer.Configurer
 	primer.SvcModeler
 	primer.Analyticer
+	primer.Projecter
 }
 
 type Use struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	auth      *authentication.Auth
 	prompt    prompt.Prompter
 	out       output.Outputer
@@ -52,6 +56,7 @@ type Use struct {
 
 func NewUse(prime primeable) *Use {
 	return &Use{
+		prime,
 		prime.Auth(),
 		prime.Prompt(),
 		prime.Output(),
@@ -74,6 +79,8 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapInputError(err, "err_use_cannot_find_local_project", "Local project cannot be found.")
 	}
 
+	u.prime.SetProject(proj)
+
 	commitID, err := localcommit.Get(proj.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
@@ -83,7 +90,7 @@ func (u *Use) Run(params *Params) error {
 		return locale.NewInputError("err_use_commit_id_mismatch")
 	}
 
-	rti, err := runtime.SolveAndUpdate(u.auth, u.out, u.analytics, proj, nil, target.TriggerUse, u.svcModel, u.config, runtime.OptMinimalUI)
+	rti, err := runtime_runbit.Update(u.prime, trigger.TriggerUse, runtime_runbit.WithoutHeaders(), runtime_runbit.WithIgnoreAsync())
 	if err != nil {
 		return locale.WrapError(err, "err_use_runtime_new", "Cannot use this project.")
 	}
@@ -92,7 +99,8 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapError(err, "err_use_default", "Could not setup your project for use.")
 	}
 
-	execDir := setup.ExecDir(rti.Target().Dir())
+	execDir := rti.Env(false).ExecutorsPath
+
 	u.out.Print(output.Prepare(
 		locale.Tr("use_project_statement", proj.NamespaceString(), proj.Dir(), execDir),
 		&struct {

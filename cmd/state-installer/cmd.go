@@ -93,7 +93,7 @@ func main() {
 	var err error
 	cfg, err = config.New()
 	if err != nil {
-		multilog.Error("Could not set up configuration handler: " + errs.JoinMessage(err))
+		multilog.Critical("Could not set up configuration handler: " + errs.JoinMessage(err))
 		fmt.Fprintln(os.Stderr, err.Error())
 		exitCode = 1
 	}
@@ -108,7 +108,7 @@ func main() {
 		Interactive: false,
 	})
 	if err != nil {
-		multilog.Error("Could not set up output handler: " + errs.JoinMessage(err))
+		multilog.Critical("Could not set up output handler: " + errs.JoinMessage(err))
 		fmt.Fprintln(os.Stderr, err.Error())
 		exitCode = 1
 		return
@@ -148,7 +148,7 @@ func main() {
 		"state-installer",
 		"",
 		"Installs or updates the State Tool",
-		primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an),
+		primer.New(out, cfg, an),
 		[]*captain.Flag{ // The naming of these flags is slightly inconsistent due to backwards compatibility requirements
 			{
 				Name:        "command",
@@ -251,6 +251,8 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 
 	an.Event(anaConst.CatInstallerFunnel, "exec")
 
+	usingDefaultInstallPath := params.path == ""
+
 	if params.path == "" {
 		var err error
 		params.path, err = installation.InstallPathForChannel(constants.ChannelName)
@@ -296,6 +298,17 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 			return errs.Wrap(err, "Could not check if install path is empty")
 		}
 		if !empty {
+			if usingDefaultInstallPath {
+				// We're having trouble pinning down why these errors are occurring, so report the list of
+				// existing files to Rollbar to help diagnose.
+				if files, err := os.ReadDir(params.path); err == nil {
+					fileList := []string{}
+					for _, file := range files {
+						fileList = append(fileList, filepath.Join(params.path, file.Name()))
+					}
+					rollbar.Critical("Installation path must be an empty directory: %s\nExisting files:\n%s", params.path, strings.Join(fileList, "\n"))
+				}
+			}
 			return locale.NewInputError("err_install_nonempty_dir", "Installation path must be an empty directory: {{.V0}}", params.path)
 		}
 	}

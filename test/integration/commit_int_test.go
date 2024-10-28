@@ -45,15 +45,18 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	data = bytes.ReplaceAll(data, []byte("casestyle"), []byte("case"))
 	suite.Require().NoError(fileutils.WriteFile(scriptPath, data), "Update buildscript")
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("commit"),
-	)
+	ts.LoginAsPersistentUser() // for CVE reporting
+
+	cp = ts.Spawn("commit")
+	cp.Expect("Operating on project")
+	cp.Expect("Creating commit")
+	cp.Expect("Resolving Dependencies")
+	cp.Expect("Installing case@")
+	cp.Expect("Checking for vulnerabilities")
 	cp.Expect("successfully created")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("pkg"),
-	)
+	cp = ts.Spawn("pkg")
 	cp.Expect("case ", e2e.RuntimeSourcingTimeoutOpt) // note: intentional trailing whitespace to not match 'casestyle'
 	cp.ExpectExitCode(0)
 }
@@ -72,7 +75,7 @@ func (suite *CommitIntegrationTestSuite) TestCommitAtTimeChange() {
 	suite.Require().NoError(err) // verify validity
 
 	// Update top-level at_time variable.
-	dateTime := "2023-03-01T12:34:56.789Z"
+	dateTime := "2023-06-21T12:34:56.789Z"
 	buildScriptFile := filepath.Join(proj.Dir(), constants.BuildScriptFileName)
 	contents, err := fileutils.ReadFile(buildScriptFile)
 	suite.Require().NoError(err)

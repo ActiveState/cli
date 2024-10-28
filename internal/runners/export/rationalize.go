@@ -5,10 +5,16 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/runbits/buildplanner"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
-func rationalizeError(err *error) {
+func rationalizeError(err *error, auth *authentication.Auth) {
 	var errProjectNotFound *ErrProjectNotFound
+	var errInvalidCommitId *buildplanner.ErrInvalidCommitId
+	var errModelProjectNotFound *model.ErrProjectNotFound
+	var errCommitIdDoesNotExistInProject *buildplanner.ErrCommitDoesNotExistInProject
 
 	switch {
 	// export log with invalid --index.
@@ -38,6 +44,25 @@ func rationalizeError(err *error) {
 	case errors.As(*err, &errProjectNotFound):
 		*err = errs.WrapUserFacing(*err,
 			locale.Tl("export_runtime_project_not_found", "Could not find project file in '[ACTIONABLE]{{.V0}}[/RESET]'", errProjectNotFound.Path),
+			errs.SetInput())
+
+	case errors.As(*err, &errInvalidCommitId):
+		*err = errs.WrapUserFacing(
+			*err, locale.Tr("err_commit_id_invalid_given", errInvalidCommitId.Id),
+			errs.SetInput())
+
+	case errors.As(*err, &errModelProjectNotFound):
+		*err = errs.WrapUserFacing(*err,
+			locale.Tr("err_api_project_not_found", errModelProjectNotFound.Organization, errModelProjectNotFound.Project),
+			errs.SetIf(!auth.Authenticated(), errs.SetTips(locale.T("tip_private_project_auth"))),
+			errs.SetInput())
+
+	case errors.As(*err, &errCommitIdDoesNotExistInProject):
+		*err = errs.WrapUserFacing(*err,
+			locale.Tr("err_commit_id_not_in_history",
+				errCommitIdDoesNotExistInProject.Project,
+				errCommitIdDoesNotExistInProject.CommitID,
+			),
 			errs.SetInput())
 	}
 }

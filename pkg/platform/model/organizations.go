@@ -152,7 +152,7 @@ func processOrgErrorResponse(err error) error {
 func processInviteErrorResponse(err error) error {
 	switch statusCode := api.ErrorCode(err); statusCode {
 	case 400:
-		return locale.WrapExternalError(err, "err_api_invite_400", "Invalid request, did you enter a valid email address?")
+		return locale.WrapExternalError(err, "err_api_invite_400", "Invalid request. Did you enter a valid email address?")
 	case 401:
 		return locale.NewExternalError("err_api_not_authenticated")
 	case 404:

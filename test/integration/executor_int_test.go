@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/pkg/executors"
 	"github.com/ActiveState/termtest"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -18,8 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 )
 
 type ExecutorIntegrationTestSuite struct {
@@ -36,17 +35,12 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorForwards() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/Python3"),
-	)
-	cp.Expect("Checked out project")
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3")
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("shell", "ActiveState-CLI/Python3"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp = ts.Spawn("shell", "ActiveState-CLI/Python3")
+	cp.Expect("Activated")
 	cp.ExpectInput()
 
 	cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
@@ -63,17 +57,12 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorExitCode() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/Python3"),
-	)
-	cp.Expect("Checked out project")
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3")
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("shell", "ActiveState-CLI/Python3"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp = ts.Spawn("shell", "ActiveState-CLI/Python3")
+	cp.Expect("Activated")
 	cp.ExpectInput()
 
 	cp.SendLine("python3 -c \"exit(42)\"")
@@ -115,7 +104,7 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorBatArguments() {
 	srcExes := fileutils.ListFilesUnsafe(filepath.Join(root, "test", "integration", "testdata", "batarguments"))
 	reportExe := filepath.Join(executorsPath, "report.exe")
 
-	t := target.NewCustomTarget("ActiveState-CLI", "test", constants.ValidZeroUUID, "", target.TriggerExecutor)
+	t := executors.NewTarget(constants.ValidZeroUUID, "ActiveState-CLI", "test", "")
 	executors := executors.New(executorsPath)
 	executors.SetExecutorSrc(ts.ExecutorExe)
 	err := executors.Apply(

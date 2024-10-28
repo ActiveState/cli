@@ -68,13 +68,19 @@ var (
 )
 
 type errProjectNameInUse struct {
-	error
 	Namespace *project.Namespaced
 }
 
+func (e errProjectNameInUse) Error() string {
+	return "project name in use"
+}
+
 type errHeadless struct {
-	error
 	ProjectURL string
+}
+
+func (e errHeadless) Error() string {
+	return "headless project"
 }
 
 func (r *Push) Run(params PushParams) (rerr error) {
@@ -97,7 +103,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		var err error
 		targetNamespace, err = r.namespaceFromProject()
 		if err != nil {
-			return errs.Wrap(err, "Could not get a valid namespace, is your activestate.yaml malformed?")
+			return errs.Wrap(err, "Could not get a valid namespace. Is your activestate.yaml malformed?")
 		}
 	}
 
@@ -106,7 +112,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 	}
 
 	if r.project.IsHeadless() {
-		return &errHeadless{err, r.project.URL()}
+		return &errHeadless{r.project.URL()}
 	}
 
 	// Capture the primary intend of the user
@@ -141,7 +147,8 @@ func (r *Push) Run(params PushParams) (rerr error) {
 	var targetPjm *mono_models.Project
 	targetPjm, err = model.LegacyFetchProjectByName(targetNamespace.Owner, targetNamespace.Project)
 	if err != nil {
-		if !errs.Matches(err, &model.ErrProjectNotFound{}) {
+		var errProjectNotFound *model.ErrProjectNotFound
+		if !errors.As(err, &errProjectNotFound) {
 			return errs.Wrap(err, "Failed to check for existence of project")
 		}
 	}
@@ -153,14 +160,14 @@ func (r *Push) Run(params PushParams) (rerr error) {
 	var projectCreated bool
 	if intend&intendCreateProject > 0 || targetPjm == nil {
 		if targetPjm != nil {
-			return &errProjectNameInUse{errs.New("project name in use"), targetNamespace}
+			return &errProjectNameInUse{targetNamespace}
 		}
 
 		// If the user didn't necessarily intend to create the project we should ask them for confirmation
 		if intend&intendCreateProject == 0 {
 			createProject, err := r.prompt.Confirm(
 				locale.Tl("create_project", "Create Project"),
-				locale.Tl("push_confirm_create_project", "You are about to create the project [NOTICE]{{.V0}}[/RESET], continue?", targetNamespace.String()),
+				locale.Tl("push_confirm_create_project", "You are about to create the project [NOTICE]{{.V0}}[/RESET]. Continue?", targetNamespace.String()),
 				ptr.To(true))
 			if err != nil {
 				return errs.Wrap(err, "Confirmation failed")

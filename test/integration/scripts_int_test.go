@@ -15,7 +15,7 @@ type ScriptsIntegrationTestSuite struct {
 
 func (suite *ScriptsIntegrationTestSuite) setupConfigFile(ts *e2e.Session) {
 	configFileContent := strings.TrimSpace(`
-project: "https://platform.activestate.com/ScriptOrg/ScriptProject"
+project: "https://platform.activestate.com/ActiveState-CLI/Empty?branch=main&commitID=6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8"
 scripts:
   - name: first-script
     value: echo "first script"

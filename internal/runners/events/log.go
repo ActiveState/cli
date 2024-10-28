@@ -30,7 +30,7 @@ func NewLog(prime primeable) *EventLog {
 func (e *EventLog) Run(params *EventLogParams) error {
 	pid := process.ActivationPID(e.cfg)
 	if pid == -1 {
-		return locale.NewInputError("err_eventlog_pid", "Could not find parent process ID, make sure you're running this command from inside an activated state (run '[ACTIONABLE]state activate[/RESET]' first).")
+		return locale.NewInputError("err_eventlog_pid", "Could not find parent process ID. Please make sure you're running this command from inside an activated state (run '[ACTIONABLE]state activate[/RESET]' first).")
 	}
 
 	filepath := logging.FilePathFor(logging.FileNameFor(int(pid)))
@@ -41,7 +41,7 @@ func (e *EventLog) Run(params *EventLogParams) error {
 
 	matcher, err := regexp.Compile(`(?:\s|^)(?:\w+-|)Event:`)
 	if err != nil {
-		return locale.NewError("err_invalid_rx", "Could not create regex matcher. Please contact support, this should not happen.")
+		return locale.NewError("err_invalid_rx", "Could not create regex matcher. Please contact support. This should not happen.")
 	}
 
 	for line := range tailer.Lines {

@@ -24,7 +24,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_None() {
 
 	// We test on config as it just dumps help and has minimal output
 	// The base state command would also work, but it's output is more verbose and termtest likes to cut off content if it's too long
-	cp := ts.SpawnWithOpts(e2e.OptArgs("config"))
+	cp := ts.Spawn("config")
 	cp.Expect("Usage:")
 	cp.ExpectExitCode(0)
 

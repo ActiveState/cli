@@ -2,26 +2,26 @@ package buildplan
 
 import (
 	"encoding/json"
+	"sort"
+
+	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildplan/raw"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
-	"github.com/go-openapi/strfmt"
 )
 
 type BuildPlan struct {
-	platforms    []strfmt.UUID
-	artifacts    Artifacts
-	requirements Requirements
-	ingredients  Ingredients
-	raw          *raw.Build
+	legacyRecipeID strfmt.UUID // still used for buildlog streamer
+	platforms      []strfmt.UUID
+	artifacts      Artifacts
+	requirements   Requirements
+	ingredients    Ingredients
+	raw            *raw.Build
 }
 
 func Unmarshal(data []byte) (*BuildPlan, error) {
-	logging.Debug("Unmarshalling buildplan")
-
 	b := &BuildPlan{}
 
 	var rawBuild raw.Build
@@ -31,29 +31,29 @@ func Unmarshal(data []byte) (*BuildPlan, error) {
 
 	b.raw = &rawBuild
 
-	b.cleanup()
+	b.sanitize()
 
 	if err := b.hydrate(); err != nil {
 		return nil, errs.Wrap(err, "error hydrating build plan")
 	}
 
-	if len(b.artifacts) == 0 || len(b.ingredients) == 0 || len(b.platforms) == 0 {
-		return nil, errs.New("Buildplan unmarshalling failed as it got zero artifacts (%d), ingredients (%d) and or platforms (%d).",
-			len(b.artifacts), len(b.ingredients), len(b.platforms))
+	if len(b.artifacts) == 0 || len(b.platforms) == 0 {
+		// Ingredients are not considered here because certain builds (eg. camel) won't be able to relate to a single ingredient
+		return nil, errs.New("Buildplan unmarshalling failed as it got zero artifacts (%d) and/or platforms (%d).",
+			len(b.artifacts), len(b.platforms))
 	}
 
 	return b, nil
 }
 
 func (b *BuildPlan) Marshal() ([]byte, error) {
-	return json.Marshal(b.raw)
+	return json.MarshalIndent(b.raw, "", "  ")
 }
 
-// cleanup empty targets
-// The type aliasing in the query populates the response with emtpy targets that we should remove
-func (b *BuildPlan) cleanup() {
-	logging.Debug("Cleaning up build plan")
-
+// sanitize will remove empty targets and sort slices to ensure consistent interpretation of the same buildplan
+// Empty targets: The type aliasing in the query populates the response with emtpy targets that we should remove
+// Sorting: The API does not do any slice ordering, meaning the same buildplan retrieved twice can use different ordering
+func (b *BuildPlan) sanitize() {
 	b.raw.Steps = sliceutils.Filter(b.raw.Steps, func(s *raw.Step) bool {
 		return s.StepID != ""
 	})
@@ -65,6 +65,27 @@ func (b *BuildPlan) cleanup() {
 	b.raw.Artifacts = sliceutils.Filter(b.raw.Artifacts, func(a *raw.Artifact) bool {
 		return a.NodeID != ""
 	})
+
+	sort.Slice(b.raw.Sources, func(i, j int) bool { return b.raw.Sources[i].NodeID < b.raw.Sources[j].NodeID })
+	sort.Slice(b.raw.Steps, func(i, j int) bool { return b.raw.Steps[i].StepID < b.raw.Steps[j].StepID })
+	sort.Slice(b.raw.Artifacts, func(i, j int) bool { return b.raw.Artifacts[i].NodeID < b.raw.Artifacts[j].NodeID })
+	sort.Slice(b.raw.Terminals, func(i, j int) bool { return b.raw.Terminals[i].Tag < b.raw.Terminals[j].Tag })
+	sort.Slice(b.raw.ResolvedRequirements, func(i, j int) bool {
+		return b.raw.ResolvedRequirements[i].Source < b.raw.ResolvedRequirements[j].Source
+	})
+	for _, t := range b.raw.Terminals {
+		sort.Slice(t.NodeIDs, func(i, j int) bool { return t.NodeIDs[i] < t.NodeIDs[j] })
+	}
+	for _, a := range b.raw.Artifacts {
+		sort.Slice(a.RuntimeDependencies, func(i, j int) bool { return a.RuntimeDependencies[i] < a.RuntimeDependencies[j] })
+	}
+	for _, step := range b.raw.Steps {
+		sort.Slice(step.Inputs, func(i, j int) bool { return step.Inputs[i].Tag < step.Inputs[j].Tag })
+		sort.Slice(step.Outputs, func(i, j int) bool { return step.Outputs[i] < step.Outputs[j] })
+		for _, input := range step.Inputs {
+			sort.Slice(input.NodeIDs, func(i, j int) bool { return input.NodeIDs[i] < input.NodeIDs[j] })
+		}
+	}
 }
 
 func (b *BuildPlan) Platforms() []strfmt.UUID {
@@ -92,10 +113,14 @@ func (b *BuildPlan) DiffArtifacts(oldBp *BuildPlan, requestedOnly bool) Artifact
 
 	if requestedOnly {
 		new = b.RequestedArtifacts().ToNameMap()
-		old = oldBp.RequestedArtifacts().ToNameMap()
+		if oldBp != nil {
+			old = oldBp.RequestedArtifacts().ToNameMap()
+		}
 	} else {
 		new = b.Artifacts().ToNameMap()
-		old = oldBp.Artifacts().ToNameMap()
+		if oldBp != nil {
+			old = oldBp.Artifacts().ToNameMap()
+		}
 	}
 
 	var updated []ArtifactUpdate
@@ -143,20 +168,13 @@ func (b *BuildPlan) Engine() types.BuildEngine {
 	return buildEngine
 }
 
-// RecipeID extracts the recipe ID from the BuildLogIDs.
+// LegacyRecipeID extracts the recipe ID from the BuildLogIDs.
 // We do this because if the build is in progress we will need to reciepe ID to
 // initialize the build log streamer.
 // This information will only be populated if the build is an alternate build.
 // This is specified in the build planner queries.
-func (b *BuildPlan) RecipeID() (strfmt.UUID, error) {
-	var result strfmt.UUID
-	for _, id := range b.raw.BuildLogIDs {
-		if result != "" && result.String() != id.ID {
-			return result, errs.New("Build plan contains multiple recipe IDs")
-		}
-		result = strfmt.UUID(id.ID)
-	}
-	return result, nil
+func (b *BuildPlan) LegacyRecipeID() strfmt.UUID {
+	return b.legacyRecipeID
 }
 
 func (b *BuildPlan) IsBuildReady() bool {

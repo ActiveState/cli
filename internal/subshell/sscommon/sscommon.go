@@ -84,8 +84,8 @@ func RunFuncByBinary(binary string) RunFunc {
 	switch {
 	case strings.Contains(bin, "bash"):
 		return runWithBash
-	case strings.Contains(bin, "cmd"):
-		return runWithCmd
+	case strings.Contains(bin, "cmd"), strings.Contains(bin, "powershell"):
+		return runWindowsShell
 	default:
 		return runDirect
 	}
@@ -107,7 +107,7 @@ func runWithBash(env []string, name string, args ...string) error {
 	return runDirect(env, "bash", "-c", quotedArgs)
 }
 
-func runWithCmd(env []string, name string, args ...string) error {
+func runWindowsShell(env []string, name string, args ...string) error {
 	ext := filepath.Ext(name)
 	switch ext {
 	case ".py":

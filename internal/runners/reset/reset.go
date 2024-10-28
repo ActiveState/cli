@@ -1,6 +1,7 @@
 package reset
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -14,10 +15,10 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
@@ -30,6 +31,10 @@ type Params struct {
 }
 
 type Reset struct {
+	prime primeable
+	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
+	// up the one that necessitates adding the primer at this level.
+	// https://activestatef.atlassian.net/browse/DX-2869
 	out       output.Outputer
 	auth      *authentication.Auth
 	prompt    prompt.Prompter
@@ -51,6 +56,7 @@ type primeable interface {
 
 func New(prime primeable) *Reset {
 	return &Reset{
+		prime,
 		prime.Output(),
 		prime.Auth(),
 		prime.Prompt(),
@@ -75,7 +81,8 @@ func (r *Reset) Run(params *Params) error {
 			return locale.WrapError(err, "err_reset_latest_commit", "Could not get latest commit ID")
 		}
 		localCommitID, err := localcommit.Get(r.project.Dir())
-		if err != nil && !errs.Matches(err, &localcommit.ErrInvalidCommitID{}) {
+		var errInvalidCommitID *localcommit.ErrInvalidCommitID
+		if err != nil && !errors.As(err, &errInvalidCommitID) {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
 		if *latestCommit == localCommitID {
@@ -103,13 +110,14 @@ func (r *Reset) Run(params *Params) error {
 	}
 
 	localCommitID, err := localcommit.Get(r.project.Dir())
-	if err != nil && !errs.Matches(err, &localcommit.ErrInvalidCommitID{}) {
+	var errInvalidCommitID *localcommit.ErrInvalidCommitID
+	if err != nil && !errors.As(err, &errInvalidCommitID) {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 	r.out.Notice(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", commitID.String()))
 	if commitID != localCommitID {
 		defaultChoice := params.Force || !r.out.Config().Interactive
-		confirm, err := r.prompt.Confirm("", locale.Tl("reset_confim", "Resetting is destructive, you will lose any changes that were not pushed. Are you sure you want to do this?"), &defaultChoice)
+		confirm, err := r.prompt.Confirm("", locale.Tl("reset_confim", "Resetting is destructive. You will lose any changes that were not pushed. Are you sure you want to do this?"), &defaultChoice)
 		if err != nil {
 			return locale.WrapError(err, "err_reset_confirm", "Could not confirm reset choice")
 		}
@@ -131,7 +139,7 @@ func (r *Reset) Run(params *Params) error {
 		}
 	}
 
-	_, err = runtime.SolveAndUpdate(r.auth, r.out, r.analytics, r.project, &commitID, target.TriggerReset, r.svcModel, r.cfg, runtime.OptOrderChanged)
+	_, err = runtime_runbit.Update(r.prime, trigger.TriggerReset, runtime_runbit.WithoutBuildscriptValidation())
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
