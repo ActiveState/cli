@@ -79,8 +79,14 @@ func main() {
 	var err error
 	cfg, err = config.New()
 	if err != nil {
-		multilog.Critical("Could not initialize config: %v", errs.JoinMessage(err))
-		fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))
+		if !locale.IsInputError(err) {
+			multilog.Critical("Could not initialize config: %v", errs.JoinMessage(err))
+			fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))
+		} else {
+			for _, err2 := range locale.UnpackError(err) {
+				fmt.Fprintf(os.Stderr, err2.Error())
+			}
+		}
 		exitCode = 1
 		return
 	}
