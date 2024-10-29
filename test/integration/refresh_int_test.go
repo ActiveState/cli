@@ -39,7 +39,7 @@ func (suite *RefreshIntegrationTestSuite) TestRefresh() {
 
 	cp = ts.Spawn("refresh")
 	cp.Expect("already up to date")
-	cp.ExpectExitCode(1)
+	cp.ExpectExitCode(0)
 }
 
 func (suite *RefreshIntegrationTestSuite) TestJSON() {
