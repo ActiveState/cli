@@ -151,14 +151,12 @@ function setShellOverride
 {
     # Walk up the process tree to find cmd.exe
     # If we encounter it we set the shell override
-    Write-Host "Walking up the process tree to find cmd.exe"
     $currentPid = $PID
     while ($currentPid -ne 0)
     {
         $process = Get-WmiObject Win32_Process | Where-Object { $_.ProcessId -eq $currentPid }
         if (!$process) { break }
 
-        Write-Host "Checking process $($process.Name) with PID $($process.ProcessId)"
         if ($process.Name -eq "cmd" -or $process.Name -eq "cmd.exe")
         {
             [System.Environment]::SetEnvironmentVariable("ACTIVESTATE_CLI_SHELL_OVERRIDE", $process.Name, "Process")
@@ -271,7 +269,6 @@ $PSDefaultParameterValues['*:Encoding'] = 'utf8'
 # Run the installer.
 $env:ACTIVESTATE_SESSION_TOKEN = $script:SESSION_TOKEN_VALUE
 setShellOverride
-Write-Host "Shell override: $env:ACTIVESTATE_CLI_SHELL_OVERRIDE"
 & $exePath $args --source-installer="install.ps1"
 $success = $?
 if (Test-Path env:ACTIVESTATE_SESSION_TOKEN)
