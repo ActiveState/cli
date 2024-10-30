@@ -109,7 +109,7 @@ func (f *JSON) Error(value interface{}) {
 
 func isPipeClosedError(err error) bool {
 	pipeErr := errors.Is(err, syscall.EPIPE)
-	if runtime.GOOS == "windows" && errors.Is(err, syscall.Errno(242)) {
+	if runtime.GOOS == "windows" && errors.Is(err, syscall.Errno(232)) {
 		// Note: 232 is Windows error code ERROR_NO_DATA, "The pipe is being closed".
 		// See https://go.dev/src/os/pipe_test.go
 		pipeErr = true
