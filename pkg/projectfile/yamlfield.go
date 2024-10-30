@@ -59,7 +59,7 @@ func (y *yamlField) Save(path string) error {
 
 	if err := os.WriteFile(path, out, 0664); err != nil {
 		if osutils.IsAccessDeniedError(err) {
-			return locale.WrapError(err, "err_migrate_projectfile_access_denied",
+			return locale.WrapInputError(err, "err_migrate_projectfile_access_denied",
 				"Your project file at '{{.V0}}' is out of date, but State Tool does not have permission to update it. Please make it writeable or re-checkout the project to a writeable location.",
 				path)
 		}
