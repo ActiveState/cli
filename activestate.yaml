@@ -181,9 +181,9 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
-      TARGET=$BUILD_REMOTE_INSTALLER_TARGET
+      TARGET=$constants.BUILD_REMOTE_INSTALLER_TARGET
       if [[ "$GOOS" == "windows" || "$OS" == "Windows_NT" ]]; then
-        TARGET="${BUILD_REMOTE_INSTALLER_TARGET}.exe"
+        TARGET="${constants.BUILD_REMOTE_INSTALLER_TARGET}.exe"
       fi
       GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.0
       cd cmd/state-remote-installer

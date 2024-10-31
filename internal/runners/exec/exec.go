@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 
@@ -24,7 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
+	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -155,9 +154,6 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 			return !v
 		}
 		exesOnPath := osutils.FilterExesOnPATH(exeTarget, env["PATH"], filter)
-		if runtime.GOOS == "windows" {
-			exesOnPath = append(exesOnPath, osutils.FilterExesOnPATH(exeTarget, env["Path"], filter)...)
-		}
 
 		if len(exesOnPath) > 0 {
 			exeTarget = exesOnPath[0]

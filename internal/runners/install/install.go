@@ -341,7 +341,7 @@ func (i *Install) renderUserFacing(reqs requirements) {
 }
 
 func prepareBuildScript(script *buildscript.BuildScript, requirements requirements, ts time.Time) error {
-	script.SetAtTime(ts)
+	script.SetAtTime(ts, true)
 	for _, req := range requirements {
 		requirement := types.Requirement{
 			Namespace:          req.Resolved.Namespace,

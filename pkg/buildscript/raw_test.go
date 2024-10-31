@@ -10,11 +10,27 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const testProject = "https://platform.activestate.com/org/project?branch=main&commitID=00000000-0000-0000-0000-000000000000"
+const testTime = "2000-01-01T00:00:00.000Z"
+
+func checkoutInfoString(project, time string) string {
+	return "```\n" +
+		"Project: " + project + "\n" +
+		"Time: " + time + "\n" +
+		"```\n"
+}
+
+var testCheckoutInfo string
+
+func init() {
+	testCheckoutInfo = checkoutInfoString(testProject, testTime)
+}
+
 func TestRawRepresentation(t *testing.T) {
 	script, err := Unmarshal([]byte(
-		`at_time = "2000-01-01T00:00:00.000Z"
+		testCheckoutInfo + `
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = ["linux", "windows"],
 	requirements = [
 		Req(name = "python", namespace = "language"),
@@ -32,14 +48,15 @@ main = runtime
 	atTime := time.Time(atTimeStrfmt)
 
 	assert.Equal(t, &rawBuildScript{
-		[]*assignment{
+		Info: ptr.To(testCheckoutInfo[2 : len(testCheckoutInfo)-3]),
+		Assignments: []*assignment{
 			{"runtime", &value{
 				FuncCall: &funcCall{"solve", []*value{
-					{Assignment: &assignment{"at_time", &value{Ident: ptr.To(`at_time`)}}},
+					{Assignment: &assignment{"at_time", &value{Ident: ptr.To(`TIME`)}}},
 					{Assignment: &assignment{
 						"platforms", &value{List: &[]*value{
-							{Str: ptr.To(`"linux"`)},
-							{Str: ptr.To(`"windows"`)},
+							{Str: ptr.To(`linux`)},
+							{Str: ptr.To(`windows`)},
 						}},
 					}},
 					{Assignment: &assignment{
@@ -47,19 +64,19 @@ main = runtime
 							{FuncCall: &funcCall{
 								Name: "Req",
 								Arguments: []*value{
-									{Assignment: &assignment{"name", newString("python")}},
-									{Assignment: &assignment{"namespace", newString("language")}},
+									{Assignment: &assignment{"name", &value{Str: ptr.To("python")}}},
+									{Assignment: &assignment{"namespace", &value{Str: ptr.To("language")}}},
 								}}},
 							{FuncCall: &funcCall{
 								Name: "Req",
 								Arguments: []*value{
-									{Assignment: &assignment{"name", newString("requests")}},
-									{Assignment: &assignment{"namespace", newString("language/python")}},
+									{Assignment: &assignment{"name", &value{Str: ptr.To("requests")}}},
+									{Assignment: &assignment{"namespace", &value{Str: ptr.To("language/python")}}},
 									{Assignment: &assignment{
 										"version", &value{FuncCall: &funcCall{
 											Name: "Eq",
 											Arguments: []*value{
-												{Assignment: &assignment{"value", newString("3.10.10")}},
+												{Assignment: &assignment{"value", &value{Str: ptr.To("3.10.10")}}},
 											},
 										}},
 									}},
@@ -72,15 +89,17 @@ main = runtime
 			}},
 			{"main", &value{Ident: ptr.To("runtime")}},
 		},
-		&atTime,
 	}, script.raw)
+
+	assert.Equal(t, testProject, script.Project())
+	assert.Equal(t, &atTime, script.AtTime())
 }
 
 func TestComplex(t *testing.T) {
 	script, err := Unmarshal([]byte(
-		`at_time = "2000-01-01T00:00:00.000Z"
+		testCheckoutInfo + `
 linux_runtime = solve(
-		at_time = at_time,
+		at_time = TIME,
 		requirements=[
 			Req(name = "python", namespace = "language")
 		],
@@ -88,7 +107,7 @@ linux_runtime = solve(
 )
 
 win_runtime = solve(
-		at_time = at_time,
+		at_time = TIME,
 		requirements=[
 			Req(name = "perl", namespace = "language")
 		],
@@ -107,42 +126,43 @@ main = merge(
 	atTime := time.Time(atTimeStrfmt)
 
 	assert.Equal(t, &rawBuildScript{
-		[]*assignment{
+		Info: ptr.To(testCheckoutInfo[2 : len(testCheckoutInfo)-3]),
+		Assignments: []*assignment{
 			{"linux_runtime", &value{
 				FuncCall: &funcCall{"solve", []*value{
-					{Assignment: &assignment{"at_time", &value{Ident: ptr.To(`at_time`)}}},
+					{Assignment: &assignment{"at_time", &value{Ident: ptr.To(`TIME`)}}},
 					{Assignment: &assignment{
 						"requirements", &value{List: &[]*value{
 							{FuncCall: &funcCall{
 								Name: "Req",
 								Arguments: []*value{
-									{Assignment: &assignment{"name", newString("python")}},
-									{Assignment: &assignment{"namespace", newString("language")}},
+									{Assignment: &assignment{"name", &value{Str: ptr.To("python")}}},
+									{Assignment: &assignment{"namespace", &value{Str: ptr.To("language")}}},
 								},
 							}},
 						}},
 					}},
 					{Assignment: &assignment{
-						"platforms", &value{List: &[]*value{{Str: ptr.To(`"67890"`)}}},
+						"platforms", &value{List: &[]*value{{Str: ptr.To(`67890`)}}},
 					}},
 				}},
 			}},
 			{"win_runtime", &value{
 				FuncCall: &funcCall{"solve", []*value{
-					{Assignment: &assignment{"at_time", &value{Ident: ptr.To(`at_time`)}}},
+					{Assignment: &assignment{"at_time", &value{Ident: ptr.To(`TIME`)}}},
 					{Assignment: &assignment{
 						"requirements", &value{List: &[]*value{
 							{FuncCall: &funcCall{
 								Name: "Req",
 								Arguments: []*value{
-									{Assignment: &assignment{"name", newString("perl")}},
-									{Assignment: &assignment{"namespace", newString("language")}},
+									{Assignment: &assignment{"name", &value{Str: ptr.To("perl")}}},
+									{Assignment: &assignment{"namespace", &value{Str: ptr.To("language")}}},
 								},
 							}},
 						}},
 					}},
 					{Assignment: &assignment{
-						"platforms", &value{List: &[]*value{{Str: ptr.To(`"12345"`)}}},
+						"platforms", &value{List: &[]*value{{Str: ptr.To(`12345`)}}},
 					}},
 				}},
 			}},
@@ -152,13 +172,18 @@ main = merge(
 					{FuncCall: &funcCall{"tar_installer", []*value{{Ident: ptr.To("linux_runtime")}}}},
 				}}}},
 		},
-		&atTime,
 	}, script.raw)
+
+	assert.Equal(t, testProject, script.Project())
+	assert.Equal(t, &atTime, script.AtTime())
 }
 
-const buildscriptWithComplexVersions = `at_time = "2023-04-27T17:30:05.999Z"
+func TestComplexVersions(t *testing.T) {
+	checkoutInfo := checkoutInfoString(testProject, "2023-04-27T17:30:05.999Z")
+	script, err := Unmarshal([]byte(
+		checkoutInfo + `
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = ["96b7e6f2-bebf-564c-bc1c-f04482398f38", "96b7e6f2-bebf-564c-bc1c-f04482398f38"],
 	requirements = [
 		Req(name = "python", namespace = "language"),
@@ -168,10 +193,8 @@ runtime = solve(
 	solver_version = 0
 )
 
-main = runtime`
-
-func TestComplexVersions(t *testing.T) {
-	script, err := Unmarshal([]byte(buildscriptWithComplexVersions))
+main = runtime
+`))
 	require.NoError(t, err)
 
 	atTimeStrfmt, err := strfmt.ParseDateTime("2023-04-27T17:30:05.999Z")
@@ -179,14 +202,15 @@ func TestComplexVersions(t *testing.T) {
 	atTime := time.Time(atTimeStrfmt)
 
 	assert.Equal(t, &rawBuildScript{
-		[]*assignment{
+		Info: ptr.To(checkoutInfo[2 : len(checkoutInfo)-3]),
+		Assignments: []*assignment{
 			{"runtime", &value{
 				FuncCall: &funcCall{"solve", []*value{
-					{Assignment: &assignment{"at_time", &value{Ident: ptr.To(`at_time`)}}},
+					{Assignment: &assignment{"at_time", &value{Ident: ptr.To(`TIME`)}}},
 					{Assignment: &assignment{
 						"platforms", &value{List: &[]*value{
-							{Str: ptr.To(`"96b7e6f2-bebf-564c-bc1c-f04482398f38"`)},
-							{Str: ptr.To(`"96b7e6f2-bebf-564c-bc1c-f04482398f38"`)},
+							{Str: ptr.To(`96b7e6f2-bebf-564c-bc1c-f04482398f38`)},
+							{Str: ptr.To(`96b7e6f2-bebf-564c-bc1c-f04482398f38`)},
 						}},
 					}},
 					{Assignment: &assignment{
@@ -194,20 +218,20 @@ func TestComplexVersions(t *testing.T) {
 							{FuncCall: &funcCall{
 								Name: "Req",
 								Arguments: []*value{
-									{Assignment: &assignment{"name", newString("python")}},
-									{Assignment: &assignment{"namespace", newString("language")}},
+									{Assignment: &assignment{"name", &value{Str: ptr.To("python")}}},
+									{Assignment: &assignment{"namespace", &value{Str: ptr.To("language")}}},
 								},
 							}},
 							{FuncCall: &funcCall{
 								Name: "Req",
 								Arguments: []*value{
-									{Assignment: &assignment{"name", newString("requests")}},
-									{Assignment: &assignment{"namespace", newString("language/python")}},
+									{Assignment: &assignment{"name", &value{Str: ptr.To("requests")}}},
+									{Assignment: &assignment{"namespace", &value{Str: ptr.To("language/python")}}},
 									{Assignment: &assignment{
 										"version", &value{FuncCall: &funcCall{
 											Name: "Eq",
 											Arguments: []*value{
-												{Assignment: &assignment{Key: "value", Value: newString("3.10.10")}},
+												{Assignment: &assignment{Key: "value", Value: &value{Str: ptr.To("3.10.10")}}},
 											},
 										}},
 									}},
@@ -216,8 +240,8 @@ func TestComplexVersions(t *testing.T) {
 							{FuncCall: &funcCall{
 								Name: "Req",
 								Arguments: []*value{
-									{Assignment: &assignment{"name", newString("argparse")}},
-									{Assignment: &assignment{"namespace", newString("language/python")}},
+									{Assignment: &assignment{"name", &value{Str: ptr.To("argparse")}}},
+									{Assignment: &assignment{"namespace", &value{Str: ptr.To("language/python")}}},
 									{Assignment: &assignment{
 										"version", &value{FuncCall: &funcCall{
 											Name: "And",
@@ -225,13 +249,13 @@ func TestComplexVersions(t *testing.T) {
 												{Assignment: &assignment{Key: "left", Value: &value{FuncCall: &funcCall{
 													Name: "Gt",
 													Arguments: []*value{
-														{Assignment: &assignment{Key: "value", Value: newString("1.0")}},
+														{Assignment: &assignment{Key: "value", Value: &value{Str: ptr.To("1.0")}}},
 													},
 												}}}},
 												{Assignment: &assignment{Key: "right", Value: &value{FuncCall: &funcCall{
 													Name: "Lt",
 													Arguments: []*value{
-														{Assignment: &assignment{Key: "value", Value: newString("2.0")}},
+														{Assignment: &assignment{Key: "value", Value: &value{Str: ptr.To("2.0")}}},
 													},
 												}}}},
 											},
@@ -246,6 +270,8 @@ func TestComplexVersions(t *testing.T) {
 			}},
 			{"main", &value{Ident: ptr.To("runtime")}},
 		},
-		&atTime,
 	}, script.raw)
+
+	assert.Equal(t, testProject, script.Project())
+	assert.Equal(t, &atTime, script.AtTime())
 }

@@ -82,7 +82,7 @@ func (b *BuildPlanner) StageCommit(params StageCommitParams) (*Commit, error) {
 	}
 
 	stagedScript := buildscript.New()
-	stagedScript.SetAtTime(time.Time(resp.Commit.AtTime))
+	stagedScript.SetAtTime(time.Time(resp.Commit.AtTime), false)
 	if err := stagedScript.UnmarshalBuildExpression(resp.Commit.Expression); err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}

@@ -99,7 +99,7 @@ func (a *Remove) Run(params RemoveRunParams) (rerr error) {
 	}
 
 	// Update local checkout and source runtime changes
-	if err := reqop_runbit.UpdateAndReload(a.prime, script, oldCommit, locale.Tr("commit_message_added", params.Platform.String()), trigger.TriggerPlatform); err != nil {
+	if err := reqop_runbit.UpdateAndReload(a.prime, script, oldCommit, locale.Tr("commit_message_removed", params.Platform.String()), trigger.TriggerPlatform); err != nil {
 		return errs.Wrap(err, "Failed to update local checkout")
 	}
 

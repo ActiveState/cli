@@ -24,10 +24,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_searchSimple() {
 	cp := ts.Spawn("platforms", "search")
 	expectations := []string{
 		"Darwin",
-		"Darwin",
 		"Linux",
-		"Linux",
-		"Windows",
 		"Windows",
 	}
 	for _, expectation := range expectations {

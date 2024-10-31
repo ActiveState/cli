@@ -4,11 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/go-openapi/strfmt"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
@@ -16,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/sliceutils"
+	"github.com/go-openapi/strfmt"
 )
 
 // At this time, there is no way to ask the Platform for an empty build expression.
@@ -69,15 +68,20 @@ func (b *BuildScript) UnmarshalBuildExpression(data []byte) error {
 	b.raw.Assignments = assignments
 
 	// Extract the 'at_time' from the solve node, if it exists, and change its value to be a
-	// reference to "$at_time", which is how we want to show it in AScript format.
-	if atTimeNode, err := b.getSolveAtTimeValue(); err == nil && atTimeNode.Str != nil && !strings.HasPrefix(strValue(atTimeNode), `$`) {
-		atTime, err := strfmt.ParseDateTime(strValue(atTimeNode))
-		if err != nil {
-			return errs.Wrap(err, "Invalid timestamp: %s", strValue(atTimeNode))
+	// reference to "TIME", which is how we want to show it in AScript format.
+	if atTimeNode, err := b.getSolveAtTimeValue(); err == nil {
+		if atTimeNode.Str != nil && !strings.HasPrefix(*atTimeNode.Str, `$`) {
+			atTime, err := strfmt.ParseDateTime(*atTimeNode.Str)
+			if err != nil {
+				return errs.Wrap(err, "Invalid timestamp: %s", *atTimeNode.Str)
+			}
+			atTimeNode.Str = nil
+			atTimeNode.Ident = ptr.To("TIME")
+			// Preserve the original at_time found in the solve node.
+			b.atTime = ptr.To(time.Time(atTime))
+		} else if atTimeNode.Ident != nil && *atTimeNode.Ident == "at_time" {
+			atTimeNode.Ident = ptr.To("TIME")
 		}
-		atTimeNode.Str = nil
-		atTimeNode.Ident = ptr.To("at_time")
-		b.raw.AtTime = ptr.To(time.Time(atTime))
 	} else if err != nil && !errors.Is(err, errNodeNotFound) {
 		return errs.Wrap(err, "Could not get at_time node")
 	}
@@ -174,7 +178,7 @@ func unmarshalValue(path []string, valueInterface interface{}) (*value, error) {
 		if len(path) >= 2 && path[len(path)-2] == ctxIn || strings.HasPrefix(v, "$") {
 			result.Ident = ptr.To(strings.TrimPrefix(v, "$"))
 		} else {
-			result.Str = ptr.To(strconv.Quote(v)) // quoting is mandatory
+			result.Str = ptr.To(v)
 		}
 
 	case float64:
@@ -339,7 +343,7 @@ func transformVersion(requirements *assignment) *funcCall {
 					{Assignment: &assignment{"value", o.Value}},
 				}
 			case requirementComparatorKey:
-				f.Name = cases.Title(language.English).String(strValue(o.Value))
+				f.Name = cases.Title(language.English).String(*o.Value.Str)
 			}
 		}
 		funcs = append(funcs, f)

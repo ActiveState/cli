@@ -1,19 +1,13 @@
 package buildscript
 
 import (
-	"strconv"
-	"strings"
-	"time"
-
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/brunoga/deep"
 )
 
 // Tagged fields will be filled in by Participle.
 type rawBuildScript struct {
+	Info        *string       `parser:"(RawString @RawString RawString)?"`
 	Assignments []*assignment `parser:"@@+"`
-
-	AtTime *time.Time // set after initial read
 }
 
 // clone is meant to facilitate making modifications to functions at marshal time. The idea is that these modifications
@@ -62,7 +56,7 @@ type assignment struct {
 type value struct {
 	FuncCall *funcCall `parser:"@@"`
 	List     *[]*value `parser:"| '[' (@@ (',' @@)* ','?)? ']'"`
-	Str      *string   `parser:"| @String"` // note: this value is ALWAYS quoted
+	Str      *string   `parser:"| @String"`
 	Number   *float64  `parser:"| (@Float | @Int)"`
 	Null     *null     `parser:"| @@"`
 
@@ -78,16 +72,4 @@ type null struct {
 type funcCall struct {
 	Name      string   `parser:"@Ident"`
 	Arguments []*value `parser:"'(' @@ (',' @@)* ','? ')'"`
-}
-
-// newString is a convenience function for constructing a string value from an unquoted string.
-// Use this instead of &value{Str: ptr.To(strconv.Quote(s))}
-func newString(s string) *value {
-	return &value{Str: ptr.To(strconv.Quote(s))}
-}
-
-// strValue is a convenience function for retrieving an unquoted string from value.
-// Use this instead of strings.Trim(*v.Str, `"`)
-func strValue(v *value) string {
-	return strings.Trim(*v.Str, `"`)
 }

@@ -147,11 +147,23 @@ function error([string] $msg)
     Write-Host $msg -ForegroundColor Red
 }
 
-function setShellOverride {
-    $parentProcess = Get-WmiObject Win32_Process | Where-Object { $_.ProcessId -eq $PID }
-    $parentProcessDetails = Get-WmiObject Win32_Process | Where-Object { $_.ProcessId -eq $parentProcess.ParentProcessId }
-    if ($parentProcessDetails.Name -eq "cmd" -or $parentProcessDetails.Name -eq "cmd.exe") {
-        [System.Environment]::SetEnvironmentVariable("ACTIVESTATE_CLI_SHELL_OVERRIDE", $parentProcessDetails.Name, "Process")
+function setShellOverride
+{
+    # Walk up the process tree to find cmd.exe
+    # If we encounter it we set the shell override
+    $currentPid = $PID
+    while ($currentPid -ne 0)
+    {
+        $process = Get-WmiObject Win32_Process | Where-Object { $_.ProcessId -eq $currentPid }
+        if (!$process) { break }
+
+        if ($process.Name -eq "cmd" -or $process.Name -eq "cmd.exe")
+        {
+            [System.Environment]::SetEnvironmentVariable("ACTIVESTATE_CLI_SHELL_OVERRIDE", $process.Name, "Process")
+            break
+        }
+
+        $currentPid = $process.ParentProcessId
     }
 }
 

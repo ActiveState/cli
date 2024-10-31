@@ -92,7 +92,8 @@ func (r *Refresh) Run(params *Params) error {
 	}
 
 	if !needsUpdate {
-		return locale.NewInputError("refresh_runtime_uptodate")
+		r.out.Notice(locale.T("refresh_runtime_uptodate"))
+		return nil
 	}
 
 	rti, err := runtime_runbit.Update(r.prime, trigger.TriggerRefresh, runtime_runbit.WithoutHeaders(), runtime_runbit.WithIgnoreAsync())

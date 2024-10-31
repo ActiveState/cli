@@ -582,11 +582,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivateBranch() {
 
 	namespace := "ActiveState-CLI/Branches"
 
-	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("activate", namespace, "--branch", "firstbranch")
-	cp.Expect("Activated")
+	cp := ts.Spawn("activate", namespace, "--branch", "firstbranch")
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt) // note: activate always sources the runtime
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }

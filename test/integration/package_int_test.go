@@ -656,11 +656,13 @@ func (suite *PackageIntegrationTestSuite) TestChangeSummaryShowsAddedForUpdate()
 
 	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
 
-	cp = ts.Spawn("install", "jinja2@2.0")
+	timestamp := "--ts=2024-08-15T20:07:00.000Z"
+
+	cp = ts.Spawn("install", "jinja2@2.0", timestamp)
 	cp.Expect("Added: language/python/jinja2")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("install", "jinja2@3.1.4")
+	cp = ts.Spawn("install", "jinja2@3.1.4", timestamp)
 	cp.Expect("Installing jinja2@3.1.4 includes 1 direct dep")
 	cp.Expect("└─ markupsafe@2.1.5")
 	cp.Expect("Updated: language/python/jinja2")

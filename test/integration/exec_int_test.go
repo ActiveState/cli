@@ -8,7 +8,6 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -16,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/termtest"
 )
 
 type ExecIntegrationTestSuite struct {
@@ -176,8 +174,35 @@ func (suite *ExecIntegrationTestSuite) TestExeBatArguments() {
 	inputs := []string{"a<b", "b>a", "hello world", "&whoami", "imnot|apipe", "%NotAppData%", "^NotEscaped", "(NotAGroup)"}
 	outputs := `"` + strings.Join(inputs, `" "`) + `"`
 	cp = ts.SpawnWithOpts(e2e.OptArgs(append([]string{"exec", reportBat, "--"}, inputs...)...))
-	cp.Expect(outputs, termtest.OptExpectTimeout(5*time.Second))
+	cp.Expect(outputs, e2e.RuntimeBuildSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
+}
+
+func (suite *ExecIntegrationTestSuite) TestExec_PATH_and_Path_on_Windows() {
+	suite.OnlyRunForTags(tagsuite.Exec)
+
+	if runtime.GOOS != "windows" {
+		suite.T().Skip("This test is only for windows")
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("exec", "where", "python3")
+	cp.Expect(os.TempDir()) // from runtime's defined PATH
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("exec", "where", "notepad")
+	cp.Expect("notepad.exe") // from OS-defined default Path
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("exec", "does-not-exist")
+	cp.Expect("not found") // neither on PATH nor Path
+	cp.ExpectNotExitCode(0)
 }
 
 func TestExecIntegrationTestSuite(t *testing.T) {

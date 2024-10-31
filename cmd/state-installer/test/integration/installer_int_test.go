@@ -242,7 +242,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallWhileInUse() {
 	cp.Expect("successfully installed", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput()
 	cp.SendLine("state checkout ActiveState/Perl-5.32")
-	cp.Expect("Checked out")
+	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("state shell Perl-5.32")
 	cp.Expect("Activated") // state.exe remains active
 

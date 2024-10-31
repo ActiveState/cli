@@ -70,7 +70,7 @@ func (suite *ManifestIntegrationTestSuite) TestManifest_JSON() {
 }
 
 func (suite *ManifestIntegrationTestSuite) TestManifest_Advanced_Reqs() {
-	suite.OnlyRunForTags(tagsuite.Manifest)
+	suite.OnlyRunForTags(tagsuite.Manifest, tagsuite.BuildScripts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -79,13 +79,17 @@ func (suite *ManifestIntegrationTestSuite) TestManifest_Advanced_Reqs() {
 	cp := ts.Spawn("config", "set", constants.OptinBuildscriptsConfig, "true")
 	cp.ExpectExitCode(0)
 
-	ts.PrepareProject("ActiveState-CLI-Testing/Python-With-Custom-Reqs", "92ac7df2-0b0c-42f5-9b25-75b0cb4063f7")
+	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/ActiveState-CLI-Testing/Python-With-Custom-Reqs?branch=main&commitID=92ac7df2-0b0c-42f5-9b25-75b0cb4063f7
+config_version: 1`) // need config_version to be 1 or more so the migrator does not wipe out our build script
 	bsf := filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName)
-	fileutils.WriteFile(bsf, []byte(fmt.Sprintf(`
-at_time = "2022-07-07T19:51:01.140Z"
+	err := fileutils.WriteFile(bsf, []byte(fmt.Sprintf(
+		"```\n"+
+			"Project: https://platform.activestate.com/ActiveState-CLI-Testing/Python-With-Custom-Reqs?branch=main&commitID=92ac7df2-0b0c-42f5-9b25-75b0cb4063f7\n"+
+			"Time: 2022-07-07T19:51:01.140Z\n"+
+			"```\n"+`
 runtime = state_tool_artifacts_v1(src = sources)
 sources = solve(
-	at_time = at_time,
+	at_time = TIME,
 	requirements = [
 		Req(name = "python", namespace = "language", version = Eq(value = "3.9.13")),
 		Revision(name = "IngWithRevision", revision_id = "%s"),
@@ -94,6 +98,7 @@ sources = solve(
 )
 main = runtime
 `, e2e.CommitIDNotChecked)))
+	suite.Require().NoError(err)
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("manifest"),
