@@ -135,7 +135,7 @@ var (
 	NamespaceBundle   = NamespaceType{"bundle", "bundles", NamespaceBundlesMatch}
 	NamespaceLanguage = NamespaceType{"language", "", NamespaceLanguageMatch}
 	NamespacePlatform = NamespaceType{"platform", "", NamespacePlatformMatch}
-	NamespaceOrg      = NamespaceType{"org", "private/", NamespaceOrgMatch}
+	NamespaceOrg      = NamespaceType{"org", "private", NamespaceOrgMatch}
 	NamespaceRaw      = NamespaceType{"raw", "", ""}
 	NamespaceBlank    = NamespaceType{"", "", ""}
 )
@@ -229,7 +229,7 @@ func NewNamespaceOrg(orgName, suffix string) Namespace {
 	}
 	return Namespace{
 		nsType: NamespaceOrg,
-		value:  NamespaceOrg.prefix + "/" + orgName,
+		value:  NamespaceOrg.prefix + "/" + ns,
 	}
 }
 
