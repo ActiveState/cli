@@ -699,28 +699,3 @@ func TestCommonParentPath(t *testing.T) {
 		})
 	}
 }
-
-func TestCommonParentPathx(t *testing.T) {
-	tests := []struct {
-		a, b     string
-		expected string
-	}{
-		{"./folder1/file.txt", "./folder1/subfolder/file.txt", "./folder1"},
-		{"./folder1/file.txt", "./folder2/file.txt", "."},
-		{"./folder1/subfolder1/file.txt", "./folder1/subfolder2/file.txt", "./folder1"},
-		{"./folder1/", "./folder1/subfolder/", "./folder1"},
-		{"./folder1/file.txt", "./folder1/file.txt", "./folder1/file.txt"},
-		{"./folder1/file.txt", "./folder1/", "./folder1"},
-		{"./folder1/file.txt", "./folder2/", "."},
-		{"", "./folder1/file.txt", ""},
-		{"./folder1/file.txt", "", ""},
-		{"", "", ""},
-	}
-
-	for x, test := range tests {
-		result := commonParentPath(test.a, test.b)
-		if result != test.expected {
-			t.Errorf("%d: commonParentPath(%q, %q) = %q; expected %q", x, test.a, test.b, result, test.expected)
-		}
-	}
-}
