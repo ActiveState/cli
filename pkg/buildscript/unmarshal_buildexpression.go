@@ -2,6 +2,7 @@ package buildscript
 
 import (
 	"encoding/json"
+	"errors"
 	"sort"
 	"strconv"
 	"strings"
@@ -77,21 +78,11 @@ func (b *BuildScript) UnmarshalBuildExpression(data []byte) error {
 		atTimeNode.Str = nil
 		atTimeNode.Ident = ptr.To("at_time")
 		b.raw.AtTime = ptr.To(time.Time(atTime))
-	} else if err != nil {
+	} else if err != nil && !errors.Is(err, errNodeNotFound) {
 		return errs.Wrap(err, "Could not get at_time node")
 	}
 
-	// If the requirements are in legacy object form, e.g.
-	//   requirements = [{"name": "<name>", "namespace": "<name>"}, {...}, ...]
-	// then transform them into function call form for the AScript format, e.g.
-	//   requirements = [Req(name = "<name>", namespace = "<name>"), Req(...), ...]
-	requirements, err := b.getRequirementsNode()
-	if err != nil {
-		return errs.Wrap(err, "Could not get requirements node")
-	}
-	if isLegacyRequirementsList(requirements) {
-		requirements.List = transformRequirements(requirements).List
-	}
+	b.raw.transformToRequirementFuncs()
 
 	return nil
 }
@@ -180,7 +171,7 @@ func unmarshalValue(path []string, valueInterface interface{}) (*value, error) {
 		result.List = &values
 
 	case string:
-		if sliceutils.Contains(path, ctxIn) || strings.HasPrefix(v, "$") {
+		if len(path) >= 2 && path[len(path)-2] == ctxIn || strings.HasPrefix(v, "$") {
 			result.Ident = ptr.To(strings.TrimPrefix(v, "$"))
 		} else {
 			result.Str = ptr.To(strconv.Quote(v)) // quoting is mandatory
@@ -282,15 +273,9 @@ func unmarshalIn(path []string, inValue interface{}) (*value, error) {
 	return in, nil
 }
 
-// isLegacyRequirementsList returns whether or not the given requirements list is in the legacy
-// object format, such as
-//
-//	[
-//		{"name": "<name>", "namespace": "<namespace>"},
-//		...,
-//	]
-func isLegacyRequirementsList(value *value) bool {
-	return len(*value.List) > 0 && (*value.List)[0].Object != nil
+// isObjectList returns whether or not the given value is a list containing objects
+func isObjectList(value *value) bool {
+	return value.List != nil && len(*value.List) > 0 && (*value.List)[0].Object != nil
 }
 
 // transformRequirements transforms a build expression list of requirements in object form into a
@@ -381,4 +366,43 @@ func transformVersion(requirements *assignment) *funcCall {
 		f = &funcCall{andFuncName, args}
 	}
 	return f
+}
+
+type requirementFunction struct {
+	FunctionName         string
+	RequirementArguments []string
+}
+
+var requirementFunctions = []requirementFunction{
+	{solveFuncName, []string{requirementsKey}},
+	{"ingredient", []string{"build_deps", "runtime_deps", "test_deps"}},
+}
+
+func (r *rawBuildScript) transformToRequirementFuncs() {
+	// Iterate over the function calls within the buildscript
+	for _, functionCall := range r.FuncCalls() {
+
+		// Find a matching requirement function
+		for _, reqFunction := range requirementFunctions {
+			if functionCall.Name != reqFunction.FunctionName {
+				continue
+			}
+
+			// Find a matching requirement argument
+			for _, arg := range functionCall.Arguments {
+				if arg.Assignment == nil {
+					continue
+				}
+				for _, reqArgument := range reqFunction.RequirementArguments {
+					if arg.Assignment.Key == reqArgument {
+
+						// Convert the argument to requirement functions
+						if isObjectList(arg.Assignment.Value) {
+							arg.Assignment.Value.List = transformRequirements(arg.Assignment.Value).List
+						}
+					}
+				}
+			}
+		}
+	}
 }
