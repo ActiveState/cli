@@ -20,6 +20,7 @@ import (
 	buildplanner_runbit "github.com/ActiveState/cli/internal/runbits/buildplanner"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -127,6 +128,9 @@ func (d *Download) Run(params *DownloadParams) (rerr error) {
 }
 
 func (d *Download) downloadArtifact(artifact *buildplan.Artifact, targetDir string) (rerr error) {
+	if artifact.Status != types.ArtifactSucceeded {
+		return locale.NewInputError("err_artifact_dl_status", "Could not download artifact {{.V0}}, status is {{.V1}}", artifact.Name(), artifact.Status)
+	}
 	artifactURL, err := url.Parse(artifact.URL)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse artifact URL %s.", artifact.URL)
