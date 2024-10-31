@@ -185,7 +185,7 @@ func (i *IngredientCall) resolveDependenciesByKey(key string, typ request.Depend
 			request.Dependency{
 				Name:                req.Name,
 				Namespace:           req.Namespace,
-				VersionRequirements: model.BuildPlannerVersionConstraintsToString(req.VersionRequirement),
+				VersionRequirements: model.VersionRequirementsToString(req.VersionRequirement, true),
 				Type:                typ,
 			},
 			[]request.Dependency{},
