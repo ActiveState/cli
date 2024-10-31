@@ -10,7 +10,7 @@ func NewHashGlobs(wd string, globs []string) *HashGlobs {
 }
 
 func (c *HashGlobs) Query() string {
-	return `query(wd: String!, $globs: [String!]!) {
+	return `query($wd: String!, $globs: [String!]!) {
 	hashGlobs(wd: $wd, globs: $globs)  {
 		hash
 		files {
