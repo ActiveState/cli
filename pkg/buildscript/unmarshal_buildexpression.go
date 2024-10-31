@@ -373,11 +373,15 @@ type requirementFunction struct {
 	RequirementArguments []string
 }
 
+// requirementFunctions holds the function names and arguments that hold objects which need to be translated to
+// requirement functions (eg. `solve(requirements=..)`).
 var requirementFunctions = []requirementFunction{
 	{solveFuncName, []string{requirementsKey}},
 	{"ingredient", []string{"build_deps", "runtime_deps", "test_deps"}},
 }
 
+// transformToRequirementFuncs will look object assignments that need to be converted to requirement functions
+// this works off of the defined requirementFunctions above.
 func (r *rawBuildScript) transformToRequirementFuncs() {
 	// Iterate over the function calls within the buildscript
 	for _, functionCall := range r.FuncCalls() {

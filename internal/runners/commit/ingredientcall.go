@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -238,6 +239,7 @@ func (i *IngredientCall) resolveDependenciesByKey(key string, typ request.Depend
 	return deps, nil
 }
 
+// resolveFeatures turns ingredient features into the appropriate types used by our models
 func (i *IngredientCall) resolveFeatures() ([]request.PublishVariableFeature, error) {
 	features := []request.PublishVariableFeature{}
 	bsFeatures := i.funcCall.Argument("features")

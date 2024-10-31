@@ -104,6 +104,7 @@ type ExampleDepVariables struct {
 	Dependencies []PublishVariableDep `yaml:"dependencies,omitempty"`
 }
 
+// MarshalJSON automatically takes the name and namespace and turns it into the path argument that the API expects
 func (p PublishVariables) MarshalJSON() ([]byte, error) {
 	if p.Path == "" {
 		if p.Name == "" || p.Namespace == "" {

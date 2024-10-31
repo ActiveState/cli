@@ -1249,6 +1249,8 @@ func globPath(path string) string {
 	return result
 }
 
+// CommonParentPath will return the common parent path of the given paths, provided they share a common path.
+// If they do not all share a single common path the result will be empty.
 func CommonParentPath(paths []string) string {
 	if len(paths) == 0 {
 		return ""

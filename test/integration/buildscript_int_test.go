@@ -99,12 +99,14 @@ wheel = make_wheel(
 main = wheel
 `, platformID))
 
+	// Prepare sample ingredient source files
 	root := environment.GetRootPathUnsafe()
 	sampleSource := filepath.Join(root, "test", "integration", "testdata", "sample_ingredient")
 	sampleTarget := filepath.Join(ts.Dirs.Work, "sample_ingredient")
 	suite.Require().NoError(fileutils.Mkdir(sampleTarget))
 	suite.Require().NoError(fileutils.CopyFiles(sampleSource, sampleTarget))
 
+	// Create a new commit, which will use the source files to create an ingredient if it doesn't already exist
 	cp := ts.Spawn("commit")
 	cp.ExpectExitCode(0, e2e.RuntimeSolvingTimeoutOpt)
 
@@ -138,15 +140,18 @@ main = wheel
 		return nil
 	}, e2e.RuntimeBuildSourcingTimeout))
 
+	// Ensure build didn't fail
 	suite.False(out.HasFailedArtifacts)
 	suite.Empty(out.Platforms[0].Artifacts[0].Errors)
 
+	// Download the wheel artifact that was produced from our source ingredient
 	cp = ts.Spawn("artifacts", "dl", "--output=json", out.Platforms[0].Artifacts[0].ID)
 	cp.ExpectExitCode(0)
 
 	var path string
 	suite.Require().NoError(json.Unmarshal(AssertValidJSON(suite.T(), cp), &path))
 
+	// Read wheel archive and ensure it contains the expected files
 	zipReader, err := zip.OpenReader(path)
 	suite.Require().NoError(err)
 	defer zipReader.Close()
