@@ -634,3 +634,93 @@ func TestIsWritableDir(t *testing.T) {
 		t.Fatalf("Path should not be writable: %s", pathWithNoPermission)
 	}
 }
+
+func TestCommonParentPath(t *testing.T) {
+	tests := []struct {
+		paths    []string
+		expected string
+	}{
+		{
+			paths:    []string{"./folder1/file.txt", "./folder1/subfolder/file.txt"},
+			expected: "./folder1",
+		},
+		{
+			paths:    []string{"./folder1/file.txt", "./folder2/file.txt"},
+			expected: ".",
+		},
+		{
+			paths:    []string{"./folder1/subfolder1/file.txt", "./folder1/subfolder2/file.txt"},
+			expected: "./folder1",
+		},
+		{
+			paths:    []string{"./folder1/", "./folder1/subfolder/"},
+			expected: "./folder1",
+		},
+		{
+			paths:    []string{"./folder1/file.txt", "./folder1/file.txt"},
+			expected: "./folder1/file.txt",
+		},
+		{
+			paths:    []string{"./folder1/file.txt", "./folder1/"},
+			expected: "./folder1",
+		},
+		{
+			paths:    []string{"./folder1/file.txt", "./folder2/"},
+			expected: ".",
+		},
+		{
+			paths:    []string{"./folder1/file.txt", "./folder1/subfolder/file.txt", "./folder1/subfolder2/file.txt"},
+			expected: "./folder1",
+		},
+		{
+			paths:    []string{"./folder1/file.txt", "./folder1/subfolder/file.txt", "./folder2/file.txt"},
+			expected: ".",
+		},
+		{
+			paths:    []string{"./folder1/file.txt", "./folder1/subfolder/file.txt", "./folder1/subfolder2/file.txt", "./folder1/subfolder3/file.txt"},
+			expected: "./folder1",
+		},
+		{
+			paths:    []string{"./folder1/file.txt", "./folder1/file.txt", "./folder1/file.txt"},
+			expected: "./folder1/file.txt",
+		},
+		{
+			paths:    []string{},
+			expected: "",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(filepath.Join(test.paths...), func(t *testing.T) {
+			result := CommonParentPath(test.paths)
+			if result != test.expected {
+				t.Errorf("CommonParentPath(%v) = %q; expected %q", test.paths, result, test.expected)
+			}
+		})
+	}
+}
+
+func TestCommonParentPathx(t *testing.T) {
+	tests := []struct {
+		a, b     string
+		expected string
+	}{
+		{"./folder1/file.txt", "./folder1/subfolder/file.txt", "./folder1"},
+		{"./folder1/file.txt", "./folder2/file.txt", "."},
+		{"./folder1/subfolder1/file.txt", "./folder1/subfolder2/file.txt", "./folder1"},
+		{"./folder1/", "./folder1/subfolder/", "./folder1"},
+		{"./folder1/file.txt", "./folder1/file.txt", "./folder1/file.txt"},
+		{"./folder1/file.txt", "./folder1/", "./folder1"},
+		{"./folder1/file.txt", "./folder2/", "."},
+		{"", "./folder1/file.txt", ""},
+		{"./folder1/file.txt", "", ""},
+		{"", "", ""},
+	}
+
+	for x, test := range tests {
+		result := commonParentPath(test.a, test.b)
+		if result != test.expected {
+			t.Errorf("%d: commonParentPath(%q, %q) = %q; expected %q", x, test.a, test.b, result, test.expected)
+		}
+	}
+}

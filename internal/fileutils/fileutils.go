@@ -1248,3 +1248,37 @@ func globPath(path string) string {
 	}
 	return result
 }
+
+func CommonParentPath(paths []string) string {
+	if len(paths) == 0 {
+		return ""
+	}
+
+	common := paths[0]
+	for _, p := range paths[1:] {
+		common = commonParentPath(common, p)
+		if common == "" {
+			return ""
+		}
+	}
+
+	return common
+}
+
+func commonParentPath(a, b string) string {
+	common := ""
+	a = filepath.ToSlash(a)
+	b = filepath.ToSlash(b)
+	as := strings.Split(a, "/")
+	bs := strings.Split(b, "/")
+	max := min(len(as), len(bs))
+	for x := 1; x <= max; x++ {
+		ac := strings.Join(as[:x], "/")
+		bc := strings.Join(bs[:x], "/")
+		if ac != bc {
+			return common
+		}
+		common = ac
+	}
+	return common
+}
