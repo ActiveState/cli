@@ -49,6 +49,8 @@ func (suite *BuildScriptIntegrationTestSuite) TestBuildScript_NeedsReset() {
 }
 
 func (suite *BuildScriptIntegrationTestSuite) TestBuildScript_IngredientFunc() {
+	suite.T().Skip("Please enable once ingredient publishing via buildscript on the API is live")
+	
 	suite.OnlyRunForTags(tagsuite.BuildScripts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
