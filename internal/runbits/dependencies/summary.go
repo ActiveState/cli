@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/output/renderers"
 	"github.com/ActiveState/cli/pkg/buildplan"
 )
 
@@ -27,12 +28,8 @@ func OutputSummary(out output.Outputer, directDependencies buildplan.Artifacts) 
 	out.Notice("") // blank line
 	out.Notice(locale.Tl("setting_up_dependencies", "  Setting up the following dependencies:"))
 
+	items := make([]string, len(ingredients))
 	for i, ingredient := range ingredients {
-		prefix := "  " + output.TreeMid
-		if i == len(ingredients)-1 {
-			prefix = "  " + output.TreeEnd
-		}
-
 		subDependencies := ingredient.RuntimeDependencies(true)
 		if _, isCommon := commonDependencies[ingredient.IngredientID]; !isCommon {
 			// If the ingredient is itself not a common sub-dependency; filter out any common sub dependencies so we don't
@@ -44,10 +41,9 @@ func OutputSummary(out output.Outputer, directDependencies buildplan.Artifacts) 
 			subdepLocale = locale.Tl("summary_subdeps", "([ACTIONABLE]{{.V0}}[/RESET] sub-dependencies)", strconv.Itoa(numSubs))
 		}
 
-		item := fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET] %s", ingredient.Name, ingredient.Version, subdepLocale)
-
-		out.Notice(fmt.Sprintf("[DISABLED]%s[/RESET] %s", prefix, item))
+		items[i] = fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET] %s", ingredient.Name, ingredient.Version, subdepLocale)
 	}
 
+	out.Notice(renderers.NewBulletList("  ", renderers.BulletTree, items))
 	out.Notice("") // blank line
 }

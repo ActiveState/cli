@@ -5,14 +5,14 @@ import (
 	"strings"
 )
 
-type CroppedLines []CroppedLine
+type WrappedLines []WrappedLine
 
-type CroppedLine struct {
+type WrappedLine struct {
 	Line   string
 	Length int
 }
 
-func (c CroppedLines) String() string {
+func (c WrappedLines) String() string {
 	var result string
 	for _, crop := range c {
 		result = result + crop.Line
@@ -22,8 +22,9 @@ func (c CroppedLines) String() string {
 }
 
 var indentRegexp = regexp.MustCompile(`^([ ]+)`)
+var isLinkRegexp = regexp.MustCompile(`\s*(\[[^\]]+\])?https?://`)
 
-func GetCroppedText(text string, maxLen int, includeLineEnds bool) CroppedLines {
+func Wrap(text string, maxLen int, includeLineEnds bool, continuation string) WrappedLines {
 	indent := ""
 	if indentMatch := indentRegexp.FindStringSubmatch(text); indentMatch != nil {
 		indent = indentMatch[0]
@@ -32,11 +33,13 @@ func GetCroppedText(text string, maxLen int, includeLineEnds bool) CroppedLines 
 		}
 	}
 
-	entries := make([]CroppedLine, 0)
+	maxLen -= len(continuation)
+
+	entries := make([]WrappedLine, 0)
 	colorCodes := colorRx.FindAllStringSubmatchIndex(text, -1)
 
 	isLineEnd := false
-	entry := CroppedLine{}
+	entry := WrappedLine{}
 	for pos, amend := range text {
 		inColorTag := inRange(pos, colorCodes)
 
@@ -69,8 +72,8 @@ func GetCroppedText(text string, maxLen int, includeLineEnds bool) CroppedLines 
 					}
 				}
 				// Extract the word from the current line if it doesn't start the line.
-				if i > 0 && i < len(entry.Line)-1 {
-					wrapped = indent + entry.Line[i:]
+				if i > 0 && i < len(entry.Line)-1 && !isLinkRegexp.MatchString(entry.Line[i:]) {
+					wrapped = indent + continuation + entry.Line[i:]
 					entry.Line = entry.Line[:i]
 					entry.Length -= wrappedLength
 					isLineEnd = true // emulate for wrapping purposes
@@ -79,11 +82,11 @@ func GetCroppedText(text string, maxLen int, includeLineEnds bool) CroppedLines 
 				}
 			}
 			entries = append(entries, entry)
-			entry = CroppedLine{Line: wrapped, Length: wrappedLength}
+			entry = WrappedLine{Line: wrapped, Length: wrappedLength}
 		}
 
 		if isLineEnd && includeLineEnds {
-			entries = append(entries, CroppedLine{"\n", 1})
+			entries = append(entries, WrappedLine{"\n", 1})
 		}
 	}
 

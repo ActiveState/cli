@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/output/renderers"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/buildplan"
 )
@@ -107,12 +108,8 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 	//   └─ name@oldVersion → name@newVersion (Updated)
 	// depending on whether or not it has subdependencies, and whether or not showUpdatedPackages is
 	// `true`.
+	items := make([]string, len(directDependencies))
 	for i, ingredient := range directDependencies {
-		prefix := output.TreeMid
-		if i == len(directDependencies)-1 {
-			prefix = output.TreeEnd
-		}
-
 		// Retrieve runtime dependencies, and then filter out any dependencies that are common between all added ingredients.
 		runtimeDeps := ingredient.RuntimeDependencies(true)
 		runtimeDeps = runtimeDeps.Filter(func(i *buildplan.Ingredient) bool { _, ok := commonDependencies[i.IngredientID]; return !ok })
@@ -130,8 +127,9 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 			item = fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET] → %s (%s)", oldVersion.Name, oldVersion.Version, item, locale.Tl("updated", "updated"))
 		}
 
-		out.Notice(fmt.Sprintf("  [DISABLED]%s[/RESET] %s", prefix, item))
+		items[i] = item
 	}
 
+	out.Notice(renderers.NewBulletList("  ", renderers.BulletTree, items))
 	out.Notice("") // blank line
 }
