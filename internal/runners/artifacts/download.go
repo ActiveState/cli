@@ -174,7 +174,11 @@ func (d *Download) downloadArtifact(artifact *buildplan.Artifact, targetDir stri
 		return errs.Wrap(err, "Writing download to target file %s failed", downloadPath)
 	}
 
-	d.out.Notice(locale.Tl("msg_download_success", "[SUCCESS]Downloaded {{.V0}} to {{.V1}}[/RESET]", artifact.Name(), downloadPath))
+	if d.out.Type().IsStructured() {
+		d.out.Print(output.Structured(downloadPath))
+	} else {
+		d.out.Notice(locale.Tl("msg_download_success", "[SUCCESS]Downloaded {{.V0}} to {{.V1}}[/RESET]", artifact.Name(), downloadPath))
+	}
 
 	return nil
 }
