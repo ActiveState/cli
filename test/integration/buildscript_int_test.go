@@ -49,8 +49,6 @@ func (suite *BuildScriptIntegrationTestSuite) TestBuildScript_NeedsReset() {
 }
 
 func (suite *BuildScriptIntegrationTestSuite) TestBuildScript_IngredientFunc() {
-	suite.T().Skip("Since this test creates commits and thus triggers new builds we should avoid running it too often")
-
 	suite.OnlyRunForTags(tagsuite.BuildScripts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -61,10 +59,9 @@ func (suite *BuildScriptIntegrationTestSuite) TestBuildScript_IngredientFunc() {
 	ts.LoginAsPersistentUser()
 
 	// Replace with commented out code when ingredient publishing via buildscripts is live
-	ts.PrepareActiveStateYAML(fmt.Sprintf("project: %s/%s?commitID=%s\nconfig_version: %d\n",
-		"https://pr14847.activestate.build", "ActiveState-CLI/Empty", "ab2517ff-c9b4-4ffa-a5d5-58c20557c98e", projectfile.ConfigVersion))
-	// ts.PrepareActiveStateYAML(fmt.Sprintf("project: %s/%s?commitID=%s\nconfig_version: %d\n",
-	//	"https://"+constants.DefaultAPIHost, "ActiveState-CLI/Empty", "6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8", projectfile.ConfigVersion))
+	projectURL := fmt.Sprintf("https://%s/%s?commitID=%s", "pr14847.activestate.build", "ActiveState-CLI/Empty", "ab2517ff-c9b4-4ffa-a5d5-58c20557c98e")
+	// projectURL := fmt.Sprintf("https://%s/%s?commitID=%s", constants.DefaultAPIHost, "ActiveState-CLI/Empty", "6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8")
+	ts.PrepareActiveStateYAML(fmt.Sprintf("project: %s\nconfig_version: %d\n", projectURL, projectfile.ConfigVersion))
 
 	var platformID string
 	switch runtime.GOOS {
@@ -76,8 +73,12 @@ func (suite *BuildScriptIntegrationTestSuite) TestBuildScript_IngredientFunc() {
 		platformID = constants.LinuxBit64UUID
 	}
 
+	denoter := "```"
 	ts.PrepareBuildScript(fmt.Sprintf(`
-at_time = "2024-10-30T21:31:33.000Z"
+%s
+Project: %s
+Time: "2024-10-30T21:31:33.000Z"
+%s
 wheel = make_wheel(
 	at_time = at_time,
 	src = tag(
@@ -97,7 +98,7 @@ wheel = make_wheel(
 )
 
 main = wheel
-`, platformID))
+`, denoter, projectURL, denoter, platformID))
 
 	// Prepare sample ingredient source files
 	root := environment.GetRootPathUnsafe()
@@ -114,7 +115,7 @@ main = wheel
 	// If this fails then there's likely an issue with calculating the file hash, or checking whether an ingredient
 	// already exists with the given hash.
 	cp = ts.Spawn("commit")
-	cp.Expect("No new changes to commit")
+	cp.Expect("no new changes")
 	cp.ExpectExit()
 
 	// Commit should've given us the hash

@@ -83,7 +83,7 @@ func (i *IngredientCall) Resolve() error {
 		if err != nil {
 			return errs.Wrap(err, "Unable to determine latest revision time")
 		}
-		i.script.SetAtTime(latest)
+		i.script.SetAtTime(latest, true)
 	}
 
 	// Add/update arguments on the buildscript ingredient function call
