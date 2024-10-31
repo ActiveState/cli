@@ -103,6 +103,23 @@ type ExampleDepVariables struct {
 	Dependencies []PublishVariableDep `yaml:"dependencies,omitempty"`
 }
 
+func (p PublishVariables) MarshalJSON() ([]byte, error) {
+	if p.Path == "" {
+		if p.Name == "" || p.Namespace == "" {
+			return nil, errs.New("either Path of Name and Namespace are required")
+		}
+		p.Path = fmt.Sprintf("%s/%s", p.Namespace, p.Name)
+	}
+	// prevent recursion
+	type Alias PublishVariables
+	alias := &struct {
+		Alias
+	}{
+		Alias: (Alias)(p),
+	}
+	return json.Marshal(alias)
+}
+
 func (p PublishVariables) MarshalYaml(includeExample bool) ([]byte, error) {
 	v, err := yamlcomment.Marshal(p)
 	if err != nil {
