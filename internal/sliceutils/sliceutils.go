@@ -134,3 +134,16 @@ func EqualValues[S ~[]E, E cmp.Ordered](a, b S) bool {
 
 	return true
 }
+
+// Cast allows casting of a slice of any type to a slice of a specific type.
+func Cast[T any](slice []any) ([]T, bool) {
+	result := []T{}
+	for _, s := range slice {
+		v, ok := s.(T)
+		if !ok {
+			return nil, false
+		}
+		result = append(result, v)
+	}
+	return result, true
+}
