@@ -7,6 +7,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/brunoga/deep"
 )
 
@@ -120,11 +122,13 @@ func (f *FuncCall) UnsetArgument(k string) {
 
 // Value turns a standard type into a buildscript compatible type
 // Intended for use with functions like SetArgument.
-func Value[T string | float64 | []string | []float64](inputv T) *value {
+func Value[T string | int | float64 | []string | []float64](inputv T) *value {
 	v := &value{}
 	switch vt := any(inputv).(type) {
 	case string:
 		v.Str = &vt
+	case int:
+		v.Number = ptr.To(float64(vt))
 	case float64:
 		v.Number = &vt
 	case []string:
@@ -159,6 +163,12 @@ func exportValue(v *value) any {
 		result := []any{}
 		for _, value := range *v.List {
 			result = append(result, exportValue(value))
+		}
+		if v, ok := sliceutils.Cast[string](result); ok {
+			return v
+		}
+		if v, ok := sliceutils.Cast[float64](result); ok {
+			return v
 		}
 		return result
 	case v.Str != nil:
