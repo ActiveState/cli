@@ -6,10 +6,11 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/rtutils"
+	"github.com/bmatcuk/doublestar/v4"
 	"github.com/cespare/xxhash"
 	"github.com/patrickmn/go-cache"
 )
@@ -21,6 +22,7 @@ type fileCache interface {
 
 type FileHasher struct {
 	cache fileCache
+	mutex *sync.Mutex
 }
 
 type hashedFile struct {
@@ -32,15 +34,16 @@ type hashedFile struct {
 func NewFileHasher() *FileHasher {
 	return &FileHasher{
 		cache: cache.New(24*time.Hour, 24*time.Hour),
+		mutex: &sync.Mutex{},
 	}
 }
 
 func (fh *FileHasher) HashFiles(wd string, globs []string) (_ string, _ []hashedFile, rerr error) {
-	sort.Strings(globs) // ensure consistent ordering
+	fs := os.DirFS(wd)
 	hashedFiles := []hashedFile{}
-	hasher := xxhash.New()
+	hashes := []string{}
 	for _, glob := range globs {
-		files, err := filepath.Glob(glob)
+		files, err := doublestar.Glob(fs, glob)
 		if err != nil {
 			return "", nil, errs.Wrap(err, "Could not match glob: %s", glob)
 		}
@@ -53,19 +56,17 @@ func (fh *FileHasher) HashFiles(wd string, globs []string) (_ string, _ []hashed
 				}
 				f = af
 			}
-			file, err := os.Open(f)
+			fileInfo, err := os.Stat(f)
 			if err != nil {
-				return "", nil, errs.Wrap(err, "Could not open file: %s", file.Name())
+				return "", nil, errs.Wrap(err, "Could not stat file: %s", f)
 			}
-			defer rtutils.Closer(file.Close, &rerr)
 
-			fileInfo, err := file.Stat()
-			if err != nil {
-				return "", nil, errs.Wrap(err, "Could not stat file: %s", file.Name())
+			if fileInfo.IsDir() {
+				continue
 			}
 
 			var hash string
-			cachedHash, ok := fh.cache.Get(cacheKey(file.Name(), fileInfo.ModTime()))
+			cachedHash, ok := fh.cache.Get(cacheKey(fileInfo.Name(), fileInfo.ModTime()))
 			if ok {
 				hash, ok = cachedHash.(string)
 				if !ok {
@@ -73,27 +74,43 @@ func (fh *FileHasher) HashFiles(wd string, globs []string) (_ string, _ []hashed
 				}
 			} else {
 				fileHasher := xxhash.New()
+				// include filepath in hash, because moving files should affect the hash
+				fmt.Fprintf(fileHasher, "%016x", f)
+				file, err := os.Open(f)
+				if err != nil {
+					return "", nil, errs.Wrap(err, "Could not open file: %s", f)
+				}
+				defer file.Close()
 				if _, err := io.Copy(fileHasher, file); err != nil {
-					return "", nil, errs.Wrap(err, "Could not hash file: %s", file.Name())
+					return "", nil, errs.Wrap(err, "Could not hash file: %s", fileInfo.Name())
 				}
 
 				hash = fmt.Sprintf("%016x", fileHasher.Sum64())
 			}
 
-			fh.cache.Set(cacheKey(file.Name(), fileInfo.ModTime()), hash, cache.NoExpiration)
+			fh.cache.Set(cacheKey(fileInfo.Name(), fileInfo.ModTime()), hash, cache.NoExpiration)
 
+			hashes = append(hashes, hash)
 			hashedFiles = append(hashedFiles, hashedFile{
 				Pattern: glob,
-				Path:    file.Name(),
+				Path:    f,
 				Hash:    hash,
 			})
-
-			// Incorporate the individual file hash into the overall hash in hex format
-			fmt.Fprintf(hasher, "%016x", hash)
 		}
 	}
 
-	return fmt.Sprintf("%016x", hasher.Sum64()), hashedFiles, nil
+	if hashedFiles == nil {
+		return "", nil, nil
+	}
+
+	// Ensure the overall hash is consistently calculated
+	sort.Slice(hashedFiles, func(i, j int) bool { return hashedFiles[i].Path < hashedFiles[j].Path })
+	h := xxhash.New()
+	for _, f := range hashedFiles {
+		fmt.Fprintf(h, "%016x", f.Hash)
+	}
+
+	return fmt.Sprintf("%016x", h.Sum64()), hashedFiles, nil
 }
 
 func cacheKey(file string, modTime time.Time) string {
