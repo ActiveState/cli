@@ -74,7 +74,11 @@ func (m *Messages) Check(command string, flags []string) ([]*graph.MessageInfo, 
 	if cacheValue == nil {
 		return []*graph.MessageInfo{}, nil
 	}
-	allMessages := cacheValue.([]*graph.MessageInfo)
+
+	allMessages, ok := cacheValue.([]*graph.MessageInfo)
+	if !ok {
+		return nil, errs.New("Could not get messages from cache")
+	}
 
 	conditionParams := *m.baseParams // copy
 	conditionParams.UserEmail = m.auth.Email()
@@ -110,7 +114,11 @@ func check(params *ConditionParams, messages []*graph.MessageInfo, lastReportMap
 		logging.Debug("Checking message %s", message.ID)
 		// Ensure we don't show the same message too often
 		if lastReport, ok := lastReportMap[message.ID]; ok {
-			lastReportTime, err := time.Parse(time.RFC3339, lastReport.(string))
+			lr, ok := lastReport.(string)
+			if !ok {
+				return nil, errs.New("Could not get last reported time for message %s as it's not a string", message.ID)
+			}
+			lastReportTime, err := time.Parse(time.RFC3339, lr)
 			if err != nil {
 				return nil, errs.New("Could not parse last reported time for message %s as it's not a valid RFC3339 value: %v", message.ID, lastReport)
 			}
