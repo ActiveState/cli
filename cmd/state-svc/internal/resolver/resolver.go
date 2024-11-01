@@ -50,7 +50,6 @@ type Resolver struct {
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
 func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Resolver, error) {
-	defer func() { panics.LogAndPanic(recover(), debug.Stack()) }()
 	msg, err := messages.New(cfg, auth)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not initialize messages")
