@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"sync"
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -22,7 +21,6 @@ type fileCache interface {
 
 type FileHasher struct {
 	cache fileCache
-	mutex *sync.Mutex
 }
 
 type hashedFile struct {
@@ -34,7 +32,6 @@ type hashedFile struct {
 func NewFileHasher() *FileHasher {
 	return &FileHasher{
 		cache: cache.New(24*time.Hour, 24*time.Hour),
-		mutex: &sync.Mutex{},
 	}
 }
 
