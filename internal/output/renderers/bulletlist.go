@@ -1,7 +1,6 @@
 package renderers
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/colorize"
@@ -22,7 +21,7 @@ type bulletList struct {
 // ├─ two
 // │ wrapped
 // └─ three
-var BulletTree = []string{output.TreeMid, output.TreeMid, output.TreeLink, output.TreeEnd}
+var BulletTree = []string{output.TreeMid, output.TreeMid, output.TreeLink + " ", output.TreeEnd}
 
 // HeadedBulletTree outputs a list like:
 //
@@ -30,7 +29,7 @@ var BulletTree = []string{output.TreeMid, output.TreeMid, output.TreeLink, outpu
 // ├─ two
 // │ wrapped
 // └─ three
-var HeadedBulletTree = []string{"", output.TreeMid, output.TreeLink, output.TreeEnd}
+var HeadedBulletTree = []string{"", output.TreeMid, output.TreeLink + " ", output.TreeEnd}
 
 // NewBulletList returns a printable list of items prefixed with the given set of bullets.
 // The set of bullets should contain four items: the bullet for the first item (e.g. ""); the
@@ -73,14 +72,15 @@ func (b *bulletList) MarshalOutput(format output.Format) interface{} {
 			}
 			item = b.prefix + bullet + item
 		} else {
-			bullet = b.bullets[1]
+			bullet = b.bullets[1] + " "
 			continuation := indent + b.bullets[2] + " "
 			if i == len(b.items)-1 {
-				bullet = b.bullets[3] // this is the last item
+				bullet = b.bullets[3] + " " // this is the last item
 				continuation = " "
 			}
-			wrapped := colorize.Wrap(item, termutils.GetWidth()-len(indent), true, continuation).String()
-			item = fmt.Sprintf("%s%s %s", indent, bullet, wrapped)
+			maxWidth := termutils.GetWidth() - len(indent) - len(bullet)
+			wrapped := colorize.Wrap(item, maxWidth, true, continuation).String()
+			item = indent + bullet + wrapped
 		}
 		out[i] = item
 	}

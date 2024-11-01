@@ -1,8 +1,11 @@
 package colorize
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 type WrappedLines []WrappedLine
@@ -37,6 +40,7 @@ func Wrap(text string, maxLen int, includeLineEnds bool, continuation string) Wr
 
 	entries := make([]WrappedLine, 0)
 	colorCodes := colorRx.FindAllStringSubmatchIndex(text, -1)
+	colorNames := colorRx.FindAllStringSubmatch(text, -1)
 
 	isLineEnd := false
 	entry := WrappedLine{}
@@ -73,7 +77,15 @@ func Wrap(text string, maxLen int, includeLineEnds bool, continuation string) Wr
 				}
 				// Extract the word from the current line if it doesn't start the line.
 				if i > 0 && i < len(entry.Line)-1 && !isLinkRegexp.MatchString(entry.Line[i:]) {
-					wrapped = indent + continuation + entry.Line[i:]
+					tag := colorTag(pos, colorCodes, colorNames)
+					if continuation != "" && tag != "" {
+						// Do not colorize the continuation.
+						wrapped = fmt.Sprintf("%s[/RESET]%s%s%s", indent, continuation, tag, entry.Line[i:])
+					} else {
+						wrapped = indent + continuation + entry.Line[i:]
+					}
+					logging.Debug("continuation: '%s'", continuation)
+					logging.Debug("wrapped: '%s'", wrapped)
 					entry.Line = entry.Line[:i]
 					entry.Length -= wrappedLength
 					isLineEnd = true // emulate for wrapping purposes
@@ -101,6 +113,19 @@ func inRange(pos int, ranges [][]int) bool {
 		}
 	}
 	return false
+}
+
+// colorTag returns the currently active color tag (if any) at the given position.
+func colorTag(pos int, ranges [][]int, names [][]string) string {
+	for i, intRange := range ranges {
+		if pos < intRange[0] {
+			continue // before [COLOR]
+		}
+		if i < len(ranges)-1 || pos < ranges[i+1][0] {
+			return names[i][0] // missing [/RESET] or between [COLOR] and [/RESET]
+		}
+	}
+	return ""
 }
 
 func isSpace(b byte) bool { return b == ' ' || b == '\t' }
