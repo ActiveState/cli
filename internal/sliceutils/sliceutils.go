@@ -19,14 +19,20 @@ func RemoveFromStrings(slice []string, indexes ...int) []string {
 }
 
 func GetInt(slice []int, index int) (int, bool) {
-	if index > len(slice)-1 {
+	if index < 0 {
+		index = len(slice) + index
+	}
+	if index > len(slice)-1 || index < 0 {
 		return -1, false
 	}
 	return slice[index], true
 }
 
 func GetString(slice []string, index int) (string, bool) {
-	if index > len(slice)-1 {
+	if index < 0 {
+		index = len(slice) + index
+	}
+	if index > len(slice)-1 || index < 0 {
 		return "", false
 	}
 	// return normalized string

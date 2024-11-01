@@ -175,7 +175,8 @@ func unmarshalValue(path []string, valueInterface interface{}) (*value, error) {
 		result.List = &values
 
 	case string:
-		if len(path) >= 2 && path[len(path)-2] == ctxIn || strings.HasPrefix(v, "$") {
+		parentNode, hasParentNode := sliceutils.GetString(path, -2)
+		if (hasParentNode && parentNode == ctxIn) || strings.HasPrefix(v, "$") {
 			result.Ident = ptr.To(strings.TrimPrefix(v, "$"))
 		} else {
 			result.Str = ptr.To(v)
