@@ -49,20 +49,13 @@ func (suite *BuildScriptIntegrationTestSuite) TestBuildScript_NeedsReset() {
 }
 
 func (suite *BuildScriptIntegrationTestSuite) TestBuildScript_IngredientFunc() {
-	suite.T().Skip("Please enable once ingredient publishing via buildscript on the API is live")
-	
 	suite.OnlyRunForTags(tagsuite.BuildScripts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	// Drop the env below once ingredient publishing is live
-	ts.Env = append(ts.Env, "ACTIVESTATE_API_HOST=pr14847.activestate.build")
-
 	ts.LoginAsPersistentUser()
 
-	// Replace with commented out code when ingredient publishing via buildscripts is live
-	projectURL := fmt.Sprintf("https://%s/%s?commitID=%s", "pr14847.activestate.build", "ActiveState-CLI/Empty", "ab2517ff-c9b4-4ffa-a5d5-58c20557c98e")
-	// projectURL := fmt.Sprintf("https://%s/%s?commitID=%s", constants.DefaultAPIHost, "ActiveState-CLI/Empty", "6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8")
+	projectURL := fmt.Sprintf("https://%s/%s?commitID=%s", constants.DefaultAPIHost, "ActiveState-CLI/Empty", "6d79f2ae-f8b5-46bd-917a-d4b2558ec7b8")
 	ts.PrepareActiveStateYAML(fmt.Sprintf("project: %s\nconfig_version: %d\n", projectURL, projectfile.ConfigVersion))
 
 	var platformID string
