@@ -24,9 +24,9 @@ import (
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/poller"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -50,6 +50,7 @@ type Resolver struct {
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
 func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Resolver, error) {
+	defer func() { panics.LogAndPanic(recover(), debug.Stack()) }()
 	msg, err := messages.New(cfg, auth)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not initialize messages")
@@ -110,7 +111,7 @@ func (r *Resolver) Query() genserver.QueryResolver { return r }
 func (r *Resolver) Mutation() genserver.MutationResolver { return r }
 
 func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
-	defer func() { handlePanics(recover(), debug.Stack()) }()
+	defer func() { panics.LogAndPanic(recover(), debug.Stack()) }()
 
 	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "Version")
 	logging.Debug("Version resolver")
@@ -126,7 +127,7 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 }
 
 func (r *Resolver) AvailableUpdate(ctx context.Context, desiredChannel, desiredVersion string) (*graph.AvailableUpdate, error) {
-	defer func() { handlePanics(recover(), debug.Stack()) }()
+	defer func() { panics.LogAndPanic(recover(), debug.Stack()) }()
 
 	if desiredChannel == "" {
 		desiredChannel = constants.ChannelName
@@ -174,7 +175,7 @@ func (r *Resolver) AvailableUpdate(ctx context.Context, desiredChannel, desiredV
 }
 
 func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
-	defer func() { handlePanics(recover(), debug.Stack()) }()
+	defer func() { panics.LogAndPanic(recover(), debug.Stack()) }()
 
 	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "Projects")
 	logging.Debug("Projects resolver")
@@ -194,7 +195,7 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 }
 
 func (r *Resolver) AnalyticsEvent(_ context.Context, category, action, source string, _label *string, dimensionsJson string) (*graph.AnalyticsEventResponse, error) {
-	defer func() { handlePanics(recover(), debug.Stack()) }()
+	defer func() { panics.LogAndPanic(recover(), debug.Stack()) }()
 
 	logging.Debug("Analytics event resolver: %s - %s: %s (%s)", category, action, ptr.From(_label, "NIL"), source)
 
@@ -228,7 +229,7 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action, source st
 }
 
 func (r *Resolver) ReportRuntimeUsage(_ context.Context, pid int, exec, source string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error) {
-	defer func() { handlePanics(recover(), debug.Stack()) }()
+	defer func() { panics.LogAndPanic(recover(), debug.Stack()) }()
 
 	logging.Debug("Runtime usage resolver: %d - %s", pid, exec)
 	var dims *dimensions.Values
@@ -242,26 +243,26 @@ func (r *Resolver) ReportRuntimeUsage(_ context.Context, pid int, exec, source s
 }
 
 func (r *Resolver) CheckMessages(ctx context.Context, command string, flags []string) ([]*graph.MessageInfo, error) {
-	defer func() { handlePanics(recover(), debug.Stack()) }()
+	defer func() { panics.LogAndPanic(recover(), debug.Stack()) }()
 	logging.Debug("Check messages resolver")
 	return r.messages.Check(command, flags)
 }
 
 func (r *Resolver) ConfigChanged(ctx context.Context, key string) (*graph.ConfigChangedResponse, error) {
-	defer func() { handlePanics(recover(), debug.Stack()) }()
+	defer func() { panics.LogAndPanic(recover(), debug.Stack()) }()
 
 	go configMediator.NotifyListeners(key)
 	return &graph.ConfigChangedResponse{Received: true}, nil
 }
 
 func (r *Resolver) FetchLogTail(ctx context.Context) (string, error) {
-	defer func() { handlePanics(recover(), debug.Stack()) }()
+	defer func() { panics.LogAndPanic(recover(), debug.Stack()) }()
 
 	return logging.ReadTail(), nil
 }
 
 func (r *Resolver) GetProcessesInUse(ctx context.Context, execDir string) ([]*graph.ProcessInfo, error) {
-	defer func() { handlePanics(recover(), debug.Stack()) }()
+	defer func() { panics.LogAndPanic(recover(), debug.Stack()) }()
 
 	inUse := r.rtwatch.GetProcessesInUse(execDir)
 	processes := make([]*graph.ProcessInfo, 0, len(inUse))
@@ -272,7 +273,7 @@ func (r *Resolver) GetProcessesInUse(ctx context.Context, execDir string) ([]*gr
 }
 
 func (r *Resolver) GetJwt(ctx context.Context) (*graph.Jwt, error) {
-	defer func() { handlePanics(recover(), debug.Stack()) }()
+	defer func() { panics.LogAndPanic(recover(), debug.Stack()) }()
 
 	if err := r.auth.MaybeRenew(); err != nil {
 		return nil, errs.Wrap(err, "Could not renew auth token")
@@ -308,7 +309,7 @@ func (r *Resolver) GetJwt(ctx context.Context) (*graph.Jwt, error) {
 }
 
 func (r *Resolver) HashGlobs(ctx context.Context, wd string, globs []string) (*graph.GlobResult, error) {
-	defer func() { handlePanics(recover(), debug.Stack()) }()
+	defer func() { panics.LogAndPanic(recover(), debug.Stack()) }()
 
 	hash, files, err := r.fileHasher.HashFiles(wd, globs)
 	if err != nil {
@@ -340,12 +341,4 @@ func (r *Resolver) GetCache(ctx context.Context, key string) (string, error) {
 func (r *Resolver) SetCache(ctx context.Context, key string, value string, expiry int) (*graphqltypes.Void, error) {
 	r.globalCache.Set(key, value, time.Duration(expiry)*time.Second)
 	return &graphqltypes.Void{}, nil
-}
-
-func handlePanics(recovered interface{}, stack []byte) {
-	if recovered != nil {
-		multilog.Error("Panic: %v", recovered)
-		logging.Debug("Stack: %s", string(stack))
-		panic(recovered) // We're only logging the panic, not interrupting it
-	}
 }
