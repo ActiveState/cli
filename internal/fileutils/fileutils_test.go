@@ -685,6 +685,54 @@ func TestCommonParentPath(t *testing.T) {
 			expected: "./folder1/file.txt",
 		},
 		{
+			paths:    []string{"/home/user/folder1/file.txt", "/home/user/folder1/subfolder/file.txt"},
+			expected: "/home/user/folder1",
+		},
+		{
+			paths:    []string{"/home/user/folder1/file.txt", "/home/user/folder2/file.txt"},
+			expected: "/home/user",
+		},
+		{
+			paths:    []string{"/home/user/folder1/subfolder1/file.txt", "/home/user/folder1/subfolder2/file.txt"},
+			expected: "/home/user/folder1",
+		},
+		{
+			paths:    []string{"C:\\Users\\User\\folder1\\file.txt", "C:\\Users\\User\\folder1\\subfolder\\file.txt"},
+			expected: "C:\\Users\\User\\folder1",
+		},
+		{
+			paths:    []string{"C:\\Users\\User\\folder1\\file.txt", "C:\\Users\\User\\folder2\\file.txt"},
+			expected: "C:\\Users\\User",
+		},
+		{
+			paths:    []string{"C:\\Users\\User\\folder1\\subfolder1\\file.txt", "C:\\Users\\User\\folder1\\subfolder2\\file.txt"},
+			expected: "C:\\Users\\User\\folder1",
+		},
+		{
+			paths:    []string{"folder1/file.txt", "folder1/subfolder/file.txt"},
+			expected: "folder1",
+		},
+		{
+			paths:    []string{"folder1/file.txt", "folder2/file.txt"},
+			expected: "",
+		},
+		{
+			paths:    []string{"folder1/file.txt", "folder1/subfolder/file.txt", "folder1/subfolder2/file.txt"},
+			expected: "folder1",
+		},
+		{
+			paths:    []string{"folder1/file.txt", "folder1/file.txt", "folder1/file.txt"},
+			expected: "folder1/file.txt",
+		},
+		{
+			paths:    []string{"C:\\Users\\User\\folder1\\file.txt", "C:\\Users\\User\\folder1\\subfolder\\file.txt", "C:\\Users\\User\\folder2\\file.txt"},
+			expected: "C:\\Users\\User",
+		},
+		{
+			paths:    []string{"/var/log/syslog", "/var/log/auth.log"},
+			expected: "/var/log",
+		},
+		{
 			paths:    []string{},
 			expected: "",
 		},

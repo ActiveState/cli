@@ -1267,12 +1267,19 @@ func CommonParentPath(paths []string) string {
 	return common
 }
 
-func commonParentPath(a, b string) string {
+func commonParentPath(a, b string) (result string) {
+	isWindowsPath := false
+	defer func() {
+		if isWindowsPath {
+			result = posixPathToWindowsPath(result)
+		}
+	}()
 	common := ""
-	a = filepath.ToSlash(a)
-	b = filepath.ToSlash(b)
-	as := strings.Split(a, "/")
-	bs := strings.Split(b, "/")
+	ab := windowsPathToPosixPath(a)
+	bb := windowsPathToPosixPath(b)
+	isWindowsPath = a != ab
+	as := strings.Split(ab, "/")
+	bs := strings.Split(bb, "/")
 	max := min(len(as), len(bs))
 	for x := 1; x <= max; x++ {
 		ac := strings.Join(as[:x], "/")
@@ -1283,4 +1290,12 @@ func commonParentPath(a, b string) string {
 		common = ac
 	}
 	return common
+}
+
+func windowsPathToPosixPath(path string) string {
+	return strings.ReplaceAll(path, "\\", "/")
+}
+
+func posixPathToWindowsPath(path string) string {
+	return strings.ReplaceAll(path, "/", "\\")
 }
