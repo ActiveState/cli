@@ -83,5 +83,10 @@ func rationalizeError(owner, project string, rerr *error) {
 				errs.SetTips(locale.T("err_init_authenticated")))
 		}
 
+	case errors.Is(*rerr, errDeleteProjectAfterError):
+		*rerr = errs.WrapUserFacing(*rerr,
+			locale.Tl("err_init_refresh_delete_project", "Could not setup runtime after init, and could not delete newly created Platform project. Please delete it manually before trying again"),
+		)
+
 	}
 }
