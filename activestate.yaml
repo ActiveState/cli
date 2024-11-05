@@ -392,9 +392,12 @@ scripts:
       set -e
 
       git fetch --quiet origin master
+      echo "Checking format for changes since master"
 
       MERGE_BASE=$(git merge-base HEAD origin/master)
+      echo "Merge base: $MERGE_BASE"
       CHANGED=$(git diff --name-only $MERGE_BASE...HEAD | grep -v testdata | grep -v vendor)
+      echo "Changed files: $CHANGED"
       NO_NEWLINE=0
       for FILE in $CHANGED; do
           if file "$FILE" | grep -q -E 'text|ASCII'; then
