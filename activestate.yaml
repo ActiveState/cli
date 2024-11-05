@@ -391,14 +391,10 @@ scripts:
     value: |
       set -e
 
-      TARGET_BRANCH=$GITHUB_BASE_REF
-      if [ "$GITHUB_BASE_REF" == "" ]; then
-        TARGET_BRANCH="master"
-      fi
+      git fetch --quiet origin master
 
-      git fetch --quiet origin $TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH
-
-      CHANGED=$(git diff --name-only origin/$TARGET_BRANCH | grep -v testdata | grep -v vendor)
+      MERGE_BASE=$(git merge-base HEAD origin/master)
+      CHANGED=$(git diff --name-only $MERGE_BASE...HEAD | grep -v testdata | grep -v vendor)
       NO_NEWLINE=0
       for FILE in $CHANGED; do
           if file "$FILE" | grep -q -E 'text|ASCII'; then
