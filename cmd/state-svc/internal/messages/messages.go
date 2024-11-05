@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/poller"
+	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/strutils"
 	auth "github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -43,6 +45,9 @@ func New(cfg *config.Instance, auth *auth.Auth) (*Messages, error) {
 	}
 
 	poll := poller.New(1*time.Hour, func() (interface{}, error) {
+		defer func() {
+			panics.LogAndPanic(recover(), debug.Stack())
+		}()
 		resp, err := fetch()
 		return resp, err
 	})
@@ -74,7 +79,11 @@ func (m *Messages) Check(command string, flags []string) ([]*graph.MessageInfo, 
 	if cacheValue == nil {
 		return []*graph.MessageInfo{}, nil
 	}
-	allMessages := cacheValue.([]*graph.MessageInfo)
+
+	allMessages, ok := cacheValue.([]*graph.MessageInfo)
+	if !ok {
+		return nil, errs.New("cacheValue has unexpected type: %T", cacheValue)
+	}
 
 	conditionParams := *m.baseParams // copy
 	conditionParams.UserEmail = m.auth.Email()
@@ -110,7 +119,11 @@ func check(params *ConditionParams, messages []*graph.MessageInfo, lastReportMap
 		logging.Debug("Checking message %s", message.ID)
 		// Ensure we don't show the same message too often
 		if lastReport, ok := lastReportMap[message.ID]; ok {
-			lastReportTime, err := time.Parse(time.RFC3339, lastReport.(string))
+			lr, ok := lastReport.(string)
+			if !ok {
+				return nil, errs.New("Could not get last reported time for message %s as it's not a string: %T", message.ID, lastReport)
+			}
+			lastReportTime, err := time.Parse(time.RFC3339, lr)
 			if err != nil {
 				return nil, errs.New("Could not parse last reported time for message %s as it's not a valid RFC3339 value: %v", message.ID, lastReport)
 			}
