@@ -65,20 +65,20 @@ func (m *SvcModel) request(ctx context.Context, request gqlclient.Request, resp 
 
 func (m *SvcModel) StateVersion(ctx context.Context) (*graph.Version, error) {
 	r := request.NewVersionRequest()
-	resp := graph.VersionResponse{}
+	resp := graph.Version{}
 	if err := m.request(ctx, r, &resp); err != nil {
 		return nil, err
 	}
-	return &resp.Version, nil
+	return &resp, nil
 }
 
 func (m *SvcModel) LocalProjects(ctx context.Context) ([]*graph.Project, error) {
 	r := request.NewLocalProjectsRequest()
-	response := graph.ProjectsResponse{Projects: []*graph.Project{}}
+	response := []*graph.Project{}
 	if err := m.request(ctx, r, &response); err != nil {
 		return nil, err
 	}
-	return response.Projects, nil
+	return response, nil
 }
 
 // CheckUpdate returns cached update information. There is no guarantee that
@@ -88,12 +88,12 @@ func (m *SvcModel) LocalProjects(ctx context.Context) ([]*graph.Project, error) 
 func (m *SvcModel) CheckUpdate(ctx context.Context, desiredChannel, desiredVersion string) (*graph.AvailableUpdate, error) {
 	defer profile.Measure("svc:CheckUpdate", time.Now())
 	r := request.NewAvailableUpdate(desiredChannel, desiredVersion)
-	u := graph.AvailableUpdateResponse{}
+	u := graph.AvailableUpdate{}
 	if err := m.request(ctx, r, &u); err != nil {
 		return nil, errs.Wrap(err, "Error checking if update is available.")
 	}
 
-	return &u.AvailableUpdate, nil
+	return &u, nil
 }
 
 func (m *SvcModel) Ping() error {
@@ -230,11 +230,11 @@ func (m *SvcModel) HashGlobs(wd string, globs []string) (*graph.GlobResult, erro
 	defer profile.Measure("svc:HashGlobs", time.Now())
 
 	req := request.NewHashGlobs(wd, globs)
-	res := graph.HashGlobsResponse{}
+	res := graph.GlobResult{}
 	if err := m.request(context.Background(), req, &res); err != nil {
 		return nil, errs.Wrap(err, "Error sending HashGlobs request to state-svc")
 	}
-	return &res.Response, errs.New("svcModel.HashGlobs() did not return an expected value")
+	return &res, errs.New("svcModel.HashGlobs() did not return an expected value")
 }
 
 func jsonFromMap(m map[string]interface{}) string {
