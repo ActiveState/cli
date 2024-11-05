@@ -186,13 +186,13 @@ func (m *SvcModel) GetJWT(ctx context.Context) (*mono_models.JWT, error) {
 	defer profile.Measure("svc:GetJWT", time.Now())
 
 	r := request.NewJWTRequest()
-	resp := graph.GetJWTResponse{}
+	var resp json.RawMessage
 	if err := m.request(ctx, r, &resp); err != nil {
 		return nil, errs.Wrap(err, "Error sending messages request")
 	}
 
 	jwt := &mono_models.JWT{}
-	err := json.Unmarshal(resp.Payload, &jwt)
+	err := json.Unmarshal(resp, &jwt)
 	if err != nil {
 		return nil, errs.Wrap(err, "Error unmarshaling JWT")
 	}

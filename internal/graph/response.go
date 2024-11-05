@@ -1,9 +1,5 @@
 package graph
 
-import (
-	"encoding/json"
-)
-
 type VersionResponse struct {
 	Version Version `json:"version"`
 }
@@ -22,10 +18,6 @@ type CheckMessagesResponse struct {
 
 type GetProcessesInUseResponse struct {
 	Processes []*ProcessInfo `json:"getProcessesInUse"`
-}
-
-type GetJWTResponse struct {
-	Payload json.RawMessage `json:"getJWT"`
 }
 
 type HashGlobsResponse struct {
