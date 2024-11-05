@@ -14,12 +14,12 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/graphql"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/graphql"
 	"github.com/pkg/errors"
 )
 
@@ -42,6 +42,11 @@ type Request interface {
 type RequestWithFiles interface {
 	Request
 	Files() []File
+}
+
+type RequestWithMultiQuery interface {
+	Request
+	IsMultiQuery() bool
 }
 
 type Header map[string][]string

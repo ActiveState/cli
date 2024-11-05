@@ -16,9 +16,6 @@ github.com/99designs/gqlgen/graphql/playground
 # github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 ## explicit
 github.com/ActiveState/go-ogle-analytics
-# github.com/ActiveState/graphql v0.0.0-20230719154233-6949037a6e48
-## explicit
-github.com/ActiveState/graphql
 # github.com/ActiveState/pty v0.0.0-20230628221854-6fb90eb08a14
 ## explicit; go 1.13
 github.com/ActiveState/pty
@@ -464,8 +461,9 @@ github.com/maruel/natural
 # github.com/mash/go-tempfile-suffix v0.0.0-20150731093933-48f0f8a3a5ab
 ## explicit
 github.com/mash/go-tempfile-suffix
-# github.com/matryer/is v1.2.0
-## explicit
+# github.com/matryer/is v1.4.1
+## explicit; go 1.14
+github.com/matryer/is
 # github.com/mattn/go-colorable v0.1.13
 ## explicit; go 1.15
 github.com/mattn/go-colorable

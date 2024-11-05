@@ -12,12 +12,12 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/graph"
+	"github.com/ActiveState/cli/internal/graphql"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
-	"github.com/ActiveState/graphql"
 )
 
 var SvcTimeoutMinimal = time.Millisecond * 500
@@ -130,12 +130,12 @@ func (m *SvcModel) CheckMessages(ctx context.Context, command string, flags []st
 	defer profile.Measure("svc:CheckMessages", time.Now())
 
 	r := request.NewMessagingRequest(command, flags)
-	resp := graph.CheckMessagesResponse{}
+	resp := []*graph.MessageInfo{}
 	if err := m.request(ctx, r, &resp); err != nil {
 		return nil, errs.Wrap(err, "Error sending messages request")
 	}
 
-	return resp.Messages, nil
+	return resp, nil
 }
 
 func (m *SvcModel) ConfigChanged(ctx context.Context, key string) error {
@@ -170,12 +170,12 @@ func (m *SvcModel) GetProcessesInUse(ctx context.Context, execDir string) ([]*gr
 	defer profile.Measure("svc:GetProcessesInUse", time.Now())
 
 	req := request.NewGetProcessesInUse(execDir)
-	response := graph.GetProcessesInUseResponse{}
+	response := []*graph.ProcessInfo{}
 	if err := m.request(ctx, req, &response); err != nil {
 		return nil, errs.Wrap(err, "Error sending GetProcessesInUse request to state-svc")
 	}
 
-	return response.Processes, nil
+	return response, nil
 }
 
 // GetJWT grabs the JWT from the svc, if it exists.
@@ -205,14 +205,14 @@ func (m *SvcModel) GetCache(key string) (result string, _ error) {
 	defer profile.Measure("svc:GetCache", time.Now())
 
 	req := request.NewGetCache(key)
-	response := make(map[string]string)
+	var response string
 	if err := m.request(context.Background(), req, &response); err != nil {
 		return "", errs.Wrap(err, "Error sending GetCache request to state-svc")
 	}
-	if entry, ok := response["getCache"]; ok {
-		return entry, nil
+	if response != "" {
+		return response, nil
 	}
-	return "", errs.New("svcModel.GetCache() did not return an expected value")
+	return "", nil
 }
 
 func (m *SvcModel) SetCache(key, value string, expiry time.Duration) error {

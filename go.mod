@@ -69,7 +69,6 @@ require (
 )
 
 require (
-	github.com/ActiveState/graphql v0.0.0-20230719154233-6949037a6e48
 	github.com/brunoga/deep v1.2.4
 	github.com/cespare/xxhash v1.1.0
 	github.com/charmbracelet/bubbles v0.18.0
@@ -143,10 +142,10 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
-	github.com/labstack/gommon v0.3.1 // indirect
+	github.com/labstack/gommon v0.3.1
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/matryer/is v1.2.0 // indirect
+	github.com/matryer/is v1.4.1
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-sqlite3 v1.14.7 // indirect

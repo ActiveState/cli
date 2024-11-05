@@ -14,7 +14,7 @@ import (
 
 func (b *BuildPlanner) GetBuildScript(commitID string) (*buildscript.BuildScript, error) {
 	logging.Debug("GetBuildScript, commitID: %s", commitID)
-	resp := &bpResp.BuildExpressionResponse{}
+	resp := &bpResp.Commit{}
 
 	cacheKey := strings.Join([]string{"GetBuildScript", commitID}, "-")
 	respRaw, err := b.cache.GetCache(cacheKey)
@@ -39,21 +39,21 @@ func (b *BuildPlanner) GetBuildScript(commitID string) (*buildscript.BuildScript
 		}
 	}
 
-	if resp.Commit == nil {
+	if resp == nil {
 		return nil, errs.New("Commit is nil")
 	}
 
-	if bpResp.IsErrorResponse(resp.Commit.Type) {
-		return nil, bpResp.ProcessCommitError(resp.Commit, "Could not get build expression from commit")
+	if bpResp.IsErrorResponse(resp.Type) {
+		return nil, bpResp.ProcessCommitError(resp, "Could not get build expression from commit")
 	}
 
-	if resp.Commit.Expression == nil {
+	if resp.Expression == nil {
 		return nil, errs.New("Commit does not contain expression")
 	}
 
 	script := buildscript.New()
-	script.SetAtTime(time.Time(resp.Commit.AtTime), false)
-	if err := script.UnmarshalBuildExpression(resp.Commit.Expression); err != nil {
+	script.SetAtTime(time.Time(resp.AtTime), false)
+	if err := script.UnmarshalBuildExpression(resp.Expression); err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}
 
