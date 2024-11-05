@@ -77,7 +77,7 @@ func (m *Messages) Check(command string, flags []string) ([]*graph.MessageInfo, 
 
 	allMessages, ok := cacheValue.([]*graph.MessageInfo)
 	if !ok {
-		return nil, errs.New("Could not get messages from cache")
+		return nil, errs.New("cacheValue has unexpected type: %T", cacheValue)
 	}
 
 	conditionParams := *m.baseParams // copy
@@ -116,7 +116,7 @@ func check(params *ConditionParams, messages []*graph.MessageInfo, lastReportMap
 		if lastReport, ok := lastReportMap[message.ID]; ok {
 			lr, ok := lastReport.(string)
 			if !ok {
-				return nil, errs.New("Could not get last reported time for message %s as it's not a string", message.ID)
+				return nil, errs.New("Could not get last reported time for message %s as it's not a string: %T", message.ID, lastReport)
 			}
 			lastReportTime, err := time.Parse(time.RFC3339, lr)
 			if err != nil {
