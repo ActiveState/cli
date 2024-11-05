@@ -1,7 +1,6 @@
 package commit
 
 import (
-	"fmt"
 	"sort"
 	"testing"
 
@@ -56,7 +55,10 @@ main = ingredient(
 
 const invalidDepScript = `
 main = ingredient(
-	runtime_deps = [ "I should be a Req" ]
+	runtime_deps = [ 
+		Req(name="runtimedep", namespace="language", version=Eq(value="1.0")),
+		"I should be a Req" 
+	]
 )
 `
 
@@ -130,7 +132,7 @@ func TestIngredientCall_resolveDependencies(t *testing.T) {
 					Dependency: request.Dependency{
 						Name:                "python",
 						Namespace:           "language",
-						VersionRequirements: "3.7.10",
+						VersionRequirements: "==3.7.10",
 						Type:                request.DependencyTypeRuntime,
 					},
 					Conditions: []request.Dependency{},
@@ -146,7 +148,7 @@ func TestIngredientCall_resolveDependencies(t *testing.T) {
 					Dependency: request.Dependency{
 						Name:                "runtimedep",
 						Namespace:           "language",
-						VersionRequirements: "1.0",
+						VersionRequirements: "==1.0",
 						Type:                request.DependencyTypeRuntime,
 					},
 					Conditions: []request.Dependency{},
@@ -155,7 +157,7 @@ func TestIngredientCall_resolveDependencies(t *testing.T) {
 					Dependency: request.Dependency{
 						Name:                "builddep",
 						Namespace:           "language",
-						VersionRequirements: "2.0",
+						VersionRequirements: "==2.0",
 						Type:                request.DependencyTypeBuild,
 					},
 					Conditions: []request.Dependency{},
@@ -164,7 +166,7 @@ func TestIngredientCall_resolveDependencies(t *testing.T) {
 					Dependency: request.Dependency{
 						Name:                "testdep",
 						Namespace:           "language",
-						VersionRequirements: "3.0",
+						VersionRequirements: "==3.0",
 						Type:                request.DependencyTypeTest,
 					},
 					Conditions: []request.Dependency{},
@@ -177,6 +179,7 @@ func TestIngredientCall_resolveDependencies(t *testing.T) {
 			invalidDepsScript,
 			nil,
 			func(t assert.TestingT, err error, _ ...interface{}) bool {
+				assert.Error(t, err)
 				return assert.ErrorAs(t, err, &invalidDepsValueType{})
 			},
 		},
@@ -196,7 +199,7 @@ func TestIngredientCall_resolveDependencies(t *testing.T) {
 			fc := bs.FunctionCalls("ingredient")[0]
 			i := &IngredientCall{script: bs, funcCall: fc}
 			got, err := i.resolveDependencies()
-			if !tt.wantErr(t, err, fmt.Sprintf("resolveDependencies()")) {
+			if !tt.wantErr(t, err, "") {
 				return
 			}
 			sort.Slice(tt.want, func(i, j int) bool {
