@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_Wrap(t *testing.T) {
@@ -123,8 +125,35 @@ func Test_WrapAsString(t *testing.T) {
 				escape := func(v string) string {
 					return strings.Replace(v, "\n", "\\n", -1)
 				}
-				t.Errorf("Wrap() = %v, want %v (crop data: %s)", escape(got.String()), escape(tt.text), escape(fmt.Sprintf("%#v", got)))
+				t.Errorf("Wrap() = %v, want %v (wrap data: %s)", escape(got.String()), escape(tt.text), escape(fmt.Sprintf("%#v", got)))
 			}
 		})
 	}
+}
+
+func TestWrapBullet(t *testing.T) {
+	lines := Wrap(" • This is a bullet", 15, true, "")
+	assert.Equal(t, " • This is a \n   bullet", lines.String())
+}
+
+func TestWrapContinuation(t *testing.T) {
+	// Test normal wrapping with no continuation.
+	lines := Wrap("This is an error", 9, true, "")
+	assert.Equal(t, "This is \nan error", lines.String())
+
+	// Verify continuations are not tagged.
+	lines = Wrap("[ERROR]This is an error[/RESET]", 10, true, "|")
+	assert.Equal(t, "[ERROR]This is \n[/RESET]|[ERROR]an error[/RESET]", lines.String())
+
+	// Verify only active tags come after continuations.
+	lines = Wrap("[BOLD]This is not[/RESET] an error", 10, true, "|")
+	assert.Equal(t, "[BOLD]This is \n[/RESET]|[BOLD]not[/RESET] an \n|error", lines.String())
+
+	// Verify continuations are not tagged, even if [/RESET] is omitted.
+	lines = Wrap("[ERROR]This is an error", 10, true, "|")
+	assert.Equal(t, "[ERROR]This is \n[/RESET]|[ERROR]an error", lines.String())
+
+	// Verify multiple tags are restored after continuations.
+	lines = Wrap("[BOLD][RED]This is a bold, red message[/RESET]", 11, true, "|")
+	assert.Equal(t, "[BOLD][RED]This is a \n[/RESET]|[BOLD][RED]bold, red \n[/RESET]|[BOLD][RED]message[/RESET]", lines.String())
 }
