@@ -138,7 +138,7 @@ main = wheel
 
 	// Ensure build didn't fail
 	suite.False(out.HasFailedArtifacts)
-	suite.Empty(out.Platforms[0].Artifacts[0].Errors)
+	suite.Empty(out.Platforms[0].Artifacts[0].Errors, "Log: %s", out.Platforms[0].Artifacts[0].LogURL)
 
 	// Download the wheel artifact that was produced from our source ingredient
 	cp = ts.Spawn("artifacts", "dl", "--output=json", out.Platforms[0].Artifacts[0].ID)
