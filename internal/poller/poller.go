@@ -1,7 +1,6 @@
 package poller
 
 import (
-	"runtime/debug"
 	"sync"
 	"time"
 
@@ -9,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/runbits/errors"
-	"github.com/ActiveState/cli/internal/runbits/panics"
 )
 
 type Poller struct {
@@ -21,15 +19,8 @@ type Poller struct {
 }
 
 func New(interval time.Duration, pollFunc func() (interface{}, error)) *Poller {
-	wrappedFn := func() (interface{}, error) {
-		defer func() {
-			panics.LogAndPanic(recover(), debug.Stack())
-		}()
-		return pollFunc()
-	}
-
 	p := &Poller{
-		pollFunc: wrappedFn,
+		pollFunc: pollFunc,
 		done:     make(chan struct{}),
 	}
 	go p.start(interval)

@@ -57,6 +57,9 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 
 	upchecker := updater.NewDefaultChecker(cfg, an)
 	pollUpdate := poller.New(1*time.Hour, func() (interface{}, error) {
+		defer func() {
+			panics.LogAndPanic(recover(), debug.Stack())
+		}()
 		logging.Debug("Poller checking for update info")
 		return upchecker.CheckFor(constants.ChannelName, "")
 	})
@@ -71,6 +74,9 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 	}
 
 	pollAuth := poller.New(time.Duration(int64(time.Millisecond)*pollRate), func() (interface{}, error) {
+		defer func() {
+			panics.LogAndPanic(recover(), debug.Stack())
+		}()
 		if auth.SyncRequired() {
 			return nil, auth.Sync()
 		}

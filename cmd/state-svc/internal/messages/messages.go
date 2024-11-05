@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/poller"
+	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/strutils"
 	auth "github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -43,6 +45,9 @@ func New(cfg *config.Instance, auth *auth.Auth) (*Messages, error) {
 	}
 
 	poll := poller.New(1*time.Hour, func() (interface{}, error) {
+		defer func() {
+			panics.LogAndPanic(recover(), debug.Stack())
+		}()
 		resp, err := fetch()
 		return resp, err
 	})
