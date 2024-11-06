@@ -44,11 +44,6 @@ type RequestWithFiles interface {
 	Files() []File
 }
 
-type RequestWithMultiQuery interface {
-	Request
-	IsMultiQuery() bool
-}
-
 type Header map[string][]string
 
 type graphqlClient = graphql.Client
