@@ -390,10 +390,7 @@ scripts:
     description: "Checks if the code is formatted correctly"
     value: |
       set -e
-      set -x
 
-      echo "Starting check-format script"
-      
       if git rev-parse --is-shallow-repository; then
         echo "Detected shallow clone, fetching complete history..."
         git fetch --unshallow origin master || {
@@ -402,27 +399,13 @@ scripts:
         }
       fi
 
-      echo "Fetching master branch..."
       git fetch origin master:refs/remotes/origin/master || {
         echo "Failed to fetch master branch"
         exit 1
       }
 
-      # If we're in detached HEAD state, create a temporary branch
-      if [ -z "$(git branch --show-current)" ]; then
-        echo "Detected detached HEAD state, creating temporary branch..."
-        git branch temp_format_check HEAD || {
-          echo "Failed to create temporary branch"
-          exit 1
-        }
-        git checkout temp_format_check
-      fi
-
-      echo "Checking format for changes since master"
       MERGE_BASE=$(git merge-base HEAD origin/master) || {
         echo "Error: Could not find merge base with origin/master"
-        echo "Current HEAD: $(git rev-parse HEAD)"
-        echo "Origin master: $(git rev-parse origin/master)"
         exit 1
       }
       
