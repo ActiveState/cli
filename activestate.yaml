@@ -401,6 +401,8 @@ scripts:
         exit 0
       fi
 
+      git fetch --quiet origin $TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH
+
       CHANGED=$(git diff --name-only origin/$TARGET_BRANCH | grep -v testdata | grep -v vendor)
       NO_NEWLINE=0
       for FILE in $CHANGED; do
