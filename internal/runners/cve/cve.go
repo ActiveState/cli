@@ -202,7 +202,7 @@ func (rd *cveOutput) MarshalOutput(format output.Format) interface{} {
 			}
 			items[i] = fmt.Sprintf("%-10s [ACTIONABLE]%s[/RESET]", severity, d.CveID)
 		}
-		rd.output.Print(renderers.NewBulletList("", renderers.BulletTree, items))
+		rd.output.Print(renderers.NewBulletList("", renderers.BulletTree, items).String())
 		rd.output.Print("")
 	}
 

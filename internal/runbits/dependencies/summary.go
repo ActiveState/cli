@@ -44,6 +44,6 @@ func OutputSummary(out output.Outputer, directDependencies buildplan.Artifacts) 
 		items[i] = fmt.Sprintf("[ACTIONABLE]%s@%s[/RESET] %s", ingredient.Name, ingredient.Version, subdepLocale)
 	}
 
-	out.Notice(renderers.NewBulletList("  ", renderers.BulletTree, items))
+	out.Notice(renderers.NewBulletList("  ", renderers.BulletTreeDisabled, items).String())
 	out.Notice("") // blank line
 }

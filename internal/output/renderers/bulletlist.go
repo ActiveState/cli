@@ -2,50 +2,58 @@ package renderers
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"github.com/ActiveState/cli/internal/colorize"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/termutils"
 )
 
+type Bullets struct {
+	Start string
+	Mid   string
+	Link  string
+	End   string
+}
+
 type bulletList struct {
 	prefix  string
 	items   []string
-	bullets []string
+	bullets Bullets
 }
 
 // BulletTree outputs a list like:
 //
 // ├─ one
 // ├─ two
-// │ wrapped
+// │  wrapped
 // └─ three
-var BulletTree = []string{output.TreeMid, output.TreeMid, output.TreeLink + " ", output.TreeEnd}
+var BulletTree = Bullets{output.TreeMid, output.TreeMid, output.TreeLink + " ", output.TreeEnd}
+
+// BulletTreeDisabled is like BulletTree, but tags the tree glyphs with [DISABLED].
+var BulletTreeDisabled = Bullets{
+	"[DISABLED]" + output.TreeMid + "[/RESET]",
+	"[DISABLED]" + output.TreeMid + "[/RESET]",
+	"[DISABLED]" + output.TreeLink + " [/RESET]",
+	"[DISABLED]" + output.TreeEnd + "[/RESET]",
+}
 
 // HeadedBulletTree outputs a list like:
 //
 // one
 // ├─ two
-// │ wrapped
+// │  wrapped
 // └─ three
-var HeadedBulletTree = []string{"", output.TreeMid, output.TreeLink + " ", output.TreeEnd}
+var HeadedBulletTree = Bullets{"", output.TreeMid, output.TreeLink + " ", output.TreeEnd}
 
-// NewBulletList returns a printable list of items prefixed with the given set of bullets.
-// The set of bullets should contain four items: the bullet for the first item (e.g. ""); the
-// bullet for each subsequent item (e.g. "├─"); the bullet for an item's wrapped lines, if any
-// (e.g. "│"); and the bullet for the last item (e.g. "└─").
-// The returned list can be passed to a plain printer. It should not be passed to a structured
-// printer.
-func NewBulletList(prefix string, bullets, items []string) *bulletList {
-	if len(bullets) != 4 {
-		multilog.Error("Invalid bullet list: 4 bullets required")
-		bullets = BulletTree
-	}
+func NewBulletList(prefix string, bullets Bullets, items []string) *bulletList {
 	return &bulletList{prefix, items, bullets}
 }
 
-func (b *bulletList) MarshalOutput(format output.Format) interface{} {
+// str is the business logic for returning a bullet list's string representation for a given
+// maximum width. Clients should call String() instead. Only tests should directly call this
+// function.
+func (b *bulletList) str(maxWidth int) string {
 	out := make([]string, len(b.items))
 
 	// Determine the indentation of each item.
@@ -61,29 +69,38 @@ func (b *bulletList) MarshalOutput(format output.Format) interface{} {
 	}
 
 	for i, item := range b.items {
-		bullet := b.bullets[0]
+		bullet := b.bullets.Start
 		if len(b.items) == 1 {
-			bullet = b.bullets[3] // special case list length of one; use last bullet
+			bullet = b.bullets.End // special case list length of one; use last bullet
 		}
 
+		prefix := ""
+		continuation := ""
 		if i == 0 {
 			if bullet != "" {
 				bullet += " "
 			}
-			item = b.prefix + bullet + item
+			prefix = b.prefix + bullet
 		} else {
-			bullet = b.bullets[1] + " "
-			continuation := indent + b.bullets[2] + " "
+			bullet = b.bullets.Mid + " "
+			continuation = indent + b.bullets.Link + " "
 			if i == len(b.items)-1 {
-				bullet = b.bullets[3] + " " // this is the last item
+				bullet = b.bullets.End + " " // this is the last item
 				continuation = " "
 			}
-			maxWidth := termutils.GetWidth() - len(indent) - len(bullet)
-			wrapped := colorize.Wrap(item, maxWidth, true, continuation).String()
-			item = indent + bullet + wrapped
+			prefix = indent + bullet
 		}
-		out[i] = item
+		wrapped := colorize.Wrap(item, maxWidth-len(indent)-bulletLength(bullet), true, continuation).String()
+		out[i] = prefix + wrapped
 	}
 
 	return strings.Join(out, "\n")
+}
+
+func (b *bulletList) String() string {
+	return b.str(termutils.GetWidth())
+}
+
+func bulletLength(bullet string) int {
+	return utf8.RuneCountInString(colorize.StripColorCodes(bullet))
 }

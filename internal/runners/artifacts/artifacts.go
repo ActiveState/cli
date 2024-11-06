@@ -211,7 +211,7 @@ func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
 						fmt.Sprintf("%s ([ERROR]%s[/RESET])", artifact.Name, locale.T("artifact_status_failed")),
 						fmt.Sprintf("%s: [ERROR]%s[/RESET]", locale.T("artifact_status_failed_message"), strings.Join(artifact.Errors, ": ")),
 						fmt.Sprintf("%s: [ACTIONABLE]%s[/RESET]", locale.T("artifact_status_failed_log"), artifact.LogURL),
-					}))
+					}).String())
 				continue
 			case artifact.status == types.ArtifactSkipped:
 				b.out.Print(fmt.Sprintf("  • %s ([NOTICE]%s[/RESET])", artifact.Name, locale.T("artifact_status_skipped")))
@@ -239,7 +239,7 @@ func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
 						fmt.Sprintf("%s ([ERROR]%s[/RESET])", artifact.Name, locale.T("artifact_status_failed")),
 						fmt.Sprintf("%s: [ERROR]%s[/RESET]", locale.T("artifact_status_failed_message"), strings.Join(artifact.Errors, ": ")),
 						fmt.Sprintf("%s: [ACTIONABLE]%s[/RESET]", locale.T("artifact_status_failed_log"), artifact.LogURL),
-					}))
+					}).String())
 				continue
 			case artifact.status == types.ArtifactSkipped:
 				b.out.Print(fmt.Sprintf("    • %s ([NOTICE]%s[/RESET])", artifact.Name, locale.T("artifact_status_skipped")))

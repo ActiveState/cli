@@ -130,6 +130,6 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 		items[i] = item
 	}
 
-	out.Notice(renderers.NewBulletList("  ", renderers.BulletTree, items))
+	out.Notice(renderers.NewBulletList("  ", renderers.BulletTreeDisabled, items).String())
 	out.Notice("") // blank line
 }
