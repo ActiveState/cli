@@ -389,28 +389,19 @@ scripts:
     standalone: true
     description: "Checks if the code is formatted correctly"
     value: |
-      set -e
-
-      if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
-        echo "Detected shallow clone, fetching complete history..."
-        git fetch --unshallow origin master
+      TARGET_BRANCH=$GITHUB_BASE_REF
+      if [ "$GITHUB_BASE_REF" == "" ]; then
+        TARGET_BRANCH="master"
       fi
 
-      git fetch origin master:refs/remotes/origin/master
-
-      MERGE_BASE=$(git merge-base HEAD origin/master)
-      CHANGED=$(git diff --name-only $MERGE_BASE...HEAD | grep -v testdata | grep -v vendor) || true
-      if [ -z "$CHANGED" ]; then
-        echo "No relevant changed files found"
+      if [ "$TARGET_BRANCH" == "master" ]; then
+        echo "Target branch is master, not checking for newlines"
         exit 0
       fi
-      echo "Changed files: $CHANGED"
 
+      CHANGED=$(git diff --name-only origin/$TARGET_BRANCH | grep -v testdata | grep -v vendor)
       NO_NEWLINE=0
       for FILE in $CHANGED; do
-          if [ ! -f "$FILE" ]; then
-              continue
-          fi
           if file "$FILE" | grep -q -E 'text|ASCII'; then
               if [ $(tail -c 1 "$FILE" | wc -l) -eq 0 ]; then
                   echo "Missing newline at end of file: $FILE"
@@ -418,6 +409,13 @@ scripts:
               fi
           fi
       done
+
+      if [ "$NO_NEWLINE" -ne 0 ]; then
+          echo "Error: Some text files are missing a newline at the end."
+          exit 1
+      else
+          echo "Success: All modified text files end with a newline."
+      fi
   - name: grab-mergecommits
     language: bash
     standalone: true
