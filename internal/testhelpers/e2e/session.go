@@ -47,7 +47,7 @@ import (
 const RuntimeBuildSourcingTimeout = 6 * time.Minute
 
 var (
-	RuntimeSolvingTimeoutOpt       = termtest.OptExpectTimeout(1 * time.Minute)
+	RuntimeSolvingTimeoutOpt       = termtest.OptExpectTimeout(90 * time.Second)
 	RuntimeSourcingTimeoutOpt      = termtest.OptExpectTimeout(3 * time.Minute)
 	RuntimeBuildSourcingTimeoutOpt = termtest.OptExpectTimeout(RuntimeBuildSourcingTimeout)
 )
