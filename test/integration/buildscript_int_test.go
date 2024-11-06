@@ -104,7 +104,7 @@ main = wheel
 
 	// Create a new commit, which will use the source files to create an ingredient if it doesn't already exist
 	cp := ts.Spawn("commit")
-	cp.ExpectExitCode(0, e2e.RuntimeSolvingTimeoutOpt)
+	cp.ExpectExitCode(0, e2e.RuntimeSolvingTimeoutOpt, termtest.OptExpectErrorMessage(ts.DebugMessage("")))
 
 	// Running commit again should say there are no changes
 	// If this fails then there's likely an issue with calculating the file hash, or checking whether an ingredient
