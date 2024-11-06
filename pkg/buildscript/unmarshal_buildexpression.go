@@ -382,6 +382,7 @@ type requirementFunction struct {
 // requirement functions (eg. `solve(requirements=..)`).
 var requirementFunctions = []requirementFunction{
 	{solveFuncName, []string{requirementsKey}},
+	{solveLegacyFuncName, []string{requirementsKey}},
 	{"ingredient", []string{"build_deps", "runtime_deps", "test_deps"}},
 }
 
