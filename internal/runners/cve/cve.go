@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/output/renderers"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
@@ -193,17 +194,15 @@ func (rd *cveOutput) MarshalOutput(format output.Format) interface{} {
 			return false
 		})
 
+		items := make([]string, len(ap.Details))
 		for i, d := range ap.Details {
-			bar := output.TreeMid
-			if i == len(ap.Details)-1 {
-				bar = output.TreeEnd
-			}
 			severity := d.Severity
 			if severity == "CRITICAL" {
 				severity = fmt.Sprintf("[ERROR]%-10s[/RESET]", severity)
 			}
-			rd.output.Print(fmt.Sprintf("  %s %-10s [ACTIONABLE]%s[/RESET]", bar, severity, d.CveID))
+			items[i] = fmt.Sprintf("%-10s [ACTIONABLE]%s[/RESET]", severity, d.CveID)
 		}
+		rd.output.Print(renderers.NewBulletList("", renderers.BulletTree, items).String())
 		rd.output.Print("")
 	}
 
