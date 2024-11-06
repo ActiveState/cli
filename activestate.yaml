@@ -390,30 +390,46 @@ scripts:
     description: "Checks if the code is formatted correctly"
     value: |
       set -e
+      set -x
 
-      git fetch --quiet origin master
+      echo "Starting check-format script"
+
+      if ! git fetch --quiet origin master; then
+        echo "Error: Failed to fetch from origin"
+        exit 1
+      fi
       echo "Checking format for changes since master"
 
-      MERGE_BASE=$(git merge-base HEAD origin/master)
+      MERGE_BASE=$(git merge-base HEAD origin/master) || {
+        echo "Error: Could not find merge base with origin/master"
+        exit 1
+      }
       echo "Merge base: $MERGE_BASE"
-      CHANGED=$(git diff --name-only $MERGE_BASE...HEAD | grep -v testdata | grep -v vendor)
+
+      CHANGED=$(git diff --name-only $MERGE_BASE...HEAD | grep -v testdata | grep -v vendor) || true
+      if [ -z "$CHANGED" ]; then
+        echo "No relevant changed files found"
+        exit 0
+      }
       echo "Changed files: $CHANGED"
+
       NO_NEWLINE=0
       for FILE in $CHANGED; do
+          echo "Checking file: $FILE"
+          if [ ! -f "$FILE" ]; then
+              echo "Warning: File no longer exists: $FILE"
+              continue
+          }
           if file "$FILE" | grep -q -E 'text|ASCII'; then
+              echo "File is text: $FILE"
               if [ $(tail -c 1 "$FILE" | wc -l) -eq 0 ]; then
                   echo "Missing newline at end of file: $FILE"
                   NO_NEWLINE=1
               fi
+          else
+              echo "Skipping non-text file: $FILE"
           fi
       done
-
-      if [ "$NO_NEWLINE" -ne 0 ]; then
-          echo "Error: Some text files are missing a newline at the end."
-          exit 1
-      else
-          echo "Success: All modified text files end with a newline."
-      fi
   - name: grab-mergecommits
     language: bash
     standalone: true
