@@ -389,6 +389,8 @@ scripts:
     standalone: true
     description: "Checks if the code is formatted correctly"
     value: |
+      set -e
+
       TARGET_BRANCH=$GITHUB_BASE_REF
       if [ "$GITHUB_BASE_REF" == "" ]; then
         TARGET_BRANCH="master"
