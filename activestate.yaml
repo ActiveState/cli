@@ -396,6 +396,11 @@ scripts:
         TARGET_BRANCH="master"
       fi
 
+      if [ "$TARGET_BRANCH" == "master" ]; then
+        echo "Target branch is master, not checking for newlines"
+        exit 0
+      fi
+
       git fetch --quiet origin $TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH
 
       CHANGED=$(git diff --name-only origin/$TARGET_BRANCH | grep -v testdata | grep -v vendor)
