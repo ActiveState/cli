@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/brunoga/deep"
 	"github.com/cespare/xxhash"
+	"github.com/gowebpki/jcs"
 )
 
 const namespaceSuffixFiles = "files"
@@ -180,6 +181,11 @@ func hashFuncCall(fc *buildscript.FuncCall, seed string) (string, error) {
 	fcb, err := json.Marshal(fcc)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not marshal function call")
+	}
+	// Go's JSON implementation does not produce canonical output, so we need to utilize additional tooling to ensure
+	// the hash we create is based on canonical data.
+	if fcb, err = jcs.Transform(fcb); err != nil {
+		return "", errs.Wrap(err, "Could not transform json blob to canonical json")
 	}
 	hasher := xxhash.New()
 	hasher.Write([]byte(seed))

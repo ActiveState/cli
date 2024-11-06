@@ -79,7 +79,7 @@ func Test_hashFuncCall(t *testing.T) {
 				seed:   "",
 			},
 			// If this fails you can update it to actual if you are sure your logic changes would result in the hash being different
-			"6a7c7bd03f10e832",
+			"6395ae666f293cd2",
 		},
 		{
 			"Simple Altered",
@@ -88,7 +88,7 @@ func Test_hashFuncCall(t *testing.T) {
 				seed:   "",
 			},
 			// If this fails you can update it to actual if you are sure your logic changes would result in the hash being different
-			"6003277e065496c1",
+			"b9a486d874a27bd5",
 		},
 		{
 			"Simple With Seed",
@@ -97,7 +97,7 @@ func Test_hashFuncCall(t *testing.T) {
 				seed:   "seed",
 			},
 			// If this fails you can update it to actual if you are sure your logic changes would result in the hash being different
-			"ee89d52f355f9985",
+			"5cca922938bd9261",
 		},
 	}
 	for _, tt := range tests {
