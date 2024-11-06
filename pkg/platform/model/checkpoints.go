@@ -11,6 +11,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
@@ -107,6 +108,10 @@ func FetchCheckpointForCommit(commitID strfmt.UUID, auth *authentication.Auth) (
 	}
 
 	logging.Debug("Returning %d requirements", len(response))
+
+	if len(response) == 0 {
+		return nil, locale.WrapError(ErrNoData, "err_no_data_found")
+	}
 
 	return response, nil
 }
