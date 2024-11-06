@@ -44,8 +44,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const RuntimeBuildSourcingTimeout = 6 * time.Minute
-
 var (
 	RuntimeSolvingTimeoutOpt       = termtest.OptExpectTimeout(90 * time.Second)
 	RuntimeSourcingTimeoutOpt      = termtest.OptExpectTimeout(3 * time.Minute)
