@@ -394,42 +394,38 @@ scripts:
 
       echo "Starting check-format script"
       
-      # Check if origin exists
-      if ! git remote get-url origin; then
-        echo "Error: 'origin' remote is not configured"
-        exit 1
+      if git rev-parse --is-shallow-repository; then
+        echo "Detected shallow clone, fetching complete history..."
+        git fetch --unshallow origin master || {
+          echo "Failed to unshallow repository"
+          exit 1
+        }
       fi
 
-      # Show current git status
-      echo "Current branch: $(git branch --show-current)"
-      echo "Git remotes:"
-      git remote -v
-
-      # Fetch with more verbose output
-      echo "Fetching from origin..."
-      if ! git fetch --verbose origin master; then
-        echo "Error: Failed to fetch from origin"
+      echo "Fetching master branch..."
+      git fetch origin master:refs/remotes/origin/master || {
+        echo "Failed to fetch master branch"
         exit 1
-      fi
+      }
 
-      # Verify master branch exists
-      if ! git show-ref --verify --quiet refs/remotes/origin/master; then
-        echo "Error: origin/master branch does not exist"
-        echo "Current HEAD: $(git rev-parse HEAD)"
-        echo "Origin master: $(git rev-parse origin/master)"
-        exit 1
+      # If we're in detached HEAD state, create a temporary branch
+      if [ -z "$(git branch --show-current)" ]; then
+        echo "Detected detached HEAD state, creating temporary branch..."
+        git branch temp_format_check HEAD || {
+          echo "Failed to create temporary branch"
+          exit 1
+        }
+        git checkout temp_format_check
       fi
 
       echo "Checking format for changes since master"
-
       MERGE_BASE=$(git merge-base HEAD origin/master) || {
         echo "Error: Could not find merge base with origin/master"
         echo "Current HEAD: $(git rev-parse HEAD)"
         echo "Origin master: $(git rev-parse origin/master)"
         exit 1
       }
-      echo "Merge base: $MERGE_BASE"
-
+      
       CHANGED=$(git diff --name-only $MERGE_BASE...HEAD | grep -v testdata | grep -v vendor) || true
       if [ -z "$CHANGED" ]; then
         echo "No relevant changed files found"
