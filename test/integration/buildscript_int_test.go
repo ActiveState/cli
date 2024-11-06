@@ -134,7 +134,7 @@ main = wheel
 			time.Sleep(time.Second * 5)
 		}
 		return nil
-	}, e2e.RuntimeBuildSourcingTimeout))
+	}, e2e.RuntimeBuildSourcingTimeout), ts.DebugMessage(""))
 
 	// Ensure build didn't fail
 	suite.False(out.HasFailedArtifacts)
