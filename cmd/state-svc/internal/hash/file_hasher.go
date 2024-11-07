@@ -45,17 +45,14 @@ func (fh *FileHasher) HashFiles(wd string, globs []string) (_ string, _ []hashed
 			return "", nil, errs.Wrap(err, "Could not match glob: %s", glob)
 		}
 		sort.Strings(files) // ensure consistent ordering
-		for _, f := range files {
-			if !filepath.IsAbs(f) {
-				af, err := filepath.Abs(filepath.Join(wd, f))
-				if err != nil {
-					return "", nil, errs.Wrap(err, "Could not get absolute path for file: %s", f)
-				}
-				f = af
-			}
-			fileInfo, err := os.Stat(f)
+		for _, relativePath := range files {
+			absolutePath, err := filepath.Abs(filepath.Join(wd, relativePath))
 			if err != nil {
-				return "", nil, errs.Wrap(err, "Could not stat file: %s", f)
+				return "", nil, errs.Wrap(err, "Could not get absolute path for file: %s", relativePath)
+			}
+			fileInfo, err := os.Stat(absolutePath)
+			if err != nil {
+				return "", nil, errs.Wrap(err, "Could not stat file: %s", absolutePath)
 			}
 
 			if fileInfo.IsDir() {
@@ -72,10 +69,10 @@ func (fh *FileHasher) HashFiles(wd string, globs []string) (_ string, _ []hashed
 			} else {
 				fileHasher := xxhash.New()
 				// include filepath in hash, because moving files should affect the hash
-				fmt.Fprintf(fileHasher, "%016x", f)
-				file, err := os.Open(f)
+				fmt.Fprintf(fileHasher, "%016x", relativePath)
+				file, err := os.Open(absolutePath)
 				if err != nil {
-					return "", nil, errs.Wrap(err, "Could not open file: %s", f)
+					return "", nil, errs.Wrap(err, "Could not open file: %s", absolutePath)
 				}
 				defer file.Close()
 				if _, err := io.Copy(fileHasher, file); err != nil {
@@ -90,7 +87,7 @@ func (fh *FileHasher) HashFiles(wd string, globs []string) (_ string, _ []hashed
 			hashes = append(hashes, hash)
 			hashedFiles = append(hashedFiles, hashedFile{
 				Pattern: glob,
-				Path:    f,
+				Path:    relativePath,
 				Hash:    hash,
 			})
 		}

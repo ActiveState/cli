@@ -15,8 +15,8 @@ type FileMap struct {
 	Target string
 }
 
-func CreateTgz(filepath string, fileMaps []FileMap) error {
-	f, err := os.OpenFile(filepath, os.O_CREATE|os.O_WRONLY, 0644)
+func CreateTgz(archivePath string, workDir string, fileMaps []FileMap) error {
+	f, err := os.OpenFile(archivePath, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return errs.Wrap(err, "Could not create temp file")
 	}
@@ -28,7 +28,11 @@ func CreateTgz(filepath string, fileMaps []FileMap) error {
 	defer tgz.Close()
 
 	for _, fileMap := range fileMaps {
-		file, err := os.Open(fileMap.Source)
+		source := fileMap.Source
+		if !filepath.IsAbs(source) {
+			source = filepath.Join(workDir, source)
+		}
+		file, err := os.Open(source)
 		if err != nil {
 			return errs.Wrap(err, "Could not open file")
 		}

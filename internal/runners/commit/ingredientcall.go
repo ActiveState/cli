@@ -107,7 +107,7 @@ func (i *IngredientCall) createIngredient(hash string, hashedFiles []*graph.Glob
 	}
 
 	tmpFile := fileutils.TempFilePath("", fmt.Sprintf("bs-hash-%s.tar.gz", hash))
-	if err := archiver.CreateTgz(tmpFile, archiver.FilesWithCommonParent(files...)); err != nil {
+	if err := archiver.CreateTgz(tmpFile, i.prime.Project().Dir(), archiver.FilesWithCommonParent(files...)); err != nil {
 		return nil, errs.Wrap(err, "Could not create tar.gz")
 	}
 	defer os.Remove(tmpFile)

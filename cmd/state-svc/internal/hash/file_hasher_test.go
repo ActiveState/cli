@@ -1,9 +1,11 @@
 package hash
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -49,6 +51,10 @@ func TestFileHasher_HashFiles(t *testing.T) {
 
 	hash2, files2, err := hasher.HashFiles(dir, []string{"./**/*"})
 	require.NoError(t, err, errs.JoinMessage(err))
+
+	for _, f := range files1 {
+		assert.False(t, strings.HasPrefix(f.Path, dir), fmt.Sprintf("'%s' should not be prefixed with '%s'", f.Path, dir))
+	}
 
 	sort.Slice(files1, func(i, j int) bool { return files1[i].Path < files1[j].Path })
 	sort.Slice(files2, func(i, j int) bool { return files2[i].Path < files2[j].Path })
