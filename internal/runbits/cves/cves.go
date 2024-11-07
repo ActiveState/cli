@@ -77,7 +77,7 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 		}
 	}
 
-	names := addedRequirements(oldBuildPlan, newBuildPlan)
+	names := changedRequirements(oldBuildPlan, newBuildPlan)
 	pg := output.StartSpinner(c.prime.Output(), locale.Tr("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
 
 	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(c.prime.Auth(), ingredients)
@@ -235,7 +235,7 @@ func (c *CveReport) promptForSecurity() (bool, error) {
 	return confirm, nil
 }
 
-func addedRequirements(oldBuildPlan *buildplan.BuildPlan, newBuildPlan *buildplan.BuildPlan) []string {
+func changedRequirements(oldBuildPlan *buildplan.BuildPlan, newBuildPlan *buildplan.BuildPlan) []string {
 	var names []string
 	var oldRequirements buildplan.Requirements
 	if oldBuildPlan != nil {
@@ -243,13 +243,16 @@ func addedRequirements(oldBuildPlan *buildplan.BuildPlan, newBuildPlan *buildpla
 	}
 	newRequirements := newBuildPlan.Requirements()
 
-	oldReqs := make(map[string]bool)
+	oldReqs := make(map[string]string)
 	for _, req := range oldRequirements {
-		oldReqs[qualifiedName(req)] = true
+		oldReqs[qualifiedName(req)] = req.Ingredient.Version
 	}
 
 	for _, req := range newRequirements {
-		if oldReqs[qualifiedName(req)] || req.Namespace == buildplan.NamespaceInternal {
+		if req.Namespace == buildplan.NamespaceInternal {
+			continue
+		}
+		if version, exists := oldReqs[qualifiedName(req)]; exists && version == req.Ingredient.Version {
 			continue
 		}
 		names = append(names, req.Name)
