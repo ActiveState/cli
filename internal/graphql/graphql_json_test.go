@@ -23,7 +23,9 @@ func TestDoJSON(t *testing.T) {
 		is.Equal(string(b), `{"query":"query {}","variables":null}`+"\n")
 		io.WriteString(w, `{
 			"data": {
-				"something": "yes"
+				"query": {
+					"something": "yes"
+				}
 			}
 		}`)
 	}))
@@ -50,7 +52,7 @@ func TestQueryJSON(t *testing.T) {
 		b, err := ioutil.ReadAll(r.Body)
 		is.NoErr(err)
 		is.Equal(string(b), `{"query":"query {}","variables":{"username":"matryer"}}`+"\n")
-		_, err = io.WriteString(w, `{"data":{"value":"some data"}}`)
+		_, err = io.WriteString(w, `{"data":{"query":{"value":"some data"}}}`)
 		is.NoErr(err)
 	}))
 	defer srv.Close()
@@ -84,7 +86,13 @@ func TestHeader(t *testing.T) {
 		calls++
 		is.Equal(r.Header.Get("X-Custom-Header"), "123")
 
-		_, err := io.WriteString(w, `{"data":{"value":"some data"}}`)
+		_, err := io.WriteString(w, `{
+			"data": {
+				"query": {
+					"value": "some data"
+				}
+			}
+		}`)
 		is.NoErr(err)
 	}))
 	defer srv.Close()

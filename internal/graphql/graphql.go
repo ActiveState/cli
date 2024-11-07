@@ -39,8 +39,6 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"strings"
-	"unicode"
 
 	"github.com/pkg/errors"
 )
@@ -146,30 +144,7 @@ func (c *Client) runWithJSON(ctx context.Context, req *Request, resp interface{}
 		return gr.Errors[0]
 	}
 
-	if req.dataPath != "" {
-		val, err := findValueByPath(intermediateResp, req.dataPath)
-		if err != nil {
-			// If the response is empty, return nil instead of an error
-			if len(intermediateResp) == 0 {
-				return nil
-			}
-			return err
-		}
-		data, err := json.Marshal(val)
-		if err != nil {
-			return errors.Wrap(err, "remarshaling response")
-		}
-		return json.Unmarshal(data, resp)
-	}
-
-	data, err := json.Marshal(intermediateResp)
-	if err != nil {
-		return errors.Wrap(err, "remarshaling response")
-	}
-	if resp == nil {
-		return nil
-	}
-	return json.Unmarshal(data, resp)
+	return c.marshalResponse(intermediateResp, resp)
 }
 
 func (c *Client) runWithPostFields(ctx context.Context, req *Request, resp interface{}) error {
@@ -238,24 +213,31 @@ func (c *Client) runWithPostFields(ctx context.Context, req *Request, resp inter
 		return gr.Errors[0]
 	}
 
-	if req.dataPath != "" {
-		val, err := findValueByPath(intermediateResp, req.dataPath)
-		if err != nil {
-			return errors.Wrap(err, "finding value by path")
-		}
-		data, err := json.Marshal(val)
-		if err != nil {
-			return errors.Wrap(err, "remarshaling response")
-		}
-		return json.Unmarshal(data, resp)
+	return c.marshalResponse(intermediateResp, resp)
+}
+
+// marshalResponse handles marshaling the intermediate response and unmarshaling it into the final response object
+func (c *Client) marshalResponse(intermediateResp map[string]interface{}, resp interface{}) error {
+	// If resp is nil, no need to process further
+	if resp == nil {
+		return nil
 	}
 
+	// Handle single-value response case
+	if len(intermediateResp) == 1 {
+		for _, val := range intermediateResp {
+			data, err := json.Marshal(val)
+			if err != nil {
+				return errors.Wrap(err, "remarshaling response")
+			}
+			return json.Unmarshal(data, resp)
+		}
+	}
+
+	// Handle multi-value response case
 	data, err := json.Marshal(intermediateResp)
 	if err != nil {
 		return errors.Wrap(err, "remarshaling response")
-	}
-	if resp == nil {
-		return nil
 	}
 	return json.Unmarshal(data, resp)
 }
@@ -298,10 +280,9 @@ type graphResponse struct {
 
 // Request is a GraphQL request.
 type Request struct {
-	q        string
-	vars     map[string]interface{}
-	files    []file
-	dataPath string
+	q     string
+	vars  map[string]interface{}
+	files []file
 
 	// Header represent any request headers that will be set
 	// when the request is made.
@@ -311,46 +292,10 @@ type Request struct {
 // NewRequest makes a new Request with the specified string.
 func NewRequest(q string) *Request {
 	req := &Request{
-		q:        q,
-		Header:   make(map[string][]string),
-		dataPath: inferDataPath(q),
+		q:      q,
+		Header: make(map[string][]string),
 	}
 	return req
-}
-
-// inferDataPath attempts to extract the first field name after the operation type
-// as the data path. Returns empty string if unable to infer.
-// For example, given the query:
-//
-//	query { user { name } }
-//
-// it will return "user".
-// The dataPath is used to signal to the client where it should start unmarshaling the response.
-func inferDataPath(query string) string {
-	query = strings.TrimSpace(query)
-	if query == "" {
-		return ""
-	}
-
-	startIdx := strings.Index(query, "{")
-	if startIdx == -1 {
-		return ""
-	}
-	query = query[startIdx+1:]
-	query = strings.TrimSpace(query)
-	if query == "" || query == "}" {
-		return ""
-	}
-
-	var result strings.Builder
-	for _, ch := range query {
-		if ch == '(' || ch == '{' || unicode.IsSpace(ch) || ch == ':' {
-			break
-		}
-		result.WriteRune(ch)
-	}
-
-	return strings.TrimSpace(result.String())
 }
 
 // Var sets a variable.
@@ -370,13 +315,6 @@ func (req *Request) File(fieldname, filename string, r io.Reader) {
 		Name:  filename,
 		R:     r,
 	})
-}
-
-// DataPath sets the path to the data field in the response.
-// This is useful if you want to unmarshal a nested object.
-// If not set, it will use the automatically inferred path.
-func (req *Request) DataPath(path string) {
-	req.dataPath = path
 }
 
 // file represents a file to upload.

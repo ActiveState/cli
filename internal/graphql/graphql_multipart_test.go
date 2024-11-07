@@ -45,7 +45,9 @@ func TestDoUseMultipartForm(t *testing.T) {
 		is.Equal(query, `query {}`)
 		io.WriteString(w, `{
 			"data": {
-				"something": "yes"
+				"query": {
+					"something": "yes"
+				}
 			}
 		}`)
 	}))
@@ -125,7 +127,7 @@ func TestQuery(t *testing.T) {
 		query := r.FormValue("query")
 		is.Equal(query, "query {}")
 		is.Equal(r.FormValue("variables"), `{"username":"matryer"}`+"\n")
-		_, err := io.WriteString(w, `{"data":{"value":"some data"}}`)
+		_, err := io.WriteString(w, `{"data":{"query":{"value":"some data"}}}`)
 		is.NoErr(err)
 	}))
 	defer srv.Close()
