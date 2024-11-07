@@ -40,7 +40,7 @@ jobs:
         sys:
           - {os: ubuntu-latest}
           - {os: macos-13, shell: zsh}
-          - {os: windows-2019}
+          - {os: windows-latest}
       fail-fast: false
     runs-on: ${{ matrix.sys.os }}
     env:
@@ -508,6 +508,6 @@ jobs:
         uses: geekyeggo/delete-artifact@v5
         with:
           name: |
-            session-build-ubuntu-20.04
-            session-build-macos-11
-            session-build-windows-2019
+            session-build-ubuntu-latest
+            session-build-macos-13
+            session-build-windows-latest
