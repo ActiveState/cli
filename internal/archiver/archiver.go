@@ -2,6 +2,7 @@ package archiver
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -57,10 +58,11 @@ func CreateTgz(filepath string, fileMaps []FileMap) error {
 func FilesWithCommonParent(filepaths ...string) []FileMap {
 	var fileMaps []FileMap
 	common := fileutils.CommonParentPath(filepaths)
-	for _, filepath := range filepaths {
+	for _, path := range filepaths {
+		path = filepath.ToSlash(path)
 		fileMaps = append(fileMaps, FileMap{
-			Source: filepath,
-			Target: strings.TrimPrefix(strings.TrimPrefix(filepath, common), "/"),
+			Source: filepath.ToSlash(path),
+			Target: strings.TrimPrefix(filepath.ToSlash(strings.TrimPrefix(path, common)), "/"),
 		})
 	}
 	return fileMaps
