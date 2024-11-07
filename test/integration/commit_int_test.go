@@ -35,7 +35,7 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 
 	cp := ts.Spawn("commit")
 	cp.Expect("no new changes")
-	cp.ExpectExitCode(1)
+	cp.ExpectExitCode(0)
 
 	_, err = buildscript_runbit.ScriptFromProject(proj)
 	suite.Require().NoError(err) // verify validity

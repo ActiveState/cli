@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
+	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -65,8 +66,7 @@ const (
 )
 
 var (
-	errNoChanges = errors.New("no changes")
-	errNoCommit  = errors.New("no commit")
+	errNoCommit = errors.New("no commit")
 )
 
 type errProjectNameInUse struct {
@@ -234,7 +234,8 @@ func (r *Push) Run(params PushParams) (rerr error) {
 
 		// Check if branch is already up to date
 		if branch.CommitID != nil && branch.CommitID.String() == commitID.String() {
-			return errNoChanges
+			r.out.Notice(locale.T("push_no_changes"))
+			return nil
 		}
 
 		// Perform the (fast-forward) push.
@@ -246,6 +247,11 @@ func (r *Push) Run(params PushParams) (rerr error) {
 			Strategy:  types.MergeCommitStrategyFastForward,
 		})
 		if err != nil {
+			var mergeCommitErr *bpResp.MergedCommitError
+			if errors.As(err, &mergeCommitErr) && mergeCommitErr.Type == types.NoChangeSinceLastCommitErrorType {
+				r.out.Notice(locale.T("push_no_changes"))
+				return nil
+			}
 			return errs.Wrap(err, "Could not push")
 		}
 	}

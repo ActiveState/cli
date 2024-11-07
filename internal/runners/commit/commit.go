@@ -35,20 +35,12 @@ func New(p primeable) *Commit {
 	return &Commit{p}
 }
 
-var ErrNoChanges = errors.New("buildscript has no changes")
-
 func rationalizeError(err *error) {
 	var buildPlannerErr *bpResp.BuildPlannerError
 
 	switch {
 	case err == nil:
 		return
-
-	case errors.Is(*err, ErrNoChanges):
-		*err = errs.WrapUserFacing(*err, locale.Tl(
-			"commit_notice_no_change",
-			"Your buildscript contains no new changes. No commit necessary.",
-		), errs.SetInput())
 
 	case errors.Is(*err, buildscript_runbit.ErrBuildscriptNotExist):
 		*err = errs.WrapUserFacing(*err, locale.T("err_buildscript_not_exist"))
@@ -109,7 +101,8 @@ func (c *Commit) Run() (rerr error) {
 
 	// Check if there is anything to commit
 	if equals {
-		return ErrNoChanges
+		out.Notice(locale.Tl("commit_notice_no_change", "Your buildscript contains no new changes. No commit necessary."))
+		return nil
 	}
 
 	pg := output.StartSpinner(out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
