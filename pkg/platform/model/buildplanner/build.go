@@ -57,6 +57,14 @@ func (c *client) Run(req gqlclient.Request, resp interface{}) error {
 const fetchCommitCacheExpiry = time.Hour * 12
 
 func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, target *string) (*Commit, error) {
+	return b.fetchCommit(commitID, owner, project, target, true)
+}
+
+func (b *BuildPlanner) FetchCommitNoPoll(commitID strfmt.UUID, owner, project string, target *string) (*Commit, error) {
+	return b.fetchCommit(commitID, owner, project, target, false)
+}
+
+func (b *BuildPlanner) fetchCommit(commitID strfmt.UUID, owner, project string, target *string, poll bool) (*Commit, error) {
 	logging.Debug("FetchCommit, commitID: %s, owner: %s, project: %s", commitID, owner, project)
 	resp := &response.ProjectResponse{}
 
@@ -92,7 +100,7 @@ func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, 
 	// The BuildPlanner will return a build plan with a status of
 	// "planning" if the build plan is not ready yet. We need to
 	// poll the BuildPlanner until the build is ready.
-	if resp.Commit.Build.Status == raw.Planning {
+	if poll && resp.Commit.Build.Status == raw.Planning {
 		resp.Commit.Build, err = b.pollBuildPlanned(commitID.String(), owner, project, target)
 		if err != nil {
 			return nil, errs.Wrap(err, "failed to poll build plan")
