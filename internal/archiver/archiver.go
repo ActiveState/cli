@@ -61,8 +61,8 @@ func FilesWithCommonParent(filepaths ...string) []FileMap {
 	for _, path := range filepaths {
 		path = filepath.ToSlash(path)
 		fileMaps = append(fileMaps, FileMap{
-			Source: filepath.ToSlash(path),
-			Target: strings.TrimPrefix(filepath.ToSlash(strings.TrimPrefix(path, common)), "/"),
+			Source: path,
+			Target: strings.TrimPrefix(strings.TrimPrefix(path, common), "/"),
 		})
 	}
 	return fileMaps
