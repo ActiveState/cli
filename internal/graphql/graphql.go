@@ -108,8 +108,10 @@ func (c *Client) runWithJSON(ctx context.Context, req *Request, resp interface{}
 	}
 	c.logf(">> variables: %v", req.vars)
 	c.logf(">> query: %s", req.q)
+
+	intermediateResp := make(map[string]interface{})
 	gr := &graphResponse{
-		Data: resp,
+		Data: &intermediateResp,
 	}
 	r, err := http.NewRequest(http.MethodPost, c.endpoint, &requestBody)
 	if err != nil {
@@ -141,7 +143,8 @@ func (c *Client) runWithJSON(ctx context.Context, req *Request, resp interface{}
 		// return first error
 		return gr.Errors[0]
 	}
-	return nil
+
+	return c.marshalResponse(intermediateResp, resp)
 }
 
 func (c *Client) runWithPostFields(ctx context.Context, req *Request, resp interface{}) error {
@@ -175,8 +178,9 @@ func (c *Client) runWithPostFields(ctx context.Context, req *Request, resp inter
 	c.logf(">> variables: %s", variablesBuf.String())
 	c.logf(">> files: %d", len(req.files))
 	c.logf(">> query: %s", req.q)
+	intermediateResp := make(map[string]interface{})
 	gr := &graphResponse{
-		Data: resp,
+		Data: &intermediateResp,
 	}
 	r, err := http.NewRequest(http.MethodPost, c.endpoint, &requestBody)
 	if err != nil {
@@ -208,7 +212,30 @@ func (c *Client) runWithPostFields(ctx context.Context, req *Request, resp inter
 		// return first error
 		return gr.Errors[0]
 	}
-	return nil
+
+	return c.marshalResponse(intermediateResp, resp)
+}
+
+func (c *Client) marshalResponse(intermediateResp map[string]interface{}, resp interface{}) error {
+	if resp == nil {
+		return nil
+	}
+
+	if len(intermediateResp) == 1 {
+		for _, val := range intermediateResp {
+			data, err := json.Marshal(val)
+			if err != nil {
+				return errors.Wrap(err, "remarshaling response")
+			}
+			return json.Unmarshal(data, resp)
+		}
+	}
+
+	data, err := json.Marshal(intermediateResp)
+	if err != nil {
+		return errors.Wrap(err, "remarshaling response")
+	}
+	return json.Unmarshal(data, resp)
 }
 
 // WithHTTPClient specifies the underlying http.Client to use when

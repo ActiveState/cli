@@ -10,47 +10,6 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-type ProjectCommitResponse struct {
-	Project *ProjectResponse `json:"project"`
-}
-
-// PostProcess must satisfy gqlclient.PostProcessor interface
-func (c *ProjectCommitResponse) PostProcess() error {
-	if c.Project == nil {
-		return errs.New("Project is nil")
-	}
-
-	if IsErrorResponse(c.Project.Type) {
-		return ProcessProjectError(c.Project, "Could not get build from project response")
-	}
-
-	if c.Project.Commit == nil {
-		return errs.New("Commit is nil")
-	}
-
-	if IsErrorResponse(c.Project.Type) {
-		return ProcessProjectError(c.Project, "Could not get build from project response")
-	}
-
-	if c.Project.Commit == nil {
-		return errs.New("Commit is nil")
-	}
-
-	if IsErrorResponse(c.Project.Commit.Type) {
-		return ProcessCommitError(c.Project.Commit, "Could not get build from commit from project response")
-	}
-
-	if c.Project.Commit.Build == nil {
-		return errs.New("Commit does not contain build")
-	}
-
-	if IsErrorResponse(c.Project.Commit.Build.Type) {
-		return ProcessBuildError(c.Project.Commit.Build, "Could not get build from project commit response")
-	}
-
-	return nil
-}
-
 func ProcessBuildError(build *BuildResponse, fallbackMessage string) error {
 	logging.Debug("ProcessBuildError: build.Type=%s", build.Type)
 	if build.Type == types.PlanningErrorType {

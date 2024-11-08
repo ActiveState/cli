@@ -12,12 +12,12 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/graph"
+	"github.com/ActiveState/cli/internal/graphql"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
-	"github.com/ActiveState/graphql"
 )
 
 var SvcTimeoutMinimal = time.Millisecond * 500
@@ -65,20 +65,20 @@ func (m *SvcModel) request(ctx context.Context, request gqlclient.Request, resp 
 
 func (m *SvcModel) StateVersion(ctx context.Context) (*graph.Version, error) {
 	r := request.NewVersionRequest()
-	resp := graph.VersionResponse{}
+	resp := graph.Version{}
 	if err := m.request(ctx, r, &resp); err != nil {
 		return nil, err
 	}
-	return &resp.Version, nil
+	return &resp, nil
 }
 
 func (m *SvcModel) LocalProjects(ctx context.Context) ([]*graph.Project, error) {
 	r := request.NewLocalProjectsRequest()
-	response := graph.ProjectsResponse{Projects: []*graph.Project{}}
+	response := []*graph.Project{}
 	if err := m.request(ctx, r, &response); err != nil {
 		return nil, err
 	}
-	return response.Projects, nil
+	return response, nil
 }
 
 // CheckUpdate returns cached update information. There is no guarantee that
@@ -88,12 +88,12 @@ func (m *SvcModel) LocalProjects(ctx context.Context) ([]*graph.Project, error) 
 func (m *SvcModel) CheckUpdate(ctx context.Context, desiredChannel, desiredVersion string) (*graph.AvailableUpdate, error) {
 	defer profile.Measure("svc:CheckUpdate", time.Now())
 	r := request.NewAvailableUpdate(desiredChannel, desiredVersion)
-	u := graph.AvailableUpdateResponse{}
+	u := graph.AvailableUpdate{}
 	if err := m.request(ctx, r, &u); err != nil {
 		return nil, errs.Wrap(err, "Error checking if update is available.")
 	}
 
-	return &u.AvailableUpdate, nil
+	return &u, nil
 }
 
 func (m *SvcModel) Ping() error {
@@ -130,12 +130,12 @@ func (m *SvcModel) CheckMessages(ctx context.Context, command string, flags []st
 	defer profile.Measure("svc:CheckMessages", time.Now())
 
 	r := request.NewMessagingRequest(command, flags)
-	resp := graph.CheckMessagesResponse{}
+	resp := []*graph.MessageInfo{}
 	if err := m.request(ctx, r, &resp); err != nil {
 		return nil, errs.Wrap(err, "Error sending messages request")
 	}
 
-	return resp.Messages, nil
+	return resp, nil
 }
 
 func (m *SvcModel) ConfigChanged(ctx context.Context, key string) error {
@@ -170,12 +170,12 @@ func (m *SvcModel) GetProcessesInUse(ctx context.Context, execDir string) ([]*gr
 	defer profile.Measure("svc:GetProcessesInUse", time.Now())
 
 	req := request.NewGetProcessesInUse(execDir)
-	response := graph.GetProcessesInUseResponse{}
+	response := []*graph.ProcessInfo{}
 	if err := m.request(ctx, req, &response); err != nil {
 		return nil, errs.Wrap(err, "Error sending GetProcessesInUse request to state-svc")
 	}
 
-	return response.Processes, nil
+	return response, nil
 }
 
 // GetJWT grabs the JWT from the svc, if it exists.
@@ -186,13 +186,13 @@ func (m *SvcModel) GetJWT(ctx context.Context) (*mono_models.JWT, error) {
 	defer profile.Measure("svc:GetJWT", time.Now())
 
 	r := request.NewJWTRequest()
-	resp := graph.GetJWTResponse{}
+	var resp json.RawMessage
 	if err := m.request(ctx, r, &resp); err != nil {
 		return nil, errs.Wrap(err, "Error sending messages request")
 	}
 
 	jwt := &mono_models.JWT{}
-	err := json.Unmarshal(resp.Payload, &jwt)
+	err := json.Unmarshal(resp, &jwt)
 	if err != nil {
 		return nil, errs.Wrap(err, "Error unmarshaling JWT")
 	}
@@ -205,14 +205,14 @@ func (m *SvcModel) GetCache(key string) (result string, _ error) {
 	defer profile.Measure("svc:GetCache", time.Now())
 
 	req := request.NewGetCache(key)
-	response := make(map[string]string)
+	var response string
 	if err := m.request(context.Background(), req, &response); err != nil {
 		return "", errs.Wrap(err, "Error sending GetCache request to state-svc")
 	}
-	if entry, ok := response["getCache"]; ok {
-		return entry, nil
+	if response != "" {
+		return response, nil
 	}
-	return "", errs.New("svcModel.GetCache() did not return an expected value")
+	return "", nil
 }
 
 func (m *SvcModel) SetCache(key, value string, expiry time.Duration) error {
@@ -230,11 +230,11 @@ func (m *SvcModel) HashGlobs(wd string, globs []string) (*graph.GlobResult, erro
 	defer profile.Measure("svc:HashGlobs", time.Now())
 
 	req := request.NewHashGlobs(wd, globs)
-	res := graph.HashGlobsResponse{}
+	res := graph.GlobResult{}
 	if err := m.request(context.Background(), req, &res); err != nil {
 		return nil, errs.Wrap(err, "Error sending HashGlobs request to state-svc")
 	}
-	return &res.Response, errs.New("svcModel.HashGlobs() did not return an expected value")
+	return &res, errs.New("svcModel.HashGlobs() did not return an expected value")
 }
 
 func jsonFromMap(m map[string]interface{}) string {

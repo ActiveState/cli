@@ -45,80 +45,80 @@ func (b *BuildPlanner) StageCommit(params StageCommitParams) (*Commit, error) {
 
 	// With the updated build expression call the stage commit mutation
 	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, params.Description, script.AtTime(), expression)
-	resp := &response.StageCommitResult{}
+	resp := &response.Commit{}
 	if err := b.client.Run(request, resp); err != nil {
 		return nil, processBuildPlannerError(err, "failed to stage commit")
 	}
 
-	if resp.Commit == nil {
+	if resp == nil {
 		return nil, errs.New("Staged commit is nil")
 	}
 
-	if response.IsErrorResponse(resp.Commit.Type) {
-		return nil, response.ProcessCommitError(resp.Commit, "Could not process error response from stage commit")
+	if response.IsErrorResponse(resp.Type) {
+		return nil, response.ProcessCommitError(resp, "Could not process error response from stage commit")
 	}
 
-	if resp.Commit.CommitID == "" {
+	if resp.CommitID == "" {
 		return nil, errs.New("Staged commit does not contain commitID")
 	}
 
-	if response.IsErrorResponse(resp.Commit.Build.Type) {
-		return &Commit{resp.Commit, nil, nil}, response.ProcessBuildError(resp.Commit.Build, "Could not process error response from stage commit")
+	if response.IsErrorResponse(resp.Build.Type) {
+		return &Commit{resp, nil, nil}, response.ProcessBuildError(resp.Build, "Could not process error response from stage commit")
 	}
 
 	// The BuildPlanner will return a build plan with a status of
 	// "planning" if the build plan is not ready yet. We need to
 	// poll the BuildPlanner until the build is ready.
-	if resp.Commit.Build.Status == raw.Planning {
-		resp.Commit.Build, err = b.pollBuildPlanned(resp.Commit.CommitID.String(), params.Owner, params.Project, nil)
+	if resp.Build.Status == raw.Planning {
+		resp.Build, err = b.pollBuildPlanned(resp.CommitID.String(), params.Owner, params.Project, nil)
 		if err != nil {
 			return nil, errs.Wrap(err, "failed to poll build plan")
 		}
 	}
 
-	bp, err := buildplan.Unmarshal(resp.Commit.Build.RawMessage)
+	bp, err := buildplan.Unmarshal(resp.Build.RawMessage)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to unmarshal build plan")
 	}
 
 	stagedScript := buildscript.New()
-	stagedScript.SetAtTime(time.Time(resp.Commit.AtTime), false)
-	if err := stagedScript.UnmarshalBuildExpression(resp.Commit.Expression); err != nil {
+	stagedScript.SetAtTime(time.Time(resp.AtTime), false)
+	if err := stagedScript.UnmarshalBuildExpression(resp.Expression); err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}
 
-	return &Commit{resp.Commit, bp, stagedScript}, nil
+	return &Commit{resp, bp, stagedScript}, nil
 }
 
 func (b *BuildPlanner) RevertCommit(organization, project, parentCommitID, commitID string) (strfmt.UUID, error) {
 	logging.Debug("RevertCommit, organization: %s, project: %s, commitID: %s", organization, project, commitID)
-	resp := &response.RevertCommitResult{}
+	resp := &response.RevertedCommit{}
 	err := b.client.Run(request.RevertCommit(organization, project, parentCommitID, commitID), resp)
 	if err != nil {
 		return "", processBuildPlannerError(err, "Failed to revert commit")
 	}
 
-	if resp.RevertedCommit == nil {
+	if resp == nil {
 		return "", errs.New("Revert commit response is nil")
 	}
 
-	if response.IsErrorResponse(resp.RevertedCommit.Type) {
-		return "", response.ProcessRevertCommitError(resp.RevertedCommit, "Could not revert commit")
+	if response.IsErrorResponse(resp.Type) {
+		return "", response.ProcessRevertCommitError(resp, "Could not revert commit")
 	}
 
-	if resp.RevertedCommit.Commit == nil {
+	if resp.Commit == nil {
 		return "", errs.New("Revert commit's commit is nil'")
 	}
 
-	if response.IsErrorResponse(resp.RevertedCommit.Commit.Type) {
-		return "", response.ProcessCommitError(resp.RevertedCommit.Commit, "Could not process error response from revert commit")
+	if response.IsErrorResponse(resp.Commit.Type) {
+		return "", response.ProcessCommitError(resp.Commit, "Could not process error response from revert commit")
 	}
 
-	if resp.RevertedCommit.Commit.CommitID == "" {
+	if resp.Commit.CommitID == "" {
 		return "", errs.New("Commit does not contain commitID")
 	}
 
-	return resp.RevertedCommit.Commit.CommitID, nil
+	return resp.Commit.CommitID, nil
 }
 
 type MergeCommitParams struct {
@@ -132,27 +132,27 @@ type MergeCommitParams struct {
 func (b *BuildPlanner) MergeCommit(params *MergeCommitParams) (strfmt.UUID, error) {
 	logging.Debug("MergeCommit, owner: %s, project: %s", params.Owner, params.Project)
 	request := request.MergeCommit(params.Owner, params.Project, params.TargetRef, params.OtherRef, params.Strategy)
-	resp := &response.MergeCommitResult{}
+	resp := &response.MergedCommit{}
 	err := b.client.Run(request, resp)
 	if err != nil {
 		return "", processBuildPlannerError(err, "Failed to merge commit")
 	}
 
-	if resp.MergedCommit == nil {
+	if resp == nil {
 		return "", errs.New("MergedCommit is nil")
 	}
 
-	if response.IsErrorResponse(resp.MergedCommit.Type) {
-		return "", response.ProcessMergedCommitError(resp.MergedCommit, "Could not merge commit")
+	if response.IsErrorResponse(resp.Type) {
+		return "", response.ProcessMergedCommitError(resp, "Could not merge commit")
 	}
 
-	if resp.MergedCommit.Commit == nil {
+	if resp.Commit == nil {
 		return "", errs.New("Merge commit's commit is nil'")
 	}
 
-	if response.IsErrorResponse(resp.MergedCommit.Commit.Type) {
-		return "", response.ProcessCommitError(resp.MergedCommit.Commit, "Could not process error response from merge commit")
+	if response.IsErrorResponse(resp.Commit.Type) {
+		return "", response.ProcessCommitError(resp.Commit, "Could not process error response from merge commit")
 	}
 
-	return resp.MergedCommit.Commit.CommitID, nil
+	return resp.Commit.CommitID, nil
 }

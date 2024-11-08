@@ -4,10 +4,10 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/gqlclient"
+	"github.com/ActiveState/cli/internal/graphql"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/graphql"
 )
 
 const clientDeprecationErrorKey = "CLIENT_DEPRECATION_ERROR"

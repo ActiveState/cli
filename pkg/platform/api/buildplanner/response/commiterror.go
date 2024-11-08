@@ -73,7 +73,7 @@ type RevertCommitError struct {
 
 func (m *RevertCommitError) Error() string { return m.Message }
 
-func ProcessRevertCommitError(rcErr *revertedCommit, fallbackMessage string) error {
+func ProcessRevertCommitError(rcErr *RevertedCommit, fallbackMessage string) error {
 	if rcErr.Type != "" {
 		return &RevertCommitError{rcErr.Type, rcErr.Message}
 	}
@@ -87,7 +87,7 @@ type MergedCommitError struct {
 
 func (m *MergedCommitError) Error() string { return m.Message }
 
-func ProcessMergedCommitError(mcErr *mergedCommit, fallbackMessage string) error {
+func ProcessMergedCommitError(mcErr *MergedCommit, fallbackMessage string) error {
 	if mcErr.Type != "" {
 		return &MergedCommitError{mcErr.Type, mcErr.Message}
 	}
