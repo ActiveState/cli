@@ -1,6 +1,8 @@
 package swtch
 
 import (
+	"errors"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
@@ -74,6 +76,15 @@ func (b branchIdentifier) Locale() string {
 	return locale.Tl("branch_identifier_type", "branch")
 }
 
+type errCommitNotOnBranch struct {
+	commitID string
+	branch   string
+}
+
+func (e errCommitNotOnBranch) Error() string {
+	return "commit is not on branch"
+}
+
 func New(prime primeable) *Switch {
 	return &Switch{
 		prime:     prime,
@@ -86,7 +97,24 @@ func New(prime primeable) *Switch {
 	}
 }
 
-func (s *Switch) Run(params SwitchParams) error {
+func rationalizeError(rerr *error) {
+	if rerr == nil {
+		return
+	}
+
+	var commitNotOnBranchErr *errCommitNotOnBranch
+
+	switch {
+	case errors.As(*rerr, &commitNotOnBranchErr):
+		*rerr = errs.WrapUserFacing(*rerr,
+			locale.Tl("err_identifier_branch_not_on_branch", "Commit does not belong to history for branch [ACTIONABLE]{{.V0}}[/RESET]", commitNotOnBranchErr.branch),
+			errs.SetInput(),
+		)
+	}
+}
+
+func (s *Switch) Run(params SwitchParams) (rerr error) {
+	defer rationalizeError(&rerr)
 	logging.Debug("ExecuteSwitch")
 
 	if s.project == nil {
@@ -96,27 +124,27 @@ func (s *Switch) Run(params SwitchParams) error {
 
 	project, err := model.LegacyFetchProjectByName(s.project.Owner(), s.project.Name())
 	if err != nil {
-		return locale.WrapError(err, "err_fetch_project", "", s.project.Namespace().String())
+		return errs.Wrap(err, "Could not fetch project '%s'", s.project.Namespace().String())
 	}
 
 	identifier, err := resolveIdentifier(project, params.Identifier)
 	if err != nil {
-		return locale.WrapError(err, "err_resolve_identifier", "Could not resolve identifier '{{.V0}}'", params.Identifier)
+		return errs.Wrap(err, "Could not resolve identifier '%s'", params.Identifier)
 	}
 
 	if id, ok := identifier.(branchIdentifier); ok {
 		err = s.project.Source().SetBranch(id.branch.Label)
 		if err != nil {
-			return locale.WrapError(err, "err_switch_set_branch", "Could not update branch")
+			return errs.Wrap(err, "Could not update branch")
 		}
 	}
 
 	belongs, err := model.CommitBelongsToBranch(s.project.Owner(), s.project.Name(), s.project.BranchName(), identifier.CommitID(), s.auth)
 	if err != nil {
-		return locale.WrapError(err, "err_identifier_branch", "Could not determine if commit belongs to branch")
+		return errs.Wrap(err, "Could not determine if commit belongs to branch")
 	}
 	if !belongs {
-		return locale.NewInputError("err_identifier_branch_not_on_branch", "Commit does not belong to history for branch [ACTIONABLE]{{.V0}}[/RESET]", s.project.BranchName())
+		return &errCommitNotOnBranch{identifier.CommitID().String(), s.project.BranchName()}
 	}
 
 	err = localcommit.Set(s.project.Dir(), identifier.CommitID().String())
@@ -126,7 +154,7 @@ func (s *Switch) Run(params SwitchParams) error {
 
 	_, err = runtime_runbit.Update(s.prime, trigger.TriggerSwitch)
 	if err != nil {
-		return locale.WrapError(err, "err_refresh_runtime")
+		return errs.Wrap(err, "Could not setup runtime")
 	}
 
 	s.out.Print(output.Prepare(
@@ -148,7 +176,7 @@ func resolveIdentifier(project *mono_models.Project, idParam string) (identifier
 
 	branch, err := model.BranchForProjectByName(project, idParam)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_identifier_branch", "Could not get branch '{{.V0}}' for current project", idParam)
+		return nil, errs.Wrap(err, "Could not get branch '%s'", idParam)
 
 	}
 
