@@ -646,8 +646,6 @@ err_incompatible_move_file_dir:
   other: |
     Could not move [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].  One is a file, the other a directory.
     This indicates that the requested build may be corrupted.
-err_init_lang:
-  other: "Invalid language: {{.V0}}@{{.V1}}"
 initializing_project:
   other: |
     Initializing Project
@@ -1217,8 +1215,6 @@ err_findproject_notfound:
   other: "Could not load project [ACTIONABLE]{{.V0}}[/RESET] from path: [ACTIONABLE]{{.V1}}[/RESET]"
 arg_state_shell_namespace_description:
   other: The namespace of the project you wish to start a virtual environment shell/prompt for, or just the project name if previously used
-err_language_by_commit:
-  other: Could not get language from commit ID {{.V0}}
 err_parse_project:
   other: Could not parse project file at {{.V0}}
 err_uninstall_privilege_mismatch:

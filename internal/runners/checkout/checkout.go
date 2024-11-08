@@ -1,6 +1,7 @@
 package checkout
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -77,6 +78,19 @@ func NewCheckout(prime primeable) *Checkout {
 	}
 }
 
+func rationalizeError(rerr *error) {
+	if rerr == nil {
+		return
+	}
+
+	switch {
+	case errors.Is(*rerr, checkout.ErrNoOrg):
+		*rerr = errs.WrapUserFacing(*rerr,
+			locale.Tl("err_no_org_name", "Your project's organization name could not be found"),
+			errs.SetInput())
+	}
+}
+
 func (u *Checkout) Run(params *Params) (rerr error) {
 	var err error
 	var ns *project.Namespaced
@@ -101,6 +115,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 	}
 
 	defer func() { runtime_runbit.RationalizeSolveError(u.prime.Project(), u.auth, &rerr) }()
+	defer rationalizeError(&rerr)
 
 	logging.Debug("Checking out %s to %s", ns.String(), params.PreferredPath)
 
@@ -113,7 +128,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 
 	proj, err := project.FromPath(projectDir)
 	if err != nil {
-		return locale.WrapError(err, "err_project_frompath")
+		return errs.Wrap(err, "Could not read created project file")
 	}
 	u.prime.SetProject(proj)
 
