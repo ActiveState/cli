@@ -216,14 +216,11 @@ func (c *Client) runWithPostFields(ctx context.Context, req *Request, resp inter
 	return c.marshalResponse(intermediateResp, resp)
 }
 
-// marshalResponse handles marshaling the intermediate response and unmarshaling it into the final response object
 func (c *Client) marshalResponse(intermediateResp map[string]interface{}, resp interface{}) error {
-	// If resp is nil, no need to process further
 	if resp == nil {
 		return nil
 	}
 
-	// Handle single-value response case
 	if len(intermediateResp) == 1 {
 		for _, val := range intermediateResp {
 			data, err := json.Marshal(val)
@@ -234,7 +231,6 @@ func (c *Client) marshalResponse(intermediateResp map[string]interface{}, resp i
 		}
 	}
 
-	// Handle multi-value response case
 	data, err := json.Marshal(intermediateResp)
 	if err != nil {
 		return errors.Wrap(err, "remarshaling response")
@@ -322,21 +318,4 @@ type file struct {
 	Field string
 	Name  string
 	R     io.Reader
-}
-
-func findValueByPath(data map[string]interface{}, path string) (interface{}, error) {
-	if val, ok := data[path]; ok {
-		return val, nil
-	}
-
-	// Recursively search through nested maps
-	for _, val := range data {
-		if nestedMap, ok := val.(map[string]interface{}); ok {
-			if found, err := findValueByPath(nestedMap, path); err == nil {
-				return found, nil
-			}
-		}
-	}
-
-	return nil, fmt.Errorf("path %q not found in response", path)
 }
