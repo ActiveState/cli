@@ -86,7 +86,8 @@ func (r *Reset) Run(params *Params) error {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
 		if *latestCommit == localCommitID {
-			return locale.NewInputError("err_reset_latest", "You are already on the latest commit")
+			r.out.Notice(locale.Tl("err_reset_latest", "You are already on the latest commit"))
+			return nil
 		}
 		commitID = *latestCommit
 

@@ -259,12 +259,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoChanges() {
 	ts.LoginAsPersistentUser()
 	cp := ts.Spawn("push")
 	cp.Expect("no local changes to push")
-	cp.ExpectExitCode(1)
-	ts.IgnoreLogErrors()
-
-	if strings.Count(cp.Snapshot(), " x ") != 1 {
-		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
-	}
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PushIntegrationTestSuite) TestPush_NameInUse() {
