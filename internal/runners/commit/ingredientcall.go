@@ -70,7 +70,11 @@ func (i *IngredientCall) Resolve() error {
 		return errs.Wrap(err, "Could not hash ingredient call")
 	}
 
-	resolvedIngredient, err := i.getCached(hash)
+	latest, err := model.FetchLatestRevisionTimeStamp(nil)
+	if err != nil {
+		return errs.Wrap(err, "Unable to determine latest revision time")
+	}
+	resolvedIngredient, err := i.getCached(hash, latest)
 	if err != nil {
 		return errs.Wrap(err, "Could not check if ingredient call is cached")
 	}
@@ -80,11 +84,11 @@ func (i *IngredientCall) Resolve() error {
 			return errs.Wrap(err, "Could not create ingredient")
 		}
 		// Bump timestamp, because otherwise the new ingredient will be unusable
-		latest, err := model.FetchLatestRevisionTimeStamp(nil)
-		if err != nil {
-			return errs.Wrap(err, "Unable to determine latest revision time")
-		}
 		i.script.SetAtTime(latest, true)
+	} else {
+		// Update atTime according to ingredient. This MAY not actually be an update if the resolvedIngredient has
+		// the same atTime as the stored buildscript.
+		i.script.SetAtTime(resolvedIngredient.AtTime, true)
 	}
 
 	// Add/update arguments on the buildscript ingredient function call
@@ -138,9 +142,15 @@ func (i *IngredientCall) createIngredient(hash string, hashedFiles []*graph.Glob
 		return nil, errs.Wrap(err, "Could not create publish request")
 	}
 
+	latest, err := model.FetchLatestRevisionTimeStamp(nil)
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to determine latest revision time")
+	}
+
 	return &resolvedIngredientData{
 		VersionID: pr.IngredientVersionID,
 		Revision:  pr.Revision,
+		AtTime:    latest,
 	}, nil
 }
 
@@ -290,11 +300,24 @@ func parseFeature(f string) (request.PublishVariableFeature, error) {
 type resolvedIngredientData struct {
 	VersionID string
 	Revision  int
+	AtTime    time.Time
+}
+
+// MarshalJSON works around go's json.Marshal not allowing you to specify the format of time fields
+func (r resolvedIngredientData) MarshalJSON() ([]byte, error) {
+	type Alias resolvedIngredientData
+	return json.Marshal(&struct {
+		Alias
+		AtTime string
+	}{
+		Alias:  Alias(r),
+		AtTime: r.AtTime.Format(time.RFC3339),
+	})
 }
 
 // getCached checks against our local cache to see if we've already handled this file hash, and if no local cache
 // exists checks against the platform ingredient API.
-func (i *IngredientCall) getCached(hash string) (*resolvedIngredientData, error) {
+func (i *IngredientCall) getCached(hash string, latest time.Time) (*resolvedIngredientData, error) {
 	cacheValue, err := i.prime.SvcModel().GetCache(fmt.Sprintf(cacheKeyFiles, hash))
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get build script cache")
@@ -319,6 +342,23 @@ func (i *IngredientCall) getCached(hash string) (*resolvedIngredientData, error)
 		return &resolvedIngredientData{
 			VersionID: string(*ingredients[0].LatestVersion.IngredientVersionID),
 			Revision:  int(*ingredients[0].LatestVersion.Revision),
+			AtTime:    ptr.From(i.script.AtTime(), latest), // Fall back to latest if script has no AtTime
+		}, nil
+	}
+
+	// Check again if the hash exists at the latest timestamp, because even if the ingredient exists, it might not exist
+	// at the atTime of the buildscript. In which case the buildscript will need to bump its timestamp without touching
+	// the ingredient.
+	ingredients, err = model.SearchIngredientsStrict(i.ns.String(), hash, true, false, &latest, i.prime.Auth())
+	if err != nil && !errors.As(err, ptr.To(&model.ErrSearch404{})) {
+		return nil, errs.Wrap(err, "Could not search ingredients")
+	}
+	if len(ingredients) > 0 {
+		// Ingredient already exists
+		return &resolvedIngredientData{
+			VersionID: string(*ingredients[0].LatestVersion.IngredientVersionID),
+			Revision:  int(*ingredients[0].LatestVersion.Revision),
+			AtTime:    latest,
 		}, nil
 	}
 
