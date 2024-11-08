@@ -12,7 +12,7 @@ import (
 
 type FileMap struct {
 	Source string
-	Target string
+	Target string // Note: Target paths should always be relative to the archive root, do not use absolute paths
 }
 
 func CreateTgz(archivePath string, workDir string, fileMaps []FileMap) error {
@@ -30,6 +30,8 @@ func CreateTgz(archivePath string, workDir string, fileMaps []FileMap) error {
 	for _, fileMap := range fileMaps {
 		source := fileMap.Source
 		if !filepath.IsAbs(source) {
+			// Ensure the source path is absolute, because otherwise it will use the global working directory which
+			// we're not interested in.
 			source = filepath.Join(workDir, source)
 		}
 		file, err := os.Open(source)
