@@ -160,7 +160,7 @@ func (c *Commit) Run() (rerr error) {
 	}
 
 	// Get old buildplan.
-	oldCommit, err := bp.FetchCommit(localCommitID, proj.Owner(), proj.Name(), nil)
+	oldCommit, err := bp.FetchCommitNoPoll(localCommitID, proj.Owner(), proj.Name(), nil)
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch old commit")
 	}
