@@ -12,7 +12,7 @@ import (
 )
 
 const testProject = "https://platform.activestate.com/org/project?branch=main&commitID=00000000-0000-0000-0000-000000000000"
-const testTime = "2000-01-01T00:00:00.000Z"
+const testTime = "2000-01-01T00:00:00Z"
 
 func checkoutInfo(project, time string) string {
 	return "```\n" +

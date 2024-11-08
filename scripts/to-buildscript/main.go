@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/pkg/buildscript"
-	"github.com/go-openapi/strfmt"
 )
 
 func main() {
@@ -45,7 +44,7 @@ func main() {
 	project := "https://platform.activestate.com/org/project?branch=main&commitID=00000000-0000-0000-0000-000000000000"
 	var atTime *time.Time
 	if len(os.Args) == (2 + argOffset) {
-		t, err := time.Parse(strfmt.RFC3339Millis, os.Args[1+argOffset])
+		t, err := time.Parse(time.RFC3339, os.Args[1+argOffset])
 		if err != nil {
 			panic(errs.JoinMessage(err))
 		}
