@@ -493,3 +493,6 @@ const OverrideShellEnvVarName = "ACTIVESTATE_CLI_SHELL_OVERRIDE"
 
 // IgnoreEnvEnvVarName is the environment variable to set for skipping specific environment variables during runtime setup.
 const IgnoreEnvEnvVarName = "ACTIVESTATE_CLI_IGNORE_ENV"
+
+// ProgressUrlPathName is the trailing path for a project's build progress.
+const BuildProgressUrlPathName = "distributions"

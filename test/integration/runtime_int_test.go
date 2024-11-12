@@ -169,7 +169,8 @@ func (suite *RuntimeIntegrationTestSuite) TestBuildInProgress() {
 	ts.PrepareEmptyProject()
 
 	cp = ts.Spawn("install", "private/"+e2e.PersistentUsername+"/hello-world", "--ts", "now")
-	cp.Expect("Build Log")
+	cp.Expect("Build Log:")
+	cp.Expect("Detailed Progress:")
 	cp.Expect("Building")
 	cp.Expect("All dependencies have been installed and verified", e2e.RuntimeBuildSourcingTimeoutOpt)
 	cp.Expect("Added: private/" + e2e.PersistentUsername + "/hello-world")

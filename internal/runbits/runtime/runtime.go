@@ -1,6 +1,7 @@
 package runtime_runbit
 
 import (
+	"net/url"
 	"os"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
@@ -251,6 +252,24 @@ func Update(
 	}
 	if opts.Archive != nil {
 		rtOpts = append(rtOpts, runtime.WithArchive(opts.Archive.Dir, opts.Archive.PlatformID, checkout.ArtifactExt))
+	}
+	if commit.BuildPlan().IsBuildInProgress() {
+		// Build progress URL is of the form
+		// https://<host>/<owner>/<project>/distributions?branch=<branch>&commitID=<commitID>
+		host := constants.DefaultAPIHost
+		if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
+			host = hostOverride
+		}
+		path, err := url.JoinPath(proj.Owner(), proj.Name(), constants.BuildProgressUrlPathName)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not construct progress url path")
+		}
+		u := &url.URL{Scheme: "https", Host: host, Path: path}
+		q := u.Query()
+		q.Set("branch", proj.BranchName())
+		q.Set("commitID", commitID.String())
+		u.RawQuery = q.Encode()
+		rtOpts = append(rtOpts, runtime.WithBuildProgressUrl(u.String()))
 	}
 
 	if err := rt.Update(buildPlan, rtHash, rtOpts...); err != nil {

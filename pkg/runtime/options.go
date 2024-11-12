@@ -13,6 +13,10 @@ func WithBuildlogFilePath(path string) SetOpt {
 	return func(opts *Opts) { opts.BuildlogFilePath = path }
 }
 
+func WithBuildProgressUrl(url string) SetOpt {
+	return func(opts *Opts) { opts.BuildProgressUrl = url }
+}
+
 func WithPreferredLibcVersion(version string) SetOpt {
 	return func(opts *Opts) { opts.PreferredLibcVersion = version }
 }
