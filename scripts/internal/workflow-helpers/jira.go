@@ -181,6 +181,7 @@ func UpdateJiraFixVersion(client *jira.Client, issue *jira.Issue, versionID stri
 		Key: issue.Key,
 		Fields: &jira.IssueFields{
 			FixVersions: []*jira.FixVersion{{ID: versionID}},
+			Labels:      issue.Fields.Labels,
 		},
 	}
 
