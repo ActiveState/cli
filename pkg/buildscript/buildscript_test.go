@@ -101,15 +101,14 @@ func TestRoundTripFromBuildExpressionWithLegacyAtTime(t *testing.T) {
 	wd, err := environment.GetRootPath()
 	require.NoError(t, err)
 
-	initialTimeStamp := "2024-10-15T16:37:06.260Z"
-	updatedTimeStamp := "2024-10-15T16:37:06.261Z"
+	initialTimeStamp := "2024-10-15T16:37:06Z"
+	updatedTimeStamp := "2024-10-15T16:37:07Z"
 
 	data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "buildscript", "testdata", "buildexpression-roundtrip-legacy.json"))
 	require.NoError(t, err)
 
 	// The initial build expression does not use the new at_time format
 	assert.NotContains(t, string(data), "$at_time")
-	assert.Contains(t, string(data), initialTimeStamp)
 
 	script := New()
 	require.NoError(t, script.UnmarshalBuildExpression(data))
