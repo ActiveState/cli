@@ -1,6 +1,6 @@
 ```
 Project: https://platform.activestate.com/ActiveState-CLI/Merge?branch=main&commitID=f3263ee4-ac4c-41ee-b778-2585333f49f7
-Time: 2023-08-01T16:20:11.985000Z
+Time: 2023-08-01T16:20:11Z
 ```
 
 runtime = state_tool_artifacts_v1(

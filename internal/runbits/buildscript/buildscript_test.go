@@ -85,10 +85,10 @@ func TestRealWorld(t *testing.T) {
 		"```\n"+
 			"<<<<<<< local\n"+
 			"Project: https://platform.activestate.com/ActiveState-CLI/Merge?branch=main&commitID=d908a758-6a81-40d4-b0eb-87069cd7f07d\n"+
-			"Time: 2024-05-10T00:00:13.138Z\n"+
+			"Time: 2024-05-10T00:00:13Z\n"+
 			"=======\n"+
 			"Project: https://platform.activestate.com/ActiveState-CLI/Merge?branch=main&commitID=f3263ee4-ac4c-41ee-b778-2585333f49f7\n"+
-			"Time: 2023-08-01T16:20:11.985Z\n"+
+			"Time: 2023-08-01T16:20:11Z\n"+
 			">>>>>>> remote\n"+
 			"```\n"+`
 runtime = state_tool_artifacts_v1(
