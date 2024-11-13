@@ -317,7 +317,7 @@ func (s *Auth) UpdateSession(accessToken *mono_models.JWT) {
 	s.bearerToken = accessToken.Token
 	clientAuth := httptransport.BearerToken(s.bearerToken)
 	s.clientAuth = &clientAuth
-	s.lastRenewal = ptr.To(time.Now())
+	s.lastRenewal = ptr.To(time.Now().Add(-1 * time.Minute)) // the renewal happened up to a few seconds ago, not now
 
 	persist = s
 }
