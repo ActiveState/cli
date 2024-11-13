@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/thoas/go-funk"
@@ -139,6 +140,7 @@ func normalizeResponse(res *http.Response, err error) (*http.Response, error) {
 }
 
 func normalizeRetryResponse(res *http.Response, err error, numTries int) (*http.Response, error) {
+	logging.Debug("Retry failed with error: %v, after %d tries", err, numTries)
 	if err2, ok := err.(net.Error); ok && err2.Timeout() {
 		return res, locale.WrapExternalError(&UserNetworkError{-1}, "err_user_network_timeout", "", locale.Tr("err_user_network_solution", constants.ForumsURL))
 	}
