@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const mergeATime = "2000-01-01T00:00:00.000Z"
-const mergeBTime = "2000-01-02T00:00:00.000Z"
+const mergeATime = "2000-01-01T00:00:00Z"
+const mergeBTime = "2000-01-02T00:00:00Z"
 
 func TestMergeAdd(t *testing.T) {
 	scriptA, err := Unmarshal([]byte(

@@ -234,7 +234,7 @@ func (m *SvcModel) HashGlobs(wd string, globs []string) (*graph.GlobResult, erro
 	if err := m.request(context.Background(), req, &res); err != nil {
 		return nil, errs.Wrap(err, "Error sending HashGlobs request to state-svc")
 	}
-	return &res.Response, errs.New("svcModel.HashGlobs() did not return an expected value")
+	return &res.Response, nil
 }
 
 func jsonFromMap(m map[string]interface{}) string {

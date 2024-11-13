@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
-	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 )
 
@@ -31,7 +31,7 @@ func (b *BuildScript) Marshal() ([]byte, error) {
 	buf.WriteString("```\n")
 	buf.WriteString("Project: " + b.project + "\n")
 	if b.atTime != nil {
-		buf.WriteString("Time: " + b.atTime.Format(strfmt.RFC3339Millis) + "\n")
+		buf.WriteString("Time: " + b.atTime.Format(time.RFC3339) + "\n")
 	}
 	buf.WriteString("```\n\n")
 

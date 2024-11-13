@@ -8,7 +8,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -102,15 +101,14 @@ func TestRoundTripFromBuildExpressionWithLegacyAtTime(t *testing.T) {
 	wd, err := environment.GetRootPath()
 	require.NoError(t, err)
 
-	initialTimeStamp := "2024-10-15T16:37:06.260Z"
-	updatedTimeStamp := "2024-10-15T16:37:06.261Z"
+	initialTimeStamp := "2024-10-15T16:37:06Z"
+	updatedTimeStamp := "2024-10-15T16:37:07Z"
 
 	data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "buildscript", "testdata", "buildexpression-roundtrip-legacy.json"))
 	require.NoError(t, err)
 
 	// The initial build expression does not use the new at_time format
 	assert.NotContains(t, string(data), "$at_time")
-	assert.Contains(t, string(data), initialTimeStamp)
 
 	script := New()
 	require.NoError(t, script.UnmarshalBuildExpression(data))
@@ -118,7 +116,7 @@ func TestRoundTripFromBuildExpressionWithLegacyAtTime(t *testing.T) {
 	// Ensure that legacy at_time is preserved in the buildscript.
 	atTime := script.AtTime()
 	require.NotNil(t, atTime)
-	require.Equal(t, initialTimeStamp, atTime.Format(strfmt.RFC3339Millis))
+	require.Equal(t, initialTimeStamp, atTime.Format(time.RFC3339))
 
 	data, err = script.MarshalBuildExpression()
 	require.NoError(t, err)
@@ -128,12 +126,12 @@ func TestRoundTripFromBuildExpressionWithLegacyAtTime(t *testing.T) {
 	assert.NotContains(t, string(data), initialTimeStamp)
 
 	// Update the time in the build script but don't override the existing time
-	updatedTime, err := time.Parse(strfmt.RFC3339Millis, updatedTimeStamp)
+	updatedTime, err := time.Parse(time.RFC3339, updatedTimeStamp)
 	require.NoError(t, err)
 	script.SetAtTime(updatedTime, false)
 
 	// The updated time should be reflected in the build script
-	require.Equal(t, initialTimeStamp, script.AtTime().Format(strfmt.RFC3339Millis))
+	require.Equal(t, initialTimeStamp, script.AtTime().Format(time.RFC3339))
 
 	data, err = script.Marshal()
 	require.NoError(t, err)
@@ -145,7 +143,7 @@ func TestRoundTripFromBuildExpressionWithLegacyAtTime(t *testing.T) {
 
 	// Now override the time in the build script
 	script.SetAtTime(updatedTime, true)
-	require.Equal(t, updatedTimeStamp, script.AtTime().Format(strfmt.RFC3339Millis))
+	require.Equal(t, updatedTimeStamp, script.AtTime().Format(time.RFC3339))
 
 	data, err = script.Marshal()
 	require.NoError(t, err)
@@ -165,7 +163,7 @@ func TestRoundTripFromBuildExpressionWithLegacyAtTime(t *testing.T) {
 // TestExpressionToScript tests that creating a build script from a given Platform build expression
 // and at time produces the expected result.
 func TestExpressionToScript(t *testing.T) {
-	ts, err := time.Parse(strfmt.RFC3339Millis, testTime)
+	ts, err := time.Parse(time.RFC3339, testTime)
 	require.NoError(t, err)
 
 	script := New()
@@ -193,7 +191,7 @@ func TestScriptToExpression(t *testing.T) {
 
 func TestOutdatedScript(t *testing.T) {
 	_, err := Unmarshal([]byte(
-		`at_time = "2000-01-01T00:00:00.000Z"
+		`at_time = "2000-01-01T00:00:00Z"
 	main = runtime
 	`))
 	assert.Error(t, err)

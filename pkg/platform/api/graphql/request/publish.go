@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -101,6 +102,24 @@ type ExampleAuthorVariables struct {
 // ExampleDepVariables is used for presenting sample data to the user, it's not used for graphql input
 type ExampleDepVariables struct {
 	Dependencies []PublishVariableDep `yaml:"dependencies,omitempty"`
+}
+
+// MarshalJSON automatically takes the name and namespace and turns it into the path argument that the API expects
+func (p PublishVariables) MarshalJSON() ([]byte, error) {
+	if p.Path == "" {
+		if p.Name == "" || p.Namespace == "" {
+			return nil, errs.New("either Path of Name and Namespace are required")
+		}
+		p.Path = fmt.Sprintf("%s/%s", p.Namespace, p.Name)
+	}
+	// prevent recursion
+	type Alias PublishVariables
+	alias := &struct {
+		Alias
+	}{
+		Alias: (Alias)(p),
+	}
+	return json.Marshal(alias)
 }
 
 func (p PublishVariables) MarshalYaml(includeExample bool) ([]byte, error) {
