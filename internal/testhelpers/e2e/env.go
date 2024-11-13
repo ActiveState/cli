@@ -40,6 +40,7 @@ func sandboxedTestEnvironment(t *testing.T, dirs *Dirs, updatePath bool, extraEn
 		constants.ServiceSockDir + "=" + dirs.SockRoot,
 		constants.HomeEnvVarName + "=" + dirs.HomeDir,
 		systemHomeEnvVarName + "=" + dirs.HomeDir,
+		constants.DebugServiceRequestsEnvVarName + "=true",
 		"NO_COLOR=true",
 		"CI=true",
 	}...)
