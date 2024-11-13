@@ -61,7 +61,7 @@ func FetchLanguagesForCommit(commitID strfmt.UUID, auth *authentication.Auth) ([
 	languages := []Language{}
 	for _, requirement := range checkpoint {
 		if NamespaceMatch(requirement.Namespace, NamespaceLanguageMatch) {
-			version := MonoConstraintsToString(requirement.VersionConstraints)
+			version := MonoConstraintsToString(requirement.VersionConstraints, true)
 			lang := Language{
 				Name:    requirement.Requirement,
 				Version: version,
@@ -85,7 +85,7 @@ func FetchLanguagesForBuildScript(script *buildscript.BuildScript) ([]Language, 
 		if NamespaceMatch(requirement.Namespace, NamespaceLanguageMatch) {
 			lang := Language{
 				Name:    requirement.Name,
-				Version: BuildPlannerVersionConstraintsToString(requirement.VersionRequirement),
+				Version: VersionRequirementsToString(requirement.VersionRequirement, true),
 			}
 			languages = append(languages, lang)
 		}

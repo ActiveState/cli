@@ -37,7 +37,7 @@ func resolveVersion(req types.Requirement, bpReqs buildplan.Ingredients) *resolv
 	var resolved string
 
 	if req.VersionRequirement != nil {
-		requested = platformModel.BuildPlannerVersionConstraintsToString(req.VersionRequirement)
+		requested = platformModel.VersionRequirementsToString(req.VersionRequirement, true)
 	} else {
 		requested = locale.Tl("manifest_version_auto", "auto")
 	}

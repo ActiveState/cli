@@ -45,9 +45,9 @@ import (
 )
 
 var (
-	RuntimeSolvingTimeoutOpt       = termtest.OptExpectTimeout(1 * time.Minute)
+	RuntimeSolvingTimeoutOpt       = termtest.OptExpectTimeout(90 * time.Second)
 	RuntimeSourcingTimeoutOpt      = termtest.OptExpectTimeout(3 * time.Minute)
-	RuntimeBuildSourcingTimeoutOpt = termtest.OptExpectTimeout(6 * time.Minute)
+	RuntimeBuildSourcingTimeoutOpt = termtest.OptExpectTimeout(RuntimeBuildSourcingTimeout)
 )
 
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
@@ -368,6 +368,10 @@ func (s *Session) newSpawnOpts(optSetters ...SpawnOptSetter) SpawnOpts {
 // given YAML contents.
 func (s *Session) PrepareActiveStateYAML(contents string) {
 	require.NoError(s.T, fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.ConfigFileName), []byte(contents)))
+}
+
+func (s *Session) PrepareBuildScript(contents string) {
+	require.NoError(s.T, fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.BuildScriptFileName), []byte(contents)))
 }
 
 func (s *Session) PrepareCommitIdFile(commitID string) {

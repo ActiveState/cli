@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
 const atTimeKey = "at_time"
@@ -72,11 +71,16 @@ func Unmarshal(data []byte) (*BuildScript, error) {
 
 		project = info.Project
 
-		atTimeStr, err := strfmt.ParseDateTime(info.Time)
+		atTimeVal, err := time.Parse(time.RFC3339, info.Time)
 		if err != nil {
-			return nil, errs.Wrap(err, "Invalid timestamp: %s", info.Time)
+			// Older buildscripts used microsecond specificity
+			atDateTime, err := strfmt.ParseDateTime(info.Time)
+			if err != nil {
+				return nil, errs.Wrap(err, "Invalid timestamp: %s", info.Time)
+			}
+			atTimeVal = time.Time(atDateTime)
 		}
-		atTime = ptr.To(time.Time(atTimeStr))
+		atTime = &atTimeVal
 	}
 
 	return &BuildScript{raw, project, atTime}, nil

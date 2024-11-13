@@ -75,11 +75,11 @@ func (suite *CommitIntegrationTestSuite) TestCommitAtTimeChange() {
 	suite.Require().NoError(err) // verify validity
 
 	// Update top-level at_time variable.
-	dateTime := "2023-06-21T12:34:56.789Z"
+	dateTime := "2023-06-21T12:34:56Z"
 	buildScriptFile := filepath.Join(proj.Dir(), constants.BuildScriptFileName)
 	contents, err := fileutils.ReadFile(buildScriptFile)
 	suite.Require().NoError(err)
-	contents = bytes.Replace(contents, []byte("2023-06-22T21:56:10.504Z"), []byte(dateTime), 1)
+	contents = bytes.Replace(contents, []byte("2023-06-22T21:56:10Z"), []byte(dateTime), 1)
 	suite.Require().NoError(fileutils.WriteFile(buildScriptFile, contents))
 	suite.Require().Contains(string(fileutils.ReadFileUnsafe(filepath.Join(proj.Dir(), constants.BuildScriptFileName))), dateTime)
 

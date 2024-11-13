@@ -1,0 +1,15 @@
+LICENSE.txt
+README.md
+pyproject.toml
+setup.cfg
+setup.py
+data/data_file
+src/sample_activestate/__init__.py
+src/sample_activestate/simple.py
+src/sample_activestate.egg-info/PKG-INFO
+src/sample_activestate.egg-info/SOURCES.txt
+src/sample_activestate.egg-info/dependency_links.txt
+src/sample_activestate.egg-info/entry_points.txt
+src/sample_activestate.egg-info/requires.txt
+src/sample_activestate.egg-info/top_level.txt
+tests/test_simple.py

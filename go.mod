@@ -69,12 +69,14 @@ require (
 )
 
 require (
+	github.com/bmatcuk/doublestar/v4 v4.7.1
 	github.com/brunoga/deep v1.2.4
 	github.com/cespare/xxhash v1.1.0
 	github.com/charmbracelet/bubbles v0.18.0
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/lipgloss v0.9.1
 	github.com/go-git/go-git/v5 v5.12.0
+	github.com/gowebpki/jcs v1.0.1
 	github.com/klauspost/compress v1.11.4
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/zijiren233/yaml-comment v0.2.1

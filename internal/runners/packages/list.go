@@ -139,7 +139,7 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 
 		version := req.VersionConstraint
 		if version == "" {
-			version = model.GqlReqVersionConstraintsString(req)
+			version = model.GqlReqVersionConstraintsString(req, false)
 			if version == "" {
 				version = locale.T("constraint_auto")
 			}

@@ -52,7 +52,7 @@ func (b *BuildPlanner) GetBuildScript(commitID string) (*buildscript.BuildScript
 	}
 
 	script := buildscript.New()
-	script.SetAtTime(time.Time(resp.AtTime), false)
+	script.SetAtTime(time.Time(resp.AtTime), true)
 	if err := script.UnmarshalBuildExpression(resp.Expression); err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}

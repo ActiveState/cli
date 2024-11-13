@@ -7,6 +7,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/brunoga/deep"
 )
 
@@ -63,7 +66,15 @@ func (b *BuildScript) SetAtTime(t time.Time, override bool) {
 	if b.atTime != nil && !override {
 		return
 	}
-	b.atTime = &t
+	// Ensure time is RFC3339 formatted, even though it's not actually stored at that format, it does still
+	// affect the specificity of the data stored and can ultimately lead to inconsistencies if not explicitly handled.
+	t2, err := time.Parse(time.RFC3339, t.Format(time.RFC3339))
+	if err != nil {
+		// Pointless error check as this should never happen, but you know what they say about assumptions
+		logging.Error("Error parsing time: %s", err)
+	}
+	b.atTime = ptr.To(t2)
+	_ = b.atTime
 }
 
 func (b *BuildScript) Equals(other *BuildScript) (bool, error) {
@@ -88,6 +99,7 @@ func (b *BuildScript) Equals(other *BuildScript) (bool, error) {
 	if err != nil {
 		return false, errs.Wrap(err, "Unable to marshal other buildscript")
 	}
+
 	return string(myBytes) == string(otherBytes), nil
 }
 
@@ -150,11 +162,13 @@ func (f *FuncCall) UnsetArgument(k string) {
 
 // Value turns a standard type into a buildscript compatible type
 // Intended for use with functions like SetArgument.
-func Value[T string | float64 | []string | []float64](inputv T) *value {
+func Value[T string | int | float64 | []string | []float64](inputv T) *value {
 	v := &value{}
 	switch vt := any(inputv).(type) {
 	case string:
 		v.Str = &vt
+	case int:
+		v.Number = ptr.To(float64(vt))
 	case float64:
 		v.Number = &vt
 	case []string:
@@ -189,6 +203,12 @@ func exportValue(v *value) any {
 		result := []any{}
 		for _, value := range *v.List {
 			result = append(result, exportValue(value))
+		}
+		if v, ok := sliceutils.Cast[string](result); ok {
+			return v
+		}
+		if v, ok := sliceutils.Cast[float64](result); ok {
+			return v
 		}
 		return result
 	case v.Str != nil:
