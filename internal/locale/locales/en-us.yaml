@@ -1127,7 +1127,9 @@ progress_solve_preruntime:
 progress_pkg_nolang:
   other: "• Searching for [ACTIONABLE]{{.V0}}[/RESET] across all languages in the ActiveState Catalog"
 progress_build_log:
-  other: "Build Log [ACTIONABLE]{{.V0}}[/RESET]"
+  other: "Build Log: [ACTIONABLE]{{.V0}}[/RESET]"
+progress_build_url:
+  other: "Detailed Progress: [ACTIONABLE]{{.V0}}[/RESET]"
 progress_completed:
   other: "[SUCCESS]✔ All dependencies have been installed and verified[/RESET]"
 progress_failed:

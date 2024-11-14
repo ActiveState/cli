@@ -37,6 +37,7 @@ type Start struct {
 
 	RequiresBuild bool
 	LogFilePath   string
+	ProgressUrl   string
 
 	ArtifactsToBuild    buildplan.ArtifactIDMap
 	ArtifactsToDownload buildplan.ArtifactIDMap
