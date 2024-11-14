@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 )
 
 // LinkContents will link the contents of src to desc
@@ -41,7 +40,15 @@ func LinkContents(src, dest string) error {
 // Link creates a link from src to target. MS decided to support Symlinks but only if you opt into developer mode (go figure),
 // which we cannot reasonably force on our users. So on Windows we will instead create dirs and hardlinks.
 func Link(src, dest string) error {
-	var err error
+	isCircular, err := isCircularLink(src)
+	if err != nil {
+		return errs.Wrap(err, "could not check for circular link")
+	}
+	if isCircular {
+		logging.Warning("Skipping linking '%s' to '%s' as it is a circular link", src, dest)
+		return nil
+	}
+
 	src, dest, err = resolvePaths(src, dest)
 	if err != nil {
 		return errs.Wrap(err, "Could not resolve src and dest paths")
@@ -56,15 +63,6 @@ func Link(src, dest string) error {
 			return errs.Wrap(err, "could not read directory %s", src)
 		}
 		for _, entry := range entries {
-			circular, err := isCircularLink(filepath.Join(src, entry.Name()))
-			if err != nil {
-				return errs.Wrap(err, "could not check for circular link")
-			}
-			if circular {
-				multilog.Error("Build contains a circular symlink: %s -> %s", filepath.Join(src, entry.Name()), dest)
-				continue
-			}
-
 			if err := Link(filepath.Join(src, entry.Name()), filepath.Join(dest, entry.Name())); err != nil {
 				return errs.Wrap(err, "sub link failed")
 			}
