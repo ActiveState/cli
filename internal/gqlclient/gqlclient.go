@@ -312,8 +312,9 @@ func (c *Client) runWithFiles(ctx context.Context, gqlReq RequestWithFiles, resp
 		logging.Debug("gqlclient: response: %s", responseData)
 	}
 
+	intermediateResp := make(map[string]interface{})
 	gr := &graphResponse{
-		Data: response,
+		Data: &intermediateResp,
 	}
 	req = req.WithContext(ctx)
 	c.Log(fmt.Sprintf(">> Raw Request: %s\n", req.URL.String()))
@@ -371,5 +372,22 @@ func (c *Client) runWithFiles(ctx context.Context, gqlReq RequestWithFiles, resp
 	if err := json.Unmarshal(resp, &gr); err != nil {
 		return errors.Wrap(err, "decoding response")
 	}
-	return nil
+
+	// If the response is a single object, meaning we only have a single query in the request, we can unmarshal the
+	// response directly to the response type. Otherwise, we need to marshal the response as we normally would.
+	if len(intermediateResp) == 1 {
+		for _, val := range intermediateResp {
+			data, err := json.Marshal(val)
+			if err != nil {
+				return errors.Wrap(err, "remarshaling response")
+			}
+			return json.Unmarshal(data, response)
+		}
+	}
+
+	data, err := json.Marshal(intermediateResp)
+	if err != nil {
+		return errors.Wrap(err, "remarshaling response")
+	}
+	return json.Unmarshal(data, response)
 }
