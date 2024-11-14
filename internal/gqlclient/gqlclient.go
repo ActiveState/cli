@@ -373,6 +373,8 @@ func (c *Client) runWithFiles(ctx context.Context, gqlReq RequestWithFiles, resp
 		return errors.Wrap(err, "decoding response")
 	}
 
+	// If the response is a single object, meaning we only have a single query in the request, we can unmarshal the
+	// response directly to the response type. Otherwise, we need to marshal the response as we normally would.
 	if len(intermediateResp) == 1 {
 		for _, val := range intermediateResp {
 			data, err := json.Marshal(val)
