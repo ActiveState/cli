@@ -91,7 +91,7 @@ func Link(src, dest string) error {
 }
 
 func isCircularLink(src string) (bool, error) {
-	if !fileutils.IsSymlink(src) {
+	if !fileutils.IsSymlink(src) || !fileutils.IsDir(src) {
 		return false, nil
 	}
 
@@ -108,7 +108,8 @@ func isCircularLink(src string) (bool, error) {
 		target = resolved
 	}
 
-	if fileutils.IsDir(src) && filepath.Dir(src) == target {
+	// If the target points at the parent directory, we have a circular link
+	if filepath.Dir(src) == target {
 		return true, nil
 	}
 
