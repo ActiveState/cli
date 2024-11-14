@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 )
 
 // LinkContents will link the contents of src to desc
@@ -55,6 +56,15 @@ func Link(src, dest string) error {
 			return errs.Wrap(err, "could not read directory %s", src)
 		}
 		for _, entry := range entries {
+			circular, err := isCircularLink(filepath.Join(src, entry.Name()))
+			if err != nil {
+				return errs.Wrap(err, "could not check for circular link")
+			}
+			if circular {
+				multilog.Error("Build contains a circular symlink: %s -> %s", filepath.Join(src, entry.Name()), dest)
+				continue
+			}
+
 			if err := Link(filepath.Join(src, entry.Name()), filepath.Join(dest, entry.Name())); err != nil {
 				return errs.Wrap(err, "sub link failed")
 			}
@@ -78,6 +88,31 @@ func Link(src, dest string) error {
 		return errs.Wrap(err, "could not link %s to %s", src, dest)
 	}
 	return nil
+}
+
+func isCircularLink(src string) (bool, error) {
+	if !fileutils.IsSymlink(src) {
+		return false, nil
+	}
+
+	target, err := os.Readlink(src)
+	if err != nil {
+		return false, errs.Wrap(err, "could not read symlink %s", src)
+	}
+
+	if !filepath.IsAbs(target) {
+		resolved, err := fileutils.ResolveUniquePath(src)
+		if err != nil {
+			return false, errs.Wrap(err, "Could not resolve src path")
+		}
+		target = resolved
+	}
+
+	if fileutils.IsDir(src) && filepath.Dir(src) == target {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 // UnlinkContents will unlink the contents of src to dest if the links exist
