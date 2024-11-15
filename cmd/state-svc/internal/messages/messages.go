@@ -44,7 +44,7 @@ func New(cfg *config.Instance, auth *auth.Auth) (*Messages, error) {
 		return nil, errs.Wrap(err, "Could not parse state version")
 	}
 
-	poll := poller.New(1*time.Hour, func() (interface{}, error) {
+	poll := poller.New(10*time.Minute, func() (interface{}, error) {
 		defer func() {
 			panics.LogAndPanic(recover(), debug.Stack())
 		}()

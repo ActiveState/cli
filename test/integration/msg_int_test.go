@@ -36,6 +36,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 		Name         string
 		MessageJson  string
 		ExpectRepeat bool
+		ExpectShown  bool
 	}{
 		{
 			"Defaults",
@@ -44,6 +45,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 				"Message": "This is a [NOTICE]simple[/RESET] message"
 			}]`,
 			false,
+			true,
 		},
 		{
 			"Repeat Hourly",
@@ -53,6 +55,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 				"Repeat": "Hourly"
 			}]`,
 			false,
+			true,
 		},
 		{
 			"Repeat Constantly",
@@ -62,6 +65,67 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 				"Repeat": "Constantly"
 			}]`,
 			true,
+			true,
+		},
+		{
+			"Condition DateAfter Shown",
+			`[{
+				"ID": "simple",
+				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"Condition": "dateAfter \"2015-11-15T14:45:28Z\""
+			}]`,
+			false,
+			true,
+		},
+		{
+			"Condition DateAfter Not Shown",
+			`[{
+				"ID": "simple",
+				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"Condition": "dateAfter \"2025-11-15T14:45:28Z\""
+			}]`,
+			false,
+			false,
+		},
+		{
+			"Condition DateBefore Shown",
+			`[{
+				"ID": "simple",
+				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"Condition": "dateBefore \"2025-11-15T14:45:28Z\""
+			}]`,
+			false,
+			false,
+		},
+		{
+			"Condition DateBefore Not Shown",
+			`[{
+				"ID": "simple",
+				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"Condition": "dateBefore \"2015-11-15T14:45:28Z\""
+			}]`,
+			false,
+			false,
+		},
+		{
+			"Condition Date Range Shown",
+			`[{
+				"ID": "simple",
+				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"Condition": "and (dateAfter \"2015-11-15T14:45:28Z\") (dateBefore \"2025-11-15T14:45:28Z\")"
+			}]`,
+			false,
+			true,
+		},
+		{
+			"Condition Date Range Not Shown",
+			`[{
+				"ID": "simple",
+				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"Condition": "and (dateAfter \"2025-11-15T14:45:28Z\") (dateBefore \"2035-11-15T14:45:28Z\")"
+			}]`,
+			false,
+			false,
 		},
 	}
 	for _, tt := range tests {
@@ -73,7 +137,9 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			suite.Require().NoError(err)
 
 			cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
-			cp.Expect(`This is a simple message`)
+			if tt.ExpectShown {
+				cp.Expect(`This is a simple message`)
+			}
 			cp.Expect("ActiveState CLI by ActiveState Software Inc.")
 			cp.ExpectExitCode(0)
 

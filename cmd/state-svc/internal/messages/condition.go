@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -54,6 +55,22 @@ func conditionFuncMap() template.FuncMap {
 		"contains":  funk.Contains,
 		"hasSuffix": strings.HasSuffix,
 		"hasPrefix": strings.HasPrefix,
+		"dateBefore": func(date string) bool {
+			parsedDate, err := time.Parse(time.RFC3339, date)
+			if err != nil {
+				multilog.Error("Messages: Could not parse date: %s", err)
+				return false
+			}
+			return time.Now().Before(parsedDate)
+		},
+		"dateAfter": func(date string) bool {
+			parsedDate, err := time.Parse(time.RFC3339, date)
+			if err != nil {
+				multilog.Error("Messages: Could not parse date: %s", err)
+				return false
+			}
+			return time.Now().After(parsedDate)
+		},
 		"regexMatch": func(str, pattern string) bool {
 			rx, err := regexp.Compile(pattern)
 			if err != nil {

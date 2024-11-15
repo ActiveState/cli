@@ -156,6 +156,48 @@ func Test_check(t *testing.T) {
 			false,
 		},
 		{
+			"Date Condition before",
+			args{
+				params: &ConditionParams{},
+				messages: []*graph.MessageInfo{
+					{ID: "A", Condition: `dateBefore "2025-11-15T14:45:28Z"`},
+					{ID: "B", Condition: `dateBefore "2015-11-15T14:45:28Z"`},
+				},
+				lastReportMap: map[string]interface{}{},
+				baseTime:      time.Now(),
+			},
+			[]string{"A"},
+			false,
+		},
+		{
+			"Date Condition after",
+			args{
+				params: &ConditionParams{},
+				messages: []*graph.MessageInfo{
+					{ID: "A", Condition: `dateAfter "2015-11-15T14:45:28Z"`},
+					{ID: "B", Condition: `dateAfter "2025-11-15T14:45:28Z"`},
+				},
+				lastReportMap: map[string]interface{}{},
+				baseTime:      time.Now(),
+			},
+			[]string{"A"},
+			false,
+		},
+		{
+			"Condition Date Range",
+			args{
+				params: &ConditionParams{},
+				messages: []*graph.MessageInfo{
+					{ID: "A", Condition: `and (dateAfter "2015-11-15T14:45:28Z") (dateBefore "2025-11-15T14:45:28Z")`},
+					{ID: "B", Condition: `and (dateAfter "2025-11-15T14:45:28Z") (dateBefore "2035-11-15T14:45:28Z")`},
+				},
+				lastReportMap: map[string]interface{}{},
+				baseTime:      time.Now(),
+			},
+			[]string{"A"},
+			false,
+		},
+		{
 			"Repeat Disabled",
 			args{
 				params: &ConditionParams{},
@@ -165,8 +207,8 @@ func Test_check(t *testing.T) {
 					{ID: "C", Repeat: graph.MessageRepeatTypeDisabled},
 				},
 				lastReportMap: map[string]interface{}{
-					"A": time.Now(),
-					"C": time.Now(),
+					"A": time.Now().Format(time.RFC3339),
+					"C": time.Now().Format(time.RFC3339),
 				},
 				baseTime: time.Now(),
 			},
@@ -183,8 +225,8 @@ func Test_check(t *testing.T) {
 					{ID: "C", Repeat: graph.MessageRepeatTypeConstantly},
 				},
 				lastReportMap: map[string]interface{}{
-					"A": time.Now(),
-					"C": time.Now().Add(-time.Hour * 24 * 30),
+					"A": time.Now().Format(time.RFC3339),
+					"C": time.Now().Add(-time.Hour * 24 * 30).Format(time.RFC3339),
 				},
 				baseTime: time.Now(),
 			},
@@ -201,9 +243,9 @@ func Test_check(t *testing.T) {
 					{ID: "C", Repeat: graph.MessageRepeatTypeHourly},
 				},
 				lastReportMap: map[string]interface{}{
-					"A": time.Now(),
-					"B": time.Now().Add(-time.Hour),
-					"C": time.Now(),
+					"A": time.Now().Format(time.RFC3339),
+					"B": time.Now().Add(-time.Hour).Format(time.RFC3339),
+					"C": time.Now().Format(time.RFC3339),
 				},
 				baseTime: time.Now(),
 			},
@@ -220,9 +262,9 @@ func Test_check(t *testing.T) {
 					{ID: "C", Repeat: graph.MessageRepeatTypeHourly},
 				},
 				lastReportMap: map[string]interface{}{
-					"A": time.Now(),
-					"B": time.Now().Add(-time.Hour * 24),
-					"C": time.Now(),
+					"A": time.Now().Format(time.RFC3339),
+					"B": time.Now().Add(-time.Hour * 24).Format(time.RFC3339),
+					"C": time.Now().Format(time.RFC3339),
 				},
 				baseTime: time.Now(),
 			},
@@ -239,9 +281,9 @@ func Test_check(t *testing.T) {
 					{ID: "C", Repeat: graph.MessageRepeatTypeHourly},
 				},
 				lastReportMap: map[string]interface{}{
-					"A": time.Now(),
-					"B": time.Now().Add(-time.Hour * 24 * 7),
-					"C": time.Now(),
+					"A": time.Now().Format(time.RFC3339),
+					"B": time.Now().Add(-time.Hour * 24 * 7).Format(time.RFC3339),
+					"C": time.Now().Format(time.RFC3339),
 				},
 				baseTime: time.Now(),
 			},
@@ -258,9 +300,9 @@ func Test_check(t *testing.T) {
 					{ID: "C", Repeat: graph.MessageRepeatTypeHourly},
 				},
 				lastReportMap: map[string]interface{}{
-					"A": time.Now(),
-					"B": time.Now().Add(-time.Hour * 24 * 7 * 30),
-					"C": time.Now(),
+					"A": time.Now().Format(time.RFC3339),
+					"B": time.Now().Add(-time.Hour * 24 * 7 * 30).Format(time.RFC3339),
+					"C": time.Now().Format(time.RFC3339),
 				},
 				baseTime: time.Now(),
 			},
