@@ -174,7 +174,7 @@ func main() {
 func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
 	msg := locale.Tr("tos_disclaimer", constants.TermsOfServiceURLLatest)
 	msg += locale.Tr("tos_disclaimer_prompt", constants.TermsOfServiceURLLatest)
-	cont, err := prompt.Confirm(locale.Tr("install_remote_title"), msg, ptr.To(true))
+	cont, err := prompt.Confirm(locale.Tr("install_remote_title"), msg, ptr.To(true), nil)
 	if err != nil {
 		return errs.Wrap(err, "Could not prompt for confirmation")
 	}

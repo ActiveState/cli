@@ -55,7 +55,7 @@ func (i *Installer) Install() (rerr error) {
 	}
 	if isAdmin && !i.Params.force && !i.Params.isUpdate && !i.Params.nonInteractive {
 		prompter := prompt.New(true, i.an)
-		confirm, err := prompter.Confirm("", locale.T("installer_prompt_is_admin"), ptr.To(false))
+		confirm, err := prompter.Confirm("", locale.T("installer_prompt_is_admin"), ptr.To(false), nil)
 		if err != nil {
 			return errs.Wrap(err, "Unable to confirm")
 		}
