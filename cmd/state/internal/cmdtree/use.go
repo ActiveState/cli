@@ -44,7 +44,9 @@ func newUseResetCommand(prime *primer.Values, globals *globalOptions) *captain.C
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
-			params.Force = globals.NonInteractive
+			if globals.NonInteractive {
+				prime.Prompt().SetInteractive(false)
+			}
 			return use.NewReset(prime).Run(params)
 		},
 	)

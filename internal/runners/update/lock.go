@@ -41,8 +41,7 @@ func (stv *StateToolChannelVersion) Type() string {
 }
 
 type LockParams struct {
-	Channel        StateToolChannelVersion
-	NonInteractive bool
+	Channel StateToolChannelVersion
 }
 
 type Lock struct {
@@ -72,8 +71,8 @@ func (l *Lock) Run(params *LockParams) error {
 
 	l.out.Notice(locale.Tl("locking_version", "Locking State Tool version for current project."))
 
-	if l.project.IsLocked() && !params.NonInteractive {
-		if err := confirmLock(l.prompt); err != nil {
+	if l.project.IsLocked() {
+		if err := confirmLock(l.prompt, l.out); err != nil {
 			return locale.WrapError(err, "err_update_lock_confirm", "Could not confirm whether to lock update.")
 		}
 	}
@@ -128,16 +127,19 @@ func (l *Lock) Run(params *LockParams) error {
 	return nil
 }
 
-func confirmLock(prom prompt.Prompter) error {
+func confirmLock(prom prompt.Prompter, out output.Outputer) error {
+	defaultChoice := !prom.IsInteractive()
 	msg := locale.T("confirm_update_locked_version_prompt")
 
-	confirmed, err := prom.Confirm(locale.T("confirm"), msg, new(bool))
+	confirmed, kind, err := prom.Confirm(locale.T("confirm"), msg, &defaultChoice, nil)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Unable to confirm")
 	}
-
 	if !confirmed {
 		return locale.NewInputError("err_update_lock_noconfirm", "Cancelling by your request.")
+	}
+	if kind == prompt.NonInteractive {
+		out.Notice(locale.T("prompt_continue_non_interactive"))
 	}
 
 	return nil

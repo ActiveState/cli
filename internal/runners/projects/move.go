@@ -41,15 +41,16 @@ func (m *Move) Run(params *MoveParams) error {
 		return locale.NewInputError("err_project_move_auth", "In order to move your project you need to be authenticated. Please run '[ACTIONABLE]state auth[/RESET]' to authenticate.")
 	}
 
-	defaultChoice := !m.out.Config().Interactive
-	move, err := m.prompt.Confirm("", locale.Tr("move_prompt", params.Namespace.String(), params.NewOwner, params.Namespace.Project), &defaultChoice)
+	defaultChoice := !m.prompt.IsInteractive()
+	move, kind, err := m.prompt.Confirm("", locale.Tr("move_prompt", params.Namespace.String(), params.NewOwner, params.Namespace.Project), &defaultChoice, nil)
 	if err != nil {
-		return locale.WrapError(err, "err_move_prompt", "Could not prompt for move confirmation")
+		return errs.Wrap(err, "Unable to confirm")
 	}
-
 	if !move {
-		m.out.Print(locale.Tl("move_cancelled", "Project move aborted by user"))
-		return nil
+		return locale.NewInputError("move_cancelled", "Project move aborted by user")
+	}
+	if kind == prompt.NonInteractive {
+		m.out.Notice(locale.T("prompt_continue_non_interactive"))
 	}
 
 	if err = model.MoveProject(params.Namespace.Owner, params.Namespace.Project, params.NewOwner, m.auth); err != nil {

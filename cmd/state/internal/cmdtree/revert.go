@@ -32,7 +32,9 @@ func newRevertCommand(prime *primer.Values, globals *globalOptions) *captain.Com
 			},
 		},
 		func(ccmd *captain.Command, args []string) error {
-			params.Force = globals.NonInteractive
+			if globals.NonInteractive {
+				prime.Prompt().SetInteractive(false)
+			}
 			return runner.Run(params)
 		},
 	).SetGroup(VCSGroup).SetSupportsStructuredOutput()

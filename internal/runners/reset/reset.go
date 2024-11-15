@@ -26,7 +26,6 @@ import (
 const local = "LOCAL"
 
 type Params struct {
-	Force    bool
 	CommitID string
 }
 
@@ -117,13 +116,16 @@ func (r *Reset) Run(params *Params) error {
 	}
 	r.out.Notice(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", commitID.String()))
 	if commitID != localCommitID {
-		defaultChoice := params.Force || !r.out.Config().Interactive
-		confirm, err := r.prompt.Confirm("", locale.Tl("reset_confim", "Resetting is destructive. You will lose any changes that were not pushed. Are you sure you want to do this?"), &defaultChoice)
+		defaultChoice := !r.prime.Prompt().IsInteractive()
+		confirm, kind, err := r.prime.Prompt().Confirm("", locale.Tl("reset_confim", "Resetting is destructive. You will lose any changes that were not pushed. Are you sure you want to do this?"), &defaultChoice, nil)
 		if err != nil {
-			return locale.WrapError(err, "err_reset_confirm", "Could not confirm reset choice")
+			return errs.Wrap(err, "Unable to confirm")
 		}
 		if !confirm {
 			return locale.NewInputError("err_reset_aborted", "Reset aborted by user")
+		}
+		if kind == prompt.NonInteractive {
+			r.prime.Output().Notice(locale.T("prompt_continue_non_interactive"))
 		}
 	}
 

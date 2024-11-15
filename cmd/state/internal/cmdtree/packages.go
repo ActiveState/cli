@@ -54,6 +54,7 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 	runner := install.New(prime, model.NamespacePackage)
 
 	params := install.Params{}
+	force := false
 
 	var packagesRaw string
 	cmd := captain.NewCommand(
@@ -66,6 +67,11 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 				Name:        "ts",
 				Description: locale.T("package_flag_ts_description"),
 				Value:       &params.Timestamp,
+			},
+			{
+				Name:        "force",
+				Description: locale.Tl("package_flag_force_description", "Ignore security policy preventing packages with CVEs from being installed (not recommended)"),
+				Value:       &force,
 			},
 		},
 		[]*captain.Argument{
@@ -81,6 +87,9 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 				if _, err := params.Packages.Add(p); err != nil {
 					return locale.WrapInputError(err, "err_install_packages_args", "Invalid install arguments")
 				}
+			}
+			if force {
+				prime.Prompt().EnableForce()
 			}
 			return runner.Run(params)
 		},

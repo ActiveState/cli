@@ -1165,6 +1165,12 @@ warning_vulnerable_short:
 prompt_continue_pkg_operation:
   other: |
     Do you want to continue installing this dependency despite its vulnerabilities?
+prompt_continue_force:
+  other: "Continuing because the '[ACTIONABLE]--force[/RESET]' flag is set."
+prompt_continue_non_interactive:
+  other: "Continuting because State Tool is running in non-interactive mode."
+prompt_abort_non_interactive:
+  other: "Aborting because State Tool is running in non-interactive mode. To bypass you can use the '[ACTIONABLE]--force[/RESET]' flag."
 unstable_command_warning:
   other: |
     This command is still in beta. If you want to opt-in to unstable features, run the following command:

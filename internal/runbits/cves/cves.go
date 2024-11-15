@@ -12,6 +12,7 @@ import (
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	vulnModel "github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
@@ -104,20 +105,24 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 	}
 
 	c.summarizeCVEs(vulnerabilities)
-	cont, err := c.promptForSecurity()
-	if err != nil {
-		return errs.Wrap(err, "Failed to prompt for security")
-	}
 
-	if !cont {
-		if !c.prime.Prompt().IsInteractive() {
+	confirm, kind, err := c.prime.Prompt().Confirm("", locale.Tr("prompt_continue_pkg_operation"), ptr.To(false), ptr.To(true))
+	if err != nil {
+		return errs.Wrap(err, "Unable to confirm")
+	}
+	if !confirm {
+		if kind == prompt.NonInteractive {
 			return errs.AddTips(
-				locale.NewInputError("err_pkgop_security_prompt", "Operation aborted due to security prompt"),
+				locale.NewInputError("prompt_abort_non_interactive"),
 				locale.Tl("more_info_prompt", "To disable security prompting run: [ACTIONABLE]state config set security.prompt.enabled false[/RESET]"),
 			)
 		}
-		return locale.NewInputError("err_pkgop_security_prompt", "Operation aborted due to security prompt")
+		return locale.NewInputError("err_pkgop_security_prompt", "Operation aborted by user")
 	}
+	if kind == prompt.Force {
+		c.prime.Output().Notice(locale.T("prompt_continue_force"))
+	}
+	c.prime.Output().Notice("") // Empty line
 
 	return nil
 }
@@ -223,16 +228,6 @@ func (c *CveReport) summarizeCVEs(vulnerabilities model.VulnerableIngredientsByL
 	out.Print("  " + locale.T("more_info_vulnerabilities"))
 	out.Print("  " + locale.T("disable_prompting_vulnerabilities"))
 	out.Print("")
-}
-
-func (c *CveReport) promptForSecurity() (bool, error) {
-	confirm, err := c.prime.Prompt().Confirm("", locale.Tr("prompt_continue_pkg_operation"), ptr.To(false))
-	if err != nil {
-		return false, locale.WrapError(err, "err_pkgop_confirm", "Need a confirmation.")
-	}
-	c.prime.Output().Notice("") // Empty line
-
-	return confirm, nil
 }
 
 func changedRequirements(oldBuildPlan *buildplan.BuildPlan, newBuildPlan *buildplan.BuildPlan) []string {

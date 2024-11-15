@@ -4,6 +4,7 @@ import (
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -20,7 +21,6 @@ type Reset struct {
 }
 
 type ResetParams struct {
-	Force bool
 }
 
 func NewReset(prime primeable) *Reset {
@@ -39,14 +39,17 @@ func (u *Reset) Run(params *ResetParams) error {
 		return locale.NewInputError(locale.T("use_reset_notice_not_reset"))
 	}
 
-	defaultChoice := params.Force || !u.out.Config().Interactive
-	ok, err := u.prompt.Confirm(locale.T("confirm"),
-		locale.Tl("use_reset_confirm", "You are about to stop using your project runtime. Continue?"), &defaultChoice)
+	defaultChoice := !u.prompt.IsInteractive()
+	ok, kind, err := u.prompt.Confirm(locale.T("confirm"),
+		locale.Tl("use_reset_confirm", "You are about to stop using your project runtime. Continue?"), &defaultChoice, nil)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Unable to confirm")
 	}
 	if !ok {
 		return locale.NewInputError("err_reset_aborted", "Reset aborted by user")
+	}
+	if kind == prompt.NonInteractive {
+		u.out.Notice(locale.T("prompt_continue_non_interactive"))
 	}
 
 	reset, err := globaldefault.ResetDefaultActivation(u.subshell, u.config)

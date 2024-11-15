@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/pkg/project"
@@ -236,8 +237,7 @@ func startInteractive(sw *scriptWatcher, scriptName string, output output.Output
 	go sw.run(scriptName, output, cfg, proj)
 
 	for {
-		doneConfirmDefault := true
-		doneEditing, err := prompt.Confirm("", locale.T("prompt_done_editing"), &doneConfirmDefault)
+		doneEditing, _, err := prompt.Confirm("", locale.T("prompt_done_editing"), ptr.To(true), nil)
 		if err != nil {
 			return errs.Wrap(err, "Prompter returned with failure.")
 		}

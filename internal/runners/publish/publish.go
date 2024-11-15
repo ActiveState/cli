@@ -218,22 +218,22 @@ func (r *Runner) Run(params *Params) error {
 		return errs.Wrap(err, "Could not marshal publish variables")
 	}
 
-	cont, err := r.prompt.Confirm(
+	cont, kind, err := r.prompt.Confirm(
 		"",
 		locale.Tl("uploadingredient_confirm", `Prepared the following ingredient:
 
 {{.V0}}
 
 Do you want to publish this ingredient?
-`, string(b)),
-		ptr.To(true),
-	)
+`, string(b)), ptr.To(true), nil)
 	if err != nil {
 		return errs.Wrap(err, "Confirmation failed")
 	}
 	if !cont {
-		r.out.Print(locale.Tl("uploadingredient_cancel", "Publish cancelled"))
-		return nil
+		return locale.NewInputError("uploadingredient_cancel", "Publish cancelled")
+	}
+	if kind == prompt.NonInteractive {
+		r.out.Notice(locale.T("prompt_continue_non_interactive"))
 	}
 
 	r.out.Notice(locale.Tl("uploadingredient_uploading", "Publishing ingredient..."))

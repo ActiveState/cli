@@ -128,10 +128,15 @@ func (r *Push) Run(params PushParams) (rerr error) {
 
 	// Ask to create a copy if the user does not have org permissions
 	if intend&pushFromNoPermission > 0 && !params.Namespace.IsValid() {
-		var err error
-		createCopy, err := r.prompt.Confirm("", locale.T("push_prompt_not_authorized"), ptr.To(true))
-		if err != nil || !createCopy {
-			return err
+		createCopy, kind, err := r.prompt.Confirm("", locale.T("push_prompt_not_authorized"), ptr.To(true), nil)
+		if err != nil {
+			return errs.Wrap(err, "Unable to confirm")
+		}
+		if !createCopy {
+			return nil
+		}
+		if kind == prompt.NonInteractive {
+			r.out.Notice(locale.T("prompt_continue_non_interactive"))
 		}
 	}
 
@@ -167,15 +172,18 @@ func (r *Push) Run(params PushParams) (rerr error) {
 
 		// If the user didn't necessarily intend to create the project we should ask them for confirmation
 		if intend&intendCreateProject == 0 {
-			createProject, err := r.prompt.Confirm(
+			createProject, kind, err := r.prompt.Confirm(
 				locale.Tl("create_project", "Create Project"),
 				locale.Tl("push_confirm_create_project", "You are about to create the project [NOTICE]{{.V0}}[/RESET]. Continue?", targetNamespace.String()),
-				ptr.To(true))
+				ptr.To(true), nil)
 			if err != nil {
 				return errs.Wrap(err, "Confirmation failed")
 			}
 			if !createProject {
 				return rationalize.ErrActionAborted
+			}
+			if kind == prompt.NonInteractive {
+				r.out.Notice(locale.T("prompt_continue_non_interactive"))
 			}
 		}
 

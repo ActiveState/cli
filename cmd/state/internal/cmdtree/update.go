@@ -52,7 +52,9 @@ func newUpdateLockCommand(prime *primer.Values, globals *globalOptions) *captain
 		},
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
-			params.NonInteractive = globals.NonInteractive
+			if globals.NonInteractive {
+				prime.Prompt().SetInteractive(false)
+			}
 			return runner.Run(&params)
 		},
 	)
@@ -73,7 +75,9 @@ func newUpdateUnlockCommand(prime *primer.Values, globals *globalOptions) *capta
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
-			params.NonInteractive = globals.NonInteractive
+			if globals.NonInteractive {
+				prime.Prompt().SetInteractive(false)
+			}
 			return runner.Run(&params)
 		},
 	)

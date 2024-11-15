@@ -2,6 +2,7 @@ package update
 
 import (
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
@@ -13,7 +14,6 @@ import (
 )
 
 type UnlockParams struct {
-	NonInteractive bool
 }
 
 type Unlock struct {
@@ -44,15 +44,13 @@ func (u *Unlock) Run(params *UnlockParams) error {
 
 	u.out.Notice(locale.Tl("unlocking_version", "Unlocking State Tool version for current project."))
 
-	if !params.NonInteractive {
-		err := confirmUnlock(u.prompt)
-		if err != nil {
-			return locale.WrapError(err, "err_update_unlock_confirm", "Unlock cancelled by user.")
-		}
+	err := confirmUnlock(u.prompt, u.out)
+	if err != nil {
+		return locale.WrapError(err, "err_update_unlock_confirm", "Unlock cancelled by user.")
 	}
 
 	// Invalidate the installer version lock.
-	err := u.cfg.Set(updater.CfgKeyInstallVersion, "")
+	err = u.cfg.Set(updater.CfgKeyInstallVersion, "")
 	if err != nil {
 		multilog.Error("Failed to invalidate installer version lock on `state update lock` invocation: %v", err)
 	}
@@ -71,17 +69,19 @@ func (u *Unlock) Run(params *UnlockParams) error {
 	return nil
 }
 
-func confirmUnlock(prom prompt.Prompter) error {
+func confirmUnlock(prom prompt.Prompter, out output.Outputer) error {
 	msg := locale.T("confirm_update_unlocked_version_prompt")
 
 	defaultChoice := !prom.IsInteractive()
-	confirmed, err := prom.Confirm(locale.T("confirm"), msg, &defaultChoice)
+	confirmed, kind, err := prom.Confirm(locale.T("confirm"), msg, &defaultChoice, nil)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Unable to confirm")
 	}
-
 	if !confirmed {
 		return locale.NewInputError("err_update_lock_noconfirm", "Cancelling by your request.")
+	}
+	if kind == prompt.NonInteractive {
+		out.Notice(locale.T("prompt_continue_non_interactive"))
 	}
 
 	return nil

@@ -1,6 +1,7 @@
 package projects
 
 import (
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -36,13 +37,16 @@ func (d *Delete) Run(params *DeleteParams) error {
 		return locale.NewInputError("err_projects_delete_authenticated", "You need to be authenticated to delete a project.")
 	}
 
-	defaultChoice := !d.out.Config().Interactive
-	confirm, err := d.prompt.Confirm("", locale.Tl("project_delete_confim", "Are you sure you want to delete the project {{.V0}}?", params.Project.String()), &defaultChoice)
+	defaultChoice := !d.prompt.IsInteractive()
+	confirm, kind, err := d.prompt.Confirm("", locale.Tl("project_delete_confim", "Are you sure you want to delete the project {{.V0}}?", params.Project.String()), &defaultChoice, nil)
 	if err != nil {
-		return locale.WrapError(err, "err_project_delete_confirm", "Could not confirm delete choice")
+		return errs.Wrap(err, "Unable to confirm")
 	}
 	if !confirm {
 		return locale.NewInputError("err_project_delete_aborted", "Delete aborted by user")
+	}
+	if kind == prompt.NonInteractive {
+		d.out.Notice(locale.T("prompt_continue_non_interactive"))
 	}
 
 	err = model.DeleteProject(params.Project.Owner, params.Project.Project, d.auth)

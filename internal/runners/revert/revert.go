@@ -40,7 +40,6 @@ type Revert struct {
 type Params struct {
 	CommitID string
 	To       bool
-	Force    bool
 }
 
 type primeable interface {
@@ -139,13 +138,16 @@ func (r *Revert) Run(params *Params) (rerr error) {
 		}
 	}
 
-	defaultChoice := params.Force || !r.out.Config().Interactive
-	revert, err := r.prompt.Confirm("", locale.Tl("revert_confirm", "Continue?"), &defaultChoice)
+	defaultChoice := !r.prime.Prompt().IsInteractive()
+	revert, kind, err := r.prime.Prompt().Confirm("", locale.Tl("revert_confirm", "Continue?"), &defaultChoice, nil)
 	if err != nil {
-		return locale.WrapError(err, "err_revert_confirm", "Could not confirm revert choice")
+		return errs.Wrap(err, "Unable to confirm")
 	}
 	if !revert {
 		return locale.NewInputError("err_revert_aborted", "Revert aborted by user")
+	}
+	if kind == prompt.NonInteractive {
+		r.prime.Output().Notice(locale.T("prompt_continue_non_interactive"))
 	}
 
 	revertCommit, err := revertFunc(revertParams, bp)

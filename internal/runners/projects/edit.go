@@ -90,15 +90,16 @@ func (e *Edit) Run(params *EditParams) error {
 
 	editMsg += locale.Tl("edit_prompt_confirm", "Continue?")
 
-	defaultChoice := !e.out.Config().Interactive
-	edit, err := e.prompt.Confirm("", editMsg, &defaultChoice)
+	defaultChoice := !e.prompt.IsInteractive()
+	edit, kind, err := e.prompt.Confirm("", editMsg, &defaultChoice, nil)
 	if err != nil {
-		return locale.WrapError(err, "err_edit_prompt", "Could not prompt for edit confirmation")
+		return errs.Wrap(err, "Unable to confirm")
 	}
-
 	if !edit {
-		e.out.Print(locale.Tl("edit_cancelled", "Project edit cancelled"))
-		return nil
+		return locale.NewInputError("edit_cancelled", "Project edit cancelled")
+	}
+	if kind == prompt.NonInteractive {
+		e.out.Notice(locale.T("prompt_continue_non_interactive"))
 	}
 
 	if err = model.EditProject(params.Namespace.Owner, params.Namespace.Project, editable, e.auth); err != nil {

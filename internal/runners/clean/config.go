@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/project"
@@ -25,7 +26,7 @@ type configurable interface {
 
 type Config struct {
 	output  output.Outputer
-	confirm promptable
+	confirm prompt.Prompter
 	cfg     configurable
 	ipComm  svcctl.IPCommunicator
 }
@@ -38,7 +39,7 @@ func NewConfig(prime primeable) *Config {
 	return newConfig(prime.Output(), prime.Prompt(), prime.Config(), prime.IPComm())
 }
 
-func newConfig(out output.Outputer, confirm promptable, cfg configurable, ipComm svcctl.IPCommunicator) *Config {
+func newConfig(out output.Outputer, confirm prompt.Prompter, cfg configurable, ipComm svcctl.IPCommunicator) *Config {
 	return &Config{
 		output:  out,
 		confirm: confirm,
@@ -52,14 +53,19 @@ func (c *Config) Run(params *ConfigParams) error {
 		return locale.NewError("err_clean_cache_activated")
 	}
 
-	if !params.Force {
-		ok, err := c.confirm.Confirm(locale.T("confirm"), locale.T("clean_config_confirm"), ptr.To(true))
-		if err != nil {
-			return locale.WrapError(err, "err_clean_config_confirm", "Could not confirm clean config choice")
-		}
-		if !ok {
-			return locale.NewInputError("err_clean_config_aborted", "Cleaning of config aborted by user")
-		}
+	defaultChoice := !c.confirm.IsInteractive()
+	ok, kind, err := c.confirm.Confirm(locale.T("confirm"), locale.T("clean_config_confirm"), &defaultChoice, ptr.To(true))
+	if err != nil {
+		return errs.Wrap(err, "Unable to confirm")
+	}
+	if !ok {
+		return locale.NewInputError("err_clean_config_aborted", "Cleaning of config aborted by user")
+	}
+	switch kind {
+	case prompt.NonInteractive:
+		c.output.Notice(locale.T("prompt_continue_non_interactive"))
+	case prompt.Force:
+		c.output.Notice(locale.T("prompt_continue_force"))
 	}
 
 	if err := stopServices(c.cfg, c.output, c.ipComm, params.Force); err != nil {
