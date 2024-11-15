@@ -116,14 +116,11 @@ func promptForPreviousPassphrase(prompt prompt.Prompter) (string, error) {
 func promptUserToRegenerateKeypair(passphrase string, cfg keypairs.Configurable, out output.Outputer, prmpt prompt.Prompter, auth *authentication.Auth) error {
 	// previous passphrase is invalid, inform user and ask if they want to generate a new keypair
 	out.Notice(locale.T("auth_generate_new_keypair_message"))
-	yes, kind, err := prmpt.Confirm("", locale.T("auth_confirm_generate_new_keypair_prompt"), ptr.To(false), nil)
+	yes, err := prmpt.Confirm("", locale.T("auth_confirm_generate_new_keypair_prompt"), ptr.To(false), nil)
 	if err != nil {
 		return errs.Wrap(err, "Unable to confirm")
 	}
 	if !yes {
-		if kind == prompt.NonInteractive {
-			return locale.NewInputError("prompt_abort_non_interactive")
-		}
 		return locale.NewInputError("auth_err_unrecoverable_keypair")
 	}
 	_, err = keypairs.GenerateAndSaveEncodedKeypair(cfg, secretsapi.Get(auth), passphrase, constants.DefaultRSABitLength, auth)

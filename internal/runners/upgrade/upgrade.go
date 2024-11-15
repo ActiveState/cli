@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
@@ -284,14 +283,14 @@ func (u *Upgrade) renderUserFacing(changes []structuredChange, expand bool) erro
 	out.Print(tbl.Render())
 
 	out.Notice(" ") // Empty line (prompts use Notice)
-	confirm, kind, err := u.prime.Prompt().Confirm("", locale.Tr("upgrade_confirm"), ptr.To(true), nil)
+	confirm, err := u.prime.Prompt().Confirm("", locale.Tr("upgrade_confirm"), ptr.To(true), nil)
 	if err != nil {
 		return errs.Wrap(err, "confirmation failed")
 	}
 	if !confirm {
 		return ErrAbort
 	}
-	if kind == prompt.NonInteractive {
+	if !u.prime.Prompt().IsInteractive() {
 		u.prime.Output().Notice(locale.T("prompt_continue_non_interactive"))
 	}
 

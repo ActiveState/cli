@@ -237,7 +237,7 @@ func startInteractive(sw *scriptWatcher, scriptName string, output output.Output
 	go sw.run(scriptName, output, cfg, proj)
 
 	for {
-		doneEditing, _, err := prompt.Confirm("", locale.T("prompt_done_editing"), ptr.To(true), nil)
+		doneEditing, err := prompt.Confirm("", locale.T("prompt_done_editing"), ptr.To(true), nil)
 		if err != nil {
 			return errs.Wrap(err, "Prompter returned with failure.")
 		}

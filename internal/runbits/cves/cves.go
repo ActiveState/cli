@@ -12,7 +12,6 @@ import (
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	vulnModel "github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
@@ -106,12 +105,12 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 
 	c.summarizeCVEs(vulnerabilities)
 
-	confirm, kind, err := c.prime.Prompt().Confirm("", locale.Tr("prompt_continue_pkg_operation"), ptr.To(false), ptr.To(true))
+	confirm, err := c.prime.Prompt().Confirm("", locale.Tr("prompt_continue_pkg_operation"), ptr.To(false), ptr.To(true))
 	if err != nil {
 		return errs.Wrap(err, "Unable to confirm")
 	}
 	if !confirm {
-		if kind == prompt.NonInteractive {
+		if !c.prime.Prompt().IsInteractive() {
 			return errs.AddTips(
 				locale.NewInputError("prompt_abort_non_interactive"),
 				locale.Tl("more_info_prompt", "To disable security prompting run: [ACTIONABLE]state config set security.prompt.enabled false[/RESET]"),
@@ -119,7 +118,7 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 		}
 		return locale.NewInputError("err_pkgop_security_prompt", "Operation aborted by user")
 	}
-	if kind == prompt.Force {
+	if c.prime.Prompt().IsForceEnabled() {
 		c.prime.Output().Notice(locale.T("prompt_continue_force"))
 	}
 	c.prime.Output().Notice("") // Empty line

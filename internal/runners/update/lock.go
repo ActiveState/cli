@@ -131,14 +131,14 @@ func confirmLock(prom prompt.Prompter, out output.Outputer) error {
 	defaultChoice := !prom.IsInteractive()
 	msg := locale.T("confirm_update_locked_version_prompt")
 
-	confirmed, kind, err := prom.Confirm(locale.T("confirm"), msg, &defaultChoice, nil)
+	confirmed, err := prom.Confirm(locale.T("confirm"), msg, &defaultChoice, nil)
 	if err != nil {
 		return errs.Wrap(err, "Unable to confirm")
 	}
 	if !confirmed {
 		return locale.NewInputError("err_update_lock_noconfirm", "Cancelling by your request.")
 	}
-	if kind == prompt.NonInteractive {
+	if !prom.IsInteractive() {
 		out.Notice(locale.T("prompt_continue_non_interactive"))
 	}
 

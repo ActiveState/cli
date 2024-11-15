@@ -40,7 +40,7 @@ func (u *Reset) Run(params *ResetParams) error {
 	}
 
 	defaultChoice := !u.prompt.IsInteractive()
-	ok, kind, err := u.prompt.Confirm(locale.T("confirm"),
+	ok, err := u.prompt.Confirm(locale.T("confirm"),
 		locale.Tl("use_reset_confirm", "You are about to stop using your project runtime. Continue?"), &defaultChoice, nil)
 	if err != nil {
 		return errs.Wrap(err, "Unable to confirm")
@@ -48,7 +48,7 @@ func (u *Reset) Run(params *ResetParams) error {
 	if !ok {
 		return locale.NewInputError("err_reset_aborted", "Reset aborted by user")
 	}
-	if kind == prompt.NonInteractive {
+	if !u.prompt.IsInteractive() {
 		u.out.Notice(locale.T("prompt_continue_non_interactive"))
 	}
 

@@ -218,7 +218,7 @@ func (r *Runner) Run(params *Params) error {
 		return errs.Wrap(err, "Could not marshal publish variables")
 	}
 
-	cont, kind, err := r.prompt.Confirm(
+	cont, err := r.prompt.Confirm(
 		"",
 		locale.Tl("uploadingredient_confirm", `Prepared the following ingredient:
 
@@ -232,7 +232,7 @@ Do you want to publish this ingredient?
 	if !cont {
 		return locale.NewInputError("uploadingredient_cancel", "Publish cancelled")
 	}
-	if kind == prompt.NonInteractive {
+	if !r.prompt.IsInteractive() {
 		r.out.Notice(locale.T("prompt_continue_non_interactive"))
 	}
 

@@ -83,17 +83,17 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 		if params.All {
 			confirmMessage = locale.T("uninstall_confirm_all")
 		}
-		ok, kind, err := u.prompt.Confirm(locale.T("confirm"), confirmMessage, &defaultChoice, ptr.To(true))
+		ok, err := u.prompt.Confirm(locale.T("confirm"), confirmMessage, &defaultChoice, ptr.To(true))
 		if err != nil {
 			return errs.Wrap(err, "Unable to confirm")
 		}
 		if !ok {
 			return locale.NewInputError("err_uninstall_aborted", "Uninstall aborted by user")
 		}
-		switch kind {
-		case prompt.NonInteractive:
+		switch {
+		case !u.prompt.IsInteractive():
 			u.out.Notice(locale.T("prompt_continue_non_interactive"))
-		case prompt.Force:
+		case u.prompt.IsForceEnabled():
 			u.out.Notice(locale.T("prompt_continue_force"))
 		}
 	}

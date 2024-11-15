@@ -42,14 +42,14 @@ func (m *Move) Run(params *MoveParams) error {
 	}
 
 	defaultChoice := !m.prompt.IsInteractive()
-	move, kind, err := m.prompt.Confirm("", locale.Tr("move_prompt", params.Namespace.String(), params.NewOwner, params.Namespace.Project), &defaultChoice, nil)
+	move, err := m.prompt.Confirm("", locale.Tr("move_prompt", params.Namespace.String(), params.NewOwner, params.Namespace.Project), &defaultChoice, nil)
 	if err != nil {
 		return errs.Wrap(err, "Unable to confirm")
 	}
 	if !move {
 		return locale.NewInputError("move_cancelled", "Project move aborted by user")
 	}
-	if kind == prompt.NonInteractive {
+	if !m.prompt.IsInteractive() {
 		m.out.Notice(locale.T("prompt_continue_non_interactive"))
 	}
 

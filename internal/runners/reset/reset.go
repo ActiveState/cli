@@ -117,14 +117,14 @@ func (r *Reset) Run(params *Params) error {
 	r.out.Notice(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", commitID.String()))
 	if commitID != localCommitID {
 		defaultChoice := !r.prime.Prompt().IsInteractive()
-		confirm, kind, err := r.prime.Prompt().Confirm("", locale.Tl("reset_confim", "Resetting is destructive. You will lose any changes that were not pushed. Are you sure you want to do this?"), &defaultChoice, nil)
+		confirm, err := r.prime.Prompt().Confirm("", locale.Tl("reset_confim", "Resetting is destructive. You will lose any changes that were not pushed. Are you sure you want to do this?"), &defaultChoice, nil)
 		if err != nil {
 			return errs.Wrap(err, "Unable to confirm")
 		}
 		if !confirm {
 			return locale.NewInputError("err_reset_aborted", "Reset aborted by user")
 		}
-		if kind == prompt.NonInteractive {
+		if !r.prime.Prompt().IsInteractive() {
 			r.prime.Output().Notice(locale.T("prompt_continue_non_interactive"))
 		}
 	}

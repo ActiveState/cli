@@ -15,17 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 )
 
-type ConfirmKind int
-
-const (
-	// A confirm prompt was completed by the user.
-	User ConfirmKind = iota
-	// A confirm prompt was completed in non-interactive mode.
-	NonInteractive
-	// A confirm prompt was completed via --force.
-	Force
-)
-
 type EventDispatcher interface {
 	EventWithLabel(category, action string, label string, dim ...*dimensions.Values)
 }
@@ -35,11 +24,12 @@ type Prompter interface {
 	Input(title, message string, defaultResponse *string, flags ...ValidatorFlag) (string, error)
 	InputAndValidate(title, message string, defaultResponse *string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error)
 	Select(title, message string, choices []string, defaultResponse *string) (string, error)
-	Confirm(title, message string, defaultChoice *bool, forcedChoice *bool) (bool, ConfirmKind, error)
+	Confirm(title, message string, defaultChoice *bool, forcedChoice *bool) (bool, error)
 	InputSecret(title, message string, flags ...ValidatorFlag) (string, error)
 	IsInteractive() bool
 	SetInteractive(bool)
 	EnableForce()
+	IsForceEnabled() bool
 }
 
 // ValidatorFunc is a function pass to the Prompter to perform validation
@@ -74,6 +64,10 @@ func (p *Prompt) SetInteractive(interactive bool) {
 // non-interactive value).
 func (p *Prompt) EnableForce() {
 	p.isForced = true
+}
+
+func (p *Prompt) IsForceEnabled() bool {
+	return p.isForced
 }
 
 // ValidatorFlag represents flags for prompt functions to change their behavior on.
@@ -183,21 +177,21 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice *
 }
 
 // Confirm prompts user for yes or no response.
-func (p *Prompt) Confirm(title, message string, defaultChoice *bool, forcedChoice *bool) (bool, ConfirmKind, error) {
+func (p *Prompt) Confirm(title, message string, defaultChoice *bool, forcedChoice *bool) (bool, error) {
 	if p.isForced {
 		if forcedChoice == nil {
-			return false, Force, errs.New("No force option given for force-enabled prompt")
+			return false, errs.New("No force option given for force-enabled prompt")
 		}
 		logging.Debug("Prompt %s confirmed with choice %v in force mode", title, forcedChoice)
-		return *forcedChoice, Force, nil
+		return *forcedChoice, nil
 	}
 
 	if !p.isInteractive {
 		if defaultChoice != nil {
 			logging.Debug("Prompt %s confirmed with default choice %v in non-interactive mode", title, defaultChoice)
-			return *defaultChoice, NonInteractive, nil
+			return *defaultChoice, nil
 		}
-		return false, NonInteractive, interactiveInputError(message)
+		return false, interactiveInputError(message)
 	}
 	if title != "" {
 		p.out.Notice(output.Emphasize(title))
@@ -219,11 +213,11 @@ func (p *Prompt) Confirm(title, message string, defaultChoice *bool, forcedChoic
 		if err == terminal.InterruptErr {
 			p.analytics.EventWithLabel(constants.CatPrompt, title, "interrupt")
 		}
-		return false, User, locale.NewInputError(err.Error())
+		return false, locale.NewInputError(err.Error())
 	}
 	p.analytics.EventWithLabel(constants.CatPrompt, title, translateConfirm(resp))
 
-	return resp, User, nil
+	return resp, nil
 }
 
 func translateConfirm(confirm bool) string {

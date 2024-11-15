@@ -91,14 +91,14 @@ func (e *Edit) Run(params *EditParams) error {
 	editMsg += locale.Tl("edit_prompt_confirm", "Continue?")
 
 	defaultChoice := !e.prompt.IsInteractive()
-	edit, kind, err := e.prompt.Confirm("", editMsg, &defaultChoice, nil)
+	edit, err := e.prompt.Confirm("", editMsg, &defaultChoice, nil)
 	if err != nil {
 		return errs.Wrap(err, "Unable to confirm")
 	}
 	if !edit {
 		return locale.NewInputError("edit_cancelled", "Project edit cancelled")
 	}
-	if kind == prompt.NonInteractive {
+	if !e.prompt.IsInteractive() {
 		e.out.Notice(locale.T("prompt_continue_non_interactive"))
 	}
 

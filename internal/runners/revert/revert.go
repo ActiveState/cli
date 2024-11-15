@@ -139,14 +139,14 @@ func (r *Revert) Run(params *Params) (rerr error) {
 	}
 
 	defaultChoice := !r.prime.Prompt().IsInteractive()
-	revert, kind, err := r.prime.Prompt().Confirm("", locale.Tl("revert_confirm", "Continue?"), &defaultChoice, nil)
+	revert, err := r.prime.Prompt().Confirm("", locale.Tl("revert_confirm", "Continue?"), &defaultChoice, nil)
 	if err != nil {
 		return errs.Wrap(err, "Unable to confirm")
 	}
 	if !revert {
 		return locale.NewInputError("err_revert_aborted", "Revert aborted by user")
 	}
-	if kind == prompt.NonInteractive {
+	if !r.prime.Prompt().IsInteractive() {
 		r.prime.Output().Notice(locale.T("prompt_continue_non_interactive"))
 	}
 
