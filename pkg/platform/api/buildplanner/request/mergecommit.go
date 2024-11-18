@@ -39,14 +39,7 @@ mutation ($organization: String!, $project: String!, $targetRef: String!, $other
       subErrors {
         __typename
         buildExprPath
-        ... on RemediableError {
-          possibleRemediations {
-            description
-            suggestedPriority
-          }
-        }
         ... on GenericSolveError {
-          path
           message
           isTransient
           validationErrors {
@@ -55,18 +48,12 @@ mutation ($organization: String!, $project: String!, $targetRef: String!, $other
           }
         }
         ... on RemediableSolveError {
-          path
           message
           isTransient
           errorType
           validationErrors {
             error
             jsonPath
-          }
-          suggestedRemediations {
-            remediationType
-            command
-            parameters
           }
         }
       }

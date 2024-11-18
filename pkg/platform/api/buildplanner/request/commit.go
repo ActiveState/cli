@@ -163,14 +163,7 @@ query ($commitID: String!, $organization: String!, $project: String!, $target: S
               subErrors {
                 __typename
                 buildExprPath
-                ... on RemediableError {
-                  possibleRemediations {
-                    description
-                    suggestedPriority
-                  }
-                }
                 ... on GenericSolveError {
-                  path
                   message
                   isTransient
                   validationErrors {
@@ -179,18 +172,12 @@ query ($commitID: String!, $organization: String!, $project: String!, $target: S
                   }
                 }
                 ... on RemediableSolveError {
-                  path
                   message
                   isTransient
                   errorType
                   validationErrors {
                     error
                     jsonPath
-                  }
-                  suggestedRemediations {
-                    remediationType
-                    command
-                    parameters
                   }
                 }
               }
