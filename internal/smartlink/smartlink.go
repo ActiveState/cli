@@ -10,7 +10,7 @@ import (
 )
 
 // LinkContents will link the contents of src to desc
-func LinkContents(src, dest string) error {
+func LinkContents(src, dest string, visited map[string]bool) error {
 	if !fileutils.DirExists(src) {
 		return errs.New("src dir does not exist: %s", src)
 	}
@@ -24,12 +24,23 @@ func LinkContents(src, dest string) error {
 		return errs.Wrap(err, "Could not resolve src and dest paths")
 	}
 
+	if visited == nil {
+		visited = make(map[string]bool)
+	}
+	if _, exists := visited[src]; exists {
+		// We've encountered a recursive link. This is most often the case when the resolved src has
+		// already been visited. In that case, just link the dest to the src (which may be a directory;
+		// this is fine).
+		return linkFile(src, dest)
+	}
+	visited[src] = true
+
 	entries, err := os.ReadDir(src)
 	if err != nil {
 		return errs.Wrap(err, "Reading dir %s failed", src)
 	}
 	for _, entry := range entries {
-		if err := Link(filepath.Join(src, entry.Name()), filepath.Join(dest, entry.Name())); err != nil {
+		if err := Link(filepath.Join(src, entry.Name()), filepath.Join(dest, entry.Name()), visited); err != nil {
 			return errs.Wrap(err, "Link failed")
 		}
 	}
@@ -39,12 +50,23 @@ func LinkContents(src, dest string) error {
 
 // Link creates a link from src to target. MS decided to support Symlinks but only if you opt into developer mode (go figure),
 // which we cannot reasonably force on our users. So on Windows we will instead create dirs and hardlinks.
-func Link(src, dest string) error {
+func Link(src, dest string, visited map[string]bool) error {
 	var err error
 	src, dest, err = resolvePaths(src, dest)
 	if err != nil {
 		return errs.Wrap(err, "Could not resolve src and dest paths")
 	}
+
+	if visited == nil {
+		visited = make(map[string]bool)
+	}
+	if _, exists := visited[src]; exists {
+		// We've encountered a recursive link. This is most often the case when the resolved src has
+		// already been visited. In that case, just link the dest to the src (which may be a directory;
+		// this is fine).
+		return linkFile(src, dest)
+	}
+	visited[src] = true
 
 	if fileutils.IsDir(src) {
 		if err := fileutils.Mkdir(dest); err != nil {
@@ -55,7 +77,7 @@ func Link(src, dest string) error {
 			return errs.Wrap(err, "could not read directory %s", src)
 		}
 		for _, entry := range entries {
-			if err := Link(filepath.Join(src, entry.Name()), filepath.Join(dest, entry.Name())); err != nil {
+			if err := Link(filepath.Join(src, entry.Name()), filepath.Join(dest, entry.Name()), visited); err != nil {
 				return errs.Wrap(err, "sub link failed")
 			}
 		}
