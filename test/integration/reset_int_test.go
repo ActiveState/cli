@@ -90,6 +90,7 @@ func (suite *ResetIntegrationTestSuite) TestRevertInvalidURL() {
 	cp.ExpectNotExitCode(0)
 
 	cp = ts.Spawn("reset", "-n")
+	cp.Expect("Continuing because State Tool is running in non-interactive mode")
 	cp.Expect("Successfully reset to commit: " + commitID.String())
 	cp.ExpectExitCode(0)
 }

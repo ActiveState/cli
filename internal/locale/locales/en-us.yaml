@@ -1168,7 +1168,7 @@ prompt_continue_pkg_operation:
 prompt_continue_force:
   other: "Continuing because the '[ACTIONABLE]--force[/RESET]' flag is set."
 prompt_continue_non_interactive:
-  other: "Continuting because State Tool is running in non-interactive mode."
+  other: "Continuing because State Tool is running in non-interactive mode."
 prompt_abort_non_interactive:
   other: "Aborting because State Tool is running in non-interactive mode. To bypass you can use the '[ACTIONABLE]--force[/RESET]' flag."
 unstable_command_warning:

@@ -600,6 +600,54 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Prompt() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *PackageIntegrationTestSuite) TestCVE_NonInteractive() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	ts.PrepareProject("ActiveState-CLi/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "set", "security.prompt.level", "high")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "set", constants.SecurityPromptConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "urllib3@2.0.2", "--ts=2024-09-10T16:36:34.393Z", "--non-interactive")
+	cp.ExpectRe(`Warning: Dependency has .* vulnerabilities`, e2e.RuntimeSolvingTimeoutOpt)
+	cp.Expect("Aborting because State Tool is running in non-interactive mode")
+	cp.ExpectNotExitCode(0)
+}
+
+func (suite *PackageIntegrationTestSuite) TestCVE_Force() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	ts.PrepareProject("ActiveState-CLi/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "set", "security.prompt.level", "high")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "set", constants.SecurityPromptConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "urllib3@2.0.2", "--ts=2024-09-10T16:36:34.393Z", "--force")
+	cp.ExpectRe(`Warning: Dependency has .* vulnerabilities`, e2e.RuntimeSolvingTimeoutOpt)
+	cp.Expect("Continuing because the '--force' flag is set")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *PackageIntegrationTestSuite) TestCVE_Indirect() {
 	suite.OnlyRunForTags(tagsuite.Package)
 	ts := e2e.New(suite.T(), false)
