@@ -147,7 +147,7 @@ query ($commitID: String!, $organization: String!, $project: String!, $target: S
                   name
                   namespace
                   version_requirements: versionRequirements {
-                   	comparator
+                    comparator
                     version
                   }
                 }
@@ -155,12 +155,20 @@ query ($commitID: String!, $organization: String!, $project: String!, $target: S
               }
             }
             ... on Error {
+              __typename
               message
             }
-            ... on PlanningError {
-              message
+            ... on ErrorWithSubErrors {
+              __typename
               subErrors {
                 __typename
+                buildExprPath
+                ... on RemediableError {
+                  possibleRemediations {
+                    description
+                    suggestedPriority
+                  }
+                }
                 ... on GenericSolveError {
                   path
                   message
@@ -185,36 +193,18 @@ query ($commitID: String!, $organization: String!, $project: String!, $target: S
                     parameters
                   }
                 }
-                ... on TargetNotFound {
-                  message
-                  requestedTarget
-                  possibleTargets
-                }
               }
             }
           }
         }
         ... on Error {
-          message
-        }
-        ... on NotFound {
           __typename
-          type
-          resource
-          mayNeedAuthentication
           message
         }
       }
     }
     ... on Error {
       __typename
-      message
-    }
-    ... on NotFound {
-      __typename
-      type
-      resource
-      mayNeedAuthentication
       message
     }
   }

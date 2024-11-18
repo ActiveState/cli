@@ -8,9 +8,6 @@ type ProjectCreated struct {
 	Type   string  `json:"__typename"`
 	Commit *Commit `json:"commit"`
 	*Error
-	*NotFoundError
-	*ParseError
-	*ForbiddenError
 }
 
 type ProjectCreatedError struct {

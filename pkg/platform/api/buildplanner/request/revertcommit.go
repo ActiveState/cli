@@ -35,45 +35,50 @@ mutation ($organization: String!, $project: String!, $commitId: String!, $target
         commitId
       }
     }
-    ... on RevertConflict {
-      __typename
-      message
-      commitId
-      targetCommitId
-      conflictPaths
-    }
-    ... on CommitHasNoParent {
+    ... on Error {
       __typename
       message
     }
-    ... on NotFound {
+    ... on ErrorWithSubErrors {
       __typename
-      message
-      mayNeedAuthentication
-    }
-    ... on ParseError {
-      __typename
-      message
-      path
-    }
-    ... on ValidationError {
-      __typename
-      message
-    }
-    ... on Forbidden {
-      __typename
-      message
-    }
-    ... on HeadOnBranchMoved {
-      __typename
-      message
-    }
-    ... on NoChangeSinceLastCommit {
-      message
-      commitId
+      subErrors {
+        __typename
+        buildExprPath
+        ... on RemediableError {
+          possibleRemediations {
+            description
+            suggestedPriority
+          }
+        }
+        ... on GenericSolveError {
+          path
+          message
+          isTransient
+          validationErrors {
+            error
+            jsonPath
+          }
+        }
+        ... on RemediableSolveError {
+          path
+          message
+          isTransient
+          errorType
+          validationErrors {
+            error
+            jsonPath
+          }
+          suggestedRemediations {
+            remediationType
+            command
+            parameters
+          }
+        }
+      }
     }
   }
-}`
+}
+`
 }
 
 func (r *revertCommit) Vars() (map[string]interface{}, error) {

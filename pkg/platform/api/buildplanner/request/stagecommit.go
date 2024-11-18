@@ -159,12 +159,20 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID!, $descri
           }
         }
         ... on Error {
+          __typename
           message
         }
-        ... on PlanningError {
-          message
+        ... on ErrorWithSubErrors {
+          __typename
           subErrors {
             __typename
+            buildExprPath
+            ... on RemediableError {
+              possibleRemediations {
+                description
+                suggestedPriority
+              }
+            }
             ... on GenericSolveError {
               path
               message
@@ -189,11 +197,6 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID!, $descri
                 parameters
               }
             }
-            ... on TargetNotFound {
-              message
-              requestedTarget
-              possibleTargets
-            }
           }
         }
       }
@@ -202,41 +205,41 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID!, $descri
       __typename
       message
     }
-    ... on NotFound {
-      __typename
-      message
-      type
-      resource
-      mayNeedAuthentication
-    }
-    ... on ParseError {
-      __typename
-      message
-      path
-    }
-    ... on Forbidden {
-      __typename
-      operation
-      message
-      resource
-    }
-    ... on HeadOnBranchMoved {
-      __typename
-      commitId
-      branchId
-      message
-    }
-    ... on NoChangeSinceLastCommit {
-      __typename
-      commitId
-      message
-    }
-    ... on ValidationError {
+    ... on ErrorWithSubErrors {
       __typename
       subErrors {
         __typename
-        message
         buildExprPath
+        ... on RemediableError {
+          possibleRemediations {
+            description
+            suggestedPriority
+          }
+        }
+        ... on GenericSolveError {
+          path
+          message
+          isTransient
+          validationErrors {
+            error
+            jsonPath
+          }
+        }
+        ... on RemediableSolveError {
+          path
+          message
+          isTransient
+          errorType
+          validationErrors {
+            error
+            jsonPath
+          }
+          suggestedRemediations {
+            remediationType
+            command
+            parameters
+          }
+        }
       }
     }
   }

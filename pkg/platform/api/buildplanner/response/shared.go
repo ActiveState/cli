@@ -93,25 +93,24 @@ func IsErrorResponse(errorType string) bool {
 		errorType == types.ComitHasNoParentErrorType
 }
 
-// NotFoundError represents an error that occurred because a resource was not found.
-type NotFoundError struct {
-	Type                  string `json:"type"`
-	Resource              string `json:"resource"`
-	MayNeedAuthentication bool   `json:"mayNeedAuthentication"`
-}
-
-// ParseError is an error that occurred while parsing the build expression.
-type ParseError struct {
-	Path string `json:"path"`
-}
-
-type ForbiddenError struct {
-	Operation string `json:"operation"`
-}
-
 // Error contains an error message.
 type Error struct {
 	Message string `json:"message"`
+}
+
+type ErrorWithSubErrors struct {
+	SubErrors []*BuildExprError `json:"subErrors"`
+}
+
+// BuildExprError represents a location in the build script where an error occurred.
+type BuildExprError struct {
+	Type          string   `json:"__typename"`
+	Message       string   `json:"message"`
+	BuildExprPath []string `json:"buildExprPath"`
+	*TargetNotFoundError
+	*RemediableError
+	*GenericSolveError
+	*RemediableSolveError
 }
 
 type TargetNotFoundError struct {

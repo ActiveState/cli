@@ -15,12 +15,12 @@ type ArtifactResponse struct {
 }
 
 type BuildResponse struct {
-	*Error
-	*PlanningError
 	Type       string             `json:"__typename"`
 	Artifacts  []ArtifactResponse `json:"artifacts"`
 	Status     string             `json:"status"`
 	RawMessage json.RawMessage    `json:"rawMessage"`
+	*Error
+	*ErrorWithSubErrors
 }
 
 func (b *BuildResponse) MarshalJSON() ([]byte, error) {

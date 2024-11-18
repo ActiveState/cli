@@ -10,4 +10,5 @@ type RevertedCommit struct {
 	CommonAncestor strfmt.UUID `json:"commonAncestorID"`
 	ConflictPaths  []string    `json:"conflictPaths"`
 	*Error
+	*ErrorWithSubErrors
 }

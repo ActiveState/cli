@@ -19,11 +19,7 @@ query ($commitID: ID!) {
       atTime
       expr
     }
-    ... on Error{
-      __typename
-      message
-    }
-    ... on NotFound {
+    ... on Error {
       __typename
       message
     }

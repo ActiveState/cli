@@ -10,6 +10,7 @@ const (
 	HeadOnBranchMovedErrorType        = "HeadOnBranchMoved"
 	ForbiddenErrorType                = "Forbidden"
 	GenericSolveErrorType             = "GenericSolveError"
+	RemediableError                   = "RemediableError"
 	RemediableSolveErrorType          = "RemediableSolveError"
 	PlanningErrorType                 = "PlanningError"
 	MergeConflictType                 = "MergeConflict"
