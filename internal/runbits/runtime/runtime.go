@@ -253,7 +253,7 @@ func Update(
 	if opts.Archive != nil {
 		rtOpts = append(rtOpts, runtime.WithArchive(opts.Archive.Dir, opts.Archive.PlatformID, checkout.ArtifactExt))
 	}
-	if commit.BuildPlan().IsBuildInProgress() {
+	if buildPlan.IsBuildInProgress() {
 		// Build progress URL is of the form
 		// https://<host>/<owner>/<project>/distributions?branch=<branch>&commitID=<commitID>
 		host := constants.DefaultAPIHost
