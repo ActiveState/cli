@@ -44,6 +44,8 @@ type MessageInfo struct {
 	ID        string               `json:"id"`
 	Message   string               `json:"message"`
 	Condition string               `json:"condition"`
+	StartDate string               `json:"startDate"`
+	EndDate   string               `json:"endDate"`
 	Repeat    MessageRepeatType    `json:"repeat"`
 	Interrupt MessageInterruptType `json:"interrupt"`
 	Placement MessagePlacementType `json:"placement"`

@@ -55,6 +55,8 @@ type MessageInfo {
     id: String!
     message: String!
     condition: String!
+    startDate: String!
+    endDate: String!
     repeat: MessageRepeatType!
     interrupt: MessageInterruptType!
     placement: MessagePlacementType!
