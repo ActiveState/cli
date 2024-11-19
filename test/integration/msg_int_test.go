@@ -36,6 +36,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 		Name         string
 		MessageJson  string
 		ExpectRepeat bool
+		ExpectShown  bool
 	}{
 		{
 			"Defaults",
@@ -44,6 +45,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 				"Message": "This is a [NOTICE]simple[/RESET] message"
 			}]`,
 			false,
+			true,
 		},
 		{
 			"Repeat Hourly",
@@ -53,6 +55,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 				"Repeat": "Hourly"
 			}]`,
 			false,
+			true,
 		},
 		{
 			"Repeat Constantly",
@@ -62,6 +65,103 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 				"Repeat": "Constantly"
 			}]`,
 			true,
+			true,
+		},
+		{
+			"Within Date Range",
+			fmt.Sprintf(`[{
+				"ID": "simple",
+				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"StartDate": "%s",
+				"EndDate": "%s"
+			}]`,
+				time.Now().Add(-1*time.Hour).Format(time.RFC3339),
+				time.Now().Add(1*time.Hour).Format(time.RFC3339)),
+			false,
+			true,
+		},
+		{
+			"Outside Date Range",
+			fmt.Sprintf(`[{
+				"ID": "simple",
+				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"StartDate": "%s",
+				"EndDate": "%s"
+			}]`,
+				time.Now().Add(1*time.Hour).Format(time.RFC3339),
+				time.Now().Add(2*time.Hour).Format(time.RFC3339)),
+			false,
+			false,
+		},
+		{
+			"Only Start Date - Valid",
+			fmt.Sprintf(`[{
+				"ID": "simple",
+				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"StartDate": "%s"
+			}]`,
+				time.Now().Add(-1*time.Hour).Format(time.RFC3339)),
+			false,
+			true,
+		},
+		{
+			"Only End Date - Valid",
+			fmt.Sprintf(`[{
+				"ID": "simple",
+				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"EndDate": "%s"
+			}]`,
+				time.Now().Add(1*time.Hour).Format(time.RFC3339)),
+			false,
+			true,
+		},
+		{
+			"Outside Date Range - Future",
+			fmt.Sprintf(`[{
+				"ID": "simple",
+				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"StartDate": "%s",
+				"EndDate": "%s"
+			}]`,
+				time.Now().Add(1*time.Hour).Format(time.RFC3339),
+				time.Now().Add(2*time.Hour).Format(time.RFC3339)),
+			false,
+			false,
+		},
+		{
+			"Outside Date Range - Past",
+			fmt.Sprintf(`[{
+				"ID": "simple",
+				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"StartDate": "%s",
+				"EndDate": "%s"
+			}]`,
+				time.Now().Add(-2*time.Hour).Format(time.RFC3339),
+				time.Now().Add(-1*time.Hour).Format(time.RFC3339)),
+			false,
+			false,
+		},
+		{
+			"Only Start Date - Invalid",
+			fmt.Sprintf(`[{
+				"ID": "simple",
+				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"StartDate": "%s"
+			}]`,
+				time.Now().Add(1*time.Hour).Format(time.RFC3339)),
+			false,
+			false,
+		},
+		{
+			"Only End Date - Invalid",
+			fmt.Sprintf(`[{
+				"ID": "simple",
+				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"EndDate": "%s"
+			}]`,
+				time.Now().Add(-1*time.Hour).Format(time.RFC3339)),
+			false,
+			false,
 		},
 	}
 	for _, tt := range tests {
@@ -73,7 +173,13 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			suite.Require().NoError(err)
 
 			cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
-			cp.Expect(`This is a simple message`)
+
+			if !tt.ExpectShown {
+				suite.Require().NotContains(cp.Output(), "This is a simple message", "Message should not appear when outside date range")
+			} else {
+				cp.Expect(`This is a simple message`)
+			}
+
 			cp.Expect("ActiveState CLI by ActiveState Software Inc.")
 			cp.ExpectExitCode(0)
 

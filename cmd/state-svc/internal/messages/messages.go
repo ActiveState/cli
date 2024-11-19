@@ -44,7 +44,7 @@ func New(cfg *config.Instance, auth *auth.Auth) (*Messages, error) {
 		return nil, errs.Wrap(err, "Could not parse state version")
 	}
 
-	poll := poller.New(1*time.Hour, func() (interface{}, error) {
+	poll := poller.New(10*time.Minute, func() (interface{}, error) {
 		defer func() {
 			panics.LogAndPanic(recover(), debug.Stack())
 		}()
@@ -112,11 +112,39 @@ func (m *Messages) Check(command string, flags []string) ([]*graph.MessageInfo, 
 	return msgs, nil
 }
 
+func messageInDateRange(message *graph.MessageInfo, baseTime time.Time) (bool, error) {
+	logging.Debug("Checking message %s in date range with base time %s", message.ID, baseTime.Format(time.RFC3339))
+	if message.StartDate != "" {
+		startDate, err := time.Parse(time.RFC3339, message.StartDate)
+		if err != nil {
+			return false, errs.Wrap(err, "Could not parse start date for message %s", message.ID)
+		}
+		if baseTime.Before(startDate) {
+			logging.Debug("Skipping message %s as it is before start date %s", message.ID, startDate.Format(time.RFC3339))
+			return false, nil
+		}
+	}
+
+	if message.EndDate != "" {
+		endDate, err := time.Parse(time.RFC3339, message.EndDate)
+		if err != nil {
+			return false, errs.Wrap(err, "Could not parse end date for message %s", message.ID)
+		}
+		if baseTime.After(endDate) {
+			logging.Debug("Skipping message %s as it is after end date %s", message.ID, endDate.Format(time.RFC3339))
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
 func check(params *ConditionParams, messages []*graph.MessageInfo, lastReportMap map[string]interface{}, baseTime time.Time) ([]*graph.MessageInfo, error) {
 	funcMap := conditionFuncMap()
 	filteredMessages := []*graph.MessageInfo{}
 	for _, message := range messages {
 		logging.Debug("Checking message %s", message.ID)
+
 		// Ensure we don't show the same message too often
 		if lastReport, ok := lastReportMap[message.ID]; ok {
 			lr, ok := lastReport.(string)
@@ -140,11 +168,23 @@ func check(params *ConditionParams, messages []*graph.MessageInfo, lastReportMap
 			}
 		}
 
+		// Check if message is within date range
+		inRange, err := messageInDateRange(message, baseTime)
+		if err != nil {
+			logging.Warning("Could not check if message %s is in date range: %v", message.ID, err)
+			continue
+		}
+		if !inRange {
+			logging.Debug("Skipping message %s as it is outside of its date range", message.ID)
+			continue
+		}
+
 		// Validate the conditional
 		if message.Condition != "" {
 			result, err := strutils.ParseTemplate(fmt.Sprintf(`{{%s}}`, message.Condition), params, funcMap)
 			if err != nil {
-				return nil, errs.Wrap(err, "Could not parse condition template for message %s", message.ID)
+				logging.Warning("Could not parse condition template for message %s: %v", message.ID, err)
+				continue
 			}
 			if result == "true" {
 				logging.Debug("Including message %s as condition %s evaluated to %s", message.ID, message.Condition, result)
