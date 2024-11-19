@@ -166,7 +166,6 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID!, $descri
           __typename
           subErrors {
             __typename
-            buildExprPath
             ... on GenericSolveError {
               message
               isTransient
@@ -196,7 +195,6 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID!, $descri
       __typename
       subErrors {
         __typename
-        buildExprPath
         ... on GenericSolveError {
           message
           isTransient

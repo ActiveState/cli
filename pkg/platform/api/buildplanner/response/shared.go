@@ -104,13 +104,10 @@ type ErrorWithSubErrors struct {
 
 // BuildExprError represents a location in the build script where an error occurred.
 type BuildExprError struct {
-	Type          string   `json:"__typename"`
-	Message       string   `json:"message"`
-	BuildExprPath []string `json:"buildExprPath"`
+	Type    string `json:"__typename"`
+	Message string `json:"message"`
 	*TargetNotFoundError
-	*RemediableError
 	*GenericSolveError
-	*RemediableSolveError
 }
 
 type TargetNotFoundError struct {

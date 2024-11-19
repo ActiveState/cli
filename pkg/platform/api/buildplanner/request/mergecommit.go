@@ -38,7 +38,6 @@ mutation ($organization: String!, $project: String!, $targetRef: String!, $other
       __typename
       subErrors {
         __typename
-        buildExprPath
         ... on GenericSolveError {
           message
           isTransient

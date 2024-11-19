@@ -162,7 +162,6 @@ query ($commitID: String!, $organization: String!, $project: String!, $target: S
               __typename
               subErrors {
                 __typename
-                buildExprPath
                 ... on GenericSolveError {
                   message
                   isTransient
