@@ -113,14 +113,12 @@ func (m *Messages) Check(command string, flags []string) ([]*graph.MessageInfo, 
 }
 
 func messageInDateRange(message *graph.MessageInfo, baseTime time.Time) (bool, error) {
-	logging.Debug("Checking message %s in date range with base time %s", message.ID, baseTime.Format(time.RFC3339))
 	if message.StartDate != "" {
 		startDate, err := time.Parse(time.RFC3339, message.StartDate)
 		if err != nil {
 			return false, errs.Wrap(err, "Could not parse start date for message %s", message.ID)
 		}
 		if baseTime.Before(startDate) {
-			logging.Debug("Skipping message %s as it is before start date %s", message.ID, startDate.Format(time.RFC3339))
 			return false, nil
 		}
 	}
@@ -131,7 +129,6 @@ func messageInDateRange(message *graph.MessageInfo, baseTime time.Time) (bool, e
 			return false, errs.Wrap(err, "Could not parse end date for message %s", message.ID)
 		}
 		if baseTime.After(endDate) {
-			logging.Debug("Skipping message %s as it is after end date %s", message.ID, endDate.Format(time.RFC3339))
 			return false, nil
 		}
 	}
