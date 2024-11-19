@@ -94,7 +94,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			false,
 		},
 		{
-			"Only Start Date - Valid",
+			"Only Start Date - Inside Range",
 			fmt.Sprintf(`[{
 				"ID": "simple",
 				"Message": "This is a [NOTICE]simple[/RESET] message",
@@ -105,7 +105,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			true,
 		},
 		{
-			"Only End Date - Valid",
+			"Only End Date - Inside Range",
 			fmt.Sprintf(`[{
 				"ID": "simple",
 				"Message": "This is a [NOTICE]simple[/RESET] message",
@@ -142,7 +142,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			false,
 		},
 		{
-			"Only Start Date - Invalid",
+			"Only Start Date - Outside Range",
 			fmt.Sprintf(`[{
 				"ID": "simple",
 				"Message": "This is a [NOTICE]simple[/RESET] message",
@@ -153,7 +153,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			false,
 		},
 		{
-			"Only End Date - Invalid",
+			"Only End Date - Outside Range",
 			fmt.Sprintf(`[{
 				"ID": "simple",
 				"Message": "This is a [NOTICE]simple[/RESET] message",
