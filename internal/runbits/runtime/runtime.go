@@ -271,6 +271,9 @@ func Update(
 		u.RawQuery = q.Encode()
 		rtOpts = append(rtOpts, runtime.WithBuildProgressUrl(u.String()))
 	}
+	if proj.IsPortable() {
+		rtOpts = append(rtOpts, runtime.WithPortable())
+	}
 
 	if err := rt.Update(buildPlan, rtHash, rtOpts...); err != nil {
 		return nil, locale.WrapError(err, "err_packages_update_runtime_install")

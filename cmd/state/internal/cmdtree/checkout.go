@@ -27,6 +27,11 @@ func newCheckoutCommand(prime *primer.Values) *captain.Command {
 				Value:       &params.RuntimePath,
 			},
 			{
+				Name:        "portable",
+				Description: locale.Tl("flag_state_checkout_portable_description", "Copy files to runtime-path instead of linking to them"),
+				Value:       &params.Portable,
+			},
+			{
 				Name:        "no-clone",
 				Description: locale.Tl("flag_state_checkout_no_clone_description", "Do not clone the github repository associated with this project (if any)"),
 				Value:       &params.NoClone,
