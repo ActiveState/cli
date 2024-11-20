@@ -239,7 +239,7 @@ func startInteractive(sw *scriptWatcher, scriptName string, output output.Output
 	for {
 		doneEditing, err := prompt.Confirm("", locale.T("prompt_done_editing"), ptr.To(true), nil)
 		if err != nil {
-			return errs.Wrap(err, "Prompter returned with failure.")
+			return errs.Wrap(err, "Not confirmed")
 		}
 		if doneEditing {
 			sw.done <- true

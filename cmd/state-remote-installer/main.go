@@ -116,7 +116,7 @@ func main() {
 	an = sync.New(anaConst.SrcStateRemoteInstaller, cfg, nil, out)
 
 	// Set up prompter
-	prompter := prompt.New(true, an)
+	prompter := prompt.New(an)
 
 	params := newParams()
 	cmd := captain.NewCommand(
@@ -176,7 +176,7 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	msg += locale.Tr("tos_disclaimer_prompt", constants.TermsOfServiceURLLatest)
 	cont, err := prompt.Confirm(locale.Tr("install_remote_title"), msg, ptr.To(true), nil)
 	if err != nil {
-		return errs.Wrap(err, "Could not prompt for confirmation")
+		return errs.Wrap(err, "Not confirmed")
 	}
 
 	if !cont {

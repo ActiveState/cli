@@ -80,7 +80,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	cleanCmd.AddChildren(
 		newCleanUninstallCommand(prime, globals),
 		newCleanCacheCommand(prime, globals),
-		newCleanConfigCommand(prime),
+		newCleanConfigCommand(prime, globals),
 	)
 
 	deployCmd := newDeployCommand(prime)
@@ -95,7 +95,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	eventsCmd := newEventsCommand(prime)
 	eventsCmd.AddChildren(newEventsLogCommand(prime))
 
-	installCmd := newInstallCommand(prime)
+	installCmd := newInstallCommand(prime, globals)
 	uninstallCmd := newUninstallCommand(prime)
 	importCmd := newImportCommand(prime, globals)
 	searchCmd := newSearchCommand(prime)
@@ -234,6 +234,7 @@ type globalOptions struct {
 	Output         string
 	Monochrome     bool
 	NonInteractive bool
+	Force          bool
 }
 
 // Group instances are used to group command help output.
@@ -302,6 +303,12 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 				Shorthand:   "n",
 				Persist:     true,
 				Value:       &globals.NonInteractive,
+			},
+			{
+				Name:        "force",
+				Description: locale.T("flag_state_force_description"),
+				Persist:     true,
+				Value:       &globals.Force,
 			},
 			{
 				Name:        "version",

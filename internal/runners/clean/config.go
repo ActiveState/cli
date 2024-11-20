@@ -56,16 +56,10 @@ func (c *Config) Run(params *ConfigParams) error {
 	defaultChoice := !c.confirm.IsInteractive()
 	ok, err := c.confirm.Confirm(locale.T("confirm"), locale.T("clean_config_confirm"), &defaultChoice, ptr.To(true))
 	if err != nil {
-		return errs.Wrap(err, "Unable to confirm")
+		return errs.Wrap(err, "Not confirmed")
 	}
 	if !ok {
 		return locale.NewInputError("err_clean_config_aborted", "Cleaning of config aborted by user")
-	}
-	switch {
-	case !c.confirm.IsInteractive():
-		c.output.Notice(locale.T("prompt_continue_non_interactive"))
-	case c.confirm.IsForceEnabled():
-		c.output.Notice(locale.T("prompt_continue_force"))
 	}
 
 	if err := stopServices(c.cfg, c.output, c.ipComm, params.Force); err != nil {

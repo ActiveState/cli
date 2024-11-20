@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
@@ -117,15 +118,12 @@ func (r *Reset) Run(params *Params) error {
 	r.out.Notice(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", commitID.String()))
 	if commitID != localCommitID {
 		defaultChoice := !r.prime.Prompt().IsInteractive()
-		confirm, err := r.prime.Prompt().Confirm("", locale.Tl("reset_confim", "Resetting is destructive. You will lose any changes that were not pushed. Are you sure you want to do this?"), &defaultChoice, nil)
+		confirm, err := r.prime.Prompt().Confirm("", locale.Tl("reset_confim", "Resetting is destructive. You will lose any changes that were not pushed. Are you sure you want to do this?"), &defaultChoice, ptr.To(true))
 		if err != nil {
-			return errs.Wrap(err, "Unable to confirm")
+			return errs.Wrap(err, "Not confirmed")
 		}
 		if !confirm {
 			return locale.NewInputError("err_reset_aborted", "Reset aborted by user")
-		}
-		if !r.prime.Prompt().IsInteractive() {
-			r.prime.Output().Notice(locale.T("prompt_continue_non_interactive"))
 		}
 	}
 

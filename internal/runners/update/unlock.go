@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/project"
@@ -44,7 +45,7 @@ func (u *Unlock) Run(params *UnlockParams) error {
 
 	u.out.Notice(locale.Tl("unlocking_version", "Unlocking State Tool version for current project."))
 
-	err := confirmUnlock(u.prompt, u.out)
+	err := confirmUnlock(u.prompt)
 	if err != nil {
 		return locale.WrapError(err, "err_update_unlock_confirm", "Unlock cancelled by user.")
 	}
@@ -69,19 +70,16 @@ func (u *Unlock) Run(params *UnlockParams) error {
 	return nil
 }
 
-func confirmUnlock(prom prompt.Prompter, out output.Outputer) error {
+func confirmUnlock(prom prompt.Prompter) error {
 	msg := locale.T("confirm_update_unlocked_version_prompt")
 
 	defaultChoice := !prom.IsInteractive()
-	confirmed, err := prom.Confirm(locale.T("confirm"), msg, &defaultChoice, nil)
+	confirmed, err := prom.Confirm(locale.T("confirm"), msg, &defaultChoice, ptr.To(true))
 	if err != nil {
-		return errs.Wrap(err, "Unable to confirm")
+		return errs.Wrap(err, "Not confirmed")
 	}
 	if !confirmed {
 		return locale.NewInputError("err_update_lock_noconfirm", "Cancelling by your request.")
-	}
-	if !prom.IsInteractive() {
-		out.Notice(locale.T("prompt_continue_non_interactive"))
 	}
 
 	return nil

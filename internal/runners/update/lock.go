@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -72,7 +73,7 @@ func (l *Lock) Run(params *LockParams) error {
 	l.out.Notice(locale.Tl("locking_version", "Locking State Tool version for current project."))
 
 	if l.project.IsLocked() {
-		if err := confirmLock(l.prompt, l.out); err != nil {
+		if err := confirmLock(l.prompt); err != nil {
 			return locale.WrapError(err, "err_update_lock_confirm", "Could not confirm whether to lock update.")
 		}
 	}
@@ -127,19 +128,16 @@ func (l *Lock) Run(params *LockParams) error {
 	return nil
 }
 
-func confirmLock(prom prompt.Prompter, out output.Outputer) error {
+func confirmLock(prom prompt.Prompter) error {
 	defaultChoice := !prom.IsInteractive()
 	msg := locale.T("confirm_update_locked_version_prompt")
 
-	confirmed, err := prom.Confirm(locale.T("confirm"), msg, &defaultChoice, nil)
+	confirmed, err := prom.Confirm(locale.T("confirm"), msg, &defaultChoice, ptr.To(true))
 	if err != nil {
-		return errs.Wrap(err, "Unable to confirm")
+		return errs.Wrap(err, "Not confirmed")
 	}
 	if !confirmed {
 		return locale.NewInputError("err_update_lock_noconfirm", "Cancelling by your request.")
-	}
-	if !prom.IsInteractive() {
-		out.Notice(locale.T("prompt_continue_non_interactive"))
 	}
 
 	return nil

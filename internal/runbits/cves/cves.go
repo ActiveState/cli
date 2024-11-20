@@ -106,20 +106,13 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 	c.summarizeCVEs(vulnerabilities)
 
 	confirm, err := c.prime.Prompt().Confirm("", locale.Tr("prompt_continue_pkg_operation"), ptr.To(false), ptr.To(true))
+	if err == nil && !confirm {
+		err = locale.NewInputError("err_pkgop_security_prompt", "Operation aborted by user")
+	}
 	if err != nil {
-		return errs.Wrap(err, "Unable to confirm")
-	}
-	if !confirm {
-		if !c.prime.Prompt().IsInteractive() {
-			return errs.AddTips(
-				locale.NewInputError("prompt_abort_non_interactive"),
-				locale.Tl("more_info_prompt", "To disable security prompting run: [ACTIONABLE]state config set security.prompt.enabled false[/RESET]"),
-			)
-		}
-		return locale.NewInputError("err_pkgop_security_prompt", "Operation aborted by user")
-	}
-	if c.prime.Prompt().IsForceEnabled() {
-		c.prime.Output().Notice(locale.T("prompt_continue_force"))
+		return errs.AddTips(err,
+			locale.Tl("more_info_prompt", "To disable security prompting run: [ACTIONABLE]state config set security.prompt.enabled false[/RESET]"),
+		)
 	}
 	c.prime.Output().Notice("") // Empty line
 

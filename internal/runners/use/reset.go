@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/subshell"
 )
 
@@ -41,15 +42,12 @@ func (u *Reset) Run(params *ResetParams) error {
 
 	defaultChoice := !u.prompt.IsInteractive()
 	ok, err := u.prompt.Confirm(locale.T("confirm"),
-		locale.Tl("use_reset_confirm", "You are about to stop using your project runtime. Continue?"), &defaultChoice, nil)
+		locale.Tl("use_reset_confirm", "You are about to stop using your project runtime. Continue?"), &defaultChoice, ptr.To(true))
 	if err != nil {
-		return errs.Wrap(err, "Unable to confirm")
+		return errs.Wrap(err, "Not confirmed")
 	}
 	if !ok {
 		return locale.NewInputError("err_reset_aborted", "Reset aborted by user")
-	}
-	if !u.prompt.IsInteractive() {
-		u.out.Notice(locale.T("prompt_continue_non_interactive"))
 	}
 
 	reset, err := globaldefault.ResetDefaultActivation(u.subshell, u.config)

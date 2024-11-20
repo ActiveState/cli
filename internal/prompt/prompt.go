@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 )
 
@@ -21,15 +20,14 @@ type EventDispatcher interface {
 
 // Prompter is the interface used to run our prompt from
 type Prompter interface {
-	Input(title, message string, defaultResponse *string, flags ...ValidatorFlag) (string, error)
-	InputAndValidate(title, message string, defaultResponse *string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error)
-	Select(title, message string, choices []string, defaultResponse *string) (string, error)
+	Input(title, message string, defaultResponse *string, forcedResponse *string, flags ...ValidatorFlag) (string, error)
+	InputAndValidate(title, message string, defaultResponse *string, forcedResponse *string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error)
+	Select(title, message string, choices []string, defaultResponse *string, forcedResponse *string) (string, error)
 	Confirm(title, message string, defaultChoice *bool, forcedChoice *bool) (bool, error)
 	InputSecret(title, message string, flags ...ValidatorFlag) (string, error)
 	IsInteractive() bool
 	SetInteractive(bool)
-	EnableForce()
-	IsForceEnabled() bool
+	SetForce(bool)
 }
 
 // ValidatorFunc is a function pass to the Prompter to perform validation
@@ -47,8 +45,8 @@ type Prompt struct {
 }
 
 // New creates a new prompter
-func New(isInteractive bool, an EventDispatcher) Prompter {
-	return &Prompt{output.Get(), an, isInteractive, false}
+func New(an EventDispatcher) Prompter {
+	return &Prompt{output.Get(), an, true, false}
 }
 
 // IsInteractive checks if the prompts can be interactive or should just return default values
@@ -60,13 +58,13 @@ func (p *Prompt) SetInteractive(interactive bool) {
 	p.isInteractive = interactive
 }
 
-// EnableForce forces confirm prompts to return the force value (which is often different from the
+// SetForce enables prompts to return the force value (which is often different from the
 // non-interactive value).
-func (p *Prompt) EnableForce() {
-	p.isForced = true
+func (p *Prompt) SetForce(force bool) {
+	p.isForced = force
 }
 
-func (p *Prompt) IsForceEnabled() bool {
+func (p *Prompt) IsForced() bool {
 	return p.isForced
 }
 
@@ -82,8 +80,8 @@ const (
 )
 
 // Input prompts the user for input.  The user can specify available validation flags to trigger validation of responses
-func (p *Prompt) Input(title, message string, defaultResponse *string, flags ...ValidatorFlag) (string, error) {
-	return p.InputAndValidate(title, message, defaultResponse, func(val interface{}) error {
+func (p *Prompt) Input(title, message string, defaultResponse *string, forcedResponse *string, flags ...ValidatorFlag) (string, error) {
+	return p.InputAndValidate(title, message, defaultResponse, forcedResponse, func(val interface{}) error {
 		return nil
 	}, flags...)
 }
@@ -100,10 +98,22 @@ func interactiveInputError(message string) error {
 }
 
 // InputAndValidate prompts an input field and allows you to specfiy a custom validation function as well as the built in flags
-func (p *Prompt) InputAndValidate(title, message string, defaultResponse *string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error) {
+func (p *Prompt) InputAndValidate(title, message string, defaultResponse *string, forcedResponse *string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error) {
+	if p.isForced {
+		response := forcedResponse
+		if response == nil {
+			response = defaultResponse
+		}
+		if response != nil {
+			p.out.Notice(locale.Tr("prompt_using_force", *response))
+			return *response, nil
+		}
+		return "", errs.New("No force option given for forced prompt")
+	}
+
 	if !p.isInteractive {
 		if defaultResponse != nil {
-			logging.Debug("Selecting default choice %s for Input prompt %s in non-interactive mode", *defaultResponse, title)
+			p.out.Notice(locale.Tr("prompt_using_non_interactive", *defaultResponse))
 			return *defaultResponse, nil
 		}
 		return "", interactiveInputError(message)
@@ -124,7 +134,7 @@ func (p *Prompt) InputAndValidate(title, message string, defaultResponse *string
 
 	// We handle defaults more clearly than the survey package can
 	if defaultResponse != nil && *defaultResponse != "" {
-		v, err := p.Select("", formatMessage(message, !p.out.Config().Colored), []string{*defaultResponse, locale.Tl("prompt_custom", "Other ..")}, defaultResponse)
+		v, err := p.Select("", formatMessage(message, !p.out.Config().Colored), []string{*defaultResponse, locale.Tl("prompt_custom", "Other ..")}, defaultResponse, forcedResponse)
 		if err != nil {
 			return "", err
 		}
@@ -145,10 +155,22 @@ func (p *Prompt) InputAndValidate(title, message string, defaultResponse *string
 }
 
 // Select prompts the user to select one entry from multiple choices
-func (p *Prompt) Select(title, message string, choices []string, defaultChoice *string) (string, error) {
+func (p *Prompt) Select(title, message string, choices []string, defaultChoice *string, forcedChoice *string) (string, error) {
+	if p.isForced {
+		choice := forcedChoice
+		if choice == nil {
+			choice = defaultChoice
+		}
+		if choice != nil {
+			p.out.Notice(locale.Tr("prompt_using_force", *choice))
+			return *choice, nil
+		}
+		return "", errs.New("No force option given for forced prompt")
+	}
+
 	if !p.isInteractive {
 		if defaultChoice != nil {
-			logging.Debug("Selecting default choice %s for Select prompt %s in non-interactive mode", *defaultChoice, title)
+			p.out.Notice(locale.Tr("prompt_using_non_interactive", *defaultChoice))
 			return *defaultChoice, nil
 		}
 		return "", interactiveInputError(message)
@@ -179,17 +201,24 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice *
 // Confirm prompts user for yes or no response.
 func (p *Prompt) Confirm(title, message string, defaultChoice *bool, forcedChoice *bool) (bool, error) {
 	if p.isForced {
-		if forcedChoice == nil {
-			return false, errs.New("No force option given for force-enabled prompt")
+		choice := forcedChoice
+		if choice == nil {
+			choice = defaultChoice
 		}
-		logging.Debug("Prompt %s confirmed with choice %v in force mode", title, forcedChoice)
-		return *forcedChoice, nil
+		if choice != nil {
+			p.out.Notice(locale.T("prompt_continue_force"))
+			return *choice, nil
+		}
+		return false, errs.New("No force option given for forced prompt")
 	}
 
 	if !p.isInteractive {
 		if defaultChoice != nil {
-			logging.Debug("Prompt %s confirmed with default choice %v in non-interactive mode", title, defaultChoice)
-			return *defaultChoice, nil
+			if *defaultChoice {
+				p.out.Notice(locale.T("prompt_continue_non_interactive"))
+				return true, nil
+			}
+			return false, locale.NewInputError("prompt_abort_non_interactive")
 		}
 		return false, interactiveInputError(message)
 	}

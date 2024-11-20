@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/pkg/runtime_helpers"
@@ -71,15 +72,12 @@ func (c *Cache) Run(params *CacheParams) error {
 
 func (c *Cache) removeCache(path string) error {
 	defaultValue := !c.prime.Prompt().IsInteractive()
-	ok, err := c.prime.Prompt().Confirm(locale.T("confirm"), locale.T("clean_cache_confirm"), &defaultValue, nil)
+	ok, err := c.prime.Prompt().Confirm(locale.T("confirm"), locale.T("clean_cache_confirm"), &defaultValue, ptr.To(true))
 	if err != nil {
-		return errs.Wrap(err, "Could not confirm")
+		return errs.Wrap(err, "Not confirmed")
 	}
 	if !ok {
 		return locale.NewInputError("err_clean_cache_not_confirmed", "Cleaning of cache aborted by user")
-	}
-	if !c.prime.Prompt().IsInteractive() {
-		c.prime.Output().Notice(locale.T("prompt_continue_non_interactive"))
 	}
 
 	inUse, err := c.checkPathInUse(path)
@@ -101,15 +99,12 @@ func (c *Cache) removeCache(path string) error {
 
 func (c *Cache) removeProjectCache(projectDir, namespace string) error {
 	defaultValue := !c.prime.Prompt().IsInteractive()
-	ok, err := c.prime.Prompt().Confirm(locale.T("confirm"), locale.Tr("clean_cache_artifact_confirm", namespace), &defaultValue, nil)
+	ok, err := c.prime.Prompt().Confirm(locale.T("confirm"), locale.Tr("clean_cache_artifact_confirm", namespace), &defaultValue, ptr.To(true))
 	if err != nil {
-		return errs.Wrap(err, "Could not confirm")
+		return errs.Wrap(err, "Not confirmed")
 	}
 	if !ok {
 		return locale.NewInputError("err_clean_cache_artifact_not_confirmed", "Cleaning of cached runtime aborted by user")
-	}
-	if !c.prime.Prompt().IsInteractive() {
-		c.prime.Output().Notice(locale.T("prompt_continue_non_interactive"))
 	}
 
 	inUse, err := c.checkPathInUse(projectDir)

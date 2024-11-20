@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -42,15 +43,12 @@ func (m *Move) Run(params *MoveParams) error {
 	}
 
 	defaultChoice := !m.prompt.IsInteractive()
-	move, err := m.prompt.Confirm("", locale.Tr("move_prompt", params.Namespace.String(), params.NewOwner, params.Namespace.Project), &defaultChoice, nil)
+	move, err := m.prompt.Confirm("", locale.Tr("move_prompt", params.Namespace.String(), params.NewOwner, params.Namespace.Project), &defaultChoice, ptr.To(true))
 	if err != nil {
-		return errs.Wrap(err, "Unable to confirm")
+		return errs.Wrap(err, "Not confirmed")
 	}
 	if !move {
 		return locale.NewInputError("move_cancelled", "Project move aborted by user")
-	}
-	if !m.prompt.IsInteractive() {
-		m.out.Notice(locale.T("prompt_continue_non_interactive"))
 	}
 
 	if err = model.MoveProject(params.Namespace.Owner, params.Namespace.Project, params.NewOwner, m.auth); err != nil {

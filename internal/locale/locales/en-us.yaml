@@ -23,6 +23,8 @@ flag_state_output_description:
   other: "Set the output method. Possible values: plain, simple, json, editor"
 flag_state_non_interactive_description:
   other: Run the State Tool without any prompts
+flag_state_force_description:
+  other: Run the State Tool without any prompts, overriding any safe defaults
 flag_state_version_description:
   other: Show the version of our state executable
 flag_state_activate_path_description:
@@ -755,12 +757,8 @@ cache_description:
   other: Removes cached Runtime Environments
 clean_config_description:
   other: Removes global State Tool configuration. Project configuration will not be affected.
-flag_state_clean_uninstall_force_description:
-  other: Run uninstall operation without prompts and ignoring any errors stopping running services
 arg_state_clean_cache_project_description:
   other: The project to be removed from the local cache.
-flag_state_clean_config_force_description:
-  other: Run clean config operation without prompts and ignoring any errors stopping running services
 err_uninstall_activated:
   other: Cannot uninstall the State Tool while in an activated state. Please deactivate by entering [ACTIONABLE]exit[/RESET] or pressing [ACTIONABLE]Ctrl+D[/RESET] and then try again.
 err_remove_cache:
@@ -1171,6 +1169,10 @@ prompt_continue_non_interactive:
   other: "Continuing because State Tool is running in non-interactive mode."
 prompt_abort_non_interactive:
   other: "Aborting because State Tool is running in non-interactive mode. To bypass you can use the '[ACTIONABLE]--force[/RESET]' flag."
+prompt_using_force:
+  other: "Using '[ACTIONABLE]{{.V0}}[/RESET]' because the '[ACTIONABLE]--force[/RESET]' flag is set."
+prompt_using_non_interactive:
+  other: "Using '[ACTIONABLE]{{.V0}}[/RESET]' because State Tool is running in non-interactive mode."
 unstable_command_warning:
   other: |
     This command is still in beta. If you want to opt-in to unstable features, run the following command:

@@ -224,7 +224,10 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	}()
 
 	// Set up prompter
-	prompter := prompt.New(isInteractive, an)
+	prompter := prompt.New(an)
+	if !isInteractive {
+		prompter.SetInteractive(false)
+	}
 
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)

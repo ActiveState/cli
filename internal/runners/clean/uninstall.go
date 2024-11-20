@@ -70,7 +70,7 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 			locale.Tl("uninstall_prompt", "Uninstall the State Tool, but keep runtime cache and configuration files"),
 			locale.Tl("uninstall_prompt_all", "Completely uninstall the State Tool, including runtime cache and configuration files"),
 		}
-		selection, err := u.prompt.Select("", "", choices, new(string))
+		selection, err := u.prompt.Select("", "", choices, ptr.To(""), nil)
 		if err != nil {
 			return locale.WrapError(err, "err_uninstall_prompt", "Could not read uninstall option")
 		}
@@ -85,16 +85,10 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 		}
 		ok, err := u.prompt.Confirm(locale.T("confirm"), confirmMessage, &defaultChoice, ptr.To(true))
 		if err != nil {
-			return errs.Wrap(err, "Unable to confirm")
+			return errs.Wrap(err, "Not confirmed")
 		}
 		if !ok {
 			return locale.NewInputError("err_uninstall_aborted", "Uninstall aborted by user")
-		}
-		switch {
-		case !u.prompt.IsInteractive():
-			u.out.Notice(locale.T("prompt_continue_non_interactive"))
-		case u.prompt.IsForceEnabled():
-			u.out.Notice(locale.T("prompt_continue_force"))
 		}
 	}
 
