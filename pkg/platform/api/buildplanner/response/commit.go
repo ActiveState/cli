@@ -38,7 +38,7 @@ func processPlanningError(message string, subErrors []*BuildExprError) error {
 			}
 		}
 
-		if se.Type != types.RemediableSolveErrorType && se.Type != types.GenericSolveErrorType && se.Type != types.RemediableError {
+		if se.Type != types.RemediableSolveErrorType && se.Type != types.GenericSolveErrorType {
 			continue
 		}
 
