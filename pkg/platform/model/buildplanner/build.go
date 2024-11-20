@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/graphql"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -50,7 +49,7 @@ func (c *Commit) BuildScript() *buildscript.BuildScript {
 	return c.buildscript
 }
 
-func (c *client) Run(req gqlclient.Request, resp interface{}) error {
+func (c *client) Run(req graphql.Request, resp interface{}) error {
 	return c.gqlClient.Run(req, resp)
 }
 

@@ -1,4 +1,4 @@
-package gqlclient
+package graphql
 
 import "fmt"
 

@@ -9,7 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/gqlclient"
+	"github.com/ActiveState/cli/internal/graphql"
 	"github.com/ActiveState/cli/internal/locale"
 	yamlcomment "github.com/zijiren233/yaml-comment"
 	"gopkg.in/yaml.v3"
@@ -187,11 +187,11 @@ func (p *PublishInput) Close() error {
 	return p.file.Close()
 }
 
-func (p *PublishInput) Files() []gqlclient.File {
+func (p *PublishInput) Files() []graphql.File {
 	if p.file == nil {
-		return []gqlclient.File{}
+		return []graphql.File{}
 	}
-	return []gqlclient.File{
+	return []graphql.File{
 		{
 			Field: "variables.input.file", // this needs to map to the graphql input, eg. variables.input.file
 			Name:  p.Variables.Name,

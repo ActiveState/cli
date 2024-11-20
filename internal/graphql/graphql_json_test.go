@@ -32,12 +32,12 @@ func TestDoJSON(t *testing.T) {
 	defer srv.Close()
 
 	ctx := context.Background()
-	client := NewClient(srv.URL)
+	client := newClient(srv.URL)
 
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 	var responseData map[string]interface{}
-	err := client.Run(ctx, &Request{q: "query {}"}, &responseData)
+	err := client.RunWithContext(ctx, &TestRequest{"query {}", nil, nil}, &responseData)
 	is.NoErr(err)
 	is.Equal(calls, 1) // calls
 	is.Equal(responseData["something"], "yes")
@@ -59,10 +59,10 @@ func TestQueryJSON(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	client := NewClient(srv.URL)
+	client := newClient(srv.URL)
 
-	req := NewRequest("query {}")
-	req.Var("username", "matryer")
+	req := NewTestRequest("query {}")
+	req.vars["username"] = "matryer"
 
 	// check variables
 	is.True(req != nil)
@@ -71,7 +71,7 @@ func TestQueryJSON(t *testing.T) {
 	var resp struct {
 		Value string
 	}
-	err := client.Run(ctx, req, &resp)
+	err := client.RunWithContext(ctx, req, &resp)
 	is.NoErr(err)
 	is.Equal(calls, 1)
 
@@ -99,15 +99,14 @@ func TestHeader(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	client := NewClient(srv.URL)
+	client := newClient(srv.URL)
 
-	req := NewRequest("query {}")
-	req.Header.Set("X-Custom-Header", "123")
-
+	req := NewTestRequest("query {}")
+	req.headers["X-Custom-Header"] = []string{"123"}
 	var resp struct {
 		Value string
 	}
-	err := client.Run(ctx, req, &resp)
+	err := client.RunWithContext(ctx, req, &resp)
 	is.NoErr(err)
 	is.Equal(calls, 1)
 
