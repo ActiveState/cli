@@ -227,7 +227,7 @@ func (c *Client) RunWithContext(ctx context.Context, req Request, resp interface
 	if header, ok := req.(RequestWithHeaders); ok {
 		for key, values := range header.Headers() {
 			for _, value := range values {
-				gqlRequest.Header.Set(key, value)
+				gqlRequest.Header.Add(key, value)
 			}
 		}
 	}
@@ -244,7 +244,7 @@ func (c *Client) RunWithContext(ctx context.Context, req Request, resp interface
 	return c.runWithJSON(ctx, gqlRequest, resp)
 }
 
-func (c *Client) runWithJSON(ctx context.Context, req *GQLRequest, resp interface{}) error {
+func (c *Client) runWithJSON(ctx context.Context, req *gqlRequest, resp interface{}) error {
 	var requestBody bytes.Buffer
 	requestBodyObj := struct {
 		Query     string                 `json:"query"`
@@ -297,7 +297,7 @@ func (c *Client) runWithJSON(ctx context.Context, req *GQLRequest, resp interfac
 	return c.marshalResponse(intermediateResp, resp)
 }
 
-func (c *Client) runWithPostFields(ctx context.Context, req *GQLRequest, resp interface{}) error {
+func (c *Client) runWithPostFields(ctx context.Context, req *gqlRequest, resp interface{}) error {
 	var requestBody bytes.Buffer
 	writer := multipart.NewWriter(&requestBody)
 	if err := writer.WriteField("query", req.q); err != nil {
@@ -369,12 +369,12 @@ func (c *Client) runWithPostFields(ctx context.Context, req *GQLRequest, resp in
 	return c.marshalResponse(intermediateResp, resp)
 }
 
-type JsonRequest struct {
+type jsonRequest struct {
 	Query     string                 `json:"query"`
 	Variables map[string]interface{} `json:"variables"`
 }
 
-func (c *Client) runWithFiles(ctx context.Context, request *GQLRequest, response interface{}) error {
+func (c *Client) runWithFiles(ctx context.Context, request *gqlRequest, response interface{}) error {
 	// Construct the multi-part request.
 	bodyReader, bodyWriter := io.Pipe()
 
@@ -407,7 +407,7 @@ func (c *Client) runWithFiles(ctx context.Context, request *GQLRequest, response
 			return
 		}
 
-		jsonReq := JsonRequest{
+		jsonReq := jsonRequest{
 			Query:     request.q,
 			Variables: vars,
 		}
@@ -614,7 +614,7 @@ type graphResponse struct {
 }
 
 // Request is a GraphQL request.
-type GQLRequest struct {
+type gqlRequest struct {
 	q     string
 	vars  map[string]interface{}
 	files []File
@@ -625,8 +625,8 @@ type GQLRequest struct {
 }
 
 // newRequest makes a new Request with the specified string.
-func newRequest(q string) *GQLRequest {
-	req := &GQLRequest{
+func newRequest(q string) *gqlRequest {
+	req := &gqlRequest{
 		q:      q,
 		Header: make(map[string][]string),
 	}
@@ -634,7 +634,7 @@ func newRequest(q string) *GQLRequest {
 }
 
 // Var sets a variable.
-func (req *GQLRequest) Var(key string, value interface{}) {
+func (req *gqlRequest) Var(key string, value interface{}) {
 	if req.vars == nil {
 		req.vars = make(map[string]interface{})
 	}
@@ -644,16 +644,12 @@ func (req *GQLRequest) Var(key string, value interface{}) {
 // File sets a file to upload.
 // Files are only supported with a Client that was created with
 // the UseMultipartForm option.
-func (req *GQLRequest) File(fieldname, filename string, r io.Reader) {
+func (req *gqlRequest) File(fieldname, filename string, r io.Reader) {
 	req.files = append(req.files, File{
 		Field: fieldname,
 		Name:  filename,
 		R:     r,
 	})
-}
-
-func (req *GQLRequest) Files() []File {
-	return req.files
 }
 
 // File represents a File to upload.
