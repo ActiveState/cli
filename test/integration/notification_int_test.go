@@ -18,7 +18,7 @@ type NotificationIntegrationTestSuite struct {
 }
 
 func (suite *NotificationIntegrationTestSuite) TestNotification_None() {
-	suite.OnlyRunForTags(tagsuite.Messaging, tagsuite.Critical)
+	suite.OnlyRunForTags(tagsuite.Notifications, tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -31,7 +31,7 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_None() {
 }
 
 func (suite *NotificationIntegrationTestSuite) TestNotification_Basic() {
-	suite.OnlyRunForTags(tagsuite.Messaging, tagsuite.Critical)
+	suite.OnlyRunForTags(tagsuite.Notifications, tagsuite.Critical)
 	tests := []struct {
 		Name         string
 		MessageJson  string
@@ -197,7 +197,7 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_Basic() {
 }
 
 func (suite *NotificationIntegrationTestSuite) TestNotification_Basic_PlacementAfter() {
-	suite.OnlyRunForTags(tagsuite.Messaging)
+	suite.OnlyRunForTags(tagsuite.Notifications)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -217,7 +217,7 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_Basic_PlacementA
 }
 
 func (suite *NotificationIntegrationTestSuite) TestNotification_Basic_InterruptPrompt() {
-	suite.OnlyRunForTags(tagsuite.Messaging)
+	suite.OnlyRunForTags(tagsuite.Notifications)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -249,7 +249,7 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_Basic_InterruptP
 }
 
 func (suite *NotificationIntegrationTestSuite) TestNotification_Basic_InterruptExit() {
-	suite.OnlyRunForTags(tagsuite.Messaging)
+	suite.OnlyRunForTags(tagsuite.Notifications)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
