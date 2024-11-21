@@ -23,7 +23,7 @@ import (
 	"github.com/blang/semver"
 )
 
-const ConfigKeyLastReport = "messages.last_reported"
+const ConfigKeyLastReport = "notifications.last_reported"
 
 type Notifications struct {
 	cfg        *config.Instance
@@ -100,7 +100,7 @@ func (m *Notifications) Check(command string, flags []string) ([]*graph.Notifica
 	lastReportMap := m.cfg.GetStringMap(ConfigKeyLastReport)
 	msgs, err := check(&conditionParams, allNotifications, lastReportMap, time.Now())
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not check messages")
+		return nil, errs.Wrap(err, "Could not check notifications")
 	}
 	for _, msg := range msgs {
 		lastReportMap[msg.ID] = time.Now().Format(time.RFC3339)
@@ -205,18 +205,18 @@ func fetch() ([]*graph.NotificationInfo, error) {
 	if v := os.Getenv(constants.NotificationsOverrideEnvVarName); v != "" {
 		body, err = fileutils.ReadFile(v)
 		if err != nil {
-			return nil, errs.Wrap(err, "Could not read messages override file")
+			return nil, errs.Wrap(err, "Could not read notifications override file")
 		}
 	} else {
 		body, err = httputil.Get(constants.NotificationsInfoURL)
 		if err != nil {
-			return nil, errs.Wrap(err, "Could not fetch messages information")
+			return nil, errs.Wrap(err, "Could not fetch notifications information")
 		}
 	}
 
 	var notifications []*graph.NotificationInfo
 	if err := json.Unmarshal(body, &notifications); err != nil {
-		return nil, errs.Wrap(err, "Could not unmarshall messages information")
+		return nil, errs.Wrap(err, "Could not unmarshall notifications information")
 	}
 
 	// Set defaults

@@ -57,7 +57,7 @@ func conditionFuncMap() template.FuncMap {
 		"regexMatch": func(str, pattern string) bool {
 			rx, err := regexp.Compile(pattern)
 			if err != nil {
-				multilog.Error("Messages: Could not compile regex pattern: %s", err)
+				multilog.Error("Notifications: Could not compile regex pattern: %s", err)
 				return false
 			}
 			return rx.MatchString(str)
