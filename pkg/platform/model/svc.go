@@ -125,14 +125,14 @@ func (m *SvcModel) ReportRuntimeUsage(ctx context.Context, pid int, exec, source
 	return nil
 }
 
-func (m *SvcModel) CheckMessages(ctx context.Context, command string, flags []string) ([]*graph.MessageInfo, error) {
-	logging.Debug("Checking for messages")
-	defer profile.Measure("svc:CheckMessages", time.Now())
+func (m *SvcModel) CheckNotifications(ctx context.Context, command string, flags []string) ([]*graph.NotificationInfo, error) {
+	logging.Debug("Checking for notifications")
+	defer profile.Measure("svc:CheckNotifications", time.Now())
 
-	r := request.NewMessagingRequest(command, flags)
-	resp := []*graph.MessageInfo{}
+	r := request.NewNotificationRequest(command, flags)
+	resp := []*graph.NotificationInfo{}
 	if err := m.request(ctx, r, &resp); err != nil {
-		return nil, errs.Wrap(err, "Error sending messages request")
+		return nil, errs.Wrap(err, "Error sending notifications request")
 	}
 
 	return resp, nil

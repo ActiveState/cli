@@ -79,7 +79,11 @@ type ComplexityRoot struct {
 		User  func(childComplexity int) int
 	}
 
-	MessageInfo struct {
+	Mutation struct {
+		SetCache func(childComplexity int, key string, value string, expiry int) int
+	}
+
+	NotificationInfo struct {
 		Condition func(childComplexity int) int
 		EndDate   func(childComplexity int) int
 		ID        func(childComplexity int) int
@@ -88,10 +92,6 @@ type ComplexityRoot struct {
 		Placement func(childComplexity int) int
 		Repeat    func(childComplexity int) int
 		StartDate func(childComplexity int) int
-	}
-
-	Mutation struct {
-		SetCache func(childComplexity int, key string, value string, expiry int) int
 	}
 
 	Organization struct {
@@ -112,7 +112,7 @@ type ComplexityRoot struct {
 	Query struct {
 		AnalyticsEvent     func(childComplexity int, category string, action string, source string, label *string, dimensionsJSON string) int
 		AvailableUpdate    func(childComplexity int, desiredChannel string, desiredVersion string) int
-		CheckMessages      func(childComplexity int, command string, flags []string) int
+		CheckNotifications func(childComplexity int, command string, flags []string) int
 		ConfigChanged      func(childComplexity int, key string) int
 		FetchLogTail       func(childComplexity int) int
 		GetCache           func(childComplexity int, key string) int
@@ -157,7 +157,7 @@ type QueryResolver interface {
 	Projects(ctx context.Context) ([]*graph.Project, error)
 	AnalyticsEvent(ctx context.Context, category string, action string, source string, label *string, dimensionsJSON string) (*graph.AnalyticsEventResponse, error)
 	ReportRuntimeUsage(ctx context.Context, pid int, exec string, source string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error)
-	CheckMessages(ctx context.Context, command string, flags []string) ([]*graph.MessageInfo, error)
+	CheckNotifications(ctx context.Context, command string, flags []string) ([]*graph.NotificationInfo, error)
 	ConfigChanged(ctx context.Context, key string) (*graph.ConfigChangedResponse, error)
 	FetchLogTail(ctx context.Context) (string, error)
 	GetProcessesInUse(ctx context.Context, execDir string) ([]*graph.ProcessInfo, error)
@@ -283,62 +283,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.JWT.User(childComplexity), true
 
-	case "MessageInfo.condition":
-		if e.complexity.MessageInfo.Condition == nil {
-			break
-		}
-
-		return e.complexity.MessageInfo.Condition(childComplexity), true
-
-	case "MessageInfo.endDate":
-		if e.complexity.MessageInfo.EndDate == nil {
-			break
-		}
-
-		return e.complexity.MessageInfo.EndDate(childComplexity), true
-
-	case "MessageInfo.id":
-		if e.complexity.MessageInfo.ID == nil {
-			break
-		}
-
-		return e.complexity.MessageInfo.ID(childComplexity), true
-
-	case "MessageInfo.interrupt":
-		if e.complexity.MessageInfo.Interrupt == nil {
-			break
-		}
-
-		return e.complexity.MessageInfo.Interrupt(childComplexity), true
-
-	case "MessageInfo.message":
-		if e.complexity.MessageInfo.Message == nil {
-			break
-		}
-
-		return e.complexity.MessageInfo.Message(childComplexity), true
-
-	case "MessageInfo.placement":
-		if e.complexity.MessageInfo.Placement == nil {
-			break
-		}
-
-		return e.complexity.MessageInfo.Placement(childComplexity), true
-
-	case "MessageInfo.repeat":
-		if e.complexity.MessageInfo.Repeat == nil {
-			break
-		}
-
-		return e.complexity.MessageInfo.Repeat(childComplexity), true
-
-	case "MessageInfo.startDate":
-		if e.complexity.MessageInfo.StartDate == nil {
-			break
-		}
-
-		return e.complexity.MessageInfo.StartDate(childComplexity), true
-
 	case "Mutation.setCache":
 		if e.complexity.Mutation.SetCache == nil {
 			break
@@ -350,6 +294,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.SetCache(childComplexity, args["key"].(string), args["value"].(string), args["expiry"].(int)), true
+
+	case "NotificationInfo.condition":
+		if e.complexity.NotificationInfo.Condition == nil {
+			break
+		}
+
+		return e.complexity.NotificationInfo.Condition(childComplexity), true
+
+	case "NotificationInfo.endDate":
+		if e.complexity.NotificationInfo.EndDate == nil {
+			break
+		}
+
+		return e.complexity.NotificationInfo.EndDate(childComplexity), true
+
+	case "NotificationInfo.id":
+		if e.complexity.NotificationInfo.ID == nil {
+			break
+		}
+
+		return e.complexity.NotificationInfo.ID(childComplexity), true
+
+	case "NotificationInfo.interrupt":
+		if e.complexity.NotificationInfo.Interrupt == nil {
+			break
+		}
+
+		return e.complexity.NotificationInfo.Interrupt(childComplexity), true
+
+	case "NotificationInfo.message":
+		if e.complexity.NotificationInfo.Message == nil {
+			break
+		}
+
+		return e.complexity.NotificationInfo.Message(childComplexity), true
+
+	case "NotificationInfo.placement":
+		if e.complexity.NotificationInfo.Placement == nil {
+			break
+		}
+
+		return e.complexity.NotificationInfo.Placement(childComplexity), true
+
+	case "NotificationInfo.repeat":
+		if e.complexity.NotificationInfo.Repeat == nil {
+			break
+		}
+
+		return e.complexity.NotificationInfo.Repeat(childComplexity), true
+
+	case "NotificationInfo.startDate":
+		if e.complexity.NotificationInfo.StartDate == nil {
+			break
+		}
+
+		return e.complexity.NotificationInfo.StartDate(childComplexity), true
 
 	case "Organization.role":
 		if e.complexity.Organization.Role == nil {
@@ -417,17 +417,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.AvailableUpdate(childComplexity, args["desiredChannel"].(string), args["desiredVersion"].(string)), true
 
-	case "Query.checkMessages":
-		if e.complexity.Query.CheckMessages == nil {
+	case "Query.checkNotifications":
+		if e.complexity.Query.CheckNotifications == nil {
 			break
 		}
 
-		args, err := ec.field_Query_checkMessages_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_checkNotifications_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.CheckMessages(childComplexity, args["command"].(string), args["flags"].([]string)), true
+		return e.complexity.Query.CheckNotifications(childComplexity, args["command"].(string), args["flags"].([]string)), true
 
 	case "Query.configChanged":
 		if e.complexity.Query.ConfigChanged == nil {
@@ -731,7 +731,7 @@ type ReportRuntimeUsageResponse {
     received: Boolean!
 }
 
-enum MessageRepeatType {
+enum NotificationRepeatType {
     Disabled
     Constantly
     Hourly
@@ -740,26 +740,26 @@ enum MessageRepeatType {
     Monthly
 }
 
-enum MessageInterruptType {
+enum NotificationInterruptType {
     Disabled
     Prompt
     Exit
 }
 
-enum MessagePlacementType {
+enum NotificationPlacementType {
     BeforeCmd
     AfterCmd
 }
 
-type MessageInfo {
+type NotificationInfo {
     id: String!
     message: String!
     condition: String!
     startDate: String!
     endDate: String!
-    repeat: MessageRepeatType!
-    interrupt: MessageInterruptType!
-    placement: MessagePlacementType!
+    repeat: NotificationRepeatType!
+    interrupt: NotificationInterruptType!
+    placement: NotificationPlacementType!
 }
 
 type Organization {
@@ -796,7 +796,7 @@ type Query {
     projects: [Project]!
     analyticsEvent(category: String!, action: String!, source: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
     reportRuntimeUsage(pid: Int!, exec: String!, source: String!, dimensionsJson: String!): ReportRuntimeUsageResponse
-    checkMessages(command: String!, flags: [String!]!): [MessageInfo!]!
+    checkNotifications(command: String!, flags: [String!]!): [NotificationInfo!]!
     configChanged(key: String!): ConfigChangedResponse
     fetchLogTail: String!
     getProcessesInUse(execDir: String!): [ProcessInfo!]!
@@ -830,709 +830,289 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 func (ec *executionContext) field_Mutation_setCache_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	arg0, err := ec.field_Mutation_setCache_argsKey(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg0 string
+	if tmp, ok := rawArgs["key"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["key"] = arg0
-	arg1, err := ec.field_Mutation_setCache_argsValue(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg1 string
+	if tmp, ok := rawArgs["value"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["value"] = arg1
-	arg2, err := ec.field_Mutation_setCache_argsExpiry(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg2 int
+	if tmp, ok := rawArgs["expiry"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expiry"))
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["expiry"] = arg2
 	return args, nil
-}
-func (ec *executionContext) field_Mutation_setCache_argsKey(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["key"]
-	if !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
-	if tmp, ok := rawArgs["key"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Mutation_setCache_argsValue(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["value"]
-	if !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
-	if tmp, ok := rawArgs["value"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Mutation_setCache_argsExpiry(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["expiry"]
-	if !ok {
-		var zeroVal int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("expiry"))
-	if tmp, ok := rawArgs["expiry"]; ok {
-		return ec.unmarshalNInt2int(ctx, tmp)
-	}
-
-	var zeroVal int
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	arg0, err := ec.field_Query___type_argsName(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["name"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field_Query___type_argsName(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["name"]
-	if !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-	if tmp, ok := rawArgs["name"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Query_analyticsEvent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	arg0, err := ec.field_Query_analyticsEvent_argsCategory(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg0 string
+	if tmp, ok := rawArgs["category"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["category"] = arg0
-	arg1, err := ec.field_Query_analyticsEvent_argsAction(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg1 string
+	if tmp, ok := rawArgs["action"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("action"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["action"] = arg1
-	arg2, err := ec.field_Query_analyticsEvent_argsSource(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg2 string
+	if tmp, ok := rawArgs["source"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["source"] = arg2
-	arg3, err := ec.field_Query_analyticsEvent_argsLabel(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg3 *string
+	if tmp, ok := rawArgs["label"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("label"))
+		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["label"] = arg3
-	arg4, err := ec.field_Query_analyticsEvent_argsDimensionsJSON(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg4 string
+	if tmp, ok := rawArgs["dimensionsJson"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dimensionsJson"))
+		arg4, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["dimensionsJson"] = arg4
 	return args, nil
-}
-func (ec *executionContext) field_Query_analyticsEvent_argsCategory(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["category"]
-	if !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
-	if tmp, ok := rawArgs["category"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_analyticsEvent_argsAction(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["action"]
-	if !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("action"))
-	if tmp, ok := rawArgs["action"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_analyticsEvent_argsSource(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["source"]
-	if !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
-	if tmp, ok := rawArgs["source"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_analyticsEvent_argsLabel(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (*string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["label"]
-	if !ok {
-		var zeroVal *string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("label"))
-	if tmp, ok := rawArgs["label"]; ok {
-		return ec.unmarshalOString2ᚖstring(ctx, tmp)
-	}
-
-	var zeroVal *string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_analyticsEvent_argsDimensionsJSON(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["dimensionsJson"]
-	if !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("dimensionsJson"))
-	if tmp, ok := rawArgs["dimensionsJson"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Query_availableUpdate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	arg0, err := ec.field_Query_availableUpdate_argsDesiredChannel(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg0 string
+	if tmp, ok := rawArgs["desiredChannel"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("desiredChannel"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["desiredChannel"] = arg0
-	arg1, err := ec.field_Query_availableUpdate_argsDesiredVersion(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg1 string
+	if tmp, ok := rawArgs["desiredVersion"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("desiredVersion"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["desiredVersion"] = arg1
 	return args, nil
 }
-func (ec *executionContext) field_Query_availableUpdate_argsDesiredChannel(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["desiredChannel"]
-	if !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
 
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("desiredChannel"))
-	if tmp, ok := rawArgs["desiredChannel"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_availableUpdate_argsDesiredVersion(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["desiredVersion"]
-	if !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("desiredVersion"))
-	if tmp, ok := rawArgs["desiredVersion"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_checkMessages_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_checkNotifications_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	arg0, err := ec.field_Query_checkMessages_argsCommand(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg0 string
+	if tmp, ok := rawArgs["command"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("command"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["command"] = arg0
-	arg1, err := ec.field_Query_checkMessages_argsFlags(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg1 []string
+	if tmp, ok := rawArgs["flags"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("flags"))
+		arg1, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["flags"] = arg1
 	return args, nil
-}
-func (ec *executionContext) field_Query_checkMessages_argsCommand(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["command"]
-	if !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("command"))
-	if tmp, ok := rawArgs["command"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_checkMessages_argsFlags(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) ([]string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["flags"]
-	if !ok {
-		var zeroVal []string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("flags"))
-	if tmp, ok := rawArgs["flags"]; ok {
-		return ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
-	}
-
-	var zeroVal []string
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Query_configChanged_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	arg0, err := ec.field_Query_configChanged_argsKey(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg0 string
+	if tmp, ok := rawArgs["key"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["key"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field_Query_configChanged_argsKey(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["key"]
-	if !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
-	if tmp, ok := rawArgs["key"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Query_getCache_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	arg0, err := ec.field_Query_getCache_argsKey(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg0 string
+	if tmp, ok := rawArgs["key"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["key"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field_Query_getCache_argsKey(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["key"]
-	if !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
-	if tmp, ok := rawArgs["key"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Query_getProcessesInUse_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	arg0, err := ec.field_Query_getProcessesInUse_argsExecDir(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg0 string
+	if tmp, ok := rawArgs["execDir"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("execDir"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["execDir"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field_Query_getProcessesInUse_argsExecDir(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["execDir"]
-	if !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("execDir"))
-	if tmp, ok := rawArgs["execDir"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Query_hashGlobs_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	arg0, err := ec.field_Query_hashGlobs_argsWd(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg0 string
+	if tmp, ok := rawArgs["wd"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("wd"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["wd"] = arg0
-	arg1, err := ec.field_Query_hashGlobs_argsGlobs(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg1 []string
+	if tmp, ok := rawArgs["globs"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("globs"))
+		arg1, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["globs"] = arg1
 	return args, nil
-}
-func (ec *executionContext) field_Query_hashGlobs_argsWd(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["wd"]
-	if !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("wd"))
-	if tmp, ok := rawArgs["wd"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_hashGlobs_argsGlobs(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) ([]string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["globs"]
-	if !ok {
-		var zeroVal []string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("globs"))
-	if tmp, ok := rawArgs["globs"]; ok {
-		return ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
-	}
-
-	var zeroVal []string
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Query_reportRuntimeUsage_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	arg0, err := ec.field_Query_reportRuntimeUsage_argsPid(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg0 int
+	if tmp, ok := rawArgs["pid"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pid"))
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["pid"] = arg0
-	arg1, err := ec.field_Query_reportRuntimeUsage_argsExec(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg1 string
+	if tmp, ok := rawArgs["exec"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("exec"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["exec"] = arg1
-	arg2, err := ec.field_Query_reportRuntimeUsage_argsSource(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg2 string
+	if tmp, ok := rawArgs["source"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["source"] = arg2
-	arg3, err := ec.field_Query_reportRuntimeUsage_argsDimensionsJSON(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg3 string
+	if tmp, ok := rawArgs["dimensionsJson"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dimensionsJson"))
+		arg3, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["dimensionsJson"] = arg3
 	return args, nil
-}
-func (ec *executionContext) field_Query_reportRuntimeUsage_argsPid(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["pid"]
-	if !ok {
-		var zeroVal int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("pid"))
-	if tmp, ok := rawArgs["pid"]; ok {
-		return ec.unmarshalNInt2int(ctx, tmp)
-	}
-
-	var zeroVal int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_reportRuntimeUsage_argsExec(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["exec"]
-	if !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("exec"))
-	if tmp, ok := rawArgs["exec"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_reportRuntimeUsage_argsSource(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["source"]
-	if !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
-	if tmp, ok := rawArgs["source"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_reportRuntimeUsage_argsDimensionsJSON(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["dimensionsJson"]
-	if !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("dimensionsJson"))
-	if tmp, ok := rawArgs["dimensionsJson"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field___Type_enumValues_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	arg0, err := ec.field___Type_enumValues_argsIncludeDeprecated(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg0 bool
+	if tmp, ok := rawArgs["includeDeprecated"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
+		arg0, err = ec.unmarshalOBoolean2bool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["includeDeprecated"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field___Type_enumValues_argsIncludeDeprecated(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (bool, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["includeDeprecated"]
-	if !ok {
-		var zeroVal bool
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
-	if tmp, ok := rawArgs["includeDeprecated"]; ok {
-		return ec.unmarshalOBoolean2bool(ctx, tmp)
-	}
-
-	var zeroVal bool
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	arg0, err := ec.field___Type_fields_argsIncludeDeprecated(ctx, rawArgs)
-	if err != nil {
-		return nil, err
+	var arg0 bool
+	if tmp, ok := rawArgs["includeDeprecated"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
+		arg0, err = ec.unmarshalOBoolean2bool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	args["includeDeprecated"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field___Type_fields_argsIncludeDeprecated(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (bool, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["includeDeprecated"]
-	if !ok {
-		var zeroVal bool
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
-	if tmp, ok := rawArgs["includeDeprecated"]; ok {
-		return ec.unmarshalOBoolean2bool(ctx, tmp)
-	}
-
-	var zeroVal bool
-	return zeroVal, nil
 }
 
 // endregion ***************************** args.gotpl *****************************
@@ -2177,358 +1757,6 @@ func (ec *executionContext) fieldContext_JWT_user(_ context.Context, field graph
 	return fc, nil
 }
 
-func (ec *executionContext) _MessageInfo_id(ctx context.Context, field graphql.CollectedField, obj *graph.MessageInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MessageInfo_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MessageInfo_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MessageInfo",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MessageInfo_message(ctx context.Context, field graphql.CollectedField, obj *graph.MessageInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MessageInfo_message(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Message, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MessageInfo_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MessageInfo",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MessageInfo_condition(ctx context.Context, field graphql.CollectedField, obj *graph.MessageInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MessageInfo_condition(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Condition, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MessageInfo_condition(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MessageInfo",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MessageInfo_startDate(ctx context.Context, field graphql.CollectedField, obj *graph.MessageInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MessageInfo_startDate(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.StartDate, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MessageInfo_startDate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MessageInfo",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MessageInfo_endDate(ctx context.Context, field graphql.CollectedField, obj *graph.MessageInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MessageInfo_endDate(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.EndDate, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MessageInfo_endDate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MessageInfo",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MessageInfo_repeat(ctx context.Context, field graphql.CollectedField, obj *graph.MessageInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MessageInfo_repeat(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Repeat, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(graph.MessageRepeatType)
-	fc.Result = res
-	return ec.marshalNMessageRepeatType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageRepeatType(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MessageInfo_repeat(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MessageInfo",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type MessageRepeatType does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MessageInfo_interrupt(ctx context.Context, field graphql.CollectedField, obj *graph.MessageInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MessageInfo_interrupt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Interrupt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(graph.MessageInterruptType)
-	fc.Result = res
-	return ec.marshalNMessageInterruptType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageInterruptType(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MessageInfo_interrupt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MessageInfo",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type MessageInterruptType does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MessageInfo_placement(ctx context.Context, field graphql.CollectedField, obj *graph.MessageInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MessageInfo_placement(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Placement, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(graph.MessagePlacementType)
-	fc.Result = res
-	return ec.marshalNMessagePlacementType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessagePlacementType(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MessageInfo_placement(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MessageInfo",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type MessagePlacementType does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Mutation_setCache(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_setCache(ctx, field)
 	if err != nil {
@@ -2577,6 +1805,358 @@ func (ec *executionContext) fieldContext_Mutation_setCache(ctx context.Context, 
 	if fc.Args, err = ec.field_Mutation_setCache_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotificationInfo_id(ctx context.Context, field graphql.CollectedField, obj *graph.NotificationInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NotificationInfo_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NotificationInfo_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotificationInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotificationInfo_message(ctx context.Context, field graphql.CollectedField, obj *graph.NotificationInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NotificationInfo_message(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NotificationInfo_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotificationInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotificationInfo_condition(ctx context.Context, field graphql.CollectedField, obj *graph.NotificationInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NotificationInfo_condition(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Condition, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NotificationInfo_condition(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotificationInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotificationInfo_startDate(ctx context.Context, field graphql.CollectedField, obj *graph.NotificationInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NotificationInfo_startDate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartDate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NotificationInfo_startDate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotificationInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotificationInfo_endDate(ctx context.Context, field graphql.CollectedField, obj *graph.NotificationInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NotificationInfo_endDate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EndDate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NotificationInfo_endDate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotificationInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotificationInfo_repeat(ctx context.Context, field graphql.CollectedField, obj *graph.NotificationInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NotificationInfo_repeat(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Repeat, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(graph.NotificationRepeatType)
+	fc.Result = res
+	return ec.marshalNNotificationRepeatType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐNotificationRepeatType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NotificationInfo_repeat(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotificationInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type NotificationRepeatType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotificationInfo_interrupt(ctx context.Context, field graphql.CollectedField, obj *graph.NotificationInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NotificationInfo_interrupt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Interrupt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(graph.NotificationInterruptType)
+	fc.Result = res
+	return ec.marshalNNotificationInterruptType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐNotificationInterruptType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NotificationInfo_interrupt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotificationInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type NotificationInterruptType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotificationInfo_placement(ctx context.Context, field graphql.CollectedField, obj *graph.NotificationInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NotificationInfo_placement(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Placement, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(graph.NotificationPlacementType)
+	fc.Result = res
+	return ec.marshalNNotificationPlacementType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐNotificationPlacementType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NotificationInfo_placement(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotificationInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type NotificationPlacementType does not have child fields")
+		},
 	}
 	return fc, nil
 }
@@ -3116,8 +2696,8 @@ func (ec *executionContext) fieldContext_Query_reportRuntimeUsage(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_checkMessages(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_checkMessages(ctx, field)
+func (ec *executionContext) _Query_checkNotifications(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_checkNotifications(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -3130,7 +2710,7 @@ func (ec *executionContext) _Query_checkMessages(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().CheckMessages(rctx, fc.Args["command"].(string), fc.Args["flags"].([]string))
+		return ec.resolvers.Query().CheckNotifications(rctx, fc.Args["command"].(string), fc.Args["flags"].([]string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3142,12 +2722,12 @@ func (ec *executionContext) _Query_checkMessages(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*graph.MessageInfo)
+	res := resTmp.([]*graph.NotificationInfo)
 	fc.Result = res
-	return ec.marshalNMessageInfo2ᚕᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageInfoᚄ(ctx, field.Selections, res)
+	return ec.marshalNNotificationInfo2ᚕᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐNotificationInfoᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_checkMessages(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_checkNotifications(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -3156,23 +2736,23 @@ func (ec *executionContext) fieldContext_Query_checkMessages(ctx context.Context
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_MessageInfo_id(ctx, field)
+				return ec.fieldContext_NotificationInfo_id(ctx, field)
 			case "message":
-				return ec.fieldContext_MessageInfo_message(ctx, field)
+				return ec.fieldContext_NotificationInfo_message(ctx, field)
 			case "condition":
-				return ec.fieldContext_MessageInfo_condition(ctx, field)
+				return ec.fieldContext_NotificationInfo_condition(ctx, field)
 			case "startDate":
-				return ec.fieldContext_MessageInfo_startDate(ctx, field)
+				return ec.fieldContext_NotificationInfo_startDate(ctx, field)
 			case "endDate":
-				return ec.fieldContext_MessageInfo_endDate(ctx, field)
+				return ec.fieldContext_NotificationInfo_endDate(ctx, field)
 			case "repeat":
-				return ec.fieldContext_MessageInfo_repeat(ctx, field)
+				return ec.fieldContext_NotificationInfo_repeat(ctx, field)
 			case "interrupt":
-				return ec.fieldContext_MessageInfo_interrupt(ctx, field)
+				return ec.fieldContext_NotificationInfo_interrupt(ctx, field)
 			case "placement":
-				return ec.fieldContext_MessageInfo_placement(ctx, field)
+				return ec.fieldContext_NotificationInfo_placement(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type MessageInfo", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type NotificationInfo", field.Name)
 		},
 	}
 	defer func() {
@@ -3182,7 +2762,7 @@ func (ec *executionContext) fieldContext_Query_checkMessages(ctx context.Context
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_checkMessages_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_checkNotifications_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -6199,80 +5779,6 @@ func (ec *executionContext) _JWT(ctx context.Context, sel ast.SelectionSet, obj 
 	return out
 }
 
-var messageInfoImplementors = []string{"MessageInfo"}
-
-func (ec *executionContext) _MessageInfo(ctx context.Context, sel ast.SelectionSet, obj *graph.MessageInfo) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, messageInfoImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("MessageInfo")
-		case "id":
-			out.Values[i] = ec._MessageInfo_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "message":
-			out.Values[i] = ec._MessageInfo_message(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "condition":
-			out.Values[i] = ec._MessageInfo_condition(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "startDate":
-			out.Values[i] = ec._MessageInfo_startDate(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "endDate":
-			out.Values[i] = ec._MessageInfo_endDate(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "repeat":
-			out.Values[i] = ec._MessageInfo_repeat(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "interrupt":
-			out.Values[i] = ec._MessageInfo_interrupt(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "placement":
-			out.Values[i] = ec._MessageInfo_placement(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -6296,6 +5802,80 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_setCache(ctx, field)
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var notificationInfoImplementors = []string{"NotificationInfo"}
+
+func (ec *executionContext) _NotificationInfo(ctx context.Context, sel ast.SelectionSet, obj *graph.NotificationInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, notificationInfoImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NotificationInfo")
+		case "id":
+			out.Values[i] = ec._NotificationInfo_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "message":
+			out.Values[i] = ec._NotificationInfo_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "condition":
+			out.Values[i] = ec._NotificationInfo_condition(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "startDate":
+			out.Values[i] = ec._NotificationInfo_startDate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "endDate":
+			out.Values[i] = ec._NotificationInfo_endDate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "repeat":
+			out.Values[i] = ec._NotificationInfo_repeat(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "interrupt":
+			out.Values[i] = ec._NotificationInfo_interrupt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "placement":
+			out.Values[i] = ec._NotificationInfo_placement(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6568,7 +6148,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "checkMessages":
+		case "checkNotifications":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -6577,7 +6157,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_checkMessages(ctx, field)
+				res = ec._Query_checkNotifications(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -7362,7 +6942,7 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) marshalNMessageInfo2ᚕᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageInfoᚄ(ctx context.Context, sel ast.SelectionSet, v []*graph.MessageInfo) graphql.Marshaler {
+func (ec *executionContext) marshalNNotificationInfo2ᚕᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐNotificationInfoᚄ(ctx context.Context, sel ast.SelectionSet, v []*graph.NotificationInfo) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -7386,7 +6966,7 @@ func (ec *executionContext) marshalNMessageInfo2ᚕᚖgithubᚗcomᚋActiveState
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNMessageInfo2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageInfo(ctx, sel, v[i])
+			ret[i] = ec.marshalNNotificationInfo2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐNotificationInfo(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -7406,43 +6986,43 @@ func (ec *executionContext) marshalNMessageInfo2ᚕᚖgithubᚗcomᚋActiveState
 	return ret
 }
 
-func (ec *executionContext) marshalNMessageInfo2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageInfo(ctx context.Context, sel ast.SelectionSet, v *graph.MessageInfo) graphql.Marshaler {
+func (ec *executionContext) marshalNNotificationInfo2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐNotificationInfo(ctx context.Context, sel ast.SelectionSet, v *graph.NotificationInfo) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
-	return ec._MessageInfo(ctx, sel, v)
+	return ec._NotificationInfo(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNMessageInterruptType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageInterruptType(ctx context.Context, v interface{}) (graph.MessageInterruptType, error) {
-	var res graph.MessageInterruptType
+func (ec *executionContext) unmarshalNNotificationInterruptType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐNotificationInterruptType(ctx context.Context, v interface{}) (graph.NotificationInterruptType, error) {
+	var res graph.NotificationInterruptType
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNMessageInterruptType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageInterruptType(ctx context.Context, sel ast.SelectionSet, v graph.MessageInterruptType) graphql.Marshaler {
+func (ec *executionContext) marshalNNotificationInterruptType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐNotificationInterruptType(ctx context.Context, sel ast.SelectionSet, v graph.NotificationInterruptType) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalNMessagePlacementType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessagePlacementType(ctx context.Context, v interface{}) (graph.MessagePlacementType, error) {
-	var res graph.MessagePlacementType
+func (ec *executionContext) unmarshalNNotificationPlacementType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐNotificationPlacementType(ctx context.Context, v interface{}) (graph.NotificationPlacementType, error) {
+	var res graph.NotificationPlacementType
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNMessagePlacementType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessagePlacementType(ctx context.Context, sel ast.SelectionSet, v graph.MessagePlacementType) graphql.Marshaler {
+func (ec *executionContext) marshalNNotificationPlacementType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐNotificationPlacementType(ctx context.Context, sel ast.SelectionSet, v graph.NotificationPlacementType) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalNMessageRepeatType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageRepeatType(ctx context.Context, v interface{}) (graph.MessageRepeatType, error) {
-	var res graph.MessageRepeatType
+func (ec *executionContext) unmarshalNNotificationRepeatType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐNotificationRepeatType(ctx context.Context, v interface{}) (graph.NotificationRepeatType, error) {
+	var res graph.NotificationRepeatType
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNMessageRepeatType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageRepeatType(ctx context.Context, sel ast.SelectionSet, v graph.MessageRepeatType) graphql.Marshaler {
+func (ec *executionContext) marshalNNotificationRepeatType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐNotificationRepeatType(ctx context.Context, sel ast.SelectionSet, v graph.NotificationRepeatType) graphql.Marshaler {
 	return v
 }
 

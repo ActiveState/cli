@@ -11,7 +11,7 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/graphqltypes"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/hash"
-	"github.com/ActiveState/cli/cmd/state-svc/internal/messages"
+	"github.com/ActiveState/cli/cmd/state-svc/internal/notifications"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/rtwatcher"
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
@@ -35,7 +35,7 @@ import (
 
 type Resolver struct {
 	cfg            *config.Instance
-	messages       *messages.Messages
+	messages       *notifications.Notifications
 	updatePoller   *poller.Poller
 	authPoller     *poller.Poller
 	projectIDCache *projectcache.ID
@@ -50,7 +50,7 @@ type Resolver struct {
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
 func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Resolver, error) {
-	msg, err := messages.New(cfg, auth)
+	msg, err := notifications.New(cfg, auth)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not initialize messages")
 	}
@@ -247,9 +247,9 @@ func (r *Resolver) ReportRuntimeUsage(_ context.Context, pid int, exec, source s
 	return &graph.ReportRuntimeUsageResponse{Received: true}, nil
 }
 
-func (r *Resolver) CheckMessages(ctx context.Context, command string, flags []string) ([]*graph.MessageInfo, error) {
+func (r *Resolver) CheckNotifications(ctx context.Context, command string, flags []string) ([]*graph.NotificationInfo, error) {
 	defer func() { panics.LogAndPanic(recover(), debug.Stack()) }()
-	logging.Debug("Check messages resolver")
+	logging.Debug("Check notifications resolver")
 	return r.messages.Check(command, flags)
 }
 
