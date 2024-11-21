@@ -3,10 +3,8 @@ package smartlink
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -42,14 +40,17 @@ func TestLinkContentsWithCircularLink(t *testing.T) {
 	err = os.Symlink(subDir, circularLink)
 	require.NoError(t, err)
 
-	err = LinkContents(srcDir, destDir, nil)
-	if runtime.GOOS == "windows" {
-		require.Error(t, err)
-		return // hard links to directories are not allowed on Windows
-	}
+	err = LinkContents(srcDir, destDir)
 	require.NoError(t, err)
 
 	// Verify file structure.
+	// src/
+	//   ├── regular.txt
+	//   └── subdir/
+	//        ├── circle
+	//        │   │   (no subdir/)
+	//        │   └── subfile.txt
+	//        └── subfile.txt
 	destFile := filepath.Join(destDir, "regular.txt")
 	require.FileExists(t, destFile)
 	content, err := os.ReadFile(destFile)
@@ -62,14 +63,11 @@ func TestLinkContentsWithCircularLink(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "sub content", string(subContent))
 
-	destCircular := filepath.Join(destDir, "subdir", "circle")
-	require.FileExists(t, destCircular)
-	target, err := fileutils.ResolveUniquePath(destCircular)
+	require.NoDirExists(t, filepath.Join(destDir, "subdir", "circle", "circle"))
+
+	destCircularSubFile := filepath.Join(destDir, "subdir", "circle", "subfile.txt")
+	require.FileExists(t, destCircularSubFile)
+	subContent, err = os.ReadFile(destCircularSubFile)
 	require.NoError(t, err)
-	srcCircular := filepath.Join(srcDir, "subdir")
-	if runtime.GOOS == "darwin" {
-		srcCircular, err = fileutils.ResolveUniquePath(srcCircular) // needed for full $TMPDIR resolution
-		require.NoError(t, err)
-	}
-	require.Equal(t, target, srcCircular)
+	require.Equal(t, "sub content", string(subContent))
 }
