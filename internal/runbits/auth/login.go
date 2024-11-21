@@ -29,13 +29,12 @@ var OpenURI = osutils.OpenURI
 
 // Authenticate will prompt the user for authentication
 func Authenticate(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
-	return AuthenticateWithInput("", "", "", false, cfg, out, prompt, auth)
+	return AuthenticateWithInput("", "", "", cfg, out, prompt, auth)
 }
 
 // AuthenticateWithInput will prompt the user for authentication if the input doesn't already provide it
 func AuthenticateWithInput(
 	username, password, totp string,
-	nonInteractive bool,
 	cfg keypairs.Configurable,
 	out output.Outputer,
 	prompt prompt.Prompter,
@@ -44,7 +43,7 @@ func AuthenticateWithInput(
 	logging.Debug("Authenticating with input")
 
 	credentials := &mono_models.Credentials{Username: username, Password: password, Totp: totp}
-	if err := ensureCredentials(credentials, prompt, nonInteractive); err != nil {
+	if err := ensureCredentials(credentials, prompt); err != nil {
 		return locale.WrapInputError(err, "login_cancelled")
 	}
 
@@ -133,10 +132,10 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 	return nil
 }
 
-func ensureCredentials(credentials *mono_models.Credentials, prompter prompt.Prompter, nonInteractive bool) error {
+func ensureCredentials(credentials *mono_models.Credentials, prompter prompt.Prompter) error {
 	var err error
 	if credentials.Username == "" {
-		if nonInteractive {
+		if !prompter.IsInteractive() || prompter.IsForced() {
 			return locale.NewInputError("err_auth_needinput")
 		}
 		credentials.Username, err = prompter.Input("", locale.T("username_prompt"), ptr.To(""), nil, prompt.InputRequired)
@@ -146,7 +145,7 @@ func ensureCredentials(credentials *mono_models.Credentials, prompter prompt.Pro
 	}
 
 	if credentials.Password == "" {
-		if nonInteractive {
+		if !prompter.IsInteractive() || prompter.IsForced() {
 			return locale.NewInputError("err_auth_needinput")
 		}
 		credentials.Password, err = prompter.InputSecret("", locale.T("password_prompt"), prompt.InputRequired)

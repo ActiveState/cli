@@ -79,7 +79,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	cleanCmd := newCleanCommand(prime)
 	cleanCmd.AddChildren(
 		newCleanUninstallCommand(prime, globals),
-		newCleanCacheCommand(prime, globals),
+		newCleanCacheCommand(prime),
 		newCleanConfigCommand(prime, globals),
 	)
 
@@ -95,7 +95,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	eventsCmd := newEventsCommand(prime)
 	eventsCmd.AddChildren(newEventsLogCommand(prime))
 
-	installCmd := newInstallCommand(prime, globals)
+	installCmd := newInstallCommand(prime)
 	uninstallCmd := newUninstallCommand(prime)
 	importCmd := newImportCommand(prime, globals)
 	searchCmd := newSearchCommand(prime)
@@ -137,8 +137,8 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	updateCmd := newUpdateCommand(prime)
 	updateCmd.AddChildren(
-		newUpdateLockCommand(prime, globals),
-		newUpdateUnlockCommand(prime, globals))
+		newUpdateLockCommand(prime),
+		newUpdateUnlockCommand(prime))
 
 	branchCmd := newBranchCommand(prime)
 	branchCmd.AddChildren(
@@ -157,7 +157,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	useCmd := newUseCommand(prime)
 	useCmd.AddChildren(
-		newUseResetCommand(prime, globals),
+		newUseResetCommand(prime),
 		newUseShowCommand(prime),
 	)
 
@@ -204,8 +204,8 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		prepareCmd,
 		newProtocolCommand(prime),
 		newExecCommand(prime, args...),
-		newRevertCommand(prime, globals),
-		newResetCommand(prime, globals),
+		newRevertCommand(prime),
+		newResetCommand(prime),
 		secretsCmd,
 		branchCmd,
 		newLearnCommand(prime),
@@ -302,12 +302,14 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 				Description: locale.T("flag_state_non_interactive_description"),
 				Shorthand:   "n",
 				Persist:     true,
+				OnUse:       func() { prime.Prompt().SetInteractive(false) },
 				Value:       &globals.NonInteractive,
 			},
 			{
 				Name:        "force",
 				Description: locale.T("flag_state_force_description"),
 				Persist:     true,
+				OnUse:       func() { prime.Prompt().SetForce(true) },
 				Value:       &globals.Force,
 			},
 			{
@@ -325,10 +327,6 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			if globals.Verbose {
-				logging.CurrentHandler().SetVerbose(true)
-			}
-
 			return runner.Run(ccmd.Usage)
 		},
 	)

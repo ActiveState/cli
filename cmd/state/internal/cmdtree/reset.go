@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/runners/reset"
 )
 
-func newResetCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
+func newResetCommand(prime *primer.Values) *captain.Command {
 	runner := reset.New(prime)
 	params := &reset.Params{}
 
@@ -25,9 +25,6 @@ func newResetCommand(prime *primer.Values, globals *globalOptions) *captain.Comm
 			},
 		},
 		func(ccmd *captain.Command, args []string) error {
-			if globals.NonInteractive {
-				prime.Prompt().SetInteractive(false)
-			}
 			return runner.Run(params)
 		},
 	).SetGroup(VCSGroup).SetSupportsStructuredOutput()

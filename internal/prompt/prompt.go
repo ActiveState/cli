@@ -28,6 +28,7 @@ type Prompter interface {
 	IsInteractive() bool
 	SetInteractive(bool)
 	SetForce(bool)
+	IsForced() bool
 }
 
 // ValidatorFunc is a function pass to the Prompter to perform validation
@@ -80,6 +81,8 @@ const (
 )
 
 // Input prompts the user for input.  The user can specify available validation flags to trigger validation of responses
+// If the prompt is non-interactive, it returns defaultResponse.
+// If the prompt is forced, it returns forcedResponse if not nil, or defaultResponse.
 func (p *Prompt) Input(title, message string, defaultResponse *string, forcedResponse *string, flags ...ValidatorFlag) (string, error) {
 	return p.InputAndValidate(title, message, defaultResponse, forcedResponse, func(val interface{}) error {
 		return nil
@@ -98,6 +101,8 @@ func interactiveInputError(message string) error {
 }
 
 // InputAndValidate prompts an input field and allows you to specfiy a custom validation function as well as the built in flags
+// If the prompt is non-interactive, it returns defaultResponse.
+// If the prompt is forced, it returns forcedResponse if not nil, or defaultResponse.
 func (p *Prompt) InputAndValidate(title, message string, defaultResponse *string, forcedResponse *string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error) {
 	if p.isForced {
 		response := forcedResponse
@@ -154,7 +159,9 @@ func (p *Prompt) InputAndValidate(title, message string, defaultResponse *string
 	return response, nil
 }
 
-// Select prompts the user to select one entry from multiple choices
+// Select prompts the user to select one entry from multiple choices.
+// If the prompt is non-interactive, it returns defaultChoice.
+// If the prompt is forced, it returns forcedChoice if not nil, or defaultChoice.
 func (p *Prompt) Select(title, message string, choices []string, defaultChoice *string, forcedChoice *string) (string, error) {
 	if p.isForced {
 		choice := forcedChoice
@@ -199,6 +206,8 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice *
 }
 
 // Confirm prompts user for yes or no response.
+// If the prompt is non-interactive, it returns defaultChoice.
+// If the prompt is forced, it returns forcedChoice if not nil, or defaultChoice.
 func (p *Prompt) Confirm(title, message string, defaultChoice *bool, forcedChoice *bool) (bool, error) {
 	if p.isForced {
 		choice := forcedChoice
@@ -259,7 +268,7 @@ func translateConfirm(confirm bool) string {
 // InputSecret prompts the user for input and obfuscates the text in stdout.
 // Will fail if empty.
 func (p *Prompt) InputSecret(title, message string, flags ...ValidatorFlag) (string, error) {
-	if !p.isInteractive {
+	if !p.isInteractive || p.isForced {
 		return "", interactiveInputError(message)
 	}
 	var response string

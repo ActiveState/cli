@@ -53,19 +53,13 @@ func newCleanUninstallCommand(prime *primer.Values, globals *globalOptions) *cap
 				return err
 			}
 
-			if globals.NonInteractive {
-				prime.Prompt().SetInteractive(false)
-			}
-			if globals.Force {
-				prime.Prompt().SetForce(true)
-				params.Force = true
-			}
+			params.Force = globals.Force
 			return runner.Run(&params)
 		},
 	)
 }
 
-func newCleanCacheCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
+func newCleanCacheCommand(prime *primer.Values) *captain.Command {
 	runner := clean.NewCache(prime)
 	params := clean.CacheParams{}
 	return captain.NewCommand(
@@ -83,9 +77,6 @@ func newCleanCacheCommand(prime *primer.Values, globals *globalOptions) *captain
 			},
 		},
 		func(ccmd *captain.Command, _ []string) error {
-			if globals.NonInteractive {
-				prime.Prompt().SetInteractive(false)
-			}
 			return runner.Run(&params)
 		},
 	)
@@ -102,10 +93,7 @@ func newCleanConfigCommand(prime *primer.Values, globals *globalOptions) *captai
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
-			if globals.Force {
-				prime.Prompt().SetForce(true)
-				params.Force = true
-			}
+			params.Force = globals.Force
 			return runner.Run(&params)
 		},
 	)
