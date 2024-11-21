@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/graphql"
+	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
@@ -49,7 +49,7 @@ func (c *Commit) BuildScript() *buildscript.BuildScript {
 	return c.buildscript
 }
 
-func (c *client) Run(req graphql.Request, resp interface{}) error {
+func (c *client) Run(req gqlclient.Request, resp interface{}) error {
 	return c.gqlClient.Run(req, resp)
 }
 
@@ -152,11 +152,11 @@ func (b *BuildPlanner) fetchCommit(commitID strfmt.UUID, owner, project string, 
 //	  "data": null
 //	}
 func processBuildPlannerError(bpErr error, fallbackMessage string) error {
-	graphqlErr := &graphql.GraphErr{}
-	if errors.As(bpErr, graphqlErr) {
-		code, ok := graphqlErr.Extensions[codeExtensionKey].(string)
+	gqlclientErr := &gqlclient.GraphErr{}
+	if errors.As(bpErr, gqlclientErr) {
+		code, ok := gqlclientErr.Extensions[codeExtensionKey].(string)
 		if ok && code == clientDeprecationErrorKey {
-			return &response.BuildPlannerError{Err: locale.NewExternalError("err_buildplanner_deprecated", "Encountered deprecation error: {{.V0}}", graphqlErr.Message)}
+			return &response.BuildPlannerError{Err: locale.NewExternalError("err_buildplanner_deprecated", "Encountered deprecation error: {{.V0}}", gqlclientErr.Message)}
 		}
 	}
 	if locale.IsInputError(bpErr) {

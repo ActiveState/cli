@@ -1,4 +1,4 @@
-package graphql
+package gqlclient
 
 type TestRequest struct {
 	q       string

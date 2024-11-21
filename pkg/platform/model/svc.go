@@ -10,8 +10,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/graph"
-	"github.com/ActiveState/cli/internal/graphql"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
@@ -22,7 +22,7 @@ import (
 var SvcTimeoutMinimal = time.Millisecond * 500
 
 type SvcModel struct {
-	client *graphql.Client
+	client *gqlclient.Client
 }
 
 // NewSvcModel returns a model for all client connections to a State Svc.  This function returns an error if the State service is not yet ready to communicate.
@@ -30,7 +30,7 @@ func NewSvcModel(port string) *SvcModel {
 	localURL := "http://127.0.0.1" + port + "/query"
 
 	return &SvcModel{
-		client: graphql.NewWithOpts(localURL, 0, graphql.WithHTTPClient(&http.Client{})),
+		client: gqlclient.NewWithOpts(localURL, 0, gqlclient.WithHTTPClient(&http.Client{})),
 	}
 }
 
@@ -39,12 +39,12 @@ func (m *SvcModel) EnableDebugLog() {
 	m.client.EnableDebugLog()
 }
 
-func (m *SvcModel) request(ctx context.Context, request graphql.Request, resp interface{}) error {
+func (m *SvcModel) request(ctx context.Context, request gqlclient.Request, resp interface{}) error {
 	defer profile.Measure("SvcModel:request", time.Now())
 
 	err := m.client.RunWithContext(ctx, request, resp)
 	if err != nil {
-		reqError := &graphql.RequestError{}
+		reqError := &gqlclient.RequestError{}
 		if errors.As(err, &reqError) && (!condition.BuiltViaCI() || condition.InTest()) {
 			vars, err := request.Vars()
 			if err != nil {
