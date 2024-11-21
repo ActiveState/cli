@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/commit"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	runtime_runbit "github.com/ActiveState/cli/internal/runbits/runtime"
@@ -40,7 +41,6 @@ type Revert struct {
 type Params struct {
 	CommitID string
 	To       bool
-	Force    bool
 }
 
 type primeable interface {
@@ -139,10 +139,10 @@ func (r *Revert) Run(params *Params) (rerr error) {
 		}
 	}
 
-	defaultChoice := params.Force || !r.out.Config().Interactive
-	revert, err := r.prompt.Confirm("", locale.Tl("revert_confirm", "Continue?"), &defaultChoice)
+	defaultChoice := !r.prime.Prompt().IsInteractive()
+	revert, err := r.prime.Prompt().Confirm("", locale.Tl("revert_confirm", "Continue?"), &defaultChoice, ptr.To(true))
 	if err != nil {
-		return locale.WrapError(err, "err_revert_confirm", "Could not confirm revert choice")
+		return errs.Wrap(err, "Not confirmed")
 	}
 	if !revert {
 		return locale.NewInputError("err_revert_aborted", "Revert aborted by user")

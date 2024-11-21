@@ -4,11 +4,13 @@ import (
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/subshell"
 )
 
@@ -20,7 +22,6 @@ type Reset struct {
 }
 
 type ResetParams struct {
-	Force bool
 }
 
 func NewReset(prime primeable) *Reset {
@@ -39,11 +40,11 @@ func (u *Reset) Run(params *ResetParams) error {
 		return locale.NewInputError(locale.T("use_reset_notice_not_reset"))
 	}
 
-	defaultChoice := params.Force || !u.out.Config().Interactive
+	defaultChoice := !u.prompt.IsInteractive()
 	ok, err := u.prompt.Confirm(locale.T("confirm"),
-		locale.Tl("use_reset_confirm", "You are about to stop using your project runtime. Continue?"), &defaultChoice)
+		locale.Tl("use_reset_confirm", "You are about to stop using your project runtime. Continue?"), &defaultChoice, ptr.To(true))
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Not confirmed")
 	}
 	if !ok {
 		return locale.NewInputError("err_reset_aborted", "Reset aborted by user")

@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -41,15 +42,13 @@ func (m *Move) Run(params *MoveParams) error {
 		return locale.NewInputError("err_project_move_auth", "In order to move your project you need to be authenticated. Please run '[ACTIONABLE]state auth[/RESET]' to authenticate.")
 	}
 
-	defaultChoice := !m.out.Config().Interactive
-	move, err := m.prompt.Confirm("", locale.Tr("move_prompt", params.Namespace.String(), params.NewOwner, params.Namespace.Project), &defaultChoice)
+	defaultChoice := !m.prompt.IsInteractive()
+	move, err := m.prompt.Confirm("", locale.Tr("move_prompt", params.Namespace.String(), params.NewOwner, params.Namespace.Project), &defaultChoice, ptr.To(true))
 	if err != nil {
-		return locale.WrapError(err, "err_move_prompt", "Could not prompt for move confirmation")
+		return errs.Wrap(err, "Not confirmed")
 	}
-
 	if !move {
-		m.out.Print(locale.Tl("move_cancelled", "Project move aborted by user"))
-		return nil
+		return locale.NewInputError("move_cancelled", "Project move aborted by user")
 	}
 
 	if err = model.MoveProject(params.Namespace.Owner, params.Namespace.Project, params.NewOwner, m.auth); err != nil {

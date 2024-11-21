@@ -33,7 +33,7 @@ func newUseCommand(prime *primer.Values) *captain.Command {
 	return cmd
 }
 
-func newUseResetCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
+func newUseResetCommand(prime *primer.Values) *captain.Command {
 	params := &use.ResetParams{}
 
 	return captain.NewCommand(
@@ -44,7 +44,6 @@ func newUseResetCommand(prime *primer.Values, globals *globalOptions) *captain.C
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
-			params.Force = globals.NonInteractive
 			return use.NewReset(prime).Run(params)
 		},
 	)

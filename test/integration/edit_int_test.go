@@ -8,12 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/testhelpers/suite"
-
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -76,9 +74,8 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 	}
 	ts, env := suite.setup()
 	defer ts.Close()
-	extraEnv := e2e.OptAppendEnv(constants.NonInteractiveEnvVarName + "=true")
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("scripts", "edit", "test-script"), env, extraEnv)
+	cp := ts.SpawnWithOpts(e2e.OptArgs("scripts", "edit", "test-script", "-n"), env)
 	cp.Expect("Watching file changes")
 	// Can't consistently get this line detected on CI
 	cp.Expect("Script changes detected")
