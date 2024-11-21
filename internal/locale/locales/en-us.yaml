@@ -22,9 +22,9 @@ flag_state_monochrome_output_description:
 flag_state_output_description:
   other: "Set the output method. Possible values: plain, simple, json, editor"
 flag_state_non_interactive_description:
-  other: Run the State Tool without any prompts
+  other: Assume default values for any prompts
 flag_state_force_description:
-  other: Run the State Tool without any prompts, overriding any safe defaults
+  other: Disable prompts and perform the requested action regardless of defaults values (this can result in destructive or unsafe actions, such as installing packages with critical CVEs)
 flag_state_version_description:
   other: Show the version of our state executable
 flag_state_activate_path_description:
