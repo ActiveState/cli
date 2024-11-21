@@ -265,7 +265,7 @@ const VulnerabilitiesAPIPath = "/v13s/v1/graphql"
 const HasuraInventoryAPIPath = "/sv/hasura-inventory/v1/graphql"
 
 // NotificationsInfoURL is the URL we check against to see what versions are deprecated
-const NotificationsInfoURL = "https://state-tool.s3.amazonaws.com/notifications.json"
+const NotificationsInfoURL = "https://state-tool.s3.amazonaws.com/messages.json"
 
 // DateFormatUser is the date format we use when communicating with the end-user
 const DateFormatUser = "January 02, 2006"

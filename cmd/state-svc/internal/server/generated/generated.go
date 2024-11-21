@@ -84,14 +84,14 @@ type ComplexityRoot struct {
 	}
 
 	NotificationInfo struct {
-		Condition    func(childComplexity int) int
-		EndDate      func(childComplexity int) int
-		ID           func(childComplexity int) int
-		Interrupt    func(childComplexity int) int
-		Notification func(childComplexity int) int
-		Placement    func(childComplexity int) int
-		Repeat       func(childComplexity int) int
-		StartDate    func(childComplexity int) int
+		Condition func(childComplexity int) int
+		EndDate   func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Interrupt func(childComplexity int) int
+		Message   func(childComplexity int) int
+		Placement func(childComplexity int) int
+		Repeat    func(childComplexity int) int
+		StartDate func(childComplexity int) int
 	}
 
 	Organization struct {
@@ -323,12 +323,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NotificationInfo.Interrupt(childComplexity), true
 
-	case "NotificationInfo.notification":
-		if e.complexity.NotificationInfo.Notification == nil {
+	case "NotificationInfo.message":
+		if e.complexity.NotificationInfo.Message == nil {
 			break
 		}
 
-		return e.complexity.NotificationInfo.Notification(childComplexity), true
+		return e.complexity.NotificationInfo.Message(childComplexity), true
 
 	case "NotificationInfo.placement":
 		if e.complexity.NotificationInfo.Placement == nil {
@@ -753,7 +753,7 @@ enum NotificationPlacementType {
 
 type NotificationInfo {
     id: String!
-    notification: String!
+    message: String!
     condition: String!
     startDate: String!
     endDate: String!
@@ -1853,8 +1853,8 @@ func (ec *executionContext) fieldContext_NotificationInfo_id(_ context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _NotificationInfo_notification(ctx context.Context, field graphql.CollectedField, obj *graph.NotificationInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_NotificationInfo_notification(ctx, field)
+func (ec *executionContext) _NotificationInfo_message(ctx context.Context, field graphql.CollectedField, obj *graph.NotificationInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NotificationInfo_message(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1867,7 +1867,7 @@ func (ec *executionContext) _NotificationInfo_notification(ctx context.Context, 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Notification, nil
+		return obj.Message, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1884,7 +1884,7 @@ func (ec *executionContext) _NotificationInfo_notification(ctx context.Context, 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_NotificationInfo_notification(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_NotificationInfo_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "NotificationInfo",
 		Field:      field,
@@ -2737,8 +2737,8 @@ func (ec *executionContext) fieldContext_Query_checkNotifications(ctx context.Co
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_NotificationInfo_id(ctx, field)
-			case "notification":
-				return ec.fieldContext_NotificationInfo_notification(ctx, field)
+			case "message":
+				return ec.fieldContext_NotificationInfo_message(ctx, field)
 			case "condition":
 				return ec.fieldContext_NotificationInfo_condition(ctx, field)
 			case "startDate":
@@ -5841,8 +5841,8 @@ func (ec *executionContext) _NotificationInfo(ctx context.Context, sel ast.Selec
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "notification":
-			out.Values[i] = ec._NotificationInfo_notification(ctx, field, obj)
+		case "message":
+			out.Values[i] = ec._NotificationInfo_message(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

@@ -90,8 +90,8 @@ func (m *Notifier) PrintByPlacement(placement graph.NotificationPlacementType) e
 			m.out.Notice("") // Line break after
 		}
 
-		logging.Debug("Printing notification: %s, %s", notification.ID, notification.Notification)
-		m.out.Notice(notification.Notification)
+		logging.Debug("Printing notification: %s, %s", notification.ID, notification.Message)
+		m.out.Notice(notification.Message)
 
 		if placement == graph.NotificationPlacementTypeBeforeCmd {
 			m.out.Notice("") // Line break before

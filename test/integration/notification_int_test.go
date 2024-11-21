@@ -42,7 +42,7 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_Basic() {
 			"Defaults",
 			`[{
 				"ID": "simple",
-				"Notification": "This is a [NOTICE]simple[/RESET] notification"
+				"Message": "This is a [NOTICE]simple[/RESET] notification"
 			}]`,
 			false,
 			true,
@@ -51,7 +51,7 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_Basic() {
 			"Repeat Hourly",
 			`[{
 				"ID": "simple",
-				"Notification": "This is a [NOTICE]simple[/RESET] notification",
+				"Message": "This is a [NOTICE]simple[/RESET] notification",
 				"Repeat": "Hourly"
 			}]`,
 			false,
@@ -61,7 +61,7 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_Basic() {
 			"Repeat Constantly",
 			`[{
 				"ID": "simple",
-				"Notification": "This is a [NOTICE]simple[/RESET] notification",
+				"Message": "This is a [NOTICE]simple[/RESET] notification",
 				"Repeat": "Constantly"
 			}]`,
 			true,
@@ -71,7 +71,7 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_Basic() {
 			"Within Date Range",
 			fmt.Sprintf(`[{
 				"ID": "simple",
-				"Notification": "This is a [NOTICE]simple[/RESET] notification",
+				"Message": "This is a [NOTICE]simple[/RESET] notification",
 				"StartDate": "%s",
 				"EndDate": "%s"
 			}]`,
@@ -84,7 +84,7 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_Basic() {
 			"Outside Date Range",
 			fmt.Sprintf(`[{
 				"ID": "simple",
-				"Notification": "This is a [NOTICE]simple[/RESET] notification",
+				"Message": "This is a [NOTICE]simple[/RESET] notification",
 				"StartDate": "%s",
 				"EndDate": "%s"
 			}]`,
@@ -97,7 +97,7 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_Basic() {
 			"Only Start Date - Inside Range",
 			fmt.Sprintf(`[{
 				"ID": "simple",
-				"Notification": "This is a [NOTICE]simple[/RESET] notification",
+				"Message": "This is a [NOTICE]simple[/RESET] notification",
 				"StartDate": "%s"
 			}]`,
 				time.Now().Add(-1*time.Hour).Format(time.RFC3339)),
@@ -108,7 +108,7 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_Basic() {
 			"Only End Date - Inside Range",
 			fmt.Sprintf(`[{
 				"ID": "simple",
-				"Notification": "This is a [NOTICE]simple[/RESET] notification",
+				"Message": "This is a [NOTICE]simple[/RESET] notification",
 				"EndDate": "%s"
 			}]`,
 				time.Now().Add(1*time.Hour).Format(time.RFC3339)),
@@ -119,7 +119,7 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_Basic() {
 			"Outside Date Range - Future",
 			fmt.Sprintf(`[{
 				"ID": "simple",
-				"Notification": "This is a [NOTICE]simple[/RESET] notification",
+				"Message": "This is a [NOTICE]simple[/RESET] notification",
 				"StartDate": "%s",
 				"EndDate": "%s"
 			}]`,
@@ -132,7 +132,7 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_Basic() {
 			"Outside Date Range - Past",
 			fmt.Sprintf(`[{
 				"ID": "simple",
-				"Notification": "This is a [NOTICE]simple[/RESET] notification",
+				"Message": "This is a [NOTICE]simple[/RESET] notification",
 				"StartDate": "%s",
 				"EndDate": "%s"
 			}]`,
@@ -145,7 +145,7 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_Basic() {
 			"Only Start Date - Outside Range",
 			fmt.Sprintf(`[{
 				"ID": "simple",
-				"Notification": "This is a [NOTICE]simple[/RESET] notification",
+				"Message": "This is a [NOTICE]simple[/RESET] notification",
 				"StartDate": "%s"
 			}]`,
 				time.Now().Add(1*time.Hour).Format(time.RFC3339)),
@@ -156,7 +156,7 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_Basic() {
 			"Only End Date - Outside Range",
 			fmt.Sprintf(`[{
 				"ID": "simple",
-				"Notification": "This is a [NOTICE]simple[/RESET] notification",
+				"Message": "This is a [NOTICE]simple[/RESET] notification",
 				"EndDate": "%s"
 			}]`,
 				time.Now().Add(-1*time.Hour).Format(time.RFC3339)),
@@ -169,7 +169,7 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_Basic() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 
-			msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "notifications.json", []byte(tt.MessageJson), 0755)
+			msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "messages.json", []byte(tt.MessageJson), 0755)
 			suite.Require().NoError(err)
 
 			cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(constants.NotificationsOverrideEnvVarName+"="+msgFile))
@@ -201,10 +201,10 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_Basic_PlacementA
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "notifications.json", []byte(fmt.Sprintf(`[
+	msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "messages.json", []byte(fmt.Sprintf(`[
 	{
 		"ID": "simple",
-		"Notification": "This is a [NOTICE]simple[/RESET] notification",
+		"Message": "This is a [NOTICE]simple[/RESET] notification",
 		"Placement": "%s"
 	}
 ]`, graph.NotificationPlacementTypeAfterCmd)), 0755)
@@ -221,10 +221,10 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_Basic_InterruptP
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "notifications.json", []byte(fmt.Sprintf(`[
+	msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "messages.json", []byte(fmt.Sprintf(`[
 	{
 		"ID": "simple",
-		"Notification": "This is a [NOTICE]simple[/RESET] notification",
+		"Message": "This is a [NOTICE]simple[/RESET] notification",
 		"Repeat": "Constantly",
 		"Interrupt": "%s"
 	}
@@ -253,10 +253,10 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_Basic_InterruptE
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "notifications.json", []byte(fmt.Sprintf(`[
+	msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "messages.json", []byte(fmt.Sprintf(`[
 	{
 		"ID": "simple",
-		"Notification": "This is a [NOTICE]simple[/RESET] notification",
+		"Message": "This is a [NOTICE]simple[/RESET] notification",
 		"Interrupt": "%s"
 	}
 ]`, graph.NotificationInterruptTypeExit)), 0755)

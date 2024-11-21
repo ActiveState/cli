@@ -44,14 +44,14 @@ type Mutation struct {
 }
 
 type NotificationInfo struct {
-	ID           string                    `json:"id"`
-	Notification string                    `json:"notification"`
-	Condition    string                    `json:"condition"`
-	StartDate    string                    `json:"startDate"`
-	EndDate      string                    `json:"endDate"`
-	Repeat       NotificationRepeatType    `json:"repeat"`
-	Interrupt    NotificationInterruptType `json:"interrupt"`
-	Placement    NotificationPlacementType `json:"placement"`
+	ID        string                    `json:"id"`
+	Message   string                    `json:"message"`
+	Condition string                    `json:"condition"`
+	StartDate string                    `json:"startDate"`
+	EndDate   string                    `json:"endDate"`
+	Repeat    NotificationRepeatType    `json:"repeat"`
+	Interrupt NotificationInterruptType `json:"interrupt"`
+	Placement NotificationPlacementType `json:"placement"`
 }
 
 type Organization struct {

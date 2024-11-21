@@ -16,7 +16,7 @@ func (m *NotificationRequest) Query() string {
 	return `query($command: String!, $flags: [String!]!) {
 		checkNotifications(command: $command, flags: $flags) {
 			id
-			notification
+			message
 			interrupt
 			placement
 		}

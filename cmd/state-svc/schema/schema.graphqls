@@ -53,7 +53,7 @@ enum NotificationPlacementType {
 
 type NotificationInfo {
     id: String!
-    notification: String!
+    message: String!
     condition: String!
     startDate: String!
     endDate: String!
