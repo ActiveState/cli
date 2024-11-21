@@ -208,7 +208,7 @@ func fetch() ([]*graph.NotificationInfo, error) {
 			return nil, errs.Wrap(err, "Could not read messages override file")
 		}
 	} else {
-		body, err = httputil.Get(constants.MessagesInfoURL)
+		body, err = httputil.Get(constants.NotificationsInfoURL)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not fetch messages information")
 		}
