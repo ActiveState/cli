@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
@@ -38,5 +39,10 @@ func rationalizeError(err *error) {
 		*err = errs.WrapUserFacing(*err,
 			locale.T("err_outdated_buildscript"),
 			errs.SetInput())
+
+	case errors.Is(*err, prompt.ErrNoForceOption):
+		*err = errs.WrapUserFacing(*err,
+			locale.T("err_prompt_no_force_option",
+				"This command has a prompt that does not support the '[ACTIONABLE]--force[/RESET]' flag."))
 	}
 }

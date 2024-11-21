@@ -45,6 +45,8 @@ type Prompt struct {
 	isForced      bool
 }
 
+var ErrNoForceOption = errs.New("No force option given for forced prompt")
+
 // New creates a new prompter
 func New(out output.Outputer, an EventDispatcher) Prompter {
 	return &Prompt{out, an, out.Config().Interactive, false}
@@ -113,7 +115,7 @@ func (p *Prompt) InputAndValidate(title, message string, defaultResponse *string
 			p.out.Notice(locale.Tr("prompt_using_force", *response))
 			return *response, nil
 		}
-		return "", errs.New("No force option given for forced prompt")
+		return "", ErrNoForceOption
 	}
 
 	if !p.isInteractive {
@@ -172,7 +174,7 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice *
 			p.out.Notice(locale.Tr("prompt_using_force", *choice))
 			return *choice, nil
 		}
-		return "", errs.New("No force option given for forced prompt")
+		return "", ErrNoForceOption
 	}
 
 	if !p.isInteractive {
@@ -218,7 +220,7 @@ func (p *Prompt) Confirm(title, message string, defaultChoice *bool, forcedChoic
 			p.out.Notice(locale.T("prompt_continue_force"))
 			return *choice, nil
 		}
-		return false, errs.New("No force option given for forced prompt")
+		return false, ErrNoForceOption
 	}
 
 	if !p.isInteractive {
