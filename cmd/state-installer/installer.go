@@ -54,7 +54,7 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Could not determine if running as Windows administrator")
 	}
 	if isAdmin && !i.Params.isUpdate {
-		prompter := prompt.New(i.an)
+		prompter := prompt.New(i.out, i.an)
 		if i.Params.nonInteractive {
 			prompter.SetInteractive(false)
 		}

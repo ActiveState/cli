@@ -116,7 +116,7 @@ func main() {
 	an = sync.New(anaConst.SrcStateRemoteInstaller, cfg, nil, out)
 
 	// Set up prompter
-	prompter := prompt.New(an)
+	prompter := prompt.New(out, an)
 
 	params := newParams()
 	cmd := captain.NewCommand(

@@ -118,9 +118,6 @@ const OverrideSessionTokenEnvVarName = "ACTIVESTATE_OVERRIDE_SESSION_TOKEN"
 // UpdateTagEnvVarName
 const UpdateTagEnvVarName = "ACTIVESTATE_UPDATE_TAG"
 
-// NonInteractiveEnvVarName is the name of the environment variable that specifies whether to run the State Tool without prompts
-const NonInteractiveEnvVarName = "ACTIVESTATE_NONINTERACTIVE"
-
 // E2ETestEnvVarName is the name of the environment variable that specifies that we are running under E2E tests
 const E2ETestEnvVarName = "ACTIVESTATE_E2E_TEST"
 

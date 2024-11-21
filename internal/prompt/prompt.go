@@ -46,8 +46,8 @@ type Prompt struct {
 }
 
 // New creates a new prompter
-func New(an EventDispatcher) Prompter {
-	return &Prompt{output.Get(), an, true, false}
+func New(out output.Outputer, an EventDispatcher) Prompter {
+	return &Prompt{out, an, out.Config().Interactive, false}
 }
 
 // IsInteractive checks if the prompts can be interactive or should just return default values
