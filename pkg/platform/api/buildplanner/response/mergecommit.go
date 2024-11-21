@@ -7,11 +7,5 @@ type MergedCommit struct {
 	Type   string  `json:"__typename"`
 	Commit *Commit `json:"commit"`
 	*Error
-	*MergeConflictError
-	*MergeError
-	*NotFoundError
-	*ParseError
-	*ForbiddenError
-	*HeadOnBranchMovedError
-	*NoChangeSinceLastCommitError
+	*ErrorWithSubErrors
 }

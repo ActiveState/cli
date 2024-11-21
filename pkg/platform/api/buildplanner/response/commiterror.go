@@ -6,7 +6,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
-	"github.com/go-openapi/strfmt"
 )
 
 type CommitError struct {
@@ -29,7 +28,7 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 	case types.ParseErrorType:
 		return &CommitError{
 			commit.Type, commit.Message,
-			locale.NewInputError("err_buildplanner_parse_error", "The platform failed to parse the build expression. Received message: {{.V0}}. Path: {{.V1}}", commit.Message, commit.ParseError.Path),
+			locale.NewInputError("err_buildplanner_parse_error", "The platform failed to parse the build expression. Received message: {{.V0}}.", commit.Message),
 		}
 	case types.ValidationErrorType:
 		var subErrorMessages []string
@@ -49,7 +48,7 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 	case types.ForbiddenErrorType:
 		return &CommitError{
 			commit.Type, commit.Message,
-			locale.NewInputError("err_buildplanner_forbidden", "Operation forbidden: {{.V0}}. Received message: {{.V1}}", commit.Operation, commit.Message),
+			locale.NewInputError("err_buildplanner_forbidden", "Operation forbidden, Received message: {{.V1}}", commit.Message),
 		}
 	case types.HeadOnBranchMovedErrorType:
 		return errs.Wrap(&CommitError{
@@ -92,30 +91,4 @@ func ProcessMergedCommitError(mcErr *MergedCommit, fallbackMessage string) error
 		return &MergedCommitError{mcErr.Type, mcErr.Message}
 	}
 	return errs.New(fallbackMessage)
-}
-
-// HeadOnBranchMovedError represents an error that occurred because the head on
-// a remote branch has moved.
-type HeadOnBranchMovedError struct {
-	HeadBranchID strfmt.UUID `json:"branchId"`
-}
-
-// NoChangeSinceLastCommitError represents an error that occurred because there
-// were no changes since the last commit.
-type NoChangeSinceLastCommitError struct {
-	NoChangeCommitID strfmt.UUID `json:"commitId"`
-}
-
-// MergeConflictError represents an error that occurred because of a merge conflict.
-type MergeConflictError struct {
-	CommonAncestorID strfmt.UUID `json:"commonAncestorId"`
-	ConflictPaths    []string    `json:"conflictPaths"`
-}
-
-// MergeError represents two different errors in the BuildPlanner's graphQL
-// schema with the same fields. Those errors being: FastForwardError and
-// NoCommonBaseFound. Inspect the Type field to determine which error it is.
-type MergeError struct {
-	TargetVCSRef strfmt.UUID `json:"targetVcsRef"`
-	OtherVCSRef  strfmt.UUID `json:"otherVcsRef"`
 }

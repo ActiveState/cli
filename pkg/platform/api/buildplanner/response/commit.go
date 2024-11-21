@@ -70,32 +70,6 @@ func ProcessProjectError(project *ProjectResponse, fallbackMessage string) error
 	return errs.New(fallbackMessage)
 }
 
-// PlanningError represents an error that occurred during planning.
-type PlanningError struct {
-	SubErrors []*BuildExprError `json:"subErrors"`
-}
-
-// BuildExprError represents a location in the build script where an error occurred.
-type BuildExprError struct {
-	Type             string                        `json:"__typename"`
-	BuildExprPath    string                        `json:"buildExprPath"`
-	Message          string                        `json:"message"`
-	IsTransient      bool                          `json:"isTransient"`
-	ValidationErrors []*SolverErrorValidationError `json:"validationErrors"`
-	*TargetNotFound
-	*RemediableSolveError
-}
-
-type TargetNotFound struct {
-	Type            string   `json:"__typename"`
-	RequestedTarget string   `json:"requestedTarget"`
-	PossibleTargets []string `json:"possibleTargets"`
-}
-
-type ValidationError struct {
-	SubErrors []*BuildExprError `json:"subErrors"`
-}
-
 // Commit contains the build and any errors.
 type Commit struct {
 	Type       string          `json:"__typename"`
@@ -105,9 +79,5 @@ type Commit struct {
 	ParentID   strfmt.UUID     `json:"parentId"`
 	Build      *BuildResponse  `json:"build"`
 	*Error
-	*ParseError
-	*ValidationError
-	*ForbiddenError
-	*HeadOnBranchMovedError
-	*NoChangeSinceLastCommitError
+	*ErrorWithSubErrors
 }

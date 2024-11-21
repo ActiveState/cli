@@ -147,7 +147,7 @@ query ($commitID: String!, $organization: String!, $project: String!, $target: S
                   name
                   namespace
                   version_requirements: versionRequirements {
-                   	comparator
+                    comparator
                     version
                   }
                 }
@@ -155,14 +155,14 @@ query ($commitID: String!, $organization: String!, $project: String!, $target: S
               }
             }
             ... on Error {
+              __typename
               message
             }
-            ... on PlanningError {
-              message
+            ... on ErrorWithSubErrors {
+              __typename
               subErrors {
                 __typename
                 ... on GenericSolveError {
-                  path
                   message
                   isTransient
                   validationErrors {
@@ -171,7 +171,6 @@ query ($commitID: String!, $organization: String!, $project: String!, $target: S
                   }
                 }
                 ... on RemediableSolveError {
-                  path
                   message
                   isTransient
                   errorType
@@ -179,42 +178,19 @@ query ($commitID: String!, $organization: String!, $project: String!, $target: S
                     error
                     jsonPath
                   }
-                  suggestedRemediations {
-                    remediationType
-                    command
-                    parameters
-                  }
-                }
-                ... on TargetNotFound {
-                  message
-                  requestedTarget
-                  possibleTargets
                 }
               }
             }
           }
         }
         ... on Error {
-          message
-        }
-        ... on NotFound {
           __typename
-          type
-          resource
-          mayNeedAuthentication
           message
         }
       }
     }
     ... on Error {
       __typename
-      message
-    }
-    ... on NotFound {
-      __typename
-      type
-      resource
-      mayNeedAuthentication
       message
     }
   }
