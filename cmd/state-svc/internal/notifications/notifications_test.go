@@ -1,4 +1,4 @@
-package messages
+package notifications
 
 import (
 	"reflect"
@@ -14,7 +14,7 @@ func Test_check(t *testing.T) {
 	baseTime := time.Now()
 	type args struct {
 		params        *ConditionParams
-		messages      []*graph.MessageInfo
+		notifications []*graph.NotificationInfo
 		lastReportMap map[string]interface{}
 		baseTime      time.Time
 	}
@@ -28,7 +28,7 @@ func Test_check(t *testing.T) {
 			"No special conditions",
 			args{
 				params: &ConditionParams{},
-				messages: []*graph.MessageInfo{
+				notifications: []*graph.NotificationInfo{
 					{ID: "A"}, {ID: "B"}, {ID: "C"},
 				},
 				lastReportMap: map[string]interface{}{},
@@ -43,7 +43,7 @@ func Test_check(t *testing.T) {
 				params: &ConditionParams{
 					Command: "foo",
 				},
-				messages: []*graph.MessageInfo{
+				notifications: []*graph.NotificationInfo{
 					{ID: "A", Condition: `eq .Command "bar"`},
 					{ID: "B", Condition: `eq .Command "foo"`},
 					{ID: "C", Condition: `eq .Command "foobar"`},
@@ -60,7 +60,7 @@ func Test_check(t *testing.T) {
 				params: &ConditionParams{
 					UserEmail: "john@doe.org",
 				},
-				messages: []*graph.MessageInfo{
+				notifications: []*graph.NotificationInfo{
 					{ID: "A", Condition: `contains .UserEmail "john"`},
 					{ID: "B", Condition: `contains .UserEmail "fred"`},
 				},
@@ -76,7 +76,7 @@ func Test_check(t *testing.T) {
 				params: &ConditionParams{
 					UserEmail: "john@doe.org",
 				},
-				messages: []*graph.MessageInfo{
+				notifications: []*graph.NotificationInfo{
 					{ID: "A", Condition: `hasPrefix .UserEmail "john"`},
 					{ID: "B", Condition: `hasPrefix .UserEmail "org"`},
 				},
@@ -92,7 +92,7 @@ func Test_check(t *testing.T) {
 				params: &ConditionParams{
 					UserEmail: "john@doe.org",
 				},
-				messages: []*graph.MessageInfo{
+				notifications: []*graph.NotificationInfo{
 					{ID: "A", Condition: `hasSuffix .UserEmail "john"`},
 					{ID: "B", Condition: `hasSuffix .UserEmail "org"`},
 				},
@@ -108,7 +108,7 @@ func Test_check(t *testing.T) {
 				params: &ConditionParams{
 					UserEmail: "john@doe.org",
 				},
-				messages: []*graph.MessageInfo{
+				notifications: []*graph.NotificationInfo{
 					{ID: "A", Condition: `regexMatch .UserEmail ".*@doe.org$"`},
 					{ID: "B", Condition: `regexMatch .UserEmail "^doe.org$"`},
 				},
@@ -124,7 +124,7 @@ func Test_check(t *testing.T) {
 				params: &ConditionParams{
 					UserEmail: "john@doe.org",
 				},
-				messages: []*graph.MessageInfo{
+				notifications: []*graph.NotificationInfo{
 					{ID: "A", Condition: `regexMatch .UserEmail ".*@doe.org$"`},
 					{ID: "B", Condition: `regexMatch .UserEmail ".*("`},
 				},
@@ -140,7 +140,7 @@ func Test_check(t *testing.T) {
 				params: &ConditionParams{
 					StateVersion: NewVersionFromSemver(semver.MustParse("7.8.9-SHA123456a7b")),
 				},
-				messages: []*graph.MessageInfo{
+				notifications: []*graph.NotificationInfo{
 					{ID: "A", Condition: `eq .StateVersion.Major 7`},
 					{ID: "B", Condition: `eq .StateVersion.Minor 8`},
 					{ID: "C", Condition: `eq .StateVersion.Patch 9`},
@@ -160,10 +160,10 @@ func Test_check(t *testing.T) {
 			"Repeat Disabled",
 			args{
 				params: &ConditionParams{},
-				messages: []*graph.MessageInfo{
-					{ID: "A", Repeat: graph.MessageRepeatTypeDisabled},
-					{ID: "B", Repeat: graph.MessageRepeatTypeDisabled},
-					{ID: "C", Repeat: graph.MessageRepeatTypeDisabled},
+				notifications: []*graph.NotificationInfo{
+					{ID: "A", Repeat: graph.NotificationRepeatTypeDisabled},
+					{ID: "B", Repeat: graph.NotificationRepeatTypeDisabled},
+					{ID: "C", Repeat: graph.NotificationRepeatTypeDisabled},
 				},
 				lastReportMap: map[string]interface{}{
 					"A": baseTime.Format(time.RFC3339),
@@ -178,10 +178,10 @@ func Test_check(t *testing.T) {
 			"Repeat Constantly",
 			args{
 				params: &ConditionParams{},
-				messages: []*graph.MessageInfo{
-					{ID: "A", Repeat: graph.MessageRepeatTypeConstantly},
-					{ID: "B", Repeat: graph.MessageRepeatTypeConstantly},
-					{ID: "C", Repeat: graph.MessageRepeatTypeConstantly},
+				notifications: []*graph.NotificationInfo{
+					{ID: "A", Repeat: graph.NotificationRepeatTypeConstantly},
+					{ID: "B", Repeat: graph.NotificationRepeatTypeConstantly},
+					{ID: "C", Repeat: graph.NotificationRepeatTypeConstantly},
 				},
 				lastReportMap: map[string]interface{}{
 					"A": baseTime.Format(time.RFC3339),
@@ -196,10 +196,10 @@ func Test_check(t *testing.T) {
 			"Repeat Hourly",
 			args{
 				params: &ConditionParams{},
-				messages: []*graph.MessageInfo{
-					{ID: "A", Repeat: graph.MessageRepeatTypeHourly},
-					{ID: "B", Repeat: graph.MessageRepeatTypeHourly},
-					{ID: "C", Repeat: graph.MessageRepeatTypeHourly},
+				notifications: []*graph.NotificationInfo{
+					{ID: "A", Repeat: graph.NotificationRepeatTypeHourly},
+					{ID: "B", Repeat: graph.NotificationRepeatTypeHourly},
+					{ID: "C", Repeat: graph.NotificationRepeatTypeHourly},
 				},
 				lastReportMap: map[string]interface{}{
 					"A": baseTime.Format(time.RFC3339),
@@ -215,10 +215,10 @@ func Test_check(t *testing.T) {
 			"Repeat Daily",
 			args{
 				params: &ConditionParams{},
-				messages: []*graph.MessageInfo{
-					{ID: "A", Repeat: graph.MessageRepeatTypeHourly},
-					{ID: "B", Repeat: graph.MessageRepeatTypeHourly},
-					{ID: "C", Repeat: graph.MessageRepeatTypeHourly},
+				notifications: []*graph.NotificationInfo{
+					{ID: "A", Repeat: graph.NotificationRepeatTypeHourly},
+					{ID: "B", Repeat: graph.NotificationRepeatTypeHourly},
+					{ID: "C", Repeat: graph.NotificationRepeatTypeHourly},
 				},
 				lastReportMap: map[string]interface{}{
 					"A": baseTime.Format(time.RFC3339),
@@ -234,10 +234,10 @@ func Test_check(t *testing.T) {
 			"Repeat Weekly",
 			args{
 				params: &ConditionParams{},
-				messages: []*graph.MessageInfo{
-					{ID: "A", Repeat: graph.MessageRepeatTypeHourly},
-					{ID: "B", Repeat: graph.MessageRepeatTypeHourly},
-					{ID: "C", Repeat: graph.MessageRepeatTypeHourly},
+				notifications: []*graph.NotificationInfo{
+					{ID: "A", Repeat: graph.NotificationRepeatTypeHourly},
+					{ID: "B", Repeat: graph.NotificationRepeatTypeHourly},
+					{ID: "C", Repeat: graph.NotificationRepeatTypeHourly},
 				},
 				lastReportMap: map[string]interface{}{
 					"A": baseTime.Format(time.RFC3339),
@@ -253,10 +253,10 @@ func Test_check(t *testing.T) {
 			"Repeat Monthly",
 			args{
 				params: &ConditionParams{},
-				messages: []*graph.MessageInfo{
-					{ID: "A", Repeat: graph.MessageRepeatTypeHourly},
-					{ID: "B", Repeat: graph.MessageRepeatTypeHourly},
-					{ID: "C", Repeat: graph.MessageRepeatTypeHourly},
+				notifications: []*graph.NotificationInfo{
+					{ID: "A", Repeat: graph.NotificationRepeatTypeHourly},
+					{ID: "B", Repeat: graph.NotificationRepeatTypeHourly},
+					{ID: "C", Repeat: graph.NotificationRepeatTypeHourly},
 				},
 				lastReportMap: map[string]interface{}{
 					"A": baseTime.Format(time.RFC3339),
@@ -272,7 +272,7 @@ func Test_check(t *testing.T) {
 			"Date Range - Within Range",
 			args{
 				params: &ConditionParams{},
-				messages: []*graph.MessageInfo{
+				notifications: []*graph.NotificationInfo{
 					{ID: "A", StartDate: baseTime.Add(-24 * time.Hour).Format(time.RFC3339), EndDate: baseTime.Add(24 * time.Hour).Format(time.RFC3339)},
 					{ID: "B", StartDate: baseTime.Add(-1 * time.Hour).Format(time.RFC3339), EndDate: baseTime.Add(1 * time.Hour).Format(time.RFC3339)},
 					{ID: "C", StartDate: baseTime.Add(1 * time.Hour).Format(time.RFC3339), EndDate: baseTime.Add(24 * time.Hour).Format(time.RFC3339)},
@@ -287,7 +287,7 @@ func Test_check(t *testing.T) {
 			"Date Range - No Dates Specified",
 			args{
 				params: &ConditionParams{},
-				messages: []*graph.MessageInfo{
+				notifications: []*graph.NotificationInfo{
 					{ID: "A"},
 					{ID: "B", StartDate: baseTime.Add(-1 * time.Hour).Format(time.RFC3339)},
 					{ID: "C", EndDate: baseTime.Add(1 * time.Hour).Format(time.RFC3339)},
@@ -302,7 +302,7 @@ func Test_check(t *testing.T) {
 			"Date Range - Invalid Date Format",
 			args{
 				params: &ConditionParams{},
-				messages: []*graph.MessageInfo{
+				notifications: []*graph.NotificationInfo{
 					{ID: "A", StartDate: "invalid-date"},
 				},
 				lastReportMap: map[string]interface{}{},
@@ -315,7 +315,7 @@ func Test_check(t *testing.T) {
 			"Date Range - Only Start Date",
 			args{
 				params: &ConditionParams{},
-				messages: []*graph.MessageInfo{
+				notifications: []*graph.NotificationInfo{
 					{ID: "A", StartDate: baseTime.Add(-1 * time.Hour).Format(time.RFC3339)},
 					{ID: "B", StartDate: baseTime.Add(1 * time.Hour).Format(time.RFC3339)},
 				},
@@ -329,7 +329,7 @@ func Test_check(t *testing.T) {
 			"Date Range - Only End Date",
 			args{
 				params: &ConditionParams{},
-				messages: []*graph.MessageInfo{
+				notifications: []*graph.NotificationInfo{
 					{ID: "A", EndDate: baseTime.Add(1 * time.Hour).Format(time.RFC3339)},
 					{ID: "B", EndDate: baseTime.Add(-1 * time.Hour).Format(time.RFC3339)},
 				},
@@ -342,7 +342,7 @@ func Test_check(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := check(tt.args.params, tt.args.messages, tt.args.lastReportMap, tt.args.baseTime)
+			got, err := check(tt.args.params, tt.args.notifications, tt.args.lastReportMap, tt.args.baseTime)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("check() error = %v, wantErr %v", errs.JoinMessage(err), tt.wantErr)
 				return

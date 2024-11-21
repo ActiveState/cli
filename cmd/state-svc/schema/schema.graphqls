@@ -31,7 +31,7 @@ type ReportRuntimeUsageResponse {
     received: Boolean!
 }
 
-enum MessageRepeatType {
+enum NotificationRepeatType {
     Disabled
     Constantly
     Hourly
@@ -40,26 +40,26 @@ enum MessageRepeatType {
     Monthly
 }
 
-enum MessageInterruptType {
+enum NotificationInterruptType {
     Disabled
     Prompt
     Exit
 }
 
-enum MessagePlacementType {
+enum NotificationPlacementType {
     BeforeCmd
     AfterCmd
 }
 
-type MessageInfo {
+type NotificationInfo {
     id: String!
-    message: String!
+    notification: String!
     condition: String!
     startDate: String!
     endDate: String!
-    repeat: MessageRepeatType!
-    interrupt: MessageInterruptType!
-    placement: MessagePlacementType!
+    repeat: NotificationRepeatType!
+    interrupt: NotificationInterruptType!
+    placement: NotificationPlacementType!
 }
 
 type Organization {
@@ -96,7 +96,7 @@ type Query {
     projects: [Project]!
     analyticsEvent(category: String!, action: String!, source: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
     reportRuntimeUsage(pid: Int!, exec: String!, source: String!, dimensionsJson: String!): ReportRuntimeUsageResponse
-    checkMessages(command: String!, flags: [String!]!): [MessageInfo!]!
+    checkNotifications(command: String!, flags: [String!]!): [NotificationInfo!]!
     configChanged(key: String!): ConfigChangedResponse
     fetchLogTail: String!
     getProcessesInUse(execDir: String!): [ProcessInfo!]!

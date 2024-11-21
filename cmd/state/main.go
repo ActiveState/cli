@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
-	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/exechandlers/messenger"
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/exechandlers/notifier"
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
@@ -247,9 +247,9 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		logging.Debug("Could not find child command, error: %v", err)
 	}
 
-	msger := messenger.New(out, svcmodel)
-	cmds.OnExecStart(msger.OnExecStart)
-	cmds.OnExecStop(msger.OnExecStop)
+	notifier := notifier.New(out, svcmodel)
+	cmds.OnExecStart(notifier.OnExecStart)
+	cmds.OnExecStop(notifier.OnExecStop)
 
 	// Auto update to latest state tool version if possible.
 	if updated, err := autoUpdate(svcmodel, args, childCmd, cfg, an, out); err == nil && updated {

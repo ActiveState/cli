@@ -1,4 +1,4 @@
-package messenger
+package notifier
 
 import (
 	"fmt"
@@ -16,20 +16,20 @@ import (
 	"golang.org/x/net/context"
 )
 
-type Messenger struct {
-	out      output.Outputer
-	svcModel *model.SvcModel
-	messages []*graph.MessageInfo
+type Notifier struct {
+	out           output.Outputer
+	svcModel      *model.SvcModel
+	notifications []*graph.NotificationInfo
 }
 
-func New(out output.Outputer, svcModel *model.SvcModel) *Messenger {
-	return &Messenger{
+func New(out output.Outputer, svcModel *model.SvcModel) *Notifier {
+	return &Notifier{
 		out:      out,
 		svcModel: svcModel,
 	}
 }
 
-func (m *Messenger) OnExecStart(cmd *captain.Command, _ []string) error {
+func (m *Notifier) OnExecStart(cmd *captain.Command, _ []string) error {
 	if m.out.Type().IsStructured() {
 		// No point showing messaging on non-plain output (eg. json)
 		return nil
@@ -42,23 +42,23 @@ func (m *Messenger) OnExecStart(cmd *captain.Command, _ []string) error {
 	cmds := cmd.JoinedCommandNames()
 	flags := cmd.ActiveFlagNames()
 
-	messages, err := m.svcModel.CheckMessages(context.Background(), cmds, flags)
+	notifications, err := m.svcModel.CheckNotifications(context.Background(), cmds, flags)
 	if err != nil {
-		multilog.Error("Could not report messages as CheckMessages return an error: %s", errs.JoinMessage(err))
+		multilog.Error("Could not report notifications as CheckNotifications return an error: %s", errs.JoinMessage(err))
 	}
 
-	m.messages = messages
+	m.notifications = notifications
 
-	logging.Debug("Received %d messages to print", len(messages))
+	logging.Debug("Received %d notifications to print", len(notifications))
 
-	if err := m.PrintByPlacement(graph.MessagePlacementTypeBeforeCmd); err != nil {
+	if err := m.PrintByPlacement(graph.NotificationPlacementTypeBeforeCmd); err != nil {
 		return errs.Wrap(err, "message error occurred before cmd")
 	}
 
 	return nil
 }
 
-func (m *Messenger) OnExecStop(cmd *captain.Command, _ []string) error {
+func (m *Notifier) OnExecStop(cmd *captain.Command, _ []string) error {
 	if m.out.Type().IsStructured() {
 		// No point showing messaging on non-plain output (eg. json)
 		return nil
@@ -68,36 +68,36 @@ func (m *Messenger) OnExecStop(cmd *captain.Command, _ []string) error {
 		return nil // do not print update/deprecation warnings/messages when running `state update`
 	}
 
-	if err := m.PrintByPlacement(graph.MessagePlacementTypeAfterCmd); err != nil {
+	if err := m.PrintByPlacement(graph.NotificationPlacementTypeAfterCmd); err != nil {
 		return errs.Wrap(err, "message error occurred before cmd")
 	}
 
 	return nil
 }
 
-func (m *Messenger) PrintByPlacement(placement graph.MessagePlacementType) error {
+func (m *Notifier) PrintByPlacement(placement graph.NotificationPlacementType) error {
 	exit := []string{}
 
-	messages := []*graph.MessageInfo{}
-	for _, message := range m.messages {
-		if message.Placement != placement {
-			logging.Debug("Skipping message %s as it's placement (%s) does not match %s", message.ID, message.Placement, placement)
-			messages = append(messages, message)
+	notifications := []*graph.NotificationInfo{}
+	for _, notification := range m.notifications {
+		if notification.Placement != placement {
+			logging.Debug("Skipping notification %s as it's placement (%s) does not match %s", notification.ID, notification.Placement, placement)
+			notifications = append(notifications, notification)
 			continue
 		}
 
-		if placement == graph.MessagePlacementTypeAfterCmd {
+		if placement == graph.NotificationPlacementTypeAfterCmd {
 			m.out.Notice("") // Line break after
 		}
 
-		logging.Debug("Printing message: %s", message.ID)
-		m.out.Notice(message.Message)
+		logging.Debug("Printing notification: %s, %s", notification.ID, notification.Notification)
+		m.out.Notice(notification.Notification)
 
-		if placement == graph.MessagePlacementTypeBeforeCmd {
+		if placement == graph.NotificationPlacementTypeBeforeCmd {
 			m.out.Notice("") // Line break before
 		}
 
-		if message.Interrupt == graph.MessageInterruptTypePrompt {
+		if notification.Interrupt == graph.NotificationInterruptTypePrompt {
 			if m.out.Config().Interactive {
 				m.out.Print(locale.Tl("messenger_prompt_continue", "Press ENTER to continue."))
 				fmt.Scanln(ptr.To("")) // Wait for input from user
@@ -106,12 +106,12 @@ func (m *Messenger) PrintByPlacement(placement graph.MessagePlacementType) error
 			}
 		}
 
-		if message.Interrupt == graph.MessageInterruptTypeExit {
-			exit = append(exit, message.ID)
+		if notification.Interrupt == graph.NotificationInterruptTypeExit {
+			exit = append(exit, notification.ID)
 		}
 	}
 
-	m.messages = messages
+	m.notifications = notifications
 
 	if len(exit) > 0 {
 		// It's the responsibility of the message to give the user context as to why this exit happened.

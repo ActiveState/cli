@@ -13,11 +13,11 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
 
-type MsgIntegrationTestSuite struct {
+type NotificationIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *MsgIntegrationTestSuite) TestMessage_None() {
+func (suite *NotificationIntegrationTestSuite) TestNotification_None() {
 	suite.OnlyRunForTags(tagsuite.Messaging, tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -30,7 +30,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_None() {
 	// the logs for any potential issues. This is done automatically by ts.Close().
 }
 
-func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
+func (suite *NotificationIntegrationTestSuite) TestNotification_Basic() {
 	suite.OnlyRunForTags(tagsuite.Messaging, tagsuite.Critical)
 	tests := []struct {
 		Name         string
@@ -42,7 +42,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			"Defaults",
 			`[{
 				"ID": "simple",
-				"Message": "This is a [NOTICE]simple[/RESET] message"
+				"Notification": "This is a [NOTICE]simple[/RESET] notification"
 			}]`,
 			false,
 			true,
@@ -51,7 +51,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			"Repeat Hourly",
 			`[{
 				"ID": "simple",
-				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"Notification": "This is a [NOTICE]simple[/RESET] notification",
 				"Repeat": "Hourly"
 			}]`,
 			false,
@@ -61,7 +61,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			"Repeat Constantly",
 			`[{
 				"ID": "simple",
-				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"Notification": "This is a [NOTICE]simple[/RESET] notification",
 				"Repeat": "Constantly"
 			}]`,
 			true,
@@ -71,7 +71,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			"Within Date Range",
 			fmt.Sprintf(`[{
 				"ID": "simple",
-				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"Notification": "This is a [NOTICE]simple[/RESET] notification",
 				"StartDate": "%s",
 				"EndDate": "%s"
 			}]`,
@@ -84,7 +84,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			"Outside Date Range",
 			fmt.Sprintf(`[{
 				"ID": "simple",
-				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"Notification": "This is a [NOTICE]simple[/RESET] notification",
 				"StartDate": "%s",
 				"EndDate": "%s"
 			}]`,
@@ -97,7 +97,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			"Only Start Date - Inside Range",
 			fmt.Sprintf(`[{
 				"ID": "simple",
-				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"Notification": "This is a [NOTICE]simple[/RESET] notification",
 				"StartDate": "%s"
 			}]`,
 				time.Now().Add(-1*time.Hour).Format(time.RFC3339)),
@@ -108,7 +108,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			"Only End Date - Inside Range",
 			fmt.Sprintf(`[{
 				"ID": "simple",
-				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"Notification": "This is a [NOTICE]simple[/RESET] notification",
 				"EndDate": "%s"
 			}]`,
 				time.Now().Add(1*time.Hour).Format(time.RFC3339)),
@@ -119,7 +119,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			"Outside Date Range - Future",
 			fmt.Sprintf(`[{
 				"ID": "simple",
-				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"Notification": "This is a [NOTICE]simple[/RESET] notification",
 				"StartDate": "%s",
 				"EndDate": "%s"
 			}]`,
@@ -132,7 +132,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			"Outside Date Range - Past",
 			fmt.Sprintf(`[{
 				"ID": "simple",
-				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"Notification": "This is a [NOTICE]simple[/RESET] notification",
 				"StartDate": "%s",
 				"EndDate": "%s"
 			}]`,
@@ -145,7 +145,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			"Only Start Date - Outside Range",
 			fmt.Sprintf(`[{
 				"ID": "simple",
-				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"Notification": "This is a [NOTICE]simple[/RESET] notification",
 				"StartDate": "%s"
 			}]`,
 				time.Now().Add(1*time.Hour).Format(time.RFC3339)),
@@ -156,7 +156,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			"Only End Date - Outside Range",
 			fmt.Sprintf(`[{
 				"ID": "simple",
-				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"Notification": "This is a [NOTICE]simple[/RESET] notification",
 				"EndDate": "%s"
 			}]`,
 				time.Now().Add(-1*time.Hour).Format(time.RFC3339)),
@@ -169,15 +169,15 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 
-			msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "messages.json", []byte(tt.MessageJson), 0755)
+			msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "notifications.json", []byte(tt.MessageJson), 0755)
 			suite.Require().NoError(err)
 
-			cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
+			cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(constants.NotificationsOverrideEnvVarName+"="+msgFile))
 
 			if !tt.ExpectShown {
-				suite.Require().NotContains(cp.Output(), "This is a simple message", "Message should not appear when outside date range")
+				suite.Require().NotContains(cp.Output(), "This is a simple notification", "Notification should not appear when outside date range")
 			} else {
-				cp.Expect(`This is a simple message`)
+				cp.Expect(`This is a simple notification`)
 			}
 
 			cp.Expect("ActiveState CLI by ActiveState Software Inc.")
@@ -186,53 +186,53 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			// Ensure message doesn't stick around when we run another command
 			cp = ts.Spawn("--version")
 			if tt.ExpectRepeat {
-				cp.Expect(`This is a simple message`)
+				cp.Expect(`This is a simple notification`)
 			}
 			cp.ExpectExitCode(0)
 			if !tt.ExpectRepeat {
-				suite.Require().NotContains(cp.Output(), "This is a simple message", "Should not repeat as that's the default behavior")
+				suite.Require().NotContains(cp.Output(), "This is a simple notification", "Should not repeat as that's the default behavior")
 			}
 		})
 	}
 }
 
-func (suite *MsgIntegrationTestSuite) TestMessage_Basic_PlacementAfter() {
+func (suite *NotificationIntegrationTestSuite) TestNotification_Basic_PlacementAfter() {
 	suite.OnlyRunForTags(tagsuite.Messaging)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "messages.json", []byte(fmt.Sprintf(`[
+	msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "notifications.json", []byte(fmt.Sprintf(`[
 	{
 		"ID": "simple",
-		"Message": "This is a [NOTICE]simple[/RESET] message",
+		"Notification": "This is a [NOTICE]simple[/RESET] notification",
 		"Placement": "%s"
 	}
-]`, graph.MessagePlacementTypeAfterCmd)), 0755)
+]`, graph.NotificationPlacementTypeAfterCmd)), 0755)
 	suite.Require().NoError(err)
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(constants.NotificationsOverrideEnvVarName+"="+msgFile))
 	cp.Expect("ActiveState CLI by ActiveState Software Inc.")
-	cp.Expect(`This is a simple message`)
+	cp.Expect(`This is a simple notification`)
 	cp.ExpectExitCode(0)
 }
 
-func (suite *MsgIntegrationTestSuite) TestMessage_Basic_InterruptPrompt() {
+func (suite *NotificationIntegrationTestSuite) TestNotification_Basic_InterruptPrompt() {
 	suite.OnlyRunForTags(tagsuite.Messaging)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "messages.json", []byte(fmt.Sprintf(`[
+	msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "notifications.json", []byte(fmt.Sprintf(`[
 	{
 		"ID": "simple",
-		"Message": "This is a [NOTICE]simple[/RESET] message",
+		"Notification": "This is a [NOTICE]simple[/RESET] notification",
 		"Repeat": "Constantly",
 		"Interrupt": "%s"
 	}
-]`, graph.MessageInterruptTypePrompt)), 0755)
+]`, graph.NotificationInterruptTypePrompt)), 0755)
 	suite.Require().NoError(err)
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
-	cp.Expect(`This is a simple message`)
+	cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(constants.NotificationsOverrideEnvVarName+"="+msgFile))
+	cp.Expect(`This is a simple notification`)
 	cp.Expect("Press ENTER to continue")
 	time.Sleep(time.Millisecond * 100)
 	suite.Require().NotContains(cp.Output(), "ActiveState CLI by ActiveState Software Inc.")
@@ -241,34 +241,34 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic_InterruptPrompt() {
 	cp.ExpectExitCode(0)
 
 	// Test that non-interactive does not prompt
-	cp = ts.SpawnCmdWithOpts("state", e2e.OptArgs("--version", "-n"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
-	cp.Expect(`This is a simple message`)
+	cp = ts.SpawnCmdWithOpts("state", e2e.OptArgs("--version", "-n"), e2e.OptAppendEnv(constants.NotificationsOverrideEnvVarName+"="+msgFile))
+	cp.Expect(`This is a simple notification`)
 	cp.Expect("ActiveState CLI by ActiveState Software Inc.")
 	cp.ExpectExitCode(0)
 	suite.Require().NotContains(cp.Output(), "Press ENTER to continue")
 }
 
-func (suite *MsgIntegrationTestSuite) TestMessage_Basic_InterruptExit() {
+func (suite *NotificationIntegrationTestSuite) TestNotification_Basic_InterruptExit() {
 	suite.OnlyRunForTags(tagsuite.Messaging)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "messages.json", []byte(fmt.Sprintf(`[
+	msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "notifications.json", []byte(fmt.Sprintf(`[
 	{
 		"ID": "simple",
-		"Message": "This is a [NOTICE]simple[/RESET] message",
+		"Notification": "This is a [NOTICE]simple[/RESET] notification",
 		"Interrupt": "%s"
 	}
-]`, graph.MessageInterruptTypeExit)), 0755)
+]`, graph.NotificationInterruptTypeExit)), 0755)
 	suite.Require().NoError(err)
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(constants.NotificationsOverrideEnvVarName+"="+msgFile))
 	cp.ExpectExitCode(1)
-	suite.Require().Contains(cp.Snapshot(), "This is a simple message")
+	suite.Require().Contains(cp.Snapshot(), "This is a simple notification")
 	suite.Require().NotContains(cp.Output(), "ActiveState CLI by ActiveState Software Inc.")
 	ts.IgnoreLogErrors()
 }
 
-func TestMsgIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(MsgIntegrationTestSuite))
+func TestNotificationIntegrationTestSuite(t *testing.T) {
+	suite.Run(t, new(NotificationIntegrationTestSuite))
 }

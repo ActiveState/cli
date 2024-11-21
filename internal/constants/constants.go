@@ -154,8 +154,8 @@ const OptinUnstableEnvVarName = "ACTIVESTATE_OPTIN_UNSTABLE"
 // ServiceSockDir overrides the default socket path root diriectory used by the state service
 const ServiceSockDir = "ACTIVESTATE_SVC_SOCK"
 
-// MessagesOverrideEnvVarName is used to override the location of the messages file (for testing purposes - should hold local filepath)
-const MessagesOverrideEnvVarName = "ACTIVESTATE_MESSAGES_OVERRIDE"
+// NotificationsOverrideEnvVarName is used to override the location of the notifications file (for testing purposes - should hold local filepath)
+const NotificationsOverrideEnvVarName = "ACTIVESTATE_NOTIFICATIONS_OVERRIDE"
 
 // DisableErrorTipsEnvVarName disables the display of tips in error messages.
 // This should only be used by the installer so-as not to pollute error message output.
