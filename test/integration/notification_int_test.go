@@ -241,7 +241,7 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_Basic_InterruptP
 	cp.ExpectExitCode(0)
 
 	// Test that non-interactive does not prompt
-	cp = ts.SpawnCmdWithOpts("state", e2e.OptArgs("--version", "-n"), e2e.OptAppendEnv(constants.NotificationsOverrideEnvVarName+"="+msgFile))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("--version", "-n"), e2e.OptAppendEnv(constants.NotificationsOverrideEnvVarName+"="+msgFile))
 	cp.Expect(`This is a simple notification`)
 	cp.Expect("ActiveState CLI by ActiveState Software Inc.")
 	cp.ExpectExitCode(0)
