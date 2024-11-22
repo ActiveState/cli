@@ -61,7 +61,8 @@ func (i *Installer) Install() (rerr error) {
 		if i.Params.force {
 			prompter.SetForce(true)
 		}
-		confirm, err := prompter.Confirm("", locale.T("installer_prompt_is_admin"), ptr.To(false), ptr.To(true))
+		defaultChoice := i.Params.nonInteractive
+		confirm, err := prompter.Confirm("", locale.T("installer_prompt_is_admin"), &defaultChoice, ptr.To(true))
 		if err != nil {
 			return errs.Wrap(err, "Not confirmed")
 		}
