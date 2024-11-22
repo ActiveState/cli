@@ -255,7 +255,7 @@ func (p *Project) Lock() string { return p.projectfile.Lock }
 // Cache returns the cache information for this project
 func (p *Project) Cache() string { return p.projectfile.Cache }
 
-func (p *Project) IsPortable() bool { return p.projectfile.Portable && p.projectfile.Cache != "" }
+func (p *Project) IsPortable() bool { return p.projectfile.Portable }
 
 // Namespace returns project namespace
 func (p *Project) Namespace() *Namespaced {

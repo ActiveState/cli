@@ -28,7 +28,7 @@ func newCheckoutCommand(prime *primer.Values) *captain.Command {
 			},
 			{
 				Name:        "portable",
-				Description: locale.Tl("flag_state_checkout_portable_description", "Copy files to runtime-path instead of linking to them"),
+				Description: locale.Tl("flag_state_checkout_portable_description", "Copy files to their runtime path instead of linking to them"),
 				Value:       &params.Portable,
 			},
 			{
