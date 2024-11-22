@@ -47,6 +47,7 @@ type Opts struct {
 	EventHandlers        []events.HandlerFunc
 	BuildlogFilePath     string
 	BuildProgressUrl     string
+	Portable             bool
 
 	FromArchive *fromArchive
 
@@ -467,7 +468,7 @@ func (s *setup) install(id strfmt.UUID) (rerr error) {
 		return errs.Wrap(err, "Could not get env")
 	}
 
-	if envDef.NeedsTransforms() || !s.supportsHardLinks {
+	if envDef.NeedsTransforms() || !s.supportsHardLinks || s.opts.Portable {
 		if err := s.depot.DeployViaCopy(id, envDef.InstallDir, s.path); err != nil {
 			return errs.Wrap(err, "Could not deploy artifact via copy")
 		}
