@@ -177,7 +177,7 @@ func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) 
 	}
 
 	// Copy or link the artifact files, depending on whether the artifact in question relies on file transformations
-	if err := smartlink.LinkContents(absoluteSrc, absoluteDest, nil); err != nil {
+	if err := smartlink.LinkContents(absoluteSrc, absoluteDest); err != nil {
 		return errs.Wrap(err, "failed to link artifact")
 	}
 
@@ -295,7 +295,7 @@ func (d *depot) Undeploy(id strfmt.UUID, relativeSrc, path string) error {
 	for sharedFile, relinkSrc := range redeploys {
 		switch deploy.Type {
 		case deploymentTypeLink:
-			if err := smartlink.Link(relinkSrc, sharedFile, nil); err != nil {
+			if err := smartlink.Link(relinkSrc, sharedFile); err != nil {
 				return errs.Wrap(err, "failed to relink file")
 			}
 		case deploymentTypeCopy:

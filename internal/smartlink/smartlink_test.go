@@ -42,7 +42,7 @@ func TestLinkContentsWithCircularLink(t *testing.T) {
 	err = os.Symlink(subDir, circularLink)
 	require.NoError(t, err)
 
-	err = LinkContents(srcDir, destDir, nil)
+	err = LinkContents(srcDir, destDir)
 	if runtime.GOOS == "windows" {
 		require.Error(t, err)
 		return // hard links to directories are not allowed on Windows

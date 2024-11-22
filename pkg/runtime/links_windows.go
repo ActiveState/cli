@@ -43,7 +43,7 @@ func supportsHardLinks(path string) (supported bool) {
 	}
 
 	logging.Debug("Attempting to link '%s' to '%s'", lnk, target)
-	err = smartlink.Link(target, lnk, nil)
+	err = smartlink.Link(target, lnk)
 	if err != nil {
 		logging.Debug("Test link creation failed: %v", err)
 		return false
