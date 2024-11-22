@@ -106,26 +106,6 @@ func interactiveInputError(message string) error {
 // If the prompt is non-interactive, it returns defaultResponse.
 // If the prompt is forced, it returns forcedResponse if not nil, or defaultResponse.
 func (p *Prompt) InputAndValidate(title, message string, defaultResponse *string, forcedResponse *string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error) {
-	if p.isForced {
-		response := forcedResponse
-		if response == nil {
-			response = defaultResponse
-		}
-		if response != nil {
-			p.out.Notice(locale.Tr("prompt_using_force", *response))
-			return *response, nil
-		}
-		return "", ErrNoForceOption
-	}
-
-	if !p.isInteractive {
-		if defaultResponse != nil {
-			p.out.Notice(locale.Tr("prompt_using_non_interactive", *defaultResponse))
-			return *defaultResponse, nil
-		}
-		return "", interactiveInputError(message)
-	}
-
 	var response string
 	flagValidators, err := processValidators(flags)
 	if err != nil {
@@ -137,6 +117,29 @@ func (p *Prompt) InputAndValidate(title, message string, defaultResponse *string
 
 	if title != "" {
 		p.out.Notice(output.Emphasize(title))
+	}
+
+	var nonInteractiveResponse *string
+
+	if p.isForced {
+		nonInteractiveResponse = forcedResponse
+		if nonInteractiveResponse == nil {
+			nonInteractiveResponse = defaultResponse
+		}
+		if nonInteractiveResponse == nil {
+			return "", ErrNoForceOption
+		}
+	}
+
+	if !p.isInteractive {
+		nonInteractiveResponse = defaultResponse
+		if nonInteractiveResponse == nil {
+			return "", interactiveInputError(message)
+		}
+	}
+
+	if p.out.Type().IsStructured() {
+		return *nonInteractiveResponse, nil
 	}
 
 	// We handle defaults more clearly than the survey package can
@@ -153,9 +156,16 @@ func (p *Prompt) InputAndValidate(title, message string, defaultResponse *string
 
 	err = survey.AskOne(&Input{&survey.Input{
 		Message: formatMessage(message, !p.out.Config().Colored),
-	}}, &response, validator)
+	}, nonInteractiveResponse}, &response, validator)
 	if err != nil {
 		return "", locale.NewInputError(err.Error())
+	}
+
+	switch {
+	case p.isForced:
+		p.out.Notice(locale.Tr("prompt_using_force", response))
+	case !p.isInteractive:
+		p.out.Notice(locale.Tr("prompt_using_non_interactive", response))
 	}
 
 	return response, nil
@@ -165,26 +175,6 @@ func (p *Prompt) InputAndValidate(title, message string, defaultResponse *string
 // If the prompt is non-interactive, it returns defaultChoice.
 // If the prompt is forced, it returns forcedChoice if not nil, or defaultChoice.
 func (p *Prompt) Select(title, message string, choices []string, defaultChoice *string, forcedChoice *string) (string, error) {
-	if p.isForced {
-		choice := forcedChoice
-		if choice == nil {
-			choice = defaultChoice
-		}
-		if choice != nil {
-			p.out.Notice(locale.Tr("prompt_using_force", *choice))
-			return *choice, nil
-		}
-		return "", ErrNoForceOption
-	}
-
-	if !p.isInteractive {
-		if defaultChoice != nil {
-			p.out.Notice(locale.Tr("prompt_using_non_interactive", *defaultChoice))
-			return *defaultChoice, nil
-		}
-		return "", interactiveInputError(message)
-	}
-
 	if title != "" {
 		p.out.Notice(output.Emphasize(title))
 	}
@@ -194,16 +184,47 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice *
 		defChoice = *defaultChoice
 	}
 
+	var nonInteractiveChoice *string
+
+	if p.isForced {
+		nonInteractiveChoice = forcedChoice
+		if nonInteractiveChoice == nil {
+			nonInteractiveChoice = defaultChoice
+		}
+		if nonInteractiveChoice == nil {
+			return "", ErrNoForceOption
+		}
+	}
+
+	if !p.isInteractive {
+		nonInteractiveChoice = defaultChoice
+		if nonInteractiveChoice == nil {
+			return "", interactiveInputError(message)
+		}
+	}
+
+	if p.out.Type().IsStructured() {
+		return *nonInteractiveChoice, nil
+	}
+
 	var response string
 	err := survey.AskOne(&Select{&survey.Select{
 		Message:  formatMessage(message, !p.out.Config().Colored),
 		Options:  choices,
 		Default:  defChoice,
 		FilterFn: func(input string, choices []string) []string { return choices }, // no filter
-	}}, &response, nil)
+	}, nonInteractiveChoice}, &response, nil)
 	if err != nil {
 		return "", locale.NewInputError(err.Error())
 	}
+
+	switch {
+	case p.isForced:
+		p.out.Notice(locale.Tr("prompt_using_force", response))
+	case !p.isInteractive:
+		p.out.Notice(locale.Tr("prompt_using_non_interactive", response))
+	}
+
 	return response, nil
 }
 
@@ -211,44 +232,45 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice *
 // If the prompt is non-interactive, it returns defaultChoice.
 // If the prompt is forced, it returns forcedChoice if not nil, or defaultChoice.
 func (p *Prompt) Confirm(title, message string, defaultChoice *bool, forcedChoice *bool) (bool, error) {
-	if p.isForced {
-		choice := forcedChoice
-		if choice == nil {
-			choice = defaultChoice
-		}
-		if choice != nil {
-			p.out.Notice(locale.T("prompt_continue_force"))
-			return *choice, nil
-		}
-		return false, ErrNoForceOption
-	}
+	p.analytics.EventWithLabel(constants.CatPrompt, title, "present")
 
-	if !p.isInteractive {
-		if defaultChoice != nil {
-			if *defaultChoice {
-				p.out.Notice(locale.T("prompt_continue_non_interactive"))
-				return true, nil
-			}
-			return false, locale.NewInputError("prompt_abort_non_interactive")
-		}
-		return false, interactiveInputError(message)
-	}
 	if title != "" {
 		p.out.Notice(output.Emphasize(title))
 	}
-
-	p.analytics.EventWithLabel(constants.CatPrompt, title, "present")
 
 	var defChoice bool
 	if defaultChoice != nil {
 		defChoice = *defaultChoice
 	}
 
+	var nonInteractiveChoice *bool
+
+	if p.isForced {
+		nonInteractiveChoice = forcedChoice
+		if nonInteractiveChoice == nil {
+			nonInteractiveChoice = defaultChoice
+		}
+		if nonInteractiveChoice == nil {
+			return false, ErrNoForceOption
+		}
+	}
+
+	if !p.isInteractive {
+		nonInteractiveChoice = defaultChoice
+		if nonInteractiveChoice == nil {
+			return false, interactiveInputError(message)
+		}
+	}
+
+	if p.out.Type().IsStructured() {
+		return *nonInteractiveChoice, nil
+	}
+
 	var resp bool
 	err := survey.AskOne(&Confirm{&survey.Confirm{
 		Message: formatMessage(strings.TrimSuffix(message, "\n"), !p.out.Config().Colored),
 		Default: defChoice,
-	}}, &resp, nil)
+	}, nonInteractiveChoice}, &resp, nil)
 	if err != nil {
 		if err == terminal.InterruptErr {
 			p.analytics.EventWithLabel(constants.CatPrompt, title, "interrupt")
@@ -256,6 +278,15 @@ func (p *Prompt) Confirm(title, message string, defaultChoice *bool, forcedChoic
 		return false, locale.NewInputError(err.Error())
 	}
 	p.analytics.EventWithLabel(constants.CatPrompt, title, translateConfirm(resp))
+
+	switch {
+	case p.isForced:
+		p.out.Notice(locale.T("prompt_continue_force"))
+	case !p.isInteractive && resp:
+		p.out.Notice(locale.T("prompt_continue_non_interactive"))
+	case !p.isInteractive && !resp:
+		return false, locale.NewInputError("prompt_abort_non_interactive")
+	}
 
 	return resp, nil
 }
