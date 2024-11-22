@@ -24,17 +24,6 @@ func LinkContents(src, dest string, visited map[string]bool) error {
 		return errs.Wrap(err, "Could not resolve src and dest paths")
 	}
 
-	if visited == nil {
-		visited = make(map[string]bool)
-	}
-	if _, exists := visited[src]; exists {
-		// We've encountered a recursive link. This is most often the case when the resolved src has
-		// already been visited. In that case, just link the dest to the src (which may be a directory;
-		// this is fine).
-		return linkFile(src, dest)
-	}
-	visited[src] = true
-
 	entries, err := os.ReadDir(src)
 	if err != nil {
 		return errs.Wrap(err, "Reading dir %s failed", src)
@@ -51,6 +40,8 @@ func LinkContents(src, dest string, visited map[string]bool) error {
 // Link creates a link from src to target. MS decided to support Symlinks but only if you opt into developer mode (go figure),
 // which we cannot reasonably force on our users. So on Windows we will instead create dirs and hardlinks.
 func Link(src, dest string, visited map[string]bool) error {
+	srcWasSymlink := isSymlink(src)
+
 	var err error
 	src, dest, err = resolvePaths(src, dest)
 	if err != nil {
@@ -60,7 +51,7 @@ func Link(src, dest string, visited map[string]bool) error {
 	if visited == nil {
 		visited = make(map[string]bool)
 	}
-	if _, exists := visited[src]; exists {
+	if _, exists := visited[src]; exists && srcWasSymlink {
 		// We've encountered a recursive link. This is most often the case when the resolved src has
 		// already been visited. In that case, just link the dest to the src (which may be a directory;
 		// this is fine).
@@ -151,6 +142,11 @@ func UnlinkContents(src, dest string) error {
 	}
 
 	return nil
+}
+
+func isSymlink(src string) bool {
+	target, err := fileutils.SymlinkTarget(src)
+	return err == nil && src != target
 }
 
 // resolvePaths will resolve src and dest to absolute paths and return them.
