@@ -3,6 +3,7 @@ package resolver
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"runtime/debug"
 	"sort"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/graphqltypes"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/hash"
+	"github.com/ActiveState/cli/cmd/state-svc/internal/messages"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/notifications"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/rtwatcher"
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
@@ -35,7 +37,8 @@ import (
 
 type Resolver struct {
 	cfg            *config.Instance
-	messages       *notifications.Notifications
+	notifications  *notifications.Notifications
+	messages       *messages.Queue
 	updatePoller   *poller.Poller
 	authPoller     *poller.Poller
 	projectIDCache *projectcache.ID
@@ -50,9 +53,20 @@ type Resolver struct {
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
 func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Resolver, error) {
-	msg, err := notifications.New(cfg, auth)
+	notif, err := notifications.New(cfg, auth)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not initialize messages")
+	}
+
+	msg := messages.NewQueue()
+	// TODO: Check error and publish message
+	if err := auth.Sync(); err != nil {
+		if errors.Is(err, &authentication.ErrInvalidToken{}) {
+			// TODO: Add common message and topics to state tool internal libraries?
+			msg.Queue("error.auth", "Invalid API token")
+		} else {
+			logging.Warning("Could not sync authenticated state: %s", err.Error())
+		}
 	}
 
 	upchecker := updater.NewDefaultChecker(cfg, an)
@@ -88,6 +102,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 	anForClient := sync.New(anaConsts.SrcStateTool, cfg, auth, nil)
 	return &Resolver{
 		cfg,
+		notif,
 		msg,
 		pollUpdate,
 		pollAuth,
@@ -102,7 +117,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 }
 
 func (r *Resolver) Close() error {
-	r.messages.Close()
+	r.notifications.Close()
 	r.updatePoller.Close()
 	r.authPoller.Close()
 	r.anForClient.Close()
@@ -250,7 +265,28 @@ func (r *Resolver) ReportRuntimeUsage(_ context.Context, pid int, exec, source s
 func (r *Resolver) CheckNotifications(ctx context.Context, command string, flags []string) ([]*graph.NotificationInfo, error) {
 	defer func() { panics.LogAndPanic(recover(), debug.Stack()) }()
 	logging.Debug("Check notifications resolver")
-	return r.messages.Check(command, flags)
+	return r.notifications.Check(command, flags)
+}
+
+func (r *Resolver) CheckMessages(ctx context.Context) ([]*graph.Message, error) {
+	logging.Debug("Check messages resolver")
+	var messages []*graph.Message
+	var err error
+
+	defer func() {
+		var sentMessageIDs []string
+		for _, msg := range messages {
+			sentMessageIDs = append(sentMessageIDs, msg.ID)
+		}
+		r.messages.Dequeue(sentMessageIDs)
+		panics.LogAndPanic(recover(), debug.Stack())
+	}()
+
+	messages, err = r.messages.Messages()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get messages")
+	}
+	return messages, nil
 }
 
 func (r *Resolver) ConfigChanged(ctx context.Context, key string) (*graph.ConfigChangedResponse, error) {
