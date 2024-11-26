@@ -132,6 +132,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth_InvalidToken() {
 	cp.ExpectExitCode(0)
 	cp.Expect("ActiveState CLI")
 	cp.Expect("Version")
+	ts.IgnoreLogErrors()
 }
 
 func TestAuthIntegrationTestSuite(t *testing.T) {
