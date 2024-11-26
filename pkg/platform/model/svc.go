@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/graph"
-	"github.com/ActiveState/cli/internal/graphql"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
@@ -31,7 +30,7 @@ func NewSvcModel(port string) *SvcModel {
 	localURL := "http://127.0.0.1" + port + "/query"
 
 	return &SvcModel{
-		client: gqlclient.NewWithOpts(localURL, 0, graphql.WithHTTPClient(&http.Client{})),
+		client: gqlclient.NewWithOpts(localURL, 0, gqlclient.WithHTTPClient(&http.Client{})),
 	}
 }
 

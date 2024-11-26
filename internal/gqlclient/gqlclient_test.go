@@ -1,4 +1,4 @@
-package graphql
+package gqlclient
 
 import (
 	"context"
@@ -25,7 +25,7 @@ func TestClient_SingleField(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL)
+	client := newClient(server.URL)
 
 	tests := []struct {
 		name  string
@@ -104,10 +104,10 @@ func TestClient_SingleField(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := NewRequest(tt.query)
+			req := NewTestRequest(tt.query)
 
 			var resp interface{}
-			err := client.Run(context.Background(), req, &resp)
+			err := client.RunWithContext(context.Background(), req, &resp)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -145,7 +145,7 @@ func TestClient_MultipleFields(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL)
+	client := newClient(server.URL)
 
 	tests := []struct {
 		name  string
@@ -179,10 +179,10 @@ func TestClient_MultipleFields(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := NewRequest(tt.query)
+			req := NewTestRequest(tt.query)
 
 			var resp interface{}
-			err := client.Run(context.Background(), req, &resp)
+			err := client.RunWithContext(context.Background(), req, &resp)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}

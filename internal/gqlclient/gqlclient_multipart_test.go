@@ -1,4 +1,4 @@
-package graphql
+package gqlclient
 
 import (
 	"context"
@@ -27,10 +27,9 @@ func TestWithClient(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	client := NewClient("", WithHTTPClient(testClient), UseMultipartForm())
+	client := newClient("", WithHTTPClient(testClient), UseMultipartForm())
 
-	req := NewRequest(``)
-	client.Run(ctx, req, nil)
+	client.RunWithContext(ctx, NewTestRequest("query {}"), nil)
 
 	is.Equal(calls, 1) // calls
 }
@@ -54,12 +53,12 @@ func TestDoUseMultipartForm(t *testing.T) {
 	defer srv.Close()
 
 	ctx := context.Background()
-	client := NewClient(srv.URL, UseMultipartForm())
+	client := newClient(srv.URL, UseMultipartForm())
 
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 	var responseData map[string]interface{}
-	err := client.Run(ctx, &Request{q: "query {}"}, &responseData)
+	err := client.RunWithContext(ctx, NewTestRequest("query {}"), &responseData)
 	is.NoErr(err)
 	is.Equal(calls, 1) // calls
 	is.Equal(responseData["something"], "yes")
@@ -82,12 +81,12 @@ func TestDoErr(t *testing.T) {
 	defer srv.Close()
 
 	ctx := context.Background()
-	client := NewClient(srv.URL, UseMultipartForm())
+	client := newClient(srv.URL, UseMultipartForm())
 
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 	var responseData map[string]interface{}
-	err := client.Run(ctx, &Request{q: "query {}"}, &responseData)
+	err := client.RunWithContext(ctx, NewTestRequest("query {}"), &responseData)
 	is.True(err != nil)
 	is.Equal(err.Error(), "graphql: Something went wrong")
 }
@@ -109,11 +108,11 @@ func TestDoNoResponse(t *testing.T) {
 	defer srv.Close()
 
 	ctx := context.Background()
-	client := NewClient(srv.URL, UseMultipartForm())
+	client := newClient(srv.URL, UseMultipartForm())
 
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
-	err := client.Run(ctx, &Request{q: "query {}"}, nil)
+	err := client.RunWithContext(ctx, NewTestRequest("query {}"), nil)
 	is.NoErr(err)
 	is.Equal(calls, 1) // calls
 }
@@ -134,10 +133,10 @@ func TestQuery(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	client := NewClient(srv.URL, UseMultipartForm())
+	client := newClient(srv.URL, UseMultipartForm())
 
-	req := NewRequest("query {}")
-	req.Var("username", "matryer")
+	req := NewTestRequest("query {}")
+	req.vars["username"] = "matryer"
 
 	// check variables
 	is.True(req != nil)
@@ -146,7 +145,7 @@ func TestQuery(t *testing.T) {
 	var resp struct {
 		Value string
 	}
-	err := client.Run(ctx, req, &resp)
+	err := client.RunWithContext(ctx, req, &resp)
 	is.NoErr(err)
 	is.Equal(calls, 1)
 
@@ -160,7 +159,7 @@ func TestFile(t *testing.T) {
 	var calls int
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		calls++
-		file, header, err := r.FormFile("file")
+		file, header, err := r.FormFile("0")
 		is.NoErr(err)
 		defer file.Close()
 		is.Equal(header.Filename, "filename.txt")
@@ -175,11 +174,12 @@ func TestFile(t *testing.T) {
 	defer srv.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
-	client := NewClient(srv.URL, UseMultipartForm())
+	client := newClient(srv.URL, UseMultipartForm())
 	f := strings.NewReader(`This is a file`)
-	req := NewRequest("query {}")
-	req.File("file", "filename.txt", f)
-	err := client.Run(ctx, req, nil)
+	req := NewTestRequestWithFiles("query {}")
+	req.files = append(req.files, File{Field: "file", Name: "filename.txt", R: f})
+	var resp string
+	err := client.RunWithContext(ctx, req, &resp)
 	is.NoErr(err)
 }
 
