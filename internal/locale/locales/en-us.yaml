@@ -1580,3 +1580,7 @@ config_set_help:
   other: "To SET the value for a specific config key run '[ACTIONABLE]state config set <key> <value>[/RESET]'"
 err_clean_in_use:
   other: "Could not clean your cache as you appear to have a runtime in use. Please stop any running State Tool processes and project runtime processes and try again."
+err_svc_invalid_token:
+  other: |
+    The State Service reported an invalid API token error: {{.V0}}
+    Please check your API token and try again.

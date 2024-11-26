@@ -3,6 +3,7 @@ package messages
 import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 type Queue struct {
@@ -20,6 +21,7 @@ func (q *Queue) Queue(topic string, message string) error {
 		q.queue[topic] = make(map[string]*graph.Message)
 	}
 	msg := NewMessage(topic, message)
+	logging.Debug("Queued message: %s, %s", msg.ID, msg.Message)
 	q.queue[topic][msg.ID] = msg
 	return nil
 }
@@ -54,9 +56,5 @@ func (q *Queue) dequeueMessages(messageID string) error {
 			return nil
 		}
 	}
-	return nil
-}
-
-func (q *Queue) Close() error {
 	return nil
 }

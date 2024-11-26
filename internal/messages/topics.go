@@ -1,5 +1,8 @@
 package messages
 
 const (
-	TopicErrorAuth = "error.auth"
+	TopicError          = "error"
+	TopicInfo           = "info"
+	TopicErrorAuth      = "error.auth"
+	TopicErrorAuthToken = "error.auth.token"
 )

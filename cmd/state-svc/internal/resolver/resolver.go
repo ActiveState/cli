@@ -26,6 +26,7 @@ import (
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
+	msgs "github.com/ActiveState/cli/internal/messages"
 	"github.com/ActiveState/cli/internal/poller"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/panics"
@@ -59,16 +60,6 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 	}
 
 	msg := messages.NewQueue()
-	// TODO: Check error and publish message
-	if err := auth.Sync(); err != nil {
-		if errors.Is(err, &authentication.ErrInvalidToken{}) {
-			// TODO: Add common message and topics to state tool internal libraries?
-			msg.Queue("error.auth", "Invalid API token")
-		} else {
-			logging.Warning("Could not sync authenticated state: %s", err.Error())
-		}
-	}
-
 	upchecker := updater.NewDefaultChecker(cfg, an)
 	pollUpdate := poller.New(1*time.Hour, func() (interface{}, error) {
 		defer func() {
@@ -88,11 +79,23 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 	}
 
 	pollAuth := poller.New(time.Duration(int64(time.Millisecond)*pollRate), func() (interface{}, error) {
+		logging.Debug("Polling for authenticated state")
 		defer func() {
 			panics.LogAndPanic(recover(), debug.Stack())
 		}()
 		if auth.SyncRequired() {
-			return nil, auth.Sync()
+			logging.Debug("Sync required")
+			if err := auth.Sync(); err != nil {
+				logging.Debug("Syncing authenticated state: %s", err.Error())
+				var invalidTokenErr *authentication.ErrInvalidToken
+				if errors.As(err, &invalidTokenErr) {
+					logging.Debug("Queuing invalid API token error")
+					msg.Queue(msgs.TopicErrorAuthToken, "Invalid API token")
+				} else {
+					logging.Warning("Could not sync authenticated state: %s", err.Error())
+				}
+			}
+			return nil, nil
 		}
 		return nil, nil
 	})
@@ -278,7 +281,9 @@ func (r *Resolver) CheckMessages(ctx context.Context) ([]*graph.Message, error) 
 		for _, msg := range messages {
 			sentMessageIDs = append(sentMessageIDs, msg.ID)
 		}
-		r.messages.Dequeue(sentMessageIDs)
+		if err := r.messages.Dequeue(sentMessageIDs); err != nil {
+			logging.Error("Could not dequeue messages: %s", errs.JoinMessage(err))
+		}
 		panics.LogAndPanic(recover(), debug.Stack())
 	}()
 
