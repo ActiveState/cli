@@ -75,7 +75,7 @@ Project: %s
 Time: "2024-10-30T21:31:33.000Z"
 %s
 wheel = make_wheel(
-	at_time = at_time,
+	at_time = TIME,
 	src = tag(
 		plan = ingredient(
 			build_deps = [
@@ -111,7 +111,7 @@ main = wheel
 	// already exists with the given hash.
 	cp = ts.Spawn("commit")
 	cp.Expect("no new changes")
-	cp.ExpectExit()
+	cp.ExpectExitCode(0)
 
 	// Commit should've given us the hash
 	suite.Contains(string(fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName))), "hash_readonly")
