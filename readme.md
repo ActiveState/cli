@@ -42,10 +42,12 @@ First run `state run install-deps-dev` followed by `state run preprocess` if you
   * If you modified assets or switched branches, you need to re-run `state run preprocess` first
 * **Testing:**
   * **Unit tests\*:** `state run test`
-  * **Integration tests:** `state run integration-tests`
+  * **Integration tests\*\*:** `state run build-svc && state run build-exec && state run integration-tests`
 
 <sup>
 * Our unit tests are in a state of slowly being converted to standalone
  integration tests, meaning that while we refer to them as unit tests
  they still contain a lot of tests that are better described as integration tests.
+ 
+** Our integration tests rely on the secrets feature, which is (as of writing) not ready for production use. You must enable it with `state config set optin.unstable true` and authenticate with `state auth --prompt`.
 </sup>
