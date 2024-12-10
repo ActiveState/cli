@@ -35,7 +35,7 @@ For usage information please refer to the [State Tool Documentation](http://docs
 
 ### Building & Testing
 
-First run `state run install-deps` followed by `state run preprocess` if you are building for the first time.
+First run `state run install-deps-dev` followed by `state run preprocess` if you are building for the first time.
 
 * **Building:** `state run build`
   * The built executable will be stored in the `build` directory
