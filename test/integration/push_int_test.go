@@ -109,6 +109,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 
 // Test pushing without permission, and choosing to create a new project
 func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
+	suite.T().Skip("Cannot create new unprivileged users") // DX-3190
 	if runtime.GOOS == "windows" {
 		suite.T().Skip("Skipped on Windows for now because SendKeyDown() doesnt work (regardless of bash/cmd)")
 	}
