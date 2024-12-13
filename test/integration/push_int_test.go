@@ -116,7 +116,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	suite.OnlyRunForTags(tagsuite.Push)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	user := ts.CreateNewUser()
+	ts.LoginAsPersistentUser()
 	pname := strutils.UUID()
 
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
@@ -155,12 +155,11 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	cp.SendLine(pname.String())
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
-	// Note: no need for ts.NotifyProjectCreated because newly created users and their projects are
-	// auto-cleaned by e2e.
+	ts.NotifyProjectCreated(e2e.PersistentUsername, pname.String())
 
 	pjfile, err = projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	suite.Require().Contains(pjfile.Project, user.Username)
+	suite.Require().Contains(pjfile.Project, e2e.PersistentUsername)
 	suite.Require().Contains(pjfile.Project, pname.String())
 }
 
