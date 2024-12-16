@@ -129,9 +129,7 @@ func (p *Prompt) InputAndValidate(title, message string, defaultResponse *string
 		if nonInteractiveResponse == nil {
 			return "", ErrNoForceOption
 		}
-	}
-
-	if !p.isInteractive {
+	} else if !p.isInteractive {
 		nonInteractiveResponse = defaultResponse
 		if nonInteractiveResponse == nil {
 			return "", interactiveInputError(message)
@@ -194,9 +192,7 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice *
 		if nonInteractiveChoice == nil {
 			return "", ErrNoForceOption
 		}
-	}
-
-	if !p.isInteractive {
+	} else if !p.isInteractive {
 		nonInteractiveChoice = defaultChoice
 		if nonInteractiveChoice == nil {
 			return "", interactiveInputError(message)
@@ -253,9 +249,7 @@ func (p *Prompt) Confirm(title, message string, defaultChoice *bool, forcedChoic
 		if nonInteractiveChoice == nil {
 			return false, ErrNoForceOption
 		}
-	}
-
-	if !p.isInteractive {
+	} else if !p.isInteractive {
 		nonInteractiveChoice = defaultChoice
 		if nonInteractiveChoice == nil {
 			return false, interactiveInputError(message)
