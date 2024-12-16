@@ -48,6 +48,9 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 
 	// Assert output
 	cp.Expect("Installing State Tool")
+	if runtime.GOOS == "windows" {
+		cp.Expect("Continuing because State Tool is running in non-interactive mode") // admin prompt
+	}
 	cp.Expect("Done")
 	cp.Expect("successfully installed")
 	suite.NotContains(cp.Output(), "Downloading State Tool")

@@ -114,6 +114,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 			cp := ts.SpawnCmdWithOpts(cmd, opts...)
 			cp.Expect("Preparing Installer for State Tool Package Manager")
+			if runtime.GOOS == "windows" {
+				cp.Expect("Continuing because the '--force' flag is set") // admin prompt
+			}
 			cp.Expect("Installation Complete", e2e.RuntimeSourcingTimeoutOpt)
 
 			if tt.Activate != "" || tt.ActivateByCommand != "" {
