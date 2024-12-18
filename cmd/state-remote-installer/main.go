@@ -173,9 +173,13 @@ func main() {
 }
 
 func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
+	if params.nonInteractive {
+		prompt.SetInteractive(false)
+	}
+	defaultChoice := params.nonInteractive
 	msg := locale.Tr("tos_disclaimer", constants.TermsOfServiceURLLatest)
 	msg += locale.Tr("tos_disclaimer_prompt", constants.TermsOfServiceURLLatest)
-	cont, err := prompt.Confirm(locale.Tr("install_remote_title"), msg, ptr.To(true), nil)
+	cont, err := prompt.Confirm(locale.Tr("install_remote_title"), msg, &defaultChoice, nil)
 	if err != nil {
 		return errs.Wrap(err, "Not confirmed")
 	}
