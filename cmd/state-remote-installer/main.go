@@ -29,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/updater"
+	"golang.org/x/term"
 )
 
 type Params struct {
@@ -90,7 +91,7 @@ func main() {
 		OutWriter:   os.Stdout,
 		ErrWriter:   os.Stderr,
 		Colored:     true,
-		Interactive: false,
+		Interactive: term.IsTerminal(int(os.Stdin.Fd())),
 	})
 	if err != nil {
 		logging.Error("Could not set up output handler: " + errs.JoinMessage(err))
