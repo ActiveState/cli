@@ -29,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/updater"
+	"golang.org/x/term"
 )
 
 type Params struct {
@@ -90,7 +91,7 @@ func main() {
 		OutWriter:   os.Stdout,
 		ErrWriter:   os.Stderr,
 		Colored:     true,
-		Interactive: false,
+		Interactive: term.IsTerminal(int(os.Stdin.Fd())),
 	})
 	if err != nil {
 		logging.Error("Could not set up output handler: " + errs.JoinMessage(err))
@@ -172,9 +173,13 @@ func main() {
 }
 
 func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
+	if params.nonInteractive {
+		prompt.SetInteractive(false)
+	}
+	defaultChoice := params.nonInteractive
 	msg := locale.Tr("tos_disclaimer", constants.TermsOfServiceURLLatest)
 	msg += locale.Tr("tos_disclaimer_prompt", constants.TermsOfServiceURLLatest)
-	cont, err := prompt.Confirm(locale.Tr("install_remote_title"), msg, ptr.To(true), nil)
+	cont, err := prompt.Confirm(locale.Tr("install_remote_title"), msg, &defaultChoice, nil)
 	if err != nil {
 		return errs.Wrap(err, "Not confirmed")
 	}
