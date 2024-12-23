@@ -58,7 +58,7 @@ require (
 	github.com/vbauerster/mpb/v7 v7.1.5
 	github.com/vektah/gqlparser/v2 v2.5.16
 	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/net v0.29.0
+	golang.org/x/net v0.33.0
 	golang.org/x/sys v0.28.0
 	golang.org/x/term v0.27.0
 	golang.org/x/text v0.21.0
