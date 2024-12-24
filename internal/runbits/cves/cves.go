@@ -77,8 +77,7 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 		}
 	}
 
-	names := changedRequirements(oldBuildPlan, newBuildPlan)
-	pg := output.StartSpinner(c.prime.Output(), locale.Tr("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
+	pg := output.StartSpinner(c.prime.Output(), locale.T("progress_cve_search"), constants.TerminalAnimationInterval)
 
 	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(c.prime.Auth(), ingredients)
 	if err != nil {
@@ -96,6 +95,7 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 	pg.Stop(locale.T("progress_unsafe"))
 	pg = nil
 
+	names := changedRequirements(oldBuildPlan, newBuildPlan)
 	vulnerabilities := model.CombineVulnerabilities(ingredientVulnerabilities, names...)
 
 	if c.prime.Prompt() == nil || !c.shouldPromptForSecurity(vulnerabilities) {
