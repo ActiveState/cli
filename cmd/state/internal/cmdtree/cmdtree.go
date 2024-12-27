@@ -295,7 +295,12 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 				Shorthand:   "o",
 				Description: locale.T("flag_state_output_description"),
 				Persist:     true,
-				Value:       &globals.Output,
+				OnUse: func() {
+					if prime.Output().Type().IsStructured() {
+						globals.NonInteractive = true
+					}
+				},
+				Value: &globals.Output,
 			},
 			{
 				Name:        "non-interactive", // Name and Shorthand should be kept in sync with cmd/state/output.go
