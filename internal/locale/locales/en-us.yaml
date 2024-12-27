@@ -610,6 +610,8 @@ err_language_updated:
   other: Failed to update language
 bundle_err_cannot_fetch_checkpoint:
   other: Cannot fetch checkpoint for bundle listing
+package_err_cannot_fetch_checkpoint:
+  other: Cannot fetch checkpoint for package listing
 package_err_cannot_obtain_commit:
   other: Cannot obtain commit for package listing
 bundle_err_cannot_obtain_commit:
