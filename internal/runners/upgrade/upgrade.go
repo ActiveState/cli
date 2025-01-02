@@ -283,9 +283,9 @@ func (u *Upgrade) renderUserFacing(changes []structuredChange, expand bool) erro
 	out.Print(tbl.Render())
 
 	out.Notice(" ") // Empty line (prompts use Notice)
-	confirm, err := u.prime.Prompt().Confirm("", locale.Tr("upgrade_confirm"), ptr.To(true))
+	confirm, err := u.prime.Prompt().Confirm("", locale.Tr("upgrade_confirm"), ptr.To(true), nil)
 	if err != nil {
-		return errs.Wrap(err, "confirmation failed")
+		return errs.Wrap(err, "Not confirmed")
 	}
 	if !confirm {
 		return ErrAbort

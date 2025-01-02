@@ -203,6 +203,7 @@ func (suite *UpdateIntegrationTestSuite) TestLockUnlock() {
 		e2e.OptArgs("update", "unlock", "-n"),
 		e2e.OptAppendEnv(suite.env(false, false)...),
 	)
+	cp.Expect("Continuing because State Tool is running in non-interactive mode")
 	cp.Expect("unlocked")
 
 	data, err = os.ReadFile(pjfile.Path())

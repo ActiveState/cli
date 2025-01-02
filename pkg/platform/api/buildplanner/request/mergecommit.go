@@ -21,52 +21,41 @@ type mergeCommit struct {
 func (b *mergeCommit) Query() string {
 	return `
 mutation ($organization: String!, $project: String!, $targetRef: String!, $otherRef: String!, $strategy: MergeStrategy) {
-  mergeCommit(input:{organization:$organization, project:$project, targetVcsRef:$targetRef, otherVcsRef:$otherRef, strategy:$strategy}) {
-		... on MergedCommit {
-			commit {
-				__typename
-				commitId
-			}
-		}
-    ... on MergeConflict {
+  mergeCommit(
+    input: {organization: $organization, project: $project, targetVcsRef: $targetRef, otherVcsRef: $otherRef, strategy: $strategy}
+  ) {
+    ... on MergedCommit {
+      commit {
+        __typename
+        commitId
+      }
+    }
+    ... on Error {
       __typename
       message
     }
-    ... on FastForwardError {
+    ... on ErrorWithSubErrors {
       __typename
-      message
-    }
-    ... on NoCommonBaseFound {
-      __typename
-      message
-    }
-    ... on NotFound {
-      __typename
-      message
-      mayNeedAuthentication
-    }
-    ... on ParseError {
-      __typename
-      message
-    }
-    ... on ValidationError {
-      __typename
-      message
-    }
-    ... on Forbidden {
-      __typename
-      message
-    }
-    ... on HeadOnBranchMoved {
-      __typename
-      message
-      commitId
-      branchId
-    }
-    ... on NoChangeSinceLastCommit {
-      __typename
-      message
-      commitId
+      subErrors {
+        __typename
+        ... on GenericSolveError {
+          message
+          isTransient
+          validationErrors {
+            error
+            jsonPath
+          }
+        }
+        ... on RemediableSolveError {
+          message
+          isTransient
+          errorType
+          validationErrors {
+            error
+            jsonPath
+          }
+        }
+      }
     }
   }
 }

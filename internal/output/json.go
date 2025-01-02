@@ -2,8 +2,11 @@ package output
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"runtime"
+	"syscall"
 
 	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/locale"
@@ -63,7 +66,11 @@ func (f *JSON) Fprint(writer io.Writer, value interface{}) {
 
 	_, err := writer.Write(b)
 	if err != nil {
-		multilog.Error("Could not write json output, error: %v", err)
+		if isPipeClosedError(err) {
+			logging.Error("Could not write json output, error: %v", err) // do not log to rollbar
+		} else {
+			multilog.Error("Could not write json output, error: %v", err)
+		}
 	}
 }
 
@@ -92,8 +99,22 @@ func (f *JSON) Error(value interface{}) {
 
 	_, err = f.cfg.OutWriter.Write(b)
 	if err != nil {
-		multilog.Error("Could not write json output, error: %v", err)
+		if isPipeClosedError(err) {
+			logging.Error("Could not write json output, error: %v", err) // do not log to rollbar
+		} else {
+			multilog.Error("Could not write json output, error: %v", err)
+		}
 	}
+}
+
+func isPipeClosedError(err error) bool {
+	pipeErr := errors.Is(err, syscall.EPIPE)
+	if runtime.GOOS == "windows" && errors.Is(err, syscall.Errno(232)) {
+		// Note: 232 is Windows error code ERROR_NO_DATA, "The pipe is being closed".
+		// See https://go.dev/src/os/pipe_test.go
+		pipeErr = true
+	}
+	return pipeErr
 }
 
 // Notice is ignored by JSON, as they are considered as non-critical output and there's currently no reliable way to

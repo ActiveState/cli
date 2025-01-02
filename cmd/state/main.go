@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
-	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/exechandlers/messenger"
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/exechandlers/notifier"
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
@@ -110,9 +110,8 @@ func main() {
 	// Set up our legacy outputer
 	setPrinterColors(outFlags)
 
-	isInteractive := strings.ToLower(os.Getenv(constants.NonInteractiveEnvVarName)) != "true" && out.Config().Interactive
 	// Run our main command logic, which is logic that defers to the error handling logic below
-	err = run(os.Args, isInteractive, cfg, out)
+	err = run(os.Args, cfg, out)
 	if err != nil {
 		exitCode, err = runbits_errors.ParseUserFacing(err)
 		if err != nil {
@@ -121,7 +120,7 @@ func main() {
 	}
 }
 
-func run(args []string, isInteractive bool, cfg *config.Instance, out output.Outputer) (rerr error) {
+func run(args []string, cfg *config.Instance, out output.Outputer) (rerr error) {
 	defer profile.Measure("main:run", time.Now())
 
 	// Set up profiling
@@ -224,7 +223,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	}()
 
 	// Set up prompter
-	prompter := prompt.New(isInteractive, an)
+	prompter := prompt.New(out, an)
 
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)
@@ -247,9 +246,9 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		logging.Debug("Could not find child command, error: %v", err)
 	}
 
-	msger := messenger.New(out, svcmodel)
-	cmds.OnExecStart(msger.OnExecStart)
-	cmds.OnExecStop(msger.OnExecStop)
+	notifier := notifier.New(out, svcmodel)
+	cmds.OnExecStart(notifier.OnExecStart)
+	cmds.OnExecStop(notifier.OnExecStop)
 
 	// Auto update to latest state tool version if possible.
 	if updated, err := autoUpdate(svcmodel, args, childCmd, cfg, an, out); err == nil && updated {

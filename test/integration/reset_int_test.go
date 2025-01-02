@@ -51,7 +51,7 @@ func (suite *ResetIntegrationTestSuite) TestReset() {
 
 	cp = ts.Spawn("reset")
 	cp.Expect("You are already on the latest commit")
-	cp.ExpectNotExitCode(0)
+	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("reset", "00000000-0000-0000-0000-000000000000")
 	cp.Expect("The given commit ID does not exist")
@@ -90,6 +90,7 @@ func (suite *ResetIntegrationTestSuite) TestRevertInvalidURL() {
 	cp.ExpectNotExitCode(0)
 
 	cp = ts.Spawn("reset", "-n")
+	cp.Expect("Continuing because State Tool is running in non-interactive mode")
 	cp.Expect("Successfully reset to commit: " + commitID.String())
 	cp.ExpectExitCode(0)
 }

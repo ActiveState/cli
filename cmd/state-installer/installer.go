@@ -53,11 +53,18 @@ func (i *Installer) Install() (rerr error) {
 	if err != nil {
 		return errs.Wrap(err, "Could not determine if running as Windows administrator")
 	}
-	if isAdmin && !i.Params.force && !i.Params.isUpdate && !i.Params.nonInteractive {
-		prompter := prompt.New(true, i.an)
-		confirm, err := prompter.Confirm("", locale.T("installer_prompt_is_admin"), ptr.To(false))
+	if isAdmin && !i.Params.isUpdate {
+		prompter := prompt.New(i.out, i.an)
+		if i.Params.nonInteractive {
+			prompter.SetInteractive(false)
+		}
+		if i.Params.force {
+			prompter.SetForce(true)
+		}
+		defaultChoice := i.Params.nonInteractive
+		confirm, err := prompter.Confirm("", locale.T("installer_prompt_is_admin"), &defaultChoice, ptr.To(true))
 		if err != nil {
-			return errs.Wrap(err, "Unable to confirm")
+			return errs.Wrap(err, "Not confirmed")
 		}
 		if !confirm {
 			return locale.NewInputError("installer_aborted", "Installation aborted by the user")

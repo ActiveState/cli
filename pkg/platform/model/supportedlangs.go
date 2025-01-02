@@ -11,11 +11,11 @@ import (
 func FetchSupportedLanguages(osPlatformName string) ([]model.SupportedLanguage, error) {
 	kernelName := HostPlatformToKernelName(osPlatformName)
 	req := request.SupportedLanguages(kernelName)
-	var resp model.SupportedLanguagesResponse
+	var resp []model.SupportedLanguage
 	med := mediator.New(nil)
 	err := med.Run(req, &resp)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to run mediator request.")
 	}
-	return resp.Languages, nil
+	return resp, nil
 }

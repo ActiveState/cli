@@ -300,7 +300,7 @@ func FetchPlatformsMap() (map[strfmt.UUID]*Platform, error) {
 }
 
 func FetchPlatformsForCommit(commitID strfmt.UUID, auth *authentication.Auth) ([]*Platform, error) {
-	checkpt, _, err := FetchCheckpointForCommit(commitID, auth)
+	checkpt, err := FetchCheckpointForCommit(commitID, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -636,14 +636,14 @@ func FetchLatestTimeStamp(auth *authentication.Auth) (time.Time, error) {
 func FetchLatestRevisionTimeStamp(auth *authentication.Auth) (time.Time, error) {
 	client := hsInventory.New(auth)
 	request := hsInventoryRequest.NewLatestRevision()
-	response := hsInventoryModel.LatestRevisionResponse{}
+	response := []hsInventoryModel.LastIngredientRevisionTime{}
 	err := client.Run(request, &response)
 	if err != nil {
 		return time.Now(), errs.Wrap(err, "Failed to get latest change time")
 	}
 
 	// Increment time by 1 second to work around API precision issue where same second comparisons can fall on either side
-	t := time.Time(response.RevisionTimes[0].RevisionTime)
+	t := time.Time(response[0].RevisionTime)
 	t = t.Add(time.Second)
 
 	return t, nil
