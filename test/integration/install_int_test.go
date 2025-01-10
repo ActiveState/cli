@@ -228,7 +228,7 @@ func (suite *InstallIntegrationTestSuite) TestInstall_SolverV3() {
 			"Ruby",
 			"ActiveState-CLI/ruby-V3#6db5b307-d63a-45e2-9d3b-70a1a1f6c10a",
 			"base64",
-			true,
+			false,
 		},
 	}
 
