@@ -1,6 +1,7 @@
 package buildplanner
 
 import (
+	"encoding/json"
 	"errors"
 	"regexp"
 	"strconv"
@@ -53,22 +54,53 @@ func (c *client) Run(req gqlclient.Request, resp interface{}) error {
 	return c.gqlClient.Run(req, resp)
 }
 
+const fetchCommitCacheExpiry = time.Hour * 12
+
 func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, target *string) (*Commit, error) {
-	logging.Debug("FetchBuildResult, commitID: %s, owner: %s, project: %s", commitID, owner, project)
+	return b.fetchCommit(commitID, owner, project, target, true)
+}
+
+func (b *BuildPlanner) FetchCommitNoPoll(commitID strfmt.UUID, owner, project string, target *string) (*Commit, error) {
+	return b.fetchCommit(commitID, owner, project, target, false)
+}
+
+func (b *BuildPlanner) fetchCommit(commitID strfmt.UUID, owner, project string, target *string, poll bool) (*Commit, error) {
+	logging.Debug("FetchCommit, commitID: %s, owner: %s, project: %s", commitID, owner, project)
 	resp := &response.ProjectCommitResponse{}
-	err := b.client.Run(request.ProjectCommit(commitID.String(), owner, project, target), resp)
+
+	cacheKey := strings.Join([]string{"FetchCommit", commitID.String(), owner, project, ptr.From(target, "")}, "-")
+	respRaw, err := b.cache.GetCache(cacheKey)
 	if err != nil {
-		err = processBuildPlannerError(err, "failed to fetch commit")
-		if !b.auth.Authenticated() {
-			err = errs.AddTips(err, locale.T("tip_private_project_auth"))
+		return nil, errs.Wrap(err, "failed to get cache")
+	}
+	if respRaw != "" {
+		if err := json.Unmarshal([]byte(respRaw), resp); err != nil {
+			return nil, errs.Wrap(err, "failed to unmarshal cache: %s", cacheKey)
 		}
-		return nil, err
+	} else {
+		err := b.client.Run(request.ProjectCommit(commitID.String(), owner, project, target), resp)
+		if err != nil {
+			err = processBuildPlannerError(err, "failed to fetch commit")
+			if !b.auth.Authenticated() {
+				err = errs.AddTips(err, locale.T("tip_private_project_auth"))
+			}
+			return nil, err
+		}
+		if resp.Project.Commit.Build.Status == raw.Completed {
+			respBytes, err := json.Marshal(resp)
+			if err != nil {
+				return nil, errs.Wrap(err, "failed to marshal cache")
+			}
+			if err := b.cache.SetCache(cacheKey, string(respBytes), fetchCommitCacheExpiry); err != nil {
+				return nil, errs.Wrap(err, "failed to set cache")
+			}
+		}
 	}
 
 	// The BuildPlanner will return a build plan with a status of
 	// "planning" if the build plan is not ready yet. We need to
 	// poll the BuildPlanner until the build is ready.
-	if resp.Project.Commit.Build.Status == raw.Planning {
+	if poll && resp.Project.Commit.Build.Status == raw.Planning {
 		resp.Project.Commit.Build, err = b.pollBuildPlanned(commitID.String(), owner, project, target)
 		if err != nil {
 			return nil, errs.Wrap(err, "failed to poll build plan")
@@ -82,10 +114,11 @@ func (b *BuildPlanner) FetchCommit(commitID strfmt.UUID, owner, project string, 
 		return nil, errs.Wrap(err, "failed to unmarshal build plan")
 	}
 
-	script, err := buildscript.UnmarshalBuildExpression(commit.Expression, ptr.To(time.Time(commit.AtTime)))
-	if err != nil {
+	script := buildscript.New()
+	if err := script.UnmarshalBuildExpression(commit.Expression); err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}
+	script.SetAtTime(time.Time(commit.AtTime), false)
 
 	return &Commit{commit, bp, script}, nil
 }

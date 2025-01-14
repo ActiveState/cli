@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/localcommit"
@@ -15,6 +16,16 @@ import (
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 )
+
+type primeable interface {
+	primer.Outputer
+	primer.Prompter
+	primer.Projecter
+	primer.Auther
+	primer.Configurer
+	primer.Analyticer
+	primer.SvcModeler
+}
 
 // Languages manages the listing execution context.
 type Languages struct {
@@ -78,7 +89,7 @@ func (l *Languages) Run() error {
 	}
 
 	// Fetch commit and buildplan, which will give us access to ingredients, and ingredients can be languages..
-	bpm := bpModel.NewBuildPlannerModel(l.auth)
+	bpm := bpModel.NewBuildPlannerModel(l.auth, l.svcModel)
 	commit, err := bpm.FetchCommit(commitID, l.project.Owner(), l.project.Name(), nil)
 	if err != nil {
 		return errs.Wrap(err, "could not fetch commit")

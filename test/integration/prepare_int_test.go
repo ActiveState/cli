@@ -8,11 +8,11 @@ import (
 	"runtime"
 	"testing"
 
-	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/osutils/user"
@@ -30,10 +30,6 @@ type PrepareIntegrationTestSuite struct {
 }
 
 func (suite *PrepareIntegrationTestSuite) TestPrepare() {
-	// Disable test for v0.36: https://activestatef.atlassian.net/browse/DX-1501.
-	// This test should be re-enabled by https://activestatef.atlassian.net/browse/DX-1435.
-	suite.T().SkipNow()
-
 	suite.OnlyRunForTags(tagsuite.Prepare)
 	if !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping TestPrepare when not running on CI or on MacOS, as it modifies PATH")
@@ -49,7 +45,6 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("_prepare"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AutostartPathOverrideEnvVarName, autostartDir)),
-		// e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.ConfigEnvVarName, ts.Dirs.Work)),
 	)
 	cp.ExpectExitCode(0)
 
@@ -59,12 +54,10 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	if isAdmin {
 		return
 	}
-	suite.AssertConfig(filepath.Join(ts.Dirs.Cache, "bin"))
+	suite.AssertConfig(storage.CachePath())
 
 	// Verify autostart was enabled.
-	app, err := svcApp.New()
-	suite.Require().NoError(err)
-	enabled, err := autostart.IsEnabled(app.Path(), svcAutostart.Options)
+	enabled, err := autostart.IsEnabled(constants.StateSvcCmd, svcAutostart.Options)
 	suite.Require().NoError(err)
 	suite.Assert().True(enabled, "autostart is not enabled")
 
@@ -74,13 +67,13 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 		suite.Require().NoError(err)
 		profile := filepath.Join(homeDir, ".profile")
 		profileContents := string(fileutils.ReadFileUnsafe(profile))
-		suite.Contains(profileContents, app.Path(), "autostart should be configured for Linux server environment")
+		suite.Contains(profileContents, constants.StateSvcCmd, "autostart should be configured for Linux server environment")
 	}
 
 	// Verify autostart can be disabled.
-	err = autostart.Disable(app.Path(), svcAutostart.Options)
+	err = autostart.Disable(constants.StateSvcCmd, svcAutostart.Options)
 	suite.Require().NoError(err)
-	enabled, err = autostart.IsEnabled(app.Path(), svcAutostart.Options)
+	enabled, err = autostart.IsEnabled(constants.StateSvcCmd, svcAutostart.Options)
 	suite.Require().NoError(err)
 	suite.Assert().False(enabled, "autostart is still enabled")
 
@@ -90,7 +83,7 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 		suite.Require().NoError(err)
 		profile := filepath.Join(homeDir, ".profile")
 		profileContents := fileutils.ReadFileUnsafe(profile)
-		suite.NotContains(profileContents, app.Exec, "autostart should not be configured for Linux server environment anymore")
+		suite.NotContains(profileContents, constants.StateSvcCmd, "autostart should not be configured for Linux server environment anymore")
 	}
 
 	// Verify the Windows shortcuts were installed.
@@ -124,7 +117,7 @@ func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
 
 func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	suite.OnlyRunForTags(tagsuite.Prepare)
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	err := ts.ClearCache()
 	suite.Require().NoError(err)
 	defer ts.Close()
@@ -132,8 +125,8 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	cp := ts.Spawn("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work, "--default")
 	cp.Expect("This project will always be available for use")
 	cp.Expect("Downloading")
-	cp.Expect("Installing")
-	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Installing", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Activated")
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -166,8 +159,9 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	cp = ts.Spawn("activate")
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("which python3")
-	cp.SendLine("python3 --version")
+	cp.SendLine("python3")
 	cp.Expect("ActiveState")
+	cp.SendLine("exit()") // exit from Python interpreter
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 

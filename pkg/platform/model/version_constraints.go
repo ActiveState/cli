@@ -16,7 +16,7 @@ type versionConstraints struct {
 	version    string
 }
 
-func InventoryRequirementsToString(requirements inventory_models.Requirements) string {
+func InventoryRequirementsToString(requirements inventory_models.Requirements, forAPI bool) string {
 	if requirements == nil {
 		return ""
 	}
@@ -25,10 +25,10 @@ func InventoryRequirementsToString(requirements inventory_models.Requirements) s
 	for i, req := range requirements {
 		constraints[i] = &versionConstraints{*req.Comparator, *req.Version}
 	}
-	return versionConstraintsToString(constraints)
+	return versionConstraintsToString(constraints, forAPI)
 }
 
-func GqlReqVersionConstraintsString(requirement *gqlModel.Requirement) string {
+func GqlReqVersionConstraintsString(requirement *gqlModel.Requirement, forAPI bool) string {
 	if requirement.VersionConstraints == nil {
 		return ""
 	}
@@ -37,10 +37,10 @@ func GqlReqVersionConstraintsString(requirement *gqlModel.Requirement) string {
 	for i, constraint := range requirement.VersionConstraints {
 		constraints[i] = &versionConstraints{constraint.Comparator, constraint.Version}
 	}
-	return versionConstraintsToString(constraints)
+	return versionConstraintsToString(constraints, forAPI)
 }
 
-func BuildPlannerVersionConstraintsToString(requirements []types.VersionRequirement) string {
+func VersionRequirementsToString(requirements []types.VersionRequirement, forAPI bool) string {
 	if requirements == nil {
 		return ""
 	}
@@ -50,10 +50,10 @@ func BuildPlannerVersionConstraintsToString(requirements []types.VersionRequirem
 		constraints = append(constraints, &versionConstraints{constraint[types.VersionRequirementComparatorKey], constraint[types.VersionRequirementVersionKey]})
 	}
 
-	return versionConstraintsToString(constraints)
+	return versionConstraintsToString(constraints, forAPI)
 }
 
-func MonoConstraintsToString(monoConstraints mono_models.Constraints) string {
+func MonoConstraintsToString(monoConstraints mono_models.Constraints, forAPI bool) string {
 	if monoConstraints == nil {
 		return ""
 	}
@@ -62,10 +62,10 @@ func MonoConstraintsToString(monoConstraints mono_models.Constraints) string {
 	for i, constraint := range monoConstraints {
 		constraints[i] = &versionConstraints{constraint.Comparator, constraint.Version}
 	}
-	return versionConstraintsToString(constraints)
+	return versionConstraintsToString(constraints, forAPI)
 }
 
-func versionConstraintsToString(constraints []*versionConstraints) string {
+func versionConstraintsToString(constraints []*versionConstraints, forAPI bool) string {
 	if len(constraints) == 0 {
 		return ""
 	}
@@ -78,7 +78,11 @@ func versionConstraintsToString(constraints []*versionConstraints) string {
 		}
 		switch req.comparator {
 		case inventory_models.RequirementComparatorEq:
-			parts = append(parts, req.version)
+			if forAPI {
+				parts = append(parts, fmt.Sprintf("==%s", req.version))
+			} else {
+				parts = append(parts, req.version)
+			}
 		case inventory_models.RequirementComparatorGt:
 			parts = append(parts, fmt.Sprintf(">%s", req.version))
 		case inventory_models.RequirementComparatorGte:

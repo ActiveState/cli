@@ -159,7 +159,7 @@ func (suite *ExecIntegrationTestSuite) TestExeBatArguments() {
 		suite.T().Skip("This test is only for windows")
 	}
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
@@ -176,6 +176,33 @@ func (suite *ExecIntegrationTestSuite) TestExeBatArguments() {
 	cp = ts.SpawnWithOpts(e2e.OptArgs(append([]string{"exec", reportBat, "--"}, inputs...)...))
 	cp.Expect(outputs, e2e.RuntimeBuildSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
+}
+
+func (suite *ExecIntegrationTestSuite) TestExec_PATH_and_Path_on_Windows() {
+	suite.OnlyRunForTags(tagsuite.Exec)
+
+	if runtime.GOOS != "windows" {
+		suite.T().Skip("This test is only for windows")
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("exec", "where", "python3")
+	cp.Expect(os.TempDir()) // from runtime's defined PATH
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("exec", "where", "notepad")
+	cp.Expect("notepad.exe") // from OS-defined default Path
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("exec", "does-not-exist")
+	cp.Expect("not found") // neither on PATH nor Path
+	cp.ExpectNotExitCode(0)
 }
 
 func TestExecIntegrationTestSuite(t *testing.T) {

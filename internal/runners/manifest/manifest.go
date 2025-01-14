@@ -29,6 +29,10 @@ type primeable interface {
 	primer.Configurer
 }
 
+type Params struct {
+	Expand bool
+}
+
 type Manifest struct {
 	prime primeable
 	// The remainder is redundant with the above. Refactoring this will follow in a later story so as not to blow
@@ -54,7 +58,7 @@ func NewManifest(prime primeable) *Manifest {
 	}
 }
 
-func (m *Manifest) Run() (rerr error) {
+func (m *Manifest) Run(params Params) (rerr error) {
 	defer rationalizeError(m.project, m.auth, &rerr)
 
 	if m.project == nil {
@@ -78,7 +82,7 @@ func (m *Manifest) Run() (rerr error) {
 		return errs.Wrap(err, "Could not fetch vulnerabilities")
 	}
 
-	reqOut := newRequirements(reqs, bpReqs, vulns, !m.out.Type().IsStructured())
+	reqOut := newRequirements(reqs, bpReqs, vulns, !m.out.Type().IsStructured(), params.Expand)
 	if m.out.Type().IsStructured() {
 		m.out.Print(reqOut)
 	} else {
@@ -106,7 +110,7 @@ func (m *Manifest) fetchRequirements() ([]buildscript.Requirement, error) {
 			return nil, errs.Wrap(err, "Could not get commit ID")
 		}
 
-		bp := bpModel.NewBuildPlannerModel(m.auth)
+		bp := bpModel.NewBuildPlannerModel(m.auth, m.svcModel)
 		script, err = bp.GetBuildScript(commitID.String())
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not get remote build expr and time")
@@ -129,7 +133,7 @@ func (m *Manifest) fetchBuildplanRequirements() (buildplan.Ingredients, error) {
 
 	// Solve runtime
 	solveSpinner := output.StartSpinner(m.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
-	bpm := bpModel.NewBuildPlannerModel(m.auth)
+	bpm := bpModel.NewBuildPlannerModel(m.auth, m.svcModel)
 	commit, err := bpm.FetchCommit(commitID, m.project.Owner(), m.project.Name(), nil)
 	if err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))

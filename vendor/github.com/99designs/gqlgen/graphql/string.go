@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"strconv"
@@ -46,7 +47,7 @@ func writeQuotedString(w io.Writer, s string) {
 	io.WriteString(w, `"`)
 }
 
-func UnmarshalString(v interface{}) (string, error) {
+func UnmarshalString(v any) (string, error) {
 	switch v := v.(type) {
 	case string:
 		return v, nil
@@ -55,15 +56,13 @@ func UnmarshalString(v interface{}) (string, error) {
 	case int64:
 		return strconv.FormatInt(v, 10), nil
 	case float64:
-		return fmt.Sprintf("%f", v), nil
+		return strconv.FormatFloat(v, 'f', -1, 64), nil
+	case json.Number:
+		return string(v), nil
 	case bool:
-		if v {
-			return "true", nil
-		} else {
-			return "false", nil
-		}
+		return strconv.FormatBool(v), nil
 	case nil:
-		return "null", nil
+		return "", nil
 	default:
 		return "", fmt.Errorf("%T is not a string", v)
 	}

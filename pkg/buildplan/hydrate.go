@@ -94,7 +94,7 @@ func (b *BuildPlan) hydrateWithBuildClosure(nodeIDs []strfmt.UUID, platformID *s
 			}
 
 			artifact.platforms = sliceutils.Unique(append(artifact.platforms, *platformID))
-			artifact.isBuildtimeDependency = true
+			artifact.IsBuildtimeDependency = true
 
 			if parent != nil {
 				parentArtifact, ok := artifactLookup[parent.NodeID]
@@ -139,7 +139,7 @@ func (b *BuildPlan) hydrateWithRuntimeClosure(nodeIDs []strfmt.UUID, platformID 
 			}
 
 			artifact.platforms = sliceutils.Unique(append(artifact.platforms, *platformID))
-			artifact.isRuntimeDependency = true
+			artifact.IsRuntimeDependency = true
 
 			return nil
 		default:
@@ -186,10 +186,10 @@ func (b *BuildPlan) hydrateWithIngredients(artifact *Artifact, platformID *strfm
 				ingredient.platforms = append(ingredient.platforms, *platformID)
 			}
 
-			if artifact.isBuildtimeDependency {
+			if artifact.IsBuildtimeDependency {
 				ingredient.IsBuildtimeDependency = true
 			}
-			if artifact.isRuntimeDependency {
+			if artifact.IsRuntimeDependency {
 				ingredient.IsRuntimeDependency = true
 			}
 

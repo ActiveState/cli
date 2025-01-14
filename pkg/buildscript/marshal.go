@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
-	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 )
 
@@ -28,13 +28,14 @@ const (
 func (b *BuildScript) Marshal() ([]byte, error) {
 	buf := strings.Builder{}
 
-	if b.raw.AtTime != nil {
-		buf.WriteString(assignmentString(
-			&Assignment{atTimeKey, newString(b.raw.AtTime.Format(strfmt.RFC3339Millis))}))
-		buf.WriteString("\n")
+	buf.WriteString("```\n")
+	buf.WriteString("Project: " + b.project + "\n")
+	if b.atTime != nil {
+		buf.WriteString("Time: " + b.atTime.Format(time.RFC3339) + "\n")
 	}
+	buf.WriteString("```\n\n")
 
-	var main *Assignment
+	var main *assignment
 	for _, assignment := range b.raw.Assignments {
 		if assignment.Key == mainKey {
 			main = assignment
@@ -50,7 +51,7 @@ func (b *BuildScript) Marshal() ([]byte, error) {
 	return []byte(buf.String()), nil
 }
 
-func assignmentString(a *Assignment) string {
+func assignmentString(a *assignment) string {
 	return fmt.Sprintf("%s = %s", a.Key, valueString(a.Value))
 }
 
@@ -58,7 +59,7 @@ func indentByTab(s string) string {
 	return fmt.Sprintf("\t%s", strings.ReplaceAll(s, "\n", "\n\t"))
 }
 
-func valueString(v *Value) string {
+func valueString(v *value) string {
 	switch {
 	case v.FuncCall != nil:
 		return funcCallString(v.FuncCall)
@@ -77,7 +78,7 @@ func valueString(v *Value) string {
 		return buf.String()
 
 	case v.Str != nil:
-		return *v.Str // keep quoted
+		return strconv.Quote(*v.Str)
 
 	case v.Number != nil:
 		return strconv.FormatFloat(*v.Number, 'G', -1, 64) // 64-bit float with minimum digits on display
@@ -118,7 +119,7 @@ var inlineFunctions = []string{
 	andFuncName,
 }
 
-func funcCallString(f *FuncCall) string {
+func funcCallString(f *funcCall) string {
 	var (
 		newline = "\n"
 		comma   = ","
@@ -142,7 +143,7 @@ func funcCallString(f *FuncCall) string {
 	return buf.String()
 }
 
-func argsToString(args []*Value, newline, comma string, indent func(string) string) string {
+func argsToString(args []*value, newline, comma string, indent func(string) string) string {
 	buf := bytes.Buffer{}
 	for i, argument := range args {
 		buf.WriteString(indent(valueString(argument)))

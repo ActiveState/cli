@@ -3,6 +3,7 @@ package model
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/go-openapi/strfmt"
 
@@ -60,10 +61,31 @@ func FetchLanguagesForCommit(commitID strfmt.UUID, auth *authentication.Auth) ([
 	languages := []Language{}
 	for _, requirement := range checkpoint {
 		if NamespaceMatch(requirement.Namespace, NamespaceLanguageMatch) {
-			version := MonoConstraintsToString(requirement.VersionConstraints)
+			version := MonoConstraintsToString(requirement.VersionConstraints, true)
 			lang := Language{
 				Name:    requirement.Requirement,
 				Version: version,
+			}
+			languages = append(languages, lang)
+		}
+	}
+
+	return languages, nil
+}
+
+// FetchLanguagesForBuildScript fetches a list of language names for the given buildscript
+func FetchLanguagesForBuildScript(script *buildscript.BuildScript) ([]Language, error) {
+	languages := []Language{}
+	reqs, err := script.DependencyRequirements()
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to get dependency requirements")
+	}
+
+	for _, requirement := range reqs {
+		if NamespaceMatch(requirement.Namespace, NamespaceLanguageMatch) {
+			lang := Language{
+				Name:    requirement.Name,
+				Version: VersionRequirementsToString(requirement.VersionRequirement, true),
 			}
 			languages = append(languages, lang)
 		}
@@ -191,12 +213,7 @@ func PlatformNameToPlatformID(name string) (string, error) {
 	if name == "darwin" {
 		name = "macos"
 	}
-	id, err := hostPlatformToPlatformID(name)
-	return id, err
-}
-
-func hostPlatformToPlatformID(os string) (string, error) {
-	switch strings.ToLower(os) {
+	switch strings.ToLower(name) {
 	case strings.ToLower(sysinfo.Linux.String()):
 		return constants.LinuxBit64UUID, nil
 	case strings.ToLower(sysinfo.Mac.String()):
@@ -204,7 +221,7 @@ func hostPlatformToPlatformID(os string) (string, error) {
 	case strings.ToLower(sysinfo.Windows.String()):
 		return constants.Win10Bit64UUID, nil
 	default:
-		return "", locale.NewExternalError("err_unsupported_platform", "", os)
+		return "", ErrPlatformNotFound
 	}
 }
 

@@ -28,7 +28,8 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 	dependencies := buildplan.Ingredients{}
 	directDependencies := buildplan.Ingredients{}
 	changeset := newBuildPlan.DiffArtifacts(oldBuildPlan, false)
-	for _, a := range changeset.Added {
+	for _, change := range changeset.Filter(buildplan.ArtifactAdded) {
+		a := change.Artifact
 		if _, exists := requested[a.ArtifactID]; !exists {
 			continue
 		}
@@ -43,16 +44,17 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 	}
 
 	// Check for any direct dependencies added by a requested package update.
-	for _, u := range changeset.Updated {
-		if _, exists := requested[u.To.ArtifactID]; !exists {
+	for _, change := range changeset.Filter(buildplan.ArtifactUpdated) {
+		if _, exists := requested[change.Artifact.ArtifactID]; !exists {
 			continue
 		}
-		for _, dep := range u.To.RuntimeDependencies(false) {
-			for _, a := range changeset.Added {
+		for _, dep := range change.Artifact.RuntimeDependencies(false, nil) {
+			for _, subchange := range changeset.Filter(buildplan.ArtifactAdded) {
+				a := subchange.Artifact
 				if a.ArtifactID != dep.ArtifactID {
 					continue
 				}
-				v := fmt.Sprintf("%s@%s", u.To.Name(), u.To.Version()) // updated/requested package, not added package
+				v := fmt.Sprintf("%s@%s", change.Artifact.Name(), change.Artifact.Version()) // updated/requested package, not added package
 				addedString = append(addedLocale, v)
 				addedLocale = append(addedLocale, fmt.Sprintf("[ACTIONABLE]%s[/RESET]", v))
 
@@ -106,9 +108,9 @@ func OutputChangeSummary(out output.Outputer, newBuildPlan *buildplan.BuildPlan,
 	// depending on whether or not it has subdependencies, and whether or not showUpdatedPackages is
 	// `true`.
 	for i, ingredient := range directDependencies {
-		prefix := "├─"
+		prefix := output.TreeMid
 		if i == len(directDependencies)-1 {
-			prefix = "└─"
+			prefix = output.TreeEnd
 		}
 
 		// Retrieve runtime dependencies, and then filter out any dependencies that are common between all added ingredients.

@@ -21,7 +21,13 @@ import (
 
 func init() {
 	configMediator.RegisterOption(constants.SecurityPromptConfig, configMediator.Bool, true)
-	configMediator.RegisterOption(constants.SecurityPromptLevelConfig, configMediator.String, vulnModel.SeverityCritical)
+	severities := configMediator.NewEnum([]string{
+		vulnModel.SeverityCritical,
+		vulnModel.SeverityHigh,
+		vulnModel.SeverityMedium,
+		vulnModel.SeverityLow,
+	}, vulnModel.SeverityCritical)
+	configMediator.RegisterOption(constants.SecurityPromptLevelConfig, configMediator.Enum, severities)
 }
 
 type primeable interface {
@@ -47,8 +53,8 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 	}
 
 	var ingredients []*request.Ingredient
-	for _, artifact := range changeset.Added {
-		for _, ing := range artifact.Ingredients {
+	for _, change := range changeset.Filter(buildplan.ArtifactAdded) {
+		for _, ing := range change.Artifact.Ingredients {
 			ingredients = append(ingredients, &request.Ingredient{
 				Namespace: ing.Namespace,
 				Name:      ing.Name,
@@ -57,12 +63,12 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 		}
 	}
 
-	for _, change := range changeset.Updated {
+	for _, change := range changeset.Filter(buildplan.ArtifactUpdated) {
 		if !change.VersionsChanged() {
 			continue // For CVE reporting we only care about ingredient changes
 		}
 
-		for _, ing := range change.To.Ingredients {
+		for _, ing := range change.Artifact.Ingredients {
 			ingredients = append(ingredients, &request.Ingredient{
 				Namespace: ing.Namespace,
 				Name:      ing.Name,
@@ -71,7 +77,7 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 		}
 	}
 
-	names := addedRequirements(oldBuildPlan, newBuildPlan)
+	names := changedRequirements(oldBuildPlan, newBuildPlan)
 	pg := output.StartSpinner(c.prime.Output(), locale.Tr("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
 
 	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(c.prime.Auth(), ingredients)
@@ -91,23 +97,26 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 	pg = nil
 
 	vulnerabilities := model.CombineVulnerabilities(ingredientVulnerabilities, names...)
+
+	if c.prime.Prompt() == nil || !c.shouldPromptForSecurity(vulnerabilities) {
+		c.warnCVEs(vulnerabilities)
+		return nil
+	}
+
 	c.summarizeCVEs(vulnerabilities)
+	cont, err := c.promptForSecurity()
+	if err != nil {
+		return errs.Wrap(err, "Failed to prompt for security")
+	}
 
-	if c.prime.Prompt() != nil && c.shouldPromptForSecurity(vulnerabilities) {
-		cont, err := c.promptForSecurity()
-		if err != nil {
-			return errs.Wrap(err, "Failed to prompt for security")
+	if !cont {
+		if !c.prime.Prompt().IsInteractive() {
+			return errs.AddTips(
+				locale.NewInputError("err_pkgop_security_prompt", "Operation aborted due to security prompt"),
+				locale.Tl("more_info_prompt", "To disable security prompting run: [ACTIONABLE]state config set security.prompt.enabled false[/RESET]"),
+			)
 		}
-
-		if !cont {
-			if !c.prime.Prompt().IsInteractive() {
-				return errs.AddTips(
-					locale.NewInputError("err_pkgop_security_prompt", "Operation aborted due to security prompt"),
-					locale.Tl("more_info_prompt", "To disable security prompting run: [ACTIONABLE]state config set security.prompt.enabled false[/RESET]"),
-				)
-			}
-			return locale.NewInputError("err_pkgop_security_prompt", "Operation aborted due to security prompt")
-		}
+		return locale.NewInputError("err_pkgop_security_prompt", "Operation aborted due to security prompt")
 	}
 
 	return nil
@@ -122,7 +131,7 @@ func (c *CveReport) shouldSkipReporting(changeset buildplan.ArtifactChangeset) b
 		return true
 	}
 
-	return len(changeset.Added) == 0 && len(changeset.Updated) == 0
+	return len(changeset.Filter(buildplan.ArtifactAdded, buildplan.ArtifactUpdated)) == 0
 }
 
 func (c *CveReport) shouldPromptForSecurity(vulnerabilities model.VulnerableIngredientsByLevels) bool {
@@ -153,6 +162,31 @@ func (c *CveReport) shouldPromptForSecurity(vulnerabilities model.VulnerableIngr
 	return false
 }
 
+func (c *CveReport) warnCVEs(vulnerabilities model.VulnerableIngredientsByLevels) {
+	if vulnerabilities.Count == 0 {
+		return
+	}
+
+	c.prime.Output().Notice("")
+
+	counts := []string{}
+	formatString := "%d [%s]%s[/RESET]"
+	if count := vulnerabilities.Critical.Count; count > 0 {
+		counts = append(counts, fmt.Sprintf(formatString, count, "RED", locale.T("cve_critical")))
+	}
+	if count := vulnerabilities.High.Count; count > 0 {
+		counts = append(counts, fmt.Sprintf(formatString, count, "ORANGE", locale.T("cve_high")))
+	}
+	if count := vulnerabilities.Medium.Count; count > 0 {
+		counts = append(counts, fmt.Sprintf(formatString, count, "YELLOW", locale.T("cve_medium")))
+	}
+	if count := vulnerabilities.Low.Count; count > 0 {
+		counts = append(counts, fmt.Sprintf(formatString, count, "MAGENTA", locale.T("cve_low")))
+	}
+
+	c.prime.Output().Notice("  " + locale.Tr("warning_vulnerable_short", strconv.Itoa(vulnerabilities.Count), strings.Join(counts, ", ")))
+}
+
 func (c *CveReport) summarizeCVEs(vulnerabilities model.VulnerableIngredientsByLevels) {
 	out := c.prime.Output()
 	out.Print("")
@@ -180,10 +214,10 @@ func (c *CveReport) summarizeCVEs(vulnerabilities model.VulnerableIngredientsByL
 		}
 	}
 
-	printVulnerabilities(vulnerabilities.Critical, locale.Tl("cve_critical", "Critical"), "RED")
-	printVulnerabilities(vulnerabilities.High, locale.Tl("cve_high", "High"), "ORANGE")
-	printVulnerabilities(vulnerabilities.Medium, locale.Tl("cve_medium", "Medium"), "YELLOW")
-	printVulnerabilities(vulnerabilities.Low, locale.Tl("cve_low", "Low"), "MAGENTA")
+	printVulnerabilities(vulnerabilities.Critical, locale.T("cve_critical"), "RED")
+	printVulnerabilities(vulnerabilities.High, locale.T("cve_high"), "ORANGE")
+	printVulnerabilities(vulnerabilities.Medium, locale.T("cve_medium"), "YELLOW")
+	printVulnerabilities(vulnerabilities.Low, locale.T("cve_low"), "MAGENTA")
 
 	out.Print("")
 	out.Print("  " + locale.T("more_info_vulnerabilities"))
@@ -196,11 +230,12 @@ func (c *CveReport) promptForSecurity() (bool, error) {
 	if err != nil {
 		return false, locale.WrapError(err, "err_pkgop_confirm", "Need a confirmation.")
 	}
+	c.prime.Output().Notice("") // Empty line
 
 	return confirm, nil
 }
 
-func addedRequirements(oldBuildPlan *buildplan.BuildPlan, newBuildPlan *buildplan.BuildPlan) []string {
+func changedRequirements(oldBuildPlan *buildplan.BuildPlan, newBuildPlan *buildplan.BuildPlan) []string {
 	var names []string
 	var oldRequirements buildplan.Requirements
 	if oldBuildPlan != nil {
@@ -208,13 +243,16 @@ func addedRequirements(oldBuildPlan *buildplan.BuildPlan, newBuildPlan *buildpla
 	}
 	newRequirements := newBuildPlan.Requirements()
 
-	oldReqs := make(map[string]bool)
+	oldReqs := make(map[string]string)
 	for _, req := range oldRequirements {
-		oldReqs[qualifiedName(req)] = true
+		oldReqs[qualifiedName(req)] = req.Ingredient.Version
 	}
 
 	for _, req := range newRequirements {
-		if oldReqs[qualifiedName(req)] || req.Namespace == buildplan.NamespaceInternal {
+		if req.Namespace == buildplan.NamespaceInternal {
+			continue
+		}
+		if version, exists := oldReqs[qualifiedName(req)]; exists && version == req.Ingredient.Version {
 			continue
 		}
 		names = append(names, req.Name)

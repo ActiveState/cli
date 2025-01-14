@@ -112,7 +112,7 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	// Fetch resolved artifacts list for showing full version numbers, if possible.
 	var artifacts buildplan.Artifacts
 	if l.project != nil && params.Project == "" {
-		bpm := bpModel.NewBuildPlannerModel(l.auth)
+		bpm := bpModel.NewBuildPlannerModel(l.auth, l.svcModel)
 		commit, err := bpm.FetchCommit(*commitID, l.project.Owner(), l.project.Name(), nil)
 		if err != nil {
 			return errs.Wrap(err, "could not fetch commit")
@@ -139,7 +139,7 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 
 		version := req.VersionConstraint
 		if version == "" {
-			version = model.GqlReqVersionConstraintsString(req)
+			version = model.GqlReqVersionConstraintsString(req, false)
 			if version == "" {
 				version = locale.T("constraint_auto")
 			}

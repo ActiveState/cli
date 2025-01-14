@@ -58,6 +58,13 @@ func rationalizeError(err *error) {
 		*err = errs.WrapUserFacing(*err,
 			buildPlannerErr.LocaleError(),
 			errs.SetIf(buildPlannerErr.InputError(), errs.SetInput()))
+
+	case errors.As(*err, &invalidDepsValueType{}):
+		*err = errs.WrapUserFacing(*err, locale.T("err_commit_invalid_deps_value_type"), errs.SetInput())
+
+	case errors.As(*err, &invalidDepValueType{}):
+		*err = errs.WrapUserFacing(*err, locale.T("err_commit_invalid_dep_value_type"), errs.SetInput())
+
 	}
 }
 
@@ -78,12 +85,18 @@ func (c *Commit) Run() (rerr error) {
 		return errs.Wrap(err, "Could not get local build script")
 	}
 
+	for _, fc := range script.FunctionCalls("ingredient") {
+		if err := NewIngredientCall(c.prime, script, fc).Resolve(); err != nil {
+			return errs.Wrap(err, "Could not resolve ingredient")
+		}
+	}
+
 	// Get equivalent build script for current state of the project
 	localCommitID, err := localcommit.Get(proj.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit ID")
 	}
-	bp := buildplanner.NewBuildPlannerModel(c.prime.Auth())
+	bp := buildplanner.NewBuildPlannerModel(c.prime.Auth(), c.prime.SvcModel())
 	remoteScript, err := bp.GetBuildScript(localCommitID.String())
 	if err != nil {
 		return errs.Wrap(err, "Could not get remote build expr and time for provided commit")
@@ -147,7 +160,7 @@ func (c *Commit) Run() (rerr error) {
 	}
 
 	// Get old buildplan.
-	oldCommit, err := bp.FetchCommit(localCommitID, proj.Owner(), proj.Name(), nil)
+	oldCommit, err := bp.FetchCommitNoPoll(localCommitID, proj.Owner(), proj.Name(), nil)
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch old commit")
 	}

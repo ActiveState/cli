@@ -17,6 +17,7 @@ import (
 	"unicode"
 
 	"github.com/gofrs/flock"
+	"github.com/labstack/gommon/random"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/assets"
@@ -870,10 +871,15 @@ func TempFileUnsafe(dir, pattern string) *os.File {
 	return f
 }
 
-func TempFilePathUnsafe(dir, pattern string) string {
-	f := TempFileUnsafe(dir, pattern)
-	defer f.Close()
-	return f.Name()
+func TempFilePath(dir, pattern string) string {
+	if dir == "" {
+		dir = os.TempDir()
+	}
+	fname := random.String(8, random.Alphanumeric)
+	if pattern != "" {
+		fname = fmt.Sprintf("%s-%s", fname, pattern)
+	}
+	return filepath.Join(dir, fname)
 }
 
 // TempDirUnsafe returns a temp path or panics if it cannot be created
@@ -1241,4 +1247,55 @@ func globPath(path string) string {
 		}
 	}
 	return result
+}
+
+// CommonParentPath will return the common parent path of the given paths, provided they share a common path.
+// If they do not all share a single common path the result will be empty.
+func CommonParentPath(paths []string) string {
+	if len(paths) == 0 {
+		return ""
+	}
+
+	common := paths[0]
+	for _, p := range paths[1:] {
+		common = commonParentPath(common, p)
+		if common == "" {
+			return ""
+		}
+	}
+
+	return common
+}
+
+func commonParentPath(a, b string) (result string) {
+	isWindowsPath := false
+	defer func() {
+		if isWindowsPath {
+			result = posixPathToWindowsPath(result)
+		}
+	}()
+	common := ""
+	ab := windowsPathToPosixPath(a)
+	bb := windowsPathToPosixPath(b)
+	isWindowsPath = a != ab
+	as := strings.Split(ab, "/")
+	bs := strings.Split(bb, "/")
+	max := min(len(as), len(bs))
+	for x := 1; x <= max; x++ {
+		ac := strings.Join(as[:x], "/")
+		bc := strings.Join(bs[:x], "/")
+		if ac != bc {
+			return common
+		}
+		common = ac
+	}
+	return common
+}
+
+func windowsPathToPosixPath(path string) string {
+	return strings.ReplaceAll(path, "\\", "/")
+}
+
+func posixPathToWindowsPath(path string) string {
+	return strings.ReplaceAll(path, "/", "\\")
 }

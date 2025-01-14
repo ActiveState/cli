@@ -1,6 +1,7 @@
 package shortcut
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -74,6 +75,9 @@ func (s *Shortcut) Enable() error {
 	cmd := exec.Command("powershell.exe", args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
+		if errors.Is(err, exec.ErrNotFound) {
+			return locale.WrapError(err, "err_prepare_shortcut_powershell_not_found", "Could not create shortcut because powershell was not found on your PATH (searched '{{.V0}}')", os.Getenv("PATH"))
+		}
 		return locale.WrapError(err, "err_clean_start", "Could not create shortcut. Received error: {{.V0}}", string(out))
 	}
 
