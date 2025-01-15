@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -129,6 +130,132 @@ func (suite *InstallIntegrationTestSuite) TestInstall_Resolved() {
 	cp.Expect("requests")
 	cp.Expect("Auto → 2.") // note: the patch version is variable, so just expect that it exists
 	cp.ExpectExitCode(0)
+}
+
+func (suite *InstallIntegrationTestSuite) TestInstall_SolverV2() {
+	suite.OnlyRunForTags(tagsuite.Install, tagsuite.SolverV2)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	tests := []struct {
+		Name         string
+		Namespace    string
+		Package      string
+		ExpectedFail bool
+	}{
+		{
+			"Python-Camel",
+			"ActiveState-CLI/Python3#971e48e4-7f9b-44e6-ad48-86cd03ffc12d",
+			"requests",
+			false,
+		},
+		{
+			"Python-Alternative",
+			"ActiveState-CLI/Python3-Alternative#c2b3f176-4788-479c-aad3-8359d28ba3ce",
+			"requests",
+			false,
+		},
+		{
+			"Perl-Camel",
+			"ActiveState-CLI/Perl#a0a1692e-d999-4763-b933-2d0d5758bf12",
+			"JSON",
+			false,
+		},
+		{
+			"Perl-Alternative",
+			"ActiveState-CLI/Perl-Alternative#ccc57e0b-fccf-41c1-8e1c-24f4de2e55fa",
+			"JSON",
+			false,
+		},
+		{
+			"Ruby-Alternative",
+			"ActiveState-CLI/ruby#b6540776-7f2c-461b-8924-77fe46669209",
+			"base64",
+			false,
+		},
+	}
+
+	for _, tt := range tests {
+		suite.Run(tt.Name, func() {
+			ts := e2e.New(suite.T(), false)
+			defer ts.Close()
+
+			cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+			cp.ExpectExitCode(0)
+
+			cp = ts.Spawn("checkout", tt.Namespace, tt.Name)
+			if !tt.ExpectedFail {
+				cp.ExpectExitCode(0)
+			} else {
+				cp.ExpectNotExitCode(0)
+				return
+			}
+
+			cp = ts.SpawnWithOpts(
+				e2e.OptArgs("install", tt.Package),
+				e2e.OptWD(filepath.Join(ts.Dirs.Work, tt.Name)),
+			)
+			cp.ExpectExitCode(0, e2e.RuntimeSolvingTimeoutOpt)
+		})
+	}
+
+}
+
+func (suite *InstallIntegrationTestSuite) TestInstall_SolverV3() {
+	suite.OnlyRunForTags(tagsuite.Install, tagsuite.SolverV3)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	tests := []struct {
+		Name         string
+		Namespace    string
+		Package      string
+		ExpectedFail bool
+	}{
+		{
+			"Python",
+			"ActiveState-CLI/Python3-Alternative-V3#354efec1-eaa3-4f41-bc50-08fdbf076628",
+			"requests",
+			false,
+		},
+		{
+			"Perl",
+			"ActiveState-CLI/Perl-Alternative-V3#3d66ff94-72be-43ce-b3d8-897bb6758cf0",
+			"JSON",
+			false,
+		},
+		{
+			"Ruby",
+			"ActiveState-CLI/ruby-V3#6db5b307-d63a-45e2-9d3b-70a1a1f6c10a",
+			"base64",
+			false,
+		},
+	}
+
+	for _, tt := range tests {
+		suite.Run(tt.Name, func() {
+			ts := e2e.New(suite.T(), false)
+			defer ts.Close()
+
+			cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+			cp.ExpectExitCode(0)
+
+			cp = ts.Spawn("checkout", tt.Namespace, tt.Name)
+			if !tt.ExpectedFail {
+				cp.ExpectExitCode(0)
+			} else {
+				cp.ExpectNotExitCode(0)
+				return
+			}
+
+			cp = ts.SpawnWithOpts(
+				e2e.OptArgs("install", tt.Package),
+				e2e.OptWD(filepath.Join(ts.Dirs.Work, tt.Name)),
+			)
+			cp.ExpectExitCode(0, e2e.RuntimeSolvingTimeoutOpt)
+		})
+	}
+
 }
 
 func TestInstallIntegrationTestSuite(t *testing.T) {

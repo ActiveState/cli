@@ -53,7 +53,7 @@ require (
 	github.com/spf13/cast v1.3.0
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/thoas/go-funk v0.8.0
 	github.com/vbauerster/mpb/v7 v7.1.5
 	github.com/vektah/gqlparser/v2 v2.5.16
@@ -75,7 +75,7 @@ require (
 	github.com/charmbracelet/bubbles v0.18.0
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/lipgloss v0.9.1
-	github.com/go-git/go-git/v5 v5.12.0
+	github.com/go-git/go-git/v5 v5.13.1
 	github.com/gowebpki/jcs v1.0.1
 	github.com/klauspost/compress v1.11.4
 	github.com/mholt/archiver/v3 v3.5.1
@@ -86,14 +86,14 @@ require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/ActiveState/pty v0.0.0-20230628221854-6fb90eb08a14 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
-	github.com/ProtonMail/go-crypto v1.0.0 // indirect
+	github.com/ProtonMail/go-crypto v1.1.3 // indirect
 	github.com/andybalholm/brotli v1.0.1 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
-	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
+	github.com/cyphar/filepath-securejoin v0.3.6 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
-	github.com/go-git/go-billy/v5 v5.5.0 // indirect
+	github.com/go-git/go-billy/v5 v5.6.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/hinshun/vt10x v0.0.0-20220301184237-5011da428d02 // indirect
@@ -109,7 +109,7 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.2 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
-	github.com/skeema/knownhosts v1.2.2 // indirect
+	github.com/skeema/knownhosts v1.3.0 // indirect
 	github.com/sosodev/duration v1.3.1 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 )
@@ -164,7 +164,6 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
 	github.com/rivo/uniseg v0.4.6 // indirect
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
-	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/trivago/tgo v1.0.7 // indirect
