@@ -72,7 +72,7 @@ func (b *BuildPlanner) StageCommit(params StageCommitParams) (*Commit, error) {
 	if resp.Build.Status == raw.Planning {
 		resp.Build, err = b.pollBuildPlanned(resp.CommitID.String(), params.Owner, params.Project, nil)
 		if err != nil {
-			return nil, errs.Wrap(err, "failed to poll build plan")
+			return &Commit{resp, nil, nil}, errs.Wrap(err, "failed to poll build plan")
 		}
 	}
 
