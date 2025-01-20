@@ -49,7 +49,7 @@ func newInitCommand(prime *primer.Values) *captain.Command {
 				if err != nil {
 					// If the namespace was invalid but an argument was passed, we
 					// assume it's a project name and not an owner.
-					logging.Error("Could not parse namespace: %v", err)
+					logging.Debug("Could not parse namespace: %v", err)
 					params.ProjectName = params.Namespace
 				} else {
 					params.ParsedNS = ns
