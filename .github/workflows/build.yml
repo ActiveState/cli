@@ -41,6 +41,7 @@ jobs:
           - {os: ubuntu-latest}
           - {os: macos-13, shell: zsh}
           - {os: windows-2019}
+          - {os: ubuntu-24.04-arm}
       fail-fast: false
     runs-on: ${{ matrix.sys.os }}
     env:
@@ -511,3 +512,4 @@ jobs:
             session-build-ubuntu-20.04
             session-build-macos-11
             session-build-windows-2019
+            session-build-ubuntu-24.04-arm
