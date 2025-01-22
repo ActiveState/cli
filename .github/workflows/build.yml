@@ -262,7 +262,7 @@ jobs:
 
       - # === Configure AWS credentials ==
         name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: ${{ env.AWS_ROLE_SESSION_NAME }}
@@ -483,7 +483,7 @@ jobs:
 
       - # === Configure AWS credentials ==
         name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: ${{ env.AWS_ROLE_SESSION_NAME }}
