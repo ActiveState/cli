@@ -75,9 +75,8 @@ jobs:
 
       # === Install gotestfmt ===
       - name: Set up gotestfmt
-        uses: gotesttools/gotestfmt-action@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@latest
 
       - # === Install State Tool ===
         name: Install State Tool
