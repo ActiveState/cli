@@ -97,7 +97,9 @@ jobs:
         name: Setup
         shell: bash
         run: |
-          bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+          arch="amd64"
+          if [[ ${{ matrix.sys.os }} = "ubuntu-24.04-arm" ]]; then arch="arm64"; fi
+          bin=$(pwd)/.github/deps/${{ runner.os }}/$arch/bin
           echo "Adding $bin to PATH"
           echo "$bin" >> $GITHUB_PATH
 
@@ -136,7 +138,6 @@ jobs:
         shell: bash
         timeout-minutes: 15
         run: |
-          export PATH="$(pwd)/.github/deps/${{ runner.os }}/bin:$PATH"
           parallelize "$(cat <<'EOF'
           [
             {
