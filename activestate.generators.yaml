@@ -75,7 +75,6 @@ scripts:
     description: Generate update files
     value: |
       set -e
-      export GOARCH=${1:-amd64}
       $constants.SET_ENV
 
       $scripts.generate-payload.path()
