@@ -82,6 +82,16 @@ jobs:
       - # === Install State Tool ===
         name: Install State Tool
         uses: ActiveState/setup-state-tool@v1
+        if: matrix.sys.os != 'ubuntu-24.04-arm'
+
+      - # === Install State Tool (ARM64) ===
+        name: Install State Tool (ARM64)
+        if: matrix.sys.os == 'ubuntu-24.04-arm'
+        shell: bash
+        run: |
+          ./installers/install.sh -b beta
+          echo "$HOME/.local/ActiveState/StateTool/beta/bin" >> $GITHUB_PATH
+          "$HOME/.local/ActiveState/StateTool/beta/bin/state" config set optin.unstable true
 
       - # === Setup ===
         name: Setup
