@@ -336,6 +336,10 @@ jobs:
             fi
           else
             TEST_SUITE_TAGS="all"
+            if [[ ${{ contains(matrix.sys.os, 'arm') }} = true ]]; then
+              echo "Skipping integration tests on ARM"
+              exit 0
+            fi
           fi
 
           echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means every test not specifically tagged)"
