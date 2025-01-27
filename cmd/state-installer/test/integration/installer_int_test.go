@@ -167,6 +167,9 @@ func (suite *InstallerIntegrationTestSuite) TestInstallNoErrorTips() {
 }
 
 func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
+	if runtime.GOARCH == "arm64" {
+		suite.T().Skip("ARM platform projects are not supported yet")
+	}
 	suite.OnlyRunForTags(tagsuite.Installer, tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()

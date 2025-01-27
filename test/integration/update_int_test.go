@@ -357,6 +357,9 @@ func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Ses
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdateToCurrent() {
+	if runtime.GOARCH == "arm64" {
+		suite.T().Skip("There is no official ARM release for install.sh yet")
+	}
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
 	ts := e2e.New(suite.T(), false)
@@ -375,6 +378,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateToCurrent() {
 	if strings.HasPrefix(constants.Version, "0.30") {
 		// Feel free to drop this once the release channel is no longer on 0.29
 		suite.T().Skip("Updating from release 0.29 to 0.30 is not covered due to how 0.29 did updates (async)")
+	}
+	if runtime.GOARCH == "arm64" {
+		suite.T().Skip("There is no official ARM release for install.sh yet")
 	}
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
