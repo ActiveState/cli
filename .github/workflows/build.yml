@@ -81,11 +81,11 @@ jobs:
       - # === Install State Tool ===
         name: Install State Tool
         uses: ActiveState/setup-state-tool@v1
-        if: matrix.sys.os != 'ubuntu-24.04-arm'
+        if: "!contains(matrix.sys.os, 'arm')"
 
       - # === Install State Tool (ARM64) ===
         name: Install State Tool (ARM64)
-        if: matrix.sys.os == 'ubuntu-24.04-arm'
+        if: contains(matrix.sys.os, 'arm')
         shell: bash
         run: |
           ./installers/install.sh -b beta
@@ -97,7 +97,7 @@ jobs:
         shell: bash
         run: |
           arch="amd64"
-          if [[ ${{ matrix.sys.os }} = "ubuntu-24.04-arm" ]]; then arch="arm64"; fi
+          if [[ ${{ contains(matrix.sys.os, 'arm') }} = true ]]; then arch="arm64"; fi
           bin=$(pwd)/.github/deps/${{ runner.os }}/$arch/bin
           echo "Adding $bin to PATH"
           echo "$bin" >> $GITHUB_PATH
