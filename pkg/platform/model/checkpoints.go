@@ -282,6 +282,8 @@ func platformArchToHostArch(arch, bits string) string {
 			return "sparc64"
 		case "x86":
 			return "amd64"
+		case "arm":
+			return "arm64"
 		}
 	}
 	return "unrecognized"
