@@ -128,10 +128,9 @@ func (suite *RuntimeIntegrationTestSuite) TestInUse() {
 	time.Sleep(1 * time.Second) // allow time for perl to start up
 
 	cp2 := ts.Spawn("install", "DateTime")
-	cp2.Expect("currently in use", e2e.RuntimeSourcingTimeoutOpt)
+	cp2.Expect("the runtime for this project is in use", e2e.RuntimeSourcingTimeoutOpt)
 	cp2.Expect("perl")
-	cp2.ExpectNotExitCode(0)
-	ts.IgnoreLogErrors()
+	cp2.ExpectExitCode(0)
 
 	cp.SendCtrlC()
 	cp.SendLine("exit")
