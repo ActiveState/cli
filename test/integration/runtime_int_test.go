@@ -113,6 +113,10 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 }
 
 func (suite *RuntimeIntegrationTestSuite) TestInUse() {
+	if runtime.GOOS == "windows" {
+		// https://activestatef.atlassian.net/browse/DX-2926
+		suite.T().Skip("interrupting on windows is currently broken when ran via CI")
+	}
 	if runtime.GOOS == "darwin" {
 		return // gopsutil errors on later versions of macOS (DX-2723)
 	}
