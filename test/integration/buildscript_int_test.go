@@ -50,6 +50,9 @@ func (suite *BuildScriptIntegrationTestSuite) TestBuildScript_NeedsReset() {
 
 func (suite *BuildScriptIntegrationTestSuite) TestBuildScript_IngredientFunc() {
 	suite.OnlyRunForTags(tagsuite.BuildScripts)
+	if runtime.GOOS != "windows" {
+		suite.T().Skip("Buildplanner does not build the ingredient artifact") // re-enable this in DX-3220
+	}
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
