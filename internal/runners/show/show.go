@@ -78,7 +78,7 @@ func formatScripts(scripts map[string]string) string {
 	for k, v := range scripts {
 		res = append(res, fmt.Sprintf("• %s", k))
 		if v != "" {
-			res = append(res, fmt.Sprintf("  └─  %s", v))
+			res = append(res, fmt.Sprintf("  %s  %s", output.TreeEnd, v))
 		}
 	}
 	return strings.Join(res, "\n")

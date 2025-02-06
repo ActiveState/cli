@@ -182,7 +182,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 	if runtime.GOOS == "linux" {
 		cp.Expect("Creating a Virtual Environment")
 		cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
-		cp.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
+		cp.ExpectInput()
 		cp.SendLine("exit")
 		cp.ExpectExitCode(0)
 	} else {
@@ -248,7 +248,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 
 	cp.SendLine("state activate --default")
 	cp.Expect("Creating a Virtual Environment")
-	cp.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
+	cp.ExpectInput(e2e.RuntimeSourcingTimeoutOpt)
 	pythonShim := pythonExe + osutils.ExeExtension
 
 	// test that existing environment variables are inherited by the activated shell
@@ -582,11 +582,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivateBranch() {
 
 	namespace := "ActiveState-CLI/Branches"
 
-	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("activate", namespace, "--branch", "firstbranch")
-	cp.Expect("Activated")
+	cp := ts.Spawn("activate", namespace, "--branch", "firstbranch")
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt) // note: activate always sources the runtime
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }

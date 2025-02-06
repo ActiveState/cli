@@ -5,7 +5,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/buildplan/raw"
 	"github.com/ActiveState/cli/pkg/buildscript"
@@ -82,8 +81,9 @@ func (b *BuildPlanner) StageCommit(params StageCommitParams) (*Commit, error) {
 		return nil, errs.Wrap(err, "failed to unmarshal build plan")
 	}
 
-	stagedScript, err := buildscript.UnmarshalBuildExpression(resp.Commit.Expression, ptr.To(time.Time(resp.Commit.AtTime)))
-	if err != nil {
+	stagedScript := buildscript.New()
+	stagedScript.SetAtTime(time.Time(resp.Commit.AtTime), false)
+	if err := stagedScript.UnmarshalBuildExpression(resp.Commit.Expression); err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}
 

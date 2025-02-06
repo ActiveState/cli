@@ -634,3 +634,116 @@ func TestIsWritableDir(t *testing.T) {
 		t.Fatalf("Path should not be writable: %s", pathWithNoPermission)
 	}
 }
+
+func TestCommonParentPath(t *testing.T) {
+	tests := []struct {
+		paths    []string
+		expected string
+	}{
+		{
+			paths:    []string{"./folder1/file.txt", "./folder1/subfolder/file.txt"},
+			expected: "./folder1",
+		},
+		{
+			paths:    []string{"./folder1/file.txt", "./folder2/file.txt"},
+			expected: ".",
+		},
+		{
+			paths:    []string{"./folder1/subfolder1/file.txt", "./folder1/subfolder2/file.txt"},
+			expected: "./folder1",
+		},
+		{
+			paths:    []string{"./folder1/", "./folder1/subfolder/"},
+			expected: "./folder1",
+		},
+		{
+			paths:    []string{"./folder1/file.txt", "./folder1/file.txt"},
+			expected: "./folder1/file.txt",
+		},
+		{
+			paths:    []string{"./folder1/file.txt", "./folder1/"},
+			expected: "./folder1",
+		},
+		{
+			paths:    []string{"./folder1/file.txt", "./folder2/"},
+			expected: ".",
+		},
+		{
+			paths:    []string{"./folder1/file.txt", "./folder1/subfolder/file.txt", "./folder1/subfolder2/file.txt"},
+			expected: "./folder1",
+		},
+		{
+			paths:    []string{"./folder1/file.txt", "./folder1/subfolder/file.txt", "./folder2/file.txt"},
+			expected: ".",
+		},
+		{
+			paths:    []string{"./folder1/file.txt", "./folder1/subfolder/file.txt", "./folder1/subfolder2/file.txt", "./folder1/subfolder3/file.txt"},
+			expected: "./folder1",
+		},
+		{
+			paths:    []string{"./folder1/file.txt", "./folder1/file.txt", "./folder1/file.txt"},
+			expected: "./folder1/file.txt",
+		},
+		{
+			paths:    []string{"/home/user/folder1/file.txt", "/home/user/folder1/subfolder/file.txt"},
+			expected: "/home/user/folder1",
+		},
+		{
+			paths:    []string{"/home/user/folder1/file.txt", "/home/user/folder2/file.txt"},
+			expected: "/home/user",
+		},
+		{
+			paths:    []string{"/home/user/folder1/subfolder1/file.txt", "/home/user/folder1/subfolder2/file.txt"},
+			expected: "/home/user/folder1",
+		},
+		{
+			paths:    []string{"C:\\Users\\User\\folder1\\file.txt", "C:\\Users\\User\\folder1\\subfolder\\file.txt"},
+			expected: "C:\\Users\\User\\folder1",
+		},
+		{
+			paths:    []string{"C:\\Users\\User\\folder1\\file.txt", "C:\\Users\\User\\folder2\\file.txt"},
+			expected: "C:\\Users\\User",
+		},
+		{
+			paths:    []string{"C:\\Users\\User\\folder1\\subfolder1\\file.txt", "C:\\Users\\User\\folder1\\subfolder2\\file.txt"},
+			expected: "C:\\Users\\User\\folder1",
+		},
+		{
+			paths:    []string{"folder1/file.txt", "folder1/subfolder/file.txt"},
+			expected: "folder1",
+		},
+		{
+			paths:    []string{"folder1/file.txt", "folder2/file.txt"},
+			expected: "",
+		},
+		{
+			paths:    []string{"folder1/file.txt", "folder1/subfolder/file.txt", "folder1/subfolder2/file.txt"},
+			expected: "folder1",
+		},
+		{
+			paths:    []string{"folder1/file.txt", "folder1/file.txt", "folder1/file.txt"},
+			expected: "folder1/file.txt",
+		},
+		{
+			paths:    []string{"C:\\Users\\User\\folder1\\file.txt", "C:\\Users\\User\\folder1\\subfolder\\file.txt", "C:\\Users\\User\\folder2\\file.txt"},
+			expected: "C:\\Users\\User",
+		},
+		{
+			paths:    []string{"/var/log/syslog", "/var/log/auth.log"},
+			expected: "/var/log",
+		},
+		{
+			paths:    []string{},
+			expected: "",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(filepath.Join(test.paths...), func(t *testing.T) {
+			result := CommonParentPath(test.paths)
+			if result != test.expected {
+				t.Errorf("CommonParentPath(%v) = %q; expected %q", test.paths, result, test.expected)
+			}
+		})
+	}
+}

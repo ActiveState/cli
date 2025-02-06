@@ -20,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
-	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/org"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
@@ -89,6 +88,8 @@ type errUnrecognizedLanguage struct {
 func (e errUnrecognizedLanguage) Error() string {
 	return fmt.Sprintf("unrecognized language: %s", e.Name)
 }
+
+var errDeleteProjectAfterError = errs.New("could not delete initialized project")
 
 // New returns a prepared ptr to Initialize instance.
 func New(prime primeable) *Initialize {
@@ -164,16 +165,15 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	err := fileutils.MkdirUnlessExists(path)
 	if err != nil {
-		return locale.WrapError(err, "err_init_preparedir", "Could not create directory at [NOTICE]{{.V0}}[/RESET]. Error: {{.V1}}", params.Path, err.Error())
+		return errs.Wrap(err, "Could not create directory '%s'", params.Path)
 	}
 
 	path, err = filepath.Abs(params.Path)
 	if err != nil {
-		return locale.WrapExternalError(err, "err_init_abs_path", "Could not determine absolute path to [NOTICE]{{.V0}}[/RESET]. Error: {{.V1}}", path, err.Error())
+		return errs.Wrap(err, "Could not determine absolute path to '%s'", params.Path)
 	}
 
 	var languageName, languageVersion string
-	var inferred bool
 	if params.Language != "" {
 		langParts := strings.Split(params.Language, "@")
 		languageName = langParts[0]
@@ -181,7 +181,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 			languageVersion = langParts[1]
 		}
 	} else {
-		languageName, languageVersion, inferred = inferLanguage(r.config, r.auth)
+		languageName, languageVersion, _ = inferLanguage(r.config, r.auth)
 	}
 
 	if languageName == "" {
@@ -200,11 +200,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	version, err := deriveVersion(lang, languageVersion, r.auth)
 	if err != nil {
-		if inferred || errors.IsReportableError(err) {
-			return locale.WrapError(err, "err_init_lang", "", languageName, languageVersion)
-		} else {
-			return locale.WrapExternalError(err, "err_init_lang", "", languageName, languageVersion)
-		}
+		return errs.Wrap(err, "Unable to get language version")
 	}
 
 	resolvedOwner, err = org.Get(paramOwner, r.auth, r.config)
@@ -226,7 +222,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	pjfile, err := projectfile.Create(createParams)
 	if err != nil {
-		return locale.WrapError(err, "err_init_pjfile", "Could not create project file")
+		return errs.Wrap(err, "Could not create project file")
 	}
 
 	// If an error occurs, remove the created activestate.yaml file so the user can try again.
@@ -262,7 +258,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return errs.Wrap(err, "Unable to determine Platform ID from %s", sysinfo.OS().String())
 	}
 
-	bp := bpModel.NewBuildPlannerModel(r.auth)
+	bp := bpModel.NewBuildPlannerModel(r.auth, r.svcModel)
 	commitID, err := bp.CreateProject(&bpModel.CreateProjectParams{
 		Owner:       namespace.Owner,
 		Project:     namespace.Project,
@@ -281,14 +277,14 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	}
 
 	if r.config.GetBool(constants.OptinBuildscriptsConfig) {
-		if err := buildscript_runbit.Initialize(proj.Dir(), r.auth); err != nil {
+		if err := buildscript_runbit.Initialize(proj, r.auth, r.svcModel); err != nil {
 			return errs.Wrap(err, "Unable to initialize buildscript")
 		}
 	}
 
 	// Solve runtime
 	solveSpinner := output.StartSpinner(r.out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
-	bpm := bpModel.NewBuildPlannerModel(r.auth)
+	bpm := bpModel.NewBuildPlannerModel(r.auth, r.svcModel)
 	commit, err := bpm.FetchCommit(commitID, r.prime.Project().Owner(), r.prime.Project().Name(), nil)
 	if err != nil {
 		solveSpinner.Stop(locale.T("progress_fail"))
@@ -296,7 +292,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		err2 := model.DeleteProject(namespace.Owner, namespace.Project, r.auth)
 		if err2 != nil {
 			multilog.Error("Error deleting remotely created project after runtime setup error: %v", errs.JoinMessage(err2))
-			return locale.WrapError(err, "err_init_refresh_delete_project", "Could not setup runtime after init, and could not delete newly created Platform project. Please delete it manually before trying again")
+			return errDeleteProjectAfterError
 		}
 		return errs.Wrap(err, "Failed to fetch build result")
 	}

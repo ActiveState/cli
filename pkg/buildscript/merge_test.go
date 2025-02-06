@@ -8,11 +8,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const mergeATime = "2000-01-01T00:00:00Z"
+const mergeBTime = "2000-01-02T00:00:00Z"
+
 func TestMergeAdd(t *testing.T) {
-	scriptA, err := Unmarshal([]byte(`
-at_time = "2000-01-01T00:00:00.000Z"
+	scriptA, err := Unmarshal([]byte(
+		checkoutInfoString(testProject, mergeATime) + `
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 		"12345",
 		"67890"
@@ -27,10 +30,10 @@ main = runtime
 `))
 	require.NoError(t, err)
 
-	scriptB, err := Unmarshal([]byte(`
-at_time = "2000-01-02T00:00:00.000Z"
+	scriptB, err := Unmarshal([]byte(
+		checkoutInfoString(testProject, mergeBTime) + `
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 		"12345",
 		"67890"
@@ -60,9 +63,9 @@ main = runtime
 	require.NoError(t, err)
 
 	assert.Equal(t,
-		`at_time = "2000-01-02T00:00:00.000Z"
+		checkoutInfoString(testProject, mergeBTime)+`
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 		"12345",
 		"67890"
@@ -78,10 +81,10 @@ main = runtime`, string(v))
 }
 
 func TestMergeRemove(t *testing.T) {
-	scriptA, err := Unmarshal([]byte(`
-at_time = "2000-01-02T00:00:00.000Z"
+	scriptA, err := Unmarshal([]byte(
+		checkoutInfoString(testProject, mergeBTime) + `
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 		"12345",
 		"67890"
@@ -97,10 +100,10 @@ main = runtime
 `))
 	require.NoError(t, err)
 
-	scriptB, err := Unmarshal([]byte(`
-at_time = "2000-01-01T00:00:00.000Z"
+	scriptB, err := Unmarshal([]byte(
+		checkoutInfoString(testProject, mergeATime) + `
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 		"12345",
 		"67890"
@@ -129,9 +132,9 @@ main = runtime
 	require.NoError(t, err)
 
 	assert.Equal(t,
-		`at_time = "2000-01-02T00:00:00.000Z"
+		checkoutInfoString(testProject, mergeBTime)+`
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 		"12345",
 		"67890"
@@ -146,10 +149,10 @@ main = runtime`, string(v))
 }
 
 func TestMergeConflict(t *testing.T) {
-	scriptA, err := Unmarshal([]byte(`
-at_time = "2000-01-01T00:00:00.000Z"
+	scriptA, err := Unmarshal([]byte(
+		checkoutInfoString(testProject, mergeATime) + `
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 		"12345",
 		"67890"
@@ -163,10 +166,10 @@ main = runtime
 `))
 	require.NoError(t, err)
 
-	scriptB, err := Unmarshal([]byte(`
-at_time = "2000-01-01T00:00:00.000Z"
+	scriptB, err := Unmarshal([]byte(
+		checkoutInfoString(testProject, mergeATime) + `
 runtime = solve(
-	at_time = at_time,
+	at_time = TIME,
 	platforms = [
 		"12345"
 	],

@@ -22,13 +22,13 @@ func FilterPlatformArtifacts(platformID strfmt.UUID) FilterArtifact {
 
 func FilterBuildtimeArtifacts() FilterArtifact {
 	return func(a *Artifact) bool {
-		return a.isBuildtimeDependency
+		return a.IsBuildtimeDependency
 	}
 }
 
 func FilterRuntimeArtifacts() FilterArtifact {
 	return func(a *Artifact) bool {
-		return a.isRuntimeDependency
+		return a.IsRuntimeDependency
 	}
 }
 
@@ -65,8 +65,7 @@ func FilterSuccessfulArtifacts() FilterArtifact {
 
 func FilterFailedArtifacts() FilterArtifact {
 	return func(a *Artifact) bool {
-		return a.Status == types.ArtifactBlocked ||
-			a.Status == types.ArtifactFailedTransiently ||
+		return a.Status == types.ArtifactFailedTransiently ||
 			a.Status == types.ArtifactFailedPermanently
 	}
 }

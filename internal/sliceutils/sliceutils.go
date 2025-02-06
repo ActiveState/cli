@@ -1,6 +1,8 @@
 package sliceutils
 
 import (
+	"cmp"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/go-openapi/strfmt"
 	"golang.org/x/text/unicode/norm"
@@ -17,14 +19,20 @@ func RemoveFromStrings(slice []string, indexes ...int) []string {
 }
 
 func GetInt(slice []int, index int) (int, bool) {
-	if index > len(slice)-1 {
+	if index < 0 {
+		index = len(slice) + index
+	}
+	if index > len(slice)-1 || index < 0 {
 		return -1, false
 	}
 	return slice[index], true
 }
 
 func GetString(slice []string, index int) (string, bool) {
-	if index > len(slice)-1 {
+	if index < 0 {
+		index = len(slice) + index
+	}
+	if index > len(slice)-1 || index < 0 {
 		return "", false
 	}
 	// return normalized string
@@ -111,4 +119,37 @@ func ToLookupMapByKey[T any, K string | int | strfmt.UUID](data []T, keyCb func(
 		result[keyCb(d)] = d
 	}
 	return result
+}
+
+// EqualValues checks if two slices have equal values, regardless of ordering. This does not recurse into nested slices or structs.
+func EqualValues[S ~[]E, E cmp.Ordered](a, b S) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	lookup := make(map[E]struct{}, len(a))
+	for _, e := range a {
+		lookup[e] = struct{}{}
+	}
+
+	for _, e := range b {
+		if _, ok := lookup[e]; !ok {
+			return false
+		}
+	}
+
+	return true
+}
+
+// Cast allows casting of a slice of any type to a slice of a specific type.
+func Cast[T any](slice []any) ([]T, bool) {
+	result := []T{}
+	for _, s := range slice {
+		v, ok := s.(T)
+		if !ok {
+			return nil, false
+		}
+		result = append(result, v)
+	}
+	return result, true
 }

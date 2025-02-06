@@ -18,7 +18,7 @@ func init() {
 	defer profile.Measure("colorize:init", time.Now())
 	var err error
 	colorRx, err = regexp.Compile(
-		`\[(HEADING|NOTICE|SUCCESS|ERROR|WARNING|DISABLED|ACTIONABLE|CYAN|GREEN|RED|ORANGE|YELLOW|MAGENTA|/RESET)!?\]`,
+		`\[(HEADING|BOLD|NOTICE|SUCCESS|ERROR|WARNING|DISABLED|ACTIONABLE|CYAN|GREEN|RED|ORANGE|YELLOW|MAGENTA|/RESET)!?\]`,
 	)
 	if err != nil {
 		panic(fmt.Sprintf("Could not compile regex: %v", err))
@@ -27,6 +27,7 @@ func init() {
 
 type ColorTheme interface {
 	Heading(writer io.Writer)
+	Bold(writer io.Writer)
 	Notice(writer io.Writer)
 	Success(writer io.Writer)
 	Error(writer io.Writer)
@@ -48,6 +49,11 @@ type defaultColorTheme struct{}
 func (dct defaultColorTheme) Heading(writer io.Writer) {
 	c := colorstyle.New(writer)
 	c.SetStyle(colorstyle.Default, true)
+	c.SetStyle(colorstyle.Bold, false)
+}
+
+func (dct defaultColorTheme) Bold(writer io.Writer) {
+	c := colorstyle.New(writer)
 	c.SetStyle(colorstyle.Bold, false)
 }
 
@@ -174,6 +180,8 @@ func colorize(ct ColorTheme, writer io.Writer, arg string) {
 		ct.Warning(writer)
 	case `ERROR`:
 		ct.Error(writer)
+	case `BOLD`:
+		ct.Bold(writer)
 	case `DISABLED`:
 		ct.Disabled(writer)
 	case `ACTIONABLE`:

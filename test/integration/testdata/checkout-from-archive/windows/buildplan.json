@@ -1,0 +1,515 @@
+{
+  "__typename": "BuildCompleted",
+  "buildPlanID": "",
+  "status": "COMPLETED",
+  "terminals": [
+    {
+      "tag": "platform:46a5b48f-226a-4696-9746-ba4d50d661c2",
+      "nodeIds": [
+        "4cfa45d0-ec48-524f-9f46-90c60bfb51ac",
+        "88ece3b1-efd3-52cd-9bac-8a3c5c80e4c7",
+        "a0018800-f1fb-53dd-8e10-049ba0b9245b",
+        "b6588d63-067d-501e-84d4-d9a7881c1119",
+        "bd3cdcd1-7b6c-5e5e-b144-6fa17dc28120",
+        "dc78166b-9088-5f4b-9ea2-637feba4f51b"
+      ]
+    },
+    {
+      "tag": "platform:78977bc8-0f32-519d-80f3-9043f059398c",
+      "nodeIds": [
+        "242604ea-36aa-5ec4-a0c3-ee160b443ed8",
+        "24a59f2c-c3ec-5586-b389-07149b46ac90",
+        "2a2631ef-bcc2-5241-87e0-cbf9ee489bb9",
+        "88ece3b1-efd3-52cd-9bac-8a3c5c80e4c7",
+        "a0018800-f1fb-53dd-8e10-049ba0b9245b",
+        "b6588d63-067d-501e-84d4-d9a7881c1119"
+      ]
+    },
+    {
+      "tag": "platform:7c998ec2-7491-4e75-be4d-8885800ef5f2",
+      "nodeIds": [
+        "59ea89fb-1b02-5798-b925-00b6a6297fa7",
+        "88ece3b1-efd3-52cd-9bac-8a3c5c80e4c7",
+        "96e76974-81c5-5816-bff0-bd91840cf89c",
+        "a0018800-f1fb-53dd-8e10-049ba0b9245b",
+        "b6588d63-067d-501e-84d4-d9a7881c1119",
+        "cd77e611-f70b-5aea-a2bb-35a2a21a612f"
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "__typename": "ArtifactSucceeded",
+      "nodeId": "09386295-a8d0-5f5f-a5dc-b22598b3b4c9",
+      "displayName": "noop-builder",
+      "mimeType": "application/x-activestate-builder",
+      "generatedBy": "e4921b27-35eb-5415-87d3-95fd3d5728e5",
+      "runtimeDependencies": [],
+      "status": "SUCCEEDED",
+      "url": 
+"s3://platform-sources/builder/65710b34592066ff70669c67ea0031b138f4249c768c429b74f6f2efe781e077/noop-builder.tar.gz",
+      "logURL": "",
+      "errors": null,
+      "checksum": "65710b34592066ff70669c67ea0031b138f4249c768c429b74f6f2efe781e077"
+    },
+    {
+      "__typename": "ArtifactSucceeded",
+      "nodeId": "242604ea-36aa-5ec4-a0c3-ee160b443ed8",
+      "displayName": "alternative-build-selector.application/gzip",
+      "mimeType": "application/x.artifact",
+      "generatedBy": "0b2a2ff3-2188-54c7-8447-99241326850c",
+      "runtimeDependencies": [],
+      "status": "SUCCEEDED",
+      "url": 
+"https://dl.activestate.com/artifact/242604ea-36aa-5ec4-a0c3-ee160b443ed8/artifact.tar.gz",
+      "logURL": 
+"https://dl.activestate.com/organization/9cc783d1-c065-4aea-8a55-3b0dbc77078b/project/c2bd9427-f888-4d53-82df-14c0d612f3bd/commit/4f46dee3-1f8f-475d-af06-9554aed2903e/artifact/242604ea-36aa-5ec4-a0c3-ee160b443ed8/logs.jsonl",
+      "errors": null,
+      "checksum": "bbcf5b36ff31084f24c3748020768173b17967abcd2437bb93638b9dd6110440"
+    },
+    {
+      "__typename": "ArtifactSucceeded",
+      "nodeId": "24a59f2c-c3ec-5586-b389-07149b46ac90",
+      "displayName": "provides_hello.application/octet-stream",
+      "mimeType": "application/x.artifact",
+      "generatedBy": "9ec50008-ec06-5950-9212-42f187e5985f",
+      "runtimeDependencies": [],
+      "status": "SUCCEEDED",
+      "url": 
+"https://dl.activestate.com/artifact/24a59f2c-c3ec-5586-b389-07149b46ac90/artifact.tar.gz",
+      "logURL": 
+"https://dl.activestate.com/organization/9cc783d1-c065-4aea-8a55-3b0dbc77078b/project/c2bd9427-f888-4d53-82df-14c0d612f3bd/commit/4f46dee3-1f8f-475d-af06-9554aed2903e/artifact/24a59f2c-c3ec-5586-b389-07149b46ac90/logs.jsonl",
+      "errors": null,
+      "checksum": "bbcf5b36ff31084f24c3748020768173b17967abcd2437bb93638b9dd6110440"
+    },
+    {
+      "__typename": "ArtifactSucceeded",
+      "nodeId": "2a2631ef-bcc2-5241-87e0-cbf9ee489bb9",
+      "displayName": "mingw-build-selector.application/gzip",
+      "mimeType": "application/x.artifact",
+      "generatedBy": "870f367a-c9f8-5096-9bc3-e0263bf7ca16",
+      "runtimeDependencies": [],
+      "status": "SUCCEEDED",
+      "url": 
+"https://dl.activestate.com/artifact/2a2631ef-bcc2-5241-87e0-cbf9ee489bb9/artifact.tar.gz",
+      "logURL": 
+"https://dl.activestate.com/organization/9cc783d1-c065-4aea-8a55-3b0dbc77078b/project/c2bd9427-f888-4d53-82df-14c0d612f3bd/commit/4f46dee3-1f8f-475d-af06-9554aed2903e/artifact/2a2631ef-bcc2-5241-87e0-cbf9ee489bb9/logs.jsonl",
+      "errors": null,
+      "checksum": "bbcf5b36ff31084f24c3748020768173b17967abcd2437bb93638b9dd6110440"
+    },
+    {
+      "__typename": "ArtifactSucceeded",
+      "nodeId": "4cfa45d0-ec48-524f-9f46-90c60bfb51ac",
+      "displayName": "mingw-build-selector.application/gzip",
+      "mimeType": "application/x.artifact",
+      "generatedBy": "7b9048bb-0f78-5b33-bd9d-ebddb96c6ebb",
+      "runtimeDependencies": [],
+      "status": "SUCCEEDED",
+      "url": 
+"https://dl.activestate.com/artifact/4cfa45d0-ec48-524f-9f46-90c60bfb51ac/artifact.tar.gz",
+      "logURL": 
+"https://dl.activestate.com/organization/9cc783d1-c065-4aea-8a55-3b0dbc77078b/project/c2bd9427-f888-4d53-82df-14c0d612f3bd/commit/4f46dee3-1f8f-475d-af06-9554aed2903e/artifact/4cfa45d0-ec48-524f-9f46-90c60bfb51ac/logs.jsonl",
+      "errors": null,
+      "checksum": "bbcf5b36ff31084f24c3748020768173b17967abcd2437bb93638b9dd6110440"
+    },
+    {
+      "__typename": "ArtifactSucceeded",
+      "nodeId": "59ea89fb-1b02-5798-b925-00b6a6297fa7",
+      "displayName": "provides_hello.application/octet-stream",
+      "mimeType": "application/x.artifact",
+      "generatedBy": "29ab23f6-8da0-5940-94f0-3b80b44959ec",
+      "runtimeDependencies": [],
+      "status": "SUCCEEDED",
+      "url": 
+"https://dl.activestate.com/artifact/59ea89fb-1b02-5798-b925-00b6a6297fa7/artifact.tar.gz",
+      "logURL": 
+"https://dl.activestate.com/organization/9cc783d1-c065-4aea-8a55-3b0dbc77078b/project/c2bd9427-f888-4d53-82df-14c0d612f3bd/commit/4f46dee3-1f8f-475d-af06-9554aed2903e/artifact/59ea89fb-1b02-5798-b925-00b6a6297fa7/logs.jsonl",
+      "errors": null,
+      "checksum": "bbcf5b36ff31084f24c3748020768173b17967abcd2437bb93638b9dd6110440"
+    },
+    {
+      "__typename": "ArtifactSucceeded",
+      "nodeId": "96e76974-81c5-5816-bff0-bd91840cf89c",
+      "displayName": "alternative-build-selector.application/gzip",
+      "mimeType": "application/x.artifact",
+      "generatedBy": "e116aa52-e773-51cf-9b00-a5d8f5983663",
+      "runtimeDependencies": [],
+      "status": "SUCCEEDED",
+      "url": 
+"https://dl.activestate.com/artifact/96e76974-81c5-5816-bff0-bd91840cf89c/artifact.tar.gz",
+      "logURL": 
+"https://dl.activestate.com/organization/9cc783d1-c065-4aea-8a55-3b0dbc77078b/project/c2bd9427-f888-4d53-82df-14c0d612f3bd/commit/4f46dee3-1f8f-475d-af06-9554aed2903e/artifact/96e76974-81c5-5816-bff0-bd91840cf89c/logs.jsonl",
+      "errors": null,
+      "checksum": "bbcf5b36ff31084f24c3748020768173b17967abcd2437bb93638b9dd6110440"
+    },
+    {
+      "__typename": "ArtifactSucceeded",
+      "nodeId": "bd3cdcd1-7b6c-5e5e-b144-6fa17dc28120",
+      "displayName": "provides_hello.application/octet-stream",
+      "mimeType": "application/x.artifact",
+      "generatedBy": "baf760f5-8ba1-5fba-9514-9e451389b021",
+      "runtimeDependencies": [],
+      "status": "SUCCEEDED",
+      "url": 
+"https://dl.activestate.com/artifact/bd3cdcd1-7b6c-5e5e-b144-6fa17dc28120/artifact.tar.gz",
+      "logURL": 
+"https://dl.activestate.com/organization/9cc783d1-c065-4aea-8a55-3b0dbc77078b/project/c2bd9427-f888-4d53-82df-14c0d612f3bd/commit/4f46dee3-1f8f-475d-af06-9554aed2903e/artifact/bd3cdcd1-7b6c-5e5e-b144-6fa17dc28120/logs.jsonl",
+      "errors": null,
+      "checksum": "bbcf5b36ff31084f24c3748020768173b17967abcd2437bb93638b9dd6110440"
+    },
+    {
+      "__typename": "ArtifactSucceeded",
+      "nodeId": "cd77e611-f70b-5aea-a2bb-35a2a21a612f",
+      "displayName": "mingw-build-selector.application/gzip",
+      "mimeType": "application/x.artifact",
+      "generatedBy": "673345fb-f606-52eb-bc84-f5a88e448f18",
+      "runtimeDependencies": [],
+      "status": "SUCCEEDED",
+      "url": 
+"https://dl.activestate.com/artifact/cd77e611-f70b-5aea-a2bb-35a2a21a612f/artifact.tar.gz",
+      "logURL": 
+"https://dl.activestate.com/organization/9cc783d1-c065-4aea-8a55-3b0dbc77078b/project/c2bd9427-f888-4d53-82df-14c0d612f3bd/commit/4f46dee3-1f8f-475d-af06-9554aed2903e/artifact/cd77e611-f70b-5aea-a2bb-35a2a21a612f/logs.jsonl",
+      "errors": null,
+      "checksum": "bbcf5b36ff31084f24c3748020768173b17967abcd2437bb93638b9dd6110440"
+    },
+    {
+      "__typename": "ArtifactSucceeded",
+      "nodeId": "dc78166b-9088-5f4b-9ea2-637feba4f51b",
+      "displayName": "alternative-build-selector.application/gzip",
+      "mimeType": "application/x.artifact",
+      "generatedBy": "3591500a-67a2-5492-8a16-de272287f804",
+      "runtimeDependencies": [],
+      "status": "SUCCEEDED",
+      "url": 
+"https://dl.activestate.com/artifact/dc78166b-9088-5f4b-9ea2-637feba4f51b/artifact.tar.gz",
+      "logURL": 
+"https://dl.activestate.com/organization/9cc783d1-c065-4aea-8a55-3b0dbc77078b/project/c2bd9427-f888-4d53-82df-14c0d612f3bd/commit/4f46dee3-1f8f-475d-af06-9554aed2903e/artifact/dc78166b-9088-5f4b-9ea2-637feba4f51b/logs.jsonl",
+      "errors": null,
+      "checksum": "bbcf5b36ff31084f24c3748020768173b17967abcd2437bb93638b9dd6110440"
+    }
+  ],
+  "steps": [
+    {
+      "stepId": "0b2a2ff3-2188-54c7-8447-99241326850c",
+      "inputs": [
+        {
+          "tag": "builder",
+          "nodeIds": [
+            "09386295-a8d0-5f5f-a5dc-b22598b3b4c9"
+          ]
+        },
+        {
+          "tag": "deps",
+          "nodeIds": []
+        },
+        {
+          "tag": "src",
+          "nodeIds": [
+            "a0018800-f1fb-53dd-8e10-049ba0b9245b"
+          ]
+        }
+      ],
+      "outputs": [
+        "242604ea-36aa-5ec4-a0c3-ee160b443ed8"
+      ]
+    },
+    {
+      "stepId": "29ab23f6-8da0-5940-94f0-3b80b44959ec",
+      "inputs": [
+        {
+          "tag": "builder",
+          "nodeIds": [
+            "09386295-a8d0-5f5f-a5dc-b22598b3b4c9"
+          ]
+        },
+        {
+          "tag": "deps",
+          "nodeIds": []
+        },
+        {
+          "tag": "src",
+          "nodeIds": [
+            "88ece3b1-efd3-52cd-9bac-8a3c5c80e4c7"
+          ]
+        }
+      ],
+      "outputs": [
+        "59ea89fb-1b02-5798-b925-00b6a6297fa7"
+      ]
+    },
+    {
+      "stepId": "3591500a-67a2-5492-8a16-de272287f804",
+      "inputs": [
+        {
+          "tag": "builder",
+          "nodeIds": [
+            "09386295-a8d0-5f5f-a5dc-b22598b3b4c9"
+          ]
+        },
+        {
+          "tag": "deps",
+          "nodeIds": []
+        },
+        {
+          "tag": "src",
+          "nodeIds": [
+            "a0018800-f1fb-53dd-8e10-049ba0b9245b"
+          ]
+        }
+      ],
+      "outputs": [
+        "dc78166b-9088-5f4b-9ea2-637feba4f51b"
+      ]
+    },
+    {
+      "stepId": "673345fb-f606-52eb-bc84-f5a88e448f18",
+      "inputs": [
+        {
+          "tag": "builder",
+          "nodeIds": [
+            "09386295-a8d0-5f5f-a5dc-b22598b3b4c9"
+          ]
+        },
+        {
+          "tag": "deps",
+          "nodeIds": []
+        },
+        {
+          "tag": "src",
+          "nodeIds": [
+            "b6588d63-067d-501e-84d4-d9a7881c1119"
+          ]
+        }
+      ],
+      "outputs": [
+        "cd77e611-f70b-5aea-a2bb-35a2a21a612f"
+      ]
+    },
+    {
+      "stepId": "7b9048bb-0f78-5b33-bd9d-ebddb96c6ebb",
+      "inputs": [
+        {
+          "tag": "builder",
+          "nodeIds": [
+            "09386295-a8d0-5f5f-a5dc-b22598b3b4c9"
+          ]
+        },
+        {
+          "tag": "deps",
+          "nodeIds": []
+        },
+        {
+          "tag": "src",
+          "nodeIds": [
+            "b6588d63-067d-501e-84d4-d9a7881c1119"
+          ]
+        }
+      ],
+      "outputs": [
+        "4cfa45d0-ec48-524f-9f46-90c60bfb51ac"
+      ]
+    },
+    {
+      "stepId": "870f367a-c9f8-5096-9bc3-e0263bf7ca16",
+      "inputs": [
+        {
+          "tag": "builder",
+          "nodeIds": [
+            "09386295-a8d0-5f5f-a5dc-b22598b3b4c9"
+          ]
+        },
+        {
+          "tag": "deps",
+          "nodeIds": []
+        },
+        {
+          "tag": "src",
+          "nodeIds": [
+            "b6588d63-067d-501e-84d4-d9a7881c1119"
+          ]
+        }
+      ],
+      "outputs": [
+        "2a2631ef-bcc2-5241-87e0-cbf9ee489bb9"
+      ]
+    },
+    {
+      "stepId": "9ec50008-ec06-5950-9212-42f187e5985f",
+      "inputs": [
+        {
+          "tag": "builder",
+          "nodeIds": [
+            "09386295-a8d0-5f5f-a5dc-b22598b3b4c9"
+          ]
+        },
+        {
+          "tag": "deps",
+          "nodeIds": []
+        },
+        {
+          "tag": "src",
+          "nodeIds": [
+            "88ece3b1-efd3-52cd-9bac-8a3c5c80e4c7"
+          ]
+        }
+      ],
+      "outputs": [
+        "24a59f2c-c3ec-5586-b389-07149b46ac90"
+      ]
+    },
+    {
+      "stepId": "baf760f5-8ba1-5fba-9514-9e451389b021",
+      "inputs": [
+        {
+          "tag": "builder",
+          "nodeIds": [
+            "09386295-a8d0-5f5f-a5dc-b22598b3b4c9"
+          ]
+        },
+        {
+          "tag": "deps",
+          "nodeIds": []
+        },
+        {
+          "tag": "src",
+          "nodeIds": [
+            "88ece3b1-efd3-52cd-9bac-8a3c5c80e4c7"
+          ]
+        }
+      ],
+      "outputs": [
+        "bd3cdcd1-7b6c-5e5e-b144-6fa17dc28120"
+      ]
+    },
+    {
+      "stepId": "e116aa52-e773-51cf-9b00-a5d8f5983663",
+      "inputs": [
+        {
+          "tag": "builder",
+          "nodeIds": [
+            "09386295-a8d0-5f5f-a5dc-b22598b3b4c9"
+          ]
+        },
+        {
+          "tag": "deps",
+          "nodeIds": []
+        },
+        {
+          "tag": "src",
+          "nodeIds": [
+            "a0018800-f1fb-53dd-8e10-049ba0b9245b"
+          ]
+        }
+      ],
+      "outputs": [
+        "96e76974-81c5-5816-bff0-bd91840cf89c"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "nodeId": "0ad51906-049e-554f-be54-0b7d42c12bde",
+      "ingredientId": "00000000-0000-1000-8000-000000000000",
+      "ingredientVersionId": "00000000-0000-1000-8000-000000000000",
+      "revision": 21,
+      "name": "docker-registry.activestate.build/activestate/windows-mingw-builder",
+      "namespace": "image",
+      "version": "sha256:53b503ff3df26cfa40b562fc9c0b01423aa3480599bd16b235bb8093a56ee15c",
+      "licenses": []
+    },
+    {
+      "nodeId": "88ece3b1-efd3-52cd-9bac-8a3c5c80e4c7",
+      "ingredientId": "af6d212c-71a1-5c3c-a335-75a7b22049b6",
+      "ingredientVersionId": "dbb62101-51ea-5f8d-ac4e-518026b2859f",
+      "revision": 1,
+      "name": "provides_hello",
+      "namespace": "private/ActiveState-CLI",
+      "version": "0.0.1",
+      "licenses": [
+        "",
+        ""
+      ]
+    },
+    {
+      "nodeId": "a0018800-f1fb-53dd-8e10-049ba0b9245b",
+      "ingredientId": "99be954b-95b1-53a3-9b6d-eb0c2d75afc1",
+      "ingredientVersionId": "4442f8b7-8059-5d99-831b-5ae6d866ec97",
+      "revision": 2,
+      "name": "alternative-build-selector",
+      "namespace": "internal",
+      "version": "10.0.0",
+      "licenses": []
+    },
+    {
+      "nodeId": "b6588d63-067d-501e-84d4-d9a7881c1119",
+      "ingredientId": "dc83d7cd-50b3-5b7a-ace6-79a9aeba7254",
+      "ingredientVersionId": "9a824a18-3eff-5ba3-b71c-bfb950fca206",
+      "revision": 1,
+      "name": "mingw-build-selector",
+      "namespace": "internal",
+      "version": "11.0.0",
+      "licenses": []
+    },
+    {
+      "nodeId": "d4fdf221-c145-525c-9f98-93789680b138",
+      "ingredientId": "00000000-0000-1000-8000-000000000000",
+      "ingredientVersionId": "00000000-0000-1000-8000-000000000000",
+      "revision": 4,
+      "name": "monterey.12.4.x86_64-64gb-with-brew",
+      "namespace": "image",
+      "version": "a5b5ff1f9c614d584a99a0da918f52a459a088e043b2fb74f26bd48380b68c40",
+      "licenses": []
+    },
+    {
+      "nodeId": "e311344d-208f-5d1d-a744-32a2a82dbf12",
+      "ingredientId": "00000000-0000-1000-8000-000000000000",
+      "ingredientVersionId": "00000000-0000-1000-8000-000000000000",
+      "revision": 21,
+      "name": "docker-registry.activestate.build/activestate/centos-8-builder",
+      "namespace": "image",
+      "version": "sha256:6b227ed35fe1216bac0df1ea503a32bb27d7459f4a07d4d3a705405bfecdf665",
+      "licenses": []
+    },
+    {
+      "nodeId": "e4921b27-35eb-5415-87d3-95fd3d5728e5",
+      "ingredientId": "888f7a88-fdc8-58f7-8e34-1e28425f3c5a",
+      "ingredientVersionId": "fcfb451f-d86d-5977-ae48-f27610f7d5ab",
+      "revision": 3,
+      "name": "noop-builder",
+      "namespace": "builder",
+      "version": "1.0.0",
+      "licenses": [
+        "(MIT-1.0)"
+      ]
+    }
+  ],
+  "buildLogIds": [
+    {
+      "id": "5839ede4-a43e-54f7-84f9-6af8884e7f47",
+      "platformID": ""
+    }
+  ],
+  "resolvedRequirements": [
+    {
+      "requirement": {
+        "name": "provides_hello",
+        "namespace": "private/ActiveState-CLI"
+      },
+      "resolvedSource": "88ece3b1-efd3-52cd-9bac-8a3c5c80e4c7"
+    },
+    {
+      "requirement": {
+        "name": "alternative-build-selector",
+        "namespace": "internal"
+      },
+      "resolvedSource": "a0018800-f1fb-53dd-8e10-049ba0b9245b"
+    },
+    {
+      "requirement": {
+        "name": "mingw-build-selector",
+        "namespace": "internal"
+      },
+      "resolvedSource": "b6588d63-067d-501e-84d4-d9a7881c1119"
+    }
+  ]
+}

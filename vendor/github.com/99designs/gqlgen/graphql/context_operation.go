@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/vektah/gqlparser/v2/ast"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 // Deprecated: Please update all references to OperationContext instead
@@ -13,7 +14,7 @@ type RequestContext = OperationContext
 
 type OperationContext struct {
 	RawQuery      string
-	Variables     map[string]interface{}
+	Variables     map[string]any
 	OperationName string
 	Doc           *ast.QueryDocument
 	Headers       http.Header
@@ -35,7 +36,7 @@ func (c *OperationContext) Validate(ctx context.Context) error {
 		return errors.New("field 'RawQuery' is required")
 	}
 	if c.Variables == nil {
-		c.Variables = make(map[string]interface{})
+		c.Variables = make(map[string]any)
 	}
 	if c.ResolverMiddleware == nil {
 		return errors.New("field 'ResolverMiddleware' is required")
@@ -72,8 +73,8 @@ func WithOperationContext(ctx context.Context, rc *OperationContext) context.Con
 //
 // Some errors can happen outside of an operation, eg json unmarshal errors.
 func HasOperationContext(ctx context.Context) bool {
-	_, ok := ctx.Value(operationCtx).(*OperationContext)
-	return ok
+	val, ok := ctx.Value(operationCtx).(*OperationContext)
+	return ok && val != nil
 }
 
 // This is just a convenient wrapper method for CollectFields
@@ -102,16 +103,23 @@ Next:
 
 // Errorf sends an error string to the client, passing it through the formatter.
 // Deprecated: use graphql.AddErrorf(ctx, err) instead
-func (c *OperationContext) Errorf(ctx context.Context, format string, args ...interface{}) {
+func (c *OperationContext) Errorf(ctx context.Context, format string, args ...any) {
 	AddErrorf(ctx, format, args...)
 }
 
-// Error sends an error to the client, passing it through the formatter.
-// Deprecated: use graphql.AddError(ctx, err) instead
+// Error add error or multiple errors (if underlaying type is gqlerror.List) into the stack.
+// Then it will be sends to the client, passing it through the formatter.
 func (c *OperationContext) Error(ctx context.Context, err error) {
+	if errList, ok := err.(gqlerror.List); ok {
+		for _, e := range errList {
+			AddError(ctx, e)
+		}
+		return
+	}
+
 	AddError(ctx, err)
 }
 
-func (c *OperationContext) Recover(ctx context.Context, err interface{}) error {
+func (c *OperationContext) Recover(ctx context.Context, err any) error {
 	return ErrorOnPath(ctx, c.RecoverFunc(ctx, err))
 }

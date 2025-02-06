@@ -39,7 +39,7 @@ jobs:
           - 1.22.x
         sys:
           - {os: ubuntu-latest}
-          - {os: macos-12, shell: zsh}
+          - {os: macos-13, shell: zsh}
           - {os: windows-2019}
       fail-fast: false
     runs-on: ${{ matrix.sys.os }}
@@ -511,10 +511,3 @@ jobs:
             session-build-ubuntu-20.04
             session-build-macos-11
             session-build-windows-2019
-
-      - # === Upload Artifacts ===
-        name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build
-          path: build/

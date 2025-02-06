@@ -80,6 +80,14 @@ func Getwd() (string, error) {
 	return r, nil
 }
 
+func GetwdUnsafe() string {
+	r, err := Getwd()
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
 func EnvSliceToMap(envSlice []string) map[string]string {
 	env := map[string]string{}
 	for _, v := range envSlice {

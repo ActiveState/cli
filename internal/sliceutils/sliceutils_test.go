@@ -323,3 +323,49 @@ func TestToLookupMapByKey(t *testing.T) {
 		"Key3": v3,
 	}, lookupMap)
 }
+
+func TestEqualValues(t *testing.T) {
+	tests := []struct {
+		name       string
+		comparison func() bool
+		expected   bool
+	}{
+		{
+			name: "Equal int slices",
+			comparison: func() bool {
+				return EqualValues([]int{1, 2, 3}, []int{3, 2, 1})
+			},
+			expected: true,
+		},
+		{
+			name: "Unequal int slices",
+			comparison: func() bool {
+				return EqualValues([]int{1, 2, 3}, []int{4, 5, 6})
+			},
+			expected: false,
+		},
+		{
+			name: "Equal string slices",
+			comparison: func() bool {
+				return EqualValues([]string{"a", "b", "c"}, []string{"c", "b", "a"})
+			},
+			expected: true,
+		},
+		{
+			name: "Unequal string slices",
+			comparison: func() bool {
+				return EqualValues([]string{"a", "b", "c"}, []string{"a", "b", "d"})
+			},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.comparison()
+			if result != tt.expected {
+				t.Errorf("%s = %v; want %v", tt.name, result, tt.expected)
+			}
+		})
+	}
+}

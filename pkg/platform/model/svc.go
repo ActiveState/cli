@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
 	"github.com/ActiveState/graphql"
@@ -197,6 +198,43 @@ func (m *SvcModel) GetJWT(ctx context.Context) (*mono_models.JWT, error) {
 	}
 
 	return jwt, nil
+}
+
+func (m *SvcModel) GetCache(key string) (result string, _ error) {
+	defer func() { logging.Debug("GetCache %s, result size: %d", key, len(result)) }()
+	defer profile.Measure("svc:GetCache", time.Now())
+
+	req := request.NewGetCache(key)
+	response := make(map[string]string)
+	if err := m.request(context.Background(), req, &response); err != nil {
+		return "", errs.Wrap(err, "Error sending GetCache request to state-svc")
+	}
+	if entry, ok := response["getCache"]; ok {
+		return entry, nil
+	}
+	return "", errs.New("svcModel.GetCache() did not return an expected value")
+}
+
+func (m *SvcModel) SetCache(key, value string, expiry time.Duration) error {
+	logging.Debug("SetCache %s, value size: %d", key, len(value))
+	defer profile.Measure("svc:SetCache", time.Now())
+
+	req := request.NewSetCache(key, value, expiry)
+	if err := m.request(context.Background(), req, ptr.To(make(map[string]string))); err != nil {
+		return errs.Wrap(err, "Error sending SetCache request to state-svc")
+	}
+	return nil
+}
+
+func (m *SvcModel) HashGlobs(wd string, globs []string) (*graph.GlobResult, error) {
+	defer profile.Measure("svc:HashGlobs", time.Now())
+
+	req := request.NewHashGlobs(wd, globs)
+	res := graph.HashGlobsResponse{}
+	if err := m.request(context.Background(), req, &res); err != nil {
+		return nil, errs.Wrap(err, "Error sending HashGlobs request to state-svc")
+	}
+	return &res.Response, nil
 }
 
 func jsonFromMap(m map[string]interface{}) string {

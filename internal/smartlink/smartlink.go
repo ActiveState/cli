@@ -40,6 +40,8 @@ func LinkContents(src, dest string) error {
 // Link creates a link from src to target. MS decided to support Symlinks but only if you opt into developer mode (go figure),
 // which we cannot reasonably force on our users. So on Windows we will instead create dirs and hardlinks.
 func Link(src, dest string) error {
+	originalSrc := src
+
 	var err error
 	src, dest, err = resolvePaths(src, dest)
 	if err != nil {
@@ -47,6 +49,16 @@ func Link(src, dest string) error {
 	}
 
 	if fileutils.IsDir(src) {
+		if fileutils.IsSymlink(originalSrc) {
+			// If the original src is a symlink, the resolved src is no longer a symlink and could point
+			// to a parent directory, resulting in a recursive directory structure.
+			// Avoid any potential problems by simply linking the original link to the target.
+			// Links to directories are okay on Linux and macOS, but will fail on Windows.
+			// If we ever get here on Windows, the artifact being deployed is bad and there's nothing we
+			// can do about it except receive the report from Rollbar and report it internally.
+			return linkFile(originalSrc, dest)
+		}
+
 		if err := fileutils.Mkdir(dest); err != nil {
 			return errs.Wrap(err, "could not create directory %s", dest)
 		}
