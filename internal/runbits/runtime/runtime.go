@@ -1,8 +1,10 @@
 package runtime_runbit
 
 import (
+	"fmt"
 	"net/url"
 	"os"
+	"strings"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
@@ -236,7 +238,11 @@ func Update(
 	defer cancel()
 	if procs, err := prime.SvcModel().GetProcessesInUse(ctx, rt.Env(false).ExecutorsPath); err == nil {
 		if len(procs) > 0 {
-			return nil, &RuntimeInUseError{procs}
+			list := []string{}
+			for _, proc := range procs {
+				list = append(list, fmt.Sprintf("   - %s (process: %d)", proc.Exe, proc.Pid))
+			}
+			prime.Output().Notice(locale.Tr("runtime_setup_in_use_warning", strings.Join(list, "\n")))
 		}
 	} else {
 		multilog.Error("Unable to determine if runtime is in use: %v", errs.JoinMessage(err))
