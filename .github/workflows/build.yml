@@ -410,7 +410,6 @@ jobs:
           merge-multiple: true
 
       - name: Scan for CVEs
-        if: runner.os == 'Linux'
         uses: aquasecurity/trivy-action@0.26.0
         env:
           TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db,public.ecr.aws/aquasecurity/trivy-db
