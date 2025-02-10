@@ -1,6 +1,6 @@
 module github.com/ActiveState/cli
 
-go 1.22.11
+go 1.22.12
 
 require (
 	github.com/99designs/gqlgen v0.17.54
