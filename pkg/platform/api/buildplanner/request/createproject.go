@@ -18,37 +18,46 @@ type createProject struct {
 func (c *createProject) Query() string {
 	return `
 mutation ($organization: String!, $project: String!, $private: Boolean!, $expr: BuildExpr!, $description: String!) {
-	createProject(input:{organization:$organization, project:$project, private:$private, expr:$expr, description:$description}) {
-		... on ProjectCreated {
-			__typename
-			commit {
-				__typename
-				commitId
-			}
-		}
-		... on AlreadyExists {
-			__typename
-			message
-		}
-		... on NotFound {
-			__typename
-			message
-		}
-		... on ParseError {
-			__typename
-			message
-			path
-		}
-		... on ValidationError {
-			__typename
-			message
-		}
-		... on Forbidden {
-			__typename
-			message
-		}
-	}
-}`
+  createProject(
+    input: {organization: $organization, project: $project, private: $private, expr: $expr, description: $description}
+  ) {
+    ... on ProjectCreated {
+      __typename
+      commit {
+        __typename
+        commitId
+      }
+    }
+    ... on Error {
+      __typename
+      message
+    }
+    ... on ErrorWithSubErrors {
+      __typename
+      subErrors {
+        __typename
+        ... on GenericSolveError {
+          message
+          isTransient
+          validationErrors {
+            error
+            jsonPath
+          }
+        }
+        ... on RemediableSolveError {
+          message
+          isTransient
+          errorType
+          validationErrors {
+            error
+            jsonPath
+          }
+        }
+      }
+    }
+  }
+}
+`
 }
 
 func (c *createProject) Vars() (map[string]interface{}, error) {

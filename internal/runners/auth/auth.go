@@ -84,7 +84,7 @@ func (a *Auth) Run(params *AuthParams) error {
 
 func (a *Auth) authenticate(params *AuthParams) error {
 	if params.Prompt || params.Username != "" {
-		return auth.AuthenticateWithInput(params.Username, params.Password, params.Totp, params.NonInteractive, a.Cfg, a.Outputer, a.Prompter, a.Auth)
+		return auth.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.Cfg, a.Outputer, a.Prompter, a.Auth)
 	}
 
 	if params.Token != "" {

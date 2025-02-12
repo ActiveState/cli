@@ -34,3 +34,12 @@ func LogPanics(recovered interface{}, stack []byte) bool {
 	}
 	return false
 }
+
+// LogAndPanic produces actionable output for panic events (that shouldn't happen) and panics
+func LogAndPanic(recovered interface{}, stack []byte) {
+	if recovered != nil {
+		multilog.Error("Panic: %v", recovered)
+		logging.Debug("Stack: %s", string(stack))
+		panic(recovered) // We're only logging the panic, not interrupting it
+	}
+}

@@ -225,15 +225,12 @@ func (r *Runner) Run(params *Params) error {
 {{.V0}}
 
 Do you want to publish this ingredient?
-`, string(b)),
-		ptr.To(true),
-	)
+`, string(b)), ptr.To(true), nil)
 	if err != nil {
-		return errs.Wrap(err, "Confirmation failed")
+		return errs.Wrap(err, "Not confirmed")
 	}
 	if !cont {
-		r.out.Print(locale.Tl("uploadingredient_cancel", "Publish cancelled"))
-		return nil
+		return locale.NewInputError("uploadingredient_cancel", "Publish cancelled")
 	}
 
 	r.out.Notice(locale.Tl("uploadingredient_uploading", "Publishing ingredient..."))
@@ -447,7 +444,7 @@ func (r *Runner) OpenInEditor(pr *request.PublishVariables) error {
 	}
 
 	// Wait for confirmation
-	if _, err := r.prompt.Input("", locale.Tl("uploadingredient_edit_confirm", "Press enter when done editing"), ptr.To("")); err != nil {
+	if _, err := r.prompt.Input("", locale.Tl("uploadingredient_edit_confirm", "Press enter when done editing"), ptr.To(""), nil); err != nil {
 		return errs.Wrap(err, "Confirmation failed")
 	}
 

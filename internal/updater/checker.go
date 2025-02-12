@@ -72,11 +72,12 @@ func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*AvailableUpd
 	return info, nil
 }
 
-func (u *Checker) infoURL(tag, desiredVersion, branchName, platform string) string {
+func (u *Checker) infoURL(tag, desiredVersion, branchName, platform, arch string) string {
 	v := make(url.Values)
 	v.Set("channel", branchName)
 	v.Set("platform", platform)
 	v.Set("source", string(u.InvocationSource))
+	v.Set("arch", arch)
 
 	if desiredVersion != "" {
 		v.Set("target-version", desiredVersion)
@@ -91,7 +92,7 @@ func (u *Checker) infoURL(tag, desiredVersion, branchName, platform string) stri
 
 func (u *Checker) getUpdateInfo(desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
 	tag := u.cfg.GetString(CfgUpdateTag)
-	infoURL := u.infoURL(tag, desiredVersion, desiredChannel, runtime.GOOS)
+	infoURL := u.infoURL(tag, desiredVersion, desiredChannel, runtime.GOOS, runtime.GOARCH)
 	logging.Debug("Getting update info: %s", infoURL)
 
 	var info *AvailableUpdate

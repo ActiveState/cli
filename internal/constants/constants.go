@@ -118,9 +118,6 @@ const OverrideSessionTokenEnvVarName = "ACTIVESTATE_OVERRIDE_SESSION_TOKEN"
 // UpdateTagEnvVarName
 const UpdateTagEnvVarName = "ACTIVESTATE_UPDATE_TAG"
 
-// NonInteractiveEnvVarName is the name of the environment variable that specifies whether to run the State Tool without prompts
-const NonInteractiveEnvVarName = "ACTIVESTATE_NONINTERACTIVE"
-
 // E2ETestEnvVarName is the name of the environment variable that specifies that we are running under E2E tests
 const E2ETestEnvVarName = "ACTIVESTATE_E2E_TEST"
 
@@ -154,8 +151,8 @@ const OptinUnstableEnvVarName = "ACTIVESTATE_OPTIN_UNSTABLE"
 // ServiceSockDir overrides the default socket path root diriectory used by the state service
 const ServiceSockDir = "ACTIVESTATE_SVC_SOCK"
 
-// MessagesOverrideEnvVarName is used to override the location of the messages file (for testing purposes - should hold local filepath)
-const MessagesOverrideEnvVarName = "ACTIVESTATE_MESSAGES_OVERRIDE"
+// NotificationsOverrideEnvVarName is used to override the location of the notifications file (for testing purposes - should hold local filepath)
+const NotificationsOverrideEnvVarName = "ACTIVESTATE_NOTIFICATIONS_OVERRIDE"
 
 // DisableErrorTipsEnvVarName disables the display of tips in error messages.
 // This should only be used by the installer so-as not to pollute error message output.
@@ -264,8 +261,8 @@ const VulnerabilitiesAPIPath = "/v13s/v1/graphql"
 // HasuraInventoryAPIPath is the path used for the hasura inventory api
 const HasuraInventoryAPIPath = "/sv/hasura-inventory/v1/graphql"
 
-// MessagesInfoURL is the URL we check against to see what versions are deprecated
-const MessagesInfoURL = "https://state-tool.s3.amazonaws.com/messages.json"
+// NotificationsInfoURL is the URL we check against to see what versions are deprecated
+const NotificationsInfoURL = "https://state-tool.s3.amazonaws.com/messages.json"
 
 // DateFormatUser is the date format we use when communicating with the end-user
 const DateFormatUser = "January 02, 2006"
@@ -493,3 +490,6 @@ const OverrideShellEnvVarName = "ACTIVESTATE_CLI_SHELL_OVERRIDE"
 
 // IgnoreEnvEnvVarName is the environment variable to set for skipping specific environment variables during runtime setup.
 const IgnoreEnvEnvVarName = "ACTIVESTATE_CLI_IGNORE_ENV"
+
+// ProgressUrlPathName is the trailing path for a project's build progress.
+const BuildProgressUrlPathName = "distributions"

@@ -147,6 +147,7 @@ func (p *ProgressDigester) Handle(ev events.Event) error {
 		// already progressbars being displayed which won't play nice with newly printed output.
 		if v.RequiresBuild {
 			p.out.Notice(locale.Tr("progress_build_log", v.LogFilePath))
+			p.out.Notice(locale.Tr("progress_build_url", v.ProgressUrl))
 		}
 
 		p.recipeID = v.RecipeID

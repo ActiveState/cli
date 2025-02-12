@@ -37,8 +37,8 @@ type ErrTokenRequired struct{ *locale.LocalizedError }
 var errNotYetGranted = locale.NewInputError("err_auth_device_noauth")
 
 // jwtLifetime is the lifetime of the JWT. This is defined by the API, but the API doesn't communicate this.
-// We drop a minute from this to avoid race conditions with the API.
-const jwtLifetime = (1 * time.Hour) - (1 * time.Minute)
+// We drop 10 minutes from this to be on the safe side and avoid race conditions with the API.
+const jwtLifetime = (1 * time.Hour) - (10 * time.Minute)
 
 // Auth is the base structure used to record the authenticated state
 type Auth struct {

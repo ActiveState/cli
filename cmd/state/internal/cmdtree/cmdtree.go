@@ -79,8 +79,8 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	cleanCmd := newCleanCommand(prime)
 	cleanCmd.AddChildren(
 		newCleanUninstallCommand(prime, globals),
-		newCleanCacheCommand(prime, globals),
-		newCleanConfigCommand(prime),
+		newCleanCacheCommand(prime),
+		newCleanConfigCommand(prime, globals),
 	)
 
 	deployCmd := newDeployCommand(prime)
@@ -137,8 +137,8 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	updateCmd := newUpdateCommand(prime)
 	updateCmd.AddChildren(
-		newUpdateLockCommand(prime, globals),
-		newUpdateUnlockCommand(prime, globals))
+		newUpdateLockCommand(prime),
+		newUpdateUnlockCommand(prime))
 
 	branchCmd := newBranchCommand(prime)
 	branchCmd.AddChildren(
@@ -157,7 +157,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	useCmd := newUseCommand(prime)
 	useCmd.AddChildren(
-		newUseResetCommand(prime, globals),
+		newUseResetCommand(prime),
 		newUseShowCommand(prime),
 	)
 
@@ -204,8 +204,8 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		prepareCmd,
 		newProtocolCommand(prime),
 		newExecCommand(prime, args...),
-		newRevertCommand(prime, globals),
-		newResetCommand(prime, globals),
+		newRevertCommand(prime),
+		newResetCommand(prime),
 		secretsCmd,
 		branchCmd,
 		newLearnCommand(prime),
@@ -234,6 +234,7 @@ type globalOptions struct {
 	Output         string
 	Monochrome     bool
 	NonInteractive bool
+	Force          bool
 }
 
 // Group instances are used to group command help output.
@@ -294,14 +295,27 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 				Shorthand:   "o",
 				Description: locale.T("flag_state_output_description"),
 				Persist:     true,
-				Value:       &globals.Output,
+				OnUse: func() {
+					if prime.Output().Type().IsStructured() {
+						globals.NonInteractive = true
+					}
+				},
+				Value: &globals.Output,
 			},
 			{
 				Name:        "non-interactive", // Name and Shorthand should be kept in sync with cmd/state/output.go
 				Description: locale.T("flag_state_non_interactive_description"),
 				Shorthand:   "n",
 				Persist:     true,
+				OnUse:       func() { prime.Prompt().SetInteractive(false) },
 				Value:       &globals.NonInteractive,
+			},
+			{
+				Name:        "force",
+				Description: locale.T("flag_state_force_description"),
+				Persist:     true,
+				OnUse:       func() { prime.Prompt().SetForce(true) },
+				Value:       &globals.Force,
 			},
 			{
 				Name:        "version",
@@ -318,10 +332,6 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			if globals.Verbose {
-				logging.CurrentHandler().SetVerbose(true)
-			}
-
 			return runner.Run(ccmd.Usage)
 		},
 	)

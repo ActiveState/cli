@@ -1,7 +1,10 @@
 package runtime_runbit
 
 import (
+	"fmt"
+	"net/url"
 	"os"
+	"strings"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
@@ -235,7 +238,11 @@ func Update(
 	defer cancel()
 	if procs, err := prime.SvcModel().GetProcessesInUse(ctx, rt.Env(false).ExecutorsPath); err == nil {
 		if len(procs) > 0 {
-			return nil, &RuntimeInUseError{procs}
+			list := []string{}
+			for _, proc := range procs {
+				list = append(list, fmt.Sprintf("   - %s (process: %d)", proc.Exe, proc.Pid))
+			}
+			prime.Output().Notice(locale.Tr("runtime_setup_in_use_warning", strings.Join(list, "\n")))
 		}
 	} else {
 		multilog.Error("Unable to determine if runtime is in use: %v", errs.JoinMessage(err))
@@ -251,6 +258,27 @@ func Update(
 	}
 	if opts.Archive != nil {
 		rtOpts = append(rtOpts, runtime.WithArchive(opts.Archive.Dir, opts.Archive.PlatformID, checkout.ArtifactExt))
+	}
+	if buildPlan.IsBuildInProgress() {
+		// Build progress URL is of the form
+		// https://<host>/<owner>/<project>/distributions?branch=<branch>&commitID=<commitID>
+		host := constants.DefaultAPIHost
+		if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
+			host = hostOverride
+		}
+		path, err := url.JoinPath(proj.Owner(), proj.Name(), constants.BuildProgressUrlPathName)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not construct progress url path")
+		}
+		u := &url.URL{Scheme: "https", Host: host, Path: path}
+		q := u.Query()
+		q.Set("branch", proj.BranchName())
+		q.Set("commitID", commitID.String())
+		u.RawQuery = q.Encode()
+		rtOpts = append(rtOpts, runtime.WithBuildProgressUrl(u.String()))
+	}
+	if proj.IsPortable() {
+		rtOpts = append(rtOpts, runtime.WithPortable())
 	}
 
 	if err := rt.Update(buildPlan, rtHash, rtOpts...); err != nil {
