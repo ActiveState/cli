@@ -485,6 +485,8 @@ arg_platforms_shared_name_description:
   other: Name[@<version>]
 field_version:
   other: Version
+field_arch:
+  other: Arch
 field_bitwidth:
   other: Bit Width
 fileutils_err_amend_file:
