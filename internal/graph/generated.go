@@ -40,6 +40,12 @@ type Jwt struct {
 	User  *User  `json:"user"`
 }
 
+type Message struct {
+	ID      string `json:"id"`
+	Topic   string `json:"topic"`
+	Message string `json:"message"`
+}
+
 type Mutation struct {
 }
 

@@ -26,7 +26,6 @@ func (c *CmdCall) OnExecStart(cmd *captain.Command, _ []string) error {
 		return errs.Wrap(err, "before-command event run failure")
 	}
 	return nil
-
 }
 
 func (c *CmdCall) OnExecStop(cmd *captain.Command, _ []string) error {
