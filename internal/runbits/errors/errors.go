@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -30,6 +31,19 @@ type ErrorTips interface {
 
 type OutputError struct {
 	error
+}
+
+var errorId string
+
+// Returns a relatively unique ID for error reporting.
+// We report this ID in non-user-facing errors and on Rollbar so we can cross-reference them.
+// Repeated calls return the same ID.
+func getErrorId() string {
+	if errorId == "" {
+		errorId = uuid.New().String()[:8]
+	}
+
+	return errorId
 }
 
 func (o *OutputError) MarshalOutput(f output.Format) interface{} {
@@ -68,7 +82,11 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 
 	// Concatenate error tips
 	errorTips := getErrorTips(o.error)
-	errorTips = append(errorTips, locale.Tl("err_help_forum", "Ask For Help → [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
+	helpMsg := locale.Tl("err_help_forum", "Ask For Help → [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL)
+	if IsReportableError(o.error) {
+		helpMsg += "\n   " + locale.Tl("err_help_error_id", "When doing so, please reference the following error ID: {{.V0}}", getErrorId())
+	}
+	errorTips = append(errorTips, helpMsg)
 
 	// Print tips
 	enableTips := os.Getenv(constants.DisableErrorTipsEnvVarName) != "true" && f == output.PlainFormatName
@@ -197,7 +215,7 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 	var action string
 	errorMsg := err.Error()
 	if IsReportableError(err) {
-		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.JoinMessage(err), stack)
+		multilog.Critical("Returning error (ID: %s):\n%s\nCreated at:\n%s", getErrorId(), errs.JoinMessage(err), stack)
 		action = anaConst.ActCommandError
 	} else {
 		logging.Debug("Returning input error:\n%s\nCreated at:\n%s", errs.JoinMessage(err), stack)
