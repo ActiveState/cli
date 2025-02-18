@@ -108,6 +108,7 @@ type Project struct {
 	Jobs          Jobs          `yaml:"jobs,omitempty"`
 	Private       bool          `yaml:"private,omitempty"`
 	Cache         string        `yaml:"cache,omitempty"`
+	Portable      bool          `yaml:"portable,omitempty"`
 	path          string        // "private"
 	parsedURL     projectURL    // parsed url data
 	parsedChannel string
@@ -920,6 +921,7 @@ type CreateParams struct {
 	path       string
 	ProjectURL string
 	Cache      string
+	Portable   bool
 }
 
 // Create will create a new activestate.yaml with a projectURL for the given details
@@ -1019,7 +1021,7 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	if params.Cache != "" {
-		createErr := createHostFile(params.Directory, params.Cache)
+		createErr := createHostFile(params.Directory, params.Cache, params.Portable)
 		if createErr != nil {
 			return nil, errs.Wrap(createErr, "Could not create cache file")
 		}
@@ -1028,14 +1030,15 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	return Parse(params.path)
 }
 
-func createHostFile(filePath, cachePath string) error {
+func createHostFile(filePath, cachePath string, portable bool) error {
 	user, err := user.Current()
 	if err != nil {
 		return errs.Wrap(err, "Could not get current user")
 	}
 
 	data := map[string]interface{}{
-		"Cache": cachePath,
+		"Cache":    cachePath,
+		"Portable": portable,
 	}
 
 	tplName := "activestate.yaml.cache.tpl"

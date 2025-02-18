@@ -252,6 +252,9 @@ func Update(
 	if opts.Archive != nil {
 		rtOpts = append(rtOpts, runtime.WithArchive(opts.Archive.Dir, opts.Archive.PlatformID, checkout.ArtifactExt))
 	}
+	if proj.IsPortable() {
+		rtOpts = append(rtOpts, runtime.WithPortable())
+	}
 
 	if err := rt.Update(buildPlan, rtHash, rtOpts...); err != nil {
 		return nil, locale.WrapError(err, "err_packages_update_runtime_install")
