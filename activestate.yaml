@@ -81,7 +81,6 @@ scripts:
   - name: install-deps-ci
     language: bash
     standalone: true
-    if: ne .Shell "cmd"
     value: |
       if { [[ "$GOOS" == "windows" ]] || [[ "$OS" == "Windows_NT" ]]; } && ! type "goversioninfo" &> /dev/null; then
         echo "goversioninfo was not found on your PATH. Installing .."
