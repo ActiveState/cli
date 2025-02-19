@@ -313,6 +313,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 			{
 				Name:        "force",
 				Description: locale.T("flag_state_force_description"),
+				Shorthand:   "f",
 				Persist:     true,
 				OnUse:       func() { prime.Prompt().SetForce(true) },
 				Value:       &globals.Force,
