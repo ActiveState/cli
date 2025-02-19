@@ -40,7 +40,7 @@ jobs:
         sys:
           - {os: ubuntu-latest}
           - {os: macos-13, shell: zsh}
-          - {os: windows-2019}
+          - {os: windows-2022}
       fail-fast: false
     runs-on: ${{ matrix.sys.os }}
     env:
@@ -262,7 +262,7 @@ jobs:
 
       - # === Configure AWS credentials ==
         name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: ${{ env.AWS_ROLE_SESSION_NAME }}
@@ -482,7 +482,7 @@ jobs:
 
       - # === Configure AWS credentials ==
         name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: ${{ env.AWS_ROLE_SESSION_NAME }}
