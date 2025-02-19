@@ -81,6 +81,16 @@ jobs:
       - # === Install State Tool ===
         name: Install State Tool
         uses: ActiveState/setup-state-tool@v1
+        if: runner.os != 'Windows'
+
+      - # === Install State Tool (Windows) ===
+        name: Install State Tool (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Invoke-Expression -Command ".\installers\install.ps1 -n"
+          echo "$env:LOCALAPPDATA\ActiveState\StateTool\release\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Invoke-Expression "$env:LOCALAPPDATA\ActiveState\StateTool\release\bin\state config set optin.unstable true"
 
       - # === Setup ===
         name: Setup
@@ -262,7 +272,7 @@ jobs:
 
       - # === Configure AWS credentials ==
         name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: ${{ env.AWS_ROLE_SESSION_NAME }}
@@ -482,7 +492,7 @@ jobs:
 
       - # === Configure AWS credentials ==
         name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: ${{ env.AWS_ROLE_SESSION_NAME }}

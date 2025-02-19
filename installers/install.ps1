@@ -154,7 +154,7 @@ function setShellOverride
     $currentPid = $PID
     while ($currentPid -ne 0)
     {
-        $process = Get-WmiObject Win32_Process | Where-Object { $_.ProcessId -eq $currentPid }
+        $process = Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -eq $currentPid }
         if (!$process) { break }
 
         if ($process.Name -eq "cmd" -or $process.Name -eq "cmd.exe")
