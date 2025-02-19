@@ -81,7 +81,7 @@ jobs:
       - # === Install State Tool ===
         name: Install State Tool
         uses: ActiveState/setup-state-tool@v1
-        if: "!contains(matrix.sys.os, 'arm')"
+        if: "!contains(matrix.sys.os, 'arm') && runner.os != 'Windows'"
 
       - # === Install State Tool (ARM64) ===
         name: Install State Tool (ARM64)
@@ -91,6 +91,15 @@ jobs:
           ./installers/install.sh -b beta
           echo "$HOME/.local/ActiveState/StateTool/beta/bin" >> $GITHUB_PATH
           "$HOME/.local/ActiveState/StateTool/beta/bin/state" config set optin.unstable true
+
+      - # === Install State Tool (Windows) ===
+        name: Install State Tool (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Invoke-Expression -Command ".\installers\install.ps1 -n"
+          echo "$env:LOCALAPPDATA\ActiveState\StateTool\release\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Invoke-Expression "$env:LOCALAPPDATA\ActiveState\StateTool\release\bin\state config set optin.unstable true"
 
       - # === Setup ===
         name: Setup
