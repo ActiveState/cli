@@ -136,11 +136,13 @@ func funcCallString(f *funcCall) string {
 	}
 
 	buf := bytes.Buffer{}
-	buf.WriteString(fmt.Sprintf("%s(%s", f.Name, newline))
-
-	buf.WriteString(argsToString(f.Arguments, newline, comma, indent))
-
-	buf.WriteString(")")
+	if len(f.Arguments) > 0 {
+		buf.WriteString(fmt.Sprintf("%s(%s", f.Name, newline))
+		buf.WriteString(argsToString(f.Arguments, newline, comma, indent))
+		buf.WriteString(")")
+	} else {
+		buf.WriteString(fmt.Sprintf("%s()", f.Name))
+	}
 	return buf.String()
 }
 
