@@ -168,7 +168,7 @@ func (d *Deploy) install(params *Params, commitID strfmt.UUID) (rerr error) {
 
 	if err := checkout.CreateProjectFiles(
 		params.Path, params.Path, params.Namespace.Owner, params.Namespace.Project,
-		constants.DefaultBranchName, commitID.String(), "",
+		constants.DefaultBranchName, commitID.String(), "", true,
 	); err != nil {
 		return errs.Wrap(err, "Could not create project files")
 	}

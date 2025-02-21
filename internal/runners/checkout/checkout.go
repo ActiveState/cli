@@ -38,6 +38,7 @@ type Params struct {
 	RuntimePath   string
 	NoClone       bool
 	Force         bool
+	Portable      bool
 }
 
 type primeable interface {
@@ -121,7 +122,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 
 	u.out.Notice(locale.Tr("checking_out", ns.String()))
 
-	projectDir, err := u.checkout.Run(ns, params.Branch, params.RuntimePath, params.PreferredPath, params.NoClone, archive != nil)
+	projectDir, err := u.checkout.Run(ns, params.Branch, params.RuntimePath, params.PreferredPath, params.NoClone, archive != nil, params.Portable)
 	if err != nil {
 		return errs.Wrap(err, "Checkout failed")
 	}

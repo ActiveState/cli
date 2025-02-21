@@ -395,6 +395,39 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutFromArchive() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutPortable() {
+	suite.OnlyRunForTags(tagsuite.Checkout)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// Checkout a working runtime.
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python#fb513fe6-b9f4-4c54-adf3-8a7833b290f3", ".", "--portable")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	// Remove the artifact depot.
+	suite.Require().NoError(os.RemoveAll(filepath.Join(ts.Dirs.Cache, "depot")))
+
+	// Verify the runtime still works because its contents are copies, not links.
+	proj, err := project.FromPath(ts.Dirs.Work)
+	suite.Require().NoError(err)
+	targetDir := filepath.Join(ts.Dirs.Cache, runtime_helpers.DirNameFromProjectDir(proj.Dir()))
+	pythonExe := filepath.Join(rt.ExecutorsPath(targetDir), "python3"+osutils.ExeExtension)
+	cp = ts.SpawnCmd(pythonExe, "--version")
+	cp.Expect("Python 3")
+	cp.ExpectExitCode(0)
+
+	// Verify there are no symlinks in the runtime.
+	files, err := fileutils.ListDir(targetDir, true)
+	suite.Require().NoError(err)
+	for _, file := range files {
+		path := filepath.Join(targetDir, file.Name())
+		resolvedPath, err := fileutils.ResolvePath(path)
+		suite.Require().NoError(err)
+		suite.Assert().NotContains(resolvedPath, "depot", "runtime file '%s' should not be linked to the depot", file.Name())
+	}
+}
+
 func TestCheckoutIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(CheckoutIntegrationTestSuite))
 }

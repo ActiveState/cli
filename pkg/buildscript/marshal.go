@@ -22,6 +22,7 @@ const (
 	ltFuncName  = "Lt"
 	lteFuncName = "Lte"
 	andFuncName = "And"
+	anyFuncName = "Any"
 )
 
 // Marshal returns this structure in AScript, suitable for writing to disk.
