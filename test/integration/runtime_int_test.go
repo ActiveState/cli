@@ -212,6 +212,35 @@ func (suite *RuntimeIntegrationTestSuite) TestIgnoreEnvironmentVars() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *RuntimeIntegrationTestSuite) TestRuntimeCache() {
+	suite.OnlyRunForTags(tagsuite.Critical)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI/Empty", "b55d0e63-db48-43c4-8341-e2b7a1cc134c")
+
+	cp := ts.Spawn("install", "shared/zlib")
+	cp.Expect("Downloading")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("reset", "-n") // should not remove cached shared/zlib artifact
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "shared/zlib")
+	cp.ExpectExitCode(0)
+	suite.Assert().NotContains(cp.Snapshot(), "Downloading", "shared/zlib should have been cached")
+
+	cp = ts.Spawn("config", "set", constants.RuntimeCacheSizeConfigKey, "0")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("reset", "-n") // should remove cached shared/zlib artifact
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "shared/zlib")
+	cp.Expect("Downloading")
+	cp.ExpectExitCode(0)
+}
+
 func TestRuntimeIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(RuntimeIntegrationTestSuite))
 }

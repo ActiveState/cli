@@ -7,14 +7,19 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"sync"
+	"time"
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/smartlink"
 )
@@ -24,7 +29,8 @@ const (
 )
 
 type depotConfig struct {
-	Deployments map[strfmt.UUID][]deployment `json:"deployments"`
+	Deployments map[strfmt.UUID][]deployment  `json:"deployments"`
+	Cache       map[strfmt.UUID]*artifactInfo `json:"cache"`
 }
 
 type deployment struct {
@@ -41,6 +47,12 @@ const (
 	deploymentTypeCopy                = "copy"
 )
 
+type artifactInfo struct {
+	InUse          bool  `json:"inUse"`
+	Size           int64 `json:"size"`
+	LastAccessTime int64 `json:"lastAccessTime"`
+}
+
 type ErrVolumeMismatch struct {
 	DepotVolume string
 	PathVolume  string
@@ -55,7 +67,14 @@ type depot struct {
 	depotPath string
 	artifacts map[strfmt.UUID]struct{}
 	fsMutex   *sync.Mutex
+	cacheSize int64
 }
+
+func init() {
+	configMediator.RegisterOption(constants.RuntimeCacheSizeConfigKey, configMediator.Int, 500)
+}
+
+const MB int64 = 1024 * 1024
 
 func newDepot(runtimePath string) (*depot, error) {
 	depotPath := filepath.Join(storage.CachePath(), depotName)
@@ -73,6 +92,7 @@ func newDepot(runtimePath string) (*depot, error) {
 	result := &depot{
 		config: depotConfig{
 			Deployments: map[strfmt.UUID][]deployment{},
+			Cache:       map[strfmt.UUID]*artifactInfo{},
 		},
 		depotPath: depotPath,
 		artifacts: map[strfmt.UUID]struct{}{},
@@ -120,6 +140,10 @@ func newDepot(runtimePath string) (*depot, error) {
 	}
 
 	return result, nil
+}
+
+func (d *depot) SetCacheSize(mb int) {
+	d.cacheSize = int64(mb) * MB
 }
 
 func (d *depot) Exists(id strfmt.UUID) bool {
@@ -196,6 +220,7 @@ func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) 
 		Files:       files.RelativePaths(),
 		RelativeSrc: relativeSrc,
 	})
+	d.recordUse(id)
 
 	return nil
 }
@@ -253,8 +278,26 @@ func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) 
 		Files:       files.RelativePaths(),
 		RelativeSrc: relativeSrc,
 	})
+	d.recordUse(id)
 
 	return nil
+}
+
+func (d *depot) recordUse(id strfmt.UUID) {
+	// Ensure a cache entry for this artifact exists and then update its last access time.
+	if _, exists := d.config.Cache[id]; !exists {
+		size, err := fileutils.GetDirSize(d.Path(id))
+		if err != nil {
+			multilog.Error("Could not get artifact size on disk: %v", err)
+			size = 0
+		}
+		logging.Debug("Recording artifact '%s' with size %.1f MB", id.String(), float64(size)/float64(MB))
+		d.config.Cache[id] = &artifactInfo{Size: size}
+	} else {
+		logging.Debug("Recording use of artifact '%s'", id.String())
+	}
+	d.config.Cache[id].InUse = true
+	d.config.Cache[id].LastAccessTime = time.Now().Unix()
 }
 
 func (d *depot) Undeploy(id strfmt.UUID, relativeSrc, path string) error {
@@ -372,14 +415,14 @@ func (d *depot) getSharedFilesToRedeploy(id strfmt.UUID, deploy deployment, path
 // Save will write config changes to disk (ie. links between depot artifacts and runtimes that use it).
 // It will also delete any stale artifacts which are not used by any runtime.
 func (d *depot) Save() error {
-	// Delete artifacts that are no longer used
+	// Mark artifacts that are no longer used and remove the old ones.
 	for id := range d.artifacts {
 		if deployments, ok := d.config.Deployments[id]; !ok || len(deployments) == 0 {
-			if err := os.RemoveAll(d.Path(id)); err != nil {
-				return errs.Wrap(err, "failed to remove stale artifact")
-			}
+			d.config.Cache[id].InUse = false
+			logging.Debug("Artifact '%s' is no longer in use", id.String())
 		}
 	}
+	d.removeStaleArtifacts()
 
 	// Write config file changes to disk
 	configFile := filepath.Join(d.depotPath, depotFile)
@@ -421,4 +464,40 @@ func someFilesExist(filePaths []string, basePath string) bool {
 		}
 	}
 	return false
+}
+
+// removeStaleArtifacts iterates over all unused artifacts in the depot, sorts them by last access
+// time, and removes them until the size of cached artifacts is under the limit.
+func (d *depot) removeStaleArtifacts() {
+	type artifact struct {
+		id   strfmt.UUID
+		info *artifactInfo
+	}
+	var totalSize int64
+	unusedArtifacts := make([]*artifact, 0)
+
+	for id, info := range d.config.Cache {
+		if !info.InUse {
+			totalSize += info.Size
+			unusedArtifacts = append(unusedArtifacts, &artifact{id: id, info: info})
+		}
+	}
+	logging.Debug("There are %d unused artifacts totaling %.1f MB in size", len(unusedArtifacts), float64(totalSize)/float64(MB))
+
+	sort.Slice(unusedArtifacts, func(i, j int) bool {
+		return unusedArtifacts[i].info.LastAccessTime < unusedArtifacts[j].info.LastAccessTime
+	})
+
+	for _, artifact := range unusedArtifacts {
+		if totalSize <= d.cacheSize {
+			break // done
+		}
+		logging.Debug("Removing cached artifact '%s', last accessed on %s", artifact.id.String(), time.Unix(artifact.info.LastAccessTime, 0).Format(time.UnixDate))
+		if err := os.RemoveAll(d.Path(artifact.id)); err == nil {
+			totalSize -= artifact.info.Size
+		} else {
+			multilog.Error("Could not delete old artifact: %v", err)
+		}
+		delete(d.config.Cache, artifact.id)
+	}
 }

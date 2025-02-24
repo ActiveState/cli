@@ -281,6 +281,7 @@ func Update(
 	if proj.IsPortable() {
 		rtOpts = append(rtOpts, runtime.WithPortable())
 	}
+	rtOpts = append(rtOpts, runtime.WithCacheSize(prime.Config().GetInt(constants.RuntimeCacheSizeConfigKey)))
 
 	if isArmPlatform(buildPlan) {
 		prime.Output().Notice(locale.Tl("warning_arm_unstable", "[WARNING]Warning:[/RESET] You are using an ARM64 architecture, which is currently unstable. While it may work, you might encounter issues."))
