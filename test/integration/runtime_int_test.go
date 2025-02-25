@@ -217,23 +217,24 @@ func (suite *RuntimeIntegrationTestSuite) TestRuntimeCache() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/Empty", "b55d0e63-db48-43c4-8341-e2b7a1cc134c")
+	ts.PrepareEmptyProject()
 
 	cp := ts.Spawn("install", "shared/zlib")
 	cp.Expect("Downloading")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("reset", "-n") // should not remove cached shared/zlib artifact
+	cp = ts.Spawn("switch", "mingw") // should not remove cached shared/zlib artifact
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "shared/zlib")
+	cp.Expect("Installing")
 	cp.ExpectExitCode(0)
 	suite.Assert().NotContains(cp.Snapshot(), "Downloading", "shared/zlib should have been cached")
 
 	cp = ts.Spawn("config", "set", constants.RuntimeCacheSizeConfigKey, "0")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("reset", "-n") // should remove cached shared/zlib artifact
+	cp = ts.Spawn("switch", "main") // should remove cached shared/zlib artifact
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "shared/zlib")
