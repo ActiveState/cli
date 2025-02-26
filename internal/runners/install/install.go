@@ -319,7 +319,7 @@ func (i *Install) promptForMatchingIngredient(req *requirement, ingredients []*m
 	choice, err := i.prime.Prompt().Select(
 		locale.T("prompt_pkgop_ingredient"),
 		locale.Tr("prompt_pkgop_ingredient_msg", req.Requested.String()),
-		choices, &choices[0],
+		choices, &choices[0], nil,
 	)
 	if err != nil {
 		return nil, errs.Wrap(err, "prompting failed")

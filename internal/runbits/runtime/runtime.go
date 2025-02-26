@@ -1,8 +1,10 @@
 package runtime_runbit
 
 import (
+	"fmt"
 	"net/url"
 	"os"
+	"strings"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
@@ -31,6 +33,7 @@ import (
 	"github.com/ActiveState/cli/pkg/runtime"
 	"github.com/ActiveState/cli/pkg/runtime/events"
 	"github.com/ActiveState/cli/pkg/runtime_helpers"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
 	"golang.org/x/net/context"
 )
@@ -236,7 +239,11 @@ func Update(
 	defer cancel()
 	if procs, err := prime.SvcModel().GetProcessesInUse(ctx, rt.Env(false).ExecutorsPath); err == nil {
 		if len(procs) > 0 {
-			return nil, &RuntimeInUseError{procs}
+			list := []string{}
+			for _, proc := range procs {
+				list = append(list, fmt.Sprintf("   - %s (process: %d)", proc.Exe, proc.Pid))
+			}
+			prime.Output().Notice(locale.Tr("runtime_setup_in_use_warning", strings.Join(list, "\n")))
 		}
 	} else {
 		multilog.Error("Unable to determine if runtime is in use: %v", errs.JoinMessage(err))
@@ -271,12 +278,47 @@ func Update(
 		u.RawQuery = q.Encode()
 		rtOpts = append(rtOpts, runtime.WithBuildProgressUrl(u.String()))
 	}
+	if proj.IsPortable() {
+		rtOpts = append(rtOpts, runtime.WithPortable())
+	}
+
+	if isArmPlatform(buildPlan) {
+		prime.Output().Notice(locale.Tl("warning_arm_unstable", "[WARNING]Warning:[/RESET] You are using an ARM64 architecture, which is currently unstable. While it may work, you might encounter issues."))
+	}
 
 	if err := rt.Update(buildPlan, rtHash, rtOpts...); err != nil {
 		return nil, locale.WrapError(err, "err_packages_update_runtime_install")
 	}
 
 	return rt, nil
+}
+
+func isArmPlatform(buildPlan *buildplan.BuildPlan) bool {
+	if sysinfo.OS() != sysinfo.Linux || sysinfo.Architecture() != sysinfo.Arm {
+		return false // only warn when using an ARM runtime on an ARM machine
+	}
+
+	platformID, err := model.FilterCurrentPlatform(sysinfo.OS().String(), buildPlan.Platforms(), "")
+	if err != nil {
+		// Note: do not log this as an error because it's likely the buildplan does not have an ARM
+		// platform configured.
+		logging.Debug("Unable to filter current platform: %v", err)
+		return false
+	}
+
+	platforms, err := model.FetchPlatforms()
+	if err != nil {
+		multilog.Error("Unable to fetch platforms: %v", err)
+		return false
+	}
+
+	for _, platform := range platforms {
+		if platform.PlatformID != nil && *platform.PlatformID == platformID {
+			return true
+		}
+	}
+
+	return false
 }
 
 type analyticsHandler struct {

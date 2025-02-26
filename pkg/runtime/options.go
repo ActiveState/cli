@@ -21,6 +21,10 @@ func WithPreferredLibcVersion(version string) SetOpt {
 	return func(opts *Opts) { opts.PreferredLibcVersion = version }
 }
 
+func WithPortable() SetOpt {
+	return func(opts *Opts) { opts.Portable = true }
+}
+
 func WithArchive(dir string, platformID strfmt.UUID, ext string) SetOpt {
 	return func(opts *Opts) {
 		opts.FromArchive = &fromArchive{dir, platformID, ext}

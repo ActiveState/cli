@@ -153,6 +153,10 @@ func marshalReq(fn *funcCall) ([]byte, error) {
 							return errs.Wrap(err, "Could not marshal additional requirement")
 						}
 					}
+				case anyFuncName:
+					// We can ignore the `version = Any()` argument; omitting it is an equivalent statement.
+					// As mentioned in this function's comment, once buildexpressions support requirements as
+					// functions, we won't need to do any of this anymore.
 				default:
 					return errs.New("Unknown version comparator: %s", name)
 				}

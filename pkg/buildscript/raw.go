@@ -71,5 +71,5 @@ type null struct {
 
 type funcCall struct {
 	Name      string   `parser:"@Ident"`
-	Arguments []*value `parser:"'(' @@ (',' @@)* ','? ')'"`
+	Arguments []*value `parser:"'(' (@@ (',' @@)* ','?)? ')'"`
 }

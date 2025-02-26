@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/locale"
 	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
@@ -22,14 +21,6 @@ var ErrBuildscriptNotExist = buildscript_runbit.ErrBuildscriptNotExist
 
 var ErrBuildScriptNeedsCommit = errors.New("buildscript is dirty, need to run state commit")
 
-type RuntimeInUseError struct {
-	Processes []*graph.ProcessInfo
-}
-
-func (err RuntimeInUseError) Error() string {
-	return "runtime is in use"
-}
-
 func rationalizeUpdateError(prime primeable, rerr *error) {
 	if *rerr == nil {
 		return
@@ -37,7 +28,6 @@ func rationalizeUpdateError(prime primeable, rerr *error) {
 
 	var artifactCachedBuildErr *runtime.ArtifactCachedBuildFailed
 	var artifactBuildErr *runtime.ArtifactBuildError
-	var runtimeInUseErr *RuntimeInUseError
 
 	switch {
 	// Artifact cached build errors
@@ -57,17 +47,6 @@ func rationalizeUpdateError(prime primeable, rerr *error) {
 			locale.Tr("err_build_artifact_failed",
 				errMsg, artifactBuildErr.Message.ErrorMessage, artifactBuildErr.Message.LogURI,
 			),
-			errs.SetInput(),
-		)
-
-	// Runtime in use
-	case errors.As(*rerr, &runtimeInUseErr):
-		list := []string{}
-		for _, proc := range runtimeInUseErr.Processes {
-			list = append(list, fmt.Sprintf("   - %s (process: %d)", proc.Exe, proc.Pid))
-		}
-		*rerr = errs.WrapUserFacing(*rerr,
-			locale.Tr("runtime_setup_in_use_err", strings.Join(list, "\n")),
 			errs.SetInput(),
 		)
 

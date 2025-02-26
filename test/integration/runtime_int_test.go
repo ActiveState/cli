@@ -113,6 +113,10 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 }
 
 func (suite *RuntimeIntegrationTestSuite) TestInUse() {
+	if runtime.GOOS == "windows" {
+		// https://activestatef.atlassian.net/browse/DX-2926
+		suite.T().Skip("interrupting on windows is currently broken when ran via CI")
+	}
 	if runtime.GOOS == "darwin" {
 		return // gopsutil errors on later versions of macOS (DX-2723)
 	}
@@ -128,10 +132,9 @@ func (suite *RuntimeIntegrationTestSuite) TestInUse() {
 	time.Sleep(1 * time.Second) // allow time for perl to start up
 
 	cp2 := ts.Spawn("install", "DateTime")
-	cp2.Expect("currently in use", e2e.RuntimeSourcingTimeoutOpt)
+	cp2.Expect("the runtime for this project is in use", e2e.RuntimeSourcingTimeoutOpt)
 	cp2.Expect("perl")
-	cp2.ExpectNotExitCode(0)
-	ts.IgnoreLogErrors()
+	cp2.ExpectExitCode(0)
 
 	cp.SendCtrlC()
 	cp.SendLine("exit")

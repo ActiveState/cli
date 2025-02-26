@@ -50,6 +50,7 @@ func (suite *BuildScriptIntegrationTestSuite) TestBuildScript_NeedsReset() {
 
 func (suite *BuildScriptIntegrationTestSuite) TestBuildScript_IngredientFunc() {
 	suite.OnlyRunForTags(tagsuite.BuildScripts)
+	suite.T().Skip("Buildplanner does not build the ingredient artifact") // re-enable this in DX-3220
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -157,6 +158,29 @@ main = wheel
 	}
 	suite.Contains(files, "sample_activestate/__init__.py")
 	suite.Contains(files, "sample_activestate-1.0.0.dist-info/WHEEL")
+}
+
+func (suite *BuildScriptIntegrationTestSuite) TestBuildScriptRequirementVersionAny() {
+	suite.OnlyRunForTags(tagsuite.BuildScripts)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "set", constants.OptinBuildscriptsConfig, "true")
+	cp.ExpectExitCode(0)
+
+	// This project's build expression has a requirement whose version is the "Any()" function.
+	// Make sure we can successfully checkout and modify this project.
+	// Previously, no version would be given for such a requirement.
+	cp = ts.Spawn("checkout", "ActiveState/python3-MacOS#b6aac9cf-a758-42d6-9574-78ec513ad8e9", ".")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "dotenv")
+	cp.Expect("Added: language/python/dotenv@Auto")
+	cp.ExpectExitCode(0)
 }
 
 func TestBuildScriptIntegrationTestSuite(t *testing.T) {

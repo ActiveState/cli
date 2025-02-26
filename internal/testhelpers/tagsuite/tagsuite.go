@@ -79,6 +79,8 @@ const (
 	Service         = "service"
 	Shell           = "shell"
 	Show            = "show"
+	SolverV2        = "solver-v2"
+	SolverV3        = "solver-v3"
 	Switch          = "switch"
 	Uninstall       = "uninstall"
 	Upgrade         = "upgrade"

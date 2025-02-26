@@ -107,7 +107,7 @@ func (f *Plain) writeNow(writer io.Writer, value string) {
 	}
 	_, err := colorize.Colorize(value, writer, !f.cfg.Colored)
 	if err != nil {
-		logging.ErrorNoStacktrace("Writing colored output failed: %v", err)
+		logging.Warning("Writing colored output failed: %v", err)
 	}
 }
 

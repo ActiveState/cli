@@ -111,9 +111,8 @@ func main() {
 	// Set up our legacy outputer
 	setPrinterColors(outFlags)
 
-	isInteractive := strings.ToLower(os.Getenv(constants.NonInteractiveEnvVarName)) != "true" && out.Config().Interactive
 	// Run our main command logic, which is logic that defers to the error handling logic below
-	err = run(os.Args, isInteractive, cfg, out)
+	err = run(os.Args, cfg, out)
 	if err != nil {
 		exitCode, err = runbits_errors.ParseUserFacing(err)
 		if err != nil {
@@ -122,7 +121,7 @@ func main() {
 	}
 }
 
-func run(args []string, isInteractive bool, cfg *config.Instance, out output.Outputer) (rerr error) {
+func run(args []string, cfg *config.Instance, out output.Outputer) (rerr error) {
 	defer profile.Measure("main:run", time.Now())
 
 	// Set up profiling
@@ -225,7 +224,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	}()
 
 	// Set up prompter
-	prompter := prompt.New(isInteractive, an)
+	prompter := prompt.New(out, an)
 
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)

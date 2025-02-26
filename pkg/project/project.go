@@ -154,6 +154,9 @@ func (p *Project) Scripts() ([]*Script, error) {
 	scs := projectfile.MakeScriptsFromConstrainedEntities(constrained)
 	scripts := make([]*Script, 0, len(scs))
 	for _, s := range scs {
+		if s.Value == "" {
+			return nil, locale.NewInputError("err_script_no_value", "Invalid script '[ACTIONABLE]{{.V0}}[/RESET]': 'value' key is empty or missing", s.Name)
+		}
 		scripts = append(scripts, &Script{s, p})
 	}
 	return scripts, nil
@@ -254,6 +257,8 @@ func (p *Project) Lock() string { return p.projectfile.Lock }
 
 // Cache returns the cache information for this project
 func (p *Project) Cache() string { return p.projectfile.Cache }
+
+func (p *Project) IsPortable() bool { return p.projectfile.Portable }
 
 // Namespace returns project namespace
 func (p *Project) Namespace() *Namespaced {

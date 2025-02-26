@@ -36,11 +36,12 @@ jobs:
     strategy:
       matrix:
         go-version:
-          - 1.22.x
+          - 1.22.12
         sys:
           - {os: ubuntu-latest}
           - {os: macos-13, shell: zsh}
           - {os: windows-2019}
+          - {os: ubuntu-24.04-arm}
       fail-fast: false
     runs-on: ${{ matrix.sys.os }}
     env:
@@ -74,19 +75,39 @@ jobs:
 
       # === Install gotestfmt ===
       - name: Set up gotestfmt
-        uses: gotesttools/gotestfmt-action@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@latest
 
       - # === Install State Tool ===
         name: Install State Tool
         uses: ActiveState/setup-state-tool@v1
+        if: "!contains(matrix.sys.os, 'arm') && runner.os != 'Windows'"
+
+      - # === Install State Tool (ARM64) ===
+        name: Install State Tool (ARM64)
+        if: contains(matrix.sys.os, 'arm')
+        shell: bash
+        run: |
+          ./installers/install.sh -b beta
+          echo "$HOME/.local/ActiveState/StateTool/beta/bin" >> $GITHUB_PATH
+          "$HOME/.local/ActiveState/StateTool/beta/bin/state" config set optin.unstable true
+
+      - # === Install State Tool (Windows) ===
+        name: Install State Tool (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Invoke-Expression -Command ".\installers\install.ps1 -n"
+          echo "$env:LOCALAPPDATA\ActiveState\StateTool\release\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Invoke-Expression "$env:LOCALAPPDATA\ActiveState\StateTool\release\bin\state config set optin.unstable true"
 
       - # === Setup ===
         name: Setup
         shell: bash
         run: |
-          bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+          arch="amd64"
+          if [[ ${{ contains(matrix.sys.os, 'arm') }} = true ]]; then arch="arm64"; fi
+          bin=$(pwd)/.github/deps/${{ runner.os }}/$arch/bin
           echo "Adding $bin to PATH"
           echo "$bin" >> $GITHUB_PATH
 
@@ -125,7 +146,6 @@ jobs:
         shell: bash
         timeout-minutes: 15
         run: |
-          export PATH="$(pwd)/.github/deps/${{ runner.os }}/bin:$PATH"
           parallelize "$(cat <<'EOF'
           [
             {
@@ -262,7 +282,7 @@ jobs:
 
       - # === Configure AWS credentials ==
         name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: ${{ env.AWS_ROLE_SESSION_NAME }}
@@ -325,6 +345,10 @@ jobs:
             fi
           else
             TEST_SUITE_TAGS="all"
+            if [[ ${{ contains(matrix.sys.os, 'arm') }} = true ]]; then
+              echo "Skipping integration tests on ARM"
+              exit 0
+            fi
           fi
 
           echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means every test not specifically tagged)"
@@ -410,7 +434,6 @@ jobs:
           merge-multiple: true
 
       - name: Scan for CVEs
-        if: runner.os == 'Linux'
         uses: aquasecurity/trivy-action@0.26.0
         env:
           TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db,public.ecr.aws/aquasecurity/trivy-db
@@ -483,7 +506,7 @@ jobs:
 
       - # === Configure AWS credentials ==
         name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: ${{ env.AWS_ROLE_SESSION_NAME }}
@@ -511,3 +534,4 @@ jobs:
             session-build-ubuntu-20.04
             session-build-macos-11
             session-build-windows-2019
+            session-build-ubuntu-24.04-arm
