@@ -62,17 +62,7 @@ func (m *Messenger) OnExecStart(_ *captain.Command, _ []string) error {
 }
 
 func (m *Messenger) handleErrorMessages(message *graph.Message) {
-	switch message.Topic {
-	case msgs.TopicErrorAuth:
-		logging.Error("State Service reported an authentication error: %s", message.Message)
-		err := locale.NewError("err_svc_message", "The State Service reported an authentication error: {{.V0}}", message.Message)
-		m.out.Error(err)
-	case msgs.TopicErrorAuthToken:
-		logging.Error("State Service reported an authentication token error: %s", message.Message)
-		err := locale.NewError("err_svc_invalid_token", "", message.Message)
-		m.out.Error(err)
-	default:
-		logging.Error("State Service reported an unknown error: %s", message.Topic)
-		m.out.Error(locale.NewError("err_svc_unknown_message", "The State Service reported an unknown error: {{.V0}}", message.Message))
-	}
+	logging.Error("State Service reported a %s error: %s", message.Topic, message.Message)
+	err := locale.NewError("err_svc_message", "[WARNING]Warning:[/RESET] {{.V0}}", message.Message)
+	m.out.Error(err)
 }

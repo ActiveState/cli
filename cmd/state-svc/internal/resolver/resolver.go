@@ -24,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	msgs "github.com/ActiveState/cli/internal/messages"
@@ -90,7 +91,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 				var invalidTokenErr *authentication.ErrInvalidToken
 				if errors.As(err, &invalidTokenErr) {
 					logging.Debug("Queuing invalid API token error")
-					msg.Queue(msgs.TopicErrorAuthToken, "Invalid API token")
+					msg.Queue(msgs.TopicErrorAuthToken, locale.Tl("err_invalid_token_try_again", "Invalid API token. Please check your API token and try again."))
 				} else {
 					logging.Warning("Could not sync authenticated state: %s", err.Error())
 				}

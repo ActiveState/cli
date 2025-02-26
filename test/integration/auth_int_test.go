@@ -120,8 +120,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth_InvalidToken() {
 
 	cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(constants.APIKeyEnvVarName+"=bad-token"))
 	// Message is displayed
-	cp.Expect("The State Service reported an invalid API token error: Invalid API token")
-	cp.Expect("Please check your API token and try again.")
+	cp.Expect("Warning: Invalid API token")
 	// The version information is still displayed
 	cp.Expect("ActiveState CLI")
 	cp.Expect("Version")
