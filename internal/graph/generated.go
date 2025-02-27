@@ -41,7 +41,6 @@ type Jwt struct {
 }
 
 type Message struct {
-	ID      string `json:"id"`
 	Topic   string `json:"topic"`
 	Message string `json:"message"`
 }

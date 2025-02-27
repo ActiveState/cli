@@ -62,7 +62,7 @@ func (m *Messenger) OnExecStart(_ *captain.Command, _ []string) error {
 }
 
 func (m *Messenger) handleErrorMessages(message *graph.Message) {
-	logging.Error("State Service reported a %s error: %s", message.Topic, message.Message)
+	logging.Warning("State Service reported a %s error: %s", message.Topic, message.Message)
 	err := locale.NewError("err_svc_message", "[WARNING]Warning:[/RESET] {{.V0}}", message.Message)
 	m.out.Error(err)
 }
