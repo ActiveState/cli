@@ -19,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/smartlink"
 )
@@ -51,6 +50,8 @@ type artifactInfo struct {
 	InUse          bool  `json:"inUse"`
 	Size           int64 `json:"size"`
 	LastAccessTime int64 `json:"lastAccessTime"`
+
+	id strfmt.UUID // for convenience when removing stale artifacts; should NOT have json tag
 }
 
 type ErrVolumeMismatch struct {
@@ -220,7 +221,10 @@ func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) 
 		Files:       files.RelativePaths(),
 		RelativeSrc: relativeSrc,
 	})
-	d.recordUse(id)
+	err = d.recordUse(id)
+	if err != nil {
+		return errs.Wrap(err, "Could not record artifact use")
+	}
 
 	return nil
 }
@@ -278,26 +282,26 @@ func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) 
 		Files:       files.RelativePaths(),
 		RelativeSrc: relativeSrc,
 	})
-	d.recordUse(id)
+	err = d.recordUse(id)
+	if err != nil {
+		return errs.Wrap(err, "Could not record artifact use")
+	}
 
 	return nil
 }
 
-func (d *depot) recordUse(id strfmt.UUID) {
+func (d *depot) recordUse(id strfmt.UUID) error {
 	// Ensure a cache entry for this artifact exists and then update its last access time.
 	if _, exists := d.config.Cache[id]; !exists {
 		size, err := fileutils.GetDirSize(d.Path(id))
 		if err != nil {
-			multilog.Error("Could not get artifact size on disk: %v", err)
-			size = 0
+			return errs.Wrap(err, "Could not get artifact size on disk")
 		}
-		logging.Debug("Recording artifact '%s' with size %.1f MB", id.String(), float64(size)/float64(MB))
-		d.config.Cache[id] = &artifactInfo{Size: size}
-	} else {
-		logging.Debug("Recording use of artifact '%s'", id.String())
+		d.config.Cache[id] = &artifactInfo{Size: size, id: id}
 	}
 	d.config.Cache[id].InUse = true
 	d.config.Cache[id].LastAccessTime = time.Now().Unix()
+	return nil
 }
 
 func (d *depot) Undeploy(id strfmt.UUID, relativeSrc, path string) error {
@@ -422,7 +426,10 @@ func (d *depot) Save() error {
 			logging.Debug("Artifact '%s' is no longer in use", id.String())
 		}
 	}
-	d.removeStaleArtifacts()
+	err := d.removeStaleArtifacts()
+	if err != nil {
+		return errs.Wrap(err, "Could not remove stale artifacts")
+	}
 
 	// Write config file changes to disk
 	configFile := filepath.Join(d.depotPath, depotFile)
@@ -468,36 +475,37 @@ func someFilesExist(filePaths []string, basePath string) bool {
 
 // removeStaleArtifacts iterates over all unused artifacts in the depot, sorts them by last access
 // time, and removes them until the size of cached artifacts is under the limit.
-func (d *depot) removeStaleArtifacts() {
-	type artifact struct {
-		id   strfmt.UUID
-		info *artifactInfo
-	}
+func (d *depot) removeStaleArtifacts() error {
 	var totalSize int64
-	unusedArtifacts := make([]*artifact, 0)
+	unusedArtifacts := make([]*artifactInfo, 0)
 
-	for id, info := range d.config.Cache {
+	for _, info := range d.config.Cache {
 		if !info.InUse {
 			totalSize += info.Size
-			unusedArtifacts = append(unusedArtifacts, &artifact{id: id, info: info})
+			unusedArtifacts = append(unusedArtifacts, info)
 		}
 	}
 	logging.Debug("There are %d unused artifacts totaling %.1f MB in size", len(unusedArtifacts), float64(totalSize)/float64(MB))
 
 	sort.Slice(unusedArtifacts, func(i, j int) bool {
-		return unusedArtifacts[i].info.LastAccessTime < unusedArtifacts[j].info.LastAccessTime
+		return unusedArtifacts[i].LastAccessTime < unusedArtifacts[j].LastAccessTime
 	})
 
+	var rerr error
 	for _, artifact := range unusedArtifacts {
 		if totalSize <= d.cacheSize {
 			break // done
 		}
-		logging.Debug("Removing cached artifact '%s', last accessed on %s", artifact.id.String(), time.Unix(artifact.info.LastAccessTime, 0).Format(time.UnixDate))
 		if err := os.RemoveAll(d.Path(artifact.id)); err == nil {
-			totalSize -= artifact.info.Size
+			totalSize -= artifact.Size
 		} else {
-			multilog.Error("Could not delete old artifact: %v", err)
+			if err := errs.Wrap(err, "Could not delete old artifact"); rerr == nil {
+				rerr = err
+			} else {
+				rerr = errs.Pack(rerr, err)
+			}
 		}
 		delete(d.config.Cache, artifact.id)
 	}
+	return rerr
 }

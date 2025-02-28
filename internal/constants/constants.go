@@ -495,4 +495,4 @@ const IgnoreEnvEnvVarName = "ACTIVESTATE_CLI_IGNORE_ENV"
 const BuildProgressUrlPathName = "distributions"
 
 // RuntimeCacheSizeConfigKey is the config key for the runtime cache size.
-const RuntimeCacheSizeConfigKey = "runtime.cache_size"
+const RuntimeCacheSizeConfigKey = "runtime.cache.size"
