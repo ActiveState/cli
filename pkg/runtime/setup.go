@@ -46,7 +46,9 @@ type Opts struct {
 	PreferredLibcVersion string
 	EventHandlers        []events.HandlerFunc
 	BuildlogFilePath     string
+	BuildProgressUrl     string
 	Portable             bool
+	CacheSize            int
 
 	FromArchive *fromArchive
 
@@ -92,6 +94,7 @@ type setup struct {
 }
 
 func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depot *depot, opts *Opts) (*setup, error) {
+	depot.SetCacheSize(opts.CacheSize)
 	installedArtifacts := depot.List(path)
 
 	var platformID strfmt.UUID
@@ -201,6 +204,7 @@ func (s *setup) RunAndWait() (rerr error) {
 		RecipeID:            s.buildplan.LegacyRecipeID(),
 		RequiresBuild:       s.buildplan.IsBuildInProgress() && len(s.toDownload) > 0,
 		LogFilePath:         s.opts.BuildlogFilePath,
+		ProgressUrl:         s.opts.BuildProgressUrl,
 		ArtifactsToBuild:    s.toBuild,
 		ArtifactsToDownload: s.toDownload,
 		ArtifactsToUnpack:   s.toUnpack,

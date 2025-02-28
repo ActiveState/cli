@@ -23,13 +23,15 @@ mutation ($organization: String!, $project: String!, $commitId: String!, $target
       __typename
       status
     }
-    ... on PlanningError {
+    ... on Error {
       __typename
       message
+    }
+    ... on ErrorWithSubErrors {
+      __typename
       subErrors {
         __typename
         ... on GenericSolveError {
-          buildExprPath
           message
           isTransient
           validationErrors {
@@ -38,7 +40,6 @@ mutation ($organization: String!, $project: String!, $commitId: String!, $target
           }
         }
         ... on RemediableSolveError {
-          buildExprPath
           message
           isTransient
           errorType
@@ -46,27 +47,12 @@ mutation ($organization: String!, $project: String!, $commitId: String!, $target
             error
             jsonPath
           }
-          suggestedRemediations {
-            remediationType
-            command
-            parameters
-          }
-        }
-        ... on TargetNotFound {
-          message
-          requestedTarget
-          possibleTargets
         }
       }
     }
-    ... on NotFound {
-      type
-      message
-      resource
-      mayNeedAuthentication
-    }
   }
-}`
+}
+`
 }
 
 func (b *evaluate) Vars() (map[string]interface{}, error) {

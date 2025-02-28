@@ -1,9 +1,11 @@
 package projects
 
 import (
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -36,10 +38,10 @@ func (d *Delete) Run(params *DeleteParams) error {
 		return locale.NewInputError("err_projects_delete_authenticated", "You need to be authenticated to delete a project.")
 	}
 
-	defaultChoice := !d.out.Config().Interactive
-	confirm, err := d.prompt.Confirm("", locale.Tl("project_delete_confim", "Are you sure you want to delete the project {{.V0}}?", params.Project.String()), &defaultChoice)
+	defaultChoice := !d.prompt.IsInteractive()
+	confirm, err := d.prompt.Confirm("", locale.Tl("project_delete_confim", "Are you sure you want to delete the project {{.V0}}?", params.Project.String()), &defaultChoice, ptr.To(true))
 	if err != nil {
-		return locale.WrapError(err, "err_project_delete_confirm", "Could not confirm delete choice")
+		return errs.Wrap(err, "Not confirmed")
 	}
 	if !confirm {
 		return locale.NewInputError("err_project_delete_aborted", "Delete aborted by user")

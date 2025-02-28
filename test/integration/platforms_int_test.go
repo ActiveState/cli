@@ -49,6 +49,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_listSimple() {
 		expectations := []string{
 			"Linux",
 			"4.18.0",
+			"x86",
 			"64",
 		}
 		for _, expectation := range expectations {
@@ -86,6 +87,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemove() {
 	expectations := []string{
 		platform,
 		version,
+		"x86",
 		"64",
 	}
 	for _, expectation := range expectations {
@@ -120,6 +122,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemoveLatest() {
 	cp = ts.Spawn("platforms")
 	cp.Expect(platform)
 	cp.Expect(version)
+	cp.Expect("x86")
 	cp.Expect("64")
 	cp.ExpectExitCode(0)
 }

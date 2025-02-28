@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/output/renderers"
 	"github.com/ActiveState/cli/internal/primer"
 	buildplanner_runbit "github.com/ActiveState/cli/internal/runbits/buildplanner"
 	"github.com/ActiveState/cli/pkg/buildplan"
@@ -204,9 +205,13 @@ func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
 		for _, artifact := range platform.Artifacts {
 			switch {
 			case len(artifact.Errors) > 0:
-				b.out.Print(fmt.Sprintf("  • %s ([ERROR]%s[/RESET])", artifact.Name, locale.T("artifact_status_failed")))
-				b.out.Print(fmt.Sprintf("    %s %s: [ERROR]%s[/RESET]", output.TreeMid, locale.T("artifact_status_failed_message"), strings.Join(artifact.Errors, ": ")))
-				b.out.Print(fmt.Sprintf("    %s %s: [ACTIONABLE]%s[/RESET]", output.TreeEnd, locale.T("artifact_status_failed_log"), artifact.LogURL))
+				b.out.Print(renderers.NewBulletList("  • ",
+					renderers.HeadedBulletTree,
+					[]string{
+						fmt.Sprintf("%s ([ERROR]%s[/RESET])", artifact.Name, locale.T("artifact_status_failed")),
+						fmt.Sprintf("%s: [ERROR]%s[/RESET]", locale.T("artifact_status_failed_message"), strings.Join(artifact.Errors, ": ")),
+						fmt.Sprintf("%s: [ACTIONABLE]%s[/RESET]", locale.T("artifact_status_failed_log"), artifact.LogURL),
+					}).String())
 				continue
 			case artifact.status == types.ArtifactSkipped:
 				b.out.Print(fmt.Sprintf("  • %s ([NOTICE]%s[/RESET])", artifact.Name, locale.T("artifact_status_skipped")))
@@ -228,9 +233,13 @@ func (b *Artifacts) outputPlain(out *StructuredOutput, fullID bool) error {
 		for _, artifact := range platform.Packages {
 			switch {
 			case len(artifact.Errors) > 0:
-				b.out.Print(fmt.Sprintf("    • %s ([ERROR]%s[/RESET])", artifact.Name, locale.T("artifact_status_failed")))
-				b.out.Print(fmt.Sprintf("      %s %s: [ERROR]%s[/RESET]", output.TreeMid, locale.T("artifact_status_failed_message"), strings.Join(artifact.Errors, ": ")))
-				b.out.Print(fmt.Sprintf("      %s %s: [ACTIONABLE]%s[/RESET]", output.TreeEnd, locale.T("artifact_status_failed_log"), artifact.LogURL))
+				b.out.Print(renderers.NewBulletList("    • ",
+					renderers.HeadedBulletTree,
+					[]string{
+						fmt.Sprintf("%s ([ERROR]%s[/RESET])", artifact.Name, locale.T("artifact_status_failed")),
+						fmt.Sprintf("%s: [ERROR]%s[/RESET]", locale.T("artifact_status_failed_message"), strings.Join(artifact.Errors, ": ")),
+						fmt.Sprintf("%s: [ACTIONABLE]%s[/RESET]", locale.T("artifact_status_failed_log"), artifact.LogURL),
+					}).String())
 				continue
 			case artifact.status == types.ArtifactSkipped:
 				b.out.Print(fmt.Sprintf("    • %s ([NOTICE]%s[/RESET])", artifact.Name, locale.T("artifact_status_skipped")))
