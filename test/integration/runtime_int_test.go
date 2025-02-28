@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -210,6 +211,39 @@ func (suite *RuntimeIntegrationTestSuite) TestIgnoreEnvironmentVars() {
 		))
 	cp.Expect(pythonPath)
 	cp.ExpectExitCode(0)
+}
+
+func (suite *RuntimeIntegrationTestSuite) TestRuntimeCache() {
+	suite.OnlyRunForTags(tagsuite.Critical)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareEmptyProject()
+
+	cp := ts.Spawn("install", "shared/zlib")
+	cp.Expect("Downloading")
+	cp.ExpectExitCode(0)
+
+	depot := filepath.Join(ts.Dirs.Cache, "depot")
+	artifacts, err := fileutils.ListDirSimple(depot, true)
+	suite.Require().NoError(err)
+
+	cp = ts.Spawn("switch", "mingw") // should not remove cached shared/zlib artifact
+	cp.ExpectExitCode(0)
+
+	artifacts2, err := fileutils.ListDirSimple(depot, true)
+	suite.Require().NoError(err)
+	suite.Assert().Equal(artifacts, artifacts2, "shared/zlib should have remained in the cache")
+
+	cp = ts.Spawn("config", "set", constants.RuntimeCacheSizeConfigKey, "0")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("switch", "main") // should remove cached shared/zlib artifact
+	cp.ExpectExitCode(0)
+
+	artifacts3, err := fileutils.ListDirSimple(depot, true)
+	suite.Require().NoError(err)
+	suite.Assert().NotEqual(artifacts, artifacts3, "shared/zlib should have been removed from the cache")
 }
 
 func TestRuntimeIntegrationTestSuite(t *testing.T) {

@@ -48,6 +48,7 @@ type Opts struct {
 	BuildlogFilePath     string
 	BuildProgressUrl     string
 	Portable             bool
+	CacheSize            int
 
 	FromArchive *fromArchive
 
@@ -93,6 +94,7 @@ type setup struct {
 }
 
 func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depot *depot, opts *Opts) (*setup, error) {
+	depot.SetCacheSize(opts.CacheSize)
 	installedArtifacts := depot.List(path)
 
 	var platformID strfmt.UUID

@@ -493,3 +493,6 @@ const IgnoreEnvEnvVarName = "ACTIVESTATE_CLI_IGNORE_ENV"
 
 // ProgressUrlPathName is the trailing path for a project's build progress.
 const BuildProgressUrlPathName = "distributions"
+
+// RuntimeCacheSizeConfigKey is the config key for the runtime cache size.
+const RuntimeCacheSizeConfigKey = "runtime.cache.size"

@@ -25,6 +25,10 @@ func WithPortable() SetOpt {
 	return func(opts *Opts) { opts.Portable = true }
 }
 
+func WithCacheSize(mb int) SetOpt {
+	return func(opts *Opts) { opts.CacheSize = mb }
+}
+
 func WithArchive(dir string, platformID strfmt.UUID, ext string) SetOpt {
 	return func(opts *Opts) {
 		opts.FromArchive = &fromArchive{dir, platformID, ext}
