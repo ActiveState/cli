@@ -876,7 +876,7 @@ deploy_uninstall_success:
 err_arg_required:
   other: "The following argument is required:\n  Name: [NOTICE]{{.V0}}[/RESET]\n  Description: [NOTICE]{{.V1}}[/RESET]"
 err_init_no_language:
-  other: "A project has not been set using 'state use'. You must include the [NOTICE]language[/RESET] argument. For more help, run '[ACTIONABLE]state init --help[/RESET]'."
+  other: "You must include the [NOTICE]language[/RESET] argument. For more help, run '[ACTIONABLE]state init --help[/RESET]'."
 platform_added:
   other: "[NOTICE]{{.V0}}[/RESET] has been added."
 platform_removed:
