@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.47.1
+
+### Added
+
+- Added a new `--portable` flag to `state checkout` which will install the runtime files without the use of external
+  symlinks. Allowing for the runtime files to be manually moved to another location.
+	- Note that depending on how the runtime was created you may still run into issues doing this. It's best to avoid
+	  such scenarios altogether and rely on the State Tool instead.
+
+### Fixed
+
+- Fixed issue where installing dependencies on a small set of projects would give a JSON marshalling error.
+
 ## 0.47.0
 
 ### Added

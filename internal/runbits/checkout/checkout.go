@@ -52,7 +52,7 @@ func New(repo git.Repository, prime primeable) *Checkout {
 	return &Checkout{repo, prime}
 }
 
-func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath string, noClone, bareCheckout bool) (_ string, rerr error) {
+func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath string, noClone, bareCheckout, portable bool) (_ string, rerr error) {
 	defer r.rationalizeError(&rerr)
 
 	path, err := r.pathToUse(ns, targetPath)
@@ -94,7 +94,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		return "", errNoCommitID
 	}
 
-	if err := CreateProjectFiles(path, cachePath, owner, proj, branchName, commitID.String(), language); err != nil {
+	if err := CreateProjectFiles(path, cachePath, owner, proj, branchName, commitID.String(), language, portable); err != nil {
 		return "", errs.Wrap(err, "Could not create project files")
 	}
 
@@ -182,7 +182,7 @@ func (r *Checkout) fetchProject(
 	return owner, proj, commitID, branchName, language, pj.RepoURL, nil
 }
 
-func CreateProjectFiles(checkoutPath, cachePath, owner, name, branch, commitID, language string) error {
+func CreateProjectFiles(checkoutPath, cachePath, owner, name, branch, commitID, language string, portable bool) error {
 	configFile := filepath.Join(checkoutPath, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
 		_, err := projectfile.Create(&projectfile.CreateParams{
@@ -192,6 +192,7 @@ func CreateProjectFiles(checkoutPath, cachePath, owner, name, branch, commitID, 
 			Directory:  checkoutPath,
 			Language:   language,
 			Cache:      cachePath,
+			Portable:   portable,
 		})
 		if err != nil {
 			if osutils.IsAccessDeniedError(err) {
