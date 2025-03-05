@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/termtest"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
@@ -85,12 +86,14 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	user := ts.CreateNewUser()
-	namespace := fmt.Sprintf("%s/%s", user.Username, "Python3")
+	ts.LoginAsPersistentUser()
+	pname := strutils.UUID()
+	namespace := fmt.Sprintf("%s/%s", e2e.PersistentUsername, pname.String())
 
 	cp := ts.Spawn("init", "--language", "python", namespace, ts.Dirs.Work)
 	cp.Expect("successfully initialized", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
+	ts.NotifyProjectCreated(e2e.PersistentUsername, pname.String())
 
 	reqsFilePath := filepath.Join(cp.WorkDirectory(), reqsFileName)
 

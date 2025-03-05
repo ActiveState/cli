@@ -154,6 +154,9 @@ func (p *Project) Scripts() ([]*Script, error) {
 	scs := projectfile.MakeScriptsFromConstrainedEntities(constrained)
 	scripts := make([]*Script, 0, len(scs))
 	for _, s := range scs {
+		if s.Value == "" {
+			return nil, locale.NewInputError("err_script_no_value", "Invalid script '[ACTIONABLE]{{.V0}}[/RESET]': 'value' key is empty or missing", s.Name)
+		}
 		scripts = append(scripts, &Script{s, p})
 	}
 	return scripts, nil

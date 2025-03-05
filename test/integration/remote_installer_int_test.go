@@ -74,7 +74,7 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 			installPath := filepath.Join(ts.Dirs.Work, "install")
 			stateExePath := filepath.Join(installPath, "bin", constants.StateCmd+osutils.ExeExtension)
 
-			args := []string{"-n"}
+			args := []string{"--non-interactive"}
 			if tt.Version != "" {
 				args = append(args, "--version", tt.Version)
 			}
@@ -93,10 +93,15 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 			)
 
 			cp.Expect("Terms of Service")
-			cp.SendLine("Y")
+			cp.Expect("Continuing because State Tool is running in non-interactive mode")
 			cp.Expect("Downloading")
 			cp.Expect("Running Installer...")
 			cp.Expect("Installing")
+			if runtime.GOOS == "windows" {
+				cp.Expect("You are installing the State Tool as an admin")
+				cp.Expect("Are you sure")
+				cp.Expect("Continuing because State Tool is running in non-interactive mode")
+			}
 			cp.Expect("Installation Complete")
 			cp.Expect("Press ENTER to exit")
 			cp.SendEnter()

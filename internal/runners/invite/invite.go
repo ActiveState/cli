@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -106,7 +107,7 @@ func (i *invite) Run(params *Params, args []string) error {
 
 func (i *invite) promptForRole() (Role, error) {
 	choices := roleNames()
-	selection, err := i.prompt.Select(locale.Tl("invite_role", "Role"), locale.Tl("invite_select_org_role", "What role should the user(s) be given?"), choices, new(string))
+	selection, err := i.prompt.Select(locale.Tl("invite_role", "Role"), locale.Tl("invite_select_org_role", "What role should the user(s) be given?"), choices, ptr.To(""), nil)
 	if err != nil {
 		return -1, err
 	}

@@ -7,10 +7,6 @@ const (
 	SeverityLow      = "low"
 )
 
-type VulnerabilitiesResponse struct {
-	Vulnerabilities []VulnerableIngredientsFilter `json:"vulnerabilities"`
-}
-
 type VulnerableIngredientsFilter struct {
 	Name             string        `json:"name"`
 	PrimaryNamespace string        `json:"primary_namespace"`

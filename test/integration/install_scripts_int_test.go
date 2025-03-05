@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -48,6 +49,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 	}
 
 	for _, tt := range tests {
+		if runtime.GOARCH == "arm64" && strings.Contains(tt.Name, "activate") {
+			continue // ARM platform projects are not supported yet
+		}
 		suite.Run(fmt.Sprintf("%s (%s@%s)", tt.Name, tt.Version, tt.Channel), func() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
@@ -114,6 +118,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 			cp := ts.SpawnCmdWithOpts(cmd, opts...)
 			cp.Expect("Preparing Installer for State Tool Package Manager")
+			if runtime.GOOS == "windows" {
+				cp.Expect("Continuing because the '--force' flag is set") // admin prompt
+			}
 			cp.Expect("Installation Complete", e2e.RuntimeSourcingTimeoutOpt)
 
 			if tt.Activate != "" || tt.ActivateByCommand != "" {

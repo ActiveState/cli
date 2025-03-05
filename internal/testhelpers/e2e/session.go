@@ -28,9 +28,6 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/api/mono"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -39,7 +36,6 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/go-openapi/strfmt"
-	"github.com/google/uuid"
 	"github.com/phayes/permbits"
 	"github.com/stretchr/testify/require"
 )
@@ -448,48 +444,8 @@ func (s *Session) LogoutUser() {
 	p.ExpectExitCode(0)
 }
 
-func (s *Session) CreateNewUser() *mono_models.UserEditable {
-	uid, err := uuid.NewRandom()
-	require.NoError(s.T, err)
-
-	username := fmt.Sprintf("user-%s", uid.String()[0:8])
-	password := uid.String()[8:]
-	email := fmt.Sprintf("%s@test.tld", username)
-	user := &mono_models.UserEditable{
-		Username: username,
-		Password: password,
-		Name:     username,
-		Email:    email,
-	}
-
-	params := users.NewAddUserParams()
-	params.SetUser(user)
-
-	// The default mono API client host is "testing.tld" inside unit tests.
-	// Since we actually want to create production users, we need to manually instantiate a mono API
-	// client with the right host.
-	serviceURL := api.GetServiceURL(api.ServiceMono)
-	host := os.Getenv(constants.APIHostEnvVarName)
-	if host == "" {
-		host = constants.DefaultAPIHost
-	}
-	serviceURL.Host = strings.Replace(serviceURL.Host, string(api.ServiceMono)+api.TestingPlatform, host, 1)
-	_, err = mono.Init(serviceURL, nil).Users.AddUser(params)
-	require.NoError(s.T, err, "Error creating new user")
-
-	p := s.Spawn(tagsuite.Auth, "--username", username, "--password", password)
-	p.Expect("logged in")
-	p.ExpectExitCode(0)
-
-	s.users = append(s.users, username)
-
-	return user
-}
-
 // NotifyProjectCreated indicates that the given project was created on the Platform and needs to
 // be deleted when the session is closed.
-// This only needs to be called for projects created by PersistentUsername, not projects created by
-// users created with CreateNewUser(). Created users' projects are auto-deleted.
 func (s *Session) NotifyProjectCreated(org, name string) {
 	s.createdProjects = append(s.createdProjects, project.NewNamespace(org, name, ""))
 }

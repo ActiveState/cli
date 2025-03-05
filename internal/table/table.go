@@ -180,9 +180,9 @@ func renderRow(providedColumns []string, colWidths []int) string {
 		widths[len(widths)-1] = mathutils.Total(colWidths[len(widths)-1:]...)
 	}
 
-	croppedColumns := []colorize.CroppedLines{}
+	croppedColumns := []colorize.WrappedLines{}
 	for n, column := range providedColumns {
-		croppedColumns = append(croppedColumns, colorize.GetCroppedText(column, widths[n]-(padding*2), false))
+		croppedColumns = append(croppedColumns, colorize.Wrap(column, widths[n]-(padding*2), false, ""))
 	}
 
 	var rendered = true
