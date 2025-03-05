@@ -422,6 +422,12 @@ func (d *depot) Save() error {
 	// Mark artifacts that are no longer used and remove the old ones.
 	for id := range d.artifacts {
 		if deployments, ok := d.config.Deployments[id]; !ok || len(deployments) == 0 {
+			if _, exists := d.config.Cache[id]; !exists {
+				err := d.recordUse(id)
+				if err != nil {
+					return errs.Wrap(err, "Could not update depot cache with previously used artifact")
+				}
+			}
 			d.config.Cache[id].InUse = false
 			logging.Debug("Artifact '%s' is no longer in use", id.String())
 		}
