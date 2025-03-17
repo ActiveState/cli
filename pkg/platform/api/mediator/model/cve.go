@@ -41,20 +41,12 @@ type ProjectVulnerabilities struct {
 	Message  *string                `json:"message,omitempty"`
 }
 
-type ProjectResponse struct {
-	ProjectVulnerabilities `json:"project"`
-}
-
 type CommitVulnerabilities struct {
 	CommitID               string                `json:"commit_id"`
 	VulnerabilityHistogram []SeverityCount       `json:"vulnerability_histogram"`
 	Sources                []SourceVulnerability `json:"Sources"`
 	TypeName               *string               `json:"__typename,omitempty"`
 	Message                *string               `json:"message,omitempty"`
-}
-
-type CommitResponse struct {
-	CommitVulnerabilities `json:"commit"`
 }
 
 type SeverityCount struct {

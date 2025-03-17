@@ -103,20 +103,12 @@ func (f *Plain) write(writer io.Writer, value interface{}) {
 // writeNow is a little helper that just writes the given value to the requested writer (no marshalling)
 func (f *Plain) writeNow(writer io.Writer, value string) {
 	if f.Config().Interactive {
-		value = wordWrap(value)
+		value = colorize.Wrap(value, termutils.GetWidth(), true, "").String()
 	}
 	_, err := colorize.Colorize(value, writer, !f.cfg.Colored)
 	if err != nil {
-		logging.ErrorNoStacktrace("Writing colored output failed: %v", err)
+		logging.Warning("Writing colored output failed: %v", err)
 	}
-}
-
-func wordWrap(text string) string {
-	return wordWrapWithWidth(text, termutils.GetWidth())
-}
-
-func wordWrapWithWidth(text string, width int) string {
-	return colorize.GetCroppedText(text, width, true).String()
 }
 
 const nilText = "<nil>"

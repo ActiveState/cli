@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -113,18 +114,16 @@ func promptForPreviousPassphrase(prompt prompt.Prompter) (string, error) {
 }
 
 func promptUserToRegenerateKeypair(passphrase string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
-	var err error
 	// previous passphrase is invalid, inform user and ask if they want to generate a new keypair
 	out.Notice(locale.T("auth_generate_new_keypair_message"))
-	yes, err := prompt.Confirm("", locale.T("auth_confirm_generate_new_keypair_prompt"), new(bool))
+	yes, err := prompt.Confirm("", locale.T("auth_confirm_generate_new_keypair_prompt"), ptr.To(false), nil)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Not confirmed")
 	}
-	if yes {
-		_, err = keypairs.GenerateAndSaveEncodedKeypair(cfg, secretsapi.Get(auth), passphrase, constants.DefaultRSABitLength, auth)
-		// TODO delete user's secrets
-	} else {
-		err = locale.NewError("auth_err_unrecoverable_keypair")
+	if !yes {
+		return locale.NewInputError("auth_err_unrecoverable_keypair")
 	}
+	_, err = keypairs.GenerateAndSaveEncodedKeypair(cfg, secretsapi.Get(auth), passphrase, constants.DefaultRSABitLength, auth)
+	// TODO delete user's secrets
 	return err
 }

@@ -96,34 +96,6 @@ func New(prime primeable) *Initialize {
 	return &Initialize{prime, prime.Auth(), prime.Config(), prime.Output(), prime.Analytics(), prime.SvcModel()}
 }
 
-// inferLanguage tries to infer a reasonable default language from the project currently in use
-// (i.e. `state use show`).
-// Error handling is not necessary because it's an input error to not include a language to
-// `state init`. We're just trying to infer one as a convenience to the user.
-func inferLanguage(config projectfile.ConfigGetter, auth *authentication.Auth) (string, string, bool) {
-	defaultProjectDir := config.GetString(constants.GlobalDefaultPrefname)
-	if defaultProjectDir == "" {
-		return "", "", false
-	}
-	defaultProj, err := project.FromPath(defaultProjectDir)
-	if err != nil {
-		return "", "", false
-	}
-	commitID, err := localcommit.Get(defaultProj.Dir())
-	if err != nil {
-		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
-		return "", "", false
-	}
-	if commitID == "" {
-		return "", "", false
-	}
-	lang, err := model.FetchLanguageForCommit(commitID, auth)
-	if err != nil {
-		return "", "", false
-	}
-	return lang.Name, lang.Version, true
-}
-
 func (r *Initialize) Run(params *RunParams) (rerr error) {
 	defer func() { runtime_runbit.RationalizeSolveError(r.prime.Project(), r.auth, &rerr) }()
 
@@ -181,10 +153,6 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 			languageVersion = langParts[1]
 		}
 	} else {
-		languageName, languageVersion, _ = inferLanguage(r.config, r.auth)
-	}
-
-	if languageName == "" {
 		return errNoLanguage
 	}
 

@@ -69,14 +69,14 @@ func FetchVulnerabilitiesForIngredients(auth *authentication.Auth, ingredients [
 	med := vulnerabilities.New(auth)
 
 	req := request.VulnerabilitiesByIngredients(requestIngredients)
-	var resp model.VulnerabilitiesResponse
+	var resp []model.VulnerableIngredientsFilter
 	err := med.Run(req, &resp)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to run vulnerabilities request")
 	}
 
 	vulnerabilities := make(map[string]*VulnerabilityIngredient)
-	for _, v := range resp.Vulnerabilities {
+	for _, v := range resp {
 		key := fmt.Sprintf("%s/%s/%s", v.PrimaryNamespace, v.Name, v.Version)
 		if _, ok := vulnerabilities[key]; !ok {
 			vulnerabilities[key] = &VulnerabilityIngredient{
