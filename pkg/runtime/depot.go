@@ -485,10 +485,12 @@ func (d *depot) removeStaleArtifacts() error {
 	var totalSize int64
 	unusedArtifacts := make([]*artifactInfo, 0)
 
-	for _, info := range d.config.Cache {
+	for id, info := range d.config.Cache {
 		if !info.InUse {
 			totalSize += info.Size
-			unusedArtifacts = append(unusedArtifacts, info)
+			unusedInfo := *info
+			unusedInfo.id = id // id is not set in cache since info is keyed by id
+			unusedArtifacts = append(unusedArtifacts, &unusedInfo)
 		}
 	}
 	logging.Debug("There are %d unused artifacts totaling %.1f MB in size", len(unusedArtifacts), float64(totalSize)/float64(MB))
