@@ -945,7 +945,7 @@ cve_needs_authentication:
 auth_tip:
   other: Run '[ACTIONABLE]state auth[/RESET]' to authenticate.
 err_non_interactive_mode:
-  other: You are running the State Tool in non-interactive mode, but interactive input was needed. Please re-run the State Tool in interactive mode. If you are using a non-interactive terminal like Git Bash on Windows, prefix your command with '[ACTIONABLE]winpty[/RESET]'. (See https://github.com/git-for-windows/git/wiki/FAQ#some-native-console-programs-dont-work-when-run-from-git-bash-how-to-fix-it for more information.)
+  other: You are running the State Tool in non-interactive mode, but interactive input was needed. Please re-run the State Tool in interactive mode. If you are using a non-interactive terminal like Git Bash on Windows, prefix your command with '[ACTIONABLE]winpty[/RESET]'. (See https://gitforwindows.org/faq#some-native-console-programs-dont-work-when-run-from-git-bash-how-to-fix-it for more information.)
 err_alternate_branches:
   other: |
     Your current platform ([ACTIONABLE]{{.V0}}/{{.V1}}[/RESET]) does not appear to be configured in your branch: '[ACTIONABLE]{{.V2}}[/RESET]'. Perhaps you could try one of the alternate branches on your project:
