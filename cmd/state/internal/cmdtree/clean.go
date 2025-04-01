@@ -37,12 +37,6 @@ func newCleanUninstallCommand(prime *primer.Values, globals *globalOptions) *cap
 				Value:       &params.All,
 			},
 			{
-				Name:        "force",
-				Shorthand:   "f",
-				Description: locale.T("flag_state_clean_uninstall_force_description"),
-				Value:       &params.Force,
-			},
-			{
 				// This option is only used by the Windows uninstall shortcut to ask the user if they wish
 				// to delete everything or keep cache and config. The user is also asked to press Enter
 				// after the uninstall process is scheduled so they may note the printed log file path.
@@ -59,13 +53,13 @@ func newCleanUninstallCommand(prime *primer.Values, globals *globalOptions) *cap
 				return err
 			}
 
-			params.NonInteractive = globals.NonInteractive // distinct from --force
+			params.Force = globals.Force
 			return runner.Run(&params)
 		},
 	)
 }
 
-func newCleanCacheCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
+func newCleanCacheCommand(prime *primer.Values) *captain.Command {
 	runner := clean.NewCache(prime)
 	params := clean.CacheParams{}
 	return captain.NewCommand(
@@ -83,13 +77,12 @@ func newCleanCacheCommand(prime *primer.Values, globals *globalOptions) *captain
 			},
 		},
 		func(ccmd *captain.Command, _ []string) error {
-			params.Force = globals.NonInteractive
 			return runner.Run(&params)
 		},
 	)
 }
 
-func newCleanConfigCommand(prime *primer.Values) *captain.Command {
+func newCleanConfigCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	runner := clean.NewConfig(prime)
 	params := clean.ConfigParams{}
 	return captain.NewCommand(
@@ -97,16 +90,10 @@ func newCleanConfigCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("clean_config_title", "Cleaning Configuration"),
 		locale.T("clean_config_description"),
 		prime,
-		[]*captain.Flag{
-			{
-				Name:        "force",
-				Shorthand:   "f",
-				Description: locale.T("flag_state_clean_config_force_description"),
-				Value:       &params.Force,
-			},
-		},
+		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
+			params.Force = globals.Force
 			return runner.Run(&params)
 		},
 	)

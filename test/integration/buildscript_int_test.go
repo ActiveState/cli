@@ -50,6 +50,7 @@ func (suite *BuildScriptIntegrationTestSuite) TestBuildScript_NeedsReset() {
 
 func (suite *BuildScriptIntegrationTestSuite) TestBuildScript_IngredientFunc() {
 	suite.OnlyRunForTags(tagsuite.BuildScripts)
+	suite.T().Skip("Buildplanner does not build the ingredient artifact") // re-enable this in DX-3220
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -167,9 +168,8 @@ func (suite *BuildScriptIntegrationTestSuite) TestBuildScriptRequirementVersionA
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
-	// Enable as part of DX-3230.
-	//cp = ts.Spawn("config", "set", constants.OptinBuildscriptsConfig, "true")
-	//cp.ExpectExitCode(0)
+	cp = ts.Spawn("config", "set", constants.OptinBuildscriptsConfig, "true")
+	cp.ExpectExitCode(0)
 
 	// This project's build expression has a requirement whose version is the "Any()" function.
 	// Make sure we can successfully checkout and modify this project.

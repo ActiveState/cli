@@ -521,6 +521,9 @@ func (c *Command) flagByName(name string, persistOnly bool) *Flag {
 			return flag
 		}
 	}
+	if c.parent != nil {
+		return c.parent.flagByName(name, persistOnly)
+	}
 	return nil
 }
 

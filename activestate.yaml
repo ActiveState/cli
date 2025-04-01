@@ -52,7 +52,7 @@ scripts:
     if: ne .Shell "cmd"
     value: |
       if ! type "go" &> /dev/null; then
-        echo "go is not installed. Please install Go version 1.22 or above."
+        echo "go is not installed. Please install Go version 1.23 or above."
         exit 1
       fi
       if ! type "golangci-lint" &> /dev/null; then
@@ -72,12 +72,6 @@ scripts:
         echo "goversioninfo was not found on your PATH. Installing .."
         GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.0
       fi
-  - name: install-deps-os
-    language: bash
-    standalone: true
-    if: ne .OS.Name "Linux"
-    description: Install OS specific deps
-    value: ""
   - name: install-deps-ci
     language: bash
     standalone: true
@@ -113,17 +107,6 @@ scripts:
         popd > /dev/null
       fi
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
-  - name: build-for
-    language: bash
-    standalone: true
-    description: Builds the project with the specified OS as the target OS. (valid values darwin, linux, windows)
-    value: |
-      set -e
-      $constants.SET_ENV
-      export GOOS=${1}
-      export GOARCH=amd64
-      [ -z "${2}" ] && >&2 echo "must provide output file as 2nd arg" && exit 1
-      go build -tags "internal $GO_BUILD_TAGS" -o ${2} $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-svc
     language: bash
     standalone: true
@@ -259,46 +242,10 @@ scripts:
     standalone: true
     description: Generates our github workflows
     value: |
-      $scripts.build-for.path() "windows" ./.github/deps/Windows/bin/state.exe
-      $scripts.build-for.path() "linux" ./.github/deps/Linux/bin/state
-      $scripts.build-for.path() "darwin" ./.github/deps/macOS/bin/state
-
-      GOOS=windows go build -o .github/deps/Windows/bin/parallelize.exe github.com/ActiveState/cli/scripts/ci/parallelize/
-      GOOS=linux go build -o .github/deps/Linux/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
-      GOOS=darwin go build -o .github/deps/macOS/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
-  - name: update-workflow-assets
-    language: bash
-    standalone: true
-    description: Generates our github workflows
-    value: |
-      [ -z "${2}" ] && >&2 echo "Usage: update-workflow-assets [branch] [version]" && exit 1
-
-      tmpDir=$(mktemp -d)
-      pushd $tmpDir
-      wget https://state-tool.s3.amazonaws.com/update/state/${1}/${2}/darwin-amd64/state-darwin-amd64-${2}.tar.gz
-      tar xzf state-darwin-amd64-${2}.tar.gz
-      cp -Rfv state-install/bin/state $project.path()/.github/deps/macOS/bin
-      cp -Rfv state-install/bin/state-svc $project.path()/.github/deps/macOS/bin
-      popd
-      rm -Rf $tmpDir
-
-      tmpDir=$(mktemp -d)
-      pushd $tmpDir
-      wget https://state-tool.s3.amazonaws.com/update/state/${1}/${2}/linux-amd64/state-linux-amd64-${2}.tar.gz
-      tar xzf state-linux-amd64-${2}.tar.gz
-      cp -Rfv state-install/bin/state $project.path()/.github/deps/Linux/bin
-      cp -Rfv state-install/bin/state-svc $project.path()/.github/deps/Linux/bin
-      popd
-      rm -Rf $tmpDir
-
-      tmpDir=$(mktemp -d)
-      pushd $tmpDir
-      wget https://state-tool.s3.amazonaws.com/update/state/${1}/${2}/windows-amd64/state-windows-amd64-${2}.zip
-      unzip state-windows-amd64-${2}.zip
-      cp -Rfv state-install/bin/state.exe $project.path()/.github/deps/Windows/bin
-      cp -Rfv state-install/bin/state-svc.exe $project.path()/.github/deps/Windows/bin
-      popd
-      rm -Rf $tmpDir
+      GOOS=windows go build -o .github/deps/Windows/amd64/bin/parallelize.exe github.com/ActiveState/cli/scripts/ci/parallelize/
+      GOOS=linux go build -o .github/deps/Linux/amd64/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
+      GOOS=linux GOARCH=arm64 go build -o .github/deps/Linux/arm64/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
+      GOOS=darwin go build -o .github/deps/macOS/amd64/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
   - name: test
     language: bash
     standalone: true
@@ -393,6 +340,11 @@ scripts:
       TARGET_BRANCH=$GITHUB_BASE_REF
       if [ "$GITHUB_BASE_REF" == "" ]; then
         TARGET_BRANCH="master"
+      fi
+
+      if [ "$TARGET_BRANCH" == "master" ]; then
+        echo "Target branch is master, not checking for newlines"
+        exit 0
       fi
 
       git fetch --quiet origin $TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH

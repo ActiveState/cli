@@ -13,27 +13,23 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/svcctl"
 )
 
-type promptable interface {
-	Confirm(title, message string, defaultChoice *bool) (bool, error)
-	Select(title, message string, choices []string, defaultChoice *string) (string, error)
-}
-
 type Uninstall struct {
 	out    output.Outputer
-	prompt promptable
+	prompt prompt.Prompter
 	cfg    *config.Instance
 	ipComm svcctl.IPCommunicator
 	an     analytics.Dispatcher
 }
 
 type UninstallParams struct {
-	Force          bool
-	NonInteractive bool
-	All            bool
-	Prompt         bool
+	Force  bool
+	All    bool
+	Prompt bool
 }
 
 type primeable interface {
@@ -49,7 +45,7 @@ func NewUninstall(prime primeable) (*Uninstall, error) {
 	return newUninstall(prime.Output(), prime.Prompt(), prime.Config(), prime.IPComm(), prime.Analytics())
 }
 
-func newUninstall(out output.Outputer, prompt promptable, cfg *config.Instance, ipComm svcctl.IPCommunicator, an analytics.Dispatcher) (*Uninstall, error) {
+func newUninstall(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, ipComm svcctl.IPCommunicator, an analytics.Dispatcher) (*Uninstall, error) {
 	return &Uninstall{
 		out:    out,
 		prompt: prompt,
@@ -74,22 +70,22 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 			locale.Tl("uninstall_prompt", "Uninstall the State Tool, but keep runtime cache and configuration files"),
 			locale.Tl("uninstall_prompt_all", "Completely uninstall the State Tool, including runtime cache and configuration files"),
 		}
-		selection, err := u.prompt.Select("", "", choices, new(string))
+		selection, err := u.prompt.Select("", "", choices, ptr.To(""), nil)
 		if err != nil {
 			return locale.WrapError(err, "err_uninstall_prompt", "Could not read uninstall option")
 		}
 		if selection == choices[1] {
 			params.All = true
 		}
-	} else if !params.Force {
-		defaultChoice := params.NonInteractive
+	} else {
+		defaultChoice := !u.prompt.IsInteractive()
 		confirmMessage := locale.T("uninstall_confirm")
 		if params.All {
 			confirmMessage = locale.T("uninstall_confirm_all")
 		}
-		ok, err := u.prompt.Confirm(locale.T("confirm"), confirmMessage, &defaultChoice)
+		ok, err := u.prompt.Confirm(locale.T("confirm"), confirmMessage, &defaultChoice, ptr.To(true))
 		if err != nil {
-			return locale.WrapError(err, "err_uninstall_confirm", "Could not confirm uninstall choice")
+			return errs.Wrap(err, "Not confirmed")
 		}
 		if !ok {
 			return locale.NewInputError("err_uninstall_aborted", "Uninstall aborted by user")

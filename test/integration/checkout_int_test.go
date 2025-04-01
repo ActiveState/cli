@@ -402,7 +402,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutPortable() {
 
 	// Checkout a working runtime.
 	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python#fb513fe6-b9f4-4c54-adf3-8a7833b290f3", ".", "--portable")
-	cp.Expect("Checked out project")
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	// Remove the artifact depot.
