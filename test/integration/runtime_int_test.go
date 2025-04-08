@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -113,6 +114,10 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 }
 
 func (suite *RuntimeIntegrationTestSuite) TestInUse() {
+	if runtime.GOOS == "windows" {
+		// https://activestatef.atlassian.net/browse/DX-2926
+		suite.T().Skip("interrupting on windows is currently broken when ran via CI")
+	}
 	if runtime.GOOS == "darwin" {
 		return // gopsutil errors on later versions of macOS (DX-2723)
 	}
@@ -128,10 +133,9 @@ func (suite *RuntimeIntegrationTestSuite) TestInUse() {
 	time.Sleep(1 * time.Second) // allow time for perl to start up
 
 	cp2 := ts.Spawn("install", "DateTime")
-	cp2.Expect("currently in use", e2e.RuntimeSourcingTimeoutOpt)
+	cp2.Expect("the runtime for this project is in use", e2e.RuntimeSourcingTimeoutOpt)
 	cp2.Expect("perl")
-	cp2.ExpectNotExitCode(0)
-	ts.IgnoreLogErrors()
+	cp2.ExpectExitCode(0)
 
 	cp.SendCtrlC()
 	cp.SendLine("exit")
@@ -139,10 +143,7 @@ func (suite *RuntimeIntegrationTestSuite) TestInUse() {
 }
 
 func (suite *RuntimeIntegrationTestSuite) TestBuildInProgress() {
-	if runtime.GOOS == "windows" {
-		suite.T().Skip("building on Windows takes too long")
-		return
-	}
+	suite.T().Skip("Publishing is taking a backseat to buildscripts and dynamic imports")
 	suite.OnlyRunForTags(tagsuite.BuildInProgress)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -169,7 +170,8 @@ func (suite *RuntimeIntegrationTestSuite) TestBuildInProgress() {
 	ts.PrepareEmptyProject()
 
 	cp = ts.Spawn("install", "private/"+e2e.PersistentUsername+"/hello-world", "--ts", "now")
-	cp.Expect("Build Log")
+	cp.Expect("Build Log:")
+	cp.Expect("Detailed Progress:")
 	cp.Expect("Building")
 	cp.Expect("All dependencies have been installed and verified", e2e.RuntimeBuildSourcingTimeoutOpt)
 	cp.Expect("Added: private/" + e2e.PersistentUsername + "/hello-world")
@@ -206,6 +208,39 @@ func (suite *RuntimeIntegrationTestSuite) TestIgnoreEnvironmentVars() {
 		))
 	cp.Expect(pythonPath)
 	cp.ExpectExitCode(0)
+}
+
+func (suite *RuntimeIntegrationTestSuite) TestRuntimeCache() {
+	suite.OnlyRunForTags(tagsuite.Critical)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareEmptyProject()
+
+	cp := ts.Spawn("install", "shared/zlib")
+	cp.Expect("Downloading")
+	cp.ExpectExitCode(0)
+
+	depot := filepath.Join(ts.Dirs.Cache, "depot")
+	artifacts, err := fileutils.ListDirSimple(depot, true)
+	suite.Require().NoError(err)
+
+	cp = ts.Spawn("switch", "mingw") // should not remove cached shared/zlib artifact
+	cp.ExpectExitCode(0)
+
+	artifacts2, err := fileutils.ListDirSimple(depot, true)
+	suite.Require().NoError(err)
+	suite.Assert().Equal(artifacts, artifacts2, "shared/zlib should have remained in the cache")
+
+	cp = ts.Spawn("config", "set", constants.RuntimeCacheSizeConfigKey, "0")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("switch", "main") // should remove cached shared/zlib artifact
+	cp.ExpectExitCode(0)
+
+	artifacts3, err := fileutils.ListDirSimple(depot, true)
+	suite.Require().NoError(err)
+	suite.Assert().NotEqual(artifacts, artifacts3, "shared/zlib should have been removed from the cache")
 }
 
 func TestRuntimeIntegrationTestSuite(t *testing.T) {

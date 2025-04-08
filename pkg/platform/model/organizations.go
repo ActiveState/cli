@@ -125,17 +125,17 @@ func FetchOrganizationsByIDs(ids []strfmt.UUID, auth *authentication.Auth) ([]mo
 	request := request.OrganizationsByIDs(ids)
 
 	gql := graphql.New(auth)
-	response := model.Organizations{}
+	response := []model.Organization{}
 	err := gql.Run(request, &response)
 	if err != nil {
 		return nil, errs.Wrap(err, "gql.Run failed")
 	}
 
-	if len(response.Organizations) != len(ids) {
-		logging.Debug("Organization membership mismatch: %d members returned for %d members requested. Caller must account for this.", len(response.Organizations), len(ids))
+	if len(response) != len(ids) {
+		logging.Debug("Organization membership mismatch: %d members returned for %d members requested. Caller must account for this.", len(response), len(ids))
 	}
 
-	return response.Organizations, nil
+	return response, nil
 }
 
 func processOrgErrorResponse(err error) error {

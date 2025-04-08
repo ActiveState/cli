@@ -29,13 +29,12 @@ var OpenURI = osutils.OpenURI
 
 // Authenticate will prompt the user for authentication
 func Authenticate(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
-	return AuthenticateWithInput("", "", "", false, cfg, out, prompt, auth)
+	return AuthenticateWithInput("", "", "", cfg, out, prompt, auth)
 }
 
 // AuthenticateWithInput will prompt the user for authentication if the input doesn't already provide it
 func AuthenticateWithInput(
 	username, password, totp string,
-	nonInteractive bool,
 	cfg keypairs.Configurable,
 	out output.Outputer,
 	prompt prompt.Prompter,
@@ -44,7 +43,7 @@ func AuthenticateWithInput(
 	logging.Debug("Authenticating with input")
 
 	credentials := &mono_models.Credentials{Username: username, Password: password, Totp: totp}
-	if err := ensureCredentials(credentials, prompt, nonInteractive); err != nil {
+	if err := ensureCredentials(credentials, prompt); err != nil {
 		return locale.WrapInputError(err, "login_cancelled")
 	}
 
@@ -106,7 +105,7 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 		locale.T("prompt_login_action"),
 		locale.T("prompt_signup_browser_action"),
 	}
-	choice, err := prompt.Select(locale.Tl("login_signup", "Login or Signup"), locale.T("prompt_login_or_signup"), choices, new(string))
+	choice, err := prompt.Select(locale.Tl("login_signup", "Login or Signup"), locale.T("prompt_login_or_signup"), choices, ptr.To(""), nil)
 	if err != nil {
 		return errs.Wrap(err, "Prompt cancelled")
 	}
@@ -133,20 +132,20 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 	return nil
 }
 
-func ensureCredentials(credentials *mono_models.Credentials, prompter prompt.Prompter, nonInteractive bool) error {
+func ensureCredentials(credentials *mono_models.Credentials, prompter prompt.Prompter) error {
 	var err error
 	if credentials.Username == "" {
-		if nonInteractive {
+		if !prompter.IsInteractive() || prompter.IsForced() {
 			return locale.NewInputError("err_auth_needinput")
 		}
-		credentials.Username, err = prompter.Input("", locale.T("username_prompt"), new(string), prompt.InputRequired)
+		credentials.Username, err = prompter.Input("", locale.T("username_prompt"), ptr.To(""), nil, prompt.InputRequired)
 		if err != nil {
 			return errs.Wrap(err, "Input cancelled")
 		}
 	}
 
 	if credentials.Password == "" {
-		if nonInteractive {
+		if !prompter.IsInteractive() || prompter.IsForced() {
 			return locale.NewInputError("err_auth_needinput")
 		}
 		credentials.Password, err = prompter.InputSecret("", locale.T("password_prompt"), prompt.InputRequired)
@@ -175,7 +174,7 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials, auth *aut
 
 func promptToken(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
 	var err error
-	credentials.Totp, err = prompt.Input("", locale.T("totp_prompt"), new(string))
+	credentials.Totp, err = prompt.Input("", locale.T("totp_prompt"), ptr.To(""), nil)
 	if err != nil {
 		return err
 	}
@@ -266,9 +265,9 @@ func authenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 		var cont bool
 		var err error
 		for !cont {
-			cont, err = prompt.Confirm(locale.Tl("continue", "Continue?"), locale.T("auth_press_enter"), ptr.To(false))
+			cont, err = prompt.Confirm(locale.Tl("continue", "Continue?"), locale.T("auth_press_enter"), ptr.To(false), nil)
 			if err != nil {
-				return errs.Wrap(err, "Prompt failed")
+				return errs.Wrap(err, "Not confirmed")
 			}
 		}
 		apiKey, err = auth.AuthenticateWithDevice(strfmt.UUID(*response.DeviceCode))

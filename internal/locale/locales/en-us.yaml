@@ -22,7 +22,9 @@ flag_state_monochrome_output_description:
 flag_state_output_description:
   other: "Set the output method. Possible values: plain, simple, json, editor"
 flag_state_non_interactive_description:
-  other: Run the State Tool without any prompts
+  other: Assume default values for any prompts
+flag_state_force_description:
+  other: Disable prompts and perform the requested action regardless of defaults values (this can result in destructive or unsafe actions, such as installing packages with critical CVEs)
 flag_state_version_description:
   other: Show the version of our state executable
 flag_state_activate_path_description:
@@ -185,9 +187,10 @@ run_description:
   other: Run your project scripts
 scripts_description:
   other: Show project scripts
-runtime_setup_in_use_err:
+runtime_setup_in_use_warning:
   other: |
-    Could not update your runtime as it is currently in use. Please stop any active runtime processes and try again. State Tool found the following processes to be using the runtime:
+    [WARNING]Warning:[/RESET] the runtime for this project is in use, it is recommended you restart any active processes to avoid conflicts.
+    The following processes are currently using this runtime:
     {{.V0}}
 runtime_alternative_file_transforms_err:
   other: "Could not apply necessary file transformations after unpacking."
@@ -482,6 +485,8 @@ arg_platforms_shared_name_description:
   other: Name[@<version>]
 field_version:
   other: Version
+field_arch:
+  other: Arch
 field_bitwidth:
   other: Bit Width
 fileutils_err_amend_file:
@@ -608,6 +613,8 @@ err_language_updated:
   other: Failed to update language
 bundle_err_cannot_fetch_checkpoint:
   other: Cannot fetch checkpoint for bundle listing
+package_err_cannot_fetch_checkpoint:
+  other: Cannot fetch checkpoint for package listing
 package_err_cannot_obtain_commit:
   other: Cannot obtain commit for package listing
 bundle_err_cannot_obtain_commit:
@@ -755,12 +762,8 @@ cache_description:
   other: Removes cached Runtime Environments
 clean_config_description:
   other: Removes global State Tool configuration. Project configuration will not be affected.
-flag_state_clean_uninstall_force_description:
-  other: Run uninstall operation without prompts and ignoring any errors stopping running services
 arg_state_clean_cache_project_description:
   other: The project to be removed from the local cache.
-flag_state_clean_config_force_description:
-  other: Run clean config operation without prompts and ignoring any errors stopping running services
 err_uninstall_activated:
   other: Cannot uninstall the State Tool while in an activated state. Please deactivate by entering [ACTIONABLE]exit[/RESET] or pressing [ACTIONABLE]Ctrl+D[/RESET] and then try again.
 err_remove_cache:
@@ -873,7 +876,7 @@ deploy_uninstall_success:
 err_arg_required:
   other: "The following argument is required:\n  Name: [NOTICE]{{.V0}}[/RESET]\n  Description: [NOTICE]{{.V1}}[/RESET]"
 err_init_no_language:
-  other: "A project has not been set using 'state use'. You must include the [NOTICE]language[/RESET] argument. For more help, run '[ACTIONABLE]state init --help[/RESET]'."
+  other: "You must include the [NOTICE]language[/RESET] argument. For more help, run '[ACTIONABLE]state init --help[/RESET]'."
 platform_added:
   other: "[NOTICE]{{.V0}}[/RESET] has been added."
 platform_removed:
@@ -942,7 +945,7 @@ cve_needs_authentication:
 auth_tip:
   other: Run '[ACTIONABLE]state auth[/RESET]' to authenticate.
 err_non_interactive_mode:
-  other: You are running the State Tool in non-interactive mode, but interactive input was needed. Please re-run the State Tool in interactive mode. If you are using a non-interactive terminal like Git Bash on Windows, prefix your command with '[ACTIONABLE]winpty[/RESET]'. (See https://github.com/git-for-windows/git/wiki/FAQ#some-native-console-programs-dont-work-when-run-from-git-bash-how-to-fix-it for more information.)
+  other: You are running the State Tool in non-interactive mode, but interactive input was needed. Please re-run the State Tool in interactive mode. If you are using a non-interactive terminal like Git Bash on Windows, prefix your command with '[ACTIONABLE]winpty[/RESET]'. (See https://gitforwindows.org/faq#some-native-console-programs-dont-work-when-run-from-git-bash-how-to-fix-it for more information.)
 err_alternate_branches:
   other: |
     Your current platform ([ACTIONABLE]{{.V0}}/{{.V1}}[/RESET]) does not appear to be configured in your branch: '[ACTIONABLE]{{.V2}}[/RESET]'. Perhaps you could try one of the alternate branches on your project:
@@ -1101,7 +1104,7 @@ progress_search:
 progress_platform_search:
   other: "• Searching for platform in the ActiveState Catalog"
 progress_cve_search:
-  other: "• Checking for vulnerabilities (CVEs) on [ACTIONABLE]{{.V0}}[/RESET] and its dependencies"
+  other: "• Checking for vulnerabilities (CVEs)"
 setup_runtime:
   other: "Setting Up Runtime"
 progress_solve:
@@ -1127,7 +1130,9 @@ progress_solve_preruntime:
 progress_pkg_nolang:
   other: "• Searching for [ACTIONABLE]{{.V0}}[/RESET] across all languages in the ActiveState Catalog"
 progress_build_log:
-  other: "Build Log [ACTIONABLE]{{.V0}}[/RESET]"
+  other: "Build Log: [ACTIONABLE]{{.V0}}[/RESET]"
+progress_build_url:
+  other: "Detailed Progress: [ACTIONABLE]{{.V0}}[/RESET]"
 progress_completed:
   other: "[SUCCESS]✔ All dependencies have been installed and verified[/RESET]"
 progress_failed:
@@ -1138,13 +1143,13 @@ unstable_feature_banner:
   other: "[NOTICE]Beta Feature: This feature is still in beta and may be unstable.[/RESET]\n"
 warning_vulnerable:
   other: |
-    [ERROR]Warning: Dependency has {{.V0}} direct and {{.V1}} indirect known vulnerabilities (CVEs)[/RESET]
+    [ERROR]Warning: Found {{.V0}} direct and {{.V1}} indirect known vulnerabilities (CVEs)[/RESET]
 warning_vulnerable_indirectonly:
   other: |
-    [ERROR]Warning: Dependency has {{.V0}} indirect known vulnerabilities (CVEs)[/RESET]
+    [ERROR]Warning: Found {{.V0}} indirect known vulnerabilities (CVEs)[/RESET]
 warning_vulnerable_directonly:
   other: |
-    [ERROR]Warning: Dependency has {{.V0}} known vulnerabilities (CVEs)[/RESET]
+    [ERROR]Warning: Found {{.V0}} known vulnerabilities (CVEs)[/RESET]
 cve_critical:
   other: Critical
 cve_high:
@@ -1159,10 +1164,20 @@ disable_prompting_vulnerabilities:
   other: To disable prompting for vulnerabilities run '[ACTIONABLE]state config set security.prompt.enabled false[/RESET]'.
 warning_vulnerable_short:
   other: |
-    [ERROR]Warning:[/RESET] Dependency has [ERROR]{{.V0}} known vulnerabilities (CVEs)[/RESET]. Severity: {{.V1}}. Run '[ACTIONABLE]state security[/RESET]' for more info.
+    [ERROR]Warning:[/RESET] Found [ERROR]{{.V0}} known vulnerabilities (CVEs)[/RESET]. Severity: {{.V1}}. Run '[ACTIONABLE]state security[/RESET]' for more info.
 prompt_continue_pkg_operation:
   other: |
     Do you want to continue installing this dependency despite its vulnerabilities?
+prompt_continue_force:
+  other: "Continuing because the '[ACTIONABLE]--force[/RESET]' flag is set."
+prompt_continue_non_interactive:
+  other: "Continuing because State Tool is running in non-interactive mode."
+prompt_abort_non_interactive:
+  other: "Aborting because State Tool is running in non-interactive mode. To bypass you can use the '[ACTIONABLE]--force[/RESET]' flag."
+prompt_using_force:
+  other: "Using '[ACTIONABLE]{{.V0}}[/RESET]' because the '[ACTIONABLE]--force[/RESET]' flag is set."
+prompt_using_non_interactive:
+  other: "Using '[ACTIONABLE]{{.V0}}[/RESET]' because State Tool is running in non-interactive mode."
 unstable_command_warning:
   other: |
     This command is still in beta. If you want to opt-in to unstable features, run the following command:

@@ -35,20 +35,12 @@ func New(p primeable) *Commit {
 	return &Commit{p}
 }
 
-var ErrNoChanges = errors.New("buildscript has no changes")
-
 func rationalizeError(err *error) {
 	var buildPlannerErr *bpResp.BuildPlannerError
 
 	switch {
 	case err == nil:
 		return
-
-	case errors.Is(*err, ErrNoChanges):
-		*err = errs.WrapUserFacing(*err, locale.Tl(
-			"commit_notice_no_change",
-			"Your buildscript contains no new changes. No commit necessary.",
-		), errs.SetInput())
 
 	case errors.Is(*err, buildscript_runbit.ErrBuildscriptNotExist):
 		*err = errs.WrapUserFacing(*err, locale.T("err_buildscript_not_exist"))
@@ -109,7 +101,8 @@ func (c *Commit) Run() (rerr error) {
 
 	// Check if there is anything to commit
 	if equals {
-		return ErrNoChanges
+		out.Notice(locale.Tl("commit_notice_no_change", "Your buildscript contains no new changes. No commit necessary."))
+		return nil
 	}
 
 	pg := output.StartSpinner(out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
@@ -127,20 +120,6 @@ func (c *Commit) Run() (rerr error) {
 	})
 	if err != nil {
 		return errs.Wrap(err, "Could not update project to reflect build script changes.")
-	}
-
-	// Update local commit ID
-	if err := localcommit.Set(proj.Dir(), stagedCommit.CommitID.String()); err != nil {
-		return errs.Wrap(err, "Could not set local commit ID")
-	}
-
-	// Update our local build expression to match the committed one. This allows our API a way to ensure forward compatibility.
-	newScript, err := bp.GetBuildScript(stagedCommit.CommitID.String())
-	if err != nil {
-		return errs.Wrap(err, "Unable to get the remote build script")
-	}
-	if err := buildscript_runbit.Update(proj, newScript); err != nil {
-		return errs.Wrap(err, "Could not update local build script")
 	}
 
 	pg.Stop(locale.T("progress_success"))
@@ -174,6 +153,20 @@ func (c *Commit) Run() (rerr error) {
 	// Report CVEs.
 	if err := cves.NewCveReport(c.prime).Report(rtCommit.BuildPlan(), oldCommit.BuildPlan()); err != nil {
 		return errs.Wrap(err, "Could not report CVEs")
+	}
+
+	// Update local commit ID
+	if err := localcommit.Set(proj.Dir(), stagedCommit.CommitID.String()); err != nil {
+		return errs.Wrap(err, "Could not set local commit ID")
+	}
+
+	// Update our local build expression to match the committed one. This allows our API a way to ensure forward compatibility.
+	newScript, err := bp.GetBuildScript(stagedCommit.CommitID.String())
+	if err != nil {
+		return errs.Wrap(err, "Unable to get the remote build script")
+	}
+	if err := buildscript_runbit.Update(proj, newScript); err != nil {
+		return errs.Wrap(err, "Could not update local build script")
 	}
 
 	out.Notice("") // blank line

@@ -40,16 +40,18 @@ type Jwt struct {
 	User  *User  `json:"user"`
 }
 
-type MessageInfo struct {
-	ID        string               `json:"id"`
-	Message   string               `json:"message"`
-	Condition string               `json:"condition"`
-	Repeat    MessageRepeatType    `json:"repeat"`
-	Interrupt MessageInterruptType `json:"interrupt"`
-	Placement MessagePlacementType `json:"placement"`
+type Mutation struct {
 }
 
-type Mutation struct {
+type NotificationInfo struct {
+	ID        string                    `json:"id"`
+	Message   string                    `json:"message"`
+	Condition string                    `json:"condition"`
+	StartDate string                    `json:"startDate"`
+	EndDate   string                    `json:"endDate"`
+	Repeat    NotificationRepeatType    `json:"repeat"`
+	Interrupt NotificationInterruptType `json:"interrupt"`
+	Placement NotificationPlacementType `json:"placement"`
 }
 
 type Organization struct {
@@ -93,135 +95,135 @@ type Version struct {
 	State *StateVersion `json:"state"`
 }
 
-type MessageInterruptType string
+type NotificationInterruptType string
 
 const (
-	MessageInterruptTypeDisabled MessageInterruptType = "Disabled"
-	MessageInterruptTypePrompt   MessageInterruptType = "Prompt"
-	MessageInterruptTypeExit     MessageInterruptType = "Exit"
+	NotificationInterruptTypeDisabled NotificationInterruptType = "Disabled"
+	NotificationInterruptTypePrompt   NotificationInterruptType = "Prompt"
+	NotificationInterruptTypeExit     NotificationInterruptType = "Exit"
 )
 
-var AllMessageInterruptType = []MessageInterruptType{
-	MessageInterruptTypeDisabled,
-	MessageInterruptTypePrompt,
-	MessageInterruptTypeExit,
+var AllNotificationInterruptType = []NotificationInterruptType{
+	NotificationInterruptTypeDisabled,
+	NotificationInterruptTypePrompt,
+	NotificationInterruptTypeExit,
 }
 
-func (e MessageInterruptType) IsValid() bool {
+func (e NotificationInterruptType) IsValid() bool {
 	switch e {
-	case MessageInterruptTypeDisabled, MessageInterruptTypePrompt, MessageInterruptTypeExit:
+	case NotificationInterruptTypeDisabled, NotificationInterruptTypePrompt, NotificationInterruptTypeExit:
 		return true
 	}
 	return false
 }
 
-func (e MessageInterruptType) String() string {
+func (e NotificationInterruptType) String() string {
 	return string(e)
 }
 
-func (e *MessageInterruptType) UnmarshalGQL(v interface{}) error {
+func (e *NotificationInterruptType) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = MessageInterruptType(str)
+	*e = NotificationInterruptType(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid MessageInterruptType", str)
+		return fmt.Errorf("%s is not a valid NotificationInterruptType", str)
 	}
 	return nil
 }
 
-func (e MessageInterruptType) MarshalGQL(w io.Writer) {
+func (e NotificationInterruptType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type MessagePlacementType string
+type NotificationPlacementType string
 
 const (
-	MessagePlacementTypeBeforeCmd MessagePlacementType = "BeforeCmd"
-	MessagePlacementTypeAfterCmd  MessagePlacementType = "AfterCmd"
+	NotificationPlacementTypeBeforeCmd NotificationPlacementType = "BeforeCmd"
+	NotificationPlacementTypeAfterCmd  NotificationPlacementType = "AfterCmd"
 )
 
-var AllMessagePlacementType = []MessagePlacementType{
-	MessagePlacementTypeBeforeCmd,
-	MessagePlacementTypeAfterCmd,
+var AllNotificationPlacementType = []NotificationPlacementType{
+	NotificationPlacementTypeBeforeCmd,
+	NotificationPlacementTypeAfterCmd,
 }
 
-func (e MessagePlacementType) IsValid() bool {
+func (e NotificationPlacementType) IsValid() bool {
 	switch e {
-	case MessagePlacementTypeBeforeCmd, MessagePlacementTypeAfterCmd:
+	case NotificationPlacementTypeBeforeCmd, NotificationPlacementTypeAfterCmd:
 		return true
 	}
 	return false
 }
 
-func (e MessagePlacementType) String() string {
+func (e NotificationPlacementType) String() string {
 	return string(e)
 }
 
-func (e *MessagePlacementType) UnmarshalGQL(v interface{}) error {
+func (e *NotificationPlacementType) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = MessagePlacementType(str)
+	*e = NotificationPlacementType(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid MessagePlacementType", str)
+		return fmt.Errorf("%s is not a valid NotificationPlacementType", str)
 	}
 	return nil
 }
 
-func (e MessagePlacementType) MarshalGQL(w io.Writer) {
+func (e NotificationPlacementType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type MessageRepeatType string
+type NotificationRepeatType string
 
 const (
-	MessageRepeatTypeDisabled   MessageRepeatType = "Disabled"
-	MessageRepeatTypeConstantly MessageRepeatType = "Constantly"
-	MessageRepeatTypeHourly     MessageRepeatType = "Hourly"
-	MessageRepeatTypeDaily      MessageRepeatType = "Daily"
-	MessageRepeatTypeWeekly     MessageRepeatType = "Weekly"
-	MessageRepeatTypeMonthly    MessageRepeatType = "Monthly"
+	NotificationRepeatTypeDisabled   NotificationRepeatType = "Disabled"
+	NotificationRepeatTypeConstantly NotificationRepeatType = "Constantly"
+	NotificationRepeatTypeHourly     NotificationRepeatType = "Hourly"
+	NotificationRepeatTypeDaily      NotificationRepeatType = "Daily"
+	NotificationRepeatTypeWeekly     NotificationRepeatType = "Weekly"
+	NotificationRepeatTypeMonthly    NotificationRepeatType = "Monthly"
 )
 
-var AllMessageRepeatType = []MessageRepeatType{
-	MessageRepeatTypeDisabled,
-	MessageRepeatTypeConstantly,
-	MessageRepeatTypeHourly,
-	MessageRepeatTypeDaily,
-	MessageRepeatTypeWeekly,
-	MessageRepeatTypeMonthly,
+var AllNotificationRepeatType = []NotificationRepeatType{
+	NotificationRepeatTypeDisabled,
+	NotificationRepeatTypeConstantly,
+	NotificationRepeatTypeHourly,
+	NotificationRepeatTypeDaily,
+	NotificationRepeatTypeWeekly,
+	NotificationRepeatTypeMonthly,
 }
 
-func (e MessageRepeatType) IsValid() bool {
+func (e NotificationRepeatType) IsValid() bool {
 	switch e {
-	case MessageRepeatTypeDisabled, MessageRepeatTypeConstantly, MessageRepeatTypeHourly, MessageRepeatTypeDaily, MessageRepeatTypeWeekly, MessageRepeatTypeMonthly:
+	case NotificationRepeatTypeDisabled, NotificationRepeatTypeConstantly, NotificationRepeatTypeHourly, NotificationRepeatTypeDaily, NotificationRepeatTypeWeekly, NotificationRepeatTypeMonthly:
 		return true
 	}
 	return false
 }
 
-func (e MessageRepeatType) String() string {
+func (e NotificationRepeatType) String() string {
 	return string(e)
 }
 
-func (e *MessageRepeatType) UnmarshalGQL(v interface{}) error {
+func (e *NotificationRepeatType) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = MessageRepeatType(str)
+	*e = NotificationRepeatType(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid MessageRepeatType", str)
+		return fmt.Errorf("%s is not a valid NotificationRepeatType", str)
 	}
 	return nil
 }
 
-func (e MessageRepeatType) MarshalGQL(w io.Writer) {
+func (e NotificationRepeatType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

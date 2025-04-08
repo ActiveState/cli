@@ -1299,3 +1299,22 @@ func windowsPathToPosixPath(path string) string {
 func posixPathToWindowsPath(path string) string {
 	return strings.ReplaceAll(path, "/", "\\")
 }
+
+// GetDirSize returns the on-disk size of the given directory and all of its contents.
+// Does not follow symlinks.
+func GetDirSize(dir string) (int64, error) {
+	var size int64
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+		if !info.IsDir() {
+			size += info.Size()
+		}
+		return nil
+	})
+	if err != nil {
+		return size, errs.Wrap(err, "Unable to compute size")
+	}
+	return size, nil
+}

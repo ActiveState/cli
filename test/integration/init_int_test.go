@@ -114,33 +114,6 @@ func (suite *InitIntegrationTestSuite) TestInit_NoLanguage() {
 	ts.IgnoreLogErrors()
 }
 
-func (suite *InitIntegrationTestSuite) TestInit_InferLanguageFromUse() {
-	suite.OnlyRunForTags(tagsuite.Init)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-	ts.LoginAsPersistentUser()
-
-	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("checkout", "ActiveState-CLI/small-python")
-	cp.Expect("Checked out project")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("use", "small-python")
-	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
-	cp.ExpectExitCode(0)
-
-	pname := strutils.UUID()
-	namespace := fmt.Sprintf("%s/%s", e2e.PersistentUsername, pname)
-	cp = ts.Spawn("init", namespace)
-	cp.Expect("successfully initialized")
-	cp.ExpectExitCode(0)
-	ts.NotifyProjectCreated(e2e.PersistentUsername, pname.String())
-
-	suite.Contains(string(fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))), "language: python3")
-}
-
 func (suite *InitIntegrationTestSuite) TestInit_NotAuthenticated() {
 	suite.OnlyRunForTags(tagsuite.Init)
 	ts := e2e.New(suite.T(), false)

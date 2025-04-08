@@ -55,17 +55,17 @@ func FetchProjectByName(orgName string, projectName string, auth *authentication
 	request := request.ProjectByOrgAndName(orgName, projectName)
 
 	gql := graphql.New(auth)
-	response := model.Projects{}
+	response := []model.Project{}
 	err := gql.Run(request, &response)
 	if err != nil {
 		return nil, errs.Wrap(err, "GraphQL request failed")
 	}
 
-	if len(response.Projects) == 0 {
+	if len(response) == 0 {
 		return nil, &ErrProjectNotFound{orgName, projectName}
 	}
 
-	return response.Projects[0].ToMonoProject()
+	return response[0].ToMonoProject()
 }
 
 // FetchOrganizationProjects fetches the projects for an organization
@@ -105,7 +105,7 @@ func LanguageByCommit(commitID strfmt.UUID, auth *authentication.Auth) (Language
 }
 
 func FetchTimeStampForCommit(commitID strfmt.UUID, auth *authentication.Auth) (*time.Time, error) {
-	_, atTime, err := FetchCheckpointForCommit(commitID, auth)
+	atTime, err := FetchAtTimeForCommit(commitID, auth)
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to fetch checkpoint for commit ID")
 	}

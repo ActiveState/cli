@@ -35,7 +35,7 @@ type Language struct {
 
 // GetRequirement searches a commit for a requirement by name.
 func GetRequirement(commitID strfmt.UUID, namespace Namespace, requirement string, auth *authentication.Auth) (*gqlModel.Requirement, error) {
-	chkPt, _, err := FetchCheckpointForCommit(commitID, auth)
+	chkPt, err := FetchCheckpointForCommit(commitID, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func GetRequirement(commitID strfmt.UUID, namespace Namespace, requirement strin
 
 // FetchLanguagesForCommit fetches a list of language names for the given commit
 func FetchLanguagesForCommit(commitID strfmt.UUID, auth *authentication.Auth) ([]Language, error) {
-	checkpoint, _, err := FetchCheckpointForCommit(commitID, auth)
+	checkpoint, err := FetchCheckpointForCommit(commitID, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -95,25 +95,42 @@ func FetchLanguagesForBuildScript(script *buildscript.BuildScript) ([]Language, 
 }
 
 // FetchCheckpointForCommit fetches the checkpoint for the given commit
-func FetchCheckpointForCommit(commitID strfmt.UUID, auth *authentication.Auth) ([]*gqlModel.Requirement, strfmt.DateTime, error) {
+func FetchCheckpointForCommit(commitID strfmt.UUID, auth *authentication.Auth) ([]*gqlModel.Requirement, error) {
 	logging.Debug("fetching checkpoint (%s)", commitID.String())
 
 	request := request.CheckpointByCommit(commitID)
 
 	gql := graphql.New(auth)
-	response := gqlModel.Checkpoint{}
+	response := []*gqlModel.Requirement{}
 	err := gql.Run(request, &response)
 	if err != nil {
-		return nil, strfmt.DateTime{}, errs.Wrap(err, "gql.Run failed")
+		return nil, errs.Wrap(err, "gql.Run failed")
 	}
 
-	logging.Debug("Returning %d requirements", len(response.Requirements))
+	logging.Debug("Returning %d requirements", len(response))
 
-	if response.Commit == nil {
-		return nil, strfmt.DateTime{}, locale.WrapError(ErrNoData, "err_no_data_found")
+	if len(response) == 0 {
+		return nil, locale.WrapError(ErrNoData, "err_no_data_found")
 	}
 
-	return response.Requirements, response.Commit.AtTime, nil
+	return response, nil
+}
+
+func FetchAtTimeForCommit(commitID strfmt.UUID, auth *authentication.Auth) (strfmt.DateTime, error) {
+	logging.Debug("fetching atTime for commit (%s)", commitID.String())
+
+	request := request.CommitByID(commitID)
+
+	gql := graphql.New(auth)
+	response := gqlModel.Commit{}
+	err := gql.Run(request, &response)
+	if err != nil {
+		return strfmt.DateTime{}, errs.Wrap(err, "gql.Run failed")
+	}
+
+	logging.Debug("Returning %s", response.AtTime)
+
+	return response.AtTime, nil
 }
 
 func GqlReqsToMonoCheckpoint(requirements []*gqlModel.Requirement) []*mono_models.Checkpoint {
@@ -265,6 +282,8 @@ func platformArchToHostArch(arch, bits string) string {
 			return "sparc64"
 		case "x86":
 			return "amd64"
+		case "arm":
+			return "arm64"
 		}
 	}
 	return "unrecognized"

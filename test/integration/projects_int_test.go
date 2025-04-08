@@ -161,7 +161,7 @@ func (suite *ProjectsIntegrationTestSuite) TestMove() {
 	cp.Expect("Continue? (y/N)")
 	cp.SendLine("n")
 	cp.Expect("aborted")
-	cp.ExpectExitCode(0)
+	cp.ExpectNotExitCode(0)
 }
 
 func TestProjectsIntegrationTestSuite(t *testing.T) {

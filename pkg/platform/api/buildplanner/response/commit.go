@@ -10,47 +10,6 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-type ProjectCommitResponse struct {
-	Project *ProjectResponse `json:"project"`
-}
-
-// PostProcess must satisfy gqlclient.PostProcessor interface
-func (c *ProjectCommitResponse) PostProcess() error {
-	if c.Project == nil {
-		return errs.New("Project is nil")
-	}
-
-	if IsErrorResponse(c.Project.Type) {
-		return ProcessProjectError(c.Project, "Could not get build from project response")
-	}
-
-	if c.Project.Commit == nil {
-		return errs.New("Commit is nil")
-	}
-
-	if IsErrorResponse(c.Project.Type) {
-		return ProcessProjectError(c.Project, "Could not get build from project response")
-	}
-
-	if c.Project.Commit == nil {
-		return errs.New("Commit is nil")
-	}
-
-	if IsErrorResponse(c.Project.Commit.Type) {
-		return ProcessCommitError(c.Project.Commit, "Could not get build from commit from project response")
-	}
-
-	if c.Project.Commit.Build == nil {
-		return errs.New("Commit does not contain build")
-	}
-
-	if IsErrorResponse(c.Project.Commit.Build.Type) {
-		return ProcessBuildError(c.Project.Commit.Build, "Could not get build from project commit response")
-	}
-
-	return nil
-}
-
 func ProcessBuildError(build *BuildResponse, fallbackMessage string) error {
 	logging.Debug("ProcessBuildError: build.Type=%s", build.Type)
 	if build.Type == types.PlanningErrorType {
@@ -111,32 +70,6 @@ func ProcessProjectError(project *ProjectResponse, fallbackMessage string) error
 	return errs.New(fallbackMessage)
 }
 
-// PlanningError represents an error that occurred during planning.
-type PlanningError struct {
-	SubErrors []*BuildExprError `json:"subErrors"`
-}
-
-// BuildExprError represents a location in the build script where an error occurred.
-type BuildExprError struct {
-	Type             string                        `json:"__typename"`
-	BuildExprPath    string                        `json:"buildExprPath"`
-	Message          string                        `json:"message"`
-	IsTransient      bool                          `json:"isTransient"`
-	ValidationErrors []*SolverErrorValidationError `json:"validationErrors"`
-	*TargetNotFound
-	*RemediableSolveError
-}
-
-type TargetNotFound struct {
-	Type            string   `json:"__typename"`
-	RequestedTarget string   `json:"requestedTarget"`
-	PossibleTargets []string `json:"possibleTargets"`
-}
-
-type ValidationError struct {
-	SubErrors []*BuildExprError `json:"subErrors"`
-}
-
 // Commit contains the build and any errors.
 type Commit struct {
 	Type       string          `json:"__typename"`
@@ -146,9 +79,5 @@ type Commit struct {
 	ParentID   strfmt.UUID     `json:"parentId"`
 	Build      *BuildResponse  `json:"build"`
 	*Error
-	*ParseError
-	*ValidationError
-	*ForbiddenError
-	*HeadOnBranchMovedError
-	*NoChangeSinceLastCommitError
+	*ErrorWithSubErrors
 }

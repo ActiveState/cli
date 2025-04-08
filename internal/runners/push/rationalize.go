@@ -52,13 +52,6 @@ func rationalizeError(err *error) {
 			errs.SetInput(),
 		)
 
-	// No changes made
-	case errors.Is(*err, errNoChanges):
-		*err = errs.WrapUserFacing(*err,
-			locale.T("push_no_changes"),
-			errs.SetInput(),
-		)
-
 	// Project name is already in use
 	case errors.As(*err, &projectNameInUseErr):
 		*err = errs.WrapUserFacing(*err,
@@ -86,14 +79,6 @@ func rationalizeError(err *error) {
 			*err = errs.WrapUserFacing(*err,
 				locale.T("err_push_target_invalid_history"),
 				errs.SetInput())
-
-			// No changes made
-		case types.NoChangeSinceLastCommitErrorType:
-			*err = errs.WrapUserFacing(*err,
-				locale.T("push_no_changes"),
-				errs.SetInput(),
-			)
-
 		}
 	}
 }
