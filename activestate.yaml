@@ -10,6 +10,8 @@ constants:
     value: ./cmd/state-installer
   - name: EXECUTOR_PKGS
     value: ./cmd/state-exec
+  - name: MCP_PKGS
+    value: ./cmd/state-mcp
   - name: BUILD_TARGET_PREFIX_DIR
     value: ./build
   - name: BUILD_TARGET
@@ -29,6 +31,8 @@ constants:
     value: state-installer
   - name: BUILD_REMOTE_INSTALLER_TARGET
     value: state-remote-installer
+  - name: BUILD_MCP_TARGET
+    value: state-mcp
   - name: INTEGRATION_TEST_REGEX
     value: 'integration\|automation'
   - name: SET_ENV
@@ -131,6 +135,14 @@ scripts:
       $constants.SET_ENV
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_EXEC_TARGET $constants.CLI_BUILDFLAGS $constants.EXECUTOR_PKGS
+  - name: build-mcp
+    description: Builds the State MCP application
+    language: bash
+    standalone: true
+    value: |
+      set -e
+      $constants.SET_ENV
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_MCP_TARGET $constants.CLI_BUILDFLAGS $constants.MCP_PKGS
   - name: build-all
     description: Builds all our tools
     language: bash
@@ -147,6 +159,8 @@ scripts:
       $scripts.build-svc.path()
       echo "Building State Executor"
       $scripts.build-exec.path()
+      echo "Building State MCP"
+      $scripts.build-mcp.path()
   - name: build-installer
     language: bash
     standalone: true
