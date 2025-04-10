@@ -18,10 +18,8 @@ type TestReporter struct {
 const TestReportFilename = "analytics.log"
 
 func TestReportFilepath() string {
-	appdata, err := storage.AppDataPath()
-	if err != nil {
-		logging.Warning("Could not acquire appdata path, using cwd instead. Error received: %s", errs.JoinMessage(err))
-	}
+	appdata := storage.AppDataPath()
+	logging.Warning("Appdata path: %s", appdata)
 	return filepath.Join(appdata, TestReportFilename)
 }
 
