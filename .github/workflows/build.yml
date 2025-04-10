@@ -224,10 +224,10 @@ jobs:
         shell: bash
         run: parallelize results Build-Install-Scripts
 
-        - # === "Build: Executor" ===
-          name: "Build: Executor"
-          shell: bash
-          run: parallelize results Build-Executor
+      - # === "Build: Executor" ===
+        name: "Build: Executor"
+        shell: bash
+        run: parallelize results Build-Executor
 
       - # === "Build: MCP" ===
         name: "Build: MCP"
