@@ -71,6 +71,7 @@ func generatePayload(inDir, outDir, binDir, channel, version string) error {
 		filepath.Join(inDir, constants.StateCmd+osutils.ExeExtension):          binDir,
 		filepath.Join(inDir, constants.StateSvcCmd+osutils.ExeExtension):       binDir,
 		filepath.Join(inDir, constants.StateExecutorCmd+osutils.ExeExtension):  binDir,
+		filepath.Join(inDir, constants.StateMCPCmd+osutils.ExeExtension):       binDir,
 	}
 	if err := copyFiles(files); err != nil {
 		return fmt.Errorf(emsg, err)
