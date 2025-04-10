@@ -24,6 +24,7 @@ import (
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rollbar"
@@ -287,6 +288,14 @@ func (c *Command) NameRecursive() string {
 	return strings.Join(name, " ")
 }
 
+func (c *Command) BaseCommand() *Command {
+	base := c
+	for base.parent != nil && base.parent.parent != nil {
+		base = base.parent
+	}
+	return base
+}
+
 func (c *Command) NamePadding() int {
 	return c.cobra.NamePadding()
 }
@@ -460,6 +469,15 @@ func (c *Command) Children() []*Command {
 	sort.Slice(commands, func(i, j int) bool {
 		return commands[i].SortBefore(commands[j])
 	})
+	return commands
+}
+
+func (c *Command) AllChildren() []*Command {
+	commands := []*Command{}
+	for _, child := range c.Children() {
+		commands = append(commands, child)
+		commands = append(commands, child.AllChildren()...)
+	}
 	return commands
 }
 
