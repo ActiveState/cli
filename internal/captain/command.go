@@ -275,11 +275,14 @@ func (c *Command) Name() string {
 }
 
 func (c *Command) NameRecursive() string {
-	child := c
+	parent := c
 	name := []string{}
-	for child != nil {
-		name = append([]string{child.Name()}, name...)
-		child = child.parent
+	for parent != nil {
+		name = append([]string{parent.Name()}, name...)
+		parent = parent.parent
+		if parent.parent == nil {
+			break // Don't include the root command in the name
+		}
 	}
 	return strings.Join(name, " ")
 }
