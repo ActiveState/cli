@@ -219,9 +219,12 @@ func (c *Command) ShortDescription() string {
 func (c *Command) Execute(args []string) error {
 	defer profile.Measure("cobra:Execute", time.Now())
 	c.logArgs(args)
-	c.cobra.SetArgs(args)
-	err := c.cobra.Execute()
-	c.cobra.SetArgs(nil)
+	// Cobra always executes the root command, so we need to set the args for the root command
+	// This makes running command.Execute() super error-prone if the args don't match the command
+	// We should probably get rid of Cobra over issues like this
+	c.cobra.Root().SetArgs(args) 
+	err := c.cobra.Root().Execute()
+	c.cobra.Root().SetArgs(nil)
 	rationalizeError(&err)
 	return setupSensibleErrors(err, args)
 }
