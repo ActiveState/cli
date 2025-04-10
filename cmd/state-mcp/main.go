@@ -119,8 +119,8 @@ func registerRawTools(mcpHandler *mcpServerHandler) func() error {
 		// Require project directory for most commands. This is currently not encoded into the command tree
 		if !sliceutils.Contains([]string{"projects", "auth"}, command.BaseCommand().Name()) {
 			opts = append(opts, mcp.WithString(
-				"project_directory", 
-				require(true),
+				"project_directory",
+				mcp.Required(),
 				mcp.Description("Absolute path to the directory where your activestate project is checked out. It should contain the activestate.yaml file."),
 			))
 		}
@@ -138,7 +138,7 @@ func registerRawTools(mcpHandler *mcpServerHandler) func() error {
 		}
 		mcpHandler.addTool(
 			mcp.NewTool(strings.Join(strings.Split(command.NameRecursive(), " "), "_"), opts...),
-		 	func(ctx context.Context, request mcp.CallToolRequest) (r *mcp.CallToolResult, rerr error) {
+			func(ctx context.Context, request mcp.CallToolRequest) (r *mcp.CallToolResult, rerr error) {
 				byt.Truncate(0)
 				if projectDir, ok := request.Params.Arguments["project_directory"]; ok {
 					pj, err := project.FromPath(projectDir.(string))
@@ -146,6 +146,15 @@ func registerRawTools(mcpHandler *mcpServerHandler) func() error {
 						return nil, errs.Wrap(err, "Failed to create project")
 					}
 					prime.SetProject(pj)
+				}
+				// Reinitialize tree with updated primer, because currently our command can take things
+				// from the primer at the time of registration, and not the time of invocation.
+				invocationTree := donotshipme.CmdTree(prime)
+				for _, child := range invocationTree.Command().AllChildren() {
+					if child.NameRecursive() == command.NameRecursive() {
+						command = child
+						break
+					}
 				}
 				args := strings.Split(command.NameRecursive(), " ")
 				for _, arg := range command.Arguments() {
@@ -162,7 +171,7 @@ func registerRawTools(mcpHandler *mcpServerHandler) func() error {
 					}
 					args = append(args, fmt.Sprintf("--%s=%s", flag.Name, v.(string)))
 				}
-				logging.Debug("Executing command: %s, args: %v (%v)", command.NameRecursive(), args, args==nil)
+				logging.Debug("Executing command: %s, args: %v (%v)", command.NameRecursive(), args, args == nil)
 				err := command.Execute(args)
 				if err != nil {
 					return nil, errs.Wrap(err, "Failed to execute command")
