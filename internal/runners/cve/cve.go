@@ -142,9 +142,6 @@ type SeverityCountOutput struct {
 }
 
 func (rd *cveOutput) MarshalOutput(format output.Format) interface{} {
-	if format != output.PlainFormatName {
-		return rd.data
-	}
 	ri := &CveInfo{
 		fmt.Sprintf("[ACTIONABLE]%s[/RESET]", rd.data.Project),
 		rd.data.CommitID,
