@@ -9,6 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/output/renderers"
 	"github.com/ActiveState/cli/internal/primer"
@@ -60,6 +61,12 @@ type cveOutput struct {
 }
 
 func (r *Cve) Run(params *Params) error {
+	defer func() {
+		if rc := recover(); rc != nil {
+			logging.Error("Recovered from panic: %v", rc)
+			fmt.Printf("Recovered from panic: %v\n", rc)
+		}
+	}()
 	if !params.Namespace.IsValid() && r.proj == nil {
 		return rationalize.ErrNoProject
 	}
@@ -71,7 +78,7 @@ func (r *Cve) Run(params *Params) error {
 		)
 	}
 
-	vulnerabilities, err := r.fetchVulnerabilities(*params.Namespace)
+	vulnerabilities, err := r.fetchVulnerabilities(params.Namespace)
 	if err != nil {
 		var errProjectNotFound *model.ErrProjectNotFound
 		if errors.As(err, &errProjectNotFound) {
@@ -101,7 +108,7 @@ func (r *Cve) Run(params *Params) error {
 	return nil
 }
 
-func (r *Cve) fetchVulnerabilities(namespaceOverride project.Namespaced) (*medmodel.CommitVulnerabilities, error) {
+func (r *Cve) fetchVulnerabilities(namespaceOverride *project.Namespaced) (*medmodel.CommitVulnerabilities, error) {
 	if namespaceOverride.IsValid() && namespaceOverride.CommitID == nil {
 		resp, err := model.FetchProjectVulnerabilities(r.auth, namespaceOverride.Owner, namespaceOverride.Project)
 		if err != nil {
