@@ -170,7 +170,7 @@ jobs:
             {
                 "ID": "Build-Executor",
                 "Args": ["state", "run", "build-exec"]
-            }
+            },
             {
                 "ID": "Build-MCP",
                 "Args": ["state", "run", "build-mcp"]
