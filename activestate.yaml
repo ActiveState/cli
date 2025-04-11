@@ -110,7 +110,9 @@ scripts:
         go generate
         popd > /dev/null
       fi
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
+      TARGET=$BUILD_TARGET_DIR/$constants.BUILD_TARGET
+      echo "Building $TARGET"
+      go build -tags "$GO_BUILD_TAGS" -o $TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-svc
     language: bash
     standalone: true
@@ -125,7 +127,9 @@ scripts:
         go generate
         popd > /dev/null
       fi
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.SVC_BUILDFLAGS $constants.DAEMON_PKGS
+      TARGET=$BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET
+      echo "Building $TARGET"
+      go build -tags "$GO_BUILD_TAGS" -o $TARGET $constants.SVC_BUILDFLAGS $constants.DAEMON_PKGS
   - name: build-exec
     description: Builds the State Executor application
     language: bash
@@ -133,8 +137,9 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
-
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_EXEC_TARGET $constants.CLI_BUILDFLAGS $constants.EXECUTOR_PKGS
+      TARGET=$BUILD_TARGET_DIR/$constants.BUILD_EXEC_TARGET
+      echo "Building $TARGET"
+      go build -tags "$GO_BUILD_TAGS" -o $TARGET $constants.CLI_BUILDFLAGS $constants.EXECUTOR_PKGS
   - name: build-mcp
     description: Builds the State MCP application
     language: bash
@@ -142,7 +147,9 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_MCP_TARGET $constants.CLI_BUILDFLAGS $constants.MCP_PKGS
+      TARGET=$BUILD_TARGET_DIR/$constants.BUILD_MCP_TARGET
+      echo "Building $TARGET"
+      go build -tags "$GO_BUILD_TAGS" -o $TARGET $constants.CLI_BUILDFLAGS $constants.MCP_PKGS
   - name: build-all
     description: Builds all our tools
     language: bash
