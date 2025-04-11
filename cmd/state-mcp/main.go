@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime/debug"
 	"time"
 
 	"github.com/ActiveState/cli/internal/events"
@@ -16,7 +17,7 @@ func main() {
 		logging.Debug("Exiting")
 		if r := recover(); r != nil {
 			logging.Error("Recovered from panic: %v", r)
-			fmt.Printf("Recovered from panic: %v\n", r)
+			fmt.Printf("Recovered from panic: %v, stack: %s\n", r, string(debug.Stack()))
 			os.Exit(1)
 		}
 	}()
@@ -29,12 +30,16 @@ func main() {
 	mcpHandler := registerServer()
 
 	// Parse command line flags
-	rawFlag := flag.Bool("raw", false, "Expose all State Tool commands as tools; this will lead to issues and is not optimized for AI use")
+	rawFlag := flag.String("type", "", "Type of MCP server to run; raw, curated or scripts")
 	flag.Parse()
-	if *rawFlag {
+	switch *rawFlag {
+	case "raw":
 		close := registerRawTools(mcpHandler)
 		defer close()
-	} else {
+	case "scripts":
+		close := registerScriptTools(mcpHandler)
+		defer close()
+	default:
 		registerCuratedTools(mcpHandler)
 	}
 

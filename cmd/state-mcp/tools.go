@@ -4,15 +4,55 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/ActiveState/cli/cmd/state/donotshipme"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/scriptrun"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/mark3labs/mcp-go/mcp"
 )
+
+func registerScriptTools(mcpHandler *mcpServerHandler) func() error {
+	byt := &bytes.Buffer{}
+	prime, close, err := mcpHandler.newPrimer(os.Getenv(constants.ActivatedStateEnvVarName), byt)
+	if err != nil {
+		panic(err)
+	}
+
+	scripts, err := prime.Project().Scripts()
+	if err != nil {
+		panic(err)
+	}
+
+	for _, script := range scripts {
+		mcpHandler.addTool(mcp.NewTool(script.Name(),
+			mcp.WithDescription(script.Description()),
+		), func(ctx context.Context, request mcp.CallToolRequest) (r *mcp.CallToolResult, rerr error) {
+			byt.Truncate(0)
+
+			scriptrunner := scriptrun.New(prime)
+			if !script.Standalone() && scriptrunner.NeedsActivation() {
+				if err := scriptrunner.PrepareVirtualEnv(); err != nil {
+					return nil, errs.Wrap(err, "Failed to prepare virtual environment")
+				}
+			}
+
+			err := scriptrunner.Run(script, []string{})
+			if err != nil {
+				return nil, errs.Wrap(err, "Failed to run script")
+			}
+
+			return mcp.NewToolResultText(byt.String()), nil
+		})
+	}
+
+	return close
+}
 
 // registerCuratedTools registers a curated set of tools for the AI assistant
 func registerCuratedTools(mcpHandler *mcpServerHandler) {
