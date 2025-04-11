@@ -32,6 +32,7 @@ constants:
   - name: BUILD_REMOTE_INSTALLER_TARGET
     value: state-remote-installer
   - name: BUILD_MCP_TARGET
+    if: ne .OS.Name "Windows"
     value: state-mcp
   - name: INTEGRATION_TEST_REGEX
     value: 'integration\|automation'
