@@ -1,5 +1,5 @@
-//go:build !windows
-// +build !windows
+//go:build darwin
+// +build darwin
 
 package subshell
 
@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/subshell/bash"
-	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/subshell/fish"
 	"github.com/ActiveState/cli/internal/subshell/tcsh"
 	"github.com/ActiveState/cli/internal/subshell/zsh"
@@ -18,12 +17,11 @@ var supportedShells = []SubShell{
 	&zsh.SubShell{},
 	&tcsh.SubShell{},
 	&fish.SubShell{},
-	&cmd.SubShell{},
 }
 
 const (
 	SHELL_ENV_VAR = "SHELL"
-	OS_DEFAULT    = "bash"
+	OS_DEFAULT    = "zsh"
 )
 
 func supportedShellName(filename string) bool {
