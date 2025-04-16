@@ -15,7 +15,7 @@ jobs:
   # === Target & Verify PR ===
   verifypr:
     name: Target & Verify PR
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}

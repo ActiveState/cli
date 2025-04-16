@@ -12,7 +12,7 @@ jobs:
   # === Set target branch ===
   propagate:
     name: Propagate to affected version branches
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       ACTIVESTATE_CI: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
