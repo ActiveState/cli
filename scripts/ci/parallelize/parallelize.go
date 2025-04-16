@@ -68,10 +68,7 @@ func run() error {
 }
 
 func jobDir() string {
-	path, err := storage.AppDataPath()
-	if err != nil {
-		panic(err)
-	}
+	path := storage.AppDataPath()
 
 	path = filepath.Join(path, "jobs")
 	if err := fileutils.MkdirUnlessExists(path); err != nil {

@@ -41,14 +41,10 @@ func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) 
 	i.thread = thread
 	i.closeThread = closeThread
 
-	var err error
 	if localPath != "" {
-		i.appDataDir, err = storage.AppDataPathWithParent(localPath)
+		i.appDataDir = storage.AppDataPathWithParent(localPath)
 	} else {
-		i.appDataDir, err = storage.AppDataPath()
-	}
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not detect appdata dir")
+		i.appDataDir = storage.AppDataPath()
 	}
 
 	// Ensure appdata dir exists, because the sqlite driver sure doesn't
@@ -61,6 +57,7 @@ func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) 
 
 	path := filepath.Join(i.appDataDir, C.InternalConfigFileName)
 
+	var err error
 	t := time.Now()
 	i.db, err = sql.Open("sqlite", path)
 	if err != nil {

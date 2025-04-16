@@ -2,8 +2,10 @@ package user
 
 import (
 	"os"
+	"os/user"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 )
 
 // HomeDirNotFoundError is an error that implements the ErrorLocalier and ErrorInput interfaces
@@ -40,9 +42,16 @@ func HomeDir() (string, error) {
 	if dir := os.Getenv(constants.HomeEnvVarName); dir != "" {
 		return dir, nil
 	}
-	dir, err := os.UserHomeDir()
-	if err != nil {
-		return "", &HomeDirNotFoundError{err}
+	
+	u, err := user.Current()
+	if err == nil {
+		return u.HomeDir, nil
+	}
+
+	// If we can't get the current user, try to get the home dir from the os
+	dir, err2 := os.UserHomeDir()
+	if err2 != nil {
+		return "", &HomeDirNotFoundError{errs.Pack(err, err2)}
 	}
 	return dir, nil
 }

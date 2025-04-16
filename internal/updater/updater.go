@@ -207,10 +207,7 @@ func (u *UpdateInstaller) InstallBlocking(installTargetPath string, args ...stri
 		return errs.Wrap(err, "Could not check if State Tool was installed as admin")
 	}
 
-	appdata, err := storage.AppDataPath()
-	if err != nil {
-		return errs.Wrap(err, "Could not detect appdata path")
-	}
+	appdata := storage.AppDataPath()
 
 	// Protect against multiple updates happening simultaneously
 	lockFile := filepath.Join(appdata, "install.lock")

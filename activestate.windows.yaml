@@ -7,6 +7,8 @@ constants:
     value: state-exec.exe
   - name: BUILD_INSTALLER_TARGET
     value: state-installer.exe
+  - name: BUILD_MCP_TARGET
+    value: state-mcp.exe
   - name: SVC_BUILDFLAGS
     value: -ldflags="-s -w -H=windowsgui"
   - name: SCRIPT_EXT

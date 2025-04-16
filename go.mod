@@ -45,7 +45,6 @@ require (
 	github.com/phayes/permbits v0.0.0-20190108233746-1efae4548023
 	github.com/posener/wstest v0.0.0-20180216222922-04b166ca0bf1
 	github.com/rollbar/rollbar-go v1.1.0
-	github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0
 	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/skratchdot/open-golang v0.0.0-20190104022628-a2dfa6d0dab6
 	github.com/spf13/cast v1.3.0
@@ -76,6 +75,7 @@ require (
 	github.com/go-git/go-git/v5 v5.13.1
 	github.com/gowebpki/jcs v1.0.1
 	github.com/klauspost/compress v1.11.4
+	github.com/mark3labs/mcp-go v0.18.0
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/zijiren233/yaml-comment v0.2.1
 )
@@ -109,6 +109,7 @@ require (
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/skeema/knownhosts v1.3.0 // indirect
 	github.com/sosodev/duration v1.3.1 // indirect
+	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	golang.org/x/sync v0.11.0 // indirect
 )
 
