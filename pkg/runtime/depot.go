@@ -331,7 +331,11 @@ func (d *depot) Undeploy(id strfmt.UUID, relativeSrc, path string) error {
 
 	// Perform uninstall based on deployment type
 	if err := smartlink.UnlinkContents(filepath.Join(d.Path(id), relativeSrc), path); err != nil {
-		return errs.Wrap(err, "failed to unlink artifact")
+		if os.IsNotExist(err) {
+			logging.Warning("artifact no longer exists: %s", filepath.Join(d.Path(id), relativeSrc))
+		} else {
+			return errs.Wrap(err, "failed to unlink artifact")
+		}
 	}
 
 	// Re-link or re-copy any files provided by other artifacts.
