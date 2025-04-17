@@ -82,6 +82,8 @@ Linux)
 Darwin)
   OS="darwin"
   ARCH="amd64"
+  arch="`uname -m`"
+  if [ $arch = "arm64" ]; then ARCH="arm64"; fi
   DOWNLOADEXT=".tar.gz"
   SHA256SUM="shasum -a 256"
   ;;

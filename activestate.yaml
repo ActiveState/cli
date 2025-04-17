@@ -39,9 +39,7 @@ constants:
       export CGO_ENABLED=0
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
       BUILD_EXEC_TARGET=$constants.BUILD_EXEC_TARGET
-
-      # add the GOARCH as infix to BUILD_TARGET_DIR if not amd64
-      BUILD_TARGET_DIR=$constants.BUILD_TARGET_PREFIX_DIR/${GOARCH#amd64}
+      BUILD_TARGET_DIR=$constants.BUILD_TARGET_PREFIX_DIR/
   - name: SCRIPT_EXT
     if: ne .OS.Name "Windows"
     value: .sh
@@ -245,7 +243,7 @@ scripts:
       GOOS=windows go build -o .github/deps/Windows/amd64/bin/parallelize.exe github.com/ActiveState/cli/scripts/ci/parallelize/
       GOOS=linux go build -o .github/deps/Linux/amd64/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
       GOOS=linux GOARCH=arm64 go build -o .github/deps/Linux/arm64/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
-      GOOS=darwin go build -o .github/deps/macOS/amd64/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
+      GOOS=darwin GOARCH=amd64 go build -o .github/deps/macOS/amd64/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
   - name: test
     language: bash
     standalone: true
