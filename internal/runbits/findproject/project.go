@@ -99,7 +99,8 @@ func FromNamespaceLocal(ns *project.Namespaced, cfg projectfile.ConfigGetter, pr
 				"",
 				locale.Tl("project_select_namespace", "Multiple projects with that name were found. Please select one."),
 				matchingNamespaces,
-				&namespace)
+				&namespace,
+				nil)
 			if err != nil {
 				return nil, locale.WrapError(err, "err_project_select_namespace", "Error selecting project")
 			}
@@ -117,7 +118,8 @@ func FromNamespaceLocal(ns *project.Namespaced, cfg projectfile.ConfigGetter, pr
 				"",
 				locale.Tl("project_select_path", "Multiple project paths for the selected project were found. Please select one."),
 				paths,
-				&path)
+				&path,
+				nil)
 			if err != nil {
 				return nil, locale.WrapError(err, "err_project_select_path", "Error selecting project path")
 			}

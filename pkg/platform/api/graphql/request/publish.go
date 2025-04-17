@@ -202,19 +202,19 @@ func (p *PublishInput) Files() []gqlclient.File {
 
 func (p *PublishInput) Query() string {
 	return `
-		mutation ($input: PublishInput!) {
-			publish(input: $input) {
-				... on CreatedIngredientVersionRevision {
-					ingredientID
-					ingredientVersionID
-					revision
-				}
-				... on Error{
-					__typename
-					error: message
-				}
-			}
-		}
+mutation ($input: PublishInput!) {
+  publish(input: $input) {
+    ... on CreatedIngredientVersionRevision {
+      ingredientID
+      ingredientVersionID
+      revision
+    }
+    ... on Error {
+      __typename
+      error: message
+    }
+  }
+}
 `
 }
 

@@ -242,7 +242,7 @@ func fetchCheckpoint(commit *strfmt.UUID, auth *authentication.Auth) ([]*gqlMode
 		return nil, nil
 	}
 
-	checkpoint, _, err := model.FetchCheckpointForCommit(*commit, auth)
+	checkpoint, err := model.FetchCheckpointForCommit(*commit, auth)
 	if err != nil && errors.Is(err, model.ErrNoData) {
 		return nil, locale.WrapExternalError(err, "package_no_data")
 	}

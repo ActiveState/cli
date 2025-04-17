@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -41,8 +42,7 @@ func (stv *StateToolChannelVersion) Type() string {
 }
 
 type LockParams struct {
-	Channel        StateToolChannelVersion
-	NonInteractive bool
+	Channel StateToolChannelVersion
 }
 
 type Lock struct {
@@ -72,7 +72,7 @@ func (l *Lock) Run(params *LockParams) error {
 
 	l.out.Notice(locale.Tl("locking_version", "Locking State Tool version for current project."))
 
-	if l.project.IsLocked() && !params.NonInteractive {
+	if l.project.IsLocked() {
 		if err := confirmLock(l.prompt); err != nil {
 			return locale.WrapError(err, "err_update_lock_confirm", "Could not confirm whether to lock update.")
 		}
@@ -129,13 +129,13 @@ func (l *Lock) Run(params *LockParams) error {
 }
 
 func confirmLock(prom prompt.Prompter) error {
+	defaultChoice := !prom.IsInteractive()
 	msg := locale.T("confirm_update_locked_version_prompt")
 
-	confirmed, err := prom.Confirm(locale.T("confirm"), msg, new(bool))
+	confirmed, err := prom.Confirm(locale.T("confirm"), msg, &defaultChoice, ptr.To(true))
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Not confirmed")
 	}
-
 	if !confirmed {
 		return locale.NewInputError("err_update_lock_noconfirm", "Cancelling by your request.")
 	}
