@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -15,6 +16,9 @@ type RevertIntegrationTestSuite struct {
 }
 
 func (suite *RevertIntegrationTestSuite) TestRevert() {
+	if runtime.GOOS == "darwin" && runtime.GOARCH == "arm64" {
+		suite.T().Skip("macOS ARM wants to link to system gettext for some reason") // DX-3256
+	}
 	suite.OnlyRunForTags(tagsuite.Revert)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
