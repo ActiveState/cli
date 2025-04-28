@@ -33,6 +33,9 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 		shells = []e2e.Shell{e2e.Bash, e2e.Fish, e2e.Tcsh, e2e.Zsh}
 	case "darwin":
 		shells = []e2e.Shell{e2e.Bash, e2e.Fish, e2e.Zsh, e2e.Tcsh}
+		if runtime.GOARCH == "arm64" {
+			shells = []e2e.Shell{e2e.Bash, e2e.Zsh, e2e.Tcsh} // DX-3257
+		}
 	case "windows":
 		shells = []e2e.Shell{e2e.Bash, e2e.Cmd}
 	}
