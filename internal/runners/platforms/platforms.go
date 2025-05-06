@@ -2,12 +2,8 @@ package platforms
 
 import (
 	"sort"
-	"strconv"
 	"strings"
 	"time"
-
-	"github.com/ActiveState/cli/pkg/sysinfo"
-	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
@@ -30,6 +26,7 @@ func (pv *PlatformVersion) Set(arg string) error {
 type Platform struct {
 	Name     string `json:"name"`
 	Version  string `json:"version"`
+	Arch     string `json:"arch"`
 	BitWidth string `json:"bitWidth"`
 }
 
@@ -49,6 +46,7 @@ func makePlatformsFromModelPlatforms(platforms []*model.Platform) []*Platform {
 			p.Version = *platform.KernelVersion.Version
 		}
 		if platform.CPUArchitecture != nil && platform.CPUArchitecture.BitWidth != nil {
+			p.Arch = *platform.CPUArchitecture.Name
 			p.BitWidth = *platform.CPUArchitecture.BitWidth
 		}
 
@@ -70,43 +68,4 @@ type Params struct {
 	BitWidth        int
 	resolvedName    string // Holds the provided platforn name, or defaults to curernt platform name if not provided
 	resolvedVersion string // Holds the provided platform version, or defaults to latest version if not provided
-}
-
-func prepareParams(ps Params) (Params, error) {
-	ps.resolvedName = ps.Platform.Name()
-	if ps.resolvedName == "" {
-		ps.resolvedName = sysinfo.OS().String()
-	}
-	ps.resolvedVersion = ps.Platform.Version()
-	if ps.resolvedVersion == "" {
-		return prepareLatestVersion(ps)
-	}
-
-	if ps.BitWidth == 0 {
-		ps.BitWidth = 32 << (^uint(0) >> 63) // gets host word size
-	}
-
-	return ps, nil
-}
-
-func prepareLatestVersion(params Params) (Params, error) {
-	platformUUID, err := model.PlatformNameToPlatformID(params.Platform.Name())
-	if err != nil {
-		return params, locale.WrapExternalError(err, "err_resolve_platform_id", "Could not resolve platform ID from name: {{.V0}}", params.Platform.Name())
-	}
-
-	platform, err := model.FetchPlatformByUID(strfmt.UUID(platformUUID))
-	if err != nil {
-		return params, locale.WrapError(err, "err_fetch_platform", "Could not get platform details")
-	}
-	params.resolvedName = *platform.Kernel.Name
-	params.resolvedVersion = *platform.KernelVersion.Version
-
-	bitWidth, err := strconv.Atoi(*platform.CPUArchitecture.BitWidth)
-	if err != nil {
-		return params, locale.WrapError(err, "err_platform_bitwidth", "Unable to determine platform bit width")
-	}
-	params.BitWidth = bitWidth
-
-	return params, nil
 }

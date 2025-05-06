@@ -19,6 +19,7 @@ const (
 	MergeConflictErrorType            = "MergeConflict"
 	RevertConflictErrorType           = "RevertConflict"
 	CommitNotInTargetHistoryErrorType = "CommitNotInTargetHistory"
-	ComitHasNoParentErrorType         = "CommitHasNoParent"
+	CommitHasNoParentErrorType        = "CommitHasNoParent"
 	TargetNotFoundErrorType           = "TargetNotFound"
+	InvalidInputErrorType             = "InvalidInput"
 )

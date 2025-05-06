@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
+	bpResp "github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -65,8 +66,7 @@ const (
 )
 
 var (
-	errNoChanges = errors.New("no changes")
-	errNoCommit  = errors.New("no commit")
+	errNoCommit = errors.New("no commit")
 )
 
 type errProjectNameInUse struct {
@@ -128,10 +128,12 @@ func (r *Push) Run(params PushParams) (rerr error) {
 
 	// Ask to create a copy if the user does not have org permissions
 	if intend&pushFromNoPermission > 0 && !params.Namespace.IsValid() {
-		var err error
-		createCopy, err := r.prompt.Confirm("", locale.T("push_prompt_not_authorized"), ptr.To(true))
-		if err != nil || !createCopy {
-			return err
+		createCopy, err := r.prompt.Confirm("", locale.T("push_prompt_not_authorized"), ptr.To(true), nil)
+		if err != nil {
+			return errs.Wrap(err, "Not confirmed")
+		}
+		if !createCopy {
+			return nil
 		}
 	}
 
@@ -170,9 +172,9 @@ func (r *Push) Run(params PushParams) (rerr error) {
 			createProject, err := r.prompt.Confirm(
 				locale.Tl("create_project", "Create Project"),
 				locale.Tl("push_confirm_create_project", "You are about to create the project [NOTICE]{{.V0}}[/RESET]. Continue?", targetNamespace.String()),
-				ptr.To(true))
+				ptr.To(true), nil)
 			if err != nil {
-				return errs.Wrap(err, "Confirmation failed")
+				return errs.Wrap(err, "Not confirmed")
 			}
 			if !createProject {
 				return rationalize.ErrActionAborted
@@ -234,7 +236,8 @@ func (r *Push) Run(params PushParams) (rerr error) {
 
 		// Check if branch is already up to date
 		if branch.CommitID != nil && branch.CommitID.String() == commitID.String() {
-			return errNoChanges
+			r.out.Notice(locale.T("push_no_changes"))
+			return nil
 		}
 
 		// Perform the (fast-forward) push.
@@ -246,6 +249,11 @@ func (r *Push) Run(params PushParams) (rerr error) {
 			Strategy:  types.MergeCommitStrategyFastForward,
 		})
 		if err != nil {
+			var mergeCommitErr *bpResp.MergedCommitError
+			if errors.As(err, &mergeCommitErr) && mergeCommitErr.Type == types.NoChangeSinceLastCommitErrorType {
+				r.out.Notice(locale.T("push_no_changes"))
+				return nil
+			}
 			return errs.Wrap(err, "Could not push")
 		}
 	}
@@ -317,9 +325,9 @@ func (r *Push) namespaceFromProject() (*project.Namespaced, error) {
 
 func (r *Push) promptNamespace() (*project.Namespaced, error) {
 	owner := r.auth.WhoAmI()
-	owner, err := r.prompt.Input("", locale.T("push_prompt_owner"), &owner)
+	owner, err := r.prompt.Input("", locale.T("push_prompt_owner"), &owner, nil)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_push_get_owner", "Could not deterimine project owner")
+		return nil, locale.WrapError(err, "err_push_get_owner", "Could not determine project owner")
 	}
 
 	var name string
@@ -333,7 +341,7 @@ func (r *Push) promptNamespace() (*project.Namespaced, error) {
 		logging.Debug("Error fetching language for commit: %v", err)
 	}
 
-	name, err = r.prompt.Input("", locale.Tl("push_prompt_name", "What would you like the name of this project to be?"), &name)
+	name, err = r.prompt.Input("", locale.Tl("push_prompt_name", "What would you like the name of this project to be?"), &name, nil)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_push_get_name", "Could not determine project name")
 	}

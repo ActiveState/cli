@@ -48,6 +48,9 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 
 	// Assert output
 	cp.Expect("Installing State Tool")
+	if runtime.GOOS == "windows" {
+		cp.Expect("Continuing because State Tool is running in non-interactive mode") // admin prompt
+	}
 	cp.Expect("Done")
 	cp.Expect("successfully installed")
 	suite.NotContains(cp.Output(), "Downloading State Tool")
@@ -164,6 +167,9 @@ func (suite *InstallerIntegrationTestSuite) TestInstallNoErrorTips() {
 }
 
 func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
+	if runtime.GOARCH == "arm64" {
+		suite.T().Skip("ARM platform projects are not supported yet")
+	}
 	suite.OnlyRunForTags(tagsuite.Installer, tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()

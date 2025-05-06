@@ -33,7 +33,6 @@ func generateDiff(script *buildscript.BuildScript, otherScript *buildscript.Buil
 	scriptLines, newScriptLines, lines := diff.DiffLinesToChars(string(sb1), string(sb2))
 	hunks := diff.DiffMain(scriptLines, newScriptLines, false)
 	hunks = diff.DiffCharsToLines(hunks, lines)
-	hunks = diff.DiffCleanupSemantic(hunks)
 	for i := 0; i < len(hunks); i++ {
 		switch hunk := hunks[i]; hunk.Type {
 		case diffmatchpatch.DiffEqual:
