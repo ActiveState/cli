@@ -38,6 +38,10 @@ func (b *BuildPlanner) StageCommit(params StageCommitParams) (*Commit, error) {
 		return nil, errs.New("Script is nil")
 	}
 
+	if script.Dynamic() {
+		return nil, errs.New("Script cannot be a dynamic_solve") // forgot to call script.SetDynamic(false) earlier
+	}
+
 	expression, err := script.MarshalBuildExpression()
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to marshal build expression")
