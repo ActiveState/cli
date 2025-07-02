@@ -273,9 +273,9 @@ func (e ErrFailedArtifacts) Error() string {
 func (bp *BuildPlanner) BuildTarget(owner, project, commitID, target string) error {
 	logging.Debug("BuildTarget, owner: %s, project: %s, commitID: %s, target: %s", owner, project, commitID, target)
 	resp := &response.BuildResponse{}
-	err := bp.client.Run(request.Evaluate(owner, project, commitID, target), resp)
+	err := bp.client.Run(request.Build(owner, project, commitID, target), resp)
 	if err != nil {
-		return processBuildPlannerError(err, "Failed to evaluate target")
+		return processBuildPlannerError(err, "Failed to build target")
 	}
 
 	if resp == nil {
@@ -283,7 +283,7 @@ func (bp *BuildPlanner) BuildTarget(owner, project, commitID, target string) err
 	}
 
 	if response.IsErrorResponse(resp.Type) {
-		return response.ProcessBuildError(resp, "Could not process error response from evaluate target")
+		return response.ProcessBuildError(resp, "Could not process error response from build target")
 	}
 
 	return nil
