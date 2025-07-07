@@ -364,54 +364,6 @@ scripts:
       else
           echo "Success: All modified text files end with a newline."
       fi
-  - name: grab-mergecommits
-    language: bash
-    standalone: true
-    value: |
-      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
-      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
-      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
-      go run $project.path()/scripts/grab-mergecommits/main.go $1
-  - name: target-version-pr
-    language: bash
-    standalone: true
-    value: |
-      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
-      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
-      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
-      go run $project.path()/scripts/ci/target-version-pr/main.go $1
-  - name: create-version-pr
-    language: bash
-    standalone: true
-    value: |
-      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
-      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
-      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
-      go run $project.path()/scripts/create-version-pr/main.go $1
-  - name: propagate-pr
-    language: bash
-    standalone: true
-    value: |
-      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
-      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
-      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
-      go run $project.path()/scripts/ci/propagate-pr/main.go $1
-  - name: verify-pr
-    language: bash
-    standalone: true
-    value: |
-      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
-      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
-      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
-      go run $project.path()/scripts/ci/verify-pr/main.go $1
-  - name: start-story
-    language: bash
-    standalone: true
-    value: |
-      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
-      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
-      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
-      go run $project.path()/scripts/start-story/main.go "$@"
   - name: ghapi
     language: bash
     standalone: true
