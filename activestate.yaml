@@ -44,9 +44,7 @@ constants:
       export CGO_ENABLED=0
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
       BUILD_EXEC_TARGET=$constants.BUILD_EXEC_TARGET
-
-      # add the GOARCH as infix to BUILD_TARGET_DIR if not amd64
-      BUILD_TARGET_DIR=$constants.BUILD_TARGET_PREFIX_DIR/${GOARCH#amd64}
+      BUILD_TARGET_DIR=$constants.BUILD_TARGET_PREFIX_DIR/
   - name: SCRIPT_EXT
     if: ne .OS.Name "Windows"
     value: .sh
@@ -267,7 +265,7 @@ scripts:
       GOOS=windows go build -o .github/deps/Windows/amd64/bin/parallelize.exe github.com/ActiveState/cli/scripts/ci/parallelize/
       GOOS=linux go build -o .github/deps/Linux/amd64/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
       GOOS=linux GOARCH=arm64 go build -o .github/deps/Linux/arm64/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
-      GOOS=darwin go build -o .github/deps/macOS/amd64/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
+      GOOS=darwin GOARCH=amd64 go build -o .github/deps/macOS/amd64/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
   - name: test
     language: bash
     standalone: true
@@ -388,54 +386,6 @@ scripts:
       else
           echo "Success: All modified text files end with a newline."
       fi
-  - name: grab-mergecommits
-    language: bash
-    standalone: true
-    value: |
-      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
-      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
-      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
-      go run $project.path()/scripts/grab-mergecommits/main.go $1
-  - name: target-version-pr
-    language: bash
-    standalone: true
-    value: |
-      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
-      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
-      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
-      go run $project.path()/scripts/ci/target-version-pr/main.go $1
-  - name: create-version-pr
-    language: bash
-    standalone: true
-    value: |
-      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
-      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
-      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
-      go run $project.path()/scripts/create-version-pr/main.go $1
-  - name: propagate-pr
-    language: bash
-    standalone: true
-    value: |
-      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
-      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
-      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
-      go run $project.path()/scripts/ci/propagate-pr/main.go $1
-  - name: verify-pr
-    language: bash
-    standalone: true
-    value: |
-      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
-      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
-      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
-      go run $project.path()/scripts/ci/verify-pr/main.go $1
-  - name: start-story
-    language: bash
-    standalone: true
-    value: |
-      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
-      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
-      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
-      go run $project.path()/scripts/start-story/main.go "$@"
   - name: ghapi
     language: bash
     standalone: true

@@ -36,10 +36,11 @@ jobs:
     strategy:
       matrix:
         go-version:
-          - 1.23.7
+          - 1.23.8
         sys:
           - {os: ubuntu-latest}
           - {os: macos-13, shell: zsh}
+          - {os: macos-latest, shell: zsh}
           - {os: windows-2019}
           - {os: ubuntu-24.04-arm}
       fail-fast: false
@@ -451,7 +452,7 @@ jobs:
     name: Deploy
     needs:
       - scan
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       ACTIVESTATE_CI: true
       SHELL: bash
@@ -532,7 +533,8 @@ jobs:
         uses: geekyeggo/delete-artifact@v5
         with:
           name: |
-            session-build-ubuntu-20.04
-            session-build-macos-11
+            session-build-ubuntu-latest
+            session-build-macos-13
+            session-build-macos-latest
             session-build-windows-2019
             session-build-ubuntu-24.04-arm

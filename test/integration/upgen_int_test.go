@@ -30,9 +30,6 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 		ext = ".zip"
 	}
 	hostArch := runtime.GOARCH
-	if runtime.GOOS == "darwin" && hostArch == "arm64" {
-		hostArch = "amd64"
-	}
 	platform := runtime.GOOS + "-" + hostArch
 
 	archivePath := filepath.Join(root, "build/update", constants.ChannelName, constants.VersionNumber, platform, fmt.Sprintf("state-%s-%s%s", platform, constants.Version, ext))

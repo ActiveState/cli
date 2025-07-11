@@ -258,9 +258,10 @@ func (p *PackagesValueNoVersion) Type() string {
 }
 
 type TimeValue struct {
-	raw  string
-	Time *time.Time
-	now  bool
+	raw     string
+	Time    *time.Time
+	now     bool
+	dynamic bool
 }
 
 var _ FlagMarshaler = &TimeValue{}
@@ -271,7 +272,7 @@ func (u *TimeValue) String() string {
 
 func (u *TimeValue) Set(v string) error {
 	u.raw = v
-	if v != "now" {
+	if v != "now" && v != "dynamic" {
 		tsv, err := time.Parse(time.RFC3339, v)
 		if err != nil {
 			return locale.WrapInputError(err, "timeflag_format", "Invalid timestamp: Should be RFC3339 formatted.")
@@ -279,6 +280,7 @@ func (u *TimeValue) Set(v string) error {
 		u.Time = &tsv
 	}
 	u.now = v == "now"
+	u.dynamic = v == "dynamic"
 	return nil
 }
 
@@ -288,6 +290,10 @@ func (u *TimeValue) Type() string {
 
 func (u *TimeValue) Now() bool {
 	return u.now
+}
+
+func (u *TimeValue) Dynamic() bool {
+	return u.dynamic
 }
 
 type IntValue struct {
