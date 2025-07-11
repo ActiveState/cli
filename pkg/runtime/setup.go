@@ -68,6 +68,7 @@ type setup struct {
 	path              string
 	opts              *Opts
 	depot             *depot
+	ecosystems        []ecosystem
 	supportsHardLinks bool
 	env               *envdef.Collection
 	buildplan         *buildplan.BuildPlan
@@ -90,7 +91,7 @@ type setup struct {
 	toInstall buildplan.ArtifactIDMap
 
 	// toUninstall encompasses all artifacts that will need to be uninstalled for this runtime.
-	toUninstall map[strfmt.UUID]struct{}
+	toUninstall buildplan.ArtifactIDMap
 }
 
 func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depot *depot, opts *Opts) (*setup, error) {
@@ -127,10 +128,10 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 
 	// Identify which artifacts we can uninstall
 	installableArtifactsMap := installableArtifacts.ToIDMap()
-	artifactsToUninstall := map[strfmt.UUID]struct{}{}
+	artifactsToUninstall := buildplan.Artifacts{}
 	for id := range installedArtifacts {
-		if _, required := installableArtifactsMap[id]; !required {
-			artifactsToUninstall[id] = struct{}{}
+		if a, required := installableArtifactsMap[id]; !required {
+			artifactsToUninstall = append(artifactsToUninstall, a)
 		}
 	}
 
@@ -167,6 +168,16 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 		}
 	}
 
+	// Load all ecosystems
+	var ecosystems []ecosystem
+	for _, e := range availableEcosystems {
+		ecosystem := e()
+		if err := ecosystem.Init(path, bp); err != nil {
+			return nil, errs.Wrap(err, "Could not create ecosystem")
+		}
+		ecosystems = append(ecosystems, ecosystem)
+	}
+
 	return &setup{
 		path:              path,
 		opts:              opts,
@@ -178,7 +189,8 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 		toDownload:        artifactsToDownload.ToIDMap(),
 		toUnpack:          artifactsToUnpack.ToIDMap(),
 		toInstall:         artifactsToInstall.ToIDMap(),
-		toUninstall:       artifactsToUninstall,
+		toUninstall:       artifactsToUninstall.ToIDMap(),
+		ecosystems:        ecosystems,
 	}, nil
 }
 
