@@ -5,39 +5,25 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/cmd/state-mcp/internal/toolregistry"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
-func TestServerProjects(t *testing.T) {
-	t.Skip("Intended for manual testing")
-	mcpHandler := registerServer()
-	registerRawTools(mcpHandler)
-	
-	msg := mcpHandler.mcpServer.HandleMessage(context.Background(), json.RawMessage(`{
+func TestServerHello(t *testing.T) {
+	t.Skip(`
+Fails due to state-svc not being detected when run as regular test, 
+works when running with debugger. Problem for another day.
+`)
+	logging.CurrentHandler().SetVerbose(true)
+	mcpHandler := setupServer(string(toolregistry.ToolCategoryDebug))
+	msg := mcpHandler.Server.HandleMessage(context.Background(), json.RawMessage(`{
 		"jsonrpc": "2.0",
 		"id": 1,
 		"method": "tools/call",
 		"params": {
-			"name": "projects",
-			"arguments": {}
-		}
-	}`))
-	t.Fatalf("%+v", msg)
-}
-
-func TestServerPackages(t *testing.T) {
-	t.Skip("Intended for manual testing")
-	mcpHandler := registerServer()
-	registerRawTools(mcpHandler)
-	
-	msg := mcpHandler.mcpServer.HandleMessage(context.Background(), json.RawMessage(`{
-		"jsonrpc": "2.0",
-		"id": 1,
-		"method": "tools/call",
-		"params": {
-			"name": "packages",
+			"name": "hello",
 			"arguments": {
-				"project_directory": "`+environment.GetRootPathUnsafe()+`"
+				"name": "World"
 			}
 		}
 	}`))

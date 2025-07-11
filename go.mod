@@ -47,7 +47,7 @@ require (
 	github.com/rollbar/rollbar-go v1.1.0
 	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/skratchdot/open-golang v0.0.0-20190104022628-a2dfa6d0dab6
-	github.com/spf13/cast v1.3.0
+	github.com/spf13/cast v1.9.2
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.10.0
@@ -75,7 +75,7 @@ require (
 	github.com/go-git/go-git/v5 v5.13.1
 	github.com/gowebpki/jcs v1.0.1
 	github.com/klauspost/compress v1.11.4
-	github.com/mark3labs/mcp-go v0.18.0
+	github.com/mark3labs/mcp-go v0.33.0
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/zijiren233/yaml-comment v0.2.1
 )

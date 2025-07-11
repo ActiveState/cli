@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"sync/atomic"
 	"syscall"
 
@@ -40,7 +41,7 @@ func WithErrorLogger(logger *log.Logger) StdioOption {
 	}
 }
 
-// WithContextFunc sets a function that will be called to customise the context
+// WithStdioContextFunc sets a function that will be called to customise the context
 // to the server. Note that the stdio server uses the same context for all requests,
 // so this function will only be called once per server instance.
 func WithStdioContextFunc(fn StdioContextFunc) StdioOption {
@@ -51,8 +52,21 @@ func WithStdioContextFunc(fn StdioContextFunc) StdioOption {
 
 // stdioSession is a static client session, since stdio has only one client.
 type stdioSession struct {
-	notifications chan mcp.JSONRPCNotification
-	initialized   atomic.Bool
+	notifications   chan mcp.JSONRPCNotification
+	initialized     atomic.Bool
+	loggingLevel    atomic.Value
+	clientInfo      atomic.Value                     // stores session-specific client info
+	writer          io.Writer                        // for sending requests to client
+	requestID       atomic.Int64                     // for generating unique request IDs
+	mu              sync.RWMutex                     // protects writer
+	pendingRequests map[int64]chan *samplingResponse // for tracking pending sampling requests
+	pendingMu       sync.RWMutex                     // protects pendingRequests
+}
+
+// samplingResponse represents a response to a sampling request
+type samplingResponse struct {
+	result *mcp.CreateMessageResult
+	err    error
 }
 
 func (s *stdioSession) SessionID() string {
@@ -64,6 +78,8 @@ func (s *stdioSession) NotificationChannel() chan<- mcp.JSONRPCNotification {
 }
 
 func (s *stdioSession) Initialize() {
+	// set default logging level
+	s.loggingLevel.Store(mcp.LoggingLevelError)
 	s.initialized.Store(true)
 }
 
@@ -71,10 +87,111 @@ func (s *stdioSession) Initialized() bool {
 	return s.initialized.Load()
 }
 
-var _ ClientSession = (*stdioSession)(nil)
+func (s *stdioSession) GetClientInfo() mcp.Implementation {
+	if value := s.clientInfo.Load(); value != nil {
+		if clientInfo, ok := value.(mcp.Implementation); ok {
+			return clientInfo
+		}
+	}
+	return mcp.Implementation{}
+}
+
+func (s *stdioSession) SetClientInfo(clientInfo mcp.Implementation) {
+	s.clientInfo.Store(clientInfo)
+}
+
+func (s *stdioSession) SetLogLevel(level mcp.LoggingLevel) {
+	s.loggingLevel.Store(level)
+}
+
+func (s *stdioSession) GetLogLevel() mcp.LoggingLevel {
+	level := s.loggingLevel.Load()
+	if level == nil {
+		return mcp.LoggingLevelError
+	}
+	return level.(mcp.LoggingLevel)
+}
+
+// RequestSampling sends a sampling request to the client and waits for the response.
+func (s *stdioSession) RequestSampling(ctx context.Context, request mcp.CreateMessageRequest) (*mcp.CreateMessageResult, error) {
+	s.mu.RLock()
+	writer := s.writer
+	s.mu.RUnlock()
+
+	if writer == nil {
+		return nil, fmt.Errorf("no writer available for sending requests")
+	}
+
+	// Generate a unique request ID
+	id := s.requestID.Add(1)
+
+	// Create a response channel for this request
+	responseChan := make(chan *samplingResponse, 1)
+	s.pendingMu.Lock()
+	s.pendingRequests[id] = responseChan
+	s.pendingMu.Unlock()
+
+	// Cleanup function to remove the pending request
+	cleanup := func() {
+		s.pendingMu.Lock()
+		delete(s.pendingRequests, id)
+		s.pendingMu.Unlock()
+	}
+	defer cleanup()
+
+	// Create the JSON-RPC request
+	jsonRPCRequest := struct {
+		JSONRPC string                  `json:"jsonrpc"`
+		ID      int64                   `json:"id"`
+		Method  string                  `json:"method"`
+		Params  mcp.CreateMessageParams `json:"params"`
+	}{
+		JSONRPC: mcp.JSONRPC_VERSION,
+		ID:      id,
+		Method:  string(mcp.MethodSamplingCreateMessage),
+		Params:  request.CreateMessageParams,
+	}
+
+	// Marshal and send the request
+	requestBytes, err := json.Marshal(jsonRPCRequest)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal sampling request: %w", err)
+	}
+	requestBytes = append(requestBytes, '\n')
+
+	if _, err := writer.Write(requestBytes); err != nil {
+		return nil, fmt.Errorf("failed to write sampling request: %w", err)
+	}
+
+	// Wait for the response or context cancellation
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case response := <-responseChan:
+		if response.err != nil {
+			return nil, response.err
+		}
+		return response.result, nil
+	}
+}
+
+// SetWriter sets the writer for sending requests to the client.
+func (s *stdioSession) SetWriter(writer io.Writer) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.writer = writer
+}
+
+var (
+	_ ClientSession         = (*stdioSession)(nil)
+	_ SessionWithLogging    = (*stdioSession)(nil)
+	_ SessionWithClientInfo = (*stdioSession)(nil)
+	_ SessionWithSampling   = (*stdioSession)(nil)
+)
 
 var stdioSessionInstance = stdioSession{
-	notifications: make(chan mcp.JSONRPCNotification, 100),
+	notifications:   make(chan mcp.JSONRPCNotification, 100),
+	pendingRequests: make(map[int64]chan *samplingResponse),
 }
 
 // NewStdioServer creates a new stdio server wrapper around an MCPServer.
@@ -156,29 +273,23 @@ func (s *StdioServer) processInputStream(ctx context.Context, reader *bufio.Read
 // returns an empty string and the context's error. EOF is returned when the input
 // stream is closed.
 func (s *StdioServer) readNextLine(ctx context.Context, reader *bufio.Reader) (string, error) {
-	readChan := make(chan string, 1)
-	errChan := make(chan error, 1)
-	defer func() {
-		close(readChan)
-		close(errChan)
-	}()
+	type result struct {
+		line string
+		err  error
+	}
+
+	resultCh := make(chan result, 1)
 
 	go func() {
 		line, err := reader.ReadString('\n')
-		if err != nil {
-			errChan <- err
-			return
-		}
-		readChan <- line
+		resultCh <- result{line: line, err: err}
 	}()
 
 	select {
 	case <-ctx.Done():
-		return "", ctx.Err()
-	case err := <-errChan:
-		return "", err
-	case line := <-readChan:
-		return line, nil
+		return "", nil
+	case res := <-resultCh:
+		return res.line, res.err
 	}
 }
 
@@ -194,8 +305,11 @@ func (s *StdioServer) Listen(
 	if err := s.server.RegisterSession(ctx, &stdioSessionInstance); err != nil {
 		return fmt.Errorf("register session: %w", err)
 	}
-	defer s.server.UnregisterSession(stdioSessionInstance.SessionID())
+	defer s.server.UnregisterSession(ctx, stdioSessionInstance.SessionID())
 	ctx = s.server.WithContext(ctx, &stdioSessionInstance)
+
+	// Set the writer for sending requests to the client
+	stdioSessionInstance.SetWriter(stdout)
 
 	// Add in any custom context.
 	if s.contextFunc != nil {
@@ -217,6 +331,11 @@ func (s *StdioServer) processMessage(
 	line string,
 	writer io.Writer,
 ) error {
+	// If line is empty, likely due to ctx cancellation
+	if len(line) == 0 {
+		return nil
+	}
+
 	// Parse the message as raw JSON
 	var rawMessage json.RawMessage
 	if err := json.Unmarshal([]byte(line), &rawMessage); err != nil {
@@ -224,7 +343,29 @@ func (s *StdioServer) processMessage(
 		return s.writeResponse(response, writer)
 	}
 
-	// Handle the message using the wrapped server
+	// Check if this is a response to a sampling request
+	if s.handleSamplingResponse(rawMessage) {
+		return nil
+	}
+
+	// Check if this is a tool call that might need sampling (and thus should be processed concurrently)
+	var baseMessage struct {
+		Method string `json:"method"`
+	}
+	if json.Unmarshal(rawMessage, &baseMessage) == nil && baseMessage.Method == "tools/call" {
+		// Process tool calls concurrently to avoid blocking on sampling requests
+		go func() {
+			response := s.server.HandleMessage(ctx, rawMessage)
+			if response != nil {
+				if err := s.writeResponse(response, writer); err != nil {
+					s.errLogger.Printf("Error writing tool response: %v", err)
+				}
+			}
+		}()
+		return nil
+	}
+
+	// Handle other messages synchronously
 	response := s.server.HandleMessage(ctx, rawMessage)
 
 	// Only write response if there is one (not for notifications)
@@ -235,6 +376,65 @@ func (s *StdioServer) processMessage(
 	}
 
 	return nil
+}
+
+// handleSamplingResponse checks if the message is a response to a sampling request
+// and routes it to the appropriate pending request channel.
+func (s *StdioServer) handleSamplingResponse(rawMessage json.RawMessage) bool {
+	return stdioSessionInstance.handleSamplingResponse(rawMessage)
+}
+
+// handleSamplingResponse handles incoming sampling responses for this session
+func (s *stdioSession) handleSamplingResponse(rawMessage json.RawMessage) bool {
+	// Try to parse as a JSON-RPC response
+	var response struct {
+		JSONRPC string          `json:"jsonrpc"`
+		ID      json.Number     `json:"id"`
+		Result  json.RawMessage `json:"result,omitempty"`
+		Error   *struct {
+			Code    int    `json:"code"`
+			Message string `json:"message"`
+		} `json:"error,omitempty"`
+	}
+
+	if err := json.Unmarshal(rawMessage, &response); err != nil {
+		return false
+	}
+	// Parse the ID as int64
+	idInt64, err := response.ID.Int64()
+	if err != nil || (response.Result == nil && response.Error == nil) {
+		return false
+	}
+
+	// Look for a pending request with this ID
+	s.pendingMu.RLock()
+	responseChan, exists := s.pendingRequests[idInt64]
+	s.pendingMu.RUnlock()
+
+	if !exists {
+		return false
+	} // Parse and send the response
+	samplingResp := &samplingResponse{}
+
+	if response.Error != nil {
+		samplingResp.err = fmt.Errorf("sampling request failed: %s", response.Error.Message)
+	} else {
+		var result mcp.CreateMessageResult
+		if err := json.Unmarshal(response.Result, &result); err != nil {
+			samplingResp.err = fmt.Errorf("failed to unmarshal sampling response: %w", err)
+		} else {
+			samplingResp.result = &result
+		}
+	}
+
+	// Send the response (non-blocking)
+	select {
+	case responseChan <- samplingResp:
+	default:
+		// Channel is full or closed, ignore
+	}
+
+	return true
 }
 
 // writeResponse marshals and writes a JSON-RPC response message followed by a newline.
@@ -261,7 +461,6 @@ func (s *StdioServer) writeResponse(
 // Returns an error if the server encounters any issues during operation.
 func ServeStdio(server *MCPServer, opts ...StdioOption) error {
 	s := NewStdioServer(server)
-	s.SetErrorLogger(log.New(os.Stderr, "", log.LstdFlags))
 
 	for _, opt := range opts {
 		opt(s)

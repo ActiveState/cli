@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"os"
 	"runtime/debug"
+	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/cmd/state-mcp/internal/mcpserver"
+	"github.com/ActiveState/cli/cmd/state-mcp/internal/toolregistry"
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/mark3labs/mcp-go/server"
 )
 
 func main() {
@@ -27,25 +29,27 @@ func main() {
 		}
 	}()
 
-	mcpHandler := registerServer()
-
 	// Parse command line flags
-	rawFlag := flag.String("type", "", "Type of MCP server to run; raw, curated or scripts")
+	rawFlag := flag.String("categories", "", "Comma separated list of categories to register tools for")
 	flag.Parse()
-	switch *rawFlag {
-	case "raw":
-		close := registerRawTools(mcpHandler)
-		defer close()
-	case "scripts":
-		close := registerScriptTools(mcpHandler)
-		defer close()
-	default:
-		registerCuratedTools(mcpHandler)
-	}
+
+	mcps := setupServer(strings.Split(*rawFlag, ",")...)
 
 	// Start the stdio server
 	logging.Info("Starting MCP server")
-	if err := server.ServeStdio(mcpHandler.mcpServer); err != nil {
+	if err := mcps.ServeStdio(); err != nil {
 		logging.Error("Server error: %v\n", err)
 	}
-} 
+}
+
+func setupServer(categories ...string) *mcpserver.Handler {
+	mcps := mcpserver.New(newPrimer)
+
+	registry := toolregistry.New()
+	tools := registry.GetTools(categories...)
+	for _, tool := range tools {
+		mcps.AddTool(tool.Tool, tool.Handler)
+	}
+
+	return mcps
+}
