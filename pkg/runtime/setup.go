@@ -275,9 +275,16 @@ func (s *setup) update() error {
 	// on in the process.
 
 	// Uninstall artifacts
-	for id := range s.toUninstall {
-		if err := s.uninstall(id); err != nil {
+	for _, a := range s.toUninstall {
+		if err := s.uninstall(a); err != nil {
 			return errs.Wrap(err, "Could not uninstall artifact")
+		}
+	}
+
+	// Tell applicable ecosystems to perform any final uninstall actions.
+	for _, e := range s.ecosystems {
+		if err := e.Apply(); err != nil {
+			return errs.Wrap(err, "Could not apply ecosystem changes")
 		}
 	}
 
@@ -285,7 +292,7 @@ func (s *setup) update() error {
 	wp = workerpool.New(maxConcurrency)
 	for _, a := range s.toInstall {
 		wp.Submit(func() error {
-			if err := s.install(a.ArtifactID); err != nil {
+			if err := s.install(a); err != nil {
 				return errs.Wrap(err, "Could not install artifact")
 			}
 			return nil
@@ -295,6 +302,13 @@ func (s *setup) update() error {
 	// Wait for workerpool handling artifact installs to finish
 	if err := wp.Wait(); err != nil {
 		return errs.Wrap(err, "errors occurred during install")
+	}
+
+	// Tell applicable ecosystems to perform any final install actions.
+	for _, e := range s.ecosystems {
+		if err := e.Apply(); err != nil {
+			return errs.Wrap(err, "Could not apply ecosystem changes")
+		}
 	}
 
 	if err := s.postProcess(); err != nil {
@@ -459,7 +473,8 @@ func (s *setup) updateExecutors() error {
 	return nil
 }
 
-func (s *setup) install(id strfmt.UUID) (rerr error) {
+func (s *setup) install(artifact *buildplan.Artifact) (rerr error) {
+	id := artifact.ArtifactID
 	defer func() {
 		if rerr == nil {
 			if err := s.fireEvent(events.ArtifactInstallSuccess{id}); err != nil {
@@ -477,6 +492,20 @@ func (s *setup) install(id strfmt.UUID) (rerr error) {
 	}
 
 	artifactDepotPath := s.depot.Path(id)
+
+	if ecosys := filterEcosystemMatchingArtifact(artifact, s.ecosystems); ecosys != nil {
+		files, err := ecosys.Add(artifact, artifactDepotPath)
+		if err != nil {
+			return errs.Wrap(err, "Ecosystem unable to add artifact")
+		}
+		s.depot.Track(id, &deployment{
+			Type:  deploymentTypeEcosystem,
+			Path:  filepath.Join(s.path, artifact.ArtifactID.String()), // dummy path for uniqueness
+			Files: files,
+		})
+		return nil
+	}
+
 	envDef, err := s.env.Load(artifactDepotPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not get env")
@@ -500,7 +529,8 @@ func (s *setup) install(id strfmt.UUID) (rerr error) {
 	return nil
 }
 
-func (s *setup) uninstall(id strfmt.UUID) (rerr error) {
+func (s *setup) uninstall(artifact *buildplan.Artifact) (rerr error) {
+	id := artifact.ArtifactID
 	defer func() {
 		if rerr == nil {
 			if err := s.fireEvent(events.ArtifactUninstallSuccess{id}); err != nil {
@@ -518,6 +548,16 @@ func (s *setup) uninstall(id strfmt.UUID) (rerr error) {
 	}
 
 	artifactDepotPath := s.depot.Path(id)
+
+	if ecosys := filterEcosystemMatchingArtifact(artifact, s.ecosystems); ecosys != nil {
+		err := ecosys.Remove(artifact)
+		if err != nil {
+			return errs.Wrap(err, "Ecosystem unable to remove artifact")
+		}
+		s.depot.Untrack(id, filepath.Join(s.path, artifact.ArtifactID.String()))
+		return nil
+	}
+
 	envDef, err := s.env.Load(artifactDepotPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not get env")
