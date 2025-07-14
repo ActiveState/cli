@@ -91,7 +91,7 @@ type setup struct {
 	toInstall buildplan.ArtifactIDMap
 
 	// toUninstall encompasses all artifacts that will need to be uninstalled for this runtime.
-	toUninstall buildplan.ArtifactIDMap
+	toUninstall map[strfmt.UUID]bool
 }
 
 func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depot *depot, opts *Opts) (*setup, error) {
@@ -128,10 +128,10 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 
 	// Identify which artifacts we can uninstall
 	installableArtifactsMap := installableArtifacts.ToIDMap()
-	artifactsToUninstall := buildplan.Artifacts{}
+	artifactsToUninstall := map[strfmt.UUID]bool{}
 	for id := range installedArtifacts {
-		if a, required := installableArtifactsMap[id]; !required {
-			artifactsToUninstall = append(artifactsToUninstall, a)
+		if _, required := installableArtifactsMap[id]; !required {
+			artifactsToUninstall[id] = true
 		}
 	}
 
@@ -189,7 +189,7 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 		toDownload:        artifactsToDownload.ToIDMap(),
 		toUnpack:          artifactsToUnpack.ToIDMap(),
 		toInstall:         artifactsToInstall.ToIDMap(),
-		toUninstall:       artifactsToUninstall.ToIDMap(),
+		toUninstall:       artifactsToUninstall,
 		ecosystems:        ecosystems,
 	}, nil
 }
@@ -275,8 +275,8 @@ func (s *setup) update() error {
 	// on in the process.
 
 	// Uninstall artifacts
-	for _, a := range s.toUninstall {
-		if err := s.uninstall(a); err != nil {
+	for id := range s.toUninstall {
+		if err := s.uninstall(id); err != nil {
 			return errs.Wrap(err, "Could not uninstall artifact")
 		}
 	}
@@ -529,8 +529,7 @@ func (s *setup) install(artifact *buildplan.Artifact) (rerr error) {
 	return nil
 }
 
-func (s *setup) uninstall(artifact *buildplan.Artifact) (rerr error) {
-	id := artifact.ArtifactID
+func (s *setup) uninstall(id strfmt.UUID) (rerr error) {
 	defer func() {
 		if rerr == nil {
 			if err := s.fireEvent(events.ArtifactUninstallSuccess{id}); err != nil {
@@ -549,14 +548,14 @@ func (s *setup) uninstall(artifact *buildplan.Artifact) (rerr error) {
 
 	artifactDepotPath := s.depot.Path(id)
 
-	if ecosys := filterEcosystemMatchingArtifact(artifact, s.ecosystems); ecosys != nil {
-		err := ecosys.Remove(artifact)
-		if err != nil {
-			return errs.Wrap(err, "Ecosystem unable to remove artifact")
-		}
-		s.depot.Untrack(id, filepath.Join(s.path, artifact.ArtifactID.String()))
-		return nil
-	}
+	//if ecosys := filterEcosystemMatchingArtifact(artifact, s.ecosystems); ecosys != nil {
+	//	err := ecosys.Remove(artifact)
+	//	if err != nil {
+	//		return errs.Wrap(err, "Ecosystem unable to remove artifact")
+	//	}
+	//	s.depot.Untrack(id, filepath.Join(s.path, artifact.ArtifactID.String()))
+	//	return nil
+	//}
 
 	envDef, err := s.env.Load(artifactDepotPath)
 	if err != nil {
