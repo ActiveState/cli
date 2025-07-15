@@ -548,6 +548,7 @@ func (s *setup) uninstall(id strfmt.UUID) (rerr error) {
 
 	artifactDepotPath := s.depot.Path(id)
 
+	// TODO: CP-956
 	//if ecosys := filterEcosystemMatchingArtifact(artifact, s.ecosystems); ecosys != nil {
 	//	err := ecosys.Remove(artifact)
 	//	if err != nil {
