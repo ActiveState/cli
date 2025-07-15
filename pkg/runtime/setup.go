@@ -281,13 +281,6 @@ func (s *setup) update() error {
 		}
 	}
 
-	// Tell applicable ecosystems to perform any final uninstall actions.
-	for _, e := range s.ecosystems {
-		if err := e.Apply(); err != nil {
-			return errs.Wrap(err, "Could not apply ecosystem changes")
-		}
-	}
-
 	// Install artifacts
 	wp = workerpool.New(maxConcurrency)
 	for _, a := range s.toInstall {
@@ -302,13 +295,6 @@ func (s *setup) update() error {
 	// Wait for workerpool handling artifact installs to finish
 	if err := wp.Wait(); err != nil {
 		return errs.Wrap(err, "errors occurred during install")
-	}
-
-	// Tell applicable ecosystems to perform any final install actions.
-	for _, e := range s.ecosystems {
-		if err := e.Apply(); err != nil {
-			return errs.Wrap(err, "Could not apply ecosystem changes")
-		}
 	}
 
 	if err := s.postProcess(); err != nil {
@@ -590,6 +576,13 @@ func (s *setup) postProcess() (rerr error) {
 			}
 		}
 	}()
+
+	// Tell applicable ecosystems to apply changes.
+	for _, e := range s.ecosystems {
+		if err := e.Apply(); err != nil {
+			return errs.Wrap(err, "Could not apply ecosystem changes")
+		}
+	}
 
 	// Update executors
 	if err := s.updateExecutors(); err != nil {
