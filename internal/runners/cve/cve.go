@@ -9,7 +9,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/output/renderers"
 	"github.com/ActiveState/cli/internal/primer"
@@ -61,12 +60,6 @@ type cveOutput struct {
 }
 
 func (r *Cve) Run(params *Params) error {
-	defer func() {
-		if rc := recover(); rc != nil {
-			logging.Error("Recovered from panic: %v", rc)
-			fmt.Printf("Recovered from panic: %v\n", rc)
-		}
-	}()
 	if !params.Namespace.IsValid() && r.proj == nil {
 		return rationalize.ErrNoProject
 	}
