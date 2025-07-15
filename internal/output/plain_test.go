@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func nilStr(s string) *string {
@@ -207,7 +208,7 @@ func TestPlain_Print(t *testing.T) {
 				},
 			},
 			"  field_header1    A  \n" +
-				"  field_header2    B  \n" +
+				"  field_hader2    B  \n" +
 				"  field_header3    C  \n",
 			"",
 		},
@@ -238,12 +239,13 @@ func TestPlain_Print(t *testing.T) {
 			outWriter := &bytes.Buffer{}
 			errWriter := &bytes.Buffer{}
 
-			f := &Plain{&Config{
+			f, err := NewPlain(&Config{
 				OutWriter:   outWriter,
 				ErrWriter:   errWriter,
 				Colored:     false,
 				Interactive: false,
-			}}
+			})
+			require.NoError(t, err)
 
 			f.Print(tt.args.value)
 			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
@@ -274,12 +276,13 @@ func TestPlain_Notice(t *testing.T) {
 			outWriter := &bytes.Buffer{}
 			errWriter := &bytes.Buffer{}
 
-			f := &Plain{&Config{
+			f, err := NewPlain(&Config{
 				OutWriter:   outWriter,
 				ErrWriter:   errWriter,
 				Colored:     false,
 				Interactive: false,
-			}}
+			})
+			require.NoError(t, err)
 
 			f.Notice(tt.args.value)
 			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
@@ -310,12 +313,13 @@ func TestPlain_Error(t *testing.T) {
 			outWriter := &bytes.Buffer{}
 			errWriter := &bytes.Buffer{}
 
-			f := &Plain{&Config{
+			f, err := NewPlain(&Config{
 				OutWriter:   outWriter,
 				ErrWriter:   errWriter,
 				Colored:     false,
 				Interactive: false,
-			}}
+			})
+			require.NoError(t, err)
 
 			f.Error(tt.args.value)
 			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
