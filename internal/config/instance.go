@@ -219,7 +219,11 @@ func (i *Instance) AllKeys() []string {
 
 // GetStringMapStringSlice retrieves a map of string slices for a given key
 func (i *Instance) GetStringMapStringSlice(key string) map[string][]string {
-	return cast.ToStringMapStringSlice(i.Get(key))
+	v := cast.ToStringMapStringSlice(i.Get(key))
+	if v == nil {
+		return map[string][]string{}
+	}
+	return v
 }
 
 // GetBool retrieves a boolean value for a given key
@@ -229,7 +233,11 @@ func (i *Instance) GetBool(key string) bool {
 
 // GetStringSlice retrieves a slice of strings for a given key
 func (i *Instance) GetStringSlice(key string) []string {
-	return cast.ToStringSlice(i.Get(key))
+	v := cast.ToStringSlice(i.Get(key))
+	if v == nil {
+		return []string{}
+	}
+	return v
 }
 
 // GetTime retrieves a time instance for a given key
@@ -239,7 +247,11 @@ func (i *Instance) GetTime(key string) time.Time {
 
 // GetStringMap retrieves a map of strings to values for a given key
 func (i *Instance) GetStringMap(key string) map[string]interface{} {
-	return cast.ToStringMap(i.Get(key))
+	v := cast.ToStringMap(i.Get(key))
+	if v == nil {
+		return map[string]interface{}{}
+	}
+	return v
 }
 
 // ConfigPath returns the path at which our configuration is stored
