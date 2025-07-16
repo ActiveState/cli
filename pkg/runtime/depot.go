@@ -42,8 +42,9 @@ type deployment struct {
 type deploymentType string
 
 const (
-	deploymentTypeLink deploymentType = "link"
-	deploymentTypeCopy                = "copy"
+	deploymentTypeLink      deploymentType = "link"
+	deploymentTypeCopy                     = "copy"
+	deploymentTypeEcosystem                = "ecosystem"
 )
 
 type artifactInfo struct {
@@ -212,16 +213,12 @@ func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) 
 	}
 
 	// Record deployment to config
-	if _, ok := d.config.Deployments[id]; !ok {
-		d.config.Deployments[id] = []deployment{}
-	}
-	d.config.Deployments[id] = append(d.config.Deployments[id], deployment{
+	err = d.Track(id, &deployment{
 		Type:        deploymentTypeLink,
 		Path:        absoluteDest,
 		Files:       files.RelativePaths(),
 		RelativeSrc: relativeSrc,
 	})
-	err = d.recordUse(id)
 	if err != nil {
 		return errs.Wrap(err, "Could not record artifact use")
 	}
@@ -273,16 +270,12 @@ func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) 
 	}
 
 	// Record deployment to config
-	if _, ok := d.config.Deployments[id]; !ok {
-		d.config.Deployments[id] = []deployment{}
-	}
-	d.config.Deployments[id] = append(d.config.Deployments[id], deployment{
+	err = d.Track(id, &deployment{
 		Type:        deploymentTypeCopy,
 		Path:        absoluteDest,
 		Files:       files.RelativePaths(),
 		RelativeSrc: relativeSrc,
 	})
-	err = d.recordUse(id)
 	if err != nil {
 		return errs.Wrap(err, "Could not record artifact use")
 	}
@@ -290,7 +283,18 @@ func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) 
 	return nil
 }
 
-func (d *depot) recordUse(id strfmt.UUID) error {
+// Track will record an artifact deployment.
+// This is automatically called by `DeployVia*()` functions.
+// This should be called for ecosystems that handle installation of artifacts.
+func (d *depot) Track(id strfmt.UUID, deploy *deployment) error {
+	// Record deployment of this artifact.
+	if _, ok := d.config.Deployments[id]; !ok {
+		d.config.Deployments[id] = []deployment{}
+	}
+	if deploy != nil {
+		d.config.Deployments[id] = append(d.config.Deployments[id], *deploy)
+	}
+
 	// Ensure a cache entry for this artifact exists and then update its last access time.
 	if _, exists := d.config.Cache[id]; !exists {
 		size, err := fileutils.GetDirSize(d.Path(id))
@@ -302,6 +306,17 @@ func (d *depot) recordUse(id strfmt.UUID) error {
 	d.config.Cache[id].InUse = true
 	d.config.Cache[id].LastAccessTime = time.Now().Unix()
 	return nil
+}
+
+// Untrack will remove an artifact deployment.
+// It does not actually delete files; it just tells the depot a previously tracked artifact should
+// no longer be tracked.
+// This is automatically called by the `Undeploy()` function.
+// This should be called for ecosystems that handle uninstallation of artifacts.
+func (d *depot) Untrack(id strfmt.UUID, path string) {
+	if _, ok := d.config.Deployments[id]; ok {
+		d.config.Deployments[id] = sliceutils.Filter(d.config.Deployments[id], func(d deployment) bool { return d.Path != path })
+	}
 }
 
 func (d *depot) Undeploy(id strfmt.UUID, relativeSrc, path string) error {
@@ -357,7 +372,7 @@ func (d *depot) Undeploy(id strfmt.UUID, relativeSrc, path string) error {
 	}
 
 	// Write changes to config
-	d.config.Deployments[id] = sliceutils.Filter(d.config.Deployments[id], func(d deployment) bool { return d.Path != path })
+	d.Untrack(id, path)
 
 	return nil
 }
@@ -427,7 +442,7 @@ func (d *depot) Save() error {
 	for id := range d.artifacts {
 		if deployments, ok := d.config.Deployments[id]; !ok || len(deployments) == 0 {
 			if _, exists := d.config.Cache[id]; !exists {
-				err := d.recordUse(id)
+				err := d.Track(id, nil) // create cache entry for previously used artifact
 				if err != nil {
 					return errs.Wrap(err, "Could not update depot cache with previously used artifact")
 				}

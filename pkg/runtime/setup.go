@@ -68,6 +68,7 @@ type setup struct {
 	path              string
 	opts              *Opts
 	depot             *depot
+	ecosystems        []ecosystem
 	supportsHardLinks bool
 	env               *envdef.Collection
 	buildplan         *buildplan.BuildPlan
@@ -90,7 +91,7 @@ type setup struct {
 	toInstall buildplan.ArtifactIDMap
 
 	// toUninstall encompasses all artifacts that will need to be uninstalled for this runtime.
-	toUninstall map[strfmt.UUID]struct{}
+	toUninstall map[strfmt.UUID]bool
 }
 
 func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depot *depot, opts *Opts) (*setup, error) {
@@ -127,10 +128,10 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 
 	// Identify which artifacts we can uninstall
 	installableArtifactsMap := installableArtifacts.ToIDMap()
-	artifactsToUninstall := map[strfmt.UUID]struct{}{}
+	artifactsToUninstall := map[strfmt.UUID]bool{}
 	for id := range installedArtifacts {
 		if _, required := installableArtifactsMap[id]; !required {
-			artifactsToUninstall[id] = struct{}{}
+			artifactsToUninstall[id] = true
 		}
 	}
 
@@ -167,6 +168,16 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 		}
 	}
 
+	// Load all ecosystems
+	var ecosystems []ecosystem
+	for _, e := range availableEcosystems {
+		ecosystem := e()
+		if err := ecosystem.Init(path, bp); err != nil {
+			return nil, errs.Wrap(err, "Could not create ecosystem")
+		}
+		ecosystems = append(ecosystems, ecosystem)
+	}
+
 	return &setup{
 		path:              path,
 		opts:              opts,
@@ -179,6 +190,7 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 		toUnpack:          artifactsToUnpack.ToIDMap(),
 		toInstall:         artifactsToInstall.ToIDMap(),
 		toUninstall:       artifactsToUninstall,
+		ecosystems:        ecosystems,
 	}, nil
 }
 
@@ -273,7 +285,7 @@ func (s *setup) update() error {
 	wp = workerpool.New(maxConcurrency)
 	for _, a := range s.toInstall {
 		wp.Submit(func() error {
-			if err := s.install(a.ArtifactID); err != nil {
+			if err := s.install(a); err != nil {
 				return errs.Wrap(err, "Could not install artifact")
 			}
 			return nil
@@ -447,7 +459,8 @@ func (s *setup) updateExecutors() error {
 	return nil
 }
 
-func (s *setup) install(id strfmt.UUID) (rerr error) {
+func (s *setup) install(artifact *buildplan.Artifact) (rerr error) {
+	id := artifact.ArtifactID
 	defer func() {
 		if rerr == nil {
 			if err := s.fireEvent(events.ArtifactInstallSuccess{id}); err != nil {
@@ -465,6 +478,20 @@ func (s *setup) install(id strfmt.UUID) (rerr error) {
 	}
 
 	artifactDepotPath := s.depot.Path(id)
+
+	if ecosys := filterEcosystemMatchingArtifact(artifact, s.ecosystems); ecosys != nil {
+		files, err := ecosys.Add(artifact, artifactDepotPath)
+		if err != nil {
+			return errs.Wrap(err, "Ecosystem unable to add artifact")
+		}
+		s.depot.Track(id, &deployment{
+			Type:  deploymentTypeEcosystem,
+			Path:  filepath.Join(s.path, artifact.ArtifactID.String()), // dummy path for uniqueness
+			Files: files,
+		})
+		return nil
+	}
+
 	envDef, err := s.env.Load(artifactDepotPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not get env")
@@ -506,6 +533,17 @@ func (s *setup) uninstall(id strfmt.UUID) (rerr error) {
 	}
 
 	artifactDepotPath := s.depot.Path(id)
+
+	// TODO: CP-956
+	//if ecosys := filterEcosystemMatchingArtifact(artifact, s.ecosystems); ecosys != nil {
+	//	err := ecosys.Remove(artifact)
+	//	if err != nil {
+	//		return errs.Wrap(err, "Ecosystem unable to remove artifact")
+	//	}
+	//	s.depot.Untrack(id, filepath.Join(s.path, artifact.ArtifactID.String()))
+	//	return nil
+	//}
+
 	envDef, err := s.env.Load(artifactDepotPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not get env")
@@ -538,6 +576,13 @@ func (s *setup) postProcess() (rerr error) {
 			}
 		}
 	}()
+
+	// Tell applicable ecosystems to apply changes.
+	for _, e := range s.ecosystems {
+		if err := e.Apply(); err != nil {
+			return errs.Wrap(err, "Could not apply ecosystem changes")
+		}
+	}
 
 	// Update executors
 	if err := s.updateExecutors(); err != nil {
