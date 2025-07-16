@@ -1,14 +1,9 @@
 package runtime
 
-import "github.com/ActiveState/cli/pkg/buildplan"
-
-// eg.
-// availableEcosystems = []func() (ecosystem, error){
-// 	func() (ecosystem, error) {
-// 		return &python.Ecosystem{}, nil
-// 	},
-// }
-var availableEcosystems []func() ecosystem
+import (
+	"github.com/ActiveState/cli/pkg/buildplan"
+	ecosys "github.com/ActiveState/cli/pkg/runtime/ecosystem"
+)
 
 type ecosystem interface {
 	Init(runtimePath string, buildplan *buildplan.BuildPlan) error
@@ -16,6 +11,14 @@ type ecosystem interface {
 	Add(artifact *buildplan.Artifact, artifactSrcPath string) ([]string, error)
 	Remove(artifact *buildplan.Artifact) error
 	Apply() error
+}
+
+var availableEcosystems []func() ecosystem
+
+func init() {
+	availableEcosystems = []func() ecosystem{
+		func() ecosystem { return &ecosys.Java{} },
+	}
 }
 
 func artifactMatchesEcosystem(a *buildplan.Artifact, e ecosystem) bool {
