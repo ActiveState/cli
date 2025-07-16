@@ -181,7 +181,6 @@ func (m *SvcModel) GetProcessesInUse(ctx context.Context, execDir string) ([]*gr
 // Note we respond with mono_models.JWT here for compatibility and to minimize the changeset at time of implementation.
 // We can revisit this in the future.
 func (m *SvcModel) GetJWT(ctx context.Context) (*mono_models.JWT, error) {
-	logging.Debug("Checking for GetJWT")
 	defer profile.Measure("svc:GetJWT", time.Now())
 
 	r := request.NewJWTRequest()

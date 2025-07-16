@@ -41,9 +41,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 
 	// This integration test is a bit special because it bypasses the spawning logic
 	// so in order to get the right log files when debugging we manually provide the config dir
-	var err error
-	ts.Dirs.Config, err = storage.AppDataPath()
-	suite.Require().NoError(err)
+	ts.Dirs.Config = storage.AppDataPath()
 
 	ipcClient := svcctl.NewDefaultIPCClient()
 	var svcPort string

@@ -10,16 +10,13 @@ package hello
 import (
 	"errors"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/example"
-	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 // primeable describes the app-level dependencies that a runner will need.
@@ -49,7 +46,6 @@ func NewParams() *Params {
 // function.
 type Hello struct {
 	out     output.Outputer
-	project *project.Project
 	auth    *authentication.Auth
 }
 
@@ -58,7 +54,6 @@ type Hello struct {
 func New(p primeable) *Hello {
 	return &Hello{
 		out:     p.Output(),
-		project: p.Project(),
 		auth:    p.Auth(),
 	}
 }
@@ -77,15 +72,6 @@ func rationalizeError(err *error) {
 		// Ensure we wrap the top-level error returned from the runner and not
 		// the unpacked error that we are inspecting.
 		*err = errs.WrapUserFacing(*err, locale.Tl("hello_err_no_name", "Cannot say hello because no name was provided."))
-	case errors.Is(*err, rationalize.ErrNoProject):
-		// It's useful to offer users reasonable tips on recourses.
-		*err = errs.WrapUserFacing(
-			*err,
-			locale.Tl("hello_err_no_project", "Cannot say hello because you are not in a project directory."),
-			errs.SetTips(
-				locale.Tl("hello_suggest_checkout", "Try using '[ACTIONABLE]state checkout[/RESET]' first."),
-			),
-		)
 	}
 }
 
@@ -94,10 +80,6 @@ func (h *Hello) Run(params *Params) (rerr error) {
 	defer rationalizeError(&rerr)
 
 	h.out.Print(locale.Tl("hello_notice", "This command is for example use only"))
-
-	if h.project == nil {
-		return rationalize.ErrNoProject
-	}
 
 	// Reusable runner logic is contained within the runbits package.
 	// You should only use this if you intend to share logic between
@@ -120,50 +102,11 @@ func (h *Hello) Run(params *Params) (rerr error) {
 		return nil
 	}
 
-	// Grab data from the platform.
-	commitMsg, err := currentCommitMessage(h.project, h.auth)
-	if err != nil {
-		err = errs.Wrap(
-			err, "Cannot get commit message",
-		)
-		return errs.AddTips(
-			err,
-			locale.Tl("hello_info_suggest_ensure_commit", "Ensure project has commits"),
-		)
-	}
-
 	h.out.Print(locale.Tl(
 		"hello_extra_info",
-		"Project: {{.V0}}\nCurrent commit message: {{.V1}}",
-		h.project.Namespace().String(), commitMsg,
+		"You are on commit {{.V0}}",
+		constants.RevisionHashShort,
 	))
 
 	return nil
-}
-
-// currentCommitMessage contains the scope in which the current commit message
-// is obtained. Since it is a sort of construction function that has some
-// complexity, it is helpful to provide localized error context. Secluding this
-// sort of logic is helpful to keep the subhandlers clean.
-func currentCommitMessage(proj *project.Project, auth *authentication.Auth) (string, error) {
-	if proj == nil {
-		return "", errs.New("Cannot determine which project to use")
-	}
-
-	commitId, err := localcommit.Get(proj.Dir())
-	if err != nil {
-		return "", errs.Wrap(err, "Cannot determine which commit to use")
-	}
-
-	commit, err := model.GetCommit(commitId, auth)
-	if err != nil {
-		return "", errs.Wrap(err, "Cannot get commit from server")
-	}
-
-	commitMsg := locale.Tl("hello_info_warn_no_commit", "Commit description not provided.")
-	if commit.Message != "" {
-		commitMsg = commit.Message
-	}
-
-	return commitMsg, nil
 }

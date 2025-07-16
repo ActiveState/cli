@@ -19,11 +19,12 @@ import (
 type JSON struct {
 	cfg         *Config
 	wroteOutput bool
+	history     *OutputHistory
 }
 
 // NewJSON constructs a new JSON struct
 func NewJSON(config *Config) (JSON, error) {
-	return JSON{cfg: config}, nil
+	return JSON{cfg: config, history: &OutputHistory{}}, nil
 }
 
 // Type tells callers what type of outputer we are
@@ -38,7 +39,11 @@ func (f *JSON) Print(v interface{}) {
 		return
 	}
 
-	f.Fprint(f.cfg.OutWriter, v)
+	w := NewWriteProxy(f.cfg.OutWriter, func(p []byte) {
+		f.history.Print = append(f.history.Print, string(p))
+	})
+
+	f.Fprint(w, v)
 }
 
 // Fprint allows printing to a specific writer, using all the conveniences of the output package
@@ -97,7 +102,11 @@ func (f *JSON) Error(value interface{}) {
 	}
 	b = []byte(colorize.StripColorCodes(string(b)))
 
-	_, err = f.cfg.OutWriter.Write(b)
+	w := NewWriteProxy(f.cfg.OutWriter, func(p []byte) {
+		f.history.Error = append(f.history.Error, string(p))
+	})
+
+	_, err = w.Write(b)
 	if err != nil {
 		if isPipeClosedError(err) {
 			logging.Error("Could not write json output, error: %v", err) // do not log to rollbar
@@ -105,6 +114,10 @@ func (f *JSON) Error(value interface{}) {
 			multilog.Error("Could not write json output, error: %v", err)
 		}
 	}
+}
+
+func (f *JSON) History() *OutputHistory {
+	return f.history
 }
 
 func isPipeClosedError(err error) bool {

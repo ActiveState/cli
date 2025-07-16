@@ -1129,7 +1129,7 @@ func AddLockInfo(projectFilePath, branch, version string) error {
 
 	projectRegex := regexp.MustCompile(fmt.Sprintf("(?m:(^project:\\s*%s))", ProjectURLRe))
 	lockString := fmt.Sprintf("%s@%s", branch, version)
-	lockUpdate := []byte(fmt.Sprintf("${1}\nlock: %s", lockString))
+	lockUpdate := []byte(fmt.Sprintf(`${1}\nlock: %s`, lockString))
 
 	data, err = os.ReadFile(projectFilePath)
 	if err != nil {
@@ -1263,6 +1263,9 @@ func addDeprecatedProjectMappings(cfg ConfigGetter) {
 			if err != nil && v != nil { // don't report if error due to nil input
 				multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Projects data in config is abnormal (type: %T)", v)
 			}
+			if projects == nil {
+				projects = map[string][]string{}
+			}
 
 			keys := funk.FilterString(cfg.AllKeys(), func(v string) bool {
 				return strings.HasPrefix(v, "project_")
@@ -1315,6 +1318,9 @@ func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 			projects, err := cast.ToStringMapStringSliceE(v)
 			if err != nil && v != nil { // don't report if error due to nil input
 				multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Projects data in config is abnormal (type: %T)", v)
+			}
+			if projects == nil {
+				projects = make(map[string][]string)
 			}
 
 			projectPath, err = fileutils.ResolveUniquePath(projectPath)
@@ -1369,6 +1375,9 @@ func CleanProjectMapping(cfg ConfigGetter) {
 			projects, err := cast.ToStringMapStringSliceE(v)
 			if err != nil && v != nil { // don't report if error due to nil input
 				multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Projects data in config is abnormal (type: %T)", v)
+			}
+			if projects == nil {
+				projects = make(map[string][]string)
 			}
 
 			seen := make(map[string]struct{})

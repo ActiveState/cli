@@ -171,6 +171,10 @@ jobs:
             {
                 "ID": "Build-Executor",
                 "Args": ["state", "run", "build-exec"]
+            },
+            {
+                "ID": "Build-MCP",
+                "Args": ["state", "run", "build-mcp"]
             }
           ]
           EOF
@@ -226,6 +230,11 @@ jobs:
         shell: bash
         run: parallelize results Build-Executor
 
+      - # === "Build: MCP" ===
+        name: "Build: MCP"
+        shell: bash
+        run: parallelize results Build-MCP
+
       - # === Prepare Windows Cert ===
         name: Prepare Windows Cert
         shell: bash
@@ -246,6 +255,7 @@ jobs:
           signtool.exe sign -d "ActiveState State Service" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe
           signtool.exe sign -d "ActiveState State Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe
           signtool.exe sign -d "ActiveState State Tool Remote Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-remote-installer.exe
+          signtool.exe sign -d "ActiveState State MCP" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-mcp.exe
         env:
           CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
 
