@@ -2,15 +2,12 @@ package graphql
 
 import (
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/api/graphql"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 type Runner struct {
-	out  output.Outputer
 	auth *authentication.Auth
 	api  api.Service
 }
@@ -29,20 +26,21 @@ func (req *Request) Vars() (map[string]interface{}, error) {
 	return req.QueryVars, nil
 }
 
-func New(prime *primer.Values, api api.Service) *Runner {
+func New(auth *authentication.Auth, api api.Service) *Runner {
 	return &Runner{
-		out:  prime.Output(),
-		auth: prime.Auth(),
+		auth: auth,
 		api:  api,
 	}
 }
 
 func (runner *Runner) Run(request *Request, response interface{}) error {
-	gql := graphql.New(runner.auth, runner.api)
+	gqlUrl := api.GetServiceURL(runner.api)
+	gql := gqlclient.NewWithOpts(gqlUrl.String(), 0, gqlclient.WithHTTPClient(api.NewHTTPClient()))
+	gql.SetTokenProvider(runner.auth)
 
 	err := gql.Run(request, &response)
 	if err != nil {
-		return errs.Wrap(err, "gql.Run failed")
+		return errs.Wrap(err, "gql.Run failed: "+err.Error())
 	}
 
 	return nil

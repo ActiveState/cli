@@ -2,13 +2,12 @@ package toolregistry
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runners/graphql"
 	"github.com/ActiveState/cli/internal/runners/hello"
-	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/internal/runners/mcp/projecterrors"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/mark3labs/mcp-go/mcp"
 )
@@ -43,31 +42,12 @@ func HelloWorldTool() Tool {
 	}
 }
 
-type BuildNodesResponse struct {
-	Commit struct {
-		Build struct {
-			Nodes []BuildNode `json:"nodes"`
-		} `json:"build"`
-	} `json:"commit"`
-}
-
-type BuildNode struct {
-	Typename            string `json:"__typename"`
-	Name                string `json:"name"`
-	Namespace           string `json:"namespace"`
-	Version             string `json:"version"`
-	DisplayName         string `json:"displayName"`
-	LogURL              string `json:"logURL"`
-	Status              string `json:"status"`
-	LastBuildFinishedAt string `json:"lastBuildFinishedAt"`
-}
-
 func ProjectErrorsTool() Tool {
 	return Tool{
 		Category: ToolCategoryDebug,
 		Tool: mcp.NewTool(
-			"projecterrors",
-			mcp.WithDescription("Project errors tool - shows errors for a project"),
+			"list_project_build_failures",
+			mcp.WithDescription("Retrieves all the failed builds for a specific project"),
 			mcp.WithString("namespace", mcp.Description("Project namespace in format 'owner/project'")),
 		),
 		Handler: func(ctx context.Context, p *primer.Values, mcpRequest mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -75,48 +55,14 @@ func ProjectErrorsTool() Tool {
 
 			ns, err := project.ParseNamespace(namespace)
 			if err != nil {
-				return mcp.NewToolResultError("Invalid namespace format. Use 'owner/project' format."), nil
+				return mcp.NewToolResultError(fmt.Errorf("invalid namespace format. Use 'owner/project' format: %w", err).Error()), nil
 			}
 
-			runner := graphql.New(p, api.ServiceBuildPlanner)
-			request := &graphql.Request{
-				QueryStr: `query($organization: String!, $project: String!) {
-								project(organization: $organization, project: $project) {
-									... on Project {
-										commit {
-											... on Commit {
-												build {
-													... on Build {
-														nodes {
-															... on Source {
-																__typename, name, version, namespace
-															}
-															... on ArtifactPermanentlyFailed {
-																__typename, displayName, logURL, status, lastBuildFinishedAt
-															}
-														}
-													}
-												}
-											}
-										}
-									}
-								}
-							}`,
-				QueryVars: map[string]interface{}{
-					"organization": ns.Owner,
-					"project":      ns.Project,
-				},
-			}
-			response := BuildNodesResponse{}
-			err = runner.Run(request, &response)
+			runner := projecterrors.New(p, ns)
+			err = runner.Run()
 			if err != nil {
-				return mcp.NewToolResultError(err.Error()), nil
+				return mcp.NewToolResultError(fmt.Errorf("error executing GraphQL query: %v", err).Error()), nil
 			}
-
-			// at this point we can handle request to create the final output
-			// OR just return the full response as text
-			jsonBytes, _ := json.Marshal(response)
-			p.Output().Print(string(jsonBytes))
 
 			return mcp.NewToolResultText(
 				strings.Join(p.Output().History().Print, "\n"),
