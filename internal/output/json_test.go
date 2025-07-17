@@ -7,7 +7,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestJSON_Print(t *testing.T) {
@@ -66,13 +65,12 @@ func TestJSON_Print(t *testing.T) {
 			outWriter := &bytes.Buffer{}
 			errWriter := &bytes.Buffer{}
 
-			f, err := NewJSON(&Config{
+			f := &JSON{cfg: &Config{
 				OutWriter:   outWriter,
 				ErrWriter:   errWriter,
 				Colored:     false,
 				Interactive: false,
-			})
-			require.NoError(t, err)
+			}}
 
 			f.Print(tt.args.value)
 			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
@@ -103,13 +101,12 @@ func TestJSON_Notice(t *testing.T) {
 			outWriter := &bytes.Buffer{}
 			errWriter := &bytes.Buffer{}
 
-			f, err := NewJSON(&Config{
+			f := &JSON{cfg: &Config{
 				OutWriter:   outWriter,
 				ErrWriter:   errWriter,
 				Colored:     false,
 				Interactive: false,
-			})
-			require.NoError(t, err)
+			}}
 
 			f.Notice(tt.args.value)
 			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
@@ -158,13 +155,12 @@ func TestJSON_Error(t *testing.T) {
 			outWriter := &bytes.Buffer{}
 			errWriter := &bytes.Buffer{}
 
-			f, err := NewJSON(&Config{
+			f := &JSON{cfg: &Config{
 				OutWriter:   outWriter,
 				ErrWriter:   errWriter,
 				Colored:     false,
 				Interactive: false,
-			})
-			require.NoError(t, err)
+			}}
 
 			f.Error(tt.args.value)
 			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")

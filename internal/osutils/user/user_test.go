@@ -39,5 +39,6 @@ func TestNoHome(t *testing.T) {
 		defer func() { os.Setenv("USERPROFILE", osHomeDir) }()
 	}
 	_, err = HomeDir()
-	assert.NoError(t, err)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "HOME environment variable is unset")
 }

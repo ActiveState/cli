@@ -436,9 +436,6 @@ const InstallerName = "State Installer"
 // StateExecutorCmd is the name of the state executor binary
 const StateExecutorCmd = "state-exec"
 
-// StateMCPCmd is the name of the state mcp binary
-const StateMCPCmd = "state-mcp"
-
 // LegacyToplevelInstallArchiveDir is the top-level directory for files in an installation archive
 // This constant will be removed in DX-2081.
 const LegacyToplevelInstallArchiveDir = "state-install"

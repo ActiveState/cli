@@ -29,12 +29,6 @@ const (
 
 var ErrNotRecognized = errs.New("Not Recognized")
 
-type OutputHistory struct {
-	Print []string
-	Error []string
-	Notice []string
-}
-
 // Outputer is the initialized formatter
 type Outputer interface {
 	Fprint(writer io.Writer, value interface{})
@@ -43,7 +37,6 @@ type Outputer interface {
 	Notice(value interface{})
 	Type() Format
 	Config() *Config
-	History() *OutputHistory
 }
 
 // lastCreated is here for specific legacy use cases

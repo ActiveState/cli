@@ -83,7 +83,13 @@ func init() {
 	defer func() { handlePanics(recover()) }()
 
 	// Set up datadir
-	datadir = storage.AppDataPath()
+	var err error
+	datadir, err = storage.AppDataPath()
+	if err != nil {
+		log.SetOutput(os.Stderr)
+		Error("Could not detect AppData dir: %v", err)
+		return
+	}
 
 	// Set up handler
 	timestamp = time.Now().UnixNano()
