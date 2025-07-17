@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 
 	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/runtime/internal/envdef"
 )
 
 const libDir = "lib"
@@ -78,12 +79,12 @@ func (e *Java) injectClasspath(runtimeJson string) error {
 		return errs.Wrap(err, "Unable to unmarshal runtime.json")
 	}
 
-	classpathEnv := map[string]interface{}{
-		"env_name":  "CLASSPATH",
-		"values":    []string{"${INSTALLDIR}/lib"},
-		"join":      "prepend",
-		"inherit":   true,
-		"separator": ":",
+	classpathEnv := envdef.EnvironmentVariable{
+		Name:      "CLASSPATH",
+		Values:    []string{"${INSTALLDIR}/lib"},
+		Join:      envdef.Prepend,
+		Inherit:   true,
+		Separator: ":",
 	}
 
 	classpathExists := false
