@@ -1,6 +1,7 @@
 package ecosystem
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"strings"
 
@@ -10,13 +11,15 @@ import (
 	"github.com/ActiveState/cli/pkg/buildplan"
 )
 
+const libDir = "lib"
+
 type Java struct {
-	libDir string
+	runtimeDir string
 }
 
 func (e *Java) Init(runtimePath string, buildplan *buildplan.BuildPlan) error {
-	e.libDir = filepath.Join(runtimePath, "lib")
-	err := fileutils.MkdirUnlessExists(e.libDir)
+	e.runtimeDir = runtimePath
+	err := fileutils.MkdirUnlessExists(filepath.Join(e.runtimeDir, libDir))
 	if err != nil {
 		return errs.Wrap(err, "Unable to create runtime lib directory")
 	}
@@ -34,15 +37,23 @@ func (e *Java) Add(artifact *buildplan.Artifact, artifactSrcPath string) ([]stri
 		return nil, errs.Wrap(err, "Unable to read artifact source directory")
 	}
 	for _, file := range files {
+		if file.Name() == "runtime.json" {
+			err = e.injectClasspath(file.AbsolutePath())
+			if err != nil {
+				return nil, errs.Wrap(err, "Unable to add CLASSPATH to runtime.json")
+			}
+			continue
+		}
 		if !strings.HasSuffix(file.Name(), ".jar") {
 			continue
 		}
-		installedFile := filepath.Join(e.libDir, file.Name())
+		relativeInstalledFile := filepath.Join(libDir, file.Name())
+		installedFile := filepath.Join(e.runtimeDir, relativeInstalledFile)
 		err = fileutils.CopyFile(file.AbsolutePath(), installedFile)
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to copy artifact jar into runtime lib directory")
 		}
-		installedFiles = append(installedFiles, installedFile)
+		installedFiles = append(installedFiles, relativeInstalledFile)
 	}
 	return installedFiles, nil
 }
@@ -52,5 +63,56 @@ func (e *Java) Remove(artifact *buildplan.Artifact) error {
 }
 
 func (e *Java) Apply() error {
+	return nil
+}
+
+func (e *Java) injectClasspath(runtimeJson string) error {
+	bytes, err := fileutils.ReadFile(runtimeJson)
+	if err != nil {
+		return errs.Wrap(err, "Unable to read runtime.json")
+	}
+
+	m := make(map[string]interface{})
+	err = json.Unmarshal(bytes, &m)
+	if err != nil {
+		return errs.Wrap(err, "Unable to unmarshal runtime.json")
+	}
+
+	classpathEnv := map[string]interface{}{
+		"env_name":  "CLASSPATH",
+		"values":    []string{"${INSTALLDIR}/lib"},
+		"join":      "prepend",
+		"inherit":   true,
+		"separator": ":",
+	}
+
+	classpathExists := false
+	if _, exists := m["env"]; !exists {
+		m["env"] = make([]map[string]interface{}, 0)
+	}
+	envList := m["env"].([]interface{})
+	for _, envInterface := range envList {
+		env := envInterface.(map[string]interface{})
+		if env["env_name"] == "CLASSPATH" {
+			classpathExists = true
+			break
+		}
+	}
+
+	if !classpathExists {
+		envList = append(envList, classpathEnv)
+		m["env"] = envList
+
+		bytes, err = json.Marshal(m)
+		if err != nil {
+			return errs.Wrap(err, "Unable to marshal new runtime.json")
+		}
+
+		err = fileutils.WriteFile(runtimeJson, bytes)
+		if err != nil {
+			return errs.Wrap(err, "Unable to write new runtime.json")
+		}
+	}
+
 	return nil
 }

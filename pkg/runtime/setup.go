@@ -486,7 +486,7 @@ func (s *setup) install(artifact *buildplan.Artifact) (rerr error) {
 		}
 		s.depot.Track(id, &deployment{
 			Type:  deploymentTypeEcosystem,
-			Path:  filepath.Join(s.path, artifact.ArtifactID.String()), // dummy path for uniqueness
+			Path:  s.path,
 			Files: files,
 		})
 		return nil
