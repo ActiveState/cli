@@ -71,7 +71,7 @@ func (r *Cve) Run(params *Params) error {
 		)
 	}
 
-	vulnerabilities, err := r.fetchVulnerabilities(params.Namespace)
+	vulnerabilities, err := r.fetchVulnerabilities(*params.Namespace)
 	if err != nil {
 		var errProjectNotFound *model.ErrProjectNotFound
 		if errors.As(err, &errProjectNotFound) {
@@ -101,7 +101,7 @@ func (r *Cve) Run(params *Params) error {
 	return nil
 }
 
-func (r *Cve) fetchVulnerabilities(namespaceOverride *project.Namespaced) (*medmodel.CommitVulnerabilities, error) {
+func (r *Cve) fetchVulnerabilities(namespaceOverride project.Namespaced) (*medmodel.CommitVulnerabilities, error) {
 	if namespaceOverride.IsValid() && namespaceOverride.CommitID == nil {
 		resp, err := model.FetchProjectVulnerabilities(r.auth, namespaceOverride.Owner, namespaceOverride.Project)
 		if err != nil {
@@ -135,6 +135,9 @@ type SeverityCountOutput struct {
 }
 
 func (rd *cveOutput) MarshalOutput(format output.Format) interface{} {
+	if format != output.PlainFormatName {
+		return rd.data
+	}
 	ri := &CveInfo{
 		fmt.Sprintf("[ACTIONABLE]%s[/RESET]", rd.data.Project),
 		rd.data.CommitID,

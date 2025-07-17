@@ -475,7 +475,11 @@ func storeInstallSource(installSource string) {
 		installSource = "state-installer"
 	}
 
-	appData := storage.AppDataPath()
+	appData, err := storage.AppDataPath()
+	if err != nil {
+		multilog.Error("Could not store install source due to AppDataPath error: %s", errs.JoinMessage(err))
+		return
+	}
 	if err := fileutils.WriteFile(filepath.Join(appData, constants.InstallSourceFile), []byte(installSource)); err != nil {
 		multilog.Error("Could not store install source due to WriteFile error: %s", errs.JoinMessage(err))
 	}

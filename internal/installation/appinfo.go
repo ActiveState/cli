@@ -46,9 +46,7 @@ func newExecFromDir(baseDir string, exec executableType) (string, error) {
 
 	// Work around dlv and goland debugger giving an unexpected executable path
 	if !condition.BuiltViaCI() && len(os.Args) > 1 &&
-		(strings.Contains(os.Args[0], "__debug_bin") || 
-		strings.Contains(filepath.ToSlash(os.Args[0]), "GoLand/___") ||
-		strings.Contains(os.Args[0], "go-build")) {
+		(strings.Contains(os.Args[0], "__debug_bin") || strings.Contains(filepath.ToSlash(os.Args[0]), "GoLand/___")) {
 		rootPath := filepath.Clean(environment.GetRootPathUnsafe())
 		path = filepath.Join(rootPath, "build")
 	}

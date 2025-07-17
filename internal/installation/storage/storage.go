@@ -11,29 +11,12 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/google/uuid"
+	"github.com/shibukawa/configdir"
 )
 
+func AppDataPath() (string, error) {
+	configDirs := configdir.New(constants.InternalConfigNamespace, fmt.Sprintf("%s-%s", constants.LibraryName, constants.ChannelName))
 
-var homeDir string
-
-func init() {
-	var err error
-	homeDir, err = user.HomeDir()
-	if err != nil {
-		panic(fmt.Sprintf("Could not get home dir, you can fix this by ensuring the $HOME environment variable is set. Error: %v", err))
-	}
-}
-
-
-func relativeAppDataPath() string {
-	return filepath.Join(constants.InternalConfigNamespace, fmt.Sprintf("%s-%s", constants.LibraryName, constants.ChannelName))
-}
-
-func relativeCachePath() string {
-	return constants.InternalConfigNamespace
-}
-
-func AppDataPath() string {
 	localPath, envSet := os.LookupEnv(constants.ConfigEnvVarName)
 	if envSet {
 		return AppDataPathWithParent(localPath)
@@ -44,10 +27,35 @@ func AppDataPath() string {
 			// panic as this only happening in tests
 			panic(err)
 		}
-		return localPath
+		return localPath, nil
 	}
 
-	return AppDataPathWithParent(BaseAppDataPath())
+	// Account for HOME dir not being set, meaning querying global folders will fail
+	// This is a workaround for docker envs that don't usually have $HOME set
+	_, envSet = os.LookupEnv("HOME")
+	if !envSet && runtime.GOOS != "windows" {
+		homeDir, err := user.HomeDir()
+		if err != nil {
+			if !condition.InUnitTest() {
+				return "", fmt.Errorf("Could not get user home directory: %w", err)
+			}
+			// Use temp dir if we're in a test (we don't want to write to our src directory)
+			var err error
+			localPath, err = os.MkdirTemp("", "cli-config-test")
+			if err != nil {
+				return "", fmt.Errorf("could not create temp dir: %w", err)
+			}
+			return AppDataPathWithParent(localPath)
+		}
+		os.Setenv("HOME", homeDir)
+	}
+
+	dir := configDirs.QueryFolders(configdir.Global)[0].Path
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return "", fmt.Errorf("could not create appdata dir: %s", dir)
+	}
+
+	return dir, nil
 }
 
 var _appDataPathInTest string
@@ -59,11 +67,11 @@ func appDataPathInTest() (string, error) {
 
 	localPath, err := os.MkdirTemp("", "cli-config")
 	if err != nil {
-		return "", fmt.Errorf("could not create temp dir: %w", err)
+		return "", fmt.Errorf("Could not create temp dir: %w", err)
 	}
 	err = os.RemoveAll(localPath)
 	if err != nil {
-		return "", fmt.Errorf("could not remove generated config dir for tests: %w", err)
+		return "", fmt.Errorf("Could not remove generated config dir for tests: %w", err)
 	}
 
 	_appDataPathInTest = localPath
@@ -71,15 +79,16 @@ func appDataPathInTest() (string, error) {
 	return localPath, nil
 }
 
-func AppDataPathWithParent(parentDir string) string {
-	dir := filepath.Join(parentDir, relativeAppDataPath())
+func AppDataPathWithParent(parentDir string) (string, error) {
+	configDirs := configdir.New(constants.InternalConfigNamespace, fmt.Sprintf("%s-%s", constants.LibraryName, constants.ChannelName))
+	configDirs.LocalPath = parentDir
+	dir := configDirs.QueryFolders(configdir.Local)[0].Path
+
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		// Can't use logging here because it would cause a circular dependency
-		// This would only happen if the user has corrupt permissions on their home dir
-		os.Stderr.WriteString(fmt.Sprintf("Could not create appdata dir: %s", dir))
+		return "", fmt.Errorf("could not create appdata dir: %s", dir)
 	}
 
-	return dir
+	return dir, nil
 }
 
 // CachePath returns the path at which our cache is stored
@@ -99,15 +108,17 @@ func CachePath() string {
 				cachePath = filepath.Join(drive, "temp", prefix+uuid.New().String()[0:8])
 			}
 		}
-		return cachePath
-
+	} else if path := os.Getenv(constants.CacheEnvVarName); path != "" {
+		cachePath = path
+	} else {
+		cachePath = configdir.New(constants.InternalConfigNamespace, "").QueryCacheFolder().Path
+		if runtime.GOOS == "windows" {
+			// Explicitly append "cache" dir as the cachedir on Windows is the same as the local appdata dir (conflicts with config)
+			cachePath = filepath.Join(cachePath, "cache")
+		}
 	}
 
-	if path := os.Getenv(constants.CacheEnvVarName); path != "" {
-		return path
-	}
-
-	return filepath.Join(BaseCachePath(), relativeCachePath())
+	return cachePath
 }
 
 func GlobalBinDir() string {
@@ -116,7 +127,11 @@ func GlobalBinDir() string {
 
 // InstallSource returns the installation source of the State Tool
 func InstallSource() (string, error) {
-	path := AppDataPath()
+	path, err := AppDataPath()
+	if err != nil {
+		return "", fmt.Errorf("Could not detect AppDataPath: %w", err)
+	}
+
 	installFilePath := filepath.Join(path, constants.InstallSourceFile)
 	installFileData, err := os.ReadFile(installFilePath)
 	if err != nil {

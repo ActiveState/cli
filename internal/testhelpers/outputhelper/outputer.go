@@ -14,4 +14,3 @@ func (o *TestOutputer) Fprint(w io.Writer, value interface{}) {}
 func (o *TestOutputer) Error(value interface{})               {}
 func (o *TestOutputer) Notice(value interface{})              {}
 func (o *TestOutputer) Config() *output.Config                { return nil }
-func (o *TestOutputer) History() *output.OutputHistory        { return nil }

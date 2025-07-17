@@ -219,12 +219,9 @@ func (c *Command) ShortDescription() string {
 func (c *Command) Execute(args []string) error {
 	defer profile.Measure("cobra:Execute", time.Now())
 	c.logArgs(args)
-	// Cobra always executes the root command, so we need to set the args for the root command
-	// This makes running command.Execute() super error-prone if the args don't match the command
-	// We should probably get rid of Cobra over issues like this
-	c.cobra.Root().SetArgs(args) 
-	err := c.cobra.Root().Execute()
-	c.cobra.Root().SetArgs(nil)
+	c.cobra.SetArgs(args)
+	err := c.cobra.Execute()
+	c.cobra.SetArgs(nil)
 	rationalizeError(&err)
 	return setupSensibleErrors(err, args)
 }
@@ -275,24 +272,13 @@ func (c *Command) Name() string {
 }
 
 func (c *Command) NameRecursive() string {
-	parent := c
+	child := c
 	name := []string{}
-	for parent != nil {
-		name = append([]string{parent.Name()}, name...)
-		parent = parent.parent
-		if parent.parent == nil {
-			break // Don't include the root command in the name
-		}
+	for child != nil {
+		name = append([]string{child.Name()}, name...)
+		child = child.parent
 	}
 	return strings.Join(name, " ")
-}
-
-func (c *Command) BaseCommand() *Command {
-	base := c
-	for base.parent != nil && base.parent.parent != nil {
-		base = base.parent
-	}
-	return base
 }
 
 func (c *Command) NamePadding() int {
@@ -468,15 +454,6 @@ func (c *Command) Children() []*Command {
 	sort.Slice(commands, func(i, j int) bool {
 		return commands[i].SortBefore(commands[j])
 	})
-	return commands
-}
-
-func (c *Command) AllChildren() []*Command {
-	commands := []*Command{}
-	for _, child := range c.Children() {
-		commands = append(commands, child)
-		commands = append(commands, child.AllChildren()...)
-	}
 	return commands
 }
 
