@@ -9,51 +9,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runners/graphql"
-	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 )
-
-type BuildNodesResponse struct {
-	Commit struct {
-		Build struct {
-			Nodes []BuildNode `json:"nodes"`
-		} `json:"build"`
-	} `json:"commit"`
-}
-
-type BuildNode struct {
-	Typename            string `json:"__typename"`
-	Name                string `json:"name"`
-	Namespace           string `json:"namespace"`
-	Version             string `json:"version"`
-	DisplayName         string `json:"displayName"`
-	LogURL              string `json:"logURL"`
-	Status              string `json:"status"`
-	LastBuildFinishedAt string `json:"lastBuildFinishedAt"`
-}
-
-type RevisionResponse []struct {
-	Versions []struct {
-		Version   string `json:"version"`
-		Revisions []struct {
-			Revision          int    `json:"revision"`
-			CreationTimestamp string `json:"creation_timestamp"`
-		} `json:"revisions"`
-	} `json:"versions"`
-}
-
-type FailedBuild struct {
-	Name              string `json:"name"`
-	Version           string `json:"version"`
-	Namespace         string `json:"namespace"`
-	BuildTimestamp    string `json:"build_timestamp"`
-	LogURL            string `json:"logURL"`
-	Fixed             bool   `json:"fixed"`
-	IsDependencyError bool   `json:"is_dependency_error"`
-}
 
 type ProjectErrorsRunner struct {
 	primer    *primer.Values
@@ -67,112 +30,88 @@ func New(p *primer.Values, ns *project.Namespaced) *ProjectErrorsRunner {
 	}
 }
 
+type FailedIngredient struct {
+	Name              string `json:"name"`
+	Version           string `json:"version"`
+	Namespace         string `json:"namespace"`
+	BuildTimestamp    string `json:"build_timestamp"`
+	LogURL            string `json:"logURL"`
+	WasFixed          bool   `json:"wasFixed"`
+	IsDependencyError bool   `json:"is_dependency_error"`
+}
+
 func (runner *ProjectErrorsRunner) Run() error {
-	gqlRunner := graphql.New(runner.primer.Auth(), api.ServiceBuildPlanner)
-	request := &graphql.Request{
-		QueryStr: `query($organization: String!, $project: String!) {
-			project(organization: $organization, project: $project) {
-				... on Project {
-					commit {
-						... on Commit {
-							build {
-								... on Build {
-									nodes {
-										... on Source {
-											__typename, name, version, namespace
-										}
-										... on ArtifactPermanentlyFailed {
-											__typename, displayName, logURL, status, lastBuildFinishedAt
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}`,
-		QueryVars: map[string]interface{}{
-			"organization": runner.namespace.Owner,
-			"project":      runner.namespace.Project,
-		},
-	}
-
-	response := BuildNodesResponse{}
-	err := gqlRunner.Run(request, &response)
+	branch, err := model.DefaultBranchForProjectName(runner.namespace.Owner, runner.namespace.Project)
 	if err != nil {
-		return fmt.Errorf("error executing GraphQL query: %v", err)
+		return fmt.Errorf("error fetching default branch: %w", err)
 	}
 
-	// Process nodes to separate sources and failures
-	sources := make(map[string]BuildNode)
-	failures := make(map[string]BuildNode)
-
-	for _, node := range response.Commit.Build.Nodes {
-		switch node.Typename {
-		case "Source":
-			sources[node.Name] = node
-		case "ArtifactPermanentlyFailed":
-			failures[node.DisplayName] = node
-		}
+	bpm := buildplanner.NewBuildPlannerModel(runner.primer.Auth(), runner.primer.SvcModel())
+	commit, err := bpm.FetchCommitNoPoll(
+		strfmt.UUID(branch.CommitID.String()), runner.namespace.Owner, runner.namespace.Project, nil)
+	if err != nil {
+		return fmt.Errorf("error fetching commit: %w", err)
 	}
 
-	// Match failures with sources
-	var failedBuilds []FailedBuild
-	for failureName, failure := range failures {
-		if source, exists := sources[failureName]; exists {
-			fixed, err := checkNewerRevisionExists(runner.primer.Auth(), source.Name, source.Version, failure.LastBuildFinishedAt)
-			if err != nil {
-				return fmt.Errorf("error checking if ingredient is fixed: %v", err)
-			}
-			failedBuilds = append(failedBuilds, FailedBuild{
-				Name:           source.Name,
-				Version:        source.Version,
-				Namespace:      source.Namespace,
-				BuildTimestamp: failure.LastBuildFinishedAt,
-				LogURL:         failure.LogURL,
-				Fixed:          fixed,
-			})
-		}
-	}
+	bp := commit.BuildPlan()
+	failedArtifacts := bp.Artifacts(buildplan.FilterFailedArtifacts())
 
-	if len(failedBuilds) > 0 {
-		err := checkDependencyErrors(&failedBuilds)
+	// Check whether a newer revision is available for each artifact version.
+	// If found, assume the issue is resolved and that a new build can be retried.
+	failedIngredients := []FailedIngredient{}
+	for _, artifact := range failedArtifacts {
+		ingredient, err := model.GetIngredientByNameAndVersion(
+			artifact.Ingredients[0].Namespace, artifact.Name(), artifact.Version(), nil, runner.primer.Auth())
 		if err != nil {
-			return fmt.Errorf("error checking dependency errors: %v", err)
+			return fmt.Errorf("error searching ingredient: %w", err)
 		}
+
+		failedIngredients = append(failedIngredients, FailedIngredient{
+			Name:      artifact.Name(),
+			Version:   artifact.Version(),
+			Namespace: artifact.Ingredients[0].Namespace,
+			LogURL:    artifact.LogURL,
+			WasFixed:  artifact.Revision() < int(*ingredient.Revision),
+		})
 	}
 
-	jsonBytes, err := json.Marshal(failedBuilds)
+	// Check if ingredients are failing due to missing dependencies.
+	err = CheckDependencyErrors(&failedIngredients)
+	if err != nil {
+		return fmt.Errorf("error checking dependency errors: %w", err)
+	}
+
+	// Marshal and output the detailed list of failing ingredients.
+	jsonBytes, err := json.Marshal(failedIngredients)
 	if err != nil {
 		return fmt.Errorf("error marshaling results: %w", err)
 	}
-
 	runner.primer.Output().Print(string(jsonBytes))
 
 	return nil
 }
 
-func checkDependencyErrors(failedBuilds *[]FailedBuild) error {
+// Perform asynchronous checks for dependency errors to improve efficiency in large projects with multiple failures.
+func CheckDependencyErrors(failedIngredients *[]FailedIngredient) error {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	var errors []error
 
 	client := &http.Client{Timeout: 30 * time.Second}
 
-	for i := range *failedBuilds {
+	for i := range *failedIngredients {
 		wg.Add(1)
-		go func(build *FailedBuild) {
+		go func(ingredient *FailedIngredient) {
 			defer wg.Done()
-			depError, err := checkWasDependencyError(client, build.LogURL)
+			depError, err := CheckWasDependencyError(client, ingredient.LogURL)
 			if err != nil {
 				mu.Lock()
-				errors = append(errors, fmt.Errorf("error checking dependency error for %s: %v", build.Name, err))
+				errors = append(errors, fmt.Errorf("error checking dependency error for %s: %w", ingredient.Name, err))
 				mu.Unlock()
 				return
 			}
-			build.IsDependencyError = depError
-		}(&(*failedBuilds)[i])
+			ingredient.IsDependencyError = depError
+		}(&(*failedIngredients)[i])
 	}
 
 	wg.Wait()
@@ -184,10 +123,54 @@ func checkDependencyErrors(failedBuilds *[]FailedBuild) error {
 	return nil
 }
 
-func checkWasDependencyError(client *http.Client, logURL string) (bool, error) {
+var MissingDependencyKeywords = map[string][]string{
+	"language/php": {
+		"require_once(): Failed opening required",
+		"include(): Failed opening",
+		"require(): Failed opening required",
+		"include_once(): Failed opening",
+		"Fatal error: Uncaught Error: Class",
+		"Class not found",
+	},
+	"language/perl": {
+		"Can't locate",
+		"in @INC",
+		"BEGIN failed--compilation aborted",
+	},
+	"language/python": {
+		"ModuleNotFoundError",
+		"No module named",
+		"ImportError",
+	},
+	"language/tcl": {
+		"can't find package",
+		"couldn't load library",
+		"package require",
+	},
+	"language/ruby": {
+		"LoadError",
+		"cannot load such file",
+		"no such file to load",
+		"in `require'",
+	},
+	"language/c-sharp": {
+		"CS0246",
+		"are you missing a using directive",
+		"could not be found",
+		"The type or namespace",
+	},
+	"shared": {
+		"unresolved import", "no external crate", "E0432", "E0463", "can't find crate", // RUST
+		"No such file or directory", "fatal error:", "undefined reference to", // C/CPP
+	},
+}
+
+// Dependency errors are detected by downloading the logs and scanning for known missing dependency keywords.
+// Not perfect, but sufficient for early debugging and prevents sending large logs to the LLM prematurely.
+func CheckWasDependencyError(client *http.Client, logURL string) (bool, error) {
 	resp, err := client.Get(logURL)
 	if err != nil {
-		return false, fmt.Errorf("error checking dependency error for %s: %v", logURL, err)
+		return false, fmt.Errorf("error checking dependency error for %s: %w", logURL, err)
 	}
 	defer resp.Body.Close()
 
@@ -197,60 +180,15 @@ func checkWasDependencyError(client *http.Client, logURL string) (bool, error) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return false, fmt.Errorf("error reading response body for %s: %v", logURL, err)
+		return false, fmt.Errorf("error reading response body for %s: %w", logURL, err)
 	}
 
-	return strings.Contains(string(body), "ModuleNotFoundError"), nil
-}
-
-func checkNewerRevisionExists(auth *authentication.Auth, packageName, version, buildTimestamp string) (bool, error) {
-	gqlRunner := graphql.New(auth, api.ServiceHasuraInventory)
-	request := &graphql.Request{
-		QueryStr: `
-			query MyQuery($packageName: String!) {
-				ingredient(where: {normalized_name: {_in: [$packageName]}}) {
-					versions {
-						version
-						revisions {
-							revision
-							creation_timestamp
-						}
-					}
-				}
-			}
-		`,
-		QueryVars: map[string]interface{}{
-			"packageName": packageName,
-		},
-	}
-
-	response := RevisionResponse{}
-	err := gqlRunner.Run(request, &response)
-	if err != nil {
-		return false, fmt.Errorf("error running the GraphQL request: %v", err)
-	}
-
-	if len(response) == 0 {
-		return false, fmt.Errorf("no ingredient found for %s", packageName)
-	}
-
-	buildTime, err := time.Parse(time.RFC3339, buildTimestamp)
-	if err != nil {
-		return false, fmt.Errorf("error parsing build timestamp: %w", err)
-	}
-
-	for _, ingredient := range response {
-		for _, v := range ingredient.Versions {
-			if v.Version == version && len(v.Revisions) > 0 {
-				var latestTime time.Time
-				for _, revision := range v.Revisions {
-					if revTime, err := time.Parse(time.RFC3339, revision.CreationTimestamp); err == nil {
-						if revTime.After(latestTime) {
-							latestTime = revTime
-						}
-					}
-				}
-				return buildTime.Before(latestTime), nil
+	// Check for missing dependency keywords across all supported languages.
+	// Even if the namespace is Python, for example, a shared library might be missing a symbol.
+	for _, keywords := range MissingDependencyKeywords {
+		for _, kw := range keywords {
+			if strings.Contains(string(body), kw) {
+				return true, nil
 			}
 		}
 	}
