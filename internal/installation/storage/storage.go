@@ -13,7 +13,6 @@ import (
 	"github.com/google/uuid"
 )
 
-
 var homeDir string
 
 func init() {
@@ -23,7 +22,6 @@ func init() {
 		panic(fmt.Sprintf("Could not get home dir, you can fix this by ensuring the $HOME environment variable is set. Error: %v", err))
 	}
 }
-
 
 func relativeAppDataPath() string {
 	return filepath.Join(constants.InternalConfigNamespace, fmt.Sprintf("%s-%s", constants.LibraryName, constants.ChannelName))
@@ -36,7 +34,7 @@ func relativeCachePath() string {
 func AppDataPath() string {
 	localPath, envSet := os.LookupEnv(constants.ConfigEnvVarName)
 	if envSet {
-		return AppDataPathWithParent(localPath)
+		return localPath
 	} else if condition.InUnitTest() {
 		var err error
 		localPath, err = appDataPathInTest()
@@ -47,7 +45,7 @@ func AppDataPath() string {
 		return localPath
 	}
 
-	return AppDataPathWithParent(BaseAppDataPath())
+	return filepath.Join(BaseAppDataPath(), relativeAppDataPath())
 }
 
 var _appDataPathInTest string

@@ -42,7 +42,7 @@ func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) 
 	i.closeThread = closeThread
 
 	if localPath != "" {
-		i.appDataDir = storage.AppDataPathWithParent(localPath)
+		i.appDataDir = localPath
 	} else {
 		i.appDataDir = storage.AppDataPath()
 	}
