@@ -44,7 +44,7 @@ func (runner *ProjectErrorsRunner) Run() error {
 
 	bpm := buildplanner.NewBuildPlannerModel(runner.auth, runner.svcModel)
 	commit, err := bpm.FetchCommitNoPoll(
-		strfmt.UUID(branch.CommitID.String()), runner.namespace.Owner, runner.namespace.Project, nil)
+		*branch.CommitID, runner.namespace.Owner, runner.namespace.Project, nil)
 	if err != nil {
 		return fmt.Errorf("error fetching commit: %w", err)
 	}
