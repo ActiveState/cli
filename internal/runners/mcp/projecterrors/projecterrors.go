@@ -128,7 +128,7 @@ func CheckDependencyErrors(failedArtifacts []*buildplan.Artifact) (map[strfmt.UU
 			depError, err := CheckWasDependencyError(client, artifact.LogURL)
 			if err != nil {
 				mu.Lock()
-				errors = append(errors, fmt.Errorf("error checking dependency error for %s: %w", artifact.Name, err))
+				errors = append(errors, fmt.Errorf("error checking dependency error for %s: %w", artifact.Name(), err))
 				mu.Unlock()
 				return
 			}
