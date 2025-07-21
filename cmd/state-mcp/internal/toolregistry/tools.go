@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/hello"
 	"github.com/ActiveState/cli/internal/runners/mcp/projecterrors"
@@ -51,17 +52,20 @@ func ProjectErrorsTool() Tool {
 			mcp.WithString("namespace", mcp.Description("Project namespace in format 'owner/project'")),
 		),
 		Handler: func(ctx context.Context, p *primer.Values, mcpRequest mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			namespace, _ := mcpRequest.RequireString("namespace")
+			namespace, err := mcpRequest.RequireString("namespace")
+			if err != nil {
+				return mcp.NewToolResultError(fmt.Sprintf("a project in the format 'owner/project' is required: %s", errs.JoinMessage(err))), nil
+			}
 
 			ns, err := project.ParseNamespace(namespace)
 			if err != nil {
-				return mcp.NewToolResultError(fmt.Errorf("invalid namespace format. Use 'owner/project' format: %w", err).Error()), nil
+				return mcp.NewToolResultError(fmt.Sprintf("error parsing project namespace: %s", errs.JoinMessage(err))), nil
 			}
 
 			runner := projecterrors.New(p, ns)
 			err = runner.Run()
 			if err != nil {
-				return mcp.NewToolResultError(fmt.Errorf("error executing GraphQL query: %v", err).Error()), nil
+				return mcp.NewToolResultError(fmt.Sprintf("error executing GraphQL query: %s", errs.JoinMessage(err))), nil
 			}
 
 			return mcp.NewToolResultText(

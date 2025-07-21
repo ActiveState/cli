@@ -11,33 +11,29 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 type ProjectErrorsRunner struct {
-	primer    *primer.Values
+	auth      *authentication.Auth
+	output    output.Outputer
+	svcModel  *model.SvcModel
 	namespace *project.Namespaced
 }
 
 func New(p *primer.Values, ns *project.Namespaced) *ProjectErrorsRunner {
 	return &ProjectErrorsRunner{
-		primer:    p,
+		auth:      p.Auth(),
+		output:    p.Output(),
+		svcModel:  p.SvcModel(),
 		namespace: ns,
 	}
-}
-
-type FailedIngredient struct {
-	Name              string `json:"name"`
-	Version           string `json:"version"`
-	Namespace         string `json:"namespace"`
-	BuildTimestamp    string `json:"build_timestamp"`
-	LogURL            string `json:"logURL"`
-	WasFixed          bool   `json:"wasFixed"`
-	IsDependencyError bool   `json:"is_dependency_error"`
 }
 
 func (runner *ProjectErrorsRunner) Run() error {
@@ -46,7 +42,7 @@ func (runner *ProjectErrorsRunner) Run() error {
 		return fmt.Errorf("error fetching default branch: %w", err)
 	}
 
-	bpm := buildplanner.NewBuildPlannerModel(runner.primer.Auth(), runner.primer.SvcModel())
+	bpm := buildplanner.NewBuildPlannerModel(runner.auth, runner.svcModel)
 	commit, err := bpm.FetchCommitNoPoll(
 		strfmt.UUID(branch.CommitID.String()), runner.namespace.Owner, runner.namespace.Project, nil)
 	if err != nil {
@@ -56,117 +52,103 @@ func (runner *ProjectErrorsRunner) Run() error {
 	bp := commit.BuildPlan()
 	failedArtifacts := bp.Artifacts(buildplan.FilterFailedArtifacts())
 
-	// Check whether a newer revision is available for each artifact version.
-	// If found, assume the issue is resolved and that a new build can be retried.
-	failedIngredients := []FailedIngredient{}
-	for _, artifact := range failedArtifacts {
-		ingredient, err := model.GetIngredientByNameAndVersion(
-			artifact.Ingredients[0].Namespace, artifact.Name(), artifact.Version(), nil, runner.primer.Auth())
-		if err != nil {
-			return fmt.Errorf("error searching ingredient: %w", err)
-		}
-
-		failedIngredients = append(failedIngredients, FailedIngredient{
-			Name:      artifact.Name(),
-			Version:   artifact.Version(),
-			Namespace: artifact.Ingredients[0].Namespace,
-			LogURL:    artifact.LogURL,
-			WasFixed:  artifact.Revision() < int(*ingredient.Revision),
-		})
+	// Check if artifacts have already been fixed by a newer revision.
+	wasFixed, err := CheckDependencyFixes(runner.auth, failedArtifacts)
+	if err != nil {
+		return fmt.Errorf("error checking for fixed artifacts: %w", err)
 	}
 
-	// Check if ingredients are failing due to missing dependencies.
-	err = CheckDependencyErrors(&failedIngredients)
+	// Check if artifacts are failing due to missing dependencies.
+	isDependencyError, err := CheckDependencyErrors(failedArtifacts)
 	if err != nil {
 		return fmt.Errorf("error checking dependency errors: %w", err)
 	}
 
-	// Marshal and output the detailed list of failing ingredients.
-	jsonBytes, err := json.Marshal(failedIngredients)
-	if err != nil {
-		return fmt.Errorf("error marshaling results: %w", err)
+	// Define the output structure and print each artifact's Marshalled JSON.
+	type ArtifactOutput struct {
+		Name                  string `json:"name"`
+		Version               string `json:"version"`
+		Namespace             string `json:"namespace"`
+		IsBuildtimeDependency bool   `json:"isBuildtimeDependency"`
+		IsRuntimeDependency   bool   `json:"isRuntimeDependency"`
+		LogURL                string `json:"logURL"`
+		SourceURI             string `json:"sourceURI"`
+		WasFixed              bool   `json:"wasFixed"`
+		IsDependencyError     bool   `json:"isDependencyError"`
 	}
-	runner.primer.Output().Print(string(jsonBytes))
-
+	for _, artifact := range failedArtifacts {
+		jsonBytes, err := json.Marshal(ArtifactOutput{
+			Name:                  artifact.Name(),
+			Version:               artifact.Version(),
+			Namespace:             artifact.Ingredients[0].Namespace,
+			IsBuildtimeDependency: artifact.IsBuildtimeDependency,
+			IsRuntimeDependency:   artifact.IsRuntimeDependency,
+			LogURL:                artifact.LogURL,
+			SourceURI:             artifact.Ingredients[0].IngredientSource.Url.String(),
+			WasFixed:              wasFixed[artifact.ArtifactID],
+			IsDependencyError:     isDependencyError[artifact.ArtifactID],
+		})
+		if err != nil {
+			return fmt.Errorf("error marshaling results: %w", err)
+		}
+		runner.output.Print(string(jsonBytes))
+	}
 	return nil
 }
 
+// Check whether a newer revision is available for each artifact version.
+// If found, assume the issue is resolved so that a new build could be retried.
+func CheckDependencyFixes(auth *authentication.Auth, failedArtifacts []*buildplan.Artifact) (map[strfmt.UUID]bool, error) {
+	fixed := make(map[strfmt.UUID]bool)
+	for _, artifact := range failedArtifacts {
+		// TODO: Query multiple artifacts at once to reduce API calls, improving performance.
+		latestRevision, err := model.GetIngredientByNameAndVersion(
+			artifact.Ingredients[0].Namespace, artifact.Name(), artifact.Version(), nil, auth)
+		if err != nil {
+			return nil, fmt.Errorf("error searching ingredient: %w", err)
+		}
+		fixed[artifact.ArtifactID] = artifact.Revision() < int(*latestRevision.Revision)
+	}
+	return fixed, nil
+}
+
 // Perform asynchronous checks for dependency errors to improve efficiency in large projects with multiple failures.
-func CheckDependencyErrors(failedIngredients *[]FailedIngredient) error {
+func CheckDependencyErrors(failedArtifacts []*buildplan.Artifact) (map[strfmt.UUID]bool, error) {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	var errors []error
 
 	client := &http.Client{Timeout: 30 * time.Second}
 
-	for i := range *failedIngredients {
+	dependencyErrors := make(map[strfmt.UUID]bool)
+	for i := range failedArtifacts {
 		wg.Add(1)
-		go func(ingredient *FailedIngredient) {
+		go func(artifact *buildplan.Artifact) {
 			defer wg.Done()
-			depError, err := CheckWasDependencyError(client, ingredient.LogURL)
+			depError, err := CheckWasDependencyError(client, artifact.LogURL)
 			if err != nil {
 				mu.Lock()
-				errors = append(errors, fmt.Errorf("error checking dependency error for %s: %w", ingredient.Name, err))
+				errors = append(errors, fmt.Errorf("error checking dependency error for %s: %w", artifact.Name, err))
 				mu.Unlock()
 				return
 			}
-			ingredient.IsDependencyError = depError
-		}(&(*failedIngredients)[i])
+			dependencyErrors[artifact.ArtifactID] = depError
+		}(failedArtifacts[i])
 	}
 
 	wg.Wait()
 
 	if len(errors) > 0 {
-		return fmt.Errorf("multiple errors occurred: %v", errors)
+		return nil, fmt.Errorf("multiple errors occurred: %v", errors)
 	}
 
-	return nil
+	return dependencyErrors, nil
 }
 
-var MissingDependencyKeywords = map[string][]string{
-	"language/php": {
-		"require_once(): Failed opening required",
-		"include(): Failed opening",
-		"require(): Failed opening required",
-		"include_once(): Failed opening",
-		"Fatal error: Uncaught Error: Class",
-		"Class not found",
-	},
-	"language/perl": {
-		"Can't locate",
-		"in @INC",
-		"BEGIN failed--compilation aborted",
-	},
-	"language/python": {
-		"ModuleNotFoundError",
-		"No module named",
-		"ImportError",
-	},
-	"language/tcl": {
-		"can't find package",
-		"couldn't load library",
-		"package require",
-	},
-	"language/ruby": {
-		"LoadError",
-		"cannot load such file",
-		"no such file to load",
-		"in `require'",
-	},
-	"language/c-sharp": {
-		"CS0246",
-		"are you missing a using directive",
-		"could not be found",
-		"The type or namespace",
-	},
-	"shared": {
-		"unresolved import", "no external crate", "E0432", "E0463", "can't find crate", // RUST
-		"No such file or directory", "fatal error:", "undefined reference to", // C/CPP
-	},
-}
-
-// Dependency errors are detected by downloading the logs and scanning for known missing dependency keywords.
-// Not perfect, but sufficient for early debugging and prevents sending large logs to the LLM prematurely.
+// For now, dependency errors are detected by downloading the logs and scanning for ModuleNotFoundError.
+// Not perfect, but sufficient for Python and prevents sending large logs to the LLM prematurely.
+// TODO: Implement a more robust solution that considers other languages. Ideally, this returns an error
+// type, were 'dependency' is just one of them; this will give the caller an overview of failure categories.
 func CheckWasDependencyError(client *http.Client, logURL string) (bool, error) {
 	resp, err := client.Get(logURL)
 	if err != nil {
@@ -183,15 +165,5 @@ func CheckWasDependencyError(client *http.Client, logURL string) (bool, error) {
 		return false, fmt.Errorf("error reading response body for %s: %w", logURL, err)
 	}
 
-	// Check for missing dependency keywords across all supported languages.
-	// Even if the namespace is Python, for example, a shared library might be missing a symbol.
-	for _, keywords := range MissingDependencyKeywords {
-		for _, kw := range keywords {
-			if strings.Contains(string(body), kw) {
-				return true, nil
-			}
-		}
-	}
-
-	return false, nil
+	return strings.Contains(string(body), "ModuleNotFoundError"), nil
 }
