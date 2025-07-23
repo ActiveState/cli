@@ -39,7 +39,7 @@ func (e *Java) Add(artifact *buildplan.Artifact, artifactSrcPath string) ([]stri
 	}
 	for _, file := range files {
 		if file.Name() == "runtime.json" {
-			err = e.injectClasspath(file.AbsolutePath())
+			err = injectEnvVar(file.AbsolutePath(), "CLASSPATH", "${INSTALLDIR}/lib")
 			if err != nil {
 				return nil, errs.Wrap(err, "Unable to add CLASSPATH to runtime.json")
 			}
@@ -67,7 +67,7 @@ func (e *Java) Apply() error {
 	return nil
 }
 
-func (e *Java) injectClasspath(runtimeJson string) error {
+func injectEnvVar(runtimeJson, name, value string) error {
 	bytes, err := fileutils.ReadFile(runtimeJson)
 	if err != nil {
 		return errs.Wrap(err, "Unable to read runtime.json")
@@ -80,8 +80,8 @@ func (e *Java) injectClasspath(runtimeJson string) error {
 	}
 
 	classpathEnv := envdef.EnvironmentVariable{
-		Name:      "CLASSPATH",
-		Values:    []string{"${INSTALLDIR}/lib"},
+		Name:      name,
+		Values:    []string{value},
 		Join:      envdef.Prepend,
 		Inherit:   true,
 		Separator: ":",
@@ -94,7 +94,7 @@ func (e *Java) injectClasspath(runtimeJson string) error {
 	envList := m["env"].([]interface{})
 	for _, envInterface := range envList {
 		env := envInterface.(map[string]interface{})
-		if env["env_name"] == "CLASSPATH" {
+		if env["env_name"] == name {
 			classpathExists = true
 			break
 		}
