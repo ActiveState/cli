@@ -1,6 +1,8 @@
 package ecosystem
 
 import (
+	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -54,11 +56,15 @@ func (e *JavaScript) Apply() error {
 		return nil // nothing to do
 	}
 
+	binDir := filepath.Join(e.runtimePath, "usr", "bin")
 	args := []string{"install", "-g", "--offline"}
 	for _, arg := range e.packages {
 		args = append(args, arg)
 	}
-	_, stderr, err := osutils.ExecSimple(filepath.Join(e.runtimePath, "exec", "npm"), args, nil)
+	env := []string{
+		fmt.Sprintf("PATH=%s%s%s", binDir, string(os.PathListSeparator), os.Getenv("PATH")),
+	}
+	_, stderr, err := osutils.ExecSimple(filepath.Join(binDir, "npm"), args, env)
 	if err != nil {
 		return errs.Wrap(err, "Error running npm: %s", stderr)
 	}
