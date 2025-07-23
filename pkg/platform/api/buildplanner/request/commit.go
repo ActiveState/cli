@@ -63,6 +63,7 @@ query ($commitID: String!, $organization: String!, $project: String!, $target: S
                   namespace
                   version
                   licenses
+                  url
                 }
               }
               steps: steps {

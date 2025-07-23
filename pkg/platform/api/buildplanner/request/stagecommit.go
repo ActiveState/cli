@@ -67,6 +67,7 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID!, $descri
               namespace
               version
               licenses
+              url
             }
           }
           steps: steps {

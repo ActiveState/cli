@@ -11,7 +11,7 @@ import (
 type Tool struct {
 	mcp.Tool
 	Category ToolCategory
-	Handler func(context.Context, *primer.Values, mcp.CallToolRequest) (*mcp.CallToolResult, error)
+	Handler  func(context.Context, *primer.Values, mcp.CallToolRequest) (*mcp.CallToolResult, error)
 }
 
 type Registry struct {
@@ -24,6 +24,7 @@ func New() *Registry {
 	}
 
 	r.RegisterTool(HelloWorldTool())
+	r.RegisterTool(ProjectErrorsTool())
 
 	return r
 }
