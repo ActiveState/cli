@@ -54,7 +54,7 @@ func (e *JavaScript) Apply() error {
 		return nil // nothing to do
 	}
 
-	args := []string{"install", "-g"}
+	args := []string{"install", "-g", "--offline"}
 	for _, arg := range e.packages {
 		args = append(args, arg)
 	}
