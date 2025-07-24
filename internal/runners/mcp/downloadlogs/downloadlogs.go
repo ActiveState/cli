@@ -36,18 +36,13 @@ func (runner *DownloadLogsRunner) Run(params *Params) error {
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode == 200 {
-		body, err := io.ReadAll(response.Body)
-		if err != nil {
-			return fmt.Errorf("error reading response body: %v", err)
-		}
-		runner.output.Print(string(body))
-		return nil
-	} else {
-		body, err := io.ReadAll(response.Body)
-		if err != nil {
-			return fmt.Errorf("error reading response body: %v", err)
-		}
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return fmt.Errorf("error reading response body: %v", err)
+	}
+	if response.StatusCode != 200 {
 		return fmt.Errorf("error fetching logs: status %d, %s", response.StatusCode, body)
 	}
+	runner.output.Print(string(body))
+	return nil
 }
