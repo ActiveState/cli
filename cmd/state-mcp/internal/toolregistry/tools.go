@@ -65,8 +65,9 @@ func ProjectErrorsTool() Tool {
 				return mcp.NewToolResultError(fmt.Sprintf("error parsing project namespace: %s", errs.JoinMessage(err))), nil
 			}
 
-			runner := projecterrors.New(p, ns)
-			err = runner.Run()
+			runner := projecterrors.New(p)
+			params := projecterrors.NewParams(ns)
+			err = runner.Run(params)
 			if err != nil {
 				return mcp.NewToolResultError(fmt.Sprintf("error executing GraphQL query: %s", errs.JoinMessage(err))), nil
 			}
@@ -92,8 +93,9 @@ func DownloadLogsTool() Tool {
 				return mcp.NewToolResultError(fmt.Sprintf("a URL is required: %s", errs.JoinMessage(err))), nil
 			}
 
-			runner := downloadlogs.New(p, url)
-			err = runner.Run()
+			runner := downloadlogs.New(p)
+			params := downloadlogs.NewParams(url)
+			err = runner.Run(params)
 			if err != nil {
 				return mcp.NewToolResultError(fmt.Sprintf("error downloading logs: %s", errs.JoinMessage(err))), nil
 			}
@@ -131,8 +133,9 @@ func GetIngredientDetailsTool() Tool {
 				return mcp.NewToolResultError(fmt.Sprintf("a namespace is required: %s", errs.JoinMessage(err))), nil
 			}
 
-			runner := ingredientdetails.New(p, name, version, namespace)
-			err = runner.Run()
+			runner := ingredientdetails.New(p)
+			params := ingredientdetails.NewParams(name, version, namespace)
+			err = runner.Run(params)
 			if err != nil {
 				return mcp.NewToolResultError(fmt.Sprintf("error executing GraphQL query: %s", errs.JoinMessage(err))), nil
 			}
@@ -158,8 +161,9 @@ func ListSourceFilesTool() Tool {
 				return mcp.NewToolResultError(fmt.Sprintf("a source URI is required: %s", errs.JoinMessage(err))), nil
 			}
 
-			runner := downloadsource.New(p, sourceUri, "")
-			err = runner.Run()
+			runner := downloadsource.New(p)
+			params := downloadsource.NewParams(sourceUri, "")
+			err = runner.Run(params)
 			if err != nil {
 				return mcp.NewToolResultError(fmt.Sprintf("error downloading logs: %s", errs.JoinMessage(err))), nil
 			}
@@ -191,8 +195,9 @@ func DownloadSourceFileTool() Tool {
 				return mcp.NewToolResultError(fmt.Sprintf("a target file is required: %s", errs.JoinMessage(err))), nil
 			}
 
-			runner := downloadsource.New(p, sourceUri, targetFile)
-			err = runner.Run()
+			runner := downloadsource.New(p)
+			params := downloadsource.NewParams(sourceUri, targetFile)
+			err = runner.Run(params)
 			if err != nil {
 				return mcp.NewToolResultError(fmt.Sprintf("error downloading source file: %s", errs.JoinMessage(err))), nil
 			}

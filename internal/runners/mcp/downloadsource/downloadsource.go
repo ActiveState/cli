@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -21,14 +20,22 @@ import (
 )
 
 type DownloadSourceRunner struct {
-	output     output.Outputer
+	output output.Outputer
+}
+
+func New(p *primer.Values) *DownloadSourceRunner {
+	return &DownloadSourceRunner{
+		output: p.Output(),
+	}
+}
+
+type Params struct {
 	sourceURI  string
 	targetFile string
 }
 
-func New(p *primer.Values, sourceURI string, targetFile string) *DownloadSourceRunner {
-	return &DownloadSourceRunner{
-		output:     p.Output(),
+func NewParams(sourceURI string, targetFile string) *Params {
+	return &Params{
 		sourceURI:  sourceURI,
 		targetFile: targetFile,
 	}
@@ -37,8 +44,8 @@ func New(p *primer.Values, sourceURI string, targetFile string) *DownloadSourceR
 // Download source code from a specified URI (S3 or HTTP/HTTPS) and unpacks it (.tar.gz).
 // If a target file is specified, it will extract that specific file from the archive.
 // Otherwise, it will list the files in the archive.
-func (runner *DownloadSourceRunner) Run() error {
-	parsedURL, err := url.Parse(runner.sourceURI)
+func (runner *DownloadSourceRunner) Run(params *Params) error {
+	parsedURL, err := url.Parse(params.sourceURI)
 	if err != nil {
 		return fmt.Errorf("failed to parse URL: %w", err)
 	}
@@ -62,31 +69,11 @@ func (runner *DownloadSourceRunner) Run() error {
 	}
 	defer reader.Close()
 
-	// Create temporary file
-	tempFile, err := os.CreateTemp("", "download-*")
-	if err != nil {
-		return fmt.Errorf("failed to create temp file: %w", err)
-	}
-	defer os.Remove(tempFile.Name())
-	defer tempFile.Close()
-
-	// Copy downloaded content to temp file
-	_, err = io.Copy(tempFile, reader)
-	if err != nil {
-		return fmt.Errorf("failed to write temp file: %w", err)
-	}
-
-	// Reset file pointer
-	_, err = tempFile.Seek(0, 0)
-	if err != nil {
-		return fmt.Errorf("failed to seek temp file: %w", err)
-	}
-
 	if !strings.HasSuffix(fileName, ".tar.gz") && !strings.HasSuffix(fileName, ".tgz") {
 		return fmt.Errorf("file '%s' is not a .tar.gz file", fileName)
 	}
 
-	err = ProcessTarGz(tempFile, runner.targetFile, runner.output)
+	err = ProcessTarGz(reader, params.targetFile, runner.output)
 	if err != nil {
 		return err
 	}
@@ -151,8 +138,8 @@ func DownloadFromHTTPS(parsedURL *url.URL) (io.ReadCloser, string, error) {
 	return resp.Body, fileName, nil
 }
 
-func ProcessTarGz(file *os.File, targetFile string, output output.Outputer) error {
-	gzReader, err := gzip.NewReader(file)
+func ProcessTarGz(reader io.Reader, targetFile string, output output.Outputer) error {
+	gzReader, err := gzip.NewReader(reader)
 	if err != nil {
 		return fmt.Errorf("failed to create gzip reader: %w", err)
 	}

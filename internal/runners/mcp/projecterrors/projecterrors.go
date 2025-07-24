@@ -21,30 +21,50 @@ import (
 )
 
 type ProjectErrorsRunner struct {
-	auth      *authentication.Auth
-	output    output.Outputer
-	svcModel  *model.SvcModel
-	namespace *project.Namespaced
+	auth     *authentication.Auth
+	output   output.Outputer
+	svcModel *model.SvcModel
 }
 
-func New(p *primer.Values, ns *project.Namespaced) *ProjectErrorsRunner {
+func New(p *primer.Values) *ProjectErrorsRunner {
 	return &ProjectErrorsRunner{
-		auth:      p.Auth(),
-		output:    p.Output(),
-		svcModel:  p.SvcModel(),
-		namespace: ns,
+		auth:     p.Auth(),
+		output:   p.Output(),
+		svcModel: p.SvcModel(),
 	}
 }
 
-func (runner *ProjectErrorsRunner) Run() error {
-	branch, err := model.DefaultBranchForProjectName(runner.namespace.Owner, runner.namespace.Project)
+type Params struct {
+	namespace *project.Namespaced
+}
+
+func NewParams(namespace *project.Namespaced) *Params {
+	return &Params{
+		namespace: namespace,
+	}
+}
+
+type ArtifactOutput struct {
+	Name                  string `json:"name"`
+	Version               string `json:"version"`
+	Namespace             string `json:"namespace"`
+	IsBuildtimeDependency bool   `json:"isBuildtimeDependency"`
+	IsRuntimeDependency   bool   `json:"isRuntimeDependency"`
+	LogURL                string `json:"logURL"`
+	SourceURI             string `json:"sourceURI"`
+	WasFixed              bool   `json:"wasFixed"`
+	IsDependencyError     bool   `json:"isDependencyError"`
+}
+
+func (runner *ProjectErrorsRunner) Run(params *Params) error {
+	branch, err := model.DefaultBranchForProjectName(params.namespace.Owner, params.namespace.Project)
 	if err != nil {
 		return fmt.Errorf("error fetching default branch: %w", err)
 	}
 
 	bpm := buildplanner.NewBuildPlannerModel(runner.auth, runner.svcModel)
 	commit, err := bpm.FetchCommitNoPoll(
-		*branch.CommitID, runner.namespace.Owner, runner.namespace.Project, nil)
+		*branch.CommitID, params.namespace.Owner, params.namespace.Project, nil)
 	if err != nil {
 		return fmt.Errorf("error fetching commit: %w", err)
 	}
@@ -64,18 +84,7 @@ func (runner *ProjectErrorsRunner) Run() error {
 		return fmt.Errorf("error checking dependency errors: %w", err)
 	}
 
-	// Define the output structure and print each artifact's Marshalled JSON.
-	type ArtifactOutput struct {
-		Name                  string `json:"name"`
-		Version               string `json:"version"`
-		Namespace             string `json:"namespace"`
-		IsBuildtimeDependency bool   `json:"isBuildtimeDependency"`
-		IsRuntimeDependency   bool   `json:"isRuntimeDependency"`
-		LogURL                string `json:"logURL"`
-		SourceURI             string `json:"sourceURI"`
-		WasFixed              bool   `json:"wasFixed"`
-		IsDependencyError     bool   `json:"isDependencyError"`
-	}
+	// Print each artifact's Marshalled JSON.
 	for _, artifact := range failedArtifacts {
 		jsonBytes, err := json.Marshal(ArtifactOutput{
 			Name:                  artifact.Name(),

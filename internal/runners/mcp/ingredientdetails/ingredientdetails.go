@@ -11,25 +11,34 @@ import (
 )
 
 type GetIngredientDetailsRunner struct {
-	auth      *authentication.Auth
-	output    output.Outputer
+	auth   *authentication.Auth
+	output output.Outputer
+}
+
+func New(p *primer.Values) *GetIngredientDetailsRunner {
+	return &GetIngredientDetailsRunner{
+		auth:   p.Auth(),
+		output: p.Output(),
+	}
+}
+
+type Params struct {
 	name      string
 	version   string
 	namespace string
 }
 
-func New(p *primer.Values, name string, version string, namespace string) *GetIngredientDetailsRunner {
-	return &GetIngredientDetailsRunner{
-		auth:      p.Auth(),
-		output:    p.Output(),
+func NewParams(name string, version string, namespace string) *Params {
+	return &Params{
 		name:      name,
 		version:   version,
 		namespace: namespace,
 	}
 }
-func (runner *GetIngredientDetailsRunner) Run() error {
+
+func (runner *GetIngredientDetailsRunner) Run(params *Params) error {
 	ingredient, err := model.GetIngredientByNameAndVersion(
-		runner.namespace, runner.name, runner.version, nil, runner.auth)
+		params.namespace, params.name, params.version, nil, runner.auth)
 
 	if err != nil {
 		return fmt.Errorf("error fetching ingredient: %w", err)
