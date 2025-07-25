@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/ActiveState/cli/cmd/state-mcp/internal/toolregistry"
+	"github.com/ActiveState/cli/cmd/state-mcp/internal/registry"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -15,7 +15,7 @@ Fails due to state-svc not being detected when run as regular test,
 works when running with debugger. Problem for another day.
 `)
 	logging.CurrentHandler().SetVerbose(true)
-	mcpHandler := setupServer(string(toolregistry.ToolCategoryDebug))
+	mcpHandler := setupServer(string(registry.CategoryDebug))
 	msg := mcpHandler.Server.HandleMessage(context.Background(), json.RawMessage(`{
 		"jsonrpc": "2.0",
 		"id": 1,
