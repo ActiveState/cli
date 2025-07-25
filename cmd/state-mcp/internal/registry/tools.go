@@ -1,4 +1,4 @@
-package toolregistry
+package registry
 
 import (
 	"context"
@@ -18,7 +18,7 @@ import (
 
 func HelloWorldTool() Tool {
 	return Tool{
-		Category: ToolCategoryDebug,
+		Category: CategoryDebug,
 		Tool: mcp.NewTool(
 			"hello",
 			mcp.WithDescription("Hello world tool"),
@@ -48,7 +48,7 @@ func HelloWorldTool() Tool {
 
 func ProjectErrorsTool() Tool {
 	return Tool{
-		Category: ToolCategoryDebug,
+		Category: CategoryDebug,
 		Tool: mcp.NewTool(
 			"list_project_build_failures",
 			mcp.WithDescription("Retrieves all the failed artifact builds for a specific project"),
@@ -81,7 +81,7 @@ func ProjectErrorsTool() Tool {
 
 func DownloadLogsTool() Tool {
 	return Tool{
-		Category: ToolCategoryDebug,
+		Category: CategoryDebug,
 		Tool: mcp.NewTool(
 			"download_logs",
 			mcp.WithDescription("Downloads logs from a specified URL"),
@@ -109,7 +109,7 @@ func DownloadLogsTool() Tool {
 
 func GetIngredientDetailsTool() Tool {
 	return Tool{
-		Category: ToolCategoryDebug,
+		Category: CategoryDebug,
 		Tool: mcp.NewTool(
 			"get_ingredient_details",
 			mcp.WithDescription("Retrieves the details for a specified ingredient, including its dependencies, status, and source URI"),
@@ -149,7 +149,7 @@ func GetIngredientDetailsTool() Tool {
 
 func ListSourceFilesTool() Tool {
 	return Tool{
-		Category: ToolCategoryDebug,
+		Category: CategoryDebug,
 		Tool: mcp.NewTool(
 			"list_source_code_files",
 			mcp.WithDescription("Lists source code files from a specified source URI (HTTPS or S3)"),
@@ -177,7 +177,7 @@ func ListSourceFilesTool() Tool {
 
 func DownloadSourceFileTool() Tool {
 	return Tool{
-		Category: ToolCategoryDebug,
+		Category: CategoryDebug,
 		Tool: mcp.NewTool(
 			"download_source_code_file",
 			mcp.WithDescription("Downloads a specific source code file from a specified archive URI"),
@@ -211,7 +211,7 @@ func DownloadSourceFileTool() Tool {
 
 func GetInstructionsTool() Tool {
 	return Tool{
-		Category: ToolCategoryDebug,
+		Category: CategoryDebug,
 		Tool: mcp.NewTool(
 			"get_fix_instructions",
 			mcp.WithDescription("Retrieves the fix format and instructions in which fixes must be provided"),

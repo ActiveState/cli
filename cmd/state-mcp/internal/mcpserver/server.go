@@ -16,7 +16,7 @@ type ToolHandlerFunc func(context.Context, *primer.Values, mcp.CallToolRequest) 
 
 // Handler wraps the MCP server and provides methods for adding tools and resources
 type Handler struct {
-	Server *server.MCPServer
+	Server      *server.MCPServer
 	primeGetter func() (*primer.Values, func() error, error)
 }
 
@@ -27,7 +27,7 @@ func New(primeGetter func() (*primer.Values, func() error, error)) *Handler {
 	)
 
 	mcpHandler := &Handler{
-		Server: s,
+		Server:      s,
 		primeGetter: primeGetter,
 	}
 
@@ -53,6 +53,18 @@ func (m *Handler) AddResource(resource mcp.Resource, handler server.ResourceHand
 	})
 }
 
+// addPrompt adds a prompt to the MCP server with error handling and logging
+func (m *Handler) AddPrompt(prompt mcp.Prompt, handler server.PromptHandlerFunc) {
+	m.Server.AddPrompt(prompt, func(ctx context.Context, request mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
+		r, err := handler(ctx, request)
+		if err != nil {
+			logging.Error("%s: Error handling prompt request: %v", prompt.Name, err)
+			return nil, errs.Wrap(err, "Failed to handle prompt request")
+		}
+		return r, nil
+	})
+}
+
 // addTool adds a tool to the MCP server with error handling and logging
 func (m *Handler) AddTool(tool mcp.Tool, handler ToolHandlerFunc) {
 	m.Server.AddTool(tool, func(ctx context.Context, request mcp.CallToolRequest) (r *mcp.CallToolResult, rerr error) {
@@ -70,5 +82,3 @@ func (m *Handler) AddTool(tool mcp.Tool, handler ToolHandlerFunc) {
 		return r, nil
 	})
 }
-
-

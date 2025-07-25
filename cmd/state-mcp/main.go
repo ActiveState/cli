@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state-mcp/internal/mcpserver"
-	"github.com/ActiveState/cli/cmd/state-mcp/internal/toolregistry"
+	"github.com/ActiveState/cli/cmd/state-mcp/internal/registry"
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/logging"
 )
@@ -45,10 +45,15 @@ func main() {
 func setupServer(categories ...string) *mcpserver.Handler {
 	mcps := mcpserver.New(newPrimer)
 
-	registry := toolregistry.New()
+	registry := registry.New()
 	tools := registry.GetTools(categories...)
 	for _, tool := range tools {
 		mcps.AddTool(tool.Tool, tool.Handler)
+	}
+
+	prompts := registry.GetPrompts(categories...)
+	for _, prompt := range prompts {
+		mcps.AddPrompt(prompt.Prompt, prompt.Handler)
 	}
 
 	return mcps
