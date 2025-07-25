@@ -10,7 +10,7 @@ func ProjectPrompt() Prompt {
 	return Prompt{
 		Category: CategoryDebug,
 		Prompt: mcp.NewPrompt("project",
-			mcp.WithPromptDescription("A prompt to debug a project build failures"),
+			mcp.WithPromptDescription("A prompt to debug project build failures"),
 			mcp.WithArgument("prompt",
 				mcp.ArgumentDescription("the user prompt with project information"),
 			),
@@ -19,7 +19,7 @@ func ProjectPrompt() Prompt {
 			prompt := request.Params.Arguments["prompt"]
 
 			return mcp.NewGetPromptResult(
-				"A prompt to debug a project build failures",
+				"A prompt to debug project build failures",
 				[]mcp.PromptMessage{
 					mcp.NewPromptMessage(
 						mcp.RoleAssistant,
@@ -55,7 +55,7 @@ func IngredientPrompt() Prompt {
 	return Prompt{
 		Category: CategoryDebug,
 		Prompt: mcp.NewPrompt("ingredient",
-			mcp.WithPromptDescription("A prompt to debug a ingredient build failure"),
+			mcp.WithPromptDescription("A prompt to debug an ingredient build failure"),
 			mcp.WithArgument("prompt",
 				mcp.ArgumentDescription("the user prompt with ingredient information"),
 			),
@@ -64,7 +64,7 @@ func IngredientPrompt() Prompt {
 			prompt := request.Params.Arguments["prompt"]
 
 			return mcp.NewGetPromptResult(
-				"A prompt to debug a project build failures",
+				"A prompt to debug ingredient build failures",
 				[]mcp.PromptMessage{
 					mcp.NewPromptMessage(
 						mcp.RoleAssistant,

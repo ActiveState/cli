@@ -58,7 +58,6 @@ func (m *Handler) AddPrompt(prompt mcp.Prompt, handler server.PromptHandlerFunc)
 	m.Server.AddPrompt(prompt, func(ctx context.Context, request mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
 		r, err := handler(ctx, request)
 		if err != nil {
-			logging.Error("%s: Error handling prompt request: %v", prompt.Name, err)
 			return nil, errs.Wrap(err, "Failed to handle prompt request")
 		}
 		return r, nil
