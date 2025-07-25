@@ -25,6 +25,11 @@ func New() *Registry {
 
 	r.RegisterTool(HelloWorldTool())
 	r.RegisterTool(ProjectErrorsTool())
+	r.RegisterTool(DownloadLogsTool())
+	r.RegisterTool(GetInstructionsTool())
+	r.RegisterTool(ListSourceFilesTool())
+	r.RegisterTool(DownloadSourceFileTool())
+	r.RegisterTool(GetIngredientDetailsTool())
 
 	return r
 }
