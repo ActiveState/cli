@@ -3,11 +3,15 @@ package reqsimport
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"path"
+	"path/filepath"
 	"time"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -63,16 +67,23 @@ func Init() *ReqsImport {
 
 // Changeset posts requirements data to a backend service and returns a
 // Changeset that can be committed to a project.
-func (ri *ReqsImport) Changeset(data []byte, lang string) ([]*mono_models.CommitChangeEditable, error) {
+func (ri *ReqsImport) Changeset(data []byte, lang, filename, namespace string) ([]*mono_models.CommitChangeEditable, error) {
 	reqPayload := &TranslationReqMsg{
-		Data:     string(data),
-		Language: lang,
+		Data:                string(data),
+		Language:            lang,
+		IncludeLanguageCore: false,
+		NamespaceOverride:   namespace,
+		Filename:            filepath.Base(filename),
+		Unformatted:         false,
 	}
 	respPayload := &TranslationRespMsg{}
 
 	err := postJSON(ri.client, ri.opts.ReqsvcURL, reqPayload, respPayload)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, ErrBadInput) && respPayload.Message != "" {
+			return nil, locale.NewInputError("API responded with error: " + respPayload.Message)
+		}
+		return nil, errs.Wrap(err, "postJSON failed")
 	}
 
 	if len(respPayload.LineErrs) > 0 {
@@ -85,9 +96,12 @@ func (ri *ReqsImport) Changeset(data []byte, lang string) ([]*mono_models.Commit
 // TranslationReqMsg represents the message sent to the requirements
 // translation service.
 type TranslationReqMsg struct {
-	Data        string `json:"requirements"`
-	Language    string `json:"language"`
-	Unformatted bool   `json:"unformatted"`
+	Data                string `json:"requirements"`
+	Language            string `json:"language"`
+	IncludeLanguageCore bool   `json:"includeLanguageCore"`
+	NamespaceOverride   string `json:"namespaceOverride"`
+	Filename            string `json:"filename"`
+	Unformatted         bool   `json:"unformatted"`
 }
 
 // TranslationRespMsg represents the message returned by the requirements
@@ -95,6 +109,7 @@ type TranslationReqMsg struct {
 type TranslationRespMsg struct {
 	Changeset []*mono_models.CommitChangeEditable `json:"changeset,omitempty"`
 	LineErrs  []TranslationLineError              `json:"errors,omitempty"`
+	Message   string                              `json:"message,omitempty"`
 }
 
 // TranslationLineError represents an error reported by the requirements
@@ -129,6 +144,8 @@ func (e *TranslationResponseError) Error() string {
 	return locale.Tr("reqsvc_err_line_errors", msgs)
 }
 
+var ErrBadInput = errs.New("Bad input")
+
 func postJSON(client *http.Client, url string, reqPayload, respPayload interface{}) error {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(reqPayload); err != nil {
@@ -137,10 +154,22 @@ func postJSON(client *http.Client, url string, reqPayload, respPayload interface
 
 	logging.Debug("POSTing JSON")
 	resp, err := client.Post(url, jsonContentType, &buf)
+	defer resp.Body.Close() // nolint
 	if err != nil {
-		return err
+		body, _ := io.ReadAll(resp.Body)
+		return errs.Wrap(err, "Could not post JSON: %s", body)
 	}
-	defer resp.Body.Close() //nolint
+
+	if resp.StatusCode == 400 {
+		err2 := json.NewDecoder(resp.Body).Decode(&respPayload)
+		if err2 != nil {
+			return errs.Wrap(ErrBadInput, "Could not decode response body")
+		}
+		return ErrBadInput
+	}
+	if resp.StatusCode > 299 {
+		return errs.New("HTTP error: %s", resp.Status)
+	}
 
 	return json.NewDecoder(resp.Body).Decode(&respPayload)
 }

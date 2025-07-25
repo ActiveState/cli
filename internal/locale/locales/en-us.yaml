@@ -597,6 +597,10 @@ package_search_flag_exact-term_description:
   other: Ensures that search results match search term exactly
 package_import_flag_filename_description:
   other: The file to import
+package_import_flag_namespace_description:
+  other: The namespace targeted for the import. Leave blank to auto detect based on filename.
+package_import_flag_language_description:
+  other: The language we're importing data from, this determines the format of the import. Leave blank to auto-detect based on filename.
 commit_message_added:
   other: "Added: {{.V0}}"
 commit_message_removed:

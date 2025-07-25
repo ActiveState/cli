@@ -140,7 +140,18 @@ func newImportCommand(prime *primer.Values, globals *globalOptions) *captain.Com
 		locale.Tl("package_import_title", "Importing Packages"),
 		locale.T("package_import_cmd_description"),
 		prime,
-		[]*captain.Flag{},
+		[]*captain.Flag{
+			{
+				Name:        "language",
+				Description: locale.T("package_import_flag_language_description"),
+				Value:       &params.Language,
+			},
+			{
+				Name:        "namespace",
+				Description: locale.T("package_import_flag_namespace_description"),
+				Value:       &params.Namespace,
+			},
+		},
 		[]*captain.Argument{
 			{
 				Name:        locale.Tl("import_file", "File"),
