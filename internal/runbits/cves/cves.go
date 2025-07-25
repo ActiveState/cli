@@ -20,6 +20,7 @@ import (
 )
 
 func init() {
+	configMediator.RegisterOption(constants.SecurityReportingConfig, configMediator.Bool, true)
 	configMediator.RegisterOption(constants.SecurityPromptConfig, configMediator.Bool, true)
 	severities := configMediator.NewEnum([]string{
 		vulnModel.SeverityCritical,
@@ -120,6 +121,10 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 }
 
 func (c *CveReport) shouldSkipReporting(changeset buildplan.ArtifactChangeset) bool {
+	if !c.prime.Config().GetBool(constants.SecurityReportingConfig) {
+		return true
+	}
+	
 	if !c.prime.Auth().Authenticated() {
 		return true
 	}

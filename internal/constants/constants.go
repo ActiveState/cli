@@ -400,6 +400,9 @@ const ReportAnalyticsConfig = "report.analytics"
 // PreferredGlibcVersionConfig is the config key used to determine the preferred glibc version
 const PreferredGlibcVersionConfig = "runtime.preferred.glibc"
 
+// SecurityReportingConfig is the config key used to determine if we will report security information (ie. CVEs)
+const SecurityReportingConfig = "security.reporting"
+
 // SecurityPromptConfig is the config key used to determine if we will prompt the user for security related actions
 const SecurityPromptConfig = "security.prompt.enabled"
 
