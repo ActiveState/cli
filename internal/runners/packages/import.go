@@ -34,16 +34,11 @@ type Confirmer interface {
 	Confirm(title, msg string, defaultOpt *bool) (bool, error)
 }
 
-// ChangesetProvider describes the behavior required to convert some file data
-// into a changeset.
-type ChangesetProvider interface {
-	Changeset(contents []byte, lang string) (model.Changeset, error)
-}
-
 // ImportRunParams tracks the info required for running Import.
 type ImportRunParams struct {
 	FileName       string
 	Language       string
+	Namespace      string
 	NonInteractive bool
 }
 
@@ -88,8 +83,9 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	out := i.prime.Output()
 	out.Notice(locale.Tr("operating_message", proj.NamespaceString(), proj.Dir()))
 
-	if params.FileName == "" {
-		params.FileName = defaultImportFile
+	filename := params.FileName
+	if filename == "" {
+		filename = defaultImportFile
 	}
 
 	localCommitId, err := localcommit.Get(proj.Dir())
@@ -110,7 +106,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		}
 	}()
 
-	changeset, err := fetchImportChangeset(reqsimport.Init(), params.FileName, language.Name)
+	changeset, err := fetchImportChangeset(reqsimport.Init(), filename, language.Name, params.Namespace)
 	if err != nil {
 		return errs.Wrap(err, "Could not import changeset")
 	}
@@ -170,13 +166,13 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	return nil
 }
 
-func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model.Changeset, error) {
+func fetchImportChangeset(reqImport *reqsimport.ReqsImport, file string, lang string, namespace string) (model.Changeset, error) {
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, locale.WrapExternalError(err, "err_reading_changeset_file", "Cannot read import file: {{.V0}}", err.Error())
 	}
 
-	changeset, err := cp.Changeset(data, lang)
+	changeset, err := reqImport.Changeset(data, lang, file, namespace)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_obtaining_change_request", "Could not process change set: {{.V0}}.", api.ErrorMessageFromPayload(err))
 	}
