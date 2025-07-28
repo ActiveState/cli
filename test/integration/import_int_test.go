@@ -145,6 +145,28 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 	ts.IgnoreLogErrors()
 }
 
+func (suite *ImportIntegrationTestSuite) TestImportOverrideNamespace() {
+	suite.OnlyRunForTags(tagsuite.Import)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+
+	reqsFilePath := filepath.Join(ts.Dirs.Work, reqsFileName)
+
+	ts.PrepareFile(reqsFilePath, reqsData)
+
+	cp := ts.Spawn("import", "requirements.txt", "--namespace", "language/perl")
+	// Error handling on this is poor atm, but this is currently the expected behavior
+	// Partial solves and better error handling will smooth this out in the long term
+	cp.Expect("Because root depends on Feature|language/perl")
+	cp.ExpectNotExitCode(0, e2e.RuntimeSolvingTimeoutOpt)
+
+	cp = ts.Spawn("history")
+	cp.Expect("namespace: language/perl")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *ImportIntegrationTestSuite) TestImportCycloneDx() {
 	suite.OnlyRunForTags(tagsuite.Import)
 	ts := e2e.New(suite.T(), false)
