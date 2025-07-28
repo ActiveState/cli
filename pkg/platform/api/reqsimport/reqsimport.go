@@ -99,7 +99,7 @@ type TranslationReqMsg struct {
 	Data                string `json:"requirements"`
 	Language            string `json:"language"`
 	IncludeLanguageCore bool   `json:"includeLanguageCore"`
-	NamespaceOverride   string `json:"namespaceOverride"`
+	NamespaceOverride   string `json:"namespaceOverride,omitempty"`
 	Filename            string `json:"filename"`
 	Unformatted         bool   `json:"unformatted"`
 }

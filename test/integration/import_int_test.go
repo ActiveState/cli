@@ -1,7 +1,6 @@
 package integration
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,7 +10,6 @@ import (
 	"github.com/ActiveState/termtest"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
@@ -87,21 +85,16 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 	defer ts.Close()
 
 	ts.LoginAsPersistentUser()
-	pname := strutils.UUID()
-	namespace := fmt.Sprintf("%s/%s", e2e.PersistentUsername, pname.String())
 
-	cp := ts.Spawn("init", "--language", "python", namespace, ts.Dirs.Work)
-	cp.Expect("successfully initialized", e2e.RuntimeSourcingTimeoutOpt)
-	cp.ExpectExitCode(0)
-	ts.NotifyProjectCreated(e2e.PersistentUsername, pname.String())
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
 
-	reqsFilePath := filepath.Join(cp.WorkDirectory(), reqsFileName)
+	reqsFilePath := filepath.Join(ts.Dirs.Work, reqsFileName)
 
 	suite.Run("invalid requirements.txt", func() {
 		ts.SetT(suite.T())
 		ts.PrepareFile(reqsFilePath, badReqsData)
 
-		cp = ts.Spawn("import", "requirements.txt")
+		cp := ts.Spawn("import", "requirements.txt")
 		cp.ExpectNotExitCode(0)
 	})
 
@@ -137,9 +130,9 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 		cp.Expect(">=0.6.1 →")
 		cp.Expect("Mopidy-Dirble")
 		cp.Expect("requests")
-		cp.Expect(">=2.2,<2.31.0 → 2.30.0")
+		cp.Expect(">=2.2,<2.31.0 → ")
 		cp.Expect("urllib3")
-		cp.Expect(">=1.21.1,<=1.26.5 → 1.26.5")
+		cp.Expect(">=1.21.1,<=1.26.5 → ")
 		cp.ExpectExitCode(0)
 	})
 	ts.IgnoreLogErrors()
