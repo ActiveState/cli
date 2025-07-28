@@ -190,7 +190,7 @@ func VersionStringToRequirements(version string) ([]types.VersionRequirement, er
 		// Ask the Platform to translate a string like ">=1.2,<1.3" into a list of requirements.
 		// Note that:
 		// - The given requirement name does not matter; it is not looked up.
-		changeset, err := reqsimport.Init().Changeset([]byte("name "+version), "")
+		changeset, err := reqsimport.Init().Changeset([]byte("name "+version), "", "", "")
 		if err != nil {
 			return nil, locale.WrapInputError(err, "err_invalid_version_string", "Invalid version string")
 		}
