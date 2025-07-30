@@ -19,6 +19,7 @@ func init() {
 	availableEcosystems = []func() ecosystem{
 		func() ecosystem { return &ecosys.Java{} },
 		func() ecosystem { return &ecosys.JavaScript{} },
+		func() ecosystem { return &ecosys.Rust{} },
 	}
 }
 
