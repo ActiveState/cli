@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/org"
@@ -39,6 +41,7 @@ type ImportRunParams struct {
 	FileName       string
 	Language       string
 	Namespace      string
+	Timestamp      captain.TimeValue
 	NonInteractive bool
 }
 
@@ -93,12 +96,6 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		return locale.WrapError(err, "package_err_cannot_obtain_commit")
 	}
 
-	auth := i.prime.Auth()
-	language, err := model.LanguageByCommit(localCommitId, auth)
-	if err != nil {
-		return locale.WrapError(err, "err_import_language", "Unable to get language from project")
-	}
-
 	pg := output.StartSpinner(i.prime.Output(), locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
 	defer func() {
 		if pg != nil {
@@ -106,11 +103,12 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		}
 	}()
 
-	changeset, err := fetchImportChangeset(reqsimport.Init(), filename, language.Name, params.Namespace)
+	changeset, err := fetchImportChangeset(reqsimport.Init(), filename, params.Language, params.Namespace)
 	if err != nil {
 		return errs.Wrap(err, "Could not import changeset")
 	}
 
+	auth := i.prime.Auth()
 	bp := buildplanner.NewBuildPlannerModel(auth, i.prime.SvcModel())
 	bs, err := bp.GetBuildScript(localCommitId.String())
 	if err != nil {
@@ -120,6 +118,29 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	if err := i.applyChangeset(changeset, bs); err != nil {
 		return locale.WrapError(err, "err_cannot_apply_changeset", "Could not apply changeset")
 	}
+
+	// Evaluate if dynamic
+	if params.Timestamp.Dynamic() {
+		if err := bs.SetDynamic(true); err != nil {
+			return errs.Wrap(err, "Setting dynamic failed")
+		}
+		// Evaluate with dynamic imports first. Then commit.
+		err := bp.Evaluate(proj.Owner(), proj.Name(), bs)
+		if err != nil {
+			return errs.Wrap(err, "Unable to dynamically evaluate build expression")
+		}
+		// StageCommit needs to be called with "solve" node
+		if err := bs.SetDynamic(false); err != nil {
+			return errs.Wrap(err, "Setting dynamic failed")
+		}
+	}
+
+	// Set timestamp
+	ts, err := commits_runbit.ExpandTimeForBuildScript(&params.Timestamp, i.prime.Auth(), bs)
+	if err != nil {
+		return errs.Wrap(err, "Unable to get timestamp from params")
+	}
+	bs.SetAtTime(ts, true)
 
 	msg := locale.T("commit_reqstext_message")
 	stagedCommit, err := bp.StageCommit(buildplanner.StageCommitParams{
