@@ -4,14 +4,15 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/go-openapi/strfmt"
 )
 
-func Evaluate(organization, project string, expr []byte, atTime *time.Time, dynamic bool, target string) *evaluate {
+func Evaluate(organization, project string, expr []byte, sessionID strfmt.UUID, atTime *time.Time, dynamic bool) *evaluate {
 	eval := &evaluate{map[string]interface{}{
 		"organization": organization,
 		"project":      project,
 		"expr":         string(expr),
-		"target":       target,
+		"sessionId":    sessionID,
 	}}
 
 	var timestamp *string
@@ -33,13 +34,14 @@ type evaluate struct {
 
 func (b *evaluate) Query() string {
 	return `
-query ($organization: String!, $project: String!, $expr: BuildExpr!, $atTime: AtTime, $target: String) {
+query ($organization: String!, $project: String!, $expr: BuildExpr!, $atTime: AtTime, $sessionId: ID) {
 	project(organization: $organization, project: $project) {
 		... on Project {
-			evaluate(expr: $expr, atTime: $atTime, target: $target) {
+			evaluate(expr: $expr, atTime: $atTime, sessionId: $sessionId) {
 				... on Build {
 					__typename
 					status
+					sessionId
 				}
 				... on Error {
 					__typename
