@@ -151,6 +151,11 @@ func newImportCommand(prime *primer.Values, globals *globalOptions) *captain.Com
 				Description: locale.T("package_import_flag_namespace_description"),
 				Value:       &params.Namespace,
 			},
+			{
+				Name:        "ts",
+				Description: locale.T("package_flag_ts_description"),
+				Value:       &params.Timestamp,
+			},
 		},
 		[]*captain.Argument{
 			{

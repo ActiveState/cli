@@ -97,7 +97,7 @@ func (ri *ReqsImport) Changeset(data []byte, lang, filename, namespace string) (
 // translation service.
 type TranslationReqMsg struct {
 	Data                string `json:"requirements"`
-	Language            string `json:"language"`
+	Language            string `json:"language,omitempty"`
 	IncludeLanguageCore bool   `json:"includeLanguageCore"`
 	NamespaceOverride   string `json:"namespaceOverride,omitempty"`
 	Filename            string `json:"filename"`
