@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/termtest"
 )
@@ -92,6 +93,49 @@ func (suite *CommitIntegrationTestSuite) TestCommitAtTimeChange() {
 	revisionTime, err := time.Parse(time.RFC3339, dateTime)
 	suite.Require().NoError(err)
 	cp.Expect(revisionTime.Format(time.RFC822))
+	cp.ExpectExitCode(0)
+}
+
+func (suite *CommitIntegrationTestSuite) TestCommitTimestampNow() {
+	ts, err := model.FetchLatestRevisionTimeStamp(nil)
+	suite.Require().NoError(err)
+	suite.testCommitTimestamp("now", ts)
+}
+
+func (suite *CommitIntegrationTestSuite) TestCommitTimestampPresent() {
+	ts, err := model.FetchLatestTimeStamp(nil)
+	suite.Require().NoError(err)
+	suite.testCommitTimestamp("present", ts)
+}
+
+func (suite *CommitIntegrationTestSuite) TestCommitTimestampCustom() {
+	ts, err := time.Parse(time.RFC3339, "2025-06-21T12:34:56Z")
+	suite.Require().NoError(err)
+	suite.testCommitTimestamp("2025-06-21T12:34:56Z", ts)
+}
+
+func (suite *CommitIntegrationTestSuite) testCommitTimestamp(input string, expected time.Time) {
+	suite.OnlyRunForTags(tagsuite.Commit, tagsuite.BuildScripts)
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	ts.PrepareProjectAndBuildScript("ActiveState-CLI/Commit-Test-A", "7a1b416e-c17f-4d4a-9e27-cbad9e8f5655")
+
+	proj, err := project.FromPath(ts.Dirs.Work)
+	suite.NoError(err, "Error loading project")
+
+	_, err = buildscript_runbit.ScriptFromProject(proj)
+	suite.Require().NoError(err) // verify validity
+
+	cp := ts.Spawn("commit", "--ts", input)
+	cp.Expect("successfully created")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("history")
+	cp.Expect("Revision")
+	// Assert time.RFC822 minus the timezone because Go seems to parse this inconsistently
+	// ie. I'm getting +0000 instead of a named timezone
+	cp.Expect(expected.Format("02 Jan 06 15:04"))
 	cp.ExpectExitCode(0)
 }
 

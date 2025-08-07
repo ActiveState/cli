@@ -5,12 +5,18 @@ import (
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
+
+type ErrInvalidTimestamp struct {
+	error
+	TimeValue *captain.TimeValue
+}
 
 // ExpandTime returns a timestamp based on the given "--ts" value.
 // If the timestamp was already defined, we just return it.
@@ -22,7 +28,7 @@ func ExpandTime(ts *captain.TimeValue, auth *authentication.Auth) (time.Time, er
 		return *ts.Time, nil
 	}
 
-	if ts != nil && ts.Now() {
+	if ts != nil && ts.IsNow() {
 		latest, err := model.FetchLatestRevisionTimeStamp(auth)
 		if err != nil {
 			return time.Time{}, errs.Wrap(err, "Unable to determine latest revision time")
@@ -30,12 +36,21 @@ func ExpandTime(ts *captain.TimeValue, auth *authentication.Auth) (time.Time, er
 		return latest, nil
 	}
 
-	latest, err := model.FetchLatestTimeStamp(auth)
-	if err != nil {
-		return time.Time{}, errs.Wrap(err, "Unable to fetch latest Platform timestamp")
+	if ts != nil && ts.IsPresent() {
+		latest, err := model.FetchLatestTimeStamp(auth)
+		if err != nil {
+			return time.Time{}, errs.Wrap(err, "Unable to fetch latest Platform timestamp")
+		}
+		return latest, nil
 	}
 
-	return latest, nil
+	return time.Now(), errs.Pack(
+		locale.NewInputError("err_invalid_timestamp", "", ts.String()),
+		ErrInvalidTimestamp{
+			errs.New("Invalid timestamp provided: %s", ts.String()),
+			ts,
+		},
+	)
 }
 
 // ExpandTimeForProject is the same as ExpandTime except that it ensures the returned time is either the same or

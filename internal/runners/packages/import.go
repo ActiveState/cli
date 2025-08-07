@@ -120,7 +120,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	}
 
 	// Evaluate if dynamic
-	if params.Timestamp.Dynamic() {
+	if params.Timestamp.IsDynamic() {
 		if err := bs.SetDynamic(true); err != nil {
 			return errs.Wrap(err, "Setting dynamic failed")
 		}
