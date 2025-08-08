@@ -141,7 +141,7 @@ func (i *Install) Run(params Params) (rerr error) {
 		}
 
 		// Resolve requirements
-		reqs, err = i.resolveRequirements(params.Packages, ts, languages, params.Timestamp.Dynamic())
+		reqs, err = i.resolveRequirements(params.Packages, ts, languages, params.Timestamp.IsDynamic())
 		if err != nil {
 			return errs.Wrap(err, "Unable to resolve requirements")
 		}
@@ -153,7 +153,7 @@ func (i *Install) Run(params Params) (rerr error) {
 
 	// Prepare updated buildscript
 	script := oldCommit.BuildScript()
-	if err := prepareBuildScript(script, reqs, ts, params.Timestamp.Dynamic()); err != nil {
+	if err := prepareBuildScript(script, reqs, ts, params.Timestamp.IsDynamic()); err != nil {
 		return errs.Wrap(err, "Could not prepare build script")
 	}
 

@@ -257,11 +257,15 @@ func (p *PackagesValueNoVersion) Type() string {
 	return "packages"
 }
 
+const (
+	tsNow     = "now"     // Bleeding edge - ie. time of most recent revision
+	tsDynamic = "dynamic" // Beyond bleeding edge - ie. pull in ingredients as needed
+	tsPresent = "present" // Platform present - ie. when BE moved the timestamp forward
+)
+
 type TimeValue struct {
-	raw     string
-	Time    *time.Time
-	now     bool
-	dynamic bool
+	raw  string
+	Time *time.Time
 }
 
 var _ FlagMarshaler = &TimeValue{}
@@ -272,15 +276,13 @@ func (u *TimeValue) String() string {
 
 func (u *TimeValue) Set(v string) error {
 	u.raw = v
-	if v != "now" && v != "dynamic" {
+	if v != tsNow && v != tsDynamic && v != tsPresent {
 		tsv, err := time.Parse(time.RFC3339, v)
 		if err != nil {
 			return locale.WrapInputError(err, "timeflag_format", "Invalid timestamp: Should be RFC3339 formatted.")
 		}
 		u.Time = &tsv
 	}
-	u.now = v == "now"
-	u.dynamic = v == "dynamic"
 	return nil
 }
 
@@ -288,12 +290,20 @@ func (u *TimeValue) Type() string {
 	return "timestamp"
 }
 
-func (u *TimeValue) Now() bool {
-	return u.now
+func (u *TimeValue) IsValid() bool {
+	return u.raw != "" || u.Time != nil
 }
 
-func (u *TimeValue) Dynamic() bool {
-	return u.dynamic
+func (u *TimeValue) IsNow() bool {
+	return u.raw == tsNow
+}
+
+func (u *TimeValue) IsDynamic() bool {
+	return u.raw == tsDynamic
+}
+
+func (u *TimeValue) IsPresent() bool {
+	return u.raw == tsPresent || u.raw == ""
 }
 
 type IntValue struct {

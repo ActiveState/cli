@@ -3,12 +3,14 @@ package commit
 import (
 	"errors"
 
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
@@ -31,12 +33,17 @@ type Commit struct {
 	prime primeable
 }
 
+type Params struct {
+	Timestamp captain.TimeValue
+}
+
 func New(p primeable) *Commit {
 	return &Commit{p}
 }
 
 func rationalizeError(err *error) {
 	var buildPlannerErr *bpResp.BuildPlannerError
+	var invalidTimestampErr commits_runbit.ErrInvalidTimestamp
 
 	switch {
 	case err == nil:
@@ -57,10 +64,13 @@ func rationalizeError(err *error) {
 	case errors.As(*err, &invalidDepValueType{}):
 		*err = errs.WrapUserFacing(*err, locale.T("err_commit_invalid_dep_value_type"), errs.SetInput())
 
+	case errors.As(*err, &invalidTimestampErr):
+		*err = errs.WrapUserFacing(*err, locale.Tr("err_invalid_timestamp", invalidTimestampErr.TimeValue.String()), errs.SetInput())
+
 	}
 }
 
-func (c *Commit) Run() (rerr error) {
+func (c *Commit) Run(params *Params) (rerr error) {
 	defer rationalizeError(&rerr)
 
 	proj := c.prime.Project()
@@ -75,6 +85,15 @@ func (c *Commit) Run() (rerr error) {
 	script, err := buildscript_runbit.ScriptFromProject(proj)
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
+	}
+
+	// Set timestamp
+	if params.Timestamp.IsValid() {
+		ts, err := commits_runbit.ExpandTimeForBuildScript(&params.Timestamp, c.prime.Auth(), script)
+		if err != nil {
+			return errs.Wrap(err, "Unable to get timestamp from params")
+		}
+		script.SetAtTime(ts, true)
 	}
 
 	for _, fc := range script.FunctionCalls("ingredient") {
