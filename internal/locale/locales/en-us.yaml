@@ -588,7 +588,7 @@ namespace_list_flag_project_description:
 package_search_flag_ns_description:
   other: The namespace to search within.
 package_flag_ts_description:
-  other: The timestamp at which you want to query. Can be either 'now', 'present' or RFC3339 formatted timestamp.
+  other: The timestamp at which you want to query. Can be either 'now' (bleeding edge), 'present' (platform present), 'dynamic' (pull in ingredients as needed), or RFC3339 formatted timestamp.
 package_flag_rev_description:
   other: The revision you want to use. This ensures you get this exact revision and nothing else.
 package_search_flag_language_description:
@@ -602,7 +602,7 @@ package_import_flag_namespace_description:
 package_import_flag_language_description:
   other: The language we're importing data from, this determines the format of the import. Leave blank to auto-detect based on filename.
 commit_flag_ts_description:
-  other: The timestamp you want to commit with. Can be either 'now', 'present' or RFC3339 formatted timestamp
+  other: The timestamp you want to commit with. Can be either 'now' (bleeding edge), 'present' (platform present), 'dynamic' (pull in ingredients as needed), or RFC3339 formatted timestamp
 commit_message_added:
   other: "Added: {{.V0}}"
 commit_message_removed:

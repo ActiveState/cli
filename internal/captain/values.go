@@ -258,9 +258,9 @@ func (p *PackagesValueNoVersion) Type() string {
 }
 
 const (
-	tsNow     = "now"
-	tsDynamic = "dynamic"
-	tsPresent = "present"
+	tsNow     = "now"     // Bleeding edge - ie. time of most recent revision
+	tsDynamic = "dynamic" // Beyond bleeding edge - ie. pull in ingredients as needed
+	tsPresent = "present" // Platform present - ie. when BE moved the timestamp forward
 )
 
 type TimeValue struct {
