@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -34,7 +35,7 @@ func (e *JavaScript) Add(artifact *buildplan.Artifact, artifactSrcPath string) (
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to read artifact source directory")
 	}
-	var packageName string
+	packageName := artifact.Name()
 	for _, file := range files {
 		if file.Name() == "runtime.json" {
 			err = injectEnvVar(file.AbsolutePath(), "NPM_CONFIG_PREFIX", "${INSTALLDIR}/usr")
@@ -47,7 +48,14 @@ func (e *JavaScript) Add(artifact *buildplan.Artifact, artifactSrcPath string) (
 		if ext != ".tar.gz" && ext != ".tgz" {
 			continue
 		}
-		packageName = file.Name()[:len(file.Name())-len(ext)]
+		if !strings.HasPrefix(file.Name(), packageName) {
+			// A vast majority of the time, the installed package name is the artifact name.
+			// When this is not the case, extract the package name from the file name. The file name is
+			// of the form <name>-<version>.tar.gz, so extract the <name> part.
+			if i := strings.LastIndex(file.Name(), "-"); i != -1 {
+				packageName = file.Name()[:i]
+			}
+		}
 		e.packages = append(e.packages, file.AbsolutePath())
 	}
 	installedDir := filepath.Join(nodeModulesDir, packageName) // Apply() will install here
