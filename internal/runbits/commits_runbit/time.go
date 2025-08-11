@@ -36,7 +36,7 @@ func ExpandTime(ts *captain.TimeValue, auth *authentication.Auth) (time.Time, er
 		return latest, nil
 	}
 
-	if ts != nil && ts.IsPresent() {
+	if ts == nil || ts.IsPresent() {
 		latest, err := model.FetchLatestTimeStamp(auth)
 		if err != nil {
 			return time.Time{}, errs.Wrap(err, "Unable to fetch latest Platform timestamp")
