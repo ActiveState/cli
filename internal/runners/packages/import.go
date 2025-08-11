@@ -129,7 +129,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		if err != nil {
 			return errs.Wrap(err, "Unable to dynamically evaluate build expression")
 		}
-		// StageCommit needs to be called with "solve" node
+		// StageCommitAndPoll needs to be called with "solve" node
 		if err := bs.SetDynamic(false); err != nil {
 			return errs.Wrap(err, "Setting dynamic failed")
 		}
@@ -143,7 +143,7 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	bs.SetAtTime(ts, true)
 
 	msg := locale.T("commit_reqstext_message")
-	stagedCommit, err := bp.StageCommit(buildplanner.StageCommitParams{
+	stagedCommit, err := bp.StageCommitAndPoll(buildplanner.StageCommitParams{
 		Owner:        proj.Owner(),
 		Project:      proj.Name(),
 		ParentCommit: localCommitId.String(),

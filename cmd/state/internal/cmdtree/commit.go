@@ -23,6 +23,12 @@ func newCommitCommand(prime *primer.Values) *captain.Command {
 				Description: locale.T("package_flag_ts_description"),
 				Value:       &params.Timestamp,
 			},
+			{
+				Name:        "skip-validation",
+				Shorthand:   "s",
+				Description: locale.T("package_flag_skip_validation_description"),
+				Value:       &params.SkipValidation,
+			},
 		},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {

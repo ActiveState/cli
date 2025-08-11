@@ -208,7 +208,7 @@ func (r *Revert) revertToCommit(params revertParams, bp *buildplanner.BuildPlann
 		Script:       bs,
 	}
 
-	newCommit, err := bp.StageCommit(stageCommitParams)
+	newCommit, err := bp.StageCommitAndPoll(stageCommitParams)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not stage commit")
 	}

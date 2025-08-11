@@ -139,6 +139,30 @@ func (suite *CommitIntegrationTestSuite) testCommitTimestamp(input string, expec
 	cp.ExpectExitCode(0)
 }
 
+func (suite *CommitIntegrationTestSuite) TestCommitSkipValidation() {
+	suite.OnlyRunForTags(tagsuite.Commit, tagsuite.BuildScripts)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareProjectAndBuildScript("ActiveState-CLI/Commit-Test-A", "7a1b416e-c17f-4d4a-9e27-cbad9e8f5655")
+
+	scriptPath := filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName)
+	data := fileutils.ReadFileUnsafe(scriptPath)
+	data = bytes.Replace(data, []byte("solver_version = null"), []byte("solver_version = 999"), 1)
+	suite.Require().NoError(fileutils.WriteFile(scriptPath, data))
+
+	cp := ts.Spawn("commit")
+	cp.Expect("solver_version in body should be")
+	cp.ExpectExitCode(1)
+
+	cp = ts.Spawn("commit", "--skip-validation")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("refresh")
+	cp.Expect("solver_version in body should be")
+	cp.ExpectExitCode(1)
+}
+
 func TestCommitIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(CommitIntegrationTestSuite))
 }
