@@ -589,6 +589,8 @@ package_search_flag_ns_description:
   other: The namespace to search within.
 package_flag_ts_description:
   other: The timestamp at which you want to query. Can be either 'now' (bleeding edge), 'present' (platform present), 'dynamic' (pull in ingredients as needed), or RFC3339 formatted timestamp.
+package_flag_skip_validation_description:
+  other: Skip validation of the changes. This will allow you to commit even if there are issues resolving the buildscript. This will also skip CVE lookups.
 package_flag_rev_description:
   other: The revision you want to use. This ensures you get this exact revision and nothing else.
 package_search_flag_language_description:

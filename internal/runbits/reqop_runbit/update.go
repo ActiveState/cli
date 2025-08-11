@@ -71,7 +71,7 @@ func UpdateAndReload(prime primeable, script *buildscript.BuildScript, oldCommit
 		if err != nil {
 			return errs.Wrap(err, "Unable to dynamically evaluate build expression")
 		}
-		// StageCommit needs to be called with "solve" node
+		// StageCommitAndPoll needs to be called with "solve" node
 		if err := script.SetDynamic(false); err != nil {
 			return errs.Wrap(err, "Setting dynamic failed")
 		}
@@ -86,7 +86,7 @@ func UpdateAndReload(prime primeable, script *buildscript.BuildScript, oldCommit
 	}
 
 	// Solve runtime
-	newCommit, err := bp.StageCommit(commitParams)
+	newCommit, err := bp.StageCommitAndPoll(commitParams)
 	if err != nil {
 		return errs.Wrap(err, "Could not stage commit")
 	}

@@ -31,22 +31,26 @@ const (
 	codeExtensionKey = "code"
 )
 
-type Commit struct {
+type StagedCommit struct {
 	*response.Commit
-	buildplan   *buildplan.BuildPlan
 	buildscript *buildscript.BuildScript
 }
 
-func (c *Commit) CommitUUID() strfmt.UUID {
+func (c *StagedCommit) CommitUUID() strfmt.UUID {
 	return c.Commit.CommitID
+}
+
+func (c *StagedCommit) BuildScript() *buildscript.BuildScript {
+	return c.buildscript
+}
+
+type Commit struct {
+	*StagedCommit
+	buildplan *buildplan.BuildPlan
 }
 
 func (c *Commit) BuildPlan() *buildplan.BuildPlan {
 	return c.buildplan
-}
-
-func (c *Commit) BuildScript() *buildscript.BuildScript {
-	return c.buildscript
 }
 
 func (c *client) Run(req gqlclient.Request, resp interface{}) error {
@@ -119,7 +123,7 @@ func (b *BuildPlanner) fetchCommit(commitID strfmt.UUID, owner, project string, 
 	}
 	script.SetAtTime(time.Time(commit.AtTime), false)
 
-	return &Commit{commit, bp, script}, nil
+	return &Commit{&StagedCommit{commit, script}, bp}, nil
 }
 
 // processBuildPlannerError will check for special error types that should be

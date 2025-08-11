@@ -94,23 +94,23 @@ func init() {
 
 	// Get username / password from `state secrets` so we can run tests without needing special env setup
 	if PersistentUsername == "" {
-		out, stderr, err := osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_USERNAME"}, []string{})
+		out, _, err := osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_USERNAME"}, []string{})
 		if err != nil {
-			fmt.Printf("WARNING!!! Could not retrieve username via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
+			fmt.Println("WARNING!!! Could not retrieve username via state secrets")
 		}
 		PersistentUsername = strings.TrimSpace(out)
 	}
 	if PersistentPassword == "" {
-		out, stderr, err := osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_PASSWORD"}, []string{})
+		out, _, err := osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_PASSWORD"}, []string{})
 		if err != nil {
-			fmt.Printf("WARNING!!! Could not retrieve password via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
+			fmt.Println("WARNING!!! Could not retrieve password via state secrets")
 		}
 		PersistentPassword = strings.TrimSpace(out)
 	}
 	if PersistentToken == "" {
-		out, stderr, err := osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_TOKEN"}, []string{})
+		out, _, err := osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_TOKEN"}, []string{})
 		if err != nil {
-			fmt.Printf("WARNING!!! Could not retrieve token via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
+			fmt.Println("WARNING!!! Could not retrieve token via state secrets")
 		}
 		PersistentToken = strings.TrimSpace(out)
 	}

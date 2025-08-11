@@ -34,7 +34,8 @@ type Commit struct {
 }
 
 type Params struct {
-	Timestamp captain.TimeValue
+	Timestamp      captain.TimeValue
+	SkipValidation bool
 }
 
 func New(p primeable) *Commit {
@@ -141,37 +142,39 @@ func (c *Commit) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Could not update project to reflect build script changes.")
 	}
 
-	pg.Stop(locale.T("progress_success"))
-	pg = nil
+	if !params.SkipValidation {
+		pg.Stop(locale.T("progress_success"))
+		pg = nil
 
-	pgSolve := output.StartSpinner(out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
-	defer func() {
-		if pgSolve != nil {
-			pgSolve.Stop(locale.T("progress_fail"))
+		pgSolve := output.StartSpinner(out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
+		defer func() {
+			if pgSolve != nil {
+				pgSolve.Stop(locale.T("progress_fail"))
+			}
+		}()
+
+		// Solve runtime
+		rtCommit, err := bp.FetchCommit(stagedCommit.CommitID, proj.Owner(), proj.Name(), nil)
+		if err != nil {
+			return errs.Wrap(err, "Could not fetch staged commit")
 		}
-	}()
 
-	// Solve runtime
-	rtCommit, err := bp.FetchCommit(stagedCommit.CommitID, proj.Owner(), proj.Name(), nil)
-	if err != nil {
-		return errs.Wrap(err, "Could not fetch staged commit")
-	}
+		// Get old buildplan.
+		oldCommit, err := bp.FetchCommitNoPoll(localCommitID, proj.Owner(), proj.Name(), nil)
+		if err != nil {
+			return errs.Wrap(err, "Failed to fetch old commit")
+		}
 
-	// Get old buildplan.
-	oldCommit, err := bp.FetchCommitNoPoll(localCommitID, proj.Owner(), proj.Name(), nil)
-	if err != nil {
-		return errs.Wrap(err, "Failed to fetch old commit")
-	}
+		pgSolve.Stop(locale.T("progress_success"))
+		pgSolve = nil
 
-	pgSolve.Stop(locale.T("progress_success"))
-	pgSolve = nil
+		// Output dependency list.
+		dependencies.OutputChangeSummary(out, rtCommit.BuildPlan(), oldCommit.BuildPlan())
 
-	// Output dependency list.
-	dependencies.OutputChangeSummary(out, rtCommit.BuildPlan(), oldCommit.BuildPlan())
-
-	// Report CVEs.
-	if err := cves.NewCveReport(c.prime).Report(rtCommit.BuildPlan(), oldCommit.BuildPlan()); err != nil {
-		return errs.Wrap(err, "Could not report CVEs")
+		// Report CVEs.
+		if err := cves.NewCveReport(c.prime).Report(rtCommit.BuildPlan(), oldCommit.BuildPlan()); err != nil {
+			return errs.Wrap(err, "Could not report CVEs")
+		}
 	}
 
 	// Update local commit ID
