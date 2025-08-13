@@ -141,11 +141,10 @@ func (c *Commit) Run(params *Params) (rerr error) {
 	if err != nil {
 		return errs.Wrap(err, "Could not update project to reflect build script changes.")
 	}
+	pg.Stop(locale.T("progress_success"))
+	pg = nil
 
 	if !params.SkipValidation {
-		pg.Stop(locale.T("progress_success"))
-		pg = nil
-
 		pgSolve := output.StartSpinner(out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
 		defer func() {
 			if pgSolve != nil {
