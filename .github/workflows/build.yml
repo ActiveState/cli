@@ -247,7 +247,7 @@ jobs:
       - # === Sign Binaries (Windows only) ===
         name: Sign Binaries (Windows only)
         shell: bash
-        #if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
+        if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
         run: |
           export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.26100.0/x64:$PATH
 
@@ -262,7 +262,7 @@ jobs:
       - # === Sign Install Scripts (Windows only) ===
         name: Sign Install Scripts (Windows only)
         shell: powershell
-        #if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
+        if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
         run: |
           $branchInfix = $Env:GITHUB_REF.Replace("refs/heads/", "").Replace("release", "")
           $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
