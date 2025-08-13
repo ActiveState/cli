@@ -251,11 +251,11 @@ jobs:
         run: |
           export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.26100.0/x64:$PATH
 
-          signtool.exe sign -d "ActiveState State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state.exe
-          signtool.exe sign -d "ActiveState State Service" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe
-          signtool.exe sign -d "ActiveState State Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe
-          signtool.exe sign -d "ActiveState State Tool Remote Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-remote-installer.exe
-          signtool.exe sign -d "ActiveState State MCP" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-mcp.exe
+          signtool.exe sign -fd SHA1 -d "ActiveState State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state.exe
+          signtool.exe sign -fd SHA1 -d "ActiveState State Service" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe
+          signtool.exe sign -fd SHA1 -d "ActiveState State Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe
+          signtool.exe sign -fd SHA1 -d "ActiveState State Tool Remote Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-remote-installer.exe
+          signtool.exe sign -fd SHA1 -d "ActiveState State MCP" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-mcp.exe
         env:
           CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
 
