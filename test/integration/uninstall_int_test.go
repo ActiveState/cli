@@ -106,23 +106,23 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 
 	if runtime.GOOS == "windows" {
 		// Allow time for spawned script to remove directories
-		time.Sleep(10 * time.Second)
+		time.Sleep(2 * time.Second)
 	}
 
 	if all {
-		suite.NoDirExists(ts.Dirs.Cache, "Cache dir should not exist after full uninstall")
-		suite.NoDirExists(ts.Dirs.Config, "Config dir should not exist after full uninstall")
+		suite.NoDirExists(ts.Dirs.Cache, ts.DebugMessage("Cache dir should not exist after full uninstall"))
+		suite.NoDirExists(ts.Dirs.Config, ts.DebugMessage("Config dir should not exist after full uninstall"))
 	} else {
-		suite.DirExists(ts.Dirs.Cache, "Cache dir should still exist after partial uninstall")
-		suite.DirExists(ts.Dirs.Config, "Config dir should still exist after partial uninstall")
+		suite.DirExists(ts.Dirs.Cache, ts.DebugMessage("Cache dir should still exist after partial uninstall"))
+		suite.DirExists(ts.Dirs.Config, ts.DebugMessage("Config dir should still exist after partial uninstall"))
 	}
 
 	if fileutils.FileExists(stateExe) {
-		suite.Fail("State tool executable should not exist after uninstall")
+		suite.Fail(ts.DebugMessage("State tool executable should not exist after uninstall"))
 	}
 
 	if fileutils.FileExists(svcExe) {
-		suite.Fail("State service executable should not exist after uninstall")
+		suite.Fail(ts.DebugMessage("State service executable should not exist after uninstall"))
 	}
 
 	if runtime.GOOS == "linux" {
@@ -135,7 +135,7 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 
 	if runtime.GOOS == "darwin" {
 		if fileutils.DirExists(filepath.Join(binDir, "system")) {
-			suite.Fail("system directory should not exist after uninstall")
+			suite.Fail(ts.DebugMessage("system directory should not exist after uninstall"))
 		}
 	}
 
@@ -145,7 +145,7 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 	}
 
 	if fileutils.DirExists(binDir) {
-		suite.Fail("bin directory should not exist after uninstall")
+		suite.Fail(ts.DebugMessage("bin directory should not exist after uninstall"))
 	}
 }
 
