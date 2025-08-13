@@ -28,7 +28,7 @@ func ExpandTime(ts *captain.TimeValue, auth *authentication.Auth) (time.Time, er
 		return *ts.Time, nil
 	}
 
-	if ts != nil && ts.IsNow() {
+	if ts != nil && (ts.IsNow() || ts.IsDynamic()) {
 		latest, err := model.FetchLatestRevisionTimeStamp(auth)
 		if err != nil {
 			return time.Time{}, errs.Wrap(err, "Unable to determine latest revision time")
