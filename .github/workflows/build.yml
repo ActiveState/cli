@@ -249,9 +249,8 @@ jobs:
         shell: bash
         #if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
         run: |
-          ls "/c/Program Files (x86)/Windows Kits/10/bin/"
-          find "/c/Program Files (x86)/Windows Kits/10/bin" -iname signtool.exe
-          export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
+          ls "/c/Program Files (x86)/"
+          export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/:/c/Program Files (x86)/Windows Kits/10/bin/10.0.26100.0/x64:$PATH
 
           signtool.exe sign -d "ActiveState State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state.exe
           signtool.exe sign -d "ActiveState State Service" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe
