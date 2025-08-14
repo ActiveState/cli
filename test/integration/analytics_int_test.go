@@ -10,10 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
-	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/termtest"
 	"github.com/thoas/go-funk"
+
+	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
+	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
 	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
@@ -464,7 +465,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 }
 
 func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
-	suite.OnlyRunForTags(tagsuite.Analytics)
+	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Analytics)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
