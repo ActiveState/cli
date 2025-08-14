@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
+	"github.com/ActiveState/termtest"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -32,7 +33,7 @@ func (suite *ErrorsIntegrationTestSuite) TestMultiErrorWithInput() {
 	defer ts.Close()
 	ts.IgnoreLogErrors()
 
-	cp := ts.Spawn("__test", "multierror-input")
+	cp := ts.SpawnWithOpts(e2e.OptArgs("__test", "multierror-input"), e2e.OptTermTest(termtest.OptVerboseLogger()))
 	cp.ExpectRe(`\s+x error1.\s+\s+x error2.\s+x error3.\s+x error4.\s+`)
 	cp.ExpectExitCode(1)
 }
@@ -43,7 +44,7 @@ func (suite *ErrorsIntegrationTestSuite) TestMultiErrorWithoutInput() {
 	defer ts.Close()
 	ts.IgnoreLogErrors()
 
-	cp := ts.Spawn("__test", "multierror-noinput")
+	cp := ts.SpawnWithOpts(e2e.OptArgs("__test", "multierror-noinput"), e2e.OptTermTest(termtest.OptVerboseLogger()))
 	cp.ExpectRe(`\s+x error1.\s+\s+x error2.\s+x error3.\s+x error4.\s+`)
 	cp.ExpectExitCode(1)
 }
