@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/hello"
+	"github.com/ActiveState/cli/internal/runners/mcp/createrevision"
 	"github.com/ActiveState/cli/internal/runners/mcp/downloadlogs"
 	"github.com/ActiveState/cli/internal/runners/mcp/downloadsource"
 	"github.com/ActiveState/cli/internal/runners/mcp/ingredientdetails"
@@ -240,6 +241,59 @@ func GetInstructionsTool() Tool {
 				`,
 			}
 			return mcp.NewToolResultText(fmt.Sprintf("%v", instructions)), nil
+		},
+	}
+}
+
+func CreateIngredientRevisionTool() Tool {
+	return Tool{
+		Category: CategoryDebug,
+		Tool: mcp.NewTool(
+			"create_ingredient_revision",
+			mcp.WithDescription("Creates a new revision for the specified ingredient version"),
+			mcp.WithString("namespace", mcp.Description("The namespace of the ingredient, e.g. language/python"), mcp.Required()),
+			mcp.WithString("name", mcp.Description("The name of the ingredient, e.g. numpy"), mcp.Required()),
+			mcp.WithString("version", mcp.Description("The version of the ingredient, e.g. 0.1.0"), mcp.Required()),
+			mcp.WithString("dependencies", mcp.Description(`The JSON representation of dependencies, e.g.
+				[ { "conditions": [ { "feature": "alternative-built-language", "namespace": "language", "requirements": [{"comparator": "eq", "sortable_version": []}] } ], "description": "Camel build dependency", "feature": "camel", "namespace": "builder", "requirements": [{"comparator": "gte", "sortable_version": ["0"], "version": "0"}], "type": "build" }, { "conditions": null, "description": "Extracted from source distribution in PyPI.", "feature": "cython", "namespace": "language/python", "original_requirement": "Cython <3.0,>=0.29.24", "requirements": [ {"comparator": "gte", "sortable_version": ["0","0","29","24"], "version": "0.29.24"}, {"comparator": "lt", "sortable_version": ["0","3"], "version": "3.0"} ], "type": "build" }, { "conditions": null, "description": "Extracted from source distribution in PyPI.", "feature": "setuptools", "namespace": "language/python", "original_requirement": "setuptools ==59.2.0", "requirements": [{"comparator": "eq", "sortable_version": ["0","59","2"], "version": "59.2.0"}], "type": "runtime" } ]
+			`), mcp.Required()),
+			mcp.WithString("comment", mcp.Description("A short summary of the changes you made, and why you made them - including the file that declares an added or updated dependency, e.g. updated dependencies and python version, as per pyproject.toml"), mcp.Required()),
+		),
+		Handler: func(ctx context.Context, p *primer.Values, mcpRequest mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			namespace, err := mcpRequest.RequireString("namespace")
+			if err != nil {
+				return mcp.NewToolResultError(fmt.Sprintf("an ingredient namespace str is required: %s", errs.JoinMessage(err))), nil
+			}
+			name, err := mcpRequest.RequireString("name")
+			if err != nil {
+				return mcp.NewToolResultError(fmt.Sprintf("an ingredient name str is required: %s", errs.JoinMessage(err))), nil
+			}
+			version, err := mcpRequest.RequireString("version")
+			if err != nil {
+				return mcp.NewToolResultError(fmt.Sprintf("an ingredient version str is required: %s", errs.JoinMessage(err))), nil
+			}
+			dependencies, err := mcpRequest.RequireString("dependencies")
+			if err != nil {
+				return mcp.NewToolResultError(fmt.Sprintf("the ingredient dependencies str is required: %s", errs.JoinMessage(err))), nil
+			}
+			comment, err := mcpRequest.RequireString("comment")
+			if err != nil {
+				return mcp.NewToolResultError(fmt.Sprintf("a comment str for the ingredient is required: %s", errs.JoinMessage(err))), nil
+			}
+
+			params := createrevision.NewParams(namespace, name, version, dependencies, comment)
+
+			runner := createrevision.New(p)
+
+			err = runner.Run(params)
+
+			if err != nil {
+				return mcp.NewToolResultError(fmt.Sprintf("error creating new ingredient version revision: %s", errs.JoinMessage(err))), nil
+			}
+
+			return mcp.NewToolResultText(
+				strings.Join(p.Output().History().Print, "\n"),
+			), nil
 		},
 	}
 }
