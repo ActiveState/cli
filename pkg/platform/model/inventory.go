@@ -734,6 +734,8 @@ func CreateNewIngredientVersionRevision(ingredient *inventory_models.FullIngredi
 			default_optsets = append(default_optsets, *optset.IngredientOptionSetID)
 		case "override":
 			override_optsets = append(override_optsets, *optset.IngredientOptionSetID)
+		default:
+			return nil, errs.New("unrecognized option set type: " + *optset.UsageType)
 		}
 	}
 
