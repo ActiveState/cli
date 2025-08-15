@@ -39,7 +39,7 @@ func (e *Golang) Namespaces() []string {
 // Unpack the module into the proxy directory.
 // We also inject the GOPROXY environment variable into runtime.json to force offline use.
 // We also inject GOMODCACHE to avoid polluting the default user cache.
-func (e *Golang) Add(artifact *buildplan.Artifact, artifactSrcPath string) ([]string, error) {
+func (e *Golang) Add(artifact *buildplan.Artifact, artifactSrcPath string) (_ []string, rerr error) {
 	installedFiles := []string{}
 
 	files, err := fileutils.ListDir(artifactSrcPath, false)
@@ -96,13 +96,35 @@ func (e *Golang) Add(artifact *buildplan.Artifact, artifactSrcPath string) ([]st
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to unpack downloaded module")
 		}
-		err = fileutils.CopyFile(filepath.Join(unpackDir, artifact.NameAndVersion(), "go.mod"), filepath.Join(vDir, artifact.Version()+".mod"))
+		defer func() {
+			err := os.RemoveAll(unpackDir)
+			if err != nil {
+				rerr = errs.Pack(rerr, errs.Wrap(err, "Unable to remove unpacked module in %s", unpackDir))
+			}
+		}()
+		zipFiles, err := fileutils.ListDirSimple(unpackDir, false)
 		if err != nil {
-			return nil, errs.Wrap(err, "Unable to copy go.mod from unpacked module")
+			return nil, errs.Wrap(err, "Unable to list unpacked module")
 		}
-		err = os.RemoveAll(unpackDir)
-		if err != nil {
-			return nil, errs.Wrap(err, "Unable to remove unpacked module")
+		goModFound := false
+		for _, file := range zipFiles {
+			if filepath.Base(file) != "go.mod" {
+				continue
+			}
+			err = fileutils.CopyFile(file, filepath.Join(vDir, artifact.Version()+".mod"))
+			if err != nil {
+				return nil, errs.Wrap(err, "Unable to copy go.mod from unpacked module")
+			}
+			goModFound = true
+			break
+		}
+
+		// If the archive did not have a go.mod to copy, create a versioned one in the @v directory.
+		if !goModFound {
+			err = fileutils.WriteFile(filepath.Join(vDir, artifact.Version()+".mod"), []byte("module "+artifact.Name()))
+			if err != nil {
+				return nil, errs.Wrap(err, "Unable to write go.mod file")
+			}
 		}
 
 		installedFiles = append(installedFiles, relativeProxied)
