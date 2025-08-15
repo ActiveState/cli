@@ -41,7 +41,7 @@ jobs:
           - { os: ubuntu-latest }
           - { os: macos-13, shell: zsh }
           - { os: macos-latest, shell: zsh }
-          - { os: windows-2025 }
+          - { os: windows-2022 }
           - { os: ubuntu-24.04-arm }
       fail-fast: false
     runs-on: ${{ matrix.sys.os }}
@@ -536,5 +536,5 @@ jobs:
             session-build-ubuntu-latest
             session-build-macos-13
             session-build-macos-latest
-            session-build-windows-2025
+            session-build-windows-2022
             session-build-ubuntu-24.04-arm
