@@ -66,7 +66,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 				e2e.OptAppendEnv(constants.OverrideShellEnvVarName+"="),
 			)
 			cp.SendLine(e2e.QuoteCommand(shell, ts.ExecutablePath(), "checkout", "ActiveState-CLI/small-python", string(shell)))
-			cp.Expect("Checked out project")
+			cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 			cp.SendLine("exit")
 			if shell != e2e.Cmd {
 				cp.ExpectExitCode(0)
