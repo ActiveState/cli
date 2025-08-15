@@ -262,23 +262,23 @@ func CreateIngredientRevisionTool() Tool {
 		Handler: func(ctx context.Context, p *primer.Values, mcpRequest mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			namespace, err := mcpRequest.RequireString("namespace")
 			if err != nil {
-				return mcp.NewToolResultError(fmt.Sprintf("an ingredient namespace is required: %s", errs.JoinMessage(err))), nil
+				return mcp.NewToolResultError(fmt.Sprintf("an ingredient namespace str is required: %s", errs.JoinMessage(err))), nil
 			}
 			name, err := mcpRequest.RequireString("name")
 			if err != nil {
-				return mcp.NewToolResultError(fmt.Sprintf("an ingredient name is required: %s", errs.JoinMessage(err))), nil
+				return mcp.NewToolResultError(fmt.Sprintf("an ingredient name str is required: %s", errs.JoinMessage(err))), nil
 			}
 			version, err := mcpRequest.RequireString("version")
 			if err != nil {
-				return mcp.NewToolResultError(fmt.Sprintf("an ingredient version is required: %s", errs.JoinMessage(err))), nil
+				return mcp.NewToolResultError(fmt.Sprintf("an ingredient version str is required: %s", errs.JoinMessage(err))), nil
 			}
 			dependencies, err := mcpRequest.RequireString("dependencies")
 			if err != nil {
-				return mcp.NewToolResultError(fmt.Sprintf("the ingredient dependencies are required: %s", errs.JoinMessage(err))), nil
+				return mcp.NewToolResultError(fmt.Sprintf("the ingredient dependencies str is required: %s", errs.JoinMessage(err))), nil
 			}
 			comment, err := mcpRequest.RequireString("comment")
 			if err != nil {
-				return mcp.NewToolResultError(fmt.Sprintf("a comment for the ingredient is required: %s", errs.JoinMessage(err))), nil
+				return mcp.NewToolResultError(fmt.Sprintf("a comment str for the ingredient is required: %s", errs.JoinMessage(err))), nil
 			}
 
 			params := createrevision.NewParams(namespace, name, version, dependencies, comment)
