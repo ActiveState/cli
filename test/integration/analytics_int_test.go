@@ -475,7 +475,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "ActiveState-CLI/Alternate-Python"),
 		e2e.OptWD(ts.Dirs.Work),
-		e2e.OptAppendEnv(constants.DisableActivateEventsEnvVarName+"=false"),
+		e2e.OptAppendEnv(constants.DisableActivateEventsEnvVarName+"=false", "DOTPROGRESS=true"),
 		e2e.OptTermTest(termtest.OptVerboseLogger()),
 	)
 
