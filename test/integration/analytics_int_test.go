@@ -476,7 +476,6 @@ func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
 		e2e.OptArgs("activate", "ActiveState-CLI/Alternate-Python"),
 		e2e.OptWD(ts.Dirs.Work),
 		e2e.OptAppendEnv(constants.DisableActivateEventsEnvVarName+"=false"),
-		e2e.OptTermTest(termtest.OptVerboseLogger()),
 	)
 
 	cp.Expect("Creating a Virtual Environment")

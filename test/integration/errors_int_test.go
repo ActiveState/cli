@@ -34,7 +34,7 @@ func (suite *ErrorsIntegrationTestSuite) TestMultiErrorWithInput() {
 	defer ts.Close()
 	ts.IgnoreLogErrors()
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("__test", "multierror-input"), e2e.OptTermTest(termtest.OptVerboseLogger()))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("__test", "multierror-input"))
 	cp.ExpectRe(`x error1.\s+\s+x error2.\s+x error3.\s+x error4.`)
 	cp.ExpectExitCode(1)
 }
