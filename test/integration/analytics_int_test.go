@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/termtest"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
