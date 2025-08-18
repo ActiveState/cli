@@ -29,7 +29,7 @@ func (suite *ResetIntegrationTestSuite) TestReset() {
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("install", "shared/zlib")
+	cp = ts.Spawn("install", "shared:zlib")
 	cp.Expect("Added")
 	cp.ExpectExitCode(0)
 
@@ -84,7 +84,7 @@ func (suite *ResetIntegrationTestSuite) TestRevertInvalidURL() {
 	err = fileutils.WriteFile(filepath.Join(ts.Dirs.Work, constants.ConfigFileName), contents)
 	suite.Require().NoError(err)
 
-	cp := ts.Spawn("install", "language/python/requests")
+	cp := ts.Spawn("install", "language/python:requests")
 	cp.Expect("invalid commit ID")
 	cp.Expect("Please run 'state reset' to fix it.")
 	cp.ExpectNotExitCode(0)

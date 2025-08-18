@@ -169,7 +169,7 @@ func (suite *RuntimeIntegrationTestSuite) TestBuildInProgress() {
 
 	ts.PrepareEmptyProject()
 
-	cp = ts.Spawn("install", "private/"+e2e.PersistentUsername+"/hello-world", "--ts", "now")
+	cp = ts.Spawn("install", "private/"+e2e.PersistentUsername+":hello-world", "--ts", "now")
 	cp.Expect("Build Log:")
 	cp.Expect("Detailed Progress:")
 	cp.Expect("Building")
@@ -217,7 +217,7 @@ func (suite *RuntimeIntegrationTestSuite) TestRuntimeCache() {
 
 	ts.PrepareEmptyProject()
 
-	cp := ts.Spawn("install", "shared/zlib")
+	cp := ts.Spawn("install", "shared:zlib")
 	cp.Expect("Downloading")
 	cp.ExpectExitCode(0)
 
