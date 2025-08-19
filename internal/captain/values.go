@@ -123,6 +123,8 @@ func (u *UsersValue) Type() string {
 // - <name>
 // - <namespace>/<name>
 // - <namespace>/<name>@<version>
+// - <namespace>:<name>
+// - <namespace>:<name>@<version>
 type PackageValue struct {
 	Namespace string `json:"namespace"`
 	Name      string `json:"name"`
@@ -137,7 +139,7 @@ func (p *PackageValue) String() string {
 	}
 	name := p.Name
 	if p.Namespace != "" {
-		name = fmt.Sprintf("%s/%s", p.Namespace, p.Name)
+		name = fmt.Sprintf("%s:%s", p.Namespace, p.Name)
 	}
 	if p.Version == "" {
 		return name
@@ -151,13 +153,18 @@ func (p *PackageValue) Set(s string) error {
 		p.Version = strings.TrimSpace(v[1])
 		s = v[0]
 	}
-	if !strings.Contains(s, "/") {
+	switch {
+	case strings.Contains(s, ":"):
+		v := strings.Split(s, ":")
+		p.Namespace = strings.TrimSpace(strings.Join(v[0:len(v)-1], ":"))
+		p.Name = strings.TrimSpace(v[len(v)-1])
+	case strings.Contains(s, "/"):
+		v := strings.Split(s, "/")
+		p.Namespace = strings.TrimSpace(strings.Join(v[0:len(v)-1], "/"))
+		p.Name = strings.TrimSpace(v[len(v)-1])
+	default:
 		p.Name = strings.TrimSpace(s)
-		return nil
 	}
-	v := strings.Split(s, "/")
-	p.Namespace = strings.TrimSpace(strings.Join(v[0:len(v)-1], "/"))
-	p.Name = strings.TrimSpace(v[len(v)-1])
 	return nil
 }
 

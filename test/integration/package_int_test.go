@@ -304,10 +304,10 @@ func (suite *PackageIntegrationTestSuite) TestPackage_Duplicate() {
 
 	ts.PrepareEmptyProject()
 
-	cp := ts.Spawn("install", "shared/zlib") // install
+	cp := ts.Spawn("install", "shared:zlib") // install
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("install", "shared/zlib") // install again
+	cp = ts.Spawn("install", "shared:zlib") // install again
 	cp.Expect(" no changes")
 	cp.ExpectNotExitCode(0)
 	ts.IgnoreLogErrors()
@@ -663,7 +663,7 @@ func (suite *PackageIntegrationTestSuite) TestCVE_Indirect() {
 	cp = ts.Spawn("config", "set", constants.SecurityPromptConfig, "true")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("install", "private/ActiveState-CLI-Testing/language/python/django_dep", "--ts=2024-09-10T16:36:34.393Z")
+	cp = ts.Spawn("install", "private/ActiveState-CLI-Testing/language/python:django_dep", "--ts=2024-09-10T16:36:34.393Z")
 	cp.ExpectRe(`Warning: Found \d+ indirect known vulnerabilities`, e2e.RuntimeSolvingTimeoutOpt)
 	cp.Expect("Do you want to continue")
 	cp.SendLine("n")
