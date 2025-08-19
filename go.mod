@@ -5,7 +5,7 @@ go 1.23.7
 require (
 	github.com/99designs/gqlgen v0.17.54
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
-	github.com/ActiveState/termtest v0.7.3-0.20240703202616-34f7899287a4
+	github.com/ActiveState/termtest v0.7.3-0.20250819163245-596dd1e45a48
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 	github.com/alecthomas/participle/v2 v2.0.0
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
