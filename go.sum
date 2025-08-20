@@ -19,8 +19,8 @@ github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527 h1:l
 github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527/go.mod h1:/9SyzKLlJSuIa7WAsLUUhHqTK9+PtZD8cKF8G4SLpa0=
 github.com/ActiveState/pty v0.0.0-20230628221854-6fb90eb08a14 h1:RdhhSiwmgyUaaF2GBNrbqTwE5SM+MaVjwf91Ua+CK8c=
 github.com/ActiveState/pty v0.0.0-20230628221854-6fb90eb08a14/go.mod h1:5mM6vNRQwshCjlkOnVpwC//4ZpkiC6nmZr8lPOxJdXs=
-github.com/ActiveState/termtest v0.7.3-0.20250819163245-596dd1e45a48 h1:8EzBJVIwZJoeBRhzsVtjwzPTuf6LQRw1SD9jGbYCL10=
-github.com/ActiveState/termtest v0.7.3-0.20250819163245-596dd1e45a48/go.mod h1:RyWp2NaaTrVAa+XjMHpKAqwBFWbL6wE12HQxiZNGAqU=
+github.com/ActiveState/termtest v0.7.3-0.20250820165828-792af935fc74 h1:bhx0C9Mh/03X/uHPBTZfv6Y2Js1ix0bT17qDDxaoTYk=
+github.com/ActiveState/termtest v0.7.3-0.20250820165828-792af935fc74/go.mod h1:RyWp2NaaTrVAa+XjMHpKAqwBFWbL6wE12HQxiZNGAqU=
 github.com/AlecAivazis/survey/v2 v2.0.5/go.mod h1:WYBhg6f0y/fNYUuesWQc0PKbJcEliGcYHB9sNT3Bg74=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 h1:w+iIsaOQNcT7OZ575w+acHgRric5iCyQh+xv+KJ4HB8=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78/go.mod h1:LmzpDX56iTiv29bbRTIsUNlaFfuhWRQBWjQdVyAevI8=
