@@ -10,9 +10,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
+	"github.com/thoas/go-funk"
+
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
-	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
@@ -463,7 +465,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 }
 
 func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
-	suite.OnlyRunForTags(tagsuite.Analytics)
+	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Analytics)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -473,7 +475,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "ActiveState-CLI/Alternate-Python"),
 		e2e.OptWD(ts.Dirs.Work),
-		e2e.OptAppendEnv(constants.DisableActivateEventsEnvVarName+"=false"),
+		e2e.OptAppendEnv(constants.DisableActivateEventsEnvVarName+"=false", "DOTPROGRESS=true"),
+		e2e.OptTermTest(termtest.OptVerboseLogger()),
 	)
 
 	cp.Expect("Creating a Virtual Environment")

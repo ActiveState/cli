@@ -38,11 +38,11 @@ jobs:
         go-version:
           - 1.23.8
         sys:
-          - {os: ubuntu-latest}
-          - {os: macos-13, shell: zsh}
-          - {os: macos-latest, shell: zsh}
-          - {os: windows-2019}
-          - {os: ubuntu-24.04-arm}
+          - { os: ubuntu-latest }
+          - { os: macos-13, shell: zsh }
+          - { os: macos-latest, shell: zsh }
+          - { os: windows-2025 }
+          - { os: ubuntu-24.04-arm }
       fail-fast: false
     runs-on: ${{ matrix.sys.os }}
     env:
@@ -249,13 +249,13 @@ jobs:
         shell: bash
         if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
         run: |
-          export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
+          export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.26100.0/x64:$PATH
 
-          signtool.exe sign -d "ActiveState State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state.exe
-          signtool.exe sign -d "ActiveState State Service" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe
-          signtool.exe sign -d "ActiveState State Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe
-          signtool.exe sign -d "ActiveState State Tool Remote Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-remote-installer.exe
-          signtool.exe sign -d "ActiveState State MCP" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-mcp.exe
+          signtool.exe sign -fd SHA1 -d "ActiveState State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state.exe
+          signtool.exe sign -fd SHA1 -d "ActiveState State Service" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe
+          signtool.exe sign -fd SHA1 -d "ActiveState State Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe
+          signtool.exe sign -fd SHA1 -d "ActiveState State Tool Remote Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-remote-installer.exe
+          signtool.exe sign -fd SHA1 -d "ActiveState State MCP" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-mcp.exe
         env:
           CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
 
@@ -536,5 +536,5 @@ jobs:
             session-build-ubuntu-latest
             session-build-macos-13
             session-build-macos-latest
-            session-build-windows-2019
+            session-build-windows-2025
             session-build-ubuntu-24.04-arm

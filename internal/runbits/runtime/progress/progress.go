@@ -95,7 +95,7 @@ func NewRuntimeProgressIndicator(out output.Outputer) events.Handler {
 	if out.Type() != output.PlainFormatName {
 		w = nil
 	}
-	if out.Config().Interactive {
+	if os.Getenv("DOTPROGRESS") == "" && out.Config().Interactive {
 		return newProgressIndicator(w, out)
 	}
 	return newDotProgressIndicator(out)

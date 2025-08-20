@@ -30,8 +30,7 @@ func (suite *HelloIntegrationTestSuite) TestHello() {
 	ts.IgnoreLogErrors()
 
 	cp = ts.Spawn("_hello", "Person", "--extra")
-	cp.Expect("Project: ActiveState-CLI/Empty")
-	cp.Expect("Current commit message:")
+	cp.Expect("You are on commit")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("_hello", "Person", "--echo", "example")
