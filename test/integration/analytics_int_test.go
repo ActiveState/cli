@@ -465,7 +465,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 }
 
 func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
-	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Analytics, tagsuite.Debug)
+	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Analytics)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
