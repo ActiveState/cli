@@ -47,7 +47,7 @@ func (runner *ProjectErrorsRunner) Run(params *Params) error {
 
 	// Collect "before" buildplan
 	bpm := bpModel.NewBuildPlannerModel(runner.auth, runner.svcModel)
-	localCommit, err := bpm.FetchCommit(*branch.CommitID, params.project.Owner, params.project.Project, nil)
+	localCommit, err := bpm.FetchCommitNoPoll(*branch.CommitID, params.project.Owner, params.project.Project, nil)
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch build result")
 	}
