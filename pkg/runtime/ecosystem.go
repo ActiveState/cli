@@ -9,7 +9,7 @@ type ecosystem interface {
 	Init(runtimePath string, buildplan *buildplan.BuildPlan) error
 	Namespaces() []string
 	Add(artifact *buildplan.Artifact, artifactSrcPath string) ([]string, error)
-	Remove(artifact *buildplan.Artifact) error
+	Remove(name, version string, installedFiles []string) error
 	Apply() error
 }
 
@@ -36,12 +36,10 @@ func artifactMatchesEcosystem(a *buildplan.Artifact, e ecosystem) bool {
 	return false
 }
 
-func namespacesMatchesEcosystem(namespaces []string, e ecosystem) bool {
-	for _, namespace := range e.Namespaces() {
-		for _, n := range namespaces {
-			if n == namespace {
-				return true
-			}
+func namespaceMatchesEcosystem(namespace string, e ecosystem) bool {
+	for _, n := range e.Namespaces() {
+		if n == namespace {
+			return true
 		}
 	}
 	return false
@@ -56,12 +54,11 @@ func filterEcosystemMatchingArtifact(artifact *buildplan.Artifact, ecosystems []
 	return nil
 }
 
-func filterEcosystemsMatchingNamespaces(ecosystems []ecosystem, namespaces []string) []ecosystem {
-	result := []ecosystem{}
+func filterEcosystemMatchingNamespace(ecosystems []ecosystem, namespace string) ecosystem {
 	for _, ecosystem := range ecosystems {
-		if namespacesMatchesEcosystem(namespaces, ecosystem) {
-			result = append(result, ecosystem)
+		if namespaceMatchesEcosystem(namespace, ecosystem) {
+			return ecosystem
 		}
 	}
-	return result
+	return nil
 }

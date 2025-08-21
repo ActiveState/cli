@@ -21,6 +21,7 @@ import (
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/smartlink"
+	"github.com/ActiveState/cli/pkg/buildplan"
 )
 
 const (
@@ -51,6 +52,11 @@ type artifactInfo struct {
 	InUse          bool  `json:"inUse"`
 	Size           int64 `json:"size"`
 	LastAccessTime int64 `json:"lastAccessTime"`
+
+	// These fields are used by ecosystems during Add/Remove/Apply.
+	Namespace string `json:"namespace,omitempty"`
+	Name      string `json:"name,omitempty"`
+	Version   string `json:"version,omitempty"`
 
 	id strfmt.UUID // for convenience when removing stale artifacts; should NOT have json tag
 }
@@ -218,7 +224,7 @@ func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) 
 		Path:        absoluteDest,
 		Files:       files.RelativePaths(),
 		RelativeSrc: relativeSrc,
-	})
+	}, nil)
 	if err != nil {
 		return errs.Wrap(err, "Could not record artifact use")
 	}
@@ -275,7 +281,7 @@ func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) 
 		Path:        absoluteDest,
 		Files:       files.RelativePaths(),
 		RelativeSrc: relativeSrc,
-	})
+	}, nil)
 	if err != nil {
 		return errs.Wrap(err, "Could not record artifact use")
 	}
@@ -286,7 +292,9 @@ func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) 
 // Track will record an artifact deployment.
 // This is automatically called by `DeployVia*()` functions.
 // This should be called for ecosystems that handle installation of artifacts.
-func (d *depot) Track(id strfmt.UUID, deploy *deployment) error {
+// The artifact parameter is only necessary for tracking dynamically imported artifacts after being
+// added by an ecosystem.
+func (d *depot) Track(id strfmt.UUID, deploy *deployment, artifact *buildplan.Artifact) error {
 	d.mapMutex.Lock()
 	defer d.mapMutex.Unlock()
 
@@ -308,6 +316,14 @@ func (d *depot) Track(id strfmt.UUID, deploy *deployment) error {
 	}
 	d.config.Cache[id].InUse = true
 	d.config.Cache[id].LastAccessTime = time.Now().Unix()
+
+	// For dynamically imported artifacts, also include artifact metadata.
+	if artifact != nil {
+		d.config.Cache[id].Namespace = artifact.Ingredients[0].Namespace
+		d.config.Cache[id].Name = artifact.Name()
+		d.config.Cache[id].Version = artifact.Version()
+	}
+
 	return nil
 }
 
@@ -317,8 +333,8 @@ func (d *depot) Track(id strfmt.UUID, deploy *deployment) error {
 // This is automatically called by the `Undeploy()` function.
 // This should be called for ecosystems that handle uninstallation of artifacts.
 func (d *depot) Untrack(id strfmt.UUID, path string) {
-	if _, ok := d.config.Deployments[id]; ok {
-		d.config.Deployments[id] = sliceutils.Filter(d.config.Deployments[id], func(d deployment) bool { return d.Path != path })
+	if deployments, ok := d.config.Deployments[id]; ok {
+		d.config.Deployments[id] = sliceutils.Filter(deployments, func(d deployment) bool { return d.Path != path })
 	}
 }
 
@@ -445,7 +461,7 @@ func (d *depot) Save() error {
 	for id := range d.artifacts {
 		if deployments, ok := d.config.Deployments[id]; !ok || len(deployments) == 0 {
 			if _, exists := d.config.Cache[id]; !exists {
-				err := d.Track(id, nil) // create cache entry for previously used artifact
+				err := d.Track(id, nil, nil) // create cache entry for previously used artifact
 				if err != nil {
 					return errs.Wrap(err, "Could not update depot cache with previously used artifact")
 				}
