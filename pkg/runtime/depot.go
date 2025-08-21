@@ -441,9 +441,6 @@ func (d *depot) getSharedFilesToRedeploy(id strfmt.UUID, deploy deployment, path
 // Save will write config changes to disk (ie. links between depot artifacts and runtimes that use it).
 // It will also delete any stale artifacts which are not used by any runtime.
 func (d *depot) Save() error {
-	d.mapMutex.Lock()
-	defer d.mapMutex.Unlock()
-
 	// Mark artifacts that are no longer used and remove the old ones.
 	for id := range d.artifacts {
 		if deployments, ok := d.config.Deployments[id]; !ok || len(deployments) == 0 {
