@@ -317,9 +317,10 @@ func RebuildProjectTool() Tool {
 				return mcp.NewToolResultError(fmt.Sprintf("error parsing project namespace: %s", errs.JoinMessage(err))), nil
 			}
 
-			params := rebuildproject.NewParams(ns)
-			runner := rebuildproject.New(p)
+			params := rebuildproject.NewParams()
+			params.Namespace = ns
 
+			runner := rebuildproject.New(p)
 			err = runner.Run(params)
 
 			if err != nil {

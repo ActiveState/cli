@@ -1,28 +1,27 @@
 package rebuildproject
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-type ProjectErrorsRunner struct {
+type RebuildProjectRunner struct {
 	auth     *authentication.Auth
 	output   output.Outputer
 	svcModel *model.SvcModel
 }
 
-func New(p *primer.Values) *ProjectErrorsRunner {
-	return &ProjectErrorsRunner{
+func New(p *primer.Values) *RebuildProjectRunner {
+	return &RebuildProjectRunner{
 		auth:     p.Auth(),
 		output:   p.Output(),
 		svcModel: p.SvcModel(),
@@ -30,47 +29,42 @@ func New(p *primer.Values) *ProjectErrorsRunner {
 }
 
 type Params struct {
-	project *project.Namespaced
+	Namespace *project.Namespaced
 }
 
-func NewParams(project *project.Namespaced) *Params {
-	return &Params{
-		project: project,
-	}
+func NewParams() *Params {
+	return &Params{}
 }
 
-func (runner *ProjectErrorsRunner) Run(params *Params) error {
-	branch, err := model.DefaultBranchForProjectName(params.project.Owner, params.project.Project)
+func (runner *RebuildProjectRunner) Run(params *Params) error {
+	branch, err := model.DefaultBranchForProjectName(params.Namespace.Owner, params.Namespace.Project)
 	if err != nil {
 		return fmt.Errorf("error fetching default branch: %w", err)
 	}
 
-	// Collect "before" buildplan
+	// Collect "before" buildscript
 	bpm := bpModel.NewBuildPlannerModel(runner.auth, runner.svcModel)
-	localCommit, err := bpm.FetchCommitNoPoll(*branch.CommitID, params.project.Owner, params.project.Project, nil)
+	localCommit, err := bpm.FetchCommitNoPoll(*branch.CommitID, params.Namespace.Owner, params.Namespace.Project, nil)
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch build result")
 	}
 
-	// Collect "after" buildplan
+	// Collect "after" buildscript
 	bumpedBS, err := localCommit.BuildScript().Clone()
 	if err != nil {
 		return errs.Wrap(err, "Failed to clone build script")
 	}
 
-	now := captain.TimeValue{}
-	now.Set("now")
-	ts, err := commits_runbit.ExpandTime(&now, runner.auth)
+	latest, err := model.FetchLatestRevisionTimeStamp(runner.auth)
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch latest timestamp")
 	}
-	bumpedBS.SetAtTime(ts, true)
+	bumpedBS.SetAtTime(latest, true)
 
-	// Since our platform is commit based we need to create a commit for the "after" buildplan, even though we may not
-	// end up using it it the user doesn't confirm the upgrade.
+	// Since our platform is commit based we need to create a commit for the "after" buildscript
 	bumpedCommit, err := bpm.StageCommitAndPoll(bpModel.StageCommitParams{
-		Owner:        params.project.Owner,
-		Project:      params.project.Project,
+		Owner:        params.Namespace.Owner,
+		Project:      params.Namespace.Project,
 		ParentCommit: branch.CommitID.String(),
 		Script:       bumpedBS,
 	})
@@ -78,11 +72,19 @@ func (runner *ProjectErrorsRunner) Run(params *Params) error {
 		return errs.Wrap(err, "Failed to stage bumped commit")
 	}
 
-	jsonBytes, err := json.Marshal(bumpedCommit)
+	// Now, merge the new commit using the branch name to fast-forward
+	_, err = bpm.MergeCommit(&buildplanner.MergeCommitParams{
+		Owner:     params.Namespace.Owner,
+		Project:   params.Namespace.Project,
+		TargetRef: branch.Label,
+		OtherRef:  bumpedCommit.CommitID.String(),
+		Strategy:  types.MergeCommitStrategyFastForward,
+	})
 	if err != nil {
-		return fmt.Errorf("error marshaling results: %w", err)
+		return fmt.Errorf("error merging commit: %w", err)
 	}
-	runner.output.Print(string(jsonBytes))
+
+	runner.output.Print("Project is now rebuilding with commit ID " + bumpedCommit.CommitID.String())
 
 	return nil
 }
