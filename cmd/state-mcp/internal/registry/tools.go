@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/runners/mcp/downloadsource"
 	"github.com/ActiveState/cli/internal/runners/mcp/ingredientdetails"
 	"github.com/ActiveState/cli/internal/runners/mcp/projecterrors"
+	"github.com/ActiveState/cli/internal/runners/mcp/rebuildproject"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/mark3labs/mcp-go/mcp"
 )
@@ -289,6 +290,41 @@ func CreateIngredientRevisionTool() Tool {
 
 			if err != nil {
 				return mcp.NewToolResultError(fmt.Sprintf("error creating new ingredient version revision: %s", errs.JoinMessage(err))), nil
+			}
+
+			return mcp.NewToolResultText(
+				strings.Join(p.Output().History().Print, "\n"),
+			), nil
+		},
+	}
+}
+
+func RebuildProjectTool() Tool {
+	return Tool{
+		Category: CategoryDebug,
+		Tool: mcp.NewTool(
+			"rebuild_project",
+			mcp.WithDescription("Triggers a project rebuild after all errors have been addressed"),
+			mcp.WithString("project", mcp.Description("Project namespace in format 'owner/project'"), mcp.Required()),
+		),
+		Handler: func(ctx context.Context, p *primer.Values, mcpRequest mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			namespace, err := mcpRequest.RequireString("project")
+			if err != nil {
+				return mcp.NewToolResultError(fmt.Sprintf("a project in the format 'owner/project' is required: %s", errs.JoinMessage(err))), nil
+			}
+			ns, err := project.ParseNamespace(namespace)
+			if err != nil {
+				return mcp.NewToolResultError(fmt.Sprintf("error parsing project namespace: %s", errs.JoinMessage(err))), nil
+			}
+
+			params := rebuildproject.NewParams()
+			params.Namespace = ns
+
+			runner := rebuildproject.New(p)
+			err = runner.Run(params)
+
+			if err != nil {
+				return mcp.NewToolResultError(fmt.Sprintf("error rebuilding project: %s", errs.JoinMessage(err))), nil
 			}
 
 			return mcp.NewToolResultText(

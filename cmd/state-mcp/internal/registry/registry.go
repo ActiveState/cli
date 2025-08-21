@@ -38,6 +38,7 @@ func New() *Registry {
 	r.RegisterTool(DownloadSourceFileTool())
 	r.RegisterTool(GetIngredientDetailsTool())
 	r.RegisterTool(CreateIngredientRevisionTool())
+	r.RegisterTool(RebuildProjectTool())
 
 	r.RegisterPrompt(ProjectPrompt())
 	r.RegisterPrompt(IngredientPrompt())
