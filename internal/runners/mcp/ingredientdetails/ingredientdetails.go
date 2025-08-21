@@ -37,8 +37,13 @@ func NewParams(name string, version string, namespace string) *Params {
 }
 
 func (runner *GetIngredientDetailsRunner) Run(params *Params) error {
+	latest, err := model.FetchLatestRevisionTimeStamp(runner.auth)
+	if err != nil {
+		return fmt.Errorf("failed to fetch latest timestamp: %w", err)
+	}
+
 	ingredient, err := model.GetIngredientByNameAndVersion(
-		params.namespace, params.name, params.version, nil, runner.auth)
+		params.namespace, params.name, params.version, &latest, runner.auth)
 
 	if err != nil {
 		return fmt.Errorf("error fetching ingredient: %w", err)
