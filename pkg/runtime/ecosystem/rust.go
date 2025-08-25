@@ -92,8 +92,17 @@ func (e *Rust) Add(artifact *buildplan.Artifact, artifactSrcPath string) ([]stri
 	return installedFiles, nil
 }
 
-func (e *Rust) Remove(artifact *buildplan.Artifact) error {
-	return nil // TODO: CP-956
+func (e *Rust) Remove(name, version string, installedFiles []string) (rerr error) {
+	for _, dir := range installedFiles {
+		if !fileutils.DirExists(dir) {
+			continue
+		}
+		err := os.RemoveAll(dir)
+		if err != nil {
+			rerr = errs.Pack(rerr, errs.Wrap(err, "Unable to remove directory for '%s': %s", name, dir))
+		}
+	}
+	return rerr
 }
 
 // configFileContents replaces the crates.io source with our vendored crates.

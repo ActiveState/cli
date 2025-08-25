@@ -484,11 +484,12 @@ func (s *setup) install(artifact *buildplan.Artifact) (rerr error) {
 		if err != nil {
 			return errs.Wrap(err, "Ecosystem unable to add artifact")
 		}
+
 		s.depot.Track(id, &deployment{
 			Type:  deploymentTypeEcosystem,
 			Path:  s.path,
 			Files: files,
-		})
+		}, artifact)
 		return nil
 	}
 
@@ -534,16 +535,6 @@ func (s *setup) uninstall(id strfmt.UUID) (rerr error) {
 
 	artifactDepotPath := s.depot.Path(id)
 
-	// TODO: CP-956
-	//if ecosys := filterEcosystemMatchingArtifact(artifact, s.ecosystems); ecosys != nil {
-	//	err := ecosys.Remove(artifact)
-	//	if err != nil {
-	//		return errs.Wrap(err, "Ecosystem unable to remove artifact")
-	//	}
-	//	s.depot.Untrack(id, filepath.Join(s.path, artifact.ArtifactID.String()))
-	//	return nil
-	//}
-
 	envDef, err := s.env.Load(artifactDepotPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not get env")
@@ -551,6 +542,33 @@ func (s *setup) uninstall(id strfmt.UUID) (rerr error) {
 
 	if err := s.env.Unload(artifactDepotPath); err != nil {
 		return errs.Wrap(err, "Could not unload artifact envdef")
+	}
+
+	// If this is a dynamically imported artifact, tell the ecosystem to remove/undeploy it.
+	if artifact, exists := s.depot.config.Cache[id]; exists && artifact.Namespace != "" {
+		if ecosys := filterEcosystemMatchingNamespace(s.ecosystems, artifact.Namespace); ecosys != nil {
+			installedFiles := []string{}
+			// Find record of our deployment
+			if deployments, ok := s.depot.config.Deployments[id]; ok {
+				deployments = sliceutils.Filter(deployments, func(d deployment) bool { return d.Path == s.path })
+				if len(deployments) > 0 {
+					installedFiles = deployments[0].Files
+				}
+			}
+
+			// Convert relative install locations to absolute paths.
+			for i, file := range installedFiles {
+				installedFiles[i] = filepath.Join(s.path, file)
+			}
+
+			// Remove/undeploy the artifact.
+			err := ecosys.Remove(artifact.Name, artifact.Version, installedFiles)
+			if err != nil {
+				return errs.Wrap(err, "Ecosystem unable to remove artifact")
+			}
+			s.depot.Untrack(id, filepath.Join(s.path, id.String()))
+			return nil
+		}
 	}
 
 	if err := s.depot.Undeploy(id, envDef.InstallDir, s.path); err != nil {
