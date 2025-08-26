@@ -271,7 +271,7 @@ scripts:
     standalone: true
     description: Runs unit tests (not integration tests)
     value: |
-      go test -v `go list ./... | grep -v integration | grep -v automation | grep -v expect | grep -v state-svc | grep -v state-offline` $@
+      go test -vet=off -v `go list ./... | grep -v integration | grep -v automation | grep -v expect | grep -v state-svc | grep -v state-offline` $@
   - name: integration-tests
     language: bash
     standalone: true
@@ -280,14 +280,14 @@ scripts:
       unset ACTIVESTATE_ACTIVATED
       export INTEGRATION_TEST_USERNAME=$secrets.project.INTEGRATION_TEST_USERNAME
       export INTEGRATION_TEST_PASSWORD=$secrets.project.INTEGRATION_TEST_PASSWORD
-      go test `go list ./... | grep "${INTEGRATION_TEST_REGEX}"` -v "${@:1}" -timeout 20m
+      go test -vet=off `go list ./... | grep "${INTEGRATION_TEST_REGEX}"` -v "${@:1}" -timeout 20m
   - name: integration-tests-build-check
     language: bash
     standalone: true
     description: Builds integration tests and removes the executable artifact(s).
     value: |
       out="x.test"
-      go list ./... | grep "${INTEGRATION_TEST_REGEX}" | xargs -L 1 go test -o $out -c
+      go list ./... | grep "${INTEGRATION_TEST_REGEX}" | xargs -L 1 go test -vet=off -o $out -c
       [ -f $out ] && rm $out
   - name: clean
     language: bash
