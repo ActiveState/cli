@@ -356,7 +356,10 @@ func (d *depot) Undeploy(id strfmt.UUID, relativeSrc, path string) error {
 	if !ok {
 		return errs.New("deployment for %s not found in depot", id)
 	}
-	deployments = sliceutils.Filter(deployments, func(d deployment) bool { return d.Path == path })
+	deployments = sliceutils.Filter(deployments, func(d deployment) bool {
+		equal, _ := fileutils.PathsEqual(d.Path, path)
+		return equal
+	})
 	if len(deployments) != 1 {
 		return errs.New("no deployment found for %s in depot", path)
 	}
