@@ -125,6 +125,12 @@ var urlsByService = map[Service]*url.URL{
 	},
 }
 
+var currentCfg *config.Instance
+
+func SetConfig(config *config.Instance) {
+	currentCfg = config
+}
+
 // GetServiceURL returns the URL for the given service
 func GetServiceURL(service Service) *url.URL {
 	serviceURL, validService := urlsByService[service]
@@ -180,11 +186,10 @@ func getProjectHost(service Service) *string {
 }
 
 func getProjectHostFromConfig() string {
-	cfg, err := config.New()
-	if err != nil {
-		return ""
+	if currentCfg != nil && !currentCfg.Closed() {
+		return currentCfg.GetString(constants.APIHostConfig)
 	}
-	return cfg.GetString(constants.APIHostConfig)
+	return ""
 }
 
 func HostOverride() string {

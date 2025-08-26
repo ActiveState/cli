@@ -29,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcctl"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/inconshreveable/mousetrap"
 )
@@ -69,6 +70,7 @@ func main() {
 	}
 	rollbar.SetupRollbar(constants.StateServiceRollbarToken)
 	rollbar.SetConfig(cfg)
+	api.SetConfig(cfg)
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)
