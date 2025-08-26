@@ -193,6 +193,13 @@ jobs:
         if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\", \"refs/heads/master\"]'), github.ref) && !startsWith(github.event.pull_request.head.ref, 'version/')"
         run: parallelize results Check-Format
 
+      - # === Raw Unit Tests ===
+        name: Raw Unit Tests
+        id: unit_tests
+        shell: bash
+        run: parallelize results Unit-Tests
+        continue-on-error: false
+
       - # === Unit Tests ===
         name: Unit Tests
         id: unit_tests
