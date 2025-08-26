@@ -186,84 +186,78 @@ func (d *depot) Put(id strfmt.UUID) error {
 }
 
 // DeployViaLink will take an artifact from the depot and link it to the target path.
-func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) error {
+func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) (*deployment, error) {
 	d.fsMutex.Lock()
 	defer d.fsMutex.Unlock()
 
 	if exists, _ := d.Exists(id); !exists {
-		return errs.New("artifact not found in depot")
+		return nil, errs.New("artifact not found in depot")
 	}
 
 	if err := d.validateVolume(absoluteDest); err != nil {
-		return errs.Wrap(err, "volume validation failed")
+		return nil, errs.Wrap(err, "volume validation failed")
 	}
 
 	// Collect artifact meta info
 	var err error
 	absoluteDest, err = fileutils.ResolvePath(absoluteDest)
 	if err != nil {
-		return errs.Wrap(err, "failed to resolve path")
+		return nil, errs.Wrap(err, "failed to resolve path")
 	}
 
 	if err := fileutils.MkdirUnlessExists(absoluteDest); err != nil {
-		return errs.Wrap(err, "failed to create path")
+		return nil, errs.Wrap(err, "failed to create path")
 	}
 
 	absoluteSrc := filepath.Join(d.Path(id), relativeSrc)
 	if !fileutils.DirExists(absoluteSrc) {
-		return errs.New("artifact src does not exist: %s", absoluteSrc)
+		return nil, errs.New("artifact src does not exist: %s", absoluteSrc)
 	}
 
 	// Copy or link the artifact files, depending on whether the artifact in question relies on file transformations
 	if err := smartlink.LinkContents(absoluteSrc, absoluteDest); err != nil {
-		return errs.Wrap(err, "failed to link artifact")
+		return nil, errs.Wrap(err, "failed to link artifact")
 	}
 
 	files, err := fileutils.ListDir(absoluteSrc, false)
 	if err != nil {
-		return errs.Wrap(err, "failed to list files")
+		return nil, errs.Wrap(err, "failed to list files")
 	}
 
-	// Record deployment to config
-	err = d.Track(id, &deployment{
+	return &deployment{
 		Type:        deploymentTypeLink,
 		Path:        absoluteDest,
 		Files:       files.RelativePaths(),
 		RelativeSrc: relativeSrc,
-	}, nil)
-	if err != nil {
-		return errs.Wrap(err, "Could not record artifact use")
-	}
-
-	return nil
+	}, nil
 }
 
 // DeployViaCopy will take an artifact from the depot and copy it to the target path.
-func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) error {
+func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) (*deployment, error) {
 	d.fsMutex.Lock()
 	defer d.fsMutex.Unlock()
 
 	if exists, _ := d.Exists(id); !exists {
-		return errs.New("artifact not found in depot")
+		return nil, errs.New("artifact not found in depot")
 	}
 
 	var err error
 	absoluteDest, err = fileutils.ResolvePath(absoluteDest)
 	if err != nil {
-		return errs.Wrap(err, "failed to resolve path")
+		return nil, errs.Wrap(err, "failed to resolve path")
 	}
 
 	if err := d.validateVolume(absoluteDest); err != nil {
-		return errs.Wrap(err, "volume validation failed")
+		return nil, errs.Wrap(err, "volume validation failed")
 	}
 
 	if err := fileutils.MkdirUnlessExists(absoluteDest); err != nil {
-		return errs.Wrap(err, "failed to create path")
+		return nil, errs.Wrap(err, "failed to create path")
 	}
 
 	absoluteSrc := filepath.Join(d.Path(id), relativeSrc)
 	if !fileutils.DirExists(absoluteSrc) {
-		return errs.New("artifact src does not exist: %s", absoluteSrc)
+		return nil, errs.New("artifact src does not exist: %s", absoluteSrc)
 	}
 
 	// Copy or link the artifact files, depending on whether the artifact in question relies on file transformations
@@ -272,37 +266,29 @@ func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) 
 		if errors.As(err, &errExist) {
 			logging.Warning("Skipping files that already exist: " + errs.JoinMessage(errExist))
 		} else {
-			return errs.Wrap(err, "failed to copy artifact")
+			return nil, errs.Wrap(err, "failed to copy artifact")
 		}
 	}
 
 	files, err := fileutils.ListDir(absoluteSrc, false)
 	if err != nil {
-		return errs.Wrap(err, "failed to list files")
+		return nil, errs.Wrap(err, "failed to list files")
 	}
 
-	// Record deployment to config
-	err = d.Track(id, &deployment{
+	return &deployment{
 		Type:        deploymentTypeCopy,
 		Path:        absoluteDest,
 		Files:       files.RelativePaths(),
 		RelativeSrc: relativeSrc,
-	}, nil)
-	if err != nil {
-		return errs.Wrap(err, "Could not record artifact use")
-	}
-
-	return nil
+	}, nil
 }
 
 // Track will record an artifact deployment.
-// This is automatically called by `DeployVia*()` functions.
-// This should be called for ecosystems that handle installation of artifacts.
-// The artifact parameter is only necessary for tracking dynamically imported artifacts after being
-// added by an ecosystem.
-func (d *depot) Track(id strfmt.UUID, deploy *deployment, artifact *buildplan.Artifact) error {
+func (d *depot) Track(artifact *buildplan.Artifact, deploy *deployment) error {
 	d.mapMutex.Lock()
 	defer d.mapMutex.Unlock()
+
+	id := artifact.ArtifactID
 
 	// Record deployment of this artifact.
 	if _, ok := d.config.Deployments[id]; !ok {
@@ -474,10 +460,12 @@ func (d *depot) Save() error {
 	for id := range d.artifacts {
 		if deployments, ok := d.config.Deployments[id]; !ok || len(deployments) == 0 {
 			if _, exists := d.config.Cache[id]; !exists {
-				err := d.Track(id, nil, nil) // create cache entry for previously used artifact
+				// Create cache entry for previously used artifact.
+				size, err := fileutils.GetDirSize(d.Path(id))
 				if err != nil {
-					return errs.Wrap(err, "Could not update depot cache with previously used artifact")
+					return errs.Wrap(err, "Could not get artifact size on disk")
 				}
+				d.config.Cache[id] = &artifactInfo{Size: size, id: id}
 			}
 			d.config.Cache[id].InUse = false
 			logging.Debug("Artifact '%s' is no longer in use", id.String())

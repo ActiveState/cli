@@ -486,11 +486,14 @@ func (s *setup) install(artifact *buildplan.Artifact) (rerr error) {
 			return errs.Wrap(err, "Ecosystem unable to add artifact")
 		}
 
-		s.depot.Track(id, &deployment{
+		err = s.depot.Track(artifact, &deployment{
 			Type:  deploymentTypeEcosystem,
 			Path:  s.path,
 			Files: files,
-		}, artifact)
+		})
+		if err != nil {
+			return errs.Wrap(err, "Could not track deployment")
+		}
 		return nil
 	}
 
@@ -499,8 +502,10 @@ func (s *setup) install(artifact *buildplan.Artifact) (rerr error) {
 		return errs.Wrap(err, "Could not get env")
 	}
 
+	var deploy *deployment
 	if envDef.NeedsTransforms() || !s.supportsHardLinks || s.opts.Portable {
-		if err := s.depot.DeployViaCopy(id, envDef.InstallDir, s.path); err != nil {
+		deploy, err = s.depot.DeployViaCopy(id, envDef.InstallDir, s.path)
+		if err != nil {
 			return errs.Wrap(err, "Could not deploy artifact via copy")
 		}
 		if envDef.NeedsTransforms() {
@@ -509,9 +514,14 @@ func (s *setup) install(artifact *buildplan.Artifact) (rerr error) {
 			}
 		}
 	} else {
-		if err := s.depot.DeployViaLink(id, envDef.InstallDir, s.path); err != nil {
+		deploy, err = s.depot.DeployViaLink(id, envDef.InstallDir, s.path)
+		if err != nil {
 			return errs.Wrap(err, "Could not deploy artifact via link")
 		}
+	}
+	err = s.depot.Track(artifact, deploy)
+	if err != nil {
+		return errs.Wrap(err, "Could not track deployment")
 	}
 
 	return nil
