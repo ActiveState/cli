@@ -139,7 +139,8 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 	// by definition we'll need to download it (unless we're setting up the runtime from an archive).
 	// We also calculate which artifacts are immediately ready to be installed, as its the inverse condition of the above.
 	artifactsToDownload := artifactsToInstall.Filter(func(a *buildplan.Artifact) bool {
-		return !depot.Exists(a.ArtifactID)
+		exists, _ := depot.Exists(a.ArtifactID)
+		return !exists
 	})
 	artifactsToUnpack := artifactsToDownload
 	if opts.FromArchive != nil {
@@ -545,15 +546,13 @@ func (s *setup) uninstall(id strfmt.UUID) (rerr error) {
 	}
 
 	// If this is a dynamically imported artifact, tell the ecosystem to remove/undeploy it.
-	if artifact, exists := s.depot.config.Cache[id]; exists && artifact.Namespace != "" {
+	if exists, artifact := s.depot.Exists(id); exists && artifact != nil && artifact.Namespace != "" {
 		if ecosys := filterEcosystemMatchingNamespace(s.ecosystems, artifact.Namespace); ecosys != nil {
 			installedFiles := []string{}
 			// Find record of our deployment
-			if deployments, ok := s.depot.config.Deployments[id]; ok {
-				deployments = sliceutils.Filter(deployments, func(d deployment) bool { return d.Path == s.path })
-				if len(deployments) > 0 {
-					installedFiles = deployments[0].Files
-				}
+			deployments := sliceutils.Filter(s.depot.Deployments(id), func(d deployment) bool { return d.Path == s.path })
+			if len(deployments) > 0 {
+				installedFiles = deployments[0].Files
 			}
 
 			// Convert relative install locations to absolute paths.

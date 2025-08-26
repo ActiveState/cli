@@ -154,9 +154,15 @@ func (d *depot) SetCacheSize(mb int) {
 	d.cacheSize = int64(mb) * MB
 }
 
-func (d *depot) Exists(id strfmt.UUID) bool {
-	_, ok := d.artifacts[id]
-	return ok
+// Note: the returned artifactInfo may be nil for depot artifacts that predate this functionality.
+func (d *depot) Exists(id strfmt.UUID) (bool, *artifactInfo) {
+	if _, ok := d.artifacts[id]; ok {
+		if artifact, exists := d.config.Cache[id]; exists {
+			return true, artifact
+		}
+		return true, nil
+	}
+	return false, nil
 }
 
 func (d *depot) Path(id strfmt.UUID) string {
@@ -184,7 +190,7 @@ func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) 
 	d.fsMutex.Lock()
 	defer d.fsMutex.Unlock()
 
-	if !d.Exists(id) {
+	if exists, _ := d.Exists(id); !exists {
 		return errs.New("artifact not found in depot")
 	}
 
@@ -237,7 +243,7 @@ func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) 
 	d.fsMutex.Lock()
 	defer d.fsMutex.Unlock()
 
-	if !d.Exists(id) {
+	if exists, _ := d.Exists(id); !exists {
 		return errs.New("artifact not found in depot")
 	}
 
@@ -327,6 +333,13 @@ func (d *depot) Track(id strfmt.UUID, deploy *deployment, artifact *buildplan.Ar
 	return nil
 }
 
+func (d *depot) Deployments(id strfmt.UUID) []deployment {
+	if deployments, ok := d.config.Deployments[id]; ok {
+		return deployments
+	}
+	return nil
+}
+
 // Untrack will remove an artifact deployment.
 // It does not actually delete files; it just tells the depot a previously tracked artifact should
 // no longer be tracked.
@@ -342,7 +355,7 @@ func (d *depot) Undeploy(id strfmt.UUID, relativeSrc, path string) error {
 	d.fsMutex.Lock()
 	defer d.fsMutex.Unlock()
 
-	if !d.Exists(id) {
+	if exists, _ := d.Exists(id); !exists {
 		return errs.New("artifact not found in depot")
 	}
 
