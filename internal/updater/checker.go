@@ -13,11 +13,11 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/pkg/platform/api"
 )
 
 type Configurable interface {
@@ -44,7 +44,7 @@ type Checker struct {
 }
 
 func NewDefaultChecker(cfg Configurable, an analytics.Dispatcher) *Checker {
-	infoURL := api.GetServiceURL(api.ServiceUpdateInfo).String()
+	infoURL := constants.APIUpdateInfoURL
 	if url, ok := os.LookupEnv("_TEST_UPDATE_INFO_URL"); ok {
 		infoURL = url
 	}

@@ -181,6 +181,9 @@ const SvcLogRotateIntervalEnvVarName = "ACTIVESTATE_CLI_LOG_ROTATE_INTERVAL_MS"
 // DisableActivateEventsEnvVarName is the environment variable used to disable events when activating or checking out a project
 const DisableActivateEventsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ACTIVATE_EVENTS"
 
+// APIUpdateInfoURL is the URL for our update info server
+const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
+
 // APIUpdateURL is the URL for our update files
 const APIUpdateURL = "https://state-tool.activestate.com/update/state"
 
