@@ -56,6 +56,77 @@ func (suite *ApiIntegrationTestSuite) TestNoApiCallsForPlainInvocation() {
 	suite.Assert().True(readLogFile, "did not read log file")
 }
 
+func (suite *ApiIntegrationTestSuite) TestAPIHostConfig_SetBeforeInvocation() {
+	suite.OnlyRunForTags(tagsuite.Critical)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.SetConfig("api.host", "test.example.com")
+
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", "doesnt/exist"),
+		e2e.OptAppendEnv("VERBOSE=true"),
+	)
+	cp.ExpectExitCode(11) // We know this command will fail, but we want to check the log file
+	ts.IgnoreLogErrors()
+
+	correctHostCount := 0
+	incorrectHostCount := 0
+	for _, path := range ts.LogFiles() {
+		contents := string(fileutils.ReadFileUnsafe(path))
+		if strings.Contains(contents, "test.example.com") {
+			correctHostCount++
+		}
+		if strings.Contains(contents, "platform.activestate.com") {
+			incorrectHostCount++
+		}
+	}
+	suite.Assert().Greater(correctHostCount, 0, "Log file should contain the configured API host 'test.example.com'")
+	suite.Assert().Equal(incorrectHostCount, 0, "Log file should not contain the default API host 'platform.activestate.com'")
+
+	// Clean up - remove the config setting
+	cp = ts.Spawn("config", "set", "api.host", "")
+	cp.Expect("Successfully")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *ApiIntegrationTestSuite) TestAPIHostConfig_SetOnFirstInvocation() {
+	suite.OnlyRunForTags(tagsuite.Critical)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("config", "set", "api.host", "test.example.com")
+	cp.Expect("Successfully")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", "doesnt/exist"),
+		e2e.OptAppendEnv("VERBOSE=true"),
+	)
+	cp.ExpectExitCode(11) // We know this command will fail, but we want to check the log file
+	ts.IgnoreLogErrors()
+
+	// Because the config value is set on first invocation of the state tool the state-svc will start
+	// before the state tool has a chance to set the host in the config. This means that it will still
+	// use the default host. The above test confirms that the service will use the configured host if
+	// the config is set before the state tool is invoked.
+	correctHostCount := 0
+	for _, path := range ts.LogFiles() {
+		contents := string(fileutils.ReadFileUnsafe(path))
+		if strings.Contains(contents, "test.example.com") {
+			correctHostCount++
+		}
+	}
+	suite.Assert().Greater(correctHostCount, 0, "Log file should contain the configured API host 'test.example.com'")
+
+	// Clean up - remove the config setting
+	cp = ts.Spawn("config", "set", "api.host", "")
+	cp.Expect("Successfully")
+	cp.ExpectExitCode(0)
+}
+
 func TestApiIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ApiIntegrationTestSuite))
 }

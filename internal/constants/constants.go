@@ -181,9 +181,6 @@ const SvcLogRotateIntervalEnvVarName = "ACTIVESTATE_CLI_LOG_ROTATE_INTERVAL_MS"
 // DisableActivateEventsEnvVarName is the environment variable used to disable events when activating or checking out a project
 const DisableActivateEventsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ACTIVATE_EVENTS"
 
-// APIUpdateInfoURL is the URL for our update info server
-const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
-
 // APIUpdateURL is the URL for our update files
 const APIUpdateURL = "https://state-tool.activestate.com/update/state"
 
@@ -260,6 +257,9 @@ const VulnerabilitiesAPIPath = "/v13s/v1/graphql"
 
 // HasuraInventoryAPIPath is the path used for the hasura inventory api
 const HasuraInventoryAPIPath = "/sv/hasura-inventory/v1/graphql"
+
+// UpdateInfoAPIPath is the path used for the update info api
+const UpdateInfoAPIPath = "/sv/state-update/api/v1"
 
 // NotificationsInfoURL is the URL we check against to see what versions are deprecated
 const NotificationsInfoURL = "https://state-tool.s3.amazonaws.com/messages.json"
@@ -408,6 +408,9 @@ const SecurityPromptConfig = "security.prompt.enabled"
 
 // SecurityPromptLevelConfig is the config key used to determine the level of security prompts
 const SecurityPromptLevelConfig = "security.prompt.level"
+
+// APIHostConfig is the config key used to determine the api host
+const APIHostConfig = "api.host"
 
 // SvcAppName is the name we give our state-svc application
 const SvcAppName = "State Service"

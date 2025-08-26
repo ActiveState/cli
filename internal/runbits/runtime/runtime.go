@@ -27,6 +27,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/project"
@@ -264,7 +265,7 @@ func Update(
 		// Build progress URL is of the form
 		// https://<host>/<owner>/<project>/distributions?branch=<branch>&commitID=<commitID>
 		host := constants.DefaultAPIHost
-		if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
+		if hostOverride := api.HostOverride(); hostOverride != "" {
 			host = hostOverride
 		}
 		path, err := url.JoinPath(proj.Owner(), proj.Name(), constants.BuildProgressUrlPathName)
