@@ -796,6 +796,10 @@ func (s *Session) SetConfig(key string, value interface{}) {
 	require.NoError(s.T, s.cfg.Set(key, value))
 }
 
+func (s *Session) GetConfig(key string) interface{} {
+	return s.cfg.Get(key)
+}
+
 func RunningOnCI() bool {
 	return condition.OnCI()
 }

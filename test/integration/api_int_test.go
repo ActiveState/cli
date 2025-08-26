@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -64,6 +65,8 @@ func (suite *ApiIntegrationTestSuite) TestAPIHostConfig_SetBeforeInvocation() {
 
 	ts.SetConfig("api.host", "test.example.com")
 
+	suite.Assert().Equal(ts.GetConfig("api.host"), "test.example.com")
+
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "doesnt/exist"),
 		e2e.OptAppendEnv("VERBOSE=true"),
@@ -75,6 +78,7 @@ func (suite *ApiIntegrationTestSuite) TestAPIHostConfig_SetBeforeInvocation() {
 	incorrectHostCount := 0
 	for _, path := range ts.LogFiles() {
 		contents := string(fileutils.ReadFileUnsafe(path))
+		fmt.Printf("Log file contents for %s: %s\n", path, contents)
 		if strings.Contains(contents, "test.example.com") {
 			correctHostCount++
 		}
