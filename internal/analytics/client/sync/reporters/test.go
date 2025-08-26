@@ -13,6 +13,7 @@ import (
 
 type TestReporter struct {
 	path string
+	host string
 }
 
 const TestReportFilename = "analytics.log"
@@ -23,8 +24,8 @@ func TestReportFilepath() string {
 	return filepath.Join(appdata, TestReportFilename)
 }
 
-func NewTestReporter(path string) *TestReporter {
-	return &TestReporter{path}
+func NewTestReporter(path, host string) *TestReporter {
+	return &TestReporter{path, host}
 }
 
 func (r *TestReporter) ID() string {
@@ -36,11 +37,12 @@ type TestLogEntry struct {
 	Action     string
 	Source     string
 	Label      string
+	URL        string
 	Dimensions *dimensions.Values
 }
 
 func (r *TestReporter) Event(category, action, source, label string, d *dimensions.Values) error {
-	b, err := json.Marshal(TestLogEntry{category, action, source, label, d})
+	b, err := json.Marshal(TestLogEntry{category, action, source, label, r.host, d})
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal test log entry")
 	}

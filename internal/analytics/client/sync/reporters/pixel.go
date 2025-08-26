@@ -15,13 +15,17 @@ type PixelReporter struct {
 	url string
 }
 
-func NewPixelReporter() *PixelReporter {
+func NewPixelReporter(url string) *PixelReporter {
 	var pixelUrl string
 
-	// Attempt to get the value for the pixel URL from the environment.  Fall back to default if that fails
-	if pixelUrl = os.Getenv(constants.AnalyticsPixelOverrideEnv); pixelUrl == "" {
+	// If a host is provided, use it. Otherwise, use the environment variable.
+	// Fall back to default if that fails.
+	if url != "" {
+		pixelUrl = url
+	} else if pixelUrl = os.Getenv(constants.AnalyticsPixelOverrideEnv); pixelUrl != "" {
 		pixelUrl = constants.DefaultAnalyticsPixel
 	}
+
 	return &PixelReporter{pixelUrl}
 }
 

@@ -644,6 +644,42 @@ func (suite *AnalyticsIntegrationTestSuite) TestCIAndInteractiveDimensions() {
 	}
 }
 
+func (suite *AnalyticsIntegrationTestSuite) TestAnalyticsPixelOverride() {
+	suite.OnlyRunForTags(tagsuite.Analytics)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("config", "set", constants.AnalyticsPixelOverrideConfig, "https://example.com")
+	cp.Expect("Successfully set config key")
+	cp.ExpectExitCode(0)
+
+	// Stop the service so that the next command will pick up the new config values.
+	// We need to do this because the analytics reporting instance will have values set that will
+	// be used until a new instance is created.
+	cp = ts.SpawnCmd(ts.SvcExe, "stop")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("--version")
+	cp.Expect("ActiveState CLI")
+	cp.ExpectExitCode(0)
+
+	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+	events := parseAnalyticsEvents(suite, ts)
+	suite.Require().NotEmpty(events)
+
+	foundCount := 0
+	for _, e := range events {
+		if e.URL == "https://example.com" {
+			foundCount++
+		}
+	}
+
+	// Because the service has already reported some events with the default configuration values,
+	// we expect to find at least one event with the new configuration values after the service is restarted.
+	suite.Greater(foundCount, 1)
+}
+
 func TestAnalyticsIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(AnalyticsIntegrationTestSuite))
 }

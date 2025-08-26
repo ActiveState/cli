@@ -409,6 +409,9 @@ const SecurityPromptConfig = "security.prompt.enabled"
 // SecurityPromptLevelConfig is the config key used to determine the level of security prompts
 const SecurityPromptLevelConfig = "security.prompt.level"
 
+// AnalyticsPixelOverrideConfig is the config key used to override the analytics pixel url
+const AnalyticsPixelOverrideConfig = "report.analytics.endpoint"
+
 // SvcAppName is the name we give our state-svc application
 const SvcAppName = "State Service"
 

@@ -17,4 +17,5 @@ type Dispatcher interface {
 
 func init() {
 	configMediator.RegisterOption(constants.ReportAnalyticsConfig, configMediator.Bool, true)
+	configMediator.RegisterOption(constants.AnalyticsPixelOverrideConfig, configMediator.String, "")
 }
