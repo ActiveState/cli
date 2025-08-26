@@ -57,7 +57,7 @@ func (suite *ApiIntegrationTestSuite) TestNoApiCallsForPlainInvocation() {
 }
 
 func (suite *ApiIntegrationTestSuite) TestAPIHostConfig_SetBeforeInvocation() {
-	suite.OnlyRunForTags(tagsuite.Critical)
+	suite.OnlyRunForTags(tagsuite.API)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -92,7 +92,7 @@ func (suite *ApiIntegrationTestSuite) TestAPIHostConfig_SetBeforeInvocation() {
 }
 
 func (suite *ApiIntegrationTestSuite) TestAPIHostConfig_SetOnFirstInvocation() {
-	suite.OnlyRunForTags(tagsuite.Critical)
+	suite.OnlyRunForTags(tagsuite.API)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
