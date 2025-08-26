@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	mediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils/lockfile"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/spf13/cast"
@@ -21,12 +22,15 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+const lockTimeout = 30 * time.Second
+
 // Instance holds our main config logic
 type Instance struct {
 	appDataDir  string
 	thread      *singlethread.Thread
 	closeThread bool
 	db          *sql.DB
+	lockfile    string
 	closed      bool
 }
 
@@ -35,7 +39,7 @@ func New() (*Instance, error) {
 	return NewCustom("", singlethread.New(), true)
 }
 
-// NewCustom is intended only to be used from tests or internally to this package
+// NewCustom is intended only to be used from tests or internally to this package.
 func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) (*Instance, error) {
 	i := &Instance{}
 	i.thread = thread
@@ -56,7 +60,7 @@ func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) 
 	}
 
 	path := filepath.Join(i.appDataDir, C.InternalConfigFileName)
-
+	i.lockfile = path + ".lock"
 	var err error
 	t := time.Now()
 	i.db, err = sql.Open("sqlite", path)
@@ -87,6 +91,7 @@ func (i *Instance) Close() error {
 	if i.closeThread {
 		i.thread.Close()
 	}
+
 	return i.db.Close()
 }
 
@@ -121,6 +126,17 @@ func (i *Instance) setWithCallback(key string, valueF func(currentValue interfac
 	if v == CancelSet {
 		logging.Debug("setWithCallback cancelled")
 		return nil
+	}
+
+	pidLock, err := lockfile.NewPidLock(i.lockfile)
+	if err != nil {
+		return errs.Wrap(err, "Could not create lock file for %s", i.lockfile)
+	}
+	defer pidLock.Close()
+
+	if err := pidLock.WaitForLock(lockTimeout); err != nil {
+		logging.Critical("Failed to acquire config database lock within %v: %v", lockTimeout, err)
+		return errs.Wrap(err, "Could not acquire config database lock within %v. Another process may be modifying the config.", lockTimeout)
 	}
 
 	q, err := i.db.Prepare(`INSERT OR REPLACE INTO config(key, value) VALUES(?,?)`)
