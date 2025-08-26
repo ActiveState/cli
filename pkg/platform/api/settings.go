@@ -135,7 +135,7 @@ func GetServiceURL(service Service) *url.URL {
 		serviceURL.Host = *host
 	}
 
-	if insecure := getProjectHostFromEnv(); insecure == "true" {
+	if insecure := os.Getenv(constants.APIHostEnvVarName); insecure == "true" {
 		if serviceURL.Scheme == "https" || serviceURL.Scheme == "wss" {
 			serviceURL.Scheme = strings.TrimRight(serviceURL.Scheme, "s")
 		}
@@ -187,12 +187,8 @@ func getProjectHostFromConfig() string {
 	return cfg.GetString(constants.APIHostConfig)
 }
 
-func getProjectHostFromEnv() string {
-	return os.Getenv(constants.APIHostEnvVarName)
-}
-
 func HostOverride() string {
-	if apiHost := getProjectHostFromEnv(); apiHost != "" {
+	if apiHost := os.Getenv(constants.APIHostEnvVarName); apiHost != "" {
 		return apiHost
 	}
 
