@@ -18,6 +18,8 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 )
 
 type Configurable interface {
@@ -30,32 +32,42 @@ type InvocationSource string
 var (
 	InvocationSourceInstall InvocationSource = "install"
 	InvocationSourceUpdate  InvocationSource = "update"
+
+	UpdateEndpointURL string
 )
 
+func init() {
+	configMediator.RegisterOption(constants.UpdateEndpointConfig, configMediator.String, "")
+}
+
+func RegisterConfigListener(cfg Configurable) {
+	configMediator.AddListener(constants.UpdateEndpointConfig, func() {
+		UpdateEndpointURL = cfg.GetString(constants.UpdateEndpointConfig)
+	})
+}
+
+func SetConfig(cfg Configurable) {
+	UpdateEndpointURL = cfg.GetString(constants.UpdateEndpointConfig)
+}
+
 type Checker struct {
-	cfg        Configurable
-	an         analytics.Dispatcher
-	apiInfoURL string
-	retryhttp  *retryhttp.Client
-	cache      *AvailableUpdate
-	done       chan struct{}
+	cfg       Configurable
+	an        analytics.Dispatcher
+	retryhttp *retryhttp.Client
+	cache     *AvailableUpdate
+	done      chan struct{}
 
 	InvocationSource InvocationSource
 }
 
 func NewDefaultChecker(cfg Configurable, an analytics.Dispatcher) *Checker {
-	infoURL := constants.APIUpdateInfoURL
-	if url, ok := os.LookupEnv("_TEST_UPDATE_INFO_URL"); ok {
-		infoURL = url
-	}
-	return NewChecker(cfg, an, infoURL, retryhttp.DefaultClient)
+	return NewChecker(cfg, an, retryhttp.DefaultClient)
 }
 
-func NewChecker(cfg Configurable, an analytics.Dispatcher, infoURL string, httpget *retryhttp.Client) *Checker {
+func NewChecker(cfg Configurable, an analytics.Dispatcher, httpget *retryhttp.Client) *Checker {
 	return &Checker{
 		cfg,
 		an,
-		infoURL,
 		httpget,
 		nil,
 		make(chan struct{}),
@@ -83,11 +95,16 @@ func (u *Checker) infoURL(tag, desiredVersion, branchName, platform, arch string
 		v.Set("target-version", desiredVersion)
 	}
 
+	infoURL := UpdateEndpointURL
+	if url, ok := os.LookupEnv("_TEST_UPDATE_INFO_URL"); ok {
+		infoURL = url
+	}
+
 	if tag != "" {
 		v.Set("tag", tag)
 	}
 
-	return u.apiInfoURL + "/info?" + v.Encode()
+	return infoURL + "/info?" + v.Encode()
 }
 
 func (u *Checker) getUpdateInfo(desiredChannel, desiredVersion string) (*AvailableUpdate, error) {

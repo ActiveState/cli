@@ -37,6 +37,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcctl"
+	"github.com/ActiveState/cli/internal/updater"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -91,6 +92,8 @@ func main() {
 		return
 	}
 	rollbar.SetConfig(cfg)
+
+	updater.SetConfig(cfg)
 
 	// Configuration options
 	// This should only be used if the config option is not exclusive to one package.
