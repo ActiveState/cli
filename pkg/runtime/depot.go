@@ -154,7 +154,11 @@ func (d *depot) SetCacheSize(mb int) {
 	d.cacheSize = int64(mb) * MB
 }
 
-// Note: the returned artifactInfo may be nil for depot artifacts that predate this functionality.
+// Exists returns whether or not an artifact ID exists in the depot, along with any known metadata
+// associated with that artifact ID.
+// Existence is merely whether a directory with the name of the given ID exists on the filesystem.
+// Artifact metadata comes from the depot's cache, and may not exist for installed artifacts that
+// predate the cache.
 func (d *depot) Exists(id strfmt.UUID) (bool, *artifactInfo) {
 	if _, ok := d.artifacts[id]; ok {
 		if artifact, exists := d.config.Cache[id]; exists {
@@ -186,6 +190,7 @@ func (d *depot) Put(id strfmt.UUID) error {
 }
 
 // DeployViaLink will take an artifact from the depot and link it to the target path.
+// It should return deployment info to be used for tracking the artifact.
 func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) (*deployment, error) {
 	d.fsMutex.Lock()
 	defer d.fsMutex.Unlock()
@@ -233,6 +238,7 @@ func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) 
 }
 
 // DeployViaCopy will take an artifact from the depot and copy it to the target path.
+// It should return deployment info to be used for tracking the artifact.
 func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) (*deployment, error) {
 	d.fsMutex.Lock()
 	defer d.fsMutex.Unlock()
