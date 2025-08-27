@@ -654,11 +654,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestAnalyticsPixelOverride() {
 	cp.Expect("Successfully set config key")
 	cp.ExpectExitCode(0)
 
-	// Stop the service so that the next command will pick up the new config values.
-	// We need to do this because the analytics reporting instance will have values set that will
-	// be used until a new instance is created.
-	cp = ts.SpawnCmd(ts.SvcExe, "stop")
-	cp.ExpectExitCode(0)
+	time.Sleep(time.Second) // Ensure state-svc has time to report events
 
 	cp = ts.Spawn("--version")
 	cp.Expect("ActiveState CLI")
@@ -668,6 +664,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestAnalyticsPixelOverride() {
 	events := parseAnalyticsEvents(suite, ts)
 	suite.Require().NotEmpty(events)
 
+	// Some events will fire before the config is updated, so we expect to
+	// find at least one event with the new configuration values after the service is restarted.
 	foundCount := 0
 	for _, e := range events {
 		if e.URL == "https://example.com" {

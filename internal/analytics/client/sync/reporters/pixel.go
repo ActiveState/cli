@@ -4,29 +4,16 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 )
 
-type PixelReporter struct {
-	url string
-}
+type PixelReporter struct{}
 
-func NewPixelReporter(url string) *PixelReporter {
-	var pixelUrl string
-
-	// If a host is provided, use it. Otherwise, use the environment variable.
-	// Fall back to default if that fails.
-	if url != "" {
-		pixelUrl = url
-	} else if pixelUrl = os.Getenv(constants.AnalyticsPixelOverrideEnv); pixelUrl != "" {
-		pixelUrl = constants.DefaultAnalyticsPixel
-	}
-
-	return &PixelReporter{pixelUrl}
+func NewPixelReporter() *PixelReporter {
+	return &PixelReporter{}
 }
 
 func (r *PixelReporter) ID() string {
@@ -34,9 +21,9 @@ func (r *PixelReporter) ID() string {
 }
 
 func (r *PixelReporter) Event(category, action, source, label string, d *dimensions.Values) error {
-	pixelURL, err := url.Parse(r.url)
+	pixelURL, err := url.Parse(analytics.AnalyticsURL)
 	if err != nil {
-		return errs.Wrap(err, "Invalid pixel URL: %s", r.url)
+		return errs.Wrap(err, "Invalid pixel URL: %s", analytics.AnalyticsURL)
 	}
 
 	query := &url.Values{}

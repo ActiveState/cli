@@ -120,16 +120,15 @@ func New(source string, cfg *config.Instance, auth *authentication.Auth, out out
 
 	a.customDimensions = customDimensions
 
-	url := a.cfg.GetString(constants.AnalyticsPixelOverrideConfig)
 	// Register reporters
 	if condition.InTest() {
 		logging.Debug("Using test reporter")
-		a.NewReporter(reporters.NewTestReporter(reporters.TestReportFilepath(), url))
+		a.NewReporter(reporters.NewTestReporter(reporters.TestReportFilepath()))
 		logging.Debug("Using test reporter as instructed by env")
 	} else if v := os.Getenv(constants.AnalyticsLogEnvVarName); v != "" {
-		a.NewReporter(reporters.NewTestReporter(v, url))
+		a.NewReporter(reporters.NewTestReporter(v))
 	} else {
-		a.NewReporter(reporters.NewPixelReporter(url))
+		a.NewReporter(reporters.NewPixelReporter())
 	}
 
 	return a

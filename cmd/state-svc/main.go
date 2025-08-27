@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state-svc/autostart"
+	"github.com/ActiveState/cli/internal/analytics"
 	anaSync "github.com/ActiveState/cli/internal/analytics/client/sync"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
@@ -69,6 +70,12 @@ func main() {
 	}
 	rollbar.SetupRollbar(constants.StateServiceRollbarToken)
 	rollbar.SetConfig(cfg)
+
+	if err := analytics.RegisterConfigListener(cfg); err != nil {
+		multilog.Critical("Could not register config listener: %v", errs.JoinMessage(err))
+		exitCode = 1
+		return
+	}
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)

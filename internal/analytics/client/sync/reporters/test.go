@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -13,7 +14,6 @@ import (
 
 type TestReporter struct {
 	path string
-	host string
 }
 
 const TestReportFilename = "analytics.log"
@@ -24,8 +24,8 @@ func TestReportFilepath() string {
 	return filepath.Join(appdata, TestReportFilename)
 }
 
-func NewTestReporter(path, host string) *TestReporter {
-	return &TestReporter{path, host}
+func NewTestReporter(path string) *TestReporter {
+	return &TestReporter{path}
 }
 
 func (r *TestReporter) ID() string {
@@ -42,7 +42,7 @@ type TestLogEntry struct {
 }
 
 func (r *TestReporter) Event(category, action, source, label string, d *dimensions.Values) error {
-	b, err := json.Marshal(TestLogEntry{category, action, source, label, r.host, d})
+	b, err := json.Marshal(TestLogEntry{category, action, source, label, analytics.AnalyticsURL, d})
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal test log entry")
 	}
