@@ -71,6 +71,7 @@ func main() {
 	rollbar.SetupRollbar(constants.StateServiceRollbarToken)
 	rollbar.SetConfig(cfg)
 
+	analytics.SetConfig(cfg)
 	if err := analytics.RegisterConfigListener(cfg); err != nil {
 		multilog.Critical("Could not register config listener: %v", errs.JoinMessage(err))
 		exitCode = 1

@@ -12,9 +12,14 @@ import (
 
 	"github.com/ActiveState/termtest"
 	"github.com/thoas/go-funk"
+	"golang.org/x/net/context"
 
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
+	"github.com/ActiveState/cli/pkg/platform/model"
 
 	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
@@ -650,15 +655,29 @@ func (suite *AnalyticsIntegrationTestSuite) TestAnalyticsPixelOverride() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("config", "set", constants.AnalyticsPixelOverrideConfig, "https://example.com")
+	testURL := "https://example.com"
+	cp := ts.Spawn("config", "set", constants.AnalyticsPixelOverrideConfig, testURL)
 	cp.Expect("Successfully set config key")
 	cp.ExpectExitCode(0)
 
-	time.Sleep(time.Second) // Ensure state-svc has time to report events
+	// Create IPC client using the test's socket directory to connect to the same state-svc instance
+	// that the spawned state tool commands are using.
+	// We make a request to the service directly to ensure we're hitting an endpoint that will send an event.
+	sockPath := &ipc.SockPath{
+		RootDir:    ts.Dirs.SockRoot,
+		AppName:    constants.CommandName,
+		AppChannel: constants.ChannelName,
+	}
+	ipcClient := ipc.NewClient(sockPath)
 
-	cp = ts.Spawn("--version")
-	cp.Expect("ActiveState CLI")
-	cp.ExpectExitCode(0)
+	svcPort, err := svcctl.LocateHTTP(ipcClient)
+	suite.Require().NoError(err, errs.JoinMessage(err))
+
+	svcmodel := model.NewSvcModel(svcPort)
+	_, err = svcmodel.LocalProjects(context.Background())
+	suite.Require().NoError(err, errs.JoinMessage(err))
+
+	time.Sleep(time.Second) // Ensure state-svc has time to report events
 
 	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
 	events := parseAnalyticsEvents(suite, ts)
@@ -666,16 +685,38 @@ func (suite *AnalyticsIntegrationTestSuite) TestAnalyticsPixelOverride() {
 
 	// Some events will fire before the config is updated, so we expect to
 	// find at least one event with the new configuration values after the service is restarted.
-	foundCount := 0
 	for _, e := range events {
-		if e.URL == "https://example.com" {
-			foundCount++
+		// Specifically check an event sent via the state-svc and ensure that the URL is the one we set in the config
+		if e.Category == anaConst.CatStateSvc && e.Action == "endpoint" && e.Label == "Projects" {
+			suite.Assert().Equal(testURL, e.URL)
 		}
 	}
 
-	// Because the service has already reported some events with the default configuration values,
-	// we expect to find at least one event with the new configuration values after the service is restarted.
-	suite.Greater(foundCount, 1)
+	// Check that all events after the config set event have the correct URL.
+	configSetEventIndex := -1
+	for i, e := range events {
+		if e.Category == anaConst.CatConfig && e.Action == anaConst.ActConfigSet && e.Label == constants.AnalyticsPixelOverrideConfig {
+			configSetEventIndex = i
+			break
+		}
+	}
+	suite.Require().NotEqual(-1, configSetEventIndex, "Should find the config set event")
+
+	// Check all events after config set, skipping the immediate update event
+	for i, e := range events {
+		if i > configSetEventIndex {
+			// Skip the immediate update event right after config set.
+			// The update event is sent before the config is updated, so it will have an empty URL.
+			if i == configSetEventIndex+1 && e.Category == "updates" {
+				continue
+			}
+			// All other events with URLs should have the correct one.
+			// This includes events from the state tool and the state-svc.
+			if e.URL != testURL {
+				suite.Equal(testURL, e.URL, "Event after config set (%s:%s) should have the updated URL", e.Category, e.Action)
+			}
+		}
+	}
 }
 
 func TestAnalyticsIntegrationTestSuite(t *testing.T) {

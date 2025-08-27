@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 )
 
@@ -21,7 +23,17 @@ func (r *PixelReporter) ID() string {
 }
 
 func (r *PixelReporter) Event(category, action, source, label string, d *dimensions.Values) error {
-	pixelURL, err := url.Parse(analytics.AnalyticsURL)
+	var pixelUrl string
+	switch {
+	case os.Getenv(constants.AnalyticsPixelOverrideEnv) != "":
+		pixelUrl = os.Getenv(constants.AnalyticsPixelOverrideEnv)
+	case analytics.AnalyticsURL != "":
+		pixelUrl = analytics.AnalyticsURL
+	default:
+		pixelUrl = constants.DefaultAnalyticsPixel
+	}
+
+	pixelURL, err := url.Parse(pixelUrl)
 	if err != nil {
 		return errs.Wrap(err, "Invalid pixel URL: %s", analytics.AnalyticsURL)
 	}

@@ -23,6 +23,10 @@ func init() {
 	configMediator.RegisterOption(constants.AnalyticsPixelOverrideConfig, configMediator.String, "")
 }
 
+func SetConfig(cfg *config.Instance) {
+	AnalyticsURL = cfg.GetString(constants.AnalyticsPixelOverrideConfig)
+}
+
 func RegisterConfigListener(cfg *config.Instance) error {
 	configMediator.AddListener(constants.AnalyticsPixelOverrideConfig, func() {
 		AnalyticsURL = cfg.GetString(constants.AnalyticsPixelOverrideConfig)
