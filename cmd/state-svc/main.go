@@ -72,6 +72,12 @@ func main() {
 	rollbar.SetConfig(cfg)
 	api.SetConfig(cfg)
 
+	if err := api.RegisterConfigListener(cfg); err != nil {
+		multilog.Critical("Could not register config listener: %v", errs.JoinMessage(err))
+		exitCode = 1
+		return
+	}
+
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)
 	}

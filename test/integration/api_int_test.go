@@ -66,10 +66,9 @@ func (suite *ApiIntegrationTestSuite) TestAPIHostConfig_SetBeforeInvocation() {
 	suite.Assert().Equal(ts.GetConfig("api.host"), "test.example.com")
 
 	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "doesnt/exist"),
-		e2e.OptAppendEnv("VERBOSE=true"),
+		e2e.OptArgs("--version"),
 	)
-	cp.ExpectExitCode(11) // We know this command will fail, but we want to check the log file
+	cp.ExpectExitCode(0)
 	ts.IgnoreLogErrors()
 
 	correctHostCount := 0
@@ -105,16 +104,15 @@ func (suite *ApiIntegrationTestSuite) TestAPIHostConfig_SetOnFirstInvocation() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "doesnt/exist"),
+		e2e.OptArgs("--version"),
 		e2e.OptAppendEnv("VERBOSE=true"),
 	)
-	cp.ExpectExitCode(11) // We know this command will fail, but we want to check the log file
-	ts.IgnoreLogErrors()
+	cp.ExpectExitCode(0)
+	// After setting the config, there should be no log entries for the default host.
+	suite.Assert().NotContains(cp.Output(), "platform.activestate.com")
 
-	// Because the config value is set on first invocation of the state tool the state-svc will start
-	// before the state tool has a chance to set the host in the config. This means that it will still
-	// use the default host. The above test confirms that the service will use the configured host if
-	// the config is set before the state tool is invoked.
+	// Some state-svc log entries will contain the default host as it executed requests before
+	// we set the config value.
 	correctHostCount := 0
 	for _, path := range ts.LogFiles() {
 		contents := string(fileutils.ReadFileUnsafe(path))
