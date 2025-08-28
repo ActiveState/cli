@@ -261,6 +261,9 @@ const VulnerabilitiesAPIPath = "/v13s/v1/graphql"
 // HasuraInventoryAPIPath is the path used for the hasura inventory api
 const HasuraInventoryAPIPath = "/sv/hasura-inventory/v1/graphql"
 
+// UpdateInfoAPIPath is the path used for the update info api
+const UpdateInfoAPIPath = "/sv/state-update/api/v1"
+
 // NotificationsInfoURL is the URL we check against to see what versions are deprecated
 const NotificationsInfoURL = "https://state-tool.s3.amazonaws.com/messages.json"
 
@@ -408,6 +411,9 @@ const SecurityPromptConfig = "security.prompt.enabled"
 
 // SecurityPromptLevelConfig is the config key used to determine the level of security prompts
 const SecurityPromptLevelConfig = "security.prompt.level"
+
+// APIHostConfig is the config key used to determine the api host
+const APIHostConfig = "api.host"
 
 // SvcAppName is the name we give our state-svc application
 const SvcAppName = "State Service"
