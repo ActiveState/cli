@@ -15,13 +15,16 @@ import (
 )
 
 type PixelReporter struct {
-	cfg *config.Instance
+	url string
 }
 
 func NewPixelReporter(cfg *config.Instance) *PixelReporter {
-	reporter := &PixelReporter{cfg: cfg}
+	reporter := &PixelReporter{
+		url: sourcePixelURL(cfg),
+	}
+
 	configMediator.AddListener(constants.AnalyticsPixelOverrideConfig, func() {
-		reporter.cfg = cfg
+		reporter.url = sourcePixelURL(cfg)
 	})
 	return reporter
 }
@@ -31,25 +34,9 @@ func (r *PixelReporter) ID() string {
 }
 
 func (r *PixelReporter) Event(category, action, source, label string, d *dimensions.Values) error {
-	var (
-		pixelUrl string
-
-		envUrl = os.Getenv(constants.AnalyticsPixelOverrideEnv)
-		cfgUrl = r.cfg.GetString(constants.AnalyticsPixelOverrideConfig)
-	)
-
-	switch {
-	case envUrl != "":
-		pixelUrl = envUrl
-	case cfgUrl != "":
-		pixelUrl = cfgUrl
-	default:
-		pixelUrl = constants.DefaultAnalyticsPixel
-	}
-
-	pixelURL, err := url.Parse(pixelUrl)
+	pixelURL, err := url.Parse(r.url)
 	if err != nil {
-		return errs.Wrap(err, "Invalid pixel URL: %s", pixelUrl)
+		return errs.Wrap(err, "Invalid pixel URL: %s", r.url)
 	}
 
 	query := &url.Values{}
@@ -71,4 +58,24 @@ func (r *PixelReporter) Event(category, action, source, label string, d *dimensi
 	}
 
 	return nil
+}
+
+func sourcePixelURL(cfg *config.Instance) string {
+	var (
+		pixelUrl string
+
+		envUrl = os.Getenv(constants.AnalyticsPixelOverrideEnv)
+		cfgUrl = cfg.GetString(constants.AnalyticsPixelOverrideConfig)
+	)
+
+	switch {
+	case envUrl != "":
+		pixelUrl = envUrl
+	case cfgUrl != "":
+		pixelUrl = cfgUrl
+	default:
+		pixelUrl = constants.DefaultAnalyticsPixel
+	}
+
+	return pixelUrl
 }
