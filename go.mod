@@ -51,11 +51,11 @@ require (
 	github.com/thoas/go-funk v0.8.0
 	github.com/vbauerster/mpb/v7 v7.1.5
 	github.com/vektah/gqlparser/v2 v2.5.16
-	golang.org/x/crypto v0.35.0 // indirect
-	golang.org/x/net v0.36.0
-	golang.org/x/sys v0.30.0
-	golang.org/x/term v0.29.0
-	golang.org/x/text v0.22.0
+	golang.org/x/crypto v0.36.0 // indirect
+	golang.org/x/net v0.38.0
+	golang.org/x/sys v0.31.0
+	golang.org/x/term v0.30.0
+	golang.org/x/text v0.23.0
 	gopkg.in/AlecAivazis/survey.v1 v1.8.8
 	gopkg.in/toast.v1 v1.0.0-20180812000517-0a84660828b2
 	gopkg.in/yaml.v2 v2.4.0
@@ -125,7 +125,7 @@ require (
 	github.com/skeema/knownhosts v1.3.0 // indirect
 	github.com/sosodev/duration v1.3.1 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
-	golang.org/x/sync v0.11.0 // indirect
+	golang.org/x/sync v0.12.0 // indirect
 )
 
 require (
@@ -183,7 +183,7 @@ require (
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.mongodb.org/mongo-driver v1.5.3 // indirect
-	golang.org/x/mod v0.21.0 // indirect
+	golang.org/x/mod v0.21.0
 	golang.org/x/time v0.1.0 // indirect
 	golang.org/x/tools v0.25.0 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
