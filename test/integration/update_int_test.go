@@ -275,7 +275,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 	}
 }
 
-func (suite *UpdateIntegrationTestSuite) TestUpdateHostLogging_SetBeforeInvocation() {
+func (suite *UpdateIntegrationTestSuite) TestUpdateHost_SetBeforeInvocation() {
 	suite.OnlyRunForTags(tagsuite.Update)
 
 	ts := e2e.New(suite.T(), false)
@@ -309,7 +309,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateHostLogging_SetBeforeInvocati
 	cp.ExpectExitCode(0)
 }
 
-func (suite *UpdateIntegrationTestSuite) TestUpdateHostLogging() {
+func (suite *UpdateIntegrationTestSuite) TestUpdateHost() {
 	suite.OnlyRunForTags(tagsuite.Update)
 
 	ts := e2e.New(suite.T(), false)
@@ -326,23 +326,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateHostLogging() {
 	)
 	cp.ExpectExitCode(0)
 
-	suite.Assert().NotContains(cp.Snapshot(), "platform.activestate.com")
-
-	// Check application log files for update host information
-	files := ts.LogFiles()
-
-	var foundHostReference bool
-	for _, file := range files {
-		logContent, err := fileutils.ReadFile(file)
-		suite.Require().NoError(err)
-		if strings.Contains(string(logContent), "https://example.com/update") {
-			foundHostReference = true
-			suite.T().Logf("Found custom update host reference in log file: %s", file)
-			break
-		}
-	}
-
-	suite.True(foundHostReference, "Should find reference to custom update host in log files")
+	output := cp.Snapshot()
+	suite.Assert().Contains(output, "Getting update info: https://example.com/update/")
 }
 
 func TestUpdateIntegrationTestSuite(t *testing.T) {

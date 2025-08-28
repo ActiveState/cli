@@ -72,7 +72,6 @@ func main() {
 	rollbar.SetConfig(cfg)
 
 	updater.SetConfig(cfg)
-	updater.RegisterConfigListener(cfg)
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)

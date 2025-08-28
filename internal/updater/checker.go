@@ -40,7 +40,7 @@ func init() {
 	configMediator.RegisterOption(constants.UpdateEndpointConfig, configMediator.String, "")
 }
 
-func RegisterConfigListener(cfg Configurable) {
+func registerConfigListener(cfg Configurable) {
 	configMediator.AddListener(constants.UpdateEndpointConfig, func() {
 		UpdateEndpointURL = cfg.GetString(constants.UpdateEndpointConfig)
 	})
@@ -48,6 +48,7 @@ func RegisterConfigListener(cfg Configurable) {
 
 func SetConfig(cfg Configurable) {
 	UpdateEndpointURL = cfg.GetString(constants.UpdateEndpointConfig)
+	registerConfigListener(cfg)
 }
 
 type Checker struct {
@@ -135,6 +136,7 @@ func (u *Checker) getUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 			logging.Debug("Update info 404s: %v", errs.JoinMessage(err))
 			label = anaConst.UpdateLabelUnavailable
 			msg = anaConst.UpdateErrorNotFound
+			info = &AvailableUpdate{}
 
 		// The request could not be satisfied or service is unavailable. This happens when Cloudflare
 		// blocks access, or the service is unavailable in a particular geographic location.
@@ -142,6 +144,7 @@ func (u *Checker) getUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 			logging.Warning("Update info request blocked or service unavailable: %v", err)
 			label = anaConst.UpdateLabelUnavailable
 			msg = anaConst.UpdateErrorBlocked
+			info = &AvailableUpdate{}
 
 		// If all went well.
 		default:
