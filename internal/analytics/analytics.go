@@ -6,6 +6,10 @@ import (
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 )
 
+func init() {
+	configMediator.RegisterOption(constants.AnalyticsPixelOverrideConfig, configMediator.String, "")
+}
+
 // Dispatcher describes a struct that can send analytics event in the background
 type Dispatcher interface {
 	Event(category, action string, dim ...*dimensions.Values)
