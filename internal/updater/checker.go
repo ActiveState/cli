@@ -32,23 +32,10 @@ type InvocationSource string
 var (
 	InvocationSourceInstall InvocationSource = "install"
 	InvocationSourceUpdate  InvocationSource = "update"
-
-	UpdateEndpointURL string
 )
 
 func init() {
 	configMediator.RegisterOption(constants.UpdateEndpointConfig, configMediator.String, "")
-}
-
-func registerConfigListener(cfg Configurable) {
-	configMediator.AddListener(constants.UpdateEndpointConfig, func() {
-		UpdateEndpointURL = cfg.GetString(constants.UpdateEndpointConfig)
-	})
-}
-
-func SetConfig(cfg Configurable) {
-	UpdateEndpointURL = cfg.GetString(constants.UpdateEndpointConfig)
-	registerConfigListener(cfg)
 }
 
 type Checker struct {
@@ -96,9 +83,19 @@ func (u *Checker) infoURL(tag, desiredVersion, branchName, platform, arch string
 		v.Set("target-version", desiredVersion)
 	}
 
-	infoURL := UpdateEndpointURL
-	if url, ok := os.LookupEnv("_TEST_UPDATE_INFO_URL"); ok {
-		infoURL = url
+	var (
+		infoURL string
+
+		envUrl = os.Getenv("_TEST_UPDATE_INFO_URL")
+		cfgUrl = u.cfg.GetString(constants.UpdateEndpointConfig)
+	)
+	switch {
+	case envUrl != "":
+		infoURL = envUrl
+	case cfgUrl != "":
+		infoURL = cfgUrl
+	default:
+		infoURL = constants.APIUpdateInfoURL
 	}
 
 	if tag != "" {
