@@ -14,27 +14,16 @@ import (
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 )
 
-var PixelURL string
-
-func init() {
-	configMediator.RegisterOption(constants.AnalyticsPixelOverrideConfig, configMediator.String, "")
+type PixelReporter struct {
+	cfg *config.Instance
 }
 
-func RegisterConfigListener(cfg *config.Instance) error {
+func NewPixelReporter(cfg *config.Instance) *PixelReporter {
+	reporter := &PixelReporter{cfg: cfg}
 	configMediator.AddListener(constants.AnalyticsPixelOverrideConfig, func() {
-		PixelURL = cfg.GetString(constants.AnalyticsPixelOverrideConfig)
+		reporter.cfg = cfg
 	})
-	return nil
-}
-
-func SetConfig(cfg *config.Instance) {
-	PixelURL = cfg.GetString(constants.AnalyticsPixelOverrideConfig)
-}
-
-type PixelReporter struct{}
-
-func NewPixelReporter() *PixelReporter {
-	return &PixelReporter{}
+	return reporter
 }
 
 func (r *PixelReporter) ID() string {
@@ -42,12 +31,18 @@ func (r *PixelReporter) ID() string {
 }
 
 func (r *PixelReporter) Event(category, action, source, label string, d *dimensions.Values) error {
-	var pixelUrl string
+	var (
+		pixelUrl string
+
+		envUrl = os.Getenv(constants.AnalyticsPixelOverrideEnv)
+		cfgUrl = r.cfg.GetString(constants.AnalyticsPixelOverrideConfig)
+	)
+
 	switch {
-	case os.Getenv(constants.AnalyticsPixelOverrideEnv) != "":
-		pixelUrl = os.Getenv(constants.AnalyticsPixelOverrideEnv)
-	case PixelURL != "":
-		pixelUrl = PixelURL
+	case envUrl != "":
+		pixelUrl = envUrl
+	case cfgUrl != "":
+		pixelUrl = cfgUrl
 	default:
 		pixelUrl = constants.DefaultAnalyticsPixel
 	}

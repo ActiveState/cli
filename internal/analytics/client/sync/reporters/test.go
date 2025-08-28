@@ -5,14 +5,18 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 )
 
 type TestReporter struct {
 	path string
+	cfg  *config.Instance
 }
 
 const TestReportFilename = "analytics.log"
@@ -23,8 +27,12 @@ func TestReportFilepath() string {
 	return filepath.Join(appdata, TestReportFilename)
 }
 
-func NewTestReporter(path string) *TestReporter {
-	return &TestReporter{path}
+func NewTestReporter(path string, cfg *config.Instance) *TestReporter {
+	reporter := &TestReporter{path, cfg}
+	configMediator.AddListener(constants.AnalyticsPixelOverrideConfig, func() {
+		reporter.cfg = cfg
+	})
+	return reporter
 }
 
 func (r *TestReporter) ID() string {
@@ -41,7 +49,8 @@ type TestLogEntry struct {
 }
 
 func (r *TestReporter) Event(category, action, source, label string, d *dimensions.Values) error {
-	b, err := json.Marshal(TestLogEntry{category, action, source, label, PixelURL, d})
+	url := r.cfg.GetString(constants.AnalyticsPixelOverrideConfig)
+	b, err := json.Marshal(TestLogEntry{category, action, source, label, url, d})
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal test log entry")
 	}

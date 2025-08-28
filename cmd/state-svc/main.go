@@ -13,7 +13,6 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state-svc/autostart"
 	anaSync "github.com/ActiveState/cli/internal/analytics/client/sync"
-	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -70,13 +69,6 @@ func main() {
 	}
 	rollbar.SetupRollbar(constants.StateServiceRollbarToken)
 	rollbar.SetConfig(cfg)
-
-	reporters.SetConfig(cfg)
-	if err := reporters.RegisterConfigListener(cfg); err != nil {
-		multilog.Critical("Could not register config listener: %v", errs.JoinMessage(err))
-		exitCode = 1
-		return
-	}
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)

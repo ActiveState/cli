@@ -685,12 +685,15 @@ func (suite *AnalyticsIntegrationTestSuite) TestAnalyticsPixelOverride() {
 
 	// Some events will fire before the config is updated, so we expect to
 	// find at least one event with the new configuration values after the service is restarted.
+	found := false
 	for _, e := range events {
 		// Specifically check an event sent via the state-svc and ensure that the URL is the one we set in the config
 		if e.Category == anaConst.CatStateSvc && e.Action == "endpoint" && e.Label == "Projects" {
 			suite.Assert().Equal(testURL, e.URL)
+			found = true
 		}
 	}
+	suite.Assert().True(found, "Should find at least one state-svc endpoint Projects event")
 
 	// Check that all events after the config set event have the correct URL.
 	configSetEventIndex := -1
