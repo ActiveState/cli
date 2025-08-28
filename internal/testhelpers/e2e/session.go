@@ -66,6 +66,7 @@ type Session struct {
 	ignoreLogErrors bool
 	cfg             *config.Instance
 	cache           keyCache
+	cfg             *config.Instance
 }
 
 type keyCache map[string]string
@@ -205,6 +206,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	if err := cfg.Set(constants.SecurityPromptConfig, false); err != nil {
 		require.NoError(session.T, err)
 	}
+	session.cfg = cfg
 
 	return session
 }

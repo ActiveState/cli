@@ -13,6 +13,7 @@ import (
 const (
 	Activate        = "activate"
 	Analytics       = "analytics"
+	API             = "api"
 	Artifacts       = "artifacts"
 	Auth            = "auth"
 	Automation      = "automation"
