@@ -155,9 +155,9 @@ func (p *PackageValue) Set(s string) error {
 	}
 	switch {
 	case strings.Contains(s, ":"):
-		v := strings.Split(s, ":")
-		p.Namespace = strings.TrimSpace(strings.Join(v[0:len(v)-1], ":"))
-		p.Name = strings.TrimSpace(v[len(v)-1])
+		namespace, name, _ := strings.Cut(s, ":")
+		p.Namespace = strings.TrimSpace(namespace)
+		p.Name = strings.TrimSpace(name)
 	case strings.Contains(s, "/"):
 		v := strings.Split(s, "/")
 		p.Namespace = strings.TrimSpace(strings.Join(v[0:len(v)-1], "/"))
