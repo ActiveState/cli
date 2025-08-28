@@ -415,6 +415,9 @@ const SecurityPromptLevelConfig = "security.prompt.level"
 // AnalyticsPixelOverrideConfig is the config key used to override the analytics pixel url
 const AnalyticsPixelOverrideConfig = "report.analytics.endpoint"
 
+// UpdateEndpointConfig is the config key used to determine the update endpoint to use
+const UpdateEndpointConfig = "update.endpoint"
+
 // APIHostConfig is the config key used to determine the api host
 const APIHostConfig = "api.host"
 

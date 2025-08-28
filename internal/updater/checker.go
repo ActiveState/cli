@@ -18,6 +18,8 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 )
 
 type Configurable interface {
@@ -32,30 +34,28 @@ var (
 	InvocationSourceUpdate  InvocationSource = "update"
 )
 
+func init() {
+	configMediator.RegisterOption(constants.UpdateEndpointConfig, configMediator.String, "")
+}
+
 type Checker struct {
-	cfg        Configurable
-	an         analytics.Dispatcher
-	apiInfoURL string
-	retryhttp  *retryhttp.Client
-	cache      *AvailableUpdate
-	done       chan struct{}
+	cfg       Configurable
+	an        analytics.Dispatcher
+	retryhttp *retryhttp.Client
+	cache     *AvailableUpdate
+	done      chan struct{}
 
 	InvocationSource InvocationSource
 }
 
 func NewDefaultChecker(cfg Configurable, an analytics.Dispatcher) *Checker {
-	infoURL := constants.APIUpdateInfoURL
-	if url, ok := os.LookupEnv("_TEST_UPDATE_INFO_URL"); ok {
-		infoURL = url
-	}
-	return NewChecker(cfg, an, infoURL, retryhttp.DefaultClient)
+	return NewChecker(cfg, an, retryhttp.DefaultClient)
 }
 
-func NewChecker(cfg Configurable, an analytics.Dispatcher, infoURL string, httpget *retryhttp.Client) *Checker {
+func NewChecker(cfg Configurable, an analytics.Dispatcher, httpget *retryhttp.Client) *Checker {
 	return &Checker{
 		cfg,
 		an,
-		infoURL,
 		httpget,
 		nil,
 		make(chan struct{}),
@@ -83,11 +83,26 @@ func (u *Checker) infoURL(tag, desiredVersion, branchName, platform, arch string
 		v.Set("target-version", desiredVersion)
 	}
 
+	var (
+		infoURL string
+
+		envUrl = os.Getenv("_TEST_UPDATE_INFO_URL")
+		cfgUrl = u.cfg.GetString(constants.UpdateEndpointConfig)
+	)
+	switch {
+	case envUrl != "":
+		infoURL = envUrl
+	case cfgUrl != "":
+		infoURL = cfgUrl
+	default:
+		infoURL = constants.APIUpdateInfoURL
+	}
+
 	if tag != "" {
 		v.Set("tag", tag)
 	}
 
-	return u.apiInfoURL + "/info?" + v.Encode()
+	return infoURL + "/info?" + v.Encode()
 }
 
 func (u *Checker) getUpdateInfo(desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
@@ -118,6 +133,7 @@ func (u *Checker) getUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 			logging.Debug("Update info 404s: %v", errs.JoinMessage(err))
 			label = anaConst.UpdateLabelUnavailable
 			msg = anaConst.UpdateErrorNotFound
+			info = &AvailableUpdate{}
 
 		// The request could not be satisfied or service is unavailable. This happens when Cloudflare
 		// blocks access, or the service is unavailable in a particular geographic location.
@@ -125,6 +141,7 @@ func (u *Checker) getUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 			logging.Warning("Update info request blocked or service unavailable: %v", err)
 			label = anaConst.UpdateLabelUnavailable
 			msg = anaConst.UpdateErrorBlocked
+			info = &AvailableUpdate{}
 
 		// If all went well.
 		default:
