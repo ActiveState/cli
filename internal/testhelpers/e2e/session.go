@@ -64,6 +64,7 @@ type Session struct {
 	ExecutorExe     string
 	spawned         []*SpawnedCmd
 	ignoreLogErrors bool
+	cfg             *config.Instance
 	cache           keyCache
 	cfg             *config.Instance
 }
@@ -200,6 +201,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 
 	cfg, err := config.NewCustom(dirs.Config, singlethread.New(), true)
 	require.NoError(session.T, err)
+	session.cfg = cfg
 
 	if err := cfg.Set(constants.SecurityPromptConfig, false); err != nil {
 		require.NoError(session.T, err)

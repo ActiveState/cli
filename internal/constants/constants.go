@@ -412,6 +412,9 @@ const SecurityPromptConfig = "security.prompt.enabled"
 // SecurityPromptLevelConfig is the config key used to determine the level of security prompts
 const SecurityPromptLevelConfig = "security.prompt.level"
 
+// UpdateEndpointConfig is the config key used to determine the update endpoint to use
+const UpdateEndpointConfig = "update.endpoint"
+
 // APIHostConfig is the config key used to determine the api host
 const APIHostConfig = "api.host"
 
