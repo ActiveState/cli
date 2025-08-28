@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -42,7 +41,7 @@ type TestLogEntry struct {
 }
 
 func (r *TestReporter) Event(category, action, source, label string, d *dimensions.Values) error {
-	b, err := json.Marshal(TestLogEntry{category, action, source, label, analytics.AnalyticsURL, d})
+	b, err := json.Marshal(TestLogEntry{category, action, source, label, PixelURL, d})
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal test log entry")
 	}

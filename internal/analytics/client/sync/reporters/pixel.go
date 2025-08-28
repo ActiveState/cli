@@ -6,11 +6,30 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 )
+
+var PixelURL string
+
+func init() {
+	configMediator.RegisterOption(constants.AnalyticsPixelOverrideConfig, configMediator.String, "")
+}
+
+func RegisterConfigListener(cfg *config.Instance) error {
+	configMediator.AddListener(constants.AnalyticsPixelOverrideConfig, func() {
+		PixelURL = cfg.GetString(constants.AnalyticsPixelOverrideConfig)
+	})
+	return nil
+}
+
+func SetConfig(cfg *config.Instance) {
+	PixelURL = cfg.GetString(constants.AnalyticsPixelOverrideConfig)
+}
 
 type PixelReporter struct{}
 
@@ -27,15 +46,15 @@ func (r *PixelReporter) Event(category, action, source, label string, d *dimensi
 	switch {
 	case os.Getenv(constants.AnalyticsPixelOverrideEnv) != "":
 		pixelUrl = os.Getenv(constants.AnalyticsPixelOverrideEnv)
-	case analytics.AnalyticsURL != "":
-		pixelUrl = analytics.AnalyticsURL
+	case PixelURL != "":
+		pixelUrl = PixelURL
 	default:
 		pixelUrl = constants.DefaultAnalyticsPixel
 	}
 
 	pixelURL, err := url.Parse(pixelUrl)
 	if err != nil {
-		return errs.Wrap(err, "Invalid pixel URL: %s", analytics.AnalyticsURL)
+		return errs.Wrap(err, "Invalid pixel URL: %s", pixelUrl)
 	}
 
 	query := &url.Values{}

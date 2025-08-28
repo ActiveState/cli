@@ -11,8 +11,8 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/exechandlers/notifier"
-	"github.com/ActiveState/cli/internal/analytics"
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
+	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -92,7 +92,7 @@ func main() {
 		return
 	}
 	rollbar.SetConfig(cfg)
-	analytics.SetConfig(cfg)
+	reporters.SetConfig(cfg)
 
 	// Configuration options
 	// This should only be used if the config option is not exclusive to one package.
