@@ -127,15 +127,15 @@ var urlsByService = map[Service]*url.URL{
 
 var configuredAPIHost string
 
-func RegisterConfigListener(cfg *config.Instance) error {
+func registerConfigListener(cfg *config.Instance) {
 	configMediator.AddListener(constants.APIHostConfig, func() {
 		configuredAPIHost = cfg.GetString(constants.APIHostConfig)
 	})
-	return nil
 }
 
 func SetConfig(cfg *config.Instance) {
 	configuredAPIHost = cfg.GetString(constants.APIHostConfig)
+	registerConfigListener(cfg)
 }
 
 // GetServiceURL returns the URL for the given service
