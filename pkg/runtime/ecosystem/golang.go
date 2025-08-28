@@ -10,15 +10,17 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/smartlink"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/buildplan"
 )
 
 type Golang struct {
-	runtimeDir          string
-	proxyDir            string
-	addedModuleVersions map[string][]string
+	runtimeDir            string
+	proxyDir              string
+	addedModuleVersions   map[string][]string
+	removedModuleVersions map[string][]string
 }
 
 func (e *Golang) Init(runtimePath string, buildplan *buildplan.BuildPlan) error {
@@ -29,6 +31,7 @@ func (e *Golang) Init(runtimePath string, buildplan *buildplan.BuildPlan) error 
 		return errs.Wrap(err, "Unable to create Go proxy directory")
 	}
 	e.addedModuleVersions = make(map[string][]string)
+	e.removedModuleVersions = make(map[string][]string)
 	return nil
 }
 
@@ -135,8 +138,28 @@ func (e *Golang) Add(artifact *buildplan.Artifact, artifactSrcPath string) (_ []
 	return installedFiles, nil
 }
 
-func (e *Golang) Remove(artifact *buildplan.Artifact) error {
-	return nil // TODO: CP-956
+// Remove a module's .mod and .zip files from the filesystem proxy.
+func (e *Golang) Remove(name, version string, installedFiles []string) (rerr error) {
+	for _, proxyDir := range installedFiles {
+		modFile := filepath.Join(proxyDir, "@v", version+".mod")
+		if fileutils.TargetExists(modFile) {
+			err := os.Remove(modFile)
+			if err != nil {
+				rerr = errs.Pack(rerr, errs.Wrap(err, "Unable to remove mod file for '%s': %s", name, modFile))
+			}
+		}
+
+		zipFile := filepath.Join(proxyDir, "@v", version+".zip")
+		if fileutils.TargetExists(zipFile) {
+			err := os.Remove(zipFile)
+			if err != nil {
+				rerr = errs.Pack(rerr, errs.Wrap(err, "Unable to remove zip file for '%s': %s", name, zipFile))
+			}
+		}
+
+		e.removedModuleVersions[name] = append(e.removedModuleVersions[name], version)
+	}
+	return rerr
 }
 
 // Create/update each added module's version list file.
@@ -165,5 +188,34 @@ func (e *Golang) Apply() error {
 			return errs.Wrap(err, "Unable to write %s", listFile)
 		}
 	}
+
+	for name, versions := range e.removedModuleVersions {
+		listFile := filepath.Join(e.runtimeDir, e.proxyDir, name, "@v", "list")
+		if !fileutils.FileExists(listFile) {
+			continue
+		}
+
+		// Read known versions and remove the ones being removed.
+		contents, err := fileutils.ReadFile(listFile)
+		if err != nil {
+			return errs.Wrap(err, "Unable to read %s", listFile)
+		}
+		knownVersions := strings.Split(string(contents), "\n")
+		knownVersions = sliceutils.Filter(knownVersions, func(version string) bool {
+			for _, v := range versions {
+				if v == version {
+					return false
+				}
+			}
+			return true
+		})
+
+		// Write the remaining versions.
+		err = fileutils.WriteFile(listFile, []byte(strings.Join(knownVersions, "\n")))
+		if err != nil {
+			return errs.Wrap(err, "Unable to write %s", listFile)
+		}
+	}
+
 	return nil
 }

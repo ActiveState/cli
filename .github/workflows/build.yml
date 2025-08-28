@@ -36,7 +36,7 @@ jobs:
     strategy:
       matrix:
         go-version:
-          - 1.23.8
+          - 1.24.6
         sys:
           - { os: ubuntu-latest }
           - { os: macos-13, shell: zsh }
@@ -192,6 +192,13 @@ jobs:
         shell: bash
         if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\", \"refs/heads/master\"]'), github.ref) && !startsWith(github.event.pull_request.head.ref, 'version/')"
         run: parallelize results Check-Format
+
+      - # === Raw Unit Tests ===
+        name: Raw Unit Tests
+        id: raw_unit_tests
+        shell: bash
+        run: parallelize results Unit-Tests
+        continue-on-error: true
 
       - # === Unit Tests ===
         name: Unit Tests

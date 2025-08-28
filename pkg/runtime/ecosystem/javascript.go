@@ -16,13 +16,14 @@ import (
 const nodeModulesDir = "usr/lib/node_modules"
 
 type JavaScript struct {
-	runtimePath string
-	packages    []string
+	runtimePath       string
+	installPackages   []string
+	uninstallPackages []string
 }
 
 func (e *JavaScript) Init(runtimePath string, buildplan *buildplan.BuildPlan) error {
 	e.runtimePath = runtimePath
-	e.packages = []string{}
+	e.installPackages = []string{}
 	return nil
 }
 
@@ -56,33 +57,48 @@ func (e *JavaScript) Add(artifact *buildplan.Artifact, artifactSrcPath string) (
 				packageName = file.Name()[:i]
 			}
 		}
-		e.packages = append(e.packages, file.AbsolutePath())
+		e.installPackages = append(e.installPackages, file.AbsolutePath())
 	}
 	installedDir := filepath.Join(nodeModulesDir, packageName) // Apply() will install here
 	return []string{installedDir}, nil
 }
 
-func (e *JavaScript) Remove(artifact *buildplan.Artifact) error {
-	return nil // TODO: CP-956
+func (e *JavaScript) Remove(name, version string, installedFiles []string) error {
+	e.uninstallPackages = append(e.uninstallPackages, name)
+	return nil
 }
 
 func (e *JavaScript) Apply() error {
-	if len(e.packages) == 0 {
+	if len(e.installPackages) == 0 && len(e.uninstallPackages) == 0 {
 		return nil // nothing to do
 	}
 
 	binDir := filepath.Join(e.runtimePath, "usr", "bin")
-	args := []string{"install", "-g", "--offline"} // do not install to current directory
-	for _, arg := range e.packages {
-		args = append(args, arg)
+	installArgs := []string{"install", "-g", "--offline"} // do not install to current directory
+	for _, arg := range e.installPackages {
+		installArgs = append(installArgs, arg)
+	}
+	uninstallArgs := []string{"uninstall", "-g", "--no-save"} // do not remove from current directory
+	for _, arg := range e.uninstallPackages {
+		uninstallArgs = append(uninstallArgs, arg)
 	}
 	env := []string{
 		fmt.Sprintf("PATH=%s%s%s", binDir, string(os.PathListSeparator), os.Getenv("PATH")),
 		fmt.Sprintf("NPM_CONFIG_PREFIX=%s", filepath.Join(e.runtimePath, "usr")),
 	}
-	_, stderr, err := osutils.ExecSimple(filepath.Join(binDir, "npm"), args, env)
-	if err != nil {
-		return errs.Wrap(err, "Error running npm: %s", stderr)
+
+	if len(e.installPackages) > 0 {
+		_, stderr, err := osutils.ExecSimple(filepath.Join(binDir, "npm"), installArgs, env)
+		if err != nil {
+			return errs.Wrap(err, "Error running npm install: %s", stderr)
+		}
+	}
+
+	if len(e.uninstallPackages) > 0 {
+		_, stderr, err := osutils.ExecSimple(filepath.Join(binDir, "npm"), uninstallArgs, env)
+		if err != nil {
+			return errs.Wrap(err, "Error running npm uninstall: %s", stderr)
+		}
 	}
 	return nil
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -193,6 +194,7 @@ func CreateProjectFiles(checkoutPath, cachePath, owner, name, branch, commitID, 
 			Language:   language,
 			Cache:      cachePath,
 			Portable:   portable,
+			Host:       api.HostOverride(),
 		})
 		if err != nil {
 			if osutils.IsAccessDeniedError(err) {

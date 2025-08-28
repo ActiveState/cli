@@ -65,6 +65,7 @@ type Session struct {
 	spawned         []*SpawnedCmd
 	ignoreLogErrors bool
 	cache           keyCache
+	cfg             *config.Instance
 }
 
 type keyCache map[string]string
@@ -203,6 +204,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	if err := cfg.Set(constants.SecurityPromptConfig, false); err != nil {
 		require.NoError(session.T, err)
 	}
+	session.cfg = cfg
 
 	return session
 }
@@ -788,6 +790,14 @@ func (s *Session) SetupRCFileCustom(subshell subshell.SubShell) {
 		err = fileutils.Touch(filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile)))
 	}
 	require.NoError(s.T, err)
+}
+
+func (s *Session) SetConfig(key string, value interface{}) {
+	require.NoError(s.T, s.cfg.Set(key, value))
+}
+
+func (s *Session) GetConfig(key string) interface{} {
+	return s.cfg.Get(key)
 }
 
 func RunningOnCI() bool {
