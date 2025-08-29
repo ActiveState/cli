@@ -23,10 +23,10 @@ type SecretsSharingTestSuite struct {
 func (suite *SecretsSharingTestSuite) SetupSuite() {
 	var err error
 
-	suite.sourceKeypair, err = keypairs.GenerateRSA(1024)
+	suite.sourceKeypair, err = keypairs.GenerateRSA(2048)
 	suite.Require().NoError(err)
 
-	suite.targetKeypair, err = keypairs.GenerateRSA(1024)
+	suite.targetKeypair, err = keypairs.GenerateRSA(2048)
 	suite.Require().NoError(err)
 
 	suite.targetPubKey, err = suite.targetKeypair.EncodePublicKey()
