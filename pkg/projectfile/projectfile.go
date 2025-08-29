@@ -922,6 +922,7 @@ type CreateParams struct {
 	ProjectURL string
 	Cache      string
 	Portable   bool
+	Host       string
 }
 
 // Create will create a new activestate.yaml with a projectURL for the given details
@@ -943,9 +944,9 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 
 	if params.ProjectURL == "" {
 		// Note: cannot use api.GetPlatformURL() due to import cycle.
-		host := constants.DefaultAPIHost
-		if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
-			host = hostOverride
+		host := params.Host
+		if host == "" {
+			host = constants.DefaultAPIHost
 		}
 		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", host, params.Owner, params.Project))
 		if err != nil {

@@ -2,6 +2,7 @@ package ecosystem
 
 import (
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -59,8 +60,17 @@ func (e *Java) Add(artifact *buildplan.Artifact, artifactSrcPath string) ([]stri
 	return installedFiles, nil
 }
 
-func (e *Java) Remove(artifact *buildplan.Artifact) error {
-	return nil // TODO: CP-956
+func (e *Java) Remove(name, version string, installedFiles []string) (rerr error) {
+	for _, file := range installedFiles {
+		if !fileutils.TargetExists(file) {
+			continue
+		}
+		err := os.Remove(file)
+		if err != nil {
+			rerr = errs.Pack(rerr, errs.Wrap(err, "Unable to remove installed file for '%s': %s", name, file))
+		}
+	}
+	return rerr
 }
 
 func (e *Java) Apply() error {

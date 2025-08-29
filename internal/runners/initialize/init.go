@@ -25,6 +25,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
 	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/model/buildplanner"
@@ -186,6 +187,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		Language:  lang.String(),
 		Directory: path,
 		Private:   params.Private,
+		Host:      api.HostOverride(),
 	}
 
 	pjfile, err := projectfile.Create(createParams)
