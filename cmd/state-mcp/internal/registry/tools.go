@@ -96,7 +96,8 @@ func DownloadLogsTool() Tool {
 			}
 
 			runner := downloadlogs.New(p)
-			params := downloadlogs.NewParams(url)
+			params := downloadlogs.NewParams()
+			params.LogUrl = url
 			err = runner.Run(params)
 			if err != nil {
 				return mcp.NewToolResultError(fmt.Sprintf("error downloading logs: %s", errs.JoinMessage(err))), nil
