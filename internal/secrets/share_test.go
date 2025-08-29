@@ -53,8 +53,6 @@ func (suite *SecretsSharingTestSuite) TestFailure_FirstShareHasBadlyEncryptedVal
 }
 
 func (suite *SecretsSharingTestSuite) TestFailure_FailedToEncryptForTargetUser() {
-	suite.T().Skip("This is still captured by integration tests, but for now we're skipping the unit test as it" +
-		" prevents CI from running and we need time to devise a proper solution.")
 	shortKeypair, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
 	suite.Require().NoError(err)
 
