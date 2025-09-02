@@ -97,6 +97,7 @@ func main() {
 	// Configuration options
 	// This should only be used if the config option is not exclusive to one package.
 	configMediator.RegisterOption(constants.OptinBuildscriptsConfig, configMediator.Bool, false)
+	configMediator.RegisterOption(constants.NotificationsURLConfig, configMediator.String, "")
 
 	// Set up our output formatter/writer
 	outFlags := parseOutputFlags(os.Args)

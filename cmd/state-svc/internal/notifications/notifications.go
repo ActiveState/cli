@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/logging"
@@ -21,7 +20,13 @@ import (
 	auth "github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/blang/semver"
+
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 )
+
+func init() {
+	configMediator.RegisterOption(constants.NotificationsURLConfig, configMediator.String, "")
+}
 
 const ConfigKeyLastReport = "notifications.last_reported"
 
@@ -48,11 +53,11 @@ func New(cfg *config.Instance, auth *auth.Auth) (*Notifications, error) {
 		defer func() {
 			panics.LogAndPanic(recover(), debug.Stack())
 		}()
-		resp, err := fetch()
+		resp, err := fetch(cfg)
 		return resp, err
 	})
 
-	return &Notifications{
+	notifications := &Notifications{
 		baseParams: &ConditionParams{
 			OS:           sysinfo.OS().String(),
 			OSVersion:    NewVersionFromSysinfo(osVersion),
@@ -62,7 +67,20 @@ func New(cfg *config.Instance, auth *auth.Auth) (*Notifications, error) {
 		cfg:  cfg,
 		auth: auth,
 		poll: poll,
-	}, nil
+	}
+
+	configMediator.AddListener(constants.NotificationsURLConfig, func() {
+		notifications.poll.Close()
+		notifications.poll = poller.New(10*time.Minute, func() (interface{}, error) {
+			defer func() {
+				panics.LogAndPanic(recover(), debug.Stack())
+			}()
+			resp, err := fetch(cfg)
+			return resp, err
+		})
+	})
+
+	return notifications, nil
 }
 
 func (m *Notifications) Close() error {
@@ -168,8 +186,7 @@ func check(params *ConditionParams, notifications []*graph.NotificationInfo, las
 		// Check if message is within date range
 		inRange, err := notificationInDateRange(notification, baseTime)
 		if err != nil {
-			logging.Warning("Could not check if notification %s is in date range: %v", notification.ID, err)
-			continue
+			return nil, errs.Wrap(err, "Could not check if notification %s is in date range", notification.ID)
 		}
 		if !inRange {
 			logging.Debug("Skipping notification %s as it is outside of its date range", notification.ID)
@@ -198,17 +215,36 @@ func check(params *ConditionParams, notifications []*graph.NotificationInfo, las
 	return filteredNotifications, nil
 }
 
-func fetch() ([]*graph.NotificationInfo, error) {
+func fetch(cfg *config.Instance) ([]*graph.NotificationInfo, error) {
 	var body []byte
 	var err error
 
-	if v := os.Getenv(constants.NotificationsOverrideEnvVarName); v != "" {
-		body, err = fileutils.ReadFile(v)
+	var (
+		notificationsURL string
+
+		envURL    = os.Getenv(constants.NotificationsOverrideEnvVarName)
+		configURL = cfg.GetString(constants.NotificationsURLConfig)
+	)
+
+	switch {
+	case envURL != "":
+		notificationsURL = envURL
+	case configURL != "":
+		notificationsURL = configURL
+	default:
+		notificationsURL = constants.NotificationsInfoURL
+	}
+
+	logging.Debug("Fetching notifications from %s", notificationsURL)
+	// Check if this is a local file path (when using environment override)
+	if envURL != "" {
+		body, err = os.ReadFile(notificationsURL)
 		if err != nil {
-			return nil, errs.Wrap(err, "Could not read notifications override file")
+			return nil, errs.Wrap(err, "Could not read notifications file")
 		}
 	} else {
-		body, err = httputil.Get(constants.NotificationsInfoURL)
+		// Use HTTP client for remote URLs
+		body, err = httputil.Get(notificationsURL)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not fetch notifications information")
 		}
