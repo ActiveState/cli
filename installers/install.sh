@@ -36,8 +36,30 @@ getopt() {
   echo $default
 }
 
+# Collect all instances of a flag (for flags that can appear multiple times)
+getopt_all() {
+  opt=$1; shift
+  result=""
+  i=0
+  for arg in $@; do
+    i=$((i + 1))
+    if [ "${arg}" = "$opt" ]; then
+      value=$(echo "$@" | cut -d' ' -f$(($i + 1)))
+      if [ -n "$value" ] && [ "${value#-}" = "$value" ]; then # ensure value doesn't start with -
+        if [ -n "$result" ]; then
+          result="$result $opt $value"
+        else
+          result="$opt $value"
+        fi
+      fi
+    fi
+  done
+  echo $result
+}
+
 CHANNEL=$(getopt "-b" "$CHANNEL" $@)
 VERSION=$(getopt "-v" "$VERSION" $@)
+CONFIG_SET_ARGS=$(getopt_all "--config-set" $@)
 
 if [ -z "${TERM}" ] || [ "${TERM}" = "dumb" ]; then
   OUTPUT_OK=""
@@ -205,7 +227,7 @@ progress_done
 echo ""
 
 # Run the installer.
-ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE $INSTALLERTMPDIR/$INSTALLERNAME$BINARYEXT "$@" --source-installer="install.sh"
+ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE $INSTALLERTMPDIR/$INSTALLERNAME$BINARYEXT "$@" $CONFIG_SET_ARGS --source-installer="install.sh"
 
 # Remove temp files
 rm -r $INSTALLERTMPDIR

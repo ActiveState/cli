@@ -41,8 +41,29 @@ function getopt([string] $opt, [string] $default, [string[]] $arr)
     return $default
 }
 
+# Collect all instances of a flag (for flags that can appear multiple times)
+function getopt_all([string] $opt, [string[]] $arr)
+{
+    $result = @()
+    for ($i = 0; $i -lt $arr.Length; $i++)
+    {
+        $arg = $arr[$i]
+        if ($arg -eq $opt -and ($i + 1) -lt $arr.Length)
+        {
+            $value = $arr[$i + 1]
+            if ($value -and -not $value.StartsWith("-"))
+            {
+                $result += $opt
+                $result += $value
+            }
+        }
+    }
+    return $result
+}
+
 $script:CHANNEL = getopt "-b" $script:CHANNEL $args
 $script:VERSION = getopt "-v" $script:VERSION $args
+$script:CONFIG_SET_ARGS = getopt_all "--config-set" $args
 
 function download([string] $url, [string] $out)
 {
@@ -269,7 +290,30 @@ $PSDefaultParameterValues['*:Encoding'] = 'utf8'
 # Run the installer.
 $env:ACTIVESTATE_SESSION_TOKEN = $script:SESSION_TOKEN_VALUE
 setShellOverride
-& $exePath $args --source-installer="install.ps1"
+
+# Build installer arguments by reconstructing the command line properly
+$cmdArgs = @()
+
+# Add non-config-set arguments first
+for ($i = 0; $i -lt $args.Length; $i++) {
+    if ($args[$i] -eq "--config-set" -and ($i + 1) -lt $args.Length) {
+        # Skip the --config-set flag and its value, we'll add them back from our processed array
+        $i++ # Skip the value too
+    } else {
+        $cmdArgs += $args[$i]
+    }
+}
+
+# Add the processed config-set arguments (pass through without comma splitting - let Go handle it)
+if ($script:CONFIG_SET_ARGS -and $script:CONFIG_SET_ARGS.Length -gt 0) {
+    $cmdArgs += $script:CONFIG_SET_ARGS
+}
+
+# Add the source installer flag
+$cmdArgs += "--source-installer=install.ps1"
+
+# Execute with the properly constructed arguments
+& $exePath @cmdArgs
 $success = $?
 if (Test-Path env:ACTIVESTATE_SESSION_TOKEN)
 {
