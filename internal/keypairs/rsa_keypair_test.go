@@ -188,7 +188,5 @@ func (suite *RSAKeypairTestSuite) TestParseEncryptedRSA_IncorrectPassphrase() {
 }
 
 func Test_RSAKeypair_TestSuite(t *testing.T) {
-	t.Skip("This is still captured by integration tests, but for now we're skipping the unit test as it" +
-		" prevents CI from running and we need time to devise a proper solution.")
 	suite.Run(t, new(RSAKeypairTestSuite))
 }
