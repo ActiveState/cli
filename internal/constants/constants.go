@@ -418,6 +418,9 @@ const AnalyticsPixelOverrideConfig = "report.analytics.endpoint"
 // UpdateEndpointConfig is the config key used to determine the update endpoint to use
 const UpdateEndpointConfig = "update.endpoint"
 
+// NotificationsURLConfig is the config key used to determine the notifications url to use
+const NotificationsURLConfig = "notifications.endpoint"
+
 // APIHostConfig is the config key used to determine the api host
 const APIHostConfig = "api.host"
 

@@ -66,7 +66,6 @@ type Session struct {
 	ignoreLogErrors bool
 	cfg             *config.Instance
 	cache           keyCache
-	cfg             *config.Instance
 }
 
 type keyCache map[string]string
