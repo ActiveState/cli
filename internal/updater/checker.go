@@ -86,7 +86,7 @@ func (u *Checker) infoURL(tag, desiredVersion, branchName, platform, arch string
 	var (
 		infoURL string
 
-		envUrl = os.Getenv("_TEST_UPDATE_INFO_URL")
+		envUrl = os.Getenv(constants.TestUpdateInfoURLEnvVarName)
 		cfgUrl = u.cfg.GetString(constants.UpdateInfoEndpointConfig)
 	)
 	switch {

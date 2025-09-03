@@ -320,9 +320,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateInfoHost() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("update"),
+		e2e.OptArgs("update", "-v"),
 		e2e.OptAppendEnv(suite.env(false, false)...),
-		e2e.OptAppendEnv("VERBOSE=true"),
 	)
 	cp.ExpectExitCode(0)
 
@@ -340,11 +339,11 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateHost_SetBeforeInvocation() {
 	suite.Assert().Equal(ts.GetConfig(constants.UpdateInfoEndpointConfig), "https://test.example.com/update")
 
 	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("update"),
+		e2e.OptArgs("update", "-v"),
 		e2e.OptAppendEnv(suite.env(false, false)...),
-		e2e.OptAppendEnv("VERBOSE=true"),
 	)
 	cp.ExpectExitCode(11) // Expect failure due to DNS resolution of fake host
+	ts.IgnoreLogErrors()
 
 	correctHostCount := 0
 	incorrectHostCount := 0
@@ -372,14 +371,13 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateHost() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("config", "set", constants.UpdateEndpointConfig, "https://example.com/update")
+	cp := ts.Spawn("config", "set", constants.UpdateEndpointConfig, "https://test.example.com/update")
 	cp.Expect("Successfully set config key")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("update"),
+		e2e.OptArgs("update", "-v"),
 		e2e.OptAppendEnv(suite.env(false, false)...),
-		e2e.OptAppendEnv("VERBOSE=true"),
 	)
 	cp.ExpectExitCode(0)
 
@@ -387,7 +385,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateHost() {
 	incorrectHostCount := 0
 	for _, path := range ts.LogFiles() {
 		contents := string(fileutils.ReadFileUnsafe(path))
-		if strings.Contains(contents, "https://example.com/update") {
+		if strings.Contains(contents, "https://test.example.com/update") {
 			correctHostCount++
 		}
 		if strings.Contains(contents, "https://state-tool.activestate.com/update") {

@@ -128,7 +128,7 @@ func NewUpdateInstaller(cfg Configurable, an analytics.Dispatcher, avUpdate *Ava
 func getAPIUpdateURL(cfg Configurable, path string) string {
 	var apiUpdateURL string
 
-	envUrl := os.Getenv("_TEST_UPDATE_URL")
+	envUrl := os.Getenv(constants.TestUpdateURLEnvVarName)
 	cfgUrl := cfg.GetString(constants.UpdateEndpointConfig)
 	switch {
 	case envUrl != "":
