@@ -208,7 +208,7 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 		version = fmt.Sprintf("%s (%s)", version, channel)
 	}
 
-	update := updater.NewUpdateInstaller(an, availableUpdate)
+	update := updater.NewUpdateInstaller(cfg, an, availableUpdate)
 	out.Fprint(os.Stdout, locale.Tl("remote_install_downloading", "• Downloading State Tool version [NOTICE]{{.V0}}[/RESET]... ", version))
 	tmpDir, err := update.DownloadAndUnpack()
 	if err != nil {

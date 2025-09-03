@@ -275,14 +275,14 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 	}
 }
 
-func (suite *UpdateIntegrationTestSuite) TestUpdateHost_SetBeforeInvocation() {
+func (suite *UpdateIntegrationTestSuite) TestUpdateInfoHost_SetBeforeInvocation() {
 	suite.OnlyRunForTags(tagsuite.Update)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.SetConfig(constants.UpdateEndpointConfig, "https://test.example.com/update")
-	suite.Assert().Equal(ts.GetConfig(constants.UpdateEndpointConfig), "https://test.example.com/update")
+	ts.SetConfig(constants.UpdateInfoEndpointConfig, "https://test.example.com/update")
+	suite.Assert().Equal(ts.GetConfig(constants.UpdateInfoEndpointConfig), "https://test.example.com/update")
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("--version"),
@@ -304,6 +304,62 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateHost_SetBeforeInvocation() {
 	suite.Assert().Equal(incorrectHostCount, 0, "Log file should not contain the default API host 'platform.activestate.com'")
 
 	// Clean up - remove the config setting
+	cp = ts.Spawn("config", "set", constants.UpdateInfoEndpointConfig, "")
+	cp.Expect("Successfully")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *UpdateIntegrationTestSuite) TestUpdateInfoHost() {
+	suite.OnlyRunForTags(tagsuite.Update)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("config", "set", constants.UpdateInfoEndpointConfig, "https://example.com/update-info")
+	cp.Expect("Successfully set config key")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("update", "-v"),
+		e2e.OptAppendEnv(suite.env(false, false)...),
+	)
+	cp.ExpectExitCode(0)
+
+	output := cp.Snapshot()
+	suite.Assert().Contains(output, "Getting update info: https://example.com/update-info/")
+}
+
+func (suite *UpdateIntegrationTestSuite) TestUpdateHost_SetBeforeInvocation() {
+	suite.OnlyRunForTags(tagsuite.Update)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.SetConfig(constants.UpdateInfoEndpointConfig, "https://test.example.com/update")
+	suite.Assert().Equal(ts.GetConfig(constants.UpdateInfoEndpointConfig), "https://test.example.com/update")
+
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("update", "-v"),
+		e2e.OptAppendEnv(suite.env(false, false)...),
+	)
+	cp.ExpectExitCode(11) // Expect failure due to DNS resolution of fake host
+	ts.IgnoreLogErrors()
+
+	correctHostCount := 0
+	incorrectHostCount := 0
+	for _, path := range ts.LogFiles() {
+		contents := string(fileutils.ReadFileUnsafe(path))
+		if strings.Contains(contents, "https://test.example.com/update") {
+			correctHostCount++
+		}
+		if strings.Contains(contents, "https://state-tool.activestate.com/update") {
+			incorrectHostCount++
+		}
+	}
+	suite.Assert().Greater(correctHostCount, 0, "Log file should contain the configured update endpoint 'test.example.com'")
+	suite.Assert().Equal(incorrectHostCount, 0, "Log file should not contain the default update endpoint 'state-tool.activestate.com'")
+
+	// Clean up - remove the config setting
 	cp = ts.Spawn("config", "set", constants.UpdateEndpointConfig, "")
 	cp.Expect("Successfully")
 	cp.ExpectExitCode(0)
@@ -315,19 +371,29 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateHost() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("config", "set", constants.UpdateEndpointConfig, "https://example.com/update")
+	cp := ts.Spawn("config", "set", constants.UpdateEndpointConfig, "https://test.example.com/update")
 	cp.Expect("Successfully set config key")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("update"),
+		e2e.OptArgs("update", "-v"),
 		e2e.OptAppendEnv(suite.env(false, false)...),
-		e2e.OptAppendEnv("VERBOSE=true"),
 	)
 	cp.ExpectExitCode(0)
 
-	output := cp.Snapshot()
-	suite.Assert().Contains(output, "Getting update info: https://example.com/update/")
+	correctHostCount := 0
+	incorrectHostCount := 0
+	for _, path := range ts.LogFiles() {
+		contents := string(fileutils.ReadFileUnsafe(path))
+		if strings.Contains(contents, "https://test.example.com/update") {
+			correctHostCount++
+		}
+		if strings.Contains(contents, "https://state-tool.activestate.com/update") {
+			incorrectHostCount++
+		}
+	}
+	suite.Assert().Greater(correctHostCount, 0, "Log file should contain the configured update endpoint 'example.com'")
+	suite.Assert().Equal(incorrectHostCount, 0, "Log file should not contain the default update endpoint 'state-tool.activestate.com'")
 }
 
 func TestUpdateIntegrationTestSuite(t *testing.T) {

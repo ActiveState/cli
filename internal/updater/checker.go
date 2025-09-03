@@ -35,7 +35,7 @@ var (
 )
 
 func init() {
-	configMediator.RegisterOption(constants.UpdateEndpointConfig, configMediator.String, "")
+	configMediator.RegisterOption(constants.UpdateInfoEndpointConfig, configMediator.String, "")
 }
 
 type Checker struct {
@@ -86,8 +86,8 @@ func (u *Checker) infoURL(tag, desiredVersion, branchName, platform, arch string
 	var (
 		infoURL string
 
-		envUrl = os.Getenv("_TEST_UPDATE_INFO_URL")
-		cfgUrl = u.cfg.GetString(constants.UpdateEndpointConfig)
+		envUrl = os.Getenv(constants.TestUpdateInfoURLEnvVarName)
+		cfgUrl = u.cfg.GetString(constants.UpdateInfoEndpointConfig)
 	)
 	switch {
 	case envUrl != "":
