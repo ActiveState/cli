@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mholt/archiver/v3"
+	"github.com/ActiveState/cli/internal/archiver"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"

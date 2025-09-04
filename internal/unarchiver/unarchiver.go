@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/ActiveState/cli/internal/archiver"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/mholt/archiver/v3"
 
 	"github.com/ActiveState/cli/internal/fileutils"
 )
