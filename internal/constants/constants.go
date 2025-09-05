@@ -133,6 +133,12 @@ const OverwriteDefaultSystemPathEnvVarName = "ACTIVESTATE_TEST_SYSTEM_PATH"
 // TestAutoUpdateEnvVarName is used to test auto updates, when set to true will always attempt to auto update
 const TestAutoUpdateEnvVarName = "ACTIVESTATE_TEST_AUTO_UPDATE"
 
+// TestUpdateInfoURLEnvVarName is used to test update info urls, when set to a url will override the default update info url
+const TestUpdateInfoURLEnvVarName = "ACTIVESTATE_TEST_UPDATE_INFO_URL"
+
+// TestUpdateURLEnvVarName is used to test update urls, when set to a url will override the default update url
+const TestUpdateURLEnvVarName = "ACTIVESTATE_TEST_UPDATE_URL"
+
 // ForceUpdateEnvVarName is used to force state tool to update, regardless of whether the update is equal to the current version
 const ForceUpdateEnvVarName = "ACTIVESTATE_FORCE_UPDATE"
 
@@ -417,6 +423,9 @@ const AnalyticsPixelOverrideConfig = "report.analytics.endpoint"
 
 // UpdateEndpointConfig is the config key used to determine the update endpoint to use
 const UpdateEndpointConfig = "update.endpoint"
+
+// UpdateInfoEndpointConfig is the config key used to determine the update info endpoint to use
+const UpdateInfoEndpointConfig = "update.info.endpoint"
 
 // NotificationsURLConfig is the config key used to determine the notifications url to use
 const NotificationsURLConfig = "notifications.endpoint"
