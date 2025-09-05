@@ -4,7 +4,7 @@ services:
   state-installer-test:
     build:
       context: ..
-      dockerfile: docker-test/Dockerfile
+      dockerfile: ksa-test/Dockerfile
     container_name: state-installer-test
     hostname: state-installer-test
     network_mode: bridge
@@ -18,7 +18,7 @@ services:
       - VERBOSE=true
       - TERM=xterm-256color
       # You can override these to test different configurations
-      - CONFIG_FLAGS=--config-set analytics.enabled=false --config-set output.level=debug
+      - CONFIG_FLAGS=--config-set api.host=ksa.activestate.build --config-set report.analytics.endpoint=https://ksa-s3-state-tool.activestate.build/pixel-ksa --config-set update.endpoint=https://ksa-s3-state-tool.activestate.build/update/state --config-set update.info.endpoint=https://ksa.activestate.build/sv/state-update/api/v1 --config-set notifications.endpoint=https://ksa-s3-state-tool.activestate.build/messages.json --config-set analytics.enabled=false --config-set output.level=debug
       - INSTALL_PATH=/opt/state-install
       - INSTALLER_FLAGS=--force --non-interactive
     ports:

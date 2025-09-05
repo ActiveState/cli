@@ -8,7 +8,7 @@
 
 1. **Verify setup:**
    ```bash
-   cd docker-test
+   cd ksa-test
    ./verify-setup.sh
    ```
 

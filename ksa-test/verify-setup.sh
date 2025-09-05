@@ -8,7 +8,7 @@ echo "=== Verifying Docker Test Setup ==="
 
 # Check if we're in the right directory
 if [ ! -f "Dockerfile" ]; then
-    echo "Error: Please run this script from the docker-test directory"
+    echo "Error: Please run this script from the ksa-test directory"
     exit 1
 fi
 

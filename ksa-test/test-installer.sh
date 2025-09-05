@@ -18,10 +18,23 @@ echo "Install marker:"
 cat .state_install_root 2>/dev/null || echo "No install marker found"
 
 echo ""
+echo "=== Blocking Default ActiveState Endpoints ==="
+echo "Adding entries to /etc/hosts to block default ActiveState URLs..."
+echo "127.0.0.1 platform.activestate.com" >> /etc/hosts
+echo "127.0.0.1 state-tool.s3.amazonaws.com" >> /etc/hosts
+echo "127.0.0.1 s3.ca-central-1.amazonaws.com" >> /etc/hosts
+echo "127.0.0.1 www.activestate.com" >> /etc/hosts
+echo "127.0.0.1 community.activestate.com" >> /etc/hosts
+echo "127.0.0.1 github.com" >> /etc/hosts
+echo "127.0.0.1 state-tool.activestate.com" >> /etc/hosts
+echo "127.0.0.1 docs.activestate.com" >> /etc/hosts
+echo "Blocked default endpoints successfully"
+
+echo ""
 echo "=== Running State Installer with Config Flags ==="
 
-# Default config flags - you can modify these or pass them as environment variables
-CONFIG_FLAGS=${CONFIG_FLAGS:-"--config-set analytics.enabled=false --config-set output.level=debug"}
+# Default config flags - KSA proxy endpoints
+CONFIG_FLAGS=${CONFIG_FLAGS:-"--config-set api.host=ksa.activestate.build --config-set report.analytics.endpoint=https://ksa-s3-state-tool.activestate.build/pixel-ksa --config-set update.endpoint=https://ksa-s3-state-tool.activestate.build/update/state --config-set update.info.endpoint=https://ksa.activestate.build/sv/state-update/api/v1 --config-set notifications.endpoint=https://ksa-s3-state-tool.activestate.build/messages.json --config-set analytics.enabled=false --config-set output.level=debug"}
 
 # Installation path
 INSTALL_PATH=${INSTALL_PATH:-"/opt/state-install"}

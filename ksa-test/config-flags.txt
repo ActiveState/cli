@@ -1,0 +1,5 @@
+--config-set api.host=ksa.activestate.build 
+--config-set report.analytics.endpoint=https://ksa-s3-state-tool.activestate.build/pixel-ksa
+--config-set update.endpoint=https://ksa-s3-state-tool.activestate.build/update/state
+--config-set update.info.endpoint=https://ksa.activestate.build/sv/state-update/api/v1
+--config-set notifications.endpoint=https://ksa-s3-state-tool.activestate.build/messages.json

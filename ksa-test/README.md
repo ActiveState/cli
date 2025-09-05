@@ -6,7 +6,7 @@ This Docker setup allows you to test the state-installer with configuration flag
 
 1. **Build and run the test environment:**
    ```bash
-   cd docker-test
+   cd ksa-test
    docker-compose up --build -d
    ```
 
@@ -95,7 +95,7 @@ The environment includes network monitoring capabilities:
 ## File Structure
 
 ```
-docker-test/
+ksa-test/
 ├── Dockerfile              # Main Docker image definition
 ├── docker-compose.yml      # Docker Compose configuration
 ├── test-installer.sh       # Test script for running installer

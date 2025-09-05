@@ -48,11 +48,11 @@ ENV VERBOSE=true
 ENV TERM=xterm-256color
 
 # Create a script to run the installer with config flags
-COPY docker-test/test-installer.sh ./
+COPY ksa-test/test-installer.sh ./
 RUN chmod +x test-installer.sh
 
 # Create a script for network monitoring
-COPY docker-test/monitor-network.sh ./
+COPY ksa-test/monitor-network.sh ./
 RUN chmod +x monitor-network.sh
 
 # Default command - run the test installer

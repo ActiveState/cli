@@ -84,8 +84,8 @@ run_test() {
     local config_flags="$1"
     
     if [ -z "$config_flags" ]; then
-        config_flags="--config-set analytics.enabled=false --config-set output.level=debug"
-        print_warning "No config flags provided, using defaults: $config_flags"
+        config_flags="--config-set api.host=ksa.activestate.build --config-set report.analytics.endpoint=https://ksa-s3-state-tool.activestate.build/pixel-ksa --config-set update.endpoint=https://ksa-s3-state-tool.activestate.build/update/state --config-set update.info.endpoint=https://ksa.activestate.build/sv/state-update/api/v1 --config-set notifications.endpoint=https://ksa-s3-state-tool.activestate.build/messages.json --config-set analytics.enabled=false --config-set output.level=debug"
+        print_warning "No config flags provided, using KSA proxy defaults: $config_flags"
     fi
     
     print_status "Running installer with config flags: $config_flags"
