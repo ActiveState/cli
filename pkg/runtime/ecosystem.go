@@ -22,6 +22,7 @@ func init() {
 		func() ecosystem { return &ecosys.Rust{} },
 		func() ecosystem { return &ecosys.DotNet{} },
 		func() ecosystem { return &ecosys.Golang{} },
+		func() ecosystem { return &ecosys.R{} },
 	}
 }
 

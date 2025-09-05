@@ -24,6 +24,7 @@ type JavaScript struct {
 func (e *JavaScript) Init(runtimePath string, buildplan *buildplan.BuildPlan) error {
 	e.runtimePath = runtimePath
 	e.installPackages = []string{}
+	e.uninstallPackages = []string{}
 	return nil
 }
 
@@ -46,7 +47,7 @@ func (e *JavaScript) Add(artifact *buildplan.Artifact, artifactSrcPath string) (
 			continue
 		}
 		ext := filepath.Ext(file.Name())
-		if ext != ".tar.gz" && ext != ".tgz" {
+		if ext != ".gz" && ext != ".tgz" {
 			continue
 		}
 		if !strings.HasPrefix(file.Name(), packageName) {
