@@ -142,10 +142,22 @@ func main() {
 		break
 	}
 
+	// Parse command line arguments manually to extract config settings before analytics
+	params := newParams()
+
+	for i, arg := range processedArgs[1:] {
+		if arg == "--config-set" && i+1 < len(processedArgs[1:]) {
+			params.configSettings = append(params.configSettings, processedArgs[1:][i+1])
+		}
+	}
+
+	if err := applyConfigSettings(cfg, params.configSettings); err != nil {
+		logging.Warning("Could not apply config settings before analytics: %s", errs.JoinMessage(err))
+	}
+
 	an = sync.New(anaConst.SrcStateInstaller, cfg, nil, out)
 	an.Event(anaConst.CatInstallerFunnel, "start")
 
-	params := newParams()
 	cmd := captain.NewCommand(
 		"state-installer",
 		"",
@@ -336,11 +348,6 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		an.Event(anaConst.CatInstallerFunnel, "already-installed")
 		params.isUpdate = true
 
-		// Apply config settings even when already installed
-		if err := applyConfigSettings(cfg, params.configSettings); err != nil {
-			return errs.Wrap(err, "Failed to apply config settings")
-		}
-
 		return postInstallEvents(out, cfg, an, params)
 	}
 
@@ -348,12 +355,6 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		return err
 	}
 	storeInstallSource(params.sourceInstaller)
-
-	// Apply config settings after installation but before post-install events
-	// This ensures the State Tool's config is properly set up
-	if err := applyConfigSettings(cfg, params.configSettings); err != nil {
-		return errs.Wrap(err, "Failed to apply config settings")
-	}
 
 	return postInstallEvents(out, cfg, an, params)
 }
