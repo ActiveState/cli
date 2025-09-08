@@ -2,6 +2,9 @@ package integration
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -267,6 +270,91 @@ func (suite *NotificationIntegrationTestSuite) TestNotification_Basic_InterruptE
 	suite.Require().Contains(cp.Snapshot(), "This is a simple notification")
 	suite.Require().NotContains(cp.Output(), "ActiveState CLI by ActiveState Software Inc.")
 	ts.IgnoreLogErrors()
+}
+
+func (suite *NotificationIntegrationTestSuite) TestNotificationEndpoint_SetBeforeInvocation() {
+	suite.OnlyRunForTags(tagsuite.Notifications)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	notificationsURL := "https://test.example.com/notifications"
+	ts.SetConfig(constants.NotificationsURLConfig, notificationsURL)
+	suite.Assert().Equal(ts.GetConfig(constants.NotificationsURLConfig), notificationsURL)
+
+	cp := ts.Spawn("--version")
+	cp.ExpectExitCode(0)
+
+	foundConfigURL := false
+	foundDefaultURL := false
+	logDir := filepath.Join(ts.Dirs.Config, "logs")
+	files, err := os.ReadDir(logDir)
+	suite.Require().NoError(err)
+	for _, file := range files {
+		if strings.Contains(file.Name(), "state-svc") {
+			logPath := filepath.Join(logDir, file.Name())
+			contents := string(fileutils.ReadFileUnsafe(logPath))
+			if strings.Contains(contents, "test.example.com") {
+				foundConfigURL = true
+			}
+			if strings.Contains(contents, "state-tool.s3.amazonaws.com") {
+				foundDefaultURL = true
+			}
+		}
+	}
+	suite.Assert().True(foundConfigURL, "Log file should contain the configured notifications endpoint '%s'", notificationsURL)
+	suite.Assert().False(foundDefaultURL, "Log file should not contain the default notifications endpoint '%s'", constants.NotificationsInfoURL)
+
+	// Clean up - remove the config setting
+	cp = ts.Spawn("config", "set", constants.NotificationsURLConfig, "")
+	cp.Expect("Successfully")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *NotificationIntegrationTestSuite) TestNotificationEndpoint() {
+	suite.OnlyRunForTags(tagsuite.Notifications)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "messages.json", []byte(`[{
+		"ID": "config-test",
+		"Message": "This is a [NOTICE]config test[/RESET] notification"
+	}]`), 0755)
+	suite.Require().NoError(err)
+
+	notificationsURL := "https://test.example.com/notifications"
+	cp := ts.Spawn("config", "set", constants.NotificationsURLConfig, notificationsURL)
+	cp.Expect("Successfully set config key")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("--version"),
+		e2e.OptAppendEnv(constants.NotificationsOverrideEnvVarName+"="+msgFile),
+		e2e.OptAppendEnv("VERBOSE=true"),
+	)
+	cp.ExpectExitCode(0)
+
+	correctHostFound := false
+	incorrectHostFound := false
+	for _, path := range ts.LogFiles() {
+		contents := string(fileutils.ReadFileUnsafe(path))
+		if strings.Contains(contents, notificationsURL) {
+			correctHostFound = true
+			break
+		}
+		if strings.Contains(contents, constants.NotificationsInfoURL) {
+			incorrectHostFound = true
+			break
+		}
+	}
+	suite.Assert().True(correctHostFound, "Log file should contain the configured notifications endpoint 'example.com'")
+	suite.Assert().False(incorrectHostFound, "Log file should not contain the default notifications endpoint 'state-tool.s3.amazonaws.com'")
+
+	// Clean up - remove the config setting
+	cp = ts.Spawn("config", "set", constants.NotificationsURLConfig, "")
+	cp.Expect("Successfully")
+	cp.ExpectExitCode(0)
 }
 
 func TestNotificationIntegrationTestSuite(t *testing.T) {

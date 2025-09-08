@@ -109,10 +109,14 @@ func (runner *ProjectErrorsRunner) Run(params *Params) error {
 // If found, assume the issue is resolved so that a new build could be retried.
 func CheckDependencyFixes(auth *authentication.Auth, failedArtifacts []*buildplan.Artifact) (map[strfmt.UUID]bool, error) {
 	fixed := make(map[strfmt.UUID]bool)
+	latest, err := model.FetchLatestRevisionTimeStamp(auth)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to fetch latest timestamp: %w", err)
+	}
 	for _, artifact := range failedArtifacts {
 		// TODO: Query multiple artifacts at once to reduce API calls, improving performance.
 		latestRevision, err := model.GetIngredientByNameAndVersion(
-			artifact.Ingredients[0].Namespace, artifact.Name(), artifact.Version(), nil, auth)
+			artifact.Ingredients[0].Namespace, artifact.Name(), artifact.Version(), &latest, auth)
 		if err != nil {
 			return nil, fmt.Errorf("error searching ingredient: %w", err)
 		}

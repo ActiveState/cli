@@ -13,7 +13,7 @@ import (
 )
 
 // MinimumRSABitLength is the minimum allowed bit-length when generating RSA keys.
-const MinimumRSABitLength int = 1024
+const MinimumRSABitLength int = 2048
 
 type ErrKeypairPassphrase struct{ *locale.LocalizedError }
 
