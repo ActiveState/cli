@@ -16,17 +16,23 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 )
 
-var awsRegionName, awsBucketName string
+var awsRegionName, awsBucketName, basePrefix string
 var client *s3.Client
 
 func main() {
 	if !condition.InUnitTest() {
-		if len(os.Args) != 3 {
-			log.Fatalf("Usage: %s <region-name> <bucket-name>", os.Args[0])
+		if len(os.Args) != 3 && len(os.Args) != 4 {
+			log.Fatalf("Usage: %s <region-name> <bucket-name> [base-prefix]", os.Args[0])
 		}
 
 		awsRegionName = os.Args[1]
 		awsBucketName = os.Args[2]
+		if len(os.Args) == 4 {
+			basePrefix = os.Args[3]
+			if basePrefix != "" && !strings.HasSuffix(basePrefix, "/") {
+				basePrefix += "/"
+			}
+		}
 
 		run()
 	}
@@ -34,13 +40,26 @@ func main() {
 
 func run() {
 	fmt.Printf("Promoting staging files to production in bucket: %s\n", awsBucketName)
+	if basePrefix != "" {
+		fmt.Printf("Using base prefix: %s\n", basePrefix)
+	}
 
 	createClient()
 
-	// List all objects with staging/ prefix
-	stagingObjects, err := listObjectsWithPrefix("staging/")
+	// List all objects with <basePrefix>staging/ prefix
+	allObjects, err := listObjectsWithPrefix(basePrefix + "staging/")
 	if err != nil {
 		log.Fatalf("Failed to list staging objects: %v", err)
+	}
+
+	// Filter out the root staging directory itself (but keep subdirectories)
+	var stagingObjects []types.Object
+	stagingPrefix := basePrefix + "staging/"
+	for _, obj := range allObjects {
+		if *obj.Key == stagingPrefix {
+			continue
+		}
+		stagingObjects = append(stagingObjects, obj)
 	}
 
 	if len(stagingObjects) == 0 {
@@ -56,13 +75,14 @@ func run() {
 	// Copy each staging object to production location and delete the staging version
 	for _, obj := range stagingObjects {
 		stagingKey := *obj.Key
-		productionKey := strings.TrimPrefix(stagingKey, "staging/")
+		relativeKey := strings.TrimPrefix(stagingKey, basePrefix+"staging/")
+		destinationKey := basePrefix + "release/" + relativeKey
 
-		fmt.Printf("Promoting %s -> %s\n", stagingKey, productionKey)
+		fmt.Printf("Promoting %s -> %s\n", stagingKey, destinationKey)
 
-		err := copyObject(stagingKey, productionKey)
+		err := copyObject(stagingKey, destinationKey)
 		if err != nil {
-			log.Fatalf("Failed to copy %s to %s: %v", stagingKey, productionKey, err)
+			log.Fatalf("Failed to copy %s to %s: %v", stagingKey, destinationKey, err)
 		}
 
 		err = deleteObject(stagingKey)

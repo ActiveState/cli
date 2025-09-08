@@ -279,18 +279,10 @@ jobs:
             fi
           fi
 
-          # Deploy to staging for release branches, regular deploy for others
-          if [[ "$GITHUB_REF" == "refs/heads/beta" || "$GITHUB_REF" == "refs/heads/release" || "$GITHUB_REF" =~ ^refs/heads/LTS ]]; then
-            echo "Deploying to staging directory for release branch: $GITHUB_REF"
-            DEPLOY_TO_STAGING=true state run deploy-updates
-            DEPLOY_TO_STAGING=true state run deploy-installers
-            DEPLOY_TO_STAGING=true state run deploy-remote-installer
-          else
-            echo "Deploying normally for non-release branch: $GITHUB_REF"
-            state run deploy-updates
-            state run deploy-installers
-            state run deploy-remote-installer
-          fi
+          echo "Deploying for integration tests"
+          state run deploy-updates
+          state run deploy-installers
+          state run deploy-remote-installer
 
       - # === Integration Tests ===
         name: Integration Tests
