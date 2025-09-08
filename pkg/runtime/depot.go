@@ -316,7 +316,7 @@ func (d *depot) Track(artifact *buildplan.Artifact, deploy *deployment) error {
 	d.config.Cache[id].LastAccessTime = time.Now().Unix()
 
 	// For dynamically imported artifacts, also include artifact metadata.
-	if artifact != nil {
+	if len(artifact.Ingredients) > 0 {
 		d.config.Cache[id].Namespace = artifact.Ingredients[0].Namespace
 		d.config.Cache[id].Name = artifact.Name()
 		d.config.Cache[id].Version = artifact.Version()
