@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -257,4 +258,40 @@ func (i *Instance) GetStringMap(key string) map[string]interface{} {
 // ConfigPath returns the path at which our configuration is stored
 func (i *Instance) ConfigPath() string {
 	return i.appDataDir
+}
+
+// ApplyArgs applies command line arguments to the config instance
+// These take the format of 'key=value'
+func (i *Instance) ApplyArgs(args []string) error {
+	for _, setting := range args {
+		setting = strings.TrimSpace(setting)
+		if setting == "" {
+			continue // Skip empty settings
+		}
+		var key, valueStr string
+
+		if strings.Contains(setting, "=") {
+			parts := strings.SplitN(setting, "=", 2)
+			if len(parts) == 2 {
+				key = strings.TrimSpace(parts[0])
+				valueStr = strings.TrimSpace(parts[1])
+			}
+		}
+
+		if key == "" || valueStr == "" {
+			return errs.New("Config setting must be in 'key=value' format: %s", setting)
+		}
+
+		// Store the raw string value without type validation since config options
+		// are not yet registered in the installer context
+		err := i.Set(key, valueStr)
+		if err != nil {
+			// Log the error but don't fail the installation for config issues
+			logging.Warning("Could not set config value %s=%s: %s", key, valueStr, errs.JoinMessage(err))
+			return errs.Wrap(err, "Could not set value %s for key %s", valueStr, key)
+		}
+
+		logging.Debug("Config setting applied: %s=%s", key, valueStr)
+	}
+	return nil
 }

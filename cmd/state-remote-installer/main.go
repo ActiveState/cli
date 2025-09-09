@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime/debug"
+	"strings"
 	"syscall"
 	"time"
 
@@ -37,6 +38,7 @@ type Params struct {
 	force          bool
 	version        string
 	nonInteractive bool
+	configSettings []string
 }
 
 func newParams() *Params {
@@ -82,6 +84,18 @@ func main() {
 		logging.Error("Could not set up configuration handler: " + errs.JoinMessage(err))
 		fmt.Fprintln(os.Stderr, err.Error())
 		exitCode = 1
+	}
+
+	// Set config as early as possible to ensure we respect the values
+	configArgs := []string{}
+	for i, arg := range os.Args[1:] {
+		if arg == "--config-set" && i+1 < len(os.Args[1:]) {
+			configArgs = append(configArgs, os.Args[1:][i+1])
+		}
+	}
+
+	if err := cfg.ApplyArgs(configArgs); err != nil {
+		logging.Warning("Could not apply config settings before analytics: %s", errs.JoinMessage(err))
 	}
 
 	rollbar.SetConfig(cfg)
@@ -154,6 +168,11 @@ func main() {
 				Hidden:    true,
 				Value:     &params.nonInteractive,
 			},
+			{
+				Name:        "config-set",
+				Description: "Set config values in 'key=value' format, can be specified multiple times",
+				Value:       &params.configSettings,
+			},
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
@@ -223,6 +242,11 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	}
 	if params.force {
 		args = append(args, "--force") // forward to installer
+	}
+	if len(params.configSettings) > 0 {
+		for _, setting := range params.configSettings {
+			args = append(args, "--config-set", setting)
+		}
 	}
 	env := []string{
 		constants.InstallerNoSubshell + "=true",
