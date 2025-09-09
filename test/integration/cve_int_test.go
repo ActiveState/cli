@@ -13,7 +13,6 @@ type CveIntegrationTestSuite struct {
 }
 
 func (suite *CveIntegrationTestSuite) TestCve() {
-	suite.T().Skip("This does not work right now") // DX-3252, CP-658
 	suite.OnlyRunForTags(tagsuite.Cve)
 
 	ts := e2e.New(suite.T(), false)
