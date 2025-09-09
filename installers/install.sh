@@ -104,8 +104,9 @@ Linux)
 Darwin)
   OS="darwin"
   ARCH="amd64"
-  arch="`uname -m`"
-  if [ $arch = "arm64" ]; then ARCH="arm64"; fi
+  if [ -n "$OVERRIDE_ARCH" ]; then
+    ARCH="$OVERRIDE_ARCH"
+  fi
   DOWNLOADEXT=".tar.gz"
   SHA256SUM="shasum -a 256"
   ;;
