@@ -59,13 +59,18 @@ func main() {
 			exitCode = 1
 		}
 
-		if err := cfg.Close(); err != nil {
-			logging.Error("Failed to close config: %w", err)
+		ev := []func(){rollbar.Wait, logging.Close}
+		if an != nil {
+			ev = append(ev, an.Wait)
 		}
-
-		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, an.Wait, logging.Close); err != nil {
+		if err := events.WaitForEvents(5*time.Second, ev...); err != nil {
 			logging.Warning("state-remote-installer failed to wait for events: %v", err)
 		}
+
+		if cfg != nil {
+			events.Close("config", cfg.Close)
+		}
+
 		os.Exit(exitCode)
 	}()
 
