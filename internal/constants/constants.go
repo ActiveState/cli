@@ -225,6 +225,9 @@ const BetaChannel = "beta"
 // ExperimentalChannel is the channel used for experimental builds
 const ExperimentalChannel = "master"
 
+// PublicChannels are the channels intended for public consumption -- comma separated because Go doesn't allow slice constants
+const PublicChannels = ReleaseChannel + "," + BetaChannel
+
 // MonoAPIPath is the api path used for the platform api
 const MonoAPIPath = "/api/v1"
 
