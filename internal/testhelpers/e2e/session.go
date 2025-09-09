@@ -768,13 +768,27 @@ func (s *Session) SetupRCFile() {
 	if runtime.GOOS == "windows" {
 		return
 	}
-	s.T.Setenv("HOME", s.Dirs.HomeDir)
-	defer s.T.Setenv("HOME", os.Getenv("HOME"))
+	s.WithEnv(func() {
+		s.SetupRCFileCustom(subshell.New(s.cfg))
+	})
+}
 
-	cfg, err := config.New()
-	require.NoError(s.T, err)
-
-	s.SetupRCFileCustom(subshell.New(cfg))
+func (s *Session) WithEnv(do func()) {
+	env := osutils.EnvSliceToMap(s.Env)
+	for k, v := range env {
+		_, exists := os.LookupEnv(k)
+		if exists {
+			defer s.T.Setenv(k, os.Getenv(k))
+		} else {
+			defer func() {
+				if err := os.Unsetenv(k); err != nil {
+					s.T.Logf("Failed to unset env var %s: %v", k, err)
+				}
+			}()
+		}
+		s.T.Setenv(k, v)
+	}
+	do()
 }
 
 func (s *Session) SetupRCFileCustom(subshell subshell.SubShell) {
@@ -790,7 +804,11 @@ func (s *Session) SetupRCFileCustom(subshell subshell.SubShell) {
 	} else {
 		err = fileutils.Touch(filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile)))
 	}
-	require.NoError(s.T, err)
+	require.NoError(s.T, err, errs.JoinMessage(err))
+}
+
+func (s *Session) Config() *config.Instance {
+	return s.cfg
 }
 
 func (s *Session) SetConfig(key string, value interface{}) {

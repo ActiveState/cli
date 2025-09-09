@@ -205,7 +205,7 @@ jobs:
         id: unit_tests
         shell: bash
         run: parallelize results Unit-Tests | gotestfmt -hide empty-packages
-        continue-on-error: ${{ github.event_name != 'schedule' }}
+        continue-on-error: true # This is captured by the "Check if Unit Tests Failed" step
 
       - # === "Build: CLI" ===
         name: "Build: CLI"
@@ -375,9 +375,9 @@ jobs:
           INTEGRATION_TEST_TOKEN: ${{ secrets.INTEGRATION_TEST_TOKEN }}
           PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
 
-      - # === Fail If Unscheduled Unit Tests Failed (Expand 'Unit Tests' above for more information) ===
-        name: Fail If Unscheduled Unit Tests Failed
-        if: github.event_name != 'schedule' && steps.unit_tests.outcome == 'failure'
+      - # === Check if Unit Tests Failed ===
+        name: Check if Unit Tests Failed
+        if: steps.unit_tests.outcome == 'failure'
         shell: bash
         run: exit 1
 

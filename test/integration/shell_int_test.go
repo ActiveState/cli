@@ -193,7 +193,10 @@ func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.SetupRCFile(ts)
+	if runtime.GOOS != "windows" {
+		ts.SetupRCFileCustom(&bash.SubShell{})
+		ts.SetupRCFileCustom(&zsh.SubShell{})
+	}
 
 	cp := ts.Spawn("checkout", "ActiveState-CLI/Empty")
 	cp.Expect("Checked out project")
@@ -201,12 +204,14 @@ func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
 
 	// Create a zsh RC file
 	var zshRcFile string
-	var err error
-	if runtime.GOOS != "windows" {
-		zsh := &zsh.SubShell{}
-		zshRcFile, err = zsh.RcFile()
-		suite.NoError(err)
-	}
+	ts.WithEnv(func() {
+		var err error
+		if runtime.GOOS != "windows" {
+			zsh := &zsh.SubShell{}
+			zshRcFile, err = zsh.RcFile()
+			suite.NoError(err)
+		}
+	})
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("use", "ActiveState-CLI/Empty"),
@@ -216,13 +221,12 @@ func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
 	cp.ExpectExitCode(0)
 
 	// Ensure both bash and zsh RC files are updated
-	cfg, err := config.New()
-	suite.NoError(err)
-	rcfile, err := subshell.New(cfg).RcFile()
+	rcfile, err := subshell.New(ts.Config()).RcFile()
+	rcfile = filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcfile))
 	if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
 		suite.NoError(err)
-		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
-		suite.Contains(string(fileutils.ReadFileUnsafe(zshRcFile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
+		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, rcfile+": PATH does not have your project in it")
+		suite.Contains(string(fileutils.ReadFileUnsafe(zshRcFile)), ts.Dirs.DefaultBin, zshRcFile+": PATH does not have your project in it")
 	}
 }
 
@@ -235,15 +239,6 @@ func (suite *ShellIntegrationTestSuite) TestJSON() {
 	cp.Expect(`"error":"This command does not support the 'json' output format`, termtest.OptExpectTimeout(5*time.Second))
 	cp.ExpectExitCode(1)
 	AssertValidJSON(suite.T(), cp)
-}
-
-func (suite *ShellIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {
-	if runtime.GOOS == "windows" {
-		return
-	}
-
-	ts.SetupRCFile()
-	ts.SetupRCFileCustom(&zsh.SubShell{})
 }
 
 func (suite *ShellIntegrationTestSuite) TestRuby() {
