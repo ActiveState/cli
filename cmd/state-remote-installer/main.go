@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime/debug"
-	"strings"
 	"syscall"
 	"time"
 
