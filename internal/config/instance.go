@@ -287,11 +287,8 @@ func (i *Instance) ApplyArgs(args []string) error {
 		err := i.Set(key, valueStr)
 		if err != nil {
 			// Log the error but don't fail the installation for config issues
-			logging.Warning("Could not set config value %s=%s: %s", key, valueStr, errs.JoinMessage(err))
 			return errs.Wrap(err, "Could not set value %s for key %s", valueStr, key)
 		}
-
-		logging.Debug("Config setting applied: %s=%s", key, valueStr)
 	}
 	return nil
 }
