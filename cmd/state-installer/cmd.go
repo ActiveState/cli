@@ -72,7 +72,11 @@ func main() {
 			exitCode = 1
 		}
 
-		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, an.Wait, logging.Close); err != nil {
+		ev := []func(){rollbar.Wait, logging.Close}
+		if an != nil {
+			ev = append(ev, an.Wait)
+		}
+		if err := events.WaitForEvents(5*time.Second, ev...); err != nil {
 			logging.Warning("state-installer failed to wait for events: %v", err)
 		}
 
@@ -98,6 +102,22 @@ func main() {
 		multilog.Critical("Could not set up configuration handler: " + errs.JoinMessage(err))
 		fmt.Fprintln(os.Stderr, err.Error())
 		exitCode = 1
+		return
+	}
+
+	// Set config as early as possible to ensure we respect the values
+	configArgs := []string{}
+	for i, arg := range os.Args[1:] {
+		if arg == "--config-set" && i+1 < len(os.Args[1:]) {
+			configArgs = append(configArgs, os.Args[1:][i+1])
+		}
+	}
+
+	if err := cfg.ApplyArgs(configArgs); err != nil {
+		multilog.Critical("Could not apply config: " + errs.JoinMessage(err))
+		fmt.Fprintln(os.Stderr, err.Error())
+		exitCode = 1
+		return
 	}
 
 	rollbar.SetConfig(cfg)
@@ -142,22 +162,10 @@ func main() {
 		break
 	}
 
-	// Parse command line arguments manually to extract config settings before analytics
-	params := newParams()
-
-	for i, arg := range processedArgs[1:] {
-		if arg == "--config-set" && i+1 < len(processedArgs[1:]) {
-			params.configSettings = append(params.configSettings, processedArgs[1:][i+1])
-		}
-	}
-
-	if err := applyConfigSettings(cfg, params.configSettings); err != nil {
-		logging.Warning("Could not apply config settings before analytics: %s", errs.JoinMessage(err))
-	}
-
 	an = sync.New(anaConst.SrcStateInstaller, cfg, nil, out)
 	an.Event(anaConst.CatInstallerFunnel, "start")
 
+	params := newParams()
 	cmd := captain.NewCommand(
 		"state-installer",
 		"",
@@ -520,46 +528,5 @@ func assertCompatibility() error {
 		}
 	}
 
-	return nil
-}
-
-func applyConfigSettings(cfg *config.Instance, configSettings []string) error {
-	for _, setting := range configSettings {
-		setting = strings.TrimSpace(setting)
-		if setting == "" {
-			continue // Skip empty settings
-		}
-		if err := applyConfigSetting(cfg, setting); err != nil {
-			return errs.Wrap(err, "Failed to apply config setting: %s", setting)
-		}
-	}
-	return nil
-}
-
-func applyConfigSetting(cfg *config.Instance, setting string) error {
-	var key, valueStr string
-
-	if strings.Contains(setting, "=") {
-		parts := strings.SplitN(setting, "=", 2)
-		if len(parts) == 2 {
-			key = strings.TrimSpace(parts[0])
-			valueStr = strings.TrimSpace(parts[1])
-		}
-	}
-
-	if key == "" || valueStr == "" {
-		return locale.NewInputError("err_config_invalid_format", "Config setting must be in 'key=value' format: {{.V0}}", setting)
-	}
-
-	// Store the raw string value without type validation since config options
-	// are not yet registered in the installer context
-	err := cfg.Set(key, valueStr)
-	if err != nil {
-		// Log the error but don't fail the installation for config issues
-		logging.Warning("Could not set config value %s=%s: %s", key, valueStr, errs.JoinMessage(err))
-		return locale.WrapError(err, "err_config_set", "Could not set value {{.V0}} for key {{.V1}}", valueStr, key)
-	}
-
-	logging.Debug("Config setting applied: %s=%s", key, valueStr)
 	return nil
 }
