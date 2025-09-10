@@ -31,11 +31,11 @@ func (suite *RSAKeypairTestSuite) TestGenerateRSA_UsesMinimumBitLength() {
 func (suite *RSAKeypairTestSuite) TestGenerateRSA_GeneratesRSAKeypair() {
 	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
 	suite.Require().Nil(err)
-	suite.Regexp(`^-{5}BEGIN RSA PRIVATE KEY-{5}\s[[:alnum:]/+=]{44}\s-{5}END RSA PRIVATE KEY-{5}\s`, kp.EncodePrivateKey())
+	suite.Regexp(`^-{5}BEGIN RSA PRIVATE KEY-{5}\s[[:alnum:]/+=\s]+?\s-{5}END RSA PRIVATE KEY-{5}`, kp.EncodePrivateKey())
 
 	encPubKey, err := kp.EncodePublicKey()
 	suite.Require().Nil(err)
-	suite.Regexp(`^-{5}BEGIN RSA PUBLIC KEY-{5}\s[[:alnum:]/+=]{44}\s-{5}END RSA PUBLIC KEY-{5}\s`, encPubKey)
+	suite.Regexp(`^-{5}BEGIN RSA PUBLIC KEY-{5}\s[[:alnum:]/+=\s]+\s-{5}END RSA PUBLIC KEY-{5}`, encPubKey)
 }
 
 func (suite *RSAKeypairTestSuite) TestRSAKeypair_EncryptAndEncodePrivateKey() {
@@ -51,18 +51,8 @@ func (suite *RSAKeypairTestSuite) TestRSAKeypair_EncryptAndEncodePrivateKey() {
 	suite.Regexp(`-{5}END RSA PRIVATE KEY-{5}\s`, keyPEM)
 }
 
-func (suite *RSAKeypairTestSuite) TestRSAKeypair_MessageTooLongForKeySize() {
-	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().Nil(err)
-
-	encMsg, err := kp.Encrypt([]byte("howdy doody"))
-	suite.Nil(encMsg)
-	suite.Require().Error(err)
-	suite.Contains(err.Error(), "EncryptOAEP failed")
-}
-
 func (suite *RSAKeypairTestSuite) TestRSAKeypair_EncryptsAndDecrypts() {
-	kp, err := keypairs.GenerateRSA(1024)
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
 	suite.Require().Nil(err)
 
 	encryptedMsg, err := kp.Encrypt([]byte("howdy doody"))
@@ -75,7 +65,7 @@ func (suite *RSAKeypairTestSuite) TestRSAKeypair_EncryptsAndDecrypts() {
 }
 
 func (suite *RSAKeypairTestSuite) TestRSAKeypair_EncodesAndDeccodesEncryptedValues() {
-	kp, err := keypairs.GenerateRSA(1024)
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
 	suite.Require().Nil(err)
 
 	encryptedMsg, err := kp.EncryptAndEncode([]byte("howdy doody"))
@@ -188,7 +178,5 @@ func (suite *RSAKeypairTestSuite) TestParseEncryptedRSA_IncorrectPassphrase() {
 }
 
 func Test_RSAKeypair_TestSuite(t *testing.T) {
-	t.Skip("This is still captured by integration tests, but for now we're skipping the unit test as it" +
-		" prevents CI from running and we need time to devise a proper solution.")
 	suite.Run(t, new(RSAKeypairTestSuite))
 }

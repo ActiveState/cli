@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/sliceutils"
 )
 
 var (
@@ -71,8 +73,11 @@ func generatePayload(inDir, outDir, binDir, channel, version string) error {
 		filepath.Join(inDir, constants.StateCmd+osutils.ExeExtension):          binDir,
 		filepath.Join(inDir, constants.StateSvcCmd+osutils.ExeExtension):       binDir,
 		filepath.Join(inDir, constants.StateExecutorCmd+osutils.ExeExtension):  binDir,
-		filepath.Join(inDir, constants.StateMCPCmd+osutils.ExeExtension):       binDir,
 	}
+	if !sliceutils.Contains(strings.Split(constants.PublicChannels, ","), channel) {
+		files[filepath.Join(inDir, constants.StateMCPCmd+osutils.ExeExtension)] = binDir
+	}
+
 	if err := copyFiles(files); err != nil {
 		return fmt.Errorf(emsg, err)
 	}

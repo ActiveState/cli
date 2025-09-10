@@ -180,8 +180,6 @@ jobs:
           EOF
           )"
         env:
-          CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
-          MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
@@ -205,7 +203,7 @@ jobs:
         id: unit_tests
         shell: bash
         run: parallelize results Unit-Tests | gotestfmt -hide empty-packages
-        continue-on-error: ${{ github.event_name != 'schedule' }}
+        continue-on-error: true # This is captured by the "Check if Unit Tests Failed" step
 
       - # === "Build: CLI" ===
         name: "Build: CLI"
@@ -241,43 +239,6 @@ jobs:
         name: "Build: MCP"
         shell: bash
         run: parallelize results Build-MCP
-
-      - # === Prepare Windows Cert ===
-        name: Prepare Windows Cert
-        shell: bash
-        if: runner.os == 'Windows'
-        run: |
-          echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
-        env:
-          MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
-
-      - # === Sign Binaries (Windows only) ===
-        name: Sign Binaries (Windows only)
-        shell: bash
-        if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
-        run: |
-          export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.26100.0/x64:$PATH
-
-          signtool.exe sign -fd SHA1 -d "ActiveState State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state.exe
-          signtool.exe sign -fd SHA1 -d "ActiveState State Service" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe
-          signtool.exe sign -fd SHA1 -d "ActiveState State Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe
-          signtool.exe sign -fd SHA1 -d "ActiveState State Tool Remote Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-remote-installer.exe
-          signtool.exe sign -fd SHA1 -d "ActiveState State MCP" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-mcp.exe
-        env:
-          CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
-
-      - # === Sign Install Scripts (Windows only) ===
-        name: Sign Install Scripts (Windows only)
-        shell: powershell
-        if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
-        run: |
-          $branchInfix = $Env:GITHUB_REF.Replace("refs/heads/", "").Replace("release", "")
-          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-          $cert.Import('Cert.p12',$env:CODE_SIGNING_PASSWD,'DefaultKeySet')
-          Set-AuthenticodeSignature -FilePath build\installers\$branchInfix\install.ps1 -Certificate $cert
-          Set-AuthenticodeSignature -FilePath build\installers\$branchInfix\legacy-install.ps1 -Certificate $cert
-        env:
-          CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
 
       - # === Generate Update ===
         name: Generate Update
@@ -318,6 +279,7 @@ jobs:
             fi
           fi
 
+          echo "Deploying for integration tests"
           state run deploy-updates
           state run deploy-installers
           state run deploy-remote-installer
@@ -375,9 +337,9 @@ jobs:
           INTEGRATION_TEST_TOKEN: ${{ secrets.INTEGRATION_TEST_TOKEN }}
           PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
 
-      - # === Fail If Unscheduled Unit Tests Failed (Expand 'Unit Tests' above for more information) ===
-        name: Fail If Unscheduled Unit Tests Failed
-        if: github.event_name != 'schedule' && steps.unit_tests.outcome == 'failure'
+      - # === Check if Unit Tests Failed ===
+        name: Check if Unit Tests Failed
+        if: steps.unit_tests.outcome == 'failure'
         shell: bash
         run: exit 1
 
@@ -531,9 +493,18 @@ jobs:
         name: Deploy
         shell: bash
         run: |
-          state run deploy-updates
-          state run deploy-installers
-          state run deploy-remote-installer
+          # Deploy to staging for release branches, regular deploy for others
+          if [[ "$GITHUB_REF" == "refs/heads/beta" || "$GITHUB_REF" == "refs/heads/release" || "$GITHUB_REF" =~ ^refs/heads/LTS ]]; then
+            echo "Deploying to staging directory for release branch: $GITHUB_REF"
+            DEPLOY_TO_STAGING=true state run deploy-updates
+            DEPLOY_TO_STAGING=true state run deploy-installers
+            DEPLOY_TO_STAGING=true state run deploy-remote-installer
+          else
+            echo "Deploying normally for non-release branch: $GITHUB_REF"
+            state run deploy-updates
+            state run deploy-installers
+            state run deploy-remote-installer
+          fi
 
       - # === Cleanup Session Artifacts ===
         name: Cleanup Session Artifacts

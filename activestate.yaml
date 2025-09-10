@@ -208,7 +208,15 @@ scripts:
 
       echo "If using tokens make sure to run 'go run extras/aws-mfa-auth/main.go' on TheHomeRepot first."
 
-      go run scripts/ci/s3-deployer/main.go ${constants.BUILD_TARGET_PREFIX_DIR}/update us-east-1 state-tool update/state
+      PREFIX="update/state"
+      if [ "$DEPLOY_TO_STAGING" = "true" ]; then
+        PREFIX="staging/$PREFIX"
+        echo "Deploying updates to staging: $PREFIX"
+      else
+        echo "Deploying updates to production: $PREFIX"
+      fi
+
+      go run scripts/ci/s3-deployer/main.go ${constants.BUILD_TARGET_PREFIX_DIR}/update us-east-1 state-tool $PREFIX
   - name: build-install-scripts
     language: bash
     standalone: true
@@ -247,16 +255,49 @@ scripts:
   - name: deploy-installers
     language: bash
     standalone: true
-    description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
+    description: Deploys installer files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
-      go run scripts/ci/s3-deployer/main.go build/installers us-east-1 state-tool update/state
+      PREFIX="update/state"
+      if [ "$DEPLOY_TO_STAGING" = "true" ]; then
+        PREFIX="staging/$PREFIX"
+        echo "Deploying installers to staging: $PREFIX"
+      else
+        echo "Deploying installers to production: $PREFIX"
+      fi
+
+      go run scripts/ci/s3-deployer/main.go build/installers us-east-1 state-tool $PREFIX
   - name: deploy-remote-installer
     language: bash
     standalone: true
     value: |
       set -e
       $constants.SET_ENV
-      go run scripts/ci/s3-deployer/main.go $BUILD_TARGET_DIR/remote-installer us-east-1 state-tool remote-installer
+      
+      PREFIX="remote-installer"
+      if [ "$DEPLOY_TO_STAGING" = "true" ]; then
+        PREFIX="staging/$PREFIX"
+        echo "Deploying remote installer to staging: $PREFIX"
+      else
+        echo "Deploying remote installer to production: $PREFIX"
+      fi
+      
+      go run scripts/ci/s3-deployer/main.go $BUILD_TARGET_DIR/remote-installer us-east-1 state-tool $PREFIX
+  - name: promote-staging-to-production
+    language: bash
+    standalone: true
+    description: Promotes files from staging directory to production. This should be run manually after Windows binaries have been signed.
+    value: |
+      set -e
+      echo "Promoting staging files to production..."
+      echo "WARNING: This will move all files from staging/ to production. Make sure Windows binaries have been signed!"
+      read -p "Are you sure you want to continue? (y/N): " -n 1 -r
+      echo
+      if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Promotion cancelled."
+        exit 1
+      fi
+      
+      go run scripts/ci/s3-promoter/main.go us-east-1 state-tool
   - name: build-workflow-assets
     language: bash
     standalone: true
