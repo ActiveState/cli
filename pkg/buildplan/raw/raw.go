@@ -89,6 +89,7 @@ type IngredientSource struct {
 	Namespace           string      `json:"namespace"`
 	Version             string      `json:"version"`
 	Licenses            []string    `json:"licenses"`
+	Url                 strfmt.URI  `json:"url"`
 }
 
 type RawResolvedRequirement struct {

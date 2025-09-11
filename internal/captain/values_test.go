@@ -53,12 +53,30 @@ func TestPackageValue_Set(t *testing.T) {
 	}{
 		{
 			"namespace, name and version",
-			"namespace/path/name@1.0.0",
+			"namespace/path:name@1.0.0",
 			false,
 			&PackageValue{Namespace: "namespace/path", Name: "name", Version: "1.0.0"},
 		},
 		{
 			"namespace and name",
+			"namespace/path:name",
+			false,
+			&PackageValue{Namespace: "namespace/path", Name: "name"},
+		},
+		{
+			"namespace, name with slashes, and version",
+			"namespace/path:name/with/slashes@1.0.0",
+			false,
+			&PackageValue{Namespace: "namespace/path", Name: "name/with/slashes", Version: "1.0.0"},
+		},
+		{
+			"legacy namespace, name and version",
+			"namespace/path/name@1.0.0",
+			false,
+			&PackageValue{Namespace: "namespace/path", Name: "name", Version: "1.0.0"},
+		},
+		{
+			"legacy namespace and name",
 			"namespace/path/name",
 			false,
 			&PackageValue{Namespace: "namespace/path", Name: "name"},
@@ -99,12 +117,30 @@ func TestPackageFlagNSRequired_Set(t *testing.T) {
 	}{
 		{
 			"namespace, name and version",
-			"namespace/path/name@1.0.0",
+			"namespace/path:name@1.0.0",
 			false,
 			&PackageValueNSRequired{PackageValue{Namespace: "namespace/path", Name: "name", Version: "1.0.0"}},
 		},
 		{
 			"namespace and name",
+			"namespace/path:name",
+			false,
+			&PackageValueNSRequired{PackageValue{Namespace: "namespace/path", Name: "name"}},
+		},
+		{
+			"namespace and name with slashes",
+			"namespace/path:name/with/slashes",
+			false,
+			&PackageValueNSRequired{PackageValue{Namespace: "namespace/path", Name: "name/with/slashes"}},
+		},
+		{
+			"legacy namespace, name and version",
+			"namespace/path/name@1.0.0",
+			false,
+			&PackageValueNSRequired{PackageValue{Namespace: "namespace/path", Name: "name", Version: "1.0.0"}},
+		},
+		{
+			"legacy namespace and name",
 			"namespace/path/name",
 			false,
 			&PackageValueNSRequired{PackageValue{Namespace: "namespace/path", Name: "name"}},

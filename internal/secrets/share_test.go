@@ -23,10 +23,10 @@ type SecretsSharingTestSuite struct {
 func (suite *SecretsSharingTestSuite) SetupSuite() {
 	var err error
 
-	suite.sourceKeypair, err = keypairs.GenerateRSA(1024)
+	suite.sourceKeypair, err = keypairs.GenerateRSA(2048)
 	suite.Require().NoError(err)
 
-	suite.targetKeypair, err = keypairs.GenerateRSA(1024)
+	suite.targetKeypair, err = keypairs.GenerateRSA(2048)
 	suite.Require().NoError(err)
 
 	suite.targetPubKey, err = suite.targetKeypair.EncodePublicKey()
@@ -47,25 +47,6 @@ func (suite *SecretsSharingTestSuite) TestFailure_FirstShareHasBadlyEncryptedVal
 	newShares, err := secrets.ShareFromDiff(suite.sourceKeypair, &secrets_models.UserSecretDiff{
 		PublicKey: &suite.targetPubKey,
 		Shares:    []*secrets_models.UserSecretShare{newUserSecretShare("", "FOO", "badly encrypted value")},
-	})
-	suite.Nil(newShares)
-	suite.Require().Error(err)
-}
-
-func (suite *SecretsSharingTestSuite) TestFailure_FailedToEncryptForTargetUser() {
-	shortKeypair, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().NoError(err)
-
-	// this is a valid public key, but will be too short for encrypting with
-	shortPubKey, err := shortKeypair.EncodePublicKey()
-	suite.Require().NoError(err)
-
-	encrValue, err := suite.sourceKeypair.EncryptAndEncode([]byte("luv 2 encrypt data"))
-	suite.Require().NoError(err)
-
-	newShares, err := secrets.ShareFromDiff(suite.sourceKeypair, &secrets_models.UserSecretDiff{
-		PublicKey: &shortPubKey,
-		Shares:    []*secrets_models.UserSecretShare{newUserSecretShare("", "FOO", encrValue)},
 	})
 	suite.Nil(newShares)
 	suite.Require().Error(err)

@@ -115,6 +115,38 @@ func (suite *ConfigIntegrationTestSuite) TestList() {
 
 	suite.Require().NotContains(cp.Snapshot(), constants.AsyncRuntimeConfig)
 }
+
+func (suite *ConfigIntegrationTestSuite) TestAPIHostConfig() {
+	suite.OnlyRunForTags(tagsuite.Config)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("config", "set", "api.host", "test.example.com", "-o", "json")
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+	cp.Expect(`{"name":"api.host","value":"test.example.com"}`)
+
+	cp = ts.Spawn("config", "get", "api.host", "-o", "json")
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+	cp.Expect(`{"name":"api.host","value":"test.example.com"}`)
+
+	cp = ts.Spawn("config")
+	cp.Expect("api.host")
+	cp.Expect("test.example.com")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "set", "api.host", "", "-o", "json")
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+	cp.Expect(`{"name":"api.host","value":""}`)
+
+	cp = ts.Spawn("config", "get", "api.host", "-o", "json")
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+	cp.Expect(`{"name":"api.host","value":""}`)
+}
+
 func TestConfigIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ConfigIntegrationTestSuite))
 }

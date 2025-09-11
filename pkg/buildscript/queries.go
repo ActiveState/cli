@@ -12,12 +12,13 @@ import (
 )
 
 const (
-	solveFuncName       = "solve"
-	solveLegacyFuncName = "solve_legacy"
-	srcKey              = "src"
-	mergeKey            = "merge"
-	requirementsKey     = "requirements"
-	platformsKey        = "platforms"
+	solveFuncName        = "solve"
+	solveLegacyFuncName  = "solve_legacy"
+	solveDynamicFuncName = "dynamic_solve"
+	srcKey               = "src"
+	mergeKey             = "merge"
+	requirementsKey      = "requirements"
+	platformsKey         = "platforms"
 )
 
 var errNodeNotFound = errs.New("Could not find node")
@@ -177,7 +178,7 @@ func getVersionRequirements(v *value) []types.VersionRequirement {
 }
 
 func isSolveFuncName(name string) bool {
-	return name == solveFuncName || name == solveLegacyFuncName
+	return name == solveFuncName || name == solveLegacyFuncName || name == solveDynamicFuncName
 }
 
 func (b *BuildScript) getTargetSolveNode(targets ...string) (*value, error) {

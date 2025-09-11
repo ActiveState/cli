@@ -65,7 +65,7 @@ func (u *Update) Run(params *Params) error {
 		))
 	}
 
-	update := updater.NewUpdateInstaller(u.an, upd)
+	update := updater.NewUpdateInstaller(u.cfg, u.an, upd)
 	if !update.ShouldInstall() {
 		logging.Debug("No update found")
 		u.out.Print(output.Prepare(

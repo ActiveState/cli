@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/sliceutils"
 )
 
 var (
@@ -72,6 +74,10 @@ func generatePayload(inDir, outDir, binDir, channel, version string) error {
 		filepath.Join(inDir, constants.StateSvcCmd+osutils.ExeExtension):       binDir,
 		filepath.Join(inDir, constants.StateExecutorCmd+osutils.ExeExtension):  binDir,
 	}
+	if !sliceutils.Contains(strings.Split(constants.PublicChannels, ","), channel) {
+		files[filepath.Join(inDir, constants.StateMCPCmd+osutils.ExeExtension)] = binDir
+	}
+
 	if err := copyFiles(files); err != nil {
 		return fmt.Errorf(emsg, err)
 	}
@@ -107,6 +113,7 @@ func copyFiles(files map[string]string) error {
 		dest := filepath.Join(target, filepath.Base(src))
 
 		if err := fileutils.CopyFile(src, dest); err != nil {
+			fmt.Printf("Files in %s: %+v\n", filepath.Dir(src), fileutils.ListFilesUnsafe(filepath.Dir(src)))
 			return fmt.Errorf("copy files (%s to %s): %w", src, target, err)
 		}
 	}

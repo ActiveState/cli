@@ -115,7 +115,7 @@ func (u *Upgrade) Run(params *Params) (rerr error) {
 
 	// Since our platform is commit based we need to create a commit for the "after" buildplan, even though we may not
 	// end up using it it the user doesn't confirm the upgrade.
-	bumpedCommit, err := bpm.StageCommit(bpModel.StageCommitParams{
+	bumpedCommit, err := bpm.StageCommitAndPoll(bpModel.StageCommitParams{
 		Owner:        proj.Owner(),
 		Project:      proj.Name(),
 		ParentCommit: localCommitID.String(),
@@ -283,9 +283,9 @@ func (u *Upgrade) renderUserFacing(changes []structuredChange, expand bool) erro
 	out.Print(tbl.Render())
 
 	out.Notice(" ") // Empty line (prompts use Notice)
-	confirm, err := u.prime.Prompt().Confirm("", locale.Tr("upgrade_confirm"), ptr.To(true))
+	confirm, err := u.prime.Prompt().Confirm("", locale.Tr("upgrade_confirm"), ptr.To(true), nil)
 	if err != nil {
-		return errs.Wrap(err, "confirmation failed")
+		return errs.Wrap(err, "Not confirmed")
 	}
 	if !confirm {
 		return ErrAbort

@@ -22,7 +22,7 @@ func (suite *BranchIntegrationTestSuite) TestBranch_List() {
 
 	ts.PrepareProject("ActiveState-CLI/Branches", "35af7414-b44b-4fd7-aa93-2ecad337ed2b")
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("branch"), e2e.OptTermTest(termtest.OptVerboseLogger()))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("branch"))
 	// Sometimes there's a space before the line break, unsure exactly why, but hence the regex
 	cp.ExpectRe(`main \(Current\)\s?\n  ├─ firstbranch\s?\n  │  └─ firstbranchchild\s?\n  │     └─ childoffirstbranchchild\s?\n  ├─ secondbranch\s?\n  └─ thirdbranch`, termtest.OptExpectTimeout(5*time.Second))
 	cp.Expect("To switch to another branch,")

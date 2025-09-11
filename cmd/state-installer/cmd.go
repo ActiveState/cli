@@ -48,6 +48,7 @@ type Params struct {
 	activateDefault *project.Namespaced
 	showVersion     bool
 	nonInteractive  bool
+	configSettings  []string
 }
 
 func newParams() *Params {
@@ -71,13 +72,18 @@ func main() {
 			exitCode = 1
 		}
 
+		ev := []func(){rollbar.Wait, logging.Close}
+		if an != nil {
+			ev = append(ev, an.Wait)
+		}
+		if err := events.WaitForEvents(5*time.Second, ev...); err != nil {
+			logging.Warning("state-installer failed to wait for events: %v", err)
+		}
+
 		if cfg != nil {
 			events.Close("config", cfg.Close)
 		}
 
-		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, an.Wait, logging.Close); err != nil {
-			logging.Warning("state-installer failed to wait for events: %v", err)
-		}
 		os.Exit(exitCode)
 	}()
 
@@ -96,6 +102,22 @@ func main() {
 		multilog.Critical("Could not set up configuration handler: " + errs.JoinMessage(err))
 		fmt.Fprintln(os.Stderr, err.Error())
 		exitCode = 1
+		return
+	}
+
+	// Set config as early as possible to ensure we respect the values
+	configArgs := []string{}
+	for i, arg := range os.Args[1:] {
+		if arg == "--config-set" && i+1 < len(os.Args[1:]) {
+			configArgs = append(configArgs, os.Args[1:][i+1])
+		}
+	}
+
+	if err := cfg.ApplyArgs(configArgs); err != nil {
+		multilog.Critical("Could not apply config: " + errs.JoinMessage(err))
+		fmt.Fprintln(os.Stderr, err.Error())
+		exitCode = 1
+		return
 	}
 
 	rollbar.SetConfig(cfg)
@@ -105,7 +127,7 @@ func main() {
 		OutWriter:   os.Stdout,
 		ErrWriter:   os.Stderr,
 		Colored:     true,
-		Interactive: false,
+		Interactive: term.IsTerminal(int(os.Stdin.Fd())),
 	})
 	if err != nil {
 		multilog.Critical("Could not set up output handler: " + errs.JoinMessage(err))
@@ -194,6 +216,11 @@ func main() {
 				Value: &params.showVersion,
 			},
 			{Name: "non-interactive", Shorthand: "n", Hidden: true, Value: &params.nonInteractive}, // don't prompt
+			{
+				Name:        "config-set",
+				Description: "Set config values in 'key=value' format, can be specified multiple times",
+				Value:       &params.configSettings,
+			},
 			// The remaining flags are for backwards compatibility (ie. we don't want to error out when they're provided)
 			{Name: "channel", Hidden: true, Value: &garbageString},
 			{Name: "bbb", Shorthand: "b", Hidden: true, Value: &garbageString},
@@ -328,6 +355,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		out.Print(fmt.Sprintf("State Tool Package Manager is already installed at [NOTICE]%s[/RESET]. To reinstall use the [ACTIONABLE]--force[/RESET] flag.", installPath))
 		an.Event(anaConst.CatInstallerFunnel, "already-installed")
 		params.isUpdate = true
+
 		return postInstallEvents(out, cfg, an, params)
 	}
 
@@ -335,6 +363,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		return err
 	}
 	storeInstallSource(params.sourceInstaller)
+
 	return postInstallEvents(out, cfg, an, params)
 }
 
@@ -475,11 +504,7 @@ func storeInstallSource(installSource string) {
 		installSource = "state-installer"
 	}
 
-	appData, err := storage.AppDataPath()
-	if err != nil {
-		multilog.Error("Could not store install source due to AppDataPath error: %s", errs.JoinMessage(err))
-		return
-	}
+	appData := storage.AppDataPath()
 	if err := fileutils.WriteFile(filepath.Join(appData, constants.InstallSourceFile), []byte(installSource)); err != nil {
 		multilog.Error("Could not store install source due to WriteFile error: %s", errs.JoinMessage(err))
 	}

@@ -1,52 +1,54 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: © 2015 LabStack LLC and Echo contributors
+
 /*
 Package echo implements high performance, minimalist Go web framework.
 
 Example:
 
-  package main
+	package main
 
-  import (
-    "net/http"
+	import (
+	  "net/http"
 
-    "github.com/labstack/echo/v4"
-    "github.com/labstack/echo/v4/middleware"
-  )
+	  "github.com/labstack/echo/v4"
+	  "github.com/labstack/echo/v4/middleware"
+	)
 
-  // Handler
-  func hello(c echo.Context) error {
-    return c.String(http.StatusOK, "Hello, World!")
-  }
+	// Handler
+	func hello(c echo.Context) error {
+	  return c.String(http.StatusOK, "Hello, World!")
+	}
 
-  func main() {
-    // Echo instance
-    e := echo.New()
+	func main() {
+	  // Echo instance
+	  e := echo.New()
 
-    // Middleware
-    e.Use(middleware.Logger())
-    e.Use(middleware.Recover())
+	  // Middleware
+	  e.Use(middleware.Logger())
+	  e.Use(middleware.Recover())
 
-    // Routes
-    e.GET("/", hello)
+	  // Routes
+	  e.GET("/", hello)
 
-    // Start server
-    e.Logger.Fatal(e.Start(":1323"))
-  }
+	  // Start server
+	  e.Logger.Fatal(e.Start(":1323"))
+	}
 
 Learn more at https://echo.labstack.com
 */
 package echo
 
 import (
-	"bytes"
 	stdContext "context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 	stdLog "log"
 	"net"
 	"net/http"
+	"os"
 	"reflect"
 	"runtime"
 	"sync"
@@ -60,86 +62,90 @@ import (
 	"golang.org/x/net/http2/h2c"
 )
 
-type (
-	// Echo is the top-level framework instance.
-	Echo struct {
-		filesystem
-		common
-		// startupMutex is mutex to lock Echo instance access during server configuration and startup. Useful for to get
-		// listener address info (on which interface/port was listener binded) without having data races.
-		startupMutex     sync.RWMutex
-		StdLogger        *stdLog.Logger
-		colorer          *color.Color
-		premiddleware    []MiddlewareFunc
-		middleware       []MiddlewareFunc
-		maxParam         *int
-		router           *Router
-		routers          map[string]*Router
-		pool             sync.Pool
-		Server           *http.Server
-		TLSServer        *http.Server
-		Listener         net.Listener
-		TLSListener      net.Listener
-		AutoTLSManager   autocert.Manager
-		DisableHTTP2     bool
-		Debug            bool
-		HideBanner       bool
-		HidePort         bool
-		HTTPErrorHandler HTTPErrorHandler
-		Binder           Binder
-		JSONSerializer   JSONSerializer
-		Validator        Validator
-		Renderer         Renderer
-		Logger           Logger
-		IPExtractor      IPExtractor
-		ListenerNetwork  string
-	}
+// Echo is the top-level framework instance.
+//
+// Goroutine safety: Do not mutate Echo instance fields after server has started. Accessing these
+// fields from handlers/middlewares and changing field values at the same time leads to data-races.
+// Adding new routes after the server has been started is also not safe!
+type Echo struct {
+	filesystem
+	common
+	// startupMutex is mutex to lock Echo instance access during server configuration and startup. Useful for to get
+	// listener address info (on which interface/port was listener bound) without having data races.
+	startupMutex sync.RWMutex
+	colorer      *color.Color
 
-	// Route contains a handler and information for matching against requests.
-	Route struct {
-		Method string `json:"method"`
-		Path   string `json:"path"`
-		Name   string `json:"name"`
-	}
+	// premiddleware are middlewares that are run before routing is done. In case a pre-middleware returns
+	// an error the router is not executed and the request will end up in the global error handler.
+	premiddleware []MiddlewareFunc
+	middleware    []MiddlewareFunc
+	maxParam      *int
+	router        *Router
+	routers       map[string]*Router
+	pool          sync.Pool
 
-	// HTTPError represents an error that occurred while handling a request.
-	HTTPError struct {
-		Code     int         `json:"-"`
-		Message  interface{} `json:"message"`
-		Internal error       `json:"-"` // Stores the error returned by an external dependency
-	}
+	StdLogger        *stdLog.Logger
+	Server           *http.Server
+	TLSServer        *http.Server
+	Listener         net.Listener
+	TLSListener      net.Listener
+	AutoTLSManager   autocert.Manager
+	HTTPErrorHandler HTTPErrorHandler
+	Binder           Binder
+	JSONSerializer   JSONSerializer
+	Validator        Validator
+	Renderer         Renderer
+	Logger           Logger
+	IPExtractor      IPExtractor
+	ListenerNetwork  string
 
-	// MiddlewareFunc defines a function to process middleware.
-	MiddlewareFunc func(next HandlerFunc) HandlerFunc
+	// OnAddRouteHandler is called when Echo adds new route to specific host router.
+	OnAddRouteHandler func(host string, route Route, handler HandlerFunc, middleware []MiddlewareFunc)
+	DisableHTTP2      bool
+	Debug             bool
+	HideBanner        bool
+	HidePort          bool
+}
 
-	// HandlerFunc defines a function to serve HTTP requests.
-	HandlerFunc func(c Context) error
+// Route contains a handler and information for matching against requests.
+type Route struct {
+	Method string `json:"method"`
+	Path   string `json:"path"`
+	Name   string `json:"name"`
+}
 
-	// HTTPErrorHandler is a centralized HTTP error handler.
-	HTTPErrorHandler func(error, Context)
+// HTTPError represents an error that occurred while handling a request.
+type HTTPError struct {
+	Internal error       `json:"-"` // Stores the error returned by an external dependency
+	Message  interface{} `json:"message"`
+	Code     int         `json:"-"`
+}
 
-	// Validator is the interface that wraps the Validate function.
-	Validator interface {
-		Validate(i interface{}) error
-	}
+// MiddlewareFunc defines a function to process middleware.
+type MiddlewareFunc func(next HandlerFunc) HandlerFunc
 
-	// JSONSerializer is the interface that encodes and decodes JSON to and from interfaces.
-	JSONSerializer interface {
-		Serialize(c Context, i interface{}, indent string) error
-		Deserialize(c Context, i interface{}) error
-	}
+// HandlerFunc defines a function to serve HTTP requests.
+type HandlerFunc func(c Context) error
 
-	// Renderer is the interface that wraps the Render function.
-	Renderer interface {
-		Render(io.Writer, string, interface{}, Context) error
-	}
+// HTTPErrorHandler is a centralized HTTP error handler.
+type HTTPErrorHandler func(err error, c Context)
 
-	// Map defines a generic map of type `map[string]interface{}`.
-	Map map[string]interface{}
+// Validator is the interface that wraps the Validate function.
+type Validator interface {
+	Validate(i interface{}) error
+}
 
-	// Common struct for Echo & Group.
-	common struct{}
-)
+// JSONSerializer is the interface that encodes and decodes JSON to and from interfaces.
+type JSONSerializer interface {
+	Serialize(c Context, i interface{}, indent string) error
+	Deserialize(c Context, i interface{}) error
+}
+
+// Map defines a generic map of type `map[string]interface{}`.
+type Map map[string]interface{}
+
+// Common struct for Echo & Group.
+type common struct{}
 
 // HTTP methods
 // NOTE: Deprecated, please use the stdlib constants directly instead.
@@ -158,7 +164,12 @@ const (
 
 // MIME types
 const (
-	MIMEApplicationJSON                  = "application/json"
+	// MIMEApplicationJSON JavaScript Object Notation (JSON) https://www.rfc-editor.org/rfc/rfc8259
+	MIMEApplicationJSON = "application/json"
+	// Deprecated: Please use MIMEApplicationJSON instead. JSON should be encoded using UTF-8 by default.
+	// No "charset" parameter is defined for this registration.
+	// Adding one really has no effect on compliant recipients.
+	// See RFC 8259, section 8.1. https://datatracker.ietf.org/doc/html/rfc8259#section-8.1
 	MIMEApplicationJSONCharsetUTF8       = MIMEApplicationJSON + "; " + charsetUTF8
 	MIMEApplicationJavaScript            = "application/javascript"
 	MIMEApplicationJavaScriptCharsetUTF8 = MIMEApplicationJavaScript + "; " + charsetUTF8
@@ -248,7 +259,7 @@ const (
 
 const (
 	// Version of Echo
-	Version = "4.9.0"
+	Version = "4.13.4"
 	website = "https://echo.labstack.com"
 	// http://patorjk.com/software/taag/#p=display&f=Small%20Slant&t=Echo
 	banner = `
@@ -263,60 +274,88 @@ ____________________________________O/_______
 `
 )
 
-var (
-	methods = [...]string{
-		http.MethodConnect,
-		http.MethodDelete,
-		http.MethodGet,
-		http.MethodHead,
-		http.MethodOptions,
-		http.MethodPatch,
-		http.MethodPost,
-		PROPFIND,
-		http.MethodPut,
-		http.MethodTrace,
-		REPORT,
-	}
-)
+var methods = [...]string{
+	http.MethodConnect,
+	http.MethodDelete,
+	http.MethodGet,
+	http.MethodHead,
+	http.MethodOptions,
+	http.MethodPatch,
+	http.MethodPost,
+	PROPFIND,
+	http.MethodPut,
+	http.MethodTrace,
+	REPORT,
+}
 
 // Errors
 var (
-	ErrUnsupportedMediaType        = NewHTTPError(http.StatusUnsupportedMediaType)
-	ErrNotFound                    = NewHTTPError(http.StatusNotFound)
-	ErrUnauthorized                = NewHTTPError(http.StatusUnauthorized)
-	ErrForbidden                   = NewHTTPError(http.StatusForbidden)
-	ErrMethodNotAllowed            = NewHTTPError(http.StatusMethodNotAllowed)
-	ErrStatusRequestEntityTooLarge = NewHTTPError(http.StatusRequestEntityTooLarge)
-	ErrTooManyRequests             = NewHTTPError(http.StatusTooManyRequests)
-	ErrBadRequest                  = NewHTTPError(http.StatusBadRequest)
-	ErrBadGateway                  = NewHTTPError(http.StatusBadGateway)
-	ErrInternalServerError         = NewHTTPError(http.StatusInternalServerError)
-	ErrRequestTimeout              = NewHTTPError(http.StatusRequestTimeout)
-	ErrServiceUnavailable          = NewHTTPError(http.StatusServiceUnavailable)
-	ErrValidatorNotRegistered      = errors.New("validator not registered")
-	ErrRendererNotRegistered       = errors.New("renderer not registered")
-	ErrInvalidRedirectCode         = errors.New("invalid redirect status code")
-	ErrCookieNotFound              = errors.New("cookie not found")
-	ErrInvalidCertOrKeyType        = errors.New("invalid cert or key type, must be string or []byte")
-	ErrInvalidListenerNetwork      = errors.New("invalid listener network")
+	ErrBadRequest                    = NewHTTPError(http.StatusBadRequest)                    // HTTP 400 Bad Request
+	ErrUnauthorized                  = NewHTTPError(http.StatusUnauthorized)                  // HTTP 401 Unauthorized
+	ErrPaymentRequired               = NewHTTPError(http.StatusPaymentRequired)               // HTTP 402 Payment Required
+	ErrForbidden                     = NewHTTPError(http.StatusForbidden)                     // HTTP 403 Forbidden
+	ErrNotFound                      = NewHTTPError(http.StatusNotFound)                      // HTTP 404 Not Found
+	ErrMethodNotAllowed              = NewHTTPError(http.StatusMethodNotAllowed)              // HTTP 405 Method Not Allowed
+	ErrNotAcceptable                 = NewHTTPError(http.StatusNotAcceptable)                 // HTTP 406 Not Acceptable
+	ErrProxyAuthRequired             = NewHTTPError(http.StatusProxyAuthRequired)             // HTTP 407 Proxy AuthRequired
+	ErrRequestTimeout                = NewHTTPError(http.StatusRequestTimeout)                // HTTP 408 Request Timeout
+	ErrConflict                      = NewHTTPError(http.StatusConflict)                      // HTTP 409 Conflict
+	ErrGone                          = NewHTTPError(http.StatusGone)                          // HTTP 410 Gone
+	ErrLengthRequired                = NewHTTPError(http.StatusLengthRequired)                // HTTP 411 Length Required
+	ErrPreconditionFailed            = NewHTTPError(http.StatusPreconditionFailed)            // HTTP 412 Precondition Failed
+	ErrStatusRequestEntityTooLarge   = NewHTTPError(http.StatusRequestEntityTooLarge)         // HTTP 413 Payload Too Large
+	ErrRequestURITooLong             = NewHTTPError(http.StatusRequestURITooLong)             // HTTP 414 URI Too Long
+	ErrUnsupportedMediaType          = NewHTTPError(http.StatusUnsupportedMediaType)          // HTTP 415 Unsupported Media Type
+	ErrRequestedRangeNotSatisfiable  = NewHTTPError(http.StatusRequestedRangeNotSatisfiable)  // HTTP 416 Range Not Satisfiable
+	ErrExpectationFailed             = NewHTTPError(http.StatusExpectationFailed)             // HTTP 417 Expectation Failed
+	ErrTeapot                        = NewHTTPError(http.StatusTeapot)                        // HTTP 418 I'm a teapot
+	ErrMisdirectedRequest            = NewHTTPError(http.StatusMisdirectedRequest)            // HTTP 421 Misdirected Request
+	ErrUnprocessableEntity           = NewHTTPError(http.StatusUnprocessableEntity)           // HTTP 422 Unprocessable Entity
+	ErrLocked                        = NewHTTPError(http.StatusLocked)                        // HTTP 423 Locked
+	ErrFailedDependency              = NewHTTPError(http.StatusFailedDependency)              // HTTP 424 Failed Dependency
+	ErrTooEarly                      = NewHTTPError(http.StatusTooEarly)                      // HTTP 425 Too Early
+	ErrUpgradeRequired               = NewHTTPError(http.StatusUpgradeRequired)               // HTTP 426 Upgrade Required
+	ErrPreconditionRequired          = NewHTTPError(http.StatusPreconditionRequired)          // HTTP 428 Precondition Required
+	ErrTooManyRequests               = NewHTTPError(http.StatusTooManyRequests)               // HTTP 429 Too Many Requests
+	ErrRequestHeaderFieldsTooLarge   = NewHTTPError(http.StatusRequestHeaderFieldsTooLarge)   // HTTP 431 Request Header Fields Too Large
+	ErrUnavailableForLegalReasons    = NewHTTPError(http.StatusUnavailableForLegalReasons)    // HTTP 451 Unavailable For Legal Reasons
+	ErrInternalServerError           = NewHTTPError(http.StatusInternalServerError)           // HTTP 500 Internal Server Error
+	ErrNotImplemented                = NewHTTPError(http.StatusNotImplemented)                // HTTP 501 Not Implemented
+	ErrBadGateway                    = NewHTTPError(http.StatusBadGateway)                    // HTTP 502 Bad Gateway
+	ErrServiceUnavailable            = NewHTTPError(http.StatusServiceUnavailable)            // HTTP 503 Service Unavailable
+	ErrGatewayTimeout                = NewHTTPError(http.StatusGatewayTimeout)                // HTTP 504 Gateway Timeout
+	ErrHTTPVersionNotSupported       = NewHTTPError(http.StatusHTTPVersionNotSupported)       // HTTP 505 HTTP Version Not Supported
+	ErrVariantAlsoNegotiates         = NewHTTPError(http.StatusVariantAlsoNegotiates)         // HTTP 506 Variant Also Negotiates
+	ErrInsufficientStorage           = NewHTTPError(http.StatusInsufficientStorage)           // HTTP 507 Insufficient Storage
+	ErrLoopDetected                  = NewHTTPError(http.StatusLoopDetected)                  // HTTP 508 Loop Detected
+	ErrNotExtended                   = NewHTTPError(http.StatusNotExtended)                   // HTTP 510 Not Extended
+	ErrNetworkAuthenticationRequired = NewHTTPError(http.StatusNetworkAuthenticationRequired) // HTTP 511 Network Authentication Required
+
+	ErrValidatorNotRegistered = errors.New("validator not registered")
+	ErrRendererNotRegistered  = errors.New("renderer not registered")
+	ErrInvalidRedirectCode    = errors.New("invalid redirect status code")
+	ErrCookieNotFound         = errors.New("cookie not found")
+	ErrInvalidCertOrKeyType   = errors.New("invalid cert or key type, must be string or []byte")
+	ErrInvalidListenerNetwork = errors.New("invalid listener network")
 )
 
-// Error handlers
-var (
-	NotFoundHandler = func(c Context) error {
-		return ErrNotFound
-	}
+// NotFoundHandler is the handler that router uses in case there was no matching route found. Returns an error that results
+// HTTP 404 status code.
+var NotFoundHandler = func(c Context) error {
+	return ErrNotFound
+}
 
-	MethodNotAllowedHandler = func(c Context) error {
-		// See RFC 7231 section 7.4.1: An origin server MUST generate an Allow field in a 405 (Method Not Allowed)
-		// response and MAY do so in any other response. For disabled resources an empty Allow header may be returned
-		routerAllowMethods, ok := c.Get(ContextKeyHeaderAllow).(string)
-		if ok && routerAllowMethods != "" {
-			c.Response().Header().Set(HeaderAllow, routerAllowMethods)
-		}
-		return ErrMethodNotAllowed
+// MethodNotAllowedHandler is the handler thar router uses in case there was no matching route found but there was
+// another matching routes for that requested URL. Returns an error that results HTTP 405 Method Not Allowed status code.
+var MethodNotAllowedHandler = func(c Context) error {
+	// See RFC 7231 section 7.4.1: An origin server MUST generate an Allow field in a 405 (Method Not Allowed)
+	// response and MAY do so in any other response. For disabled resources an empty Allow header may be returned
+	routerAllowMethods, ok := c.Get(ContextKeyHeaderAllow).(string)
+	if ok && routerAllowMethods != "" {
+		c.Response().Header().Set(HeaderAllow, routerAllowMethods)
 	}
-)
+	return ErrMethodNotAllowed
+}
 
 // New creates an instance of Echo.
 func New() (e *Echo) {
@@ -374,7 +413,7 @@ func (e *Echo) Routers() map[string]*Router {
 //
 // NOTE: In case errors happens in middleware call-chain that is returning from handler (which did not return an error).
 // When handler has already sent response (ala c.JSON()) and there is error in middleware that is returning from
-// handler. Then the error that global error handler received will be ignored because we have already "commited" the
+// handler. Then the error that global error handler received will be ignored because we have already "committed" the
 // response and status code header has been sent to the client.
 func (e *Echo) DefaultHTTPErrorHandler(err error, c Context) {
 
@@ -399,12 +438,18 @@ func (e *Echo) DefaultHTTPErrorHandler(err error, c Context) {
 	// Issue #1426
 	code := he.Code
 	message := he.Message
-	if m, ok := he.Message.(string); ok {
+
+	switch m := he.Message.(type) {
+	case string:
 		if e.Debug {
 			message = Map{"message": m, "error": err.Error()}
 		} else {
 			message = Map{"message": m}
 		}
+	case json.Marshaler:
+		// do nothing - this type knows how to format itself to JSON
+	case error:
+		message = Map{"message": m.Error()}
 	}
 
 	// Send response
@@ -527,21 +572,20 @@ func (e *Echo) File(path, file string, m ...MiddlewareFunc) *Route {
 	return e.file(path, file, e.GET, m...)
 }
 
-func (e *Echo) add(host, method, path string, handler HandlerFunc, middleware ...MiddlewareFunc) *Route {
-	name := handlerName(handler)
+func (e *Echo) add(host, method, path string, handler HandlerFunc, middlewares ...MiddlewareFunc) *Route {
 	router := e.findRouter(host)
-	// FIXME: when handler+middleware are both nil ... make it behave like handler removal
-	router.Add(method, path, func(c Context) error {
-		h := applyMiddleware(handler, middleware...)
+	//FIXME: when handler+middleware are both nil ... make it behave like handler removal
+	name := handlerName(handler)
+	route := router.add(method, path, name, func(c Context) error {
+		h := applyMiddleware(handler, middlewares...)
 		return h(c)
 	})
-	r := &Route{
-		Method: method,
-		Path:   path,
-		Name:   name,
+
+	if e.OnAddRouteHandler != nil {
+		e.OnAddRouteHandler(host, *route, handler, middlewares)
 	}
-	e.router.routes[method+path] = r
-	return r
+
+	return route
 }
 
 // Add registers a new route for an HTTP method and path with matching handler
@@ -565,7 +609,7 @@ func (e *Echo) Group(prefix string, m ...MiddlewareFunc) (g *Group) {
 	return
 }
 
-// URI generates a URI from handler.
+// URI generates an URI from handler.
 func (e *Echo) URI(handler HandlerFunc, params ...interface{}) string {
 	name := handlerName(handler)
 	return e.Reverse(name, params...)
@@ -576,37 +620,15 @@ func (e *Echo) URL(h HandlerFunc, params ...interface{}) string {
 	return e.URI(h, params...)
 }
 
-// Reverse generates an URL from route name and provided parameters.
+// Reverse generates a URL from route name and provided parameters.
 func (e *Echo) Reverse(name string, params ...interface{}) string {
-	uri := new(bytes.Buffer)
-	ln := len(params)
-	n := 0
-	for _, r := range e.router.routes {
-		if r.Name == name {
-			for i, l := 0, len(r.Path); i < l; i++ {
-				if (r.Path[i] == ':' || r.Path[i] == '*') && n < ln {
-					for ; i < l && r.Path[i] != '/'; i++ {
-					}
-					uri.WriteString(fmt.Sprintf("%v", params[n]))
-					n++
-				}
-				if i < l {
-					uri.WriteByte(r.Path[i])
-				}
-			}
-			break
-		}
-	}
-	return uri.String()
+	return e.router.Reverse(name, params...)
 }
 
-// Routes returns the registered routes.
+// Routes returns the registered routes for default router.
+// In case when Echo serves multiple hosts/domains use `e.Routers()["domain2.site"].Routes()` to get specific host routes.
 func (e *Echo) Routes() []*Route {
-	routes := make([]*Route, 0, len(e.router.routes))
-	for _, v := range e.router.routes {
-		routes = append(routes, v)
-	}
-	return routes
+	return e.router.Routes()
 }
 
 // AcquireContext returns an empty `Context` instance from the pool.
@@ -626,7 +648,7 @@ func (e *Echo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Acquire context
 	c := e.pool.Get().(*context)
 	c.Reset(r, w)
-	var h func(Context) error
+	var h HandlerFunc
 
 	if e.premiddleware == nil {
 		e.findRouter(r.Host).Find(r.Method, GetPath(r), c)
@@ -700,7 +722,7 @@ func (e *Echo) StartTLS(address string, certFile, keyFile interface{}) (err erro
 func filepathOrContent(fileOrContent interface{}) (content []byte, err error) {
 	switch v := fileOrContent.(type) {
 	case string:
-		return ioutil.ReadFile(v)
+		return os.ReadFile(v)
 	case []byte:
 		return v, nil
 	default:
@@ -884,6 +906,15 @@ func (he *HTTPError) SetInternal(err error) *HTTPError {
 	return he
 }
 
+// WithInternal returns clone of HTTPError with err set to HTTPError.Internal field
+func (he *HTTPError) WithInternal(err error) *HTTPError {
+	return &HTTPError{
+		Code:     he.Code,
+		Message:  he.Message,
+		Internal: err,
+	}
+}
+
 // Unwrap satisfies the Go 1.13 error wrapper interface.
 func (he *HTTPError) Unwrap() error {
 	return he.Internal
@@ -913,8 +944,8 @@ func WrapMiddleware(m func(http.Handler) http.Handler) MiddlewareFunc {
 
 // GetPath returns RawPath, if it's empty returns Path from URL
 // Difference between RawPath and Path is:
-//  * Path is where request path is stored. Value is stored in decoded form: /%47%6f%2f becomes /Go/.
-//  * RawPath is an optional field which only gets set if the default encoding is different from Path.
+//   - Path is where request path is stored. Value is stored in decoded form: /%47%6f%2f becomes /Go/.
+//   - RawPath is an optional field which only gets set if the default encoding is different from Path.
 func GetPath(r *http.Request) string {
 	path := r.URL.RawPath
 	if path == "" {

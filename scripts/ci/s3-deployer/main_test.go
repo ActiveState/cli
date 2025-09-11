@@ -15,7 +15,7 @@ func init() {
 }
 
 func TestCreateSession(t *testing.T) {
-	createSession()
+	createClient()
 	// succeeds if no panic/exit
 }
 

@@ -92,8 +92,9 @@ func (r *Runner) Run(params *Params) error {
 			return locale.NewInputError("err_uploadingredient_file_not_found", "File not found: {{.V0}}", params.Filepath)
 		}
 		if !strings.HasSuffix(strings.ToLower(params.Filepath), ".zip") &&
-			!strings.HasSuffix(strings.ToLower(params.Filepath), ".tar.gz") {
-			return locale.NewInputError("err_uploadingredient_file_not_supported", "Expected file extension to be either .zip or .tar.gz: '{{.V0}}'", params.Filepath)
+			!strings.HasSuffix(strings.ToLower(params.Filepath), ".tar.gz") &&
+			!strings.HasSuffix(strings.ToLower(params.Filepath), ".whl") {
+				return locale.NewInputError("err_uploadingredient_file_not_supported", "Expected file extension: .zip, .tar.gz or .whl: '{{.V0}}'", params.Filepath)
 		}
 	} else if !params.Edit {
 		return locale.NewInputError("err_uploadingredient_file_required", "You have to supply the source archive unless editing.")
@@ -225,15 +226,12 @@ func (r *Runner) Run(params *Params) error {
 {{.V0}}
 
 Do you want to publish this ingredient?
-`, string(b)),
-		ptr.To(true),
-	)
+`, string(b)), ptr.To(true), nil)
 	if err != nil {
-		return errs.Wrap(err, "Confirmation failed")
+		return errs.Wrap(err, "Not confirmed")
 	}
 	if !cont {
-		r.out.Print(locale.Tl("uploadingredient_cancel", "Publish cancelled"))
-		return nil
+		return locale.NewInputError("uploadingredient_cancel", "Publish cancelled")
 	}
 
 	r.out.Notice(locale.Tl("uploadingredient_uploading", "Publishing ingredient..."))
@@ -447,7 +445,7 @@ func (r *Runner) OpenInEditor(pr *request.PublishVariables) error {
 	}
 
 	// Wait for confirmation
-	if _, err := r.prompt.Input("", locale.Tl("uploadingredient_edit_confirm", "Press enter when done editing"), ptr.To("")); err != nil {
+	if _, err := r.prompt.Input("", locale.Tl("uploadingredient_edit_confirm", "Press enter when done editing"), ptr.To(""), nil); err != nil {
 		return errs.Wrap(err, "Confirmation failed")
 	}
 

@@ -141,7 +141,7 @@ func (i *Install) Run(params Params) (rerr error) {
 		}
 
 		// Resolve requirements
-		reqs, err = i.resolveRequirements(params.Packages, ts, languages)
+		reqs, err = i.resolveRequirements(params.Packages, ts, languages, params.Timestamp.IsDynamic())
 		if err != nil {
 			return errs.Wrap(err, "Unable to resolve requirements")
 		}
@@ -153,7 +153,7 @@ func (i *Install) Run(params Params) (rerr error) {
 
 	// Prepare updated buildscript
 	script := oldCommit.BuildScript()
-	if err := prepareBuildScript(script, reqs, ts); err != nil {
+	if err := prepareBuildScript(script, reqs, ts, params.Timestamp.IsDynamic()); err != nil {
 		return errs.Wrap(err, "Could not prepare build script")
 	}
 
@@ -181,7 +181,7 @@ type errNoMatches struct {
 }
 
 // resolveRequirements will attempt to resolve the ingredient and namespace for each requested package
-func (i *Install) resolveRequirements(packages captain.PackagesValue, ts time.Time, languages []model.Language) (requirements, error) {
+func (i *Install) resolveRequirements(packages captain.PackagesValue, ts time.Time, languages []model.Language, dynamic bool) (requirements, error) {
 	failed := []*requirement{}
 	reqs := []*requirement{}
 	for _, pkg := range packages {
@@ -189,6 +189,13 @@ func (i *Install) resolveRequirements(packages captain.PackagesValue, ts time.Ti
 		if pkg.Namespace != "" {
 			req.Resolved.Name = pkg.Name
 			req.Resolved.Namespace = pkg.Namespace
+		}
+
+		// When using dynamic imports, the packages may not yet exist in the inventory, so searching
+		// for them is fruitless. Just pass them along.
+		if dynamic {
+			reqs = append(reqs, req)
+			continue
 		}
 
 		// Find ingredients that match the pkg query
@@ -274,7 +281,9 @@ func resolveVersion(req *requirement) error {
 	}
 
 	// Verify that the version provided can be resolved
-	if versionRe.MatchString(version) {
+	// Note: if the requirement does not have an ingredient, it is being dynamically imported, so
+	// we cannot resolve its versions yet.
+	if versionRe.MatchString(version) && req.Resolved.ingredient != nil {
 		match := false
 		for _, knownVersion := range req.Resolved.ingredient.Versions {
 			if knownVersion.Version == version {
@@ -319,7 +328,7 @@ func (i *Install) promptForMatchingIngredient(req *requirement, ingredients []*m
 	choice, err := i.prime.Prompt().Select(
 		locale.T("prompt_pkgop_ingredient"),
 		locale.Tr("prompt_pkgop_ingredient_msg", req.Requested.String()),
-		choices, &choices[0],
+		choices, &choices[0], nil,
 	)
 	if err != nil {
 		return nil, errs.Wrap(err, "prompting failed")
@@ -340,8 +349,14 @@ func (i *Install) renderUserFacing(reqs requirements) {
 	i.prime.Output().Notice("")
 }
 
-func prepareBuildScript(script *buildscript.BuildScript, requirements requirements, ts time.Time) error {
+func prepareBuildScript(script *buildscript.BuildScript, requirements requirements, ts time.Time, dynamic bool) error {
 	script.SetAtTime(ts, true)
+
+	err := script.SetDynamic(dynamic)
+	if err != nil {
+		return errs.Wrap(err, "Unable to update solve function")
+	}
+
 	for _, req := range requirements {
 		requirement := types.Requirement{
 			Namespace:          req.Resolved.Namespace,

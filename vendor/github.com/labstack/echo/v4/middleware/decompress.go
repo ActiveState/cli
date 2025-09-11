@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: © 2015 LabStack LLC and Echo contributors
+
 package middleware
 
 import (
@@ -9,18 +12,16 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type (
-	// DecompressConfig defines the config for Decompress middleware.
-	DecompressConfig struct {
-		// Skipper defines a function to skip middleware.
-		Skipper Skipper
+// DecompressConfig defines the config for Decompress middleware.
+type DecompressConfig struct {
+	// Skipper defines a function to skip middleware.
+	Skipper Skipper
 
-		// GzipDecompressPool defines an interface to provide the sync.Pool used to create/store Gzip readers
-		GzipDecompressPool Decompressor
-	}
-)
+	// GzipDecompressPool defines an interface to provide the sync.Pool used to create/store Gzip readers
+	GzipDecompressPool Decompressor
+}
 
-//GZIPEncoding content-encoding header if set to "gzip", decompress body contents.
+// GZIPEncoding content-encoding header if set to "gzip", decompress body contents.
 const GZIPEncoding string = "gzip"
 
 // Decompressor is used to get the sync.Pool used by the middleware to get Gzip readers
@@ -28,13 +29,11 @@ type Decompressor interface {
 	gzipDecompressPool() sync.Pool
 }
 
-var (
-	//DefaultDecompressConfig defines the config for decompress middleware
-	DefaultDecompressConfig = DecompressConfig{
-		Skipper:            DefaultSkipper,
-		GzipDecompressPool: &DefaultGzipDecompressPool{},
-	}
-)
+// DefaultDecompressConfig defines the config for decompress middleware
+var DefaultDecompressConfig = DecompressConfig{
+	Skipper:            DefaultSkipper,
+	GzipDecompressPool: &DefaultGzipDecompressPool{},
+}
 
 // DefaultGzipDecompressPool is the default implementation of Decompressor interface
 type DefaultGzipDecompressPool struct {
@@ -44,12 +43,12 @@ func (d *DefaultGzipDecompressPool) gzipDecompressPool() sync.Pool {
 	return sync.Pool{New: func() interface{} { return new(gzip.Reader) }}
 }
 
-//Decompress decompresses request body based if content encoding type is set to "gzip" with default config
+// Decompress decompresses request body based if content encoding type is set to "gzip" with default config
 func Decompress() echo.MiddlewareFunc {
 	return DecompressWithConfig(DefaultDecompressConfig)
 }
 
-//DecompressWithConfig decompresses request body based if content encoding type is set to "gzip" with config
+// DecompressWithConfig decompresses request body based if content encoding type is set to "gzip" with config
 func DecompressWithConfig(config DecompressConfig) echo.MiddlewareFunc {
 	// Defaults
 	if config.Skipper == nil {

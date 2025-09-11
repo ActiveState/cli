@@ -38,6 +38,7 @@ func Test_Create(t *testing.T) {
 				Project:   tt.args.project,
 				Directory: tt.args.directory,
 				Language:  tt.args.language,
+				Host:      "test.example.com",
 			})
 			assert.NoError(t, err)
 			configFile := filepath.Join(tempDir, constants.ConfigFileName)

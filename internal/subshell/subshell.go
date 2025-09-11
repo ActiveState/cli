@@ -251,6 +251,7 @@ func detectShellParent() string {
 		multilog.Error("Failed to get parent process: %s", errs.JoinMessage(err))
 	}
 
+	shell := ""
 	for p != nil && p.Pid != 0 {
 		name, err := p.Name()
 		if err == nil {
@@ -258,11 +259,19 @@ func detectShellParent() string {
 				name = path.Base(name)
 			}
 			if supportedShellName(name) {
-				return name
+				if runtime.GOOS == "darwin" && name == bash.Name && shell == "" {
+					// The installer starts State Tool after installing it. The user typically invokes the
+					// installer using the one-line shell command. The one-liner tends to end up in bash,
+					// which is often not the user's default on macOS. Try looking one level up for the
+					// correct shell.
+					shell = name
+				} else {
+					return name
+				}
 			}
 		}
 		p, _ = p.Parent()
 	}
 
-	return ""
+	return shell
 }

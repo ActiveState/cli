@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: © 2015 LabStack LLC and Echo contributors
+
 package middleware
 
 import (
@@ -14,70 +17,73 @@ import (
 	"github.com/valyala/fasttemplate"
 )
 
-type (
-	// LoggerConfig defines the config for Logger middleware.
-	LoggerConfig struct {
-		// Skipper defines a function to skip middleware.
-		Skipper Skipper
+// LoggerConfig defines the config for Logger middleware.
+type LoggerConfig struct {
+	// Skipper defines a function to skip middleware.
+	Skipper Skipper
 
-		// Tags to construct the logger format.
-		//
-		// - time_unix
-		// - time_unix_milli
-		// - time_unix_micro
-		// - time_unix_nano
-		// - time_rfc3339
-		// - time_rfc3339_nano
-		// - time_custom
-		// - id (Request ID)
-		// - remote_ip
-		// - uri
-		// - host
-		// - method
-		// - path
-		// - protocol
-		// - referer
-		// - user_agent
-		// - status
-		// - error
-		// - latency (In nanoseconds)
-		// - latency_human (Human readable)
-		// - bytes_in (Bytes received)
-		// - bytes_out (Bytes sent)
-		// - header:<NAME>
-		// - query:<NAME>
-		// - form:<NAME>
-		//
-		// Example "${remote_ip} ${status}"
-		//
-		// Optional. Default value DefaultLoggerConfig.Format.
-		Format string `yaml:"format"`
+	// Tags to construct the logger format.
+	//
+	// - time_unix
+	// - time_unix_milli
+	// - time_unix_micro
+	// - time_unix_nano
+	// - time_rfc3339
+	// - time_rfc3339_nano
+	// - time_custom
+	// - id (Request ID)
+	// - remote_ip
+	// - uri
+	// - host
+	// - method
+	// - path
+	// - route
+	// - protocol
+	// - referer
+	// - user_agent
+	// - status
+	// - error
+	// - latency (In nanoseconds)
+	// - latency_human (Human readable)
+	// - bytes_in (Bytes received)
+	// - bytes_out (Bytes sent)
+	// - header:<NAME>
+	// - query:<NAME>
+	// - form:<NAME>
+	// - custom (see CustomTagFunc field)
+	//
+	// Example "${remote_ip} ${status}"
+	//
+	// Optional. Default value DefaultLoggerConfig.Format.
+	Format string `yaml:"format"`
 
-		// Optional. Default value DefaultLoggerConfig.CustomTimeFormat.
-		CustomTimeFormat string `yaml:"custom_time_format"`
+	// Optional. Default value DefaultLoggerConfig.CustomTimeFormat.
+	CustomTimeFormat string `yaml:"custom_time_format"`
 
-		// Output is a writer where logs in JSON format are written.
-		// Optional. Default value os.Stdout.
-		Output io.Writer
+	// CustomTagFunc is function called for `${custom}` tag to output user implemented text by writing it to buf.
+	// Make sure that outputted text creates valid JSON string with other logged tags.
+	// Optional.
+	CustomTagFunc func(c echo.Context, buf *bytes.Buffer) (int, error)
 
-		template *fasttemplate.Template
-		colorer  *color.Color
-		pool     *sync.Pool
-	}
-)
+	// Output is a writer where logs in JSON format are written.
+	// Optional. Default value os.Stdout.
+	Output io.Writer
 
-var (
-	// DefaultLoggerConfig is the default Logger middleware config.
-	DefaultLoggerConfig = LoggerConfig{
-		Skipper: DefaultSkipper,
-		Format: `{"time":"${time_rfc3339_nano}","id":"${id}","remote_ip":"${remote_ip}",` +
-			`"host":"${host}","method":"${method}","uri":"${uri}","user_agent":"${user_agent}",` +
-			`"status":${status},"error":"${error}","latency":${latency},"latency_human":"${latency_human}"` +
-			`,"bytes_in":${bytes_in},"bytes_out":${bytes_out}}` + "\n",
-		CustomTimeFormat: "2006-01-02 15:04:05.00000",
-		colorer:          color.New(),
-	}
-)
+	template *fasttemplate.Template
+	colorer  *color.Color
+	pool     *sync.Pool
+}
+
+// DefaultLoggerConfig is the default Logger middleware config.
+var DefaultLoggerConfig = LoggerConfig{
+	Skipper: DefaultSkipper,
+	Format: `{"time":"${time_rfc3339_nano}","id":"${id}","remote_ip":"${remote_ip}",` +
+		`"host":"${host}","method":"${method}","uri":"${uri}","user_agent":"${user_agent}",` +
+		`"status":${status},"error":"${error}","latency":${latency},"latency_human":"${latency_human}"` +
+		`,"bytes_in":${bytes_in},"bytes_out":${bytes_out}}` + "\n",
+	CustomTimeFormat: "2006-01-02 15:04:05.00000",
+	colorer:          color.New(),
+}
 
 // Logger returns a middleware that logs HTTP requests.
 func Logger() echo.MiddlewareFunc {
@@ -126,6 +132,11 @@ func LoggerWithConfig(config LoggerConfig) echo.MiddlewareFunc {
 
 			if _, err = config.template.ExecuteFunc(buf, func(w io.Writer, tag string) (int, error) {
 				switch tag {
+				case "custom":
+					if config.CustomTagFunc == nil {
+						return 0, nil
+					}
+					return config.CustomTagFunc(c, buf)
 				case "time_unix":
 					return buf.WriteString(strconv.FormatInt(time.Now().Unix(), 10))
 				case "time_unix_milli":
@@ -162,6 +173,8 @@ func LoggerWithConfig(config LoggerConfig) echo.MiddlewareFunc {
 						p = "/"
 					}
 					return buf.WriteString(p)
+				case "route":
+					return buf.WriteString(c.Path())
 				case "protocol":
 					return buf.WriteString(req.Proto)
 				case "referer":

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: © 2015 LabStack LLC and Echo contributors
+
 package middleware
 
 import (
@@ -9,14 +12,12 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type (
-	// Skipper defines a function to skip middleware. Returning true skips processing
-	// the middleware.
-	Skipper func(c echo.Context) bool
+// Skipper defines a function to skip middleware. Returning true skips processing
+// the middleware.
+type Skipper func(c echo.Context) bool
 
-	// BeforeFunc defines a function which is executed just before the middleware.
-	BeforeFunc func(c echo.Context)
-)
+// BeforeFunc defines a function which is executed just before the middleware.
+type BeforeFunc func(c echo.Context)
 
 func captureTokens(pattern *regexp.Regexp, input string) *strings.Replacer {
 	groups := pattern.FindAllStringSubmatch(input, -1)
@@ -38,9 +39,9 @@ func rewriteRulesRegex(rewrite map[string]string) map[*regexp.Regexp]string {
 	rulesRegex := map[*regexp.Regexp]string{}
 	for k, v := range rewrite {
 		k = regexp.QuoteMeta(k)
-		k = strings.Replace(k, `\*`, "(.*?)", -1)
+		k = strings.ReplaceAll(k, `\*`, "(.*?)")
 		if strings.HasPrefix(k, `\^`) {
-			k = strings.Replace(k, `\^`, "^", -1)
+			k = strings.ReplaceAll(k, `\^`, "^")
 		}
 		k = k + "$"
 		rulesRegex[regexp.MustCompile(k)] = v
@@ -53,7 +54,7 @@ func rewriteURL(rewriteRegex map[*regexp.Regexp]string, req *http.Request) error
 		return nil
 	}
 
-	// Depending how HTTP request is sent RequestURI could contain Scheme://Host/path or be just /path.
+	// Depending on how HTTP request is sent RequestURI could contain Scheme://Host/path or be just /path.
 	// We only want to use path part for rewriting and therefore trim prefix if it exists
 	rawURI := req.RequestURI
 	if rawURI != "" && rawURI[0] != '/' {

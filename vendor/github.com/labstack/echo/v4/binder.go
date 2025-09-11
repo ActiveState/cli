@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: © 2015 LabStack LLC and Echo contributors
+
 package echo
 
 import (
@@ -66,9 +69,9 @@ import (
 type BindingError struct {
 	// Field is the field name where value binding failed
 	Field string `json:"field"`
+	*HTTPError
 	// Values of parameter that failed to bind.
 	Values []string `json:"-"`
-	*HTTPError
 }
 
 // NewBindingError creates new instance of binding error
@@ -91,16 +94,15 @@ func (be *BindingError) Error() string {
 
 // ValueBinder provides utility methods for binding query or path parameter to various Go built-in types
 type ValueBinder struct {
-	// failFast is flag for binding methods to return without attempting to bind when previous binding already failed
-	failFast bool
-	errors   []error
-
 	// ValueFunc is used to get single parameter (first) value from request
 	ValueFunc func(sourceParam string) string
 	// ValuesFunc is used to get all values for parameter from request. i.e. `/api/search?ids=1&ids=2`
 	ValuesFunc func(sourceParam string) []string
 	// ErrorFunc is used to create errors. Allows you to use your own error type, that for example marshals to your specific json response
 	ErrorFunc func(sourceParam string, values []string, message interface{}, internalError error) error
+	errors    []error
+	// failFast is flag for binding methods to return without attempting to bind when previous binding already failed
+	failFast bool
 }
 
 // QueryParamsBinder creates query parameter value binder
@@ -1236,7 +1238,7 @@ func (b *ValueBinder) durations(sourceParam string, values []string, dest *[]tim
 // Example: 1609180603 bind to 2020-12-28T18:36:43.000000000+00:00
 //
 // Note:
-//  * time.Time{} (param is empty) and time.Unix(0,0) (param = "0") are not equal
+//   - time.Time{} (param is empty) and time.Unix(0,0) (param = "0") are not equal
 func (b *ValueBinder) UnixTime(sourceParam string, dest *time.Time) *ValueBinder {
 	return b.unixTime(sourceParam, dest, false, time.Second)
 }
@@ -1247,7 +1249,7 @@ func (b *ValueBinder) UnixTime(sourceParam string, dest *time.Time) *ValueBinder
 // Example: 1609180603 bind to 2020-12-28T18:36:43.000000000+00:00
 //
 // Note:
-//  * time.Time{} (param is empty) and time.Unix(0,0) (param = "0") are not equal
+//   - time.Time{} (param is empty) and time.Unix(0,0) (param = "0") are not equal
 func (b *ValueBinder) MustUnixTime(sourceParam string, dest *time.Time) *ValueBinder {
 	return b.unixTime(sourceParam, dest, true, time.Second)
 }
@@ -1257,7 +1259,7 @@ func (b *ValueBinder) MustUnixTime(sourceParam string, dest *time.Time) *ValueBi
 // Example: 1647184410140 bind to 2022-03-13T15:13:30.140000000+00:00
 //
 // Note:
-//  * time.Time{} (param is empty) and time.Unix(0,0) (param = "0") are not equal
+//   - time.Time{} (param is empty) and time.Unix(0,0) (param = "0") are not equal
 func (b *ValueBinder) UnixTimeMilli(sourceParam string, dest *time.Time) *ValueBinder {
 	return b.unixTime(sourceParam, dest, false, time.Millisecond)
 }
@@ -1268,7 +1270,7 @@ func (b *ValueBinder) UnixTimeMilli(sourceParam string, dest *time.Time) *ValueB
 // Example: 1647184410140 bind to 2022-03-13T15:13:30.140000000+00:00
 //
 // Note:
-//  * time.Time{} (param is empty) and time.Unix(0,0) (param = "0") are not equal
+//   - time.Time{} (param is empty) and time.Unix(0,0) (param = "0") are not equal
 func (b *ValueBinder) MustUnixTimeMilli(sourceParam string, dest *time.Time) *ValueBinder {
 	return b.unixTime(sourceParam, dest, true, time.Millisecond)
 }
@@ -1280,8 +1282,8 @@ func (b *ValueBinder) MustUnixTimeMilli(sourceParam string, dest *time.Time) *Va
 // Example:           999999999 binds to 1970-01-01T00:00:00.999999999+00:00
 //
 // Note:
-//  * time.Time{} (param is empty) and time.Unix(0,0) (param = "0") are not equal
-//  * Javascript's Number type only has about 53 bits of precision (Number.MAX_SAFE_INTEGER = 9007199254740991). Compare it to 1609180603123456789 in example.
+//   - time.Time{} (param is empty) and time.Unix(0,0) (param = "0") are not equal
+//   - Javascript's Number type only has about 53 bits of precision (Number.MAX_SAFE_INTEGER = 9007199254740991). Compare it to 1609180603123456789 in example.
 func (b *ValueBinder) UnixTimeNano(sourceParam string, dest *time.Time) *ValueBinder {
 	return b.unixTime(sourceParam, dest, false, time.Nanosecond)
 }
@@ -1294,8 +1296,8 @@ func (b *ValueBinder) UnixTimeNano(sourceParam string, dest *time.Time) *ValueBi
 // Example:           999999999 binds to 1970-01-01T00:00:00.999999999+00:00
 //
 // Note:
-//  * time.Time{} (param is empty) and time.Unix(0,0) (param = "0") are not equal
-//  * Javascript's Number type only has about 53 bits of precision (Number.MAX_SAFE_INTEGER = 9007199254740991). Compare it to 1609180603123456789 in example.
+//   - time.Time{} (param is empty) and time.Unix(0,0) (param = "0") are not equal
+//   - Javascript's Number type only has about 53 bits of precision (Number.MAX_SAFE_INTEGER = 9007199254740991). Compare it to 1609180603123456789 in example.
 func (b *ValueBinder) MustUnixTimeNano(sourceParam string, dest *time.Time) *ValueBinder {
 	return b.unixTime(sourceParam, dest, true, time.Nanosecond)
 }
@@ -1323,7 +1325,7 @@ func (b *ValueBinder) unixTime(sourceParam string, dest *time.Time, valueMustExi
 	case time.Second:
 		*dest = time.Unix(n, 0)
 	case time.Millisecond:
-		*dest = time.Unix(n/1e3, (n%1e3)*1e6) // TODO: time.UnixMilli(n) exists since Go1.17 switch to that when min version allows
+		*dest = time.UnixMilli(n)
 	case time.Nanosecond:
 		*dest = time.Unix(0, n)
 	}

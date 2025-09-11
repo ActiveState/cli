@@ -140,7 +140,7 @@ scripts:
     language: bash
     standalone: true
     value: echo "I exist"
-    if: or (eq .OS.Architecture "") (Contains .OS.Architecture "64")
+    if: or (eq .OS.Architecture "") (Contains .OS.Architecture "64") (Contains .OS.Architecture "ARM")
   - name: complex-false
     language: bash
     standalone: true

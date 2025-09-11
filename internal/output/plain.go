@@ -49,11 +49,12 @@ const (
 // Struct keys are localized by sending them to the locale library as field_key (lowercase)
 type Plain struct {
 	cfg *Config
+	history *OutputHistory``
 }
 
 // NewPlain constructs a new Plain struct
 func NewPlain(config *Config) (Plain, error) {
-	return Plain{config}, nil
+	return Plain{cfg: config, history: &OutputHistory{}}, nil
 }
 
 // Type tells callers what type of outputer we are
@@ -68,25 +69,38 @@ func (f *Plain) Fprint(writer io.Writer, v interface{}) {
 
 // Print will marshal and print the given value to the output writer
 func (f *Plain) Print(value interface{}) {
-	f.write(f.cfg.OutWriter, value)
-	f.write(f.cfg.OutWriter, "\n")
+	w := NewWriteProxy(f.cfg.OutWriter, func(p []byte) {
+		f.history.Print = append(f.history.Print, string(p))
+	})
+	f.write(w, value)
+	f.write(w, "\n")
 }
 
 // Error will marshal and print the given value to the error writer, it wraps it in the error format but otherwise the
 // only thing that identifies it as an error is the channel it writes it to
 func (f *Plain) Error(value interface{}) {
-	f.write(f.cfg.ErrWriter, fmt.Sprintf("[ERROR]%s[/RESET]\n", value))
+	w := NewWriteProxy(f.cfg.ErrWriter, func(p []byte) {
+		f.history.Error = append(f.history.Error, string(p))
+	})
+	f.write(w, fmt.Sprintf("[ERROR]%s[/RESET]\n", value))
 }
 
 // Notice will marshal and print the given value to the error writer, it wraps it in the notice format but otherwise the
 // only thing that identifies it as an error is the channel it writes it to
 func (f *Plain) Notice(value interface{}) {
-	f.write(f.cfg.ErrWriter, fmt.Sprintf("%s\n", value))
+	w := NewWriteProxy(f.cfg.ErrWriter, func(p []byte) {
+		f.history.Notice = append(f.history.Notice, string(p))
+	})
+	f.write(w, fmt.Sprintf("%s\n", value))
 }
 
 // Config returns the Config struct for the active instance
 func (f *Plain) Config() *Config {
 	return f.cfg
+}
+
+func (f *Plain) History() *OutputHistory {
+	return f.history
 }
 
 // write is a little helper that just takes care of marshalling the value and sending it to the requested writer
@@ -103,20 +117,12 @@ func (f *Plain) write(writer io.Writer, value interface{}) {
 // writeNow is a little helper that just writes the given value to the requested writer (no marshalling)
 func (f *Plain) writeNow(writer io.Writer, value string) {
 	if f.Config().Interactive {
-		value = wordWrap(value)
+		value = colorize.Wrap(value, termutils.GetWidth(), true, "").String()
 	}
 	_, err := colorize.Colorize(value, writer, !f.cfg.Colored)
 	if err != nil {
-		logging.ErrorNoStacktrace("Writing colored output failed: %v", err)
+		logging.Warning("Writing colored output failed: %v", err)
 	}
-}
-
-func wordWrap(text string) string {
-	return wordWrapWithWidth(text, termutils.GetWidth())
-}
-
-func wordWrapWithWidth(text string, width int) string {
-	return colorize.GetCroppedText(text, width, true).String()
 }
 
 const nilText = "<nil>"

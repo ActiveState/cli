@@ -7,21 +7,19 @@ package svcctl
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
 )
 
@@ -45,25 +43,30 @@ type IPCommunicator interface {
 	SockPath() *ipc.SockPath
 }
 
+type Outputer interface {
+	Notice(interface{})
+}
+
 func NewIPCSockPathFromGlobals() *ipc.SockPath {
-	subdir := fmt.Sprintf("%s-%s", constants.CommandName, "ipc")
-	rootDir := filepath.Join(os.TempDir(), subdir)
+	rootDir := storage.AppDataPath()
 	if os.Getenv(constants.ServiceSockDir) != "" {
 		rootDir = os.Getenv(constants.ServiceSockDir)
 	}
 
-	return &ipc.SockPath{
+	sp := &ipc.SockPath{
 		RootDir:    rootDir,
 		AppName:    constants.CommandName,
 		AppChannel: constants.ChannelName,
 	}
+
+	return sp
 }
 
 func NewDefaultIPCClient() *ipc.Client {
 	return ipc.NewClient(NewIPCSockPathFromGlobals())
 }
 
-func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec, argText string, out output.Outputer) (addr string, err error) {
+func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec, argText string, out Outputer) (addr string, err error) {
 	defer profile.Measure("svcctl:EnsureExecStartedAndLocateHTTP", time.Now())
 
 	addr, err = LocateHTTP(ipComm)
@@ -91,7 +94,7 @@ func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec, argText string,
 	return addr, nil
 }
 
-func EnsureStartedAndLocateHTTP(argText string, out output.Outputer) (addr string, err error) {
+func EnsureStartedAndLocateHTTP(argText string, out Outputer) (addr string, err error) {
 	svcExec, err := installation.ServiceExec()
 	if err != nil {
 		return "", locale.WrapError(err, "err_service_exec")
@@ -146,7 +149,7 @@ func StopServer(ipComm IPCommunicator) error {
 	return nil
 }
 
-func startAndWait(ctx context.Context, ipComm IPCommunicator, exec, argText string, out output.Outputer) error {
+func startAndWait(ctx context.Context, ipComm IPCommunicator, exec, argText string, out Outputer) error {
 	defer profile.Measure("svcmanager:Start", time.Now())
 
 	if !fileutils.FileExists(exec) {
@@ -174,7 +177,7 @@ var (
 	waitTimeoutL10nKey = "svcctl_wait_timeout"
 )
 
-func waitUp(ctx context.Context, ipComm IPCommunicator, out output.Outputer, debugInfo *debugData) error {
+func waitUp(ctx context.Context, ipComm IPCommunicator, out Outputer, debugInfo *debugData) error {
 	debugInfo.startWait()
 	defer debugInfo.stopWait()
 

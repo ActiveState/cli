@@ -22,6 +22,7 @@ type BuildScript struct {
 
 	project string
 	atTime  *time.Time
+	dynamic bool
 }
 
 func init() {
@@ -75,6 +76,24 @@ func (b *BuildScript) SetAtTime(t time.Time, override bool) {
 	}
 	b.atTime = ptr.To(t2)
 	_ = b.atTime
+}
+
+func (b *BuildScript) Dynamic() bool {
+	return b.dynamic
+}
+
+func (b *BuildScript) SetDynamic(dynamic bool) error {
+	b.dynamic = dynamic
+	solveNode, err := b.getSolveNode()
+	if err != nil {
+		return errs.Wrap(err, "Unable to find solve node")
+	}
+	if dynamic {
+		solveNode.FuncCall.Name = solveDynamicFuncName
+	} else {
+		solveNode.FuncCall.Name = solveFuncName
+	}
+	return nil
 }
 
 func (b *BuildScript) Equals(other *BuildScript) (bool, error) {

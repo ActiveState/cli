@@ -6,6 +6,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type mockConfig struct{}
+
+func (m *mockConfig) GetString(key string) string {
+	return ""
+}
+
+func (m *mockConfig) Set(key string, value interface{}) error {
+	return nil
+}
+
 func newAvailableUpdate(channel, version string) *AvailableUpdate {
 	return NewAvailableUpdate(channel, version, "platform", "path/to/zipfile.zip", "123456", "")
 }
@@ -45,7 +55,7 @@ func TestUpdateNotNeeded(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
-			upd := NewUpdateInstallerByOrigin(nil, tt.Origin, tt.AvailableUpdate)
+			upd := NewUpdateInstallerByOrigin(&mockConfig{}, nil, tt.Origin, tt.AvailableUpdate)
 			assert.Equal(t, tt.IsUseful, upd.ShouldInstall())
 		})
 	}

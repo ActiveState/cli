@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -104,7 +105,7 @@ func determineOwner(username string, prompter prompt.Prompter, auth *authenticat
 	}
 	options = append([]string{username}, options...)
 
-	r, err := prompter.Select(locale.Tl("fork_owner_title", "Owner"), locale.Tl("fork_select_org", "Who should the new project belong to?"), options, new(string))
+	r, err := prompter.Select(locale.Tl("fork_owner_title", "Owner"), locale.Tl("fork_select_org", "Who should the new project belong to?"), options, ptr.To(""), nil)
 	owner, exists := displayNameToURLNameMap[r]
 	if !exists {
 		return "", errs.New("Selected organization does not have a URL name")

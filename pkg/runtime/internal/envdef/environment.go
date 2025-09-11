@@ -82,6 +82,19 @@ func (j *VariableJoin) MarshalText() ([]byte, error) {
 	return []byte(res), nil
 }
 
+func (j VariableJoin) MarshalJSON() ([]byte, error) {
+	var res string
+	switch j {
+	default:
+		res = "prepend"
+	case Append:
+		res = "append"
+	case Disallowed:
+		res = "disallowed"
+	}
+	return json.Marshal(res)
+}
+
 // UnmarshalText un-marshals a join directive for environment variables
 func (j *VariableJoin) UnmarshalText(text []byte) error {
 	switch string(text) {

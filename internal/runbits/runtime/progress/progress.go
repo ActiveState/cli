@@ -95,7 +95,7 @@ func NewRuntimeProgressIndicator(out output.Outputer) events.Handler {
 	if out.Type() != output.PlainFormatName {
 		w = nil
 	}
-	if out.Config().Interactive {
+	if os.Getenv("DOTPROGRESS") == "" && out.Config().Interactive {
 		return newProgressIndicator(w, out)
 	}
 	return newDotProgressIndicator(out)
@@ -147,6 +147,7 @@ func (p *ProgressDigester) Handle(ev events.Event) error {
 		// already progressbars being displayed which won't play nice with newly printed output.
 		if v.RequiresBuild {
 			p.out.Notice(locale.Tr("progress_build_log", v.LogFilePath))
+			p.out.Notice(locale.Tr("progress_build_url", v.ProgressUrl))
 		}
 
 		p.recipeID = v.RecipeID

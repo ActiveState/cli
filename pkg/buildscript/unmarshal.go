@@ -83,5 +83,5 @@ func Unmarshal(data []byte) (*BuildScript, error) {
 		atTime = &atTimeVal
 	}
 
-	return &BuildScript{raw, project, atTime}, nil
+	return &BuildScript{raw: raw, project: project, atTime: atTime}, nil
 }

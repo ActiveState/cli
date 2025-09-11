@@ -278,12 +278,10 @@ func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	// Compute the merge strategy.
 	strategies, err := model.MergeCommit(remoteCommit, localCommit)
 	if err != nil {
-		switch {
-		case errors.Is(err, model.ErrMergeFastForward):
+		if errors.Is(err, model.ErrMergeFastForward) || errors.Is(err, model.ErrMergeCommitInHistory) {
 			return buildscript_runbit.Update(p.project, scriptB)
-		case !errors.Is(err, model.ErrMergeCommitInHistory):
-			return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
 		}
+		return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
 	}
 
 	// Attempt the merge.

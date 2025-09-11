@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,16 +12,17 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 
 	"github.com/ActiveState/cli/internal/condition"
 )
 
 var sourcePath, awsRegionName, awsBucketName, awsBucketPrefix string
 
-var sess *session.Session
+var client *s3.Client
 
 func main() {
 	if !condition.InUnitTest() {
@@ -40,7 +42,7 @@ func main() {
 func run() {
 	fmt.Printf("Uploading files from %s\n", sourcePath)
 
-	createSession()
+	createClient()
 	fileList := getFileList()
 
 	// Upload the files
@@ -51,28 +53,28 @@ func run() {
 	}
 }
 
-func createSession() {
-	// Specify profile to load for the session's config
+func createClient() {
 	var err error
-	var verboseErr = true
-	var logLevel = aws.LogDebug
-	_ = logLevel
-	opts := session.Options{
-		Config: aws.Config{
-			CredentialsChainVerboseErrors: &verboseErr,
-			Region:                        aws.String(awsRegionName),
-			/*Logger:                        &logger{},*/
-			/*LogLevel:                      &logLevel,*/
-		},
-	}
-	if runtime.GOOS == "windows" && !condition.OnCI() {
-		opts.Profile = "mfa" // For some reason on windows workstations this is necessary
-	}
-	sess, err = session.NewSessionWithOptions(opts)
+
+	cfg, err := config.LoadDefaultConfig(context.Background(),
+		config.WithRegion(awsRegionName),
+	)
 	if err != nil {
-		log.Fatalf("failed to create session, %s", err.Error())
-		os.Exit(1)
+		log.Fatalf("failed to load config, %s", err.Error())
 	}
+
+	// For Windows workstations, you might need to handle profile selection differently
+	if runtime.GOOS == "windows" && !condition.OnCI() {
+		cfg, err = config.LoadDefaultConfig(context.Background(),
+			config.WithRegion(awsRegionName),
+			config.WithSharedConfigProfile("mfa"),
+		)
+		if err != nil {
+			log.Fatalf("failed to load config with profile, %s", err.Error())
+		}
+	}
+
+	client = s3.NewFromConfig(cfg)
 }
 
 func getFileList() []string {
@@ -134,15 +136,14 @@ func prepareFile(p string) *s3.PutObjectInput {
 		ContentLength:      aws.Int64(size),
 		ContentType:        aws.String(http.DetectContentType(buffer)),
 		ContentDisposition: aws.String("attachment"),
-		ACL:                aws.String("public-read"),
+		ACL:                types.ObjectCannedACLPublicRead,
 	}
 
 	return params
 }
 
 func uploadFile(params *s3.PutObjectInput) {
-	s3Svc := s3.New(sess)
-	_, err := s3Svc.PutObject(params)
+	_, err := client.PutObject(context.Background(), params)
 	if err != nil {
 		fmt.Printf("Failed to upload data to %s/%s, %s\n",
 			awsBucketName, *params.Key, err.Error())

@@ -52,10 +52,12 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 		expect expect
 	}
 
-	tempFile := fileutils.TempFilePath("", "*.zip")
+	tempFile := fileutils.TempFilePath("", ".zip")
+	suite.Require().NoError(fileutils.Touch(tempFile))
 	defer os.Remove(tempFile)
 
-	tempFileInvalid := fileutils.TempFilePath("", "*.notzip")
+	tempFileInvalid := fileutils.TempFilePath("", ".notzip")
+	suite.Require().NoError(fileutils.Touch(tempFileInvalid))
 	defer os.Remove(tempFileInvalid)
 
 	ts := e2e.New(suite.T(), false)

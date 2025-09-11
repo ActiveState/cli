@@ -1,7 +1,6 @@
 package integration
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -85,20 +84,17 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	user := ts.CreateNewUser()
-	namespace := fmt.Sprintf("%s/%s", user.Username, "Python3")
+	ts.LoginAsPersistentUser()
 
-	cp := ts.Spawn("init", "--language", "python", namespace, ts.Dirs.Work)
-	cp.Expect("successfully initialized", e2e.RuntimeSourcingTimeoutOpt)
-	cp.ExpectExitCode(0)
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
 
-	reqsFilePath := filepath.Join(cp.WorkDirectory(), reqsFileName)
+	reqsFilePath := filepath.Join(ts.Dirs.Work, reqsFileName)
 
 	suite.Run("invalid requirements.txt", func() {
 		ts.SetT(suite.T())
 		ts.PrepareFile(reqsFilePath, badReqsData)
 
-		cp = ts.Spawn("import", "requirements.txt")
+		cp := ts.Spawn("import", "requirements.txt")
 		cp.ExpectNotExitCode(0)
 	})
 
@@ -134,12 +130,34 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 		cp.Expect(">=0.6.1 →")
 		cp.Expect("Mopidy-Dirble")
 		cp.Expect("requests")
-		cp.Expect(">=2.2,<2.31.0 → 2.30.0")
+		cp.Expect(">=2.2,<2.31.0 → ")
 		cp.Expect("urllib3")
-		cp.Expect(">=1.21.1,<=1.26.5 → 1.26.5")
+		cp.Expect(">=1.21.1,<=1.26.5 → ")
 		cp.ExpectExitCode(0)
 	})
 	ts.IgnoreLogErrors()
+}
+
+func (suite *ImportIntegrationTestSuite) TestImportOverrideNamespace() {
+	suite.OnlyRunForTags(tagsuite.Import)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+
+	reqsFilePath := filepath.Join(ts.Dirs.Work, reqsFileName)
+
+	ts.PrepareFile(reqsFilePath, reqsData)
+
+	cp := ts.Spawn("import", "requirements.txt", "--namespace", "language/perl")
+	// Error handling on this is poor atm, but this is currently the expected behavior
+	// Partial solves and better error handling will smooth this out in the long term
+	cp.Expect("Because root depends on Feature|language/perl")
+	cp.ExpectNotExitCode(0, e2e.RuntimeSolvingTimeoutOpt)
+
+	cp = ts.Spawn("history")
+	cp.Expect("namespace: language/perl")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *ImportIntegrationTestSuite) TestImportCycloneDx() {

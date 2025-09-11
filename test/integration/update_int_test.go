@@ -275,6 +275,127 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 	}
 }
 
+func (suite *UpdateIntegrationTestSuite) TestUpdateInfoHost_SetBeforeInvocation() {
+	suite.OnlyRunForTags(tagsuite.Update)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.SetConfig(constants.UpdateInfoEndpointConfig, "https://test.example.com/update")
+	suite.Assert().Equal(ts.GetConfig(constants.UpdateInfoEndpointConfig), "https://test.example.com/update")
+
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("--version"),
+	)
+	cp.ExpectExitCode(0)
+
+	correctHostCount := 0
+	incorrectHostCount := 0
+	for _, path := range ts.LogFiles() {
+		contents := string(fileutils.ReadFileUnsafe(path))
+		if strings.Contains(contents, "https://test.example.com/update") {
+			correctHostCount++
+		}
+		if strings.Contains(contents, "https://platform.activestate.com/update") {
+			incorrectHostCount++
+		}
+	}
+	suite.Assert().Greater(correctHostCount, 0, "Log file should contain the configured API host 'test.example.com'")
+	suite.Assert().Equal(incorrectHostCount, 0, "Log file should not contain the default API host 'platform.activestate.com'")
+
+	// Clean up - remove the config setting
+	cp = ts.Spawn("config", "set", constants.UpdateInfoEndpointConfig, "")
+	cp.Expect("Successfully")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *UpdateIntegrationTestSuite) TestUpdateInfoHost() {
+	suite.OnlyRunForTags(tagsuite.Update)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("config", "set", constants.UpdateInfoEndpointConfig, "https://example.com/update-info")
+	cp.Expect("Successfully set config key")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("update", "-v"),
+		e2e.OptAppendEnv(suite.env(false, false)...),
+	)
+	cp.ExpectExitCode(0)
+
+	output := cp.Snapshot()
+	suite.Assert().Contains(output, "Getting update info: https://example.com/update-info/")
+}
+
+func (suite *UpdateIntegrationTestSuite) TestUpdateHost_SetBeforeInvocation() {
+	suite.OnlyRunForTags(tagsuite.Update)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.SetConfig(constants.UpdateInfoEndpointConfig, "https://test.example.com/update")
+	suite.Assert().Equal(ts.GetConfig(constants.UpdateInfoEndpointConfig), "https://test.example.com/update")
+
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("update", "-v"),
+		e2e.OptAppendEnv(suite.env(false, false)...),
+	)
+	cp.ExpectExitCode(11) // Expect failure due to DNS resolution of fake host
+	ts.IgnoreLogErrors()
+
+	correctHostCount := 0
+	incorrectHostCount := 0
+	for _, path := range ts.LogFiles() {
+		contents := string(fileutils.ReadFileUnsafe(path))
+		if strings.Contains(contents, "https://test.example.com/update") {
+			correctHostCount++
+		}
+		if strings.Contains(contents, "https://state-tool.activestate.com/update") {
+			incorrectHostCount++
+		}
+	}
+	suite.Assert().Greater(correctHostCount, 0, "Log file should contain the configured update endpoint 'test.example.com'")
+	suite.Assert().Equal(incorrectHostCount, 0, "Log file should not contain the default update endpoint 'state-tool.activestate.com'")
+
+	// Clean up - remove the config setting
+	cp = ts.Spawn("config", "set", constants.UpdateEndpointConfig, "")
+	cp.Expect("Successfully")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *UpdateIntegrationTestSuite) TestUpdateHost() {
+	suite.OnlyRunForTags(tagsuite.Update)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("config", "set", constants.UpdateEndpointConfig, "https://test.example.com/update")
+	cp.Expect("Successfully set config key")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("update", "-v"),
+		e2e.OptAppendEnv(suite.env(false, false)...),
+	)
+	cp.ExpectExitCode(0)
+
+	correctHostCount := 0
+	incorrectHostCount := 0
+	for _, path := range ts.LogFiles() {
+		contents := string(fileutils.ReadFileUnsafe(path))
+		if strings.Contains(contents, "https://test.example.com/update") {
+			correctHostCount++
+		}
+		if strings.Contains(contents, "https://state-tool.activestate.com/update") {
+			incorrectHostCount++
+		}
+	}
+	suite.Assert().Greater(correctHostCount, 0, "Log file should contain the configured update endpoint 'example.com'")
+	suite.Assert().Equal(incorrectHostCount, 0, "Log file should not contain the default update endpoint 'state-tool.activestate.com'")
+}
+
 func TestUpdateIntegrationTestSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode.")
@@ -357,6 +478,9 @@ func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Ses
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdateToCurrent() {
+	if runtime.GOARCH == "arm64" {
+		suite.T().Skip("There is no official ARM release for install.sh yet")
+	}
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
 	ts := e2e.New(suite.T(), false)
@@ -375,6 +499,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateToCurrent() {
 	if strings.HasPrefix(constants.Version, "0.30") {
 		// Feel free to drop this once the release channel is no longer on 0.29
 		suite.T().Skip("Updating from release 0.29 to 0.30 is not covered due to how 0.29 did updates (async)")
+	}
+	if runtime.GOARCH == "arm64" {
+		suite.T().Skip("There is no official ARM release for install.sh yet")
 	}
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 

@@ -17,7 +17,7 @@ DOWNLOADEXT=".tar.gz"
 BINARYEXT=""
 SHA256SUM="sha256sum"
 
-SESSION_TOKEN_VERIFY="{TOKEN""}"
+SESSION_TOKEN_VERIFY="{TOKEN}"
 SESSION_TOKEN="{TOKEN}"
 SESSION_TOKEN_VALUE=""
 
@@ -36,8 +36,30 @@ getopt() {
   echo $default
 }
 
+# Collect all instances of a flag (for flags that can appear multiple times)
+getopt_all() {
+  opt=$1; shift
+  result=""
+  i=0
+  for arg in $@; do
+    i=$((i + 1))
+    if [ "${arg}" = "$opt" ]; then
+      value=$(echo "$@" | cut -d' ' -f$(($i + 1)))
+      if [ -n "$value" ] && [ "${value#-}" = "$value" ]; then # ensure value doesn't start with -
+        if [ -n "$result" ]; then
+          result="$result $opt $value"
+        else
+          result="$opt $value"
+        fi
+      fi
+    fi
+  done
+  echo $result
+}
+
 CHANNEL=$(getopt "-b" "$CHANNEL" $@)
 VERSION=$(getopt "-v" "$VERSION" $@)
+CONFIG_SET_ARGS=$(getopt_all "--config-set" $@)
 
 if [ -z "${TERM}" ] || [ "${TERM}" = "dumb" ]; then
   OUTPUT_OK=""
@@ -69,6 +91,9 @@ error () {
 case `uname -s` in
 Linux)
   OS="linux"
+  ARCH="amd64"
+  arch="`uname -m`"
+  if [ $arch = "arm64" -o $arch = "aarch64"  ]; then ARCH="arm64"; fi
   DOWNLOADEXT=".tar.gz"
   ;;
 *BSD)
@@ -78,11 +103,16 @@ Linux)
   ;;
 Darwin)
   OS="darwin"
+  ARCH="amd64"
+  if [ -n "$OVERRIDE_ARCH" ]; then
+    ARCH="$OVERRIDE_ARCH"
+  fi
   DOWNLOADEXT=".tar.gz"
   SHA256SUM="shasum -a 256"
   ;;
 MINGW*|MSYS*)
   OS="windows"
+  ARCH="amd64"
   DOWNLOADEXT=".zip"
   BINARYEXT=".exe"
   ;;
@@ -113,18 +143,18 @@ mkdir -p "$INSTALLERTMPDIR"
 if [ -z "$VERSION" ]; then
   # If the user did not specify a version, formulate a query to fetch the JSON info of the latest
   # version, including where it is.
-  JSONURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS"
+  JSONURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS&arch=$ARCH"
 elif [ -z "`echo $VERSION | grep -o '\-SHA'`" ]; then
   # If the user specified a partial version (i.e. no SHA), formulate a query to fetch the JSON info
   # of that version's latest SHA, including where it is.
   VERSIONNOSHA="$VERSION"
   VERSION=""
-  JSONURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS&target-version=$VERSIONNOSHA"
+  JSONURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS&arch=$ARCH&target-version=$VERSIONNOSHA"
 else
   # If the user specified a full version with SHA, formulate a query to fetch the JSON info of that
   # version.
   VERSIONNOSHA="`echo $VERSION | sed 's/-SHA.*$//'`"
-  JSONURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS&target-version=$VERSIONNOSHA"
+  JSONURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS&arch=$ARCH&target-version=$VERSIONNOSHA"
 fi
 
 # Fetch version info.
@@ -157,13 +187,13 @@ else
     error "Unknown version: $VERSION"
     exit 1
   fi
-  RELURL="$CHANNEL/$VERSIONNOSHA/$OS-amd64/state-$OS-amd64-$VERSION$DOWNLOADEXT"
+  RELURL="$CHANNEL/$VERSIONNOSHA/$OS-$ARCH/state-$OS-$ARCH-$VERSION$DOWNLOADEXT"
 fi
 
 # Fetch the requested or latest version.
 progress "Preparing Installer for State Tool Package Manager version $VERSION"
 STATEURL="$BASE_FILE_URL/$RELURL"
-ARCHIVE="$OS-amd64$DOWNLOADEXT"
+ARCHIVE="$OS-$ARCH$DOWNLOADEXT"
 $FETCH $INSTALLERTMPDIR/$ARCHIVE $STATEURL
 # wget and curl differ on how to handle AWS' "Forbidden" result for unknown versions.
 # wget will exit with nonzero status. curl simply creates an XML file with the forbidden error.
@@ -198,7 +228,7 @@ progress_done
 echo ""
 
 # Run the installer.
-ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE $INSTALLERTMPDIR/$INSTALLERNAME$BINARYEXT "$@" --source-installer="install.sh"
+ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE $INSTALLERTMPDIR/$INSTALLERNAME$BINARYEXT "$@" $CONFIG_SET_ARGS --source-installer="install.sh"
 
 # Remove temp files
 rm -r $INSTALLERTMPDIR
