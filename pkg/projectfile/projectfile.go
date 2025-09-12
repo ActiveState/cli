@@ -1130,7 +1130,7 @@ func AddLockInfo(projectFilePath, branch, version string) error {
 
 	projectRegex := regexp.MustCompile(fmt.Sprintf("(?m:(^project:\\s*%s))", ProjectURLRe))
 	lockString := fmt.Sprintf("%s@%s", branch, version)
-	lockUpdate := []byte(fmt.Sprintf(`${1}\nlock: %s`, lockString))
+	lockUpdate := []byte(fmt.Sprintf("${1}\nlock: %s", lockString))
 
 	data, err = os.ReadFile(projectFilePath)
 	if err != nil {
