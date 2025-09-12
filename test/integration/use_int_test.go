@@ -7,7 +7,6 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -124,12 +123,14 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	python3Exe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExtension)
 	suite.True(fileutils.TargetExists(python3Exe), python3Exe+" not found")
 
-	cfg, err := config.New()
-	suite.NoError(err)
-	rcfile, err := subshell.New(cfg).RcFile()
-	if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
+	var rcfile string
+	ts.WithEnv(func() {
+		var err error
+		rcfile, err = subshell.New(ts.Config()).RcFile()
 		suite.NoError(err)
-		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
+	})
+	if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
+		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, ts.DebugMessage("PATH does not have your project in it"))
 	}
 
 	cp = ts.Spawn("use", "reset")
