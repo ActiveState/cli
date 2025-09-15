@@ -1,11 +1,11 @@
 package unarchiver
 
 import (
+	"archive/zip"
 	"fmt"
 	"path/filepath"
 
-	"github.com/klauspost/compress/zip"
-	"github.com/mholt/archiver/v3"
+	"github.com/ActiveState/cli/internal/archiver"
 )
 
 /*
@@ -38,11 +38,20 @@ func (z *ZipArchive) ExtractNext(destination string) (f archiver.File, err error
 		return f, err // don't wrap error; calling loop must break on io.EOF
 	}
 	defer f.Close()
-	header, ok := f.Header.(zip.FileHeader)
+
+	// Validate that we have a zip header
+	_, ok := f.Header.(zip.FileHeader)
 	if !ok {
 		return f, fmt.Errorf("expected header to be zip.FileHeader but was %T", f.Header)
 	}
-	return f, z.extractFile(f, filepath.Join(destination, header.Name))
+
+	// Use the sanitized path from the File object instead of raw header.Name
+	sanitizedPath, err := f.FullPath()
+	if err != nil {
+		return f, fmt.Errorf("invalid file path: %w", err)
+	}
+
+	return f, z.extractFile(f, filepath.Join(destination, sanitizedPath))
 }
 
 func (z *ZipArchive) extractFile(f archiver.File, to string) error {

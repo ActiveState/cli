@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mholt/archiver/v3"
+	"github.com/ActiveState/cli/internal/archiver"
 )
 
 /*
@@ -73,7 +73,14 @@ func (ar *TarGzArchive) ExtractNext(destination string) (f archiver.File, err er
 	if !ok {
 		return f, fmt.Errorf("expected header to be *tar.Header but was %T", f.Header)
 	}
-	return f, untarSingleFile(header, f, destination, header.Name, ar.OverwriteExisting)
+
+	// Use the sanitized path from the File object instead of raw header.Name
+	sanitizedPath, err := f.FullPath()
+	if err != nil {
+		return f, fmt.Errorf("invalid file path: %w", err)
+	}
+
+	return f, untarSingleFile(header, f, destination, sanitizedPath, ar.OverwriteExisting)
 }
 
 func untarSingleFile(hdr *tar.Header, data io.Reader, destination, relTo string, overwriteExisting bool) error {
