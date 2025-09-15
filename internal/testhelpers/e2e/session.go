@@ -205,6 +205,10 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	if err := cfg.Set(constants.SecurityPromptConfig, false); err != nil {
 		require.NoError(session.T, err)
 	}
+
+	// Set proxy configuration for all integration tests
+	session.setProxyConfig()
+
 	session.cfg = cfg
 
 	return session
@@ -817,6 +821,22 @@ func (s *Session) SetConfig(key string, value interface{}) {
 
 func (s *Session) GetConfig(key string) interface{} {
 	return s.cfg.Get(key)
+}
+
+// setProxyConfig configures the session to use the KSA proxy environment
+// This sets all the necessary config values for running integration tests against the proxy
+func (s *Session) setProxyConfig() {
+	s.SetConfig("api.host", "ksa.activestate.build")
+	s.SetConfig("report.analytics.endpoint", "https://ksa-s3-state-tool.activestate.build/pixel-ksa")
+	s.SetConfig("update.endpoint", "https://ksa-s3-state-tool.activestate.build/update/state")
+	s.SetConfig("update.info.endpoint", "https://ksa.activestate.build/sv/state-update/api/v1")
+	s.SetConfig("notifications.endpoint", "https://ksa-s3-state-tool.activestate.build/messages")
+}
+
+// SetProxyConfig configures the session to use the KSA proxy environment
+// This sets all the necessary config values for running integration tests against the proxy
+func (s *Session) SetProxyConfig() {
+	s.setProxyConfig()
 }
 
 func RunningOnCI() bool {
