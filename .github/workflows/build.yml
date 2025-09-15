@@ -68,6 +68,16 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
+      - # === Install Tailscale ===
+        &install-tailscale
+        name: Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:cli-ci
+          use-cache: 'true'
+
       - # === Install Go ===
         name: Install Go
         uses: actions/setup-go@v5
@@ -398,6 +408,8 @@ jobs:
       - os_specific
     runs-on: ubuntu-latest
     steps:
+      - *install-tailscale
+
       - name: Download All Build Session Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -438,6 +450,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - *install-tailscale
 
       - # === Install Go ===
         name: Install Go

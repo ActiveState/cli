@@ -27,6 +27,16 @@ jobs:
         name: Checkout code
         uses: actions/checkout@v5
 
+      - # === Install Tailscale ===
+        &install-tailscale
+        name: Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:cli-ci
+          use-cache: 'true'
+
       - # === Install Go ===
         name: Install Go
         uses: actions/setup-go@v5
