@@ -11,15 +11,15 @@ func (b *BuildPlanner) Publish(vars request.PublishVariables, filepath string) (
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create publish request")
 	}
-	res := graphModel.PublishResponse{}
+	res := graphModel.PublishResult{}
 
 	if err := b.client.Run(pr, &res); err != nil {
 		return nil, processBuildPlannerError(err, "Publish failed")
 	}
 
-	if res.Result.Error != "" {
-		return nil, errs.New("API responded with error: %s", res.Result.Error)
+	if res.Error != "" {
+		return nil, errs.New("API responded with error: %s", res.Error)
 	}
 
-	return &res.Result, nil
+	return &res, nil
 }

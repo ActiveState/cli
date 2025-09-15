@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: © 2015 LabStack LLC and Echo contributors
+
 package echo
 
 import (
@@ -21,7 +24,7 @@ To retrieve IP address reliably/securely, you must let your application be aware
 In Echo, this can be done by configuring `Echo#IPExtractor` appropriately.
 This guides show you why and how.
 
-> Note: if you dont' set `Echo#IPExtractor` explicitly, Echo fallback to legacy behavior, which is not a good choice.
+> Note: if you don't set `Echo#IPExtractor` explicitly, Echo fallback to legacy behavior, which is not a good choice.
 
 Let's start from two questions to know the right direction:
 
@@ -64,7 +67,7 @@ XFF:  "x"                   "x, a"                  "x, a, b"
 ```
 
 In this case, use **first _untrustable_ IP reading from right**. Never use first one reading from left, as it is
-configurable by client. Here "trustable" means "you are sure the IP address belongs to your infrastructre".
+configurable by client. Here "trustable" means "you are sure the IP address belongs to your infrastructure".
 In above example, if `b` and `c` are trustable, the IP address of the client is `a` for both cases, never be `x`.
 
 In Echo, use `ExtractIPFromXFFHeader(...TrustOption)`.
@@ -131,10 +134,10 @@ Private IPv6 address ranges:
 */
 
 type ipChecker struct {
+	trustExtraRanges []*net.IPNet
 	trustLoopback    bool
 	trustLinkLocal   bool
 	trustPrivateNet  bool
-	trustExtraRanges []*net.IPNet
 }
 
 // TrustOption is config for which IP address to trust
@@ -225,13 +228,21 @@ func extractIP(req *http.Request) string {
 func ExtractIPFromRealIPHeader(options ...TrustOption) IPExtractor {
 	checker := newIPChecker(options)
 	return func(req *http.Request) string {
+		directIP := extractIP(req)
 		realIP := req.Header.Get(HeaderXRealIP)
-		if realIP != "" {
-			if ip := net.ParseIP(realIP); ip != nil && checker.trust(ip) {
+		if realIP == "" {
+			return directIP
+		}
+
+		if checker.trust(net.ParseIP(directIP)) {
+			realIP = strings.TrimPrefix(realIP, "[")
+			realIP = strings.TrimSuffix(realIP, "]")
+			if rIP := net.ParseIP(realIP); rIP != nil {
 				return realIP
 			}
 		}
-		return extractIP(req)
+
+		return directIP
 	}
 }
 
@@ -248,7 +259,10 @@ func ExtractIPFromXFFHeader(options ...TrustOption) IPExtractor {
 		}
 		ips := append(strings.Split(strings.Join(xffs, ","), ","), directIP)
 		for i := len(ips) - 1; i >= 0; i-- {
-			ip := net.ParseIP(strings.TrimSpace(ips[i]))
+			ips[i] = strings.TrimSpace(ips[i])
+			ips[i] = strings.TrimPrefix(ips[i], "[")
+			ips[i] = strings.TrimSuffix(ips[i], "]")
+			ip := net.ParseIP(ips[i])
 			if ip == nil {
 				// Unable to parse IP; cannot trust entire records
 				return directIP

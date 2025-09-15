@@ -29,7 +29,7 @@ func (suite *ResetIntegrationTestSuite) TestReset() {
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("install", "shared/zlib")
+	cp = ts.Spawn("install", "shared:zlib")
 	cp.Expect("Added")
 	cp.ExpectExitCode(0)
 
@@ -51,7 +51,7 @@ func (suite *ResetIntegrationTestSuite) TestReset() {
 
 	cp = ts.Spawn("reset")
 	cp.Expect("You are already on the latest commit")
-	cp.ExpectNotExitCode(0)
+	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("reset", "00000000-0000-0000-0000-000000000000")
 	cp.Expect("The given commit ID does not exist")
@@ -84,12 +84,13 @@ func (suite *ResetIntegrationTestSuite) TestRevertInvalidURL() {
 	err = fileutils.WriteFile(filepath.Join(ts.Dirs.Work, constants.ConfigFileName), contents)
 	suite.Require().NoError(err)
 
-	cp := ts.Spawn("install", "language/python/requests")
+	cp := ts.Spawn("install", "language/python:requests")
 	cp.Expect("invalid commit ID")
 	cp.Expect("Please run 'state reset' to fix it.")
 	cp.ExpectNotExitCode(0)
 
 	cp = ts.Spawn("reset", "-n")
+	cp.Expect("Continuing because State Tool is running in non-interactive mode")
 	cp.Expect("Successfully reset to commit: " + commitID.String())
 	cp.ExpectExitCode(0)
 }

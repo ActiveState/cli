@@ -60,22 +60,22 @@ func (b *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID, 
 
 	// Create the project.
 	request := request.CreateProject(params.Owner, params.Project, params.Private, expression, params.Description)
-	resp := &response.CreateProjectResult{}
+	resp := &response.ProjectCreated{}
 	if err := b.client.Run(request, resp); err != nil {
 		return "", processBuildPlannerError(err, "Failed to create project")
 	}
 
-	if resp.ProjectCreated == nil {
+	if resp == nil {
 		return "", errs.New("ProjectCreated is nil")
 	}
 
-	if response.IsErrorResponse(resp.ProjectCreated.Type) {
-		return "", response.ProcessProjectCreatedError(resp.ProjectCreated, "Could not create project")
+	if response.IsErrorResponse(resp.Type) {
+		return "", response.ProcessProjectCreatedError(resp, "Could not create project")
 	}
 
-	if resp.ProjectCreated.Commit == nil {
+	if resp.Commit == nil {
 		return "", errs.New("ProjectCreated.Commit is nil")
 	}
 
-	return resp.ProjectCreated.Commit.CommitID, nil
+	return resp.Commit.CommitID, nil
 }

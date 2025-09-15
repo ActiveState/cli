@@ -10,15 +10,29 @@ import (
 func newCommitCommand(prime *primer.Values) *captain.Command {
 	runner := commit.New(prime)
 
+	params := &commit.Params{}
+
 	cmd := captain.NewCommand(
 		"commit",
 		locale.Tl("commit_title", "Commit Changes"),
 		locale.Tl("commit_description", "Commit changes to the Build Script"),
 		prime,
-		[]*captain.Flag{},
+		[]*captain.Flag{
+			{
+				Name:        "ts",
+				Description: locale.T("package_flag_ts_description"),
+				Value:       &params.Timestamp,
+			},
+			{
+				Name:        "skip-validation",
+				Shorthand:   "s",
+				Description: locale.T("package_flag_skip_validation_description"),
+				Value:       &params.SkipValidation,
+			},
+		},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run()
+			return runner.Run(params)
 		},
 	)
 

@@ -20,6 +20,7 @@ import (
 )
 
 func init() {
+	configMediator.RegisterOption(constants.SecurityReportingConfig, configMediator.Bool, true)
 	configMediator.RegisterOption(constants.SecurityPromptConfig, configMediator.Bool, true)
 	severities := configMediator.NewEnum([]string{
 		vulnModel.SeverityCritical,
@@ -77,8 +78,7 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 		}
 	}
 
-	names := changedRequirements(oldBuildPlan, newBuildPlan)
-	pg := output.StartSpinner(c.prime.Output(), locale.Tr("progress_cve_search", strings.Join(names, ", ")), constants.TerminalAnimationInterval)
+	pg := output.StartSpinner(c.prime.Output(), locale.T("progress_cve_search"), constants.TerminalAnimationInterval)
 
 	ingredientVulnerabilities, err := model.FetchVulnerabilitiesForIngredients(c.prime.Auth(), ingredients)
 	if err != nil {
@@ -96,6 +96,7 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 	pg.Stop(locale.T("progress_unsafe"))
 	pg = nil
 
+	names := changedRequirements(oldBuildPlan, newBuildPlan)
 	vulnerabilities := model.CombineVulnerabilities(ingredientVulnerabilities, names...)
 
 	if c.prime.Prompt() == nil || !c.shouldPromptForSecurity(vulnerabilities) {
@@ -104,25 +105,26 @@ func (c *CveReport) Report(newBuildPlan *buildplan.BuildPlan, oldBuildPlan *buil
 	}
 
 	c.summarizeCVEs(vulnerabilities)
-	cont, err := c.promptForSecurity()
-	if err != nil {
-		return errs.Wrap(err, "Failed to prompt for security")
-	}
 
-	if !cont {
-		if !c.prime.Prompt().IsInteractive() {
-			return errs.AddTips(
-				locale.NewInputError("err_pkgop_security_prompt", "Operation aborted due to security prompt"),
-				locale.Tl("more_info_prompt", "To disable security prompting run: [ACTIONABLE]state config set security.prompt.enabled false[/RESET]"),
-			)
-		}
-		return locale.NewInputError("err_pkgop_security_prompt", "Operation aborted due to security prompt")
+	confirm, err := c.prime.Prompt().Confirm("", locale.Tr("prompt_continue_pkg_operation"), ptr.To(false), ptr.To(true))
+	if err == nil && !confirm {
+		err = locale.NewInputError("err_pkgop_security_prompt", "Operation aborted by user")
 	}
+	if err != nil {
+		return errs.AddTips(err,
+			locale.Tl("more_info_prompt", "To disable security prompting run: [ACTIONABLE]state config set security.prompt.enabled false[/RESET]"),
+		)
+	}
+	c.prime.Output().Notice("") // Empty line
 
 	return nil
 }
 
 func (c *CveReport) shouldSkipReporting(changeset buildplan.ArtifactChangeset) bool {
+	if !c.prime.Config().GetBool(constants.SecurityReportingConfig) {
+		return true
+	}
+	
 	if !c.prime.Auth().Authenticated() {
 		return true
 	}
@@ -223,16 +225,6 @@ func (c *CveReport) summarizeCVEs(vulnerabilities model.VulnerableIngredientsByL
 	out.Print("  " + locale.T("more_info_vulnerabilities"))
 	out.Print("  " + locale.T("disable_prompting_vulnerabilities"))
 	out.Print("")
-}
-
-func (c *CveReport) promptForSecurity() (bool, error) {
-	confirm, err := c.prime.Prompt().Confirm("", locale.Tr("prompt_continue_pkg_operation"), ptr.To(false))
-	if err != nil {
-		return false, locale.WrapError(err, "err_pkgop_confirm", "Need a confirmation.")
-	}
-	c.prime.Output().Notice("") // Empty line
-
-	return confirm, nil
 }
 
 func changedRequirements(oldBuildPlan *buildplan.BuildPlan, newBuildPlan *buildplan.BuildPlan) []string {

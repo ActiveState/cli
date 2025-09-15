@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -41,14 +42,10 @@ func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) 
 	i.thread = thread
 	i.closeThread = closeThread
 
-	var err error
 	if localPath != "" {
-		i.appDataDir, err = storage.AppDataPathWithParent(localPath)
+		i.appDataDir = localPath
 	} else {
-		i.appDataDir, err = storage.AppDataPath()
-	}
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not detect appdata dir")
+		i.appDataDir = storage.AppDataPath()
 	}
 
 	// Ensure appdata dir exists, because the sqlite driver sure doesn't
@@ -61,6 +58,7 @@ func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) 
 
 	path := filepath.Join(i.appDataDir, C.InternalConfigFileName)
 
+	var err error
 	t := time.Now()
 	i.db, err = sql.Open("sqlite", path)
 	if err != nil {
@@ -222,7 +220,11 @@ func (i *Instance) AllKeys() []string {
 
 // GetStringMapStringSlice retrieves a map of string slices for a given key
 func (i *Instance) GetStringMapStringSlice(key string) map[string][]string {
-	return cast.ToStringMapStringSlice(i.Get(key))
+	v := cast.ToStringMapStringSlice(i.Get(key))
+	if v == nil {
+		return map[string][]string{}
+	}
+	return v
 }
 
 // GetBool retrieves a boolean value for a given key
@@ -232,7 +234,11 @@ func (i *Instance) GetBool(key string) bool {
 
 // GetStringSlice retrieves a slice of strings for a given key
 func (i *Instance) GetStringSlice(key string) []string {
-	return cast.ToStringSlice(i.Get(key))
+	v := cast.ToStringSlice(i.Get(key))
+	if v == nil {
+		return []string{}
+	}
+	return v
 }
 
 // GetTime retrieves a time instance for a given key
@@ -242,10 +248,47 @@ func (i *Instance) GetTime(key string) time.Time {
 
 // GetStringMap retrieves a map of strings to values for a given key
 func (i *Instance) GetStringMap(key string) map[string]interface{} {
-	return cast.ToStringMap(i.Get(key))
+	v := cast.ToStringMap(i.Get(key))
+	if v == nil {
+		return map[string]interface{}{}
+	}
+	return v
 }
 
 // ConfigPath returns the path at which our configuration is stored
 func (i *Instance) ConfigPath() string {
 	return i.appDataDir
+}
+
+// ApplyArgs applies command line arguments to the config instance
+// These take the format of 'key=value'
+func (i *Instance) ApplyArgs(args []string) error {
+	for _, setting := range args {
+		setting = strings.TrimSpace(setting)
+		if setting == "" {
+			continue // Skip empty settings
+		}
+		var key, valueStr string
+
+		if strings.Contains(setting, "=") {
+			parts := strings.SplitN(setting, "=", 2)
+			if len(parts) == 2 {
+				key = strings.TrimSpace(parts[0])
+				valueStr = strings.TrimSpace(parts[1])
+			}
+		}
+
+		if key == "" || valueStr == "" {
+			return errs.New("Config setting must be in 'key=value' format: %s", setting)
+		}
+
+		// Store the raw string value without type validation since config options
+		// are not yet registered in the installer context
+		err := i.Set(key, valueStr)
+		if err != nil {
+			// Log the error but don't fail the installation for config issues
+			return errs.Wrap(err, "Could not set value %s for key %s", valueStr, key)
+		}
+	}
+	return nil
 }

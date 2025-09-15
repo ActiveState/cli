@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/org"
@@ -34,16 +36,12 @@ type Confirmer interface {
 	Confirm(title, msg string, defaultOpt *bool) (bool, error)
 }
 
-// ChangesetProvider describes the behavior required to convert some file data
-// into a changeset.
-type ChangesetProvider interface {
-	Changeset(contents []byte, lang string) (model.Changeset, error)
-}
-
 // ImportRunParams tracks the info required for running Import.
 type ImportRunParams struct {
 	FileName       string
 	Language       string
+	Namespace      string
+	Timestamp      captain.TimeValue
 	NonInteractive bool
 }
 
@@ -88,19 +86,14 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	out := i.prime.Output()
 	out.Notice(locale.Tr("operating_message", proj.NamespaceString(), proj.Dir()))
 
-	if params.FileName == "" {
-		params.FileName = defaultImportFile
+	filename := params.FileName
+	if filename == "" {
+		filename = defaultImportFile
 	}
 
 	localCommitId, err := localcommit.Get(proj.Dir())
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_commit")
-	}
-
-	auth := i.prime.Auth()
-	language, err := model.LanguageByCommit(localCommitId, auth)
-	if err != nil {
-		return locale.WrapError(err, "err_import_language", "Unable to get language from project")
 	}
 
 	pg := output.StartSpinner(i.prime.Output(), locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
@@ -110,11 +103,12 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		}
 	}()
 
-	changeset, err := fetchImportChangeset(reqsimport.Init(), params.FileName, language.Name)
+	changeset, err := fetchImportChangeset(reqsimport.Init(), filename, params.Language, params.Namespace)
 	if err != nil {
 		return errs.Wrap(err, "Could not import changeset")
 	}
 
+	auth := i.prime.Auth()
 	bp := buildplanner.NewBuildPlannerModel(auth, i.prime.SvcModel())
 	bs, err := bp.GetBuildScript(localCommitId.String())
 	if err != nil {
@@ -125,8 +119,31 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 		return locale.WrapError(err, "err_cannot_apply_changeset", "Could not apply changeset")
 	}
 
+	// Evaluate if dynamic
+	if params.Timestamp.IsDynamic() {
+		if err := bs.SetDynamic(true); err != nil {
+			return errs.Wrap(err, "Setting dynamic failed")
+		}
+		// Evaluate with dynamic imports first. Then commit.
+		err := bp.Evaluate(proj.Owner(), proj.Name(), bs)
+		if err != nil {
+			return errs.Wrap(err, "Unable to dynamically evaluate build expression")
+		}
+		// StageCommitAndPoll needs to be called with "solve" node
+		if err := bs.SetDynamic(false); err != nil {
+			return errs.Wrap(err, "Setting dynamic failed")
+		}
+	}
+
+	// Set timestamp
+	ts, err := commits_runbit.ExpandTimeForBuildScript(&params.Timestamp, i.prime.Auth(), bs)
+	if err != nil {
+		return errs.Wrap(err, "Unable to get timestamp from params")
+	}
+	bs.SetAtTime(ts, true)
+
 	msg := locale.T("commit_reqstext_message")
-	stagedCommit, err := bp.StageCommit(buildplanner.StageCommitParams{
+	stagedCommit, err := bp.StageCommitAndPoll(buildplanner.StageCommitParams{
 		Owner:        proj.Owner(),
 		Project:      proj.Name(),
 		ParentCommit: localCommitId.String(),
@@ -170,13 +187,13 @@ func (i *Import) Run(params *ImportRunParams) (rerr error) {
 	return nil
 }
 
-func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model.Changeset, error) {
+func fetchImportChangeset(reqImport *reqsimport.ReqsImport, file string, lang string, namespace string) (model.Changeset, error) {
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, locale.WrapExternalError(err, "err_reading_changeset_file", "Cannot read import file: {{.V0}}", err.Error())
 	}
 
-	changeset, err := cp.Changeset(data, lang)
+	changeset, err := reqImport.Changeset(data, lang, file, namespace)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_obtaining_change_request", "Could not process change set: {{.V0}}.", api.ErrorMessageFromPayload(err))
 	}

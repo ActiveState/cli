@@ -6,6 +6,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.48.0
+
+### Added
+
+- Added `--ts=dynamic` parameter to `state install` and `state import` in order to use dynamic imports, allowing users
+  to fetch and install
+  packages not yet present in the ActiveState catalog.
+- Added `state config set security.reporting <true|false>` config to disable CVE reporting.
+- Added `--language` and `--namespace` flags to `state import`, allowing users to specify the language and namespace of
+  packages to import, improving flexibility for multi-language projects.
+- Added `--ts` flag to `state commit`, allowing users to use preset timestamps for commit creation.
+- Added `state commit --skip-validation` flag, allowing users to commit buildscripts that do not necessarily resolve
+  all dependencies.
+- Added new configuration options for customizing which endpoints State Tool uses.
+
+### Changed
+
+- Artifacts are retained in Cache even when they are not currently being used, to improve performance and reduce
+  network traffic. This is still limited by the cache size.
+- State Tool now defaults to `zsh` shell on macOS, as it is the default shell on modern macOS systems.
+- Removed `state init` language inference, requiring users to always explicitly specify the --language argument. This
+  was done because the automatic language inference was too magical / error-prone.
+- Namespaces provided to commands (eg. `state install <namespace>/<package>`) now support the `<namespace>:<package>`
+  syntax, enabling
+  users to specify namespace and package name when the package name itself contains a slash.
+
+### Fixed
+
+- Fixed issue where uninstall of a package could fail due to recoverable caching errors.
+
+### Security
+
+- Addressed all but one CVE. The remaining CVE is not exploitable on State Tool and will be addressed in a future
+  release.
+
 ## 0.47.1
 
 ### Added

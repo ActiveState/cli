@@ -23,13 +23,32 @@ func (p *checkpointByCommit) Query() string {
 		  version_constraint
 		  constraint_json
 		}
-		vcs_commits_by_pk(commit_id: $commit_id) {
-		  at_time
-		}
-	  }	  
-	  `
+	  }`
 }
 
 func (p *checkpointByCommit) Vars() (map[string]interface{}, error) {
+	return p.vars, nil
+}
+
+// New request type for commit details
+func CommitByID(commitID strfmt.UUID) *commitByID {
+	return &commitByID{vars: map[string]interface{}{
+		"commit_id": commitID,
+	}}
+}
+
+type commitByID struct {
+	vars map[string]interface{}
+}
+
+func (p *commitByID) Query() string {
+	return `query ($commit_id: uuid!) {
+		vcs_commits_by_pk(commit_id: $commit_id) {
+		  at_time
+		}
+	}`
+}
+
+func (p *commitByID) Vars() (map[string]interface{}, error) {
 	return p.vars, nil
 }

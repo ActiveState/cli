@@ -1,0 +1,65 @@
+package runtime
+
+import (
+	"github.com/ActiveState/cli/pkg/buildplan"
+	ecosys "github.com/ActiveState/cli/pkg/runtime/ecosystem"
+)
+
+type ecosystem interface {
+	Init(runtimePath string, buildplan *buildplan.BuildPlan) error
+	Namespaces() []string
+	Add(artifact *buildplan.Artifact, artifactSrcPath string) ([]string, error)
+	Remove(name, version string, installedFiles []string) error
+	Apply() error
+}
+
+var availableEcosystems []func() ecosystem
+
+func init() {
+	availableEcosystems = []func() ecosystem{
+		func() ecosystem { return &ecosys.Java{} },
+		func() ecosystem { return &ecosys.JavaScript{} },
+		func() ecosystem { return &ecosys.Rust{} },
+		func() ecosystem { return &ecosys.DotNet{} },
+		func() ecosystem { return &ecosys.Golang{} },
+		func() ecosystem { return &ecosys.R{} },
+	}
+}
+
+func artifactMatchesEcosystem(a *buildplan.Artifact, e ecosystem) bool {
+	for _, namespace := range e.Namespaces() {
+		for _, i := range a.Ingredients {
+			if i.Namespace == namespace {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func namespaceMatchesEcosystem(namespace string, e ecosystem) bool {
+	for _, n := range e.Namespaces() {
+		if n == namespace {
+			return true
+		}
+	}
+	return false
+}
+
+func filterEcosystemMatchingArtifact(artifact *buildplan.Artifact, ecosystems []ecosystem) ecosystem {
+	for _, ecosystem := range ecosystems {
+		if artifactMatchesEcosystem(artifact, ecosystem) {
+			return ecosystem
+		}
+	}
+	return nil
+}
+
+func filterEcosystemMatchingNamespace(ecosystems []ecosystem, namespace string) ecosystem {
+	for _, ecosystem := range ecosystems {
+		if namespaceMatchesEcosystem(namespace, ecosystem) {
+			return ecosystem
+		}
+	}
+	return nil
+}

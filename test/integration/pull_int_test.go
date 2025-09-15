@@ -89,7 +89,7 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	cp.Expect("Checked out")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("install", "shared/zlib")
+	cp = ts.Spawn("install", "shared:zlib")
 	cp.Expect("Added", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 

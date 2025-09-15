@@ -65,6 +65,18 @@ func UpdateAndReload(prime primeable, script *buildscript.BuildScript, oldCommit
 	}()
 	pg = output.StartSpinner(out, locale.T("progress_solve_preruntime"), constants.TerminalAnimationInterval)
 
+	if script.Dynamic() {
+		// Evaluate with dynamic imports first. Then commit.
+		err := bp.Evaluate(pj.Owner(), pj.Name(), script)
+		if err != nil {
+			return errs.Wrap(err, "Unable to dynamically evaluate build expression")
+		}
+		// StageCommitAndPoll needs to be called with "solve" node
+		if err := script.SetDynamic(false); err != nil {
+			return errs.Wrap(err, "Setting dynamic failed")
+		}
+	}
+
 	commitParams := buildplanner.StageCommitParams{
 		Owner:        pj.Owner(),
 		Project:      pj.Name(),
@@ -74,7 +86,7 @@ func UpdateAndReload(prime primeable, script *buildscript.BuildScript, oldCommit
 	}
 
 	// Solve runtime
-	newCommit, err := bp.StageCommit(commitParams)
+	newCommit, err := bp.StageCommitAndPoll(commitParams)
 	if err != nil {
 		return errs.Wrap(err, "Could not stage commit")
 	}

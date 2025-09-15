@@ -3,12 +3,14 @@ package commit
 import (
 	"errors"
 
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/internal/runbits/commits_runbit"
 	"github.com/ActiveState/cli/internal/runbits/cves"
 	"github.com/ActiveState/cli/internal/runbits/dependencies"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
@@ -31,24 +33,22 @@ type Commit struct {
 	prime primeable
 }
 
+type Params struct {
+	Timestamp      captain.TimeValue
+	SkipValidation bool
+}
+
 func New(p primeable) *Commit {
 	return &Commit{p}
 }
 
-var ErrNoChanges = errors.New("buildscript has no changes")
-
 func rationalizeError(err *error) {
 	var buildPlannerErr *bpResp.BuildPlannerError
+	var invalidTimestampErr commits_runbit.ErrInvalidTimestamp
 
 	switch {
 	case err == nil:
 		return
-
-	case errors.Is(*err, ErrNoChanges):
-		*err = errs.WrapUserFacing(*err, locale.Tl(
-			"commit_notice_no_change",
-			"Your buildscript contains no new changes. No commit necessary.",
-		), errs.SetInput())
 
 	case errors.Is(*err, buildscript_runbit.ErrBuildscriptNotExist):
 		*err = errs.WrapUserFacing(*err, locale.T("err_buildscript_not_exist"))
@@ -65,10 +65,13 @@ func rationalizeError(err *error) {
 	case errors.As(*err, &invalidDepValueType{}):
 		*err = errs.WrapUserFacing(*err, locale.T("err_commit_invalid_dep_value_type"), errs.SetInput())
 
+	case errors.As(*err, &invalidTimestampErr):
+		*err = errs.WrapUserFacing(*err, locale.Tr("err_invalid_timestamp", invalidTimestampErr.TimeValue.String()), errs.SetInput())
+
 	}
 }
 
-func (c *Commit) Run() (rerr error) {
+func (c *Commit) Run(params *Params) (rerr error) {
 	defer rationalizeError(&rerr)
 
 	proj := c.prime.Project()
@@ -83,6 +86,15 @@ func (c *Commit) Run() (rerr error) {
 	script, err := buildscript_runbit.ScriptFromProject(proj)
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
+	}
+
+	// Set timestamp
+	if params.Timestamp.IsValid() {
+		ts, err := commits_runbit.ExpandTimeForBuildScript(&params.Timestamp, c.prime.Auth(), script)
+		if err != nil {
+			return errs.Wrap(err, "Unable to get timestamp from params")
+		}
+		script.SetAtTime(ts, true)
 	}
 
 	for _, fc := range script.FunctionCalls("ingredient") {
@@ -109,7 +121,8 @@ func (c *Commit) Run() (rerr error) {
 
 	// Check if there is anything to commit
 	if equals {
-		return ErrNoChanges
+		out.Notice(locale.Tl("commit_notice_no_change", "Your buildscript contains no new changes. No commit necessary."))
+		return nil
 	}
 
 	pg := output.StartSpinner(out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
@@ -128,6 +141,40 @@ func (c *Commit) Run() (rerr error) {
 	if err != nil {
 		return errs.Wrap(err, "Could not update project to reflect build script changes.")
 	}
+	pg.Stop(locale.T("progress_success"))
+	pg = nil
+
+	if !params.SkipValidation {
+		pgSolve := output.StartSpinner(out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
+		defer func() {
+			if pgSolve != nil {
+				pgSolve.Stop(locale.T("progress_fail"))
+			}
+		}()
+
+		// Solve runtime
+		rtCommit, err := bp.FetchCommit(stagedCommit.CommitID, proj.Owner(), proj.Name(), nil)
+		if err != nil {
+			return errs.Wrap(err, "Could not fetch staged commit")
+		}
+
+		// Get old buildplan.
+		oldCommit, err := bp.FetchCommitNoPoll(localCommitID, proj.Owner(), proj.Name(), nil)
+		if err != nil {
+			return errs.Wrap(err, "Failed to fetch old commit")
+		}
+
+		pgSolve.Stop(locale.T("progress_success"))
+		pgSolve = nil
+
+		// Output dependency list.
+		dependencies.OutputChangeSummary(out, rtCommit.BuildPlan(), oldCommit.BuildPlan())
+
+		// Report CVEs.
+		if err := cves.NewCveReport(c.prime).Report(rtCommit.BuildPlan(), oldCommit.BuildPlan()); err != nil {
+			return errs.Wrap(err, "Could not report CVEs")
+		}
+	}
 
 	// Update local commit ID
 	if err := localcommit.Set(proj.Dir(), stagedCommit.CommitID.String()); err != nil {
@@ -141,39 +188,6 @@ func (c *Commit) Run() (rerr error) {
 	}
 	if err := buildscript_runbit.Update(proj, newScript); err != nil {
 		return errs.Wrap(err, "Could not update local build script")
-	}
-
-	pg.Stop(locale.T("progress_success"))
-	pg = nil
-
-	pgSolve := output.StartSpinner(out, locale.T("progress_solve"), constants.TerminalAnimationInterval)
-	defer func() {
-		if pgSolve != nil {
-			pgSolve.Stop(locale.T("progress_fail"))
-		}
-	}()
-
-	// Solve runtime
-	rtCommit, err := bp.FetchCommit(stagedCommit.CommitID, proj.Owner(), proj.Name(), nil)
-	if err != nil {
-		return errs.Wrap(err, "Could not fetch staged commit")
-	}
-
-	// Get old buildplan.
-	oldCommit, err := bp.FetchCommitNoPoll(localCommitID, proj.Owner(), proj.Name(), nil)
-	if err != nil {
-		return errs.Wrap(err, "Failed to fetch old commit")
-	}
-
-	pgSolve.Stop(locale.T("progress_success"))
-	pgSolve = nil
-
-	// Output dependency list.
-	dependencies.OutputChangeSummary(out, rtCommit.BuildPlan(), oldCommit.BuildPlan())
-
-	// Report CVEs.
-	if err := cves.NewCveReport(c.prime).Report(rtCommit.BuildPlan(), oldCommit.BuildPlan()); err != nil {
-		return errs.Wrap(err, "Could not report CVEs")
 	}
 
 	out.Notice("") // blank line

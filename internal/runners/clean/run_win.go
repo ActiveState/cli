@@ -32,19 +32,19 @@ func (u *Uninstall) runUninstall(params *UninstallParams) error {
 	logFile, err := os.CreateTemp("", "state-clean-uninstall")
 	if err != nil {
 		logging.Error("Could not create temporary log file: %s", errs.JoinMessage(err))
-		aggErr = locale.WrapError(aggErr, "err_clean_logfile", "Could not create temporary log file")
+		aggErr = locale.WrapError(aggErr, "err_clean_logfile", "Could not create temporary log file: {{.V0}}", err.Error())
 	}
 
 	stateExec, err := installation.StateExec()
 	if err != nil {
 		logging.Debug("Could not get State Tool executable: %s", errs.JoinMessage(err))
-		aggErr = locale.WrapError(aggErr, "err_state_exec")
+		aggErr = locale.WrapError(aggErr, "err_state_exec_with_error", "Could not get State Tool executable: {{.V0}}", err.Error())
 	}
 
 	err = removeInstall(logFile.Name(), params, u.cfg)
 	if err != nil {
 		logging.Debug("Could not remove installation: %s", errs.JoinMessage(err))
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(stateExec))
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}: {{.V1}}", filepath.Dir(stateExec), err.Error())
 	}
 
 	err = removeApp()

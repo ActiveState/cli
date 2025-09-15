@@ -34,7 +34,7 @@ func newUpdateCommand(prime *primer.Values) *captain.Command {
 	return cmd
 }
 
-func newUpdateLockCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
+func newUpdateLockCommand(prime *primer.Values) *captain.Command {
 	runner := update.NewLock(prime)
 	params := update.LockParams{}
 
@@ -52,7 +52,6 @@ func newUpdateLockCommand(prime *primer.Values, globals *globalOptions) *captain
 		},
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
-			params.NonInteractive = globals.NonInteractive
 			return runner.Run(&params)
 		},
 	)
@@ -61,7 +60,7 @@ func newUpdateLockCommand(prime *primer.Values, globals *globalOptions) *captain
 	return cmd
 }
 
-func newUpdateUnlockCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
+func newUpdateUnlockCommand(prime *primer.Values) *captain.Command {
 	runner := update.NewUnlock(prime)
 	params := update.UnlockParams{}
 
@@ -73,7 +72,6 @@ func newUpdateUnlockCommand(prime *primer.Values, globals *globalOptions) *capta
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
-			params.NonInteractive = globals.NonInteractive
 			return runner.Run(&params)
 		},
 	)

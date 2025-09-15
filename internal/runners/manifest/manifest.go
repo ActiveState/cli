@@ -147,6 +147,10 @@ func (m *Manifest) fetchBuildplanRequirements() (buildplan.Ingredients, error) {
 func (m *Manifest) fetchVulnerabilities(reqs []buildscript.Requirement, bpReqs buildplan.Ingredients) (vulnerabilities, error) {
 	vulns := make(vulnerabilities)
 
+	if !m.cfg.GetBool(constants.SecurityReportingConfig) {
+		return vulns, nil
+	}
+
 	if !m.auth.Authenticated() {
 		for _, req := range reqs {
 			r, ok := req.(buildscript.DependencyRequirement)

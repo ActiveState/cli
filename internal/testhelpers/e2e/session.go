@@ -28,9 +28,6 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/api/mono"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -39,7 +36,6 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/go-openapi/strfmt"
-	"github.com/google/uuid"
 	"github.com/phayes/permbits"
 	"github.com/stretchr/testify/require"
 )
@@ -68,6 +64,7 @@ type Session struct {
 	ExecutorExe     string
 	spawned         []*SpawnedCmd
 	ignoreLogErrors bool
+	cfg             *config.Instance
 	cache           keyCache
 }
 
@@ -98,23 +95,23 @@ func init() {
 
 	// Get username / password from `state secrets` so we can run tests without needing special env setup
 	if PersistentUsername == "" {
-		out, stderr, err := osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_USERNAME"}, []string{})
+		out, _, err := osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_USERNAME"}, []string{})
 		if err != nil {
-			fmt.Printf("WARNING!!! Could not retrieve username via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
+			fmt.Println("WARNING!!! Could not retrieve username via state secrets")
 		}
 		PersistentUsername = strings.TrimSpace(out)
 	}
 	if PersistentPassword == "" {
-		out, stderr, err := osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_PASSWORD"}, []string{})
+		out, _, err := osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_PASSWORD"}, []string{})
 		if err != nil {
-			fmt.Printf("WARNING!!! Could not retrieve password via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
+			fmt.Println("WARNING!!! Could not retrieve password via state secrets")
 		}
 		PersistentPassword = strings.TrimSpace(out)
 	}
 	if PersistentToken == "" {
-		out, stderr, err := osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_TOKEN"}, []string{})
+		out, _, err := osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_TOKEN"}, []string{})
 		if err != nil {
-			fmt.Printf("WARNING!!! Could not retrieve token via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
+			fmt.Println("WARNING!!! Could not retrieve token via state secrets")
 		}
 		PersistentToken = strings.TrimSpace(out)
 	}
@@ -203,10 +200,12 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 
 	cfg, err := config.NewCustom(dirs.Config, singlethread.New(), true)
 	require.NoError(session.T, err)
+	session.cfg = cfg
 
 	if err := cfg.Set(constants.SecurityPromptConfig, false); err != nil {
 		require.NoError(session.T, err)
 	}
+	session.cfg = cfg
 
 	return session
 }
@@ -448,48 +447,8 @@ func (s *Session) LogoutUser() {
 	p.ExpectExitCode(0)
 }
 
-func (s *Session) CreateNewUser() *mono_models.UserEditable {
-	uid, err := uuid.NewRandom()
-	require.NoError(s.T, err)
-
-	username := fmt.Sprintf("user-%s", uid.String()[0:8])
-	password := uid.String()[8:]
-	email := fmt.Sprintf("%s@test.tld", username)
-	user := &mono_models.UserEditable{
-		Username: username,
-		Password: password,
-		Name:     username,
-		Email:    email,
-	}
-
-	params := users.NewAddUserParams()
-	params.SetUser(user)
-
-	// The default mono API client host is "testing.tld" inside unit tests.
-	// Since we actually want to create production users, we need to manually instantiate a mono API
-	// client with the right host.
-	serviceURL := api.GetServiceURL(api.ServiceMono)
-	host := os.Getenv(constants.APIHostEnvVarName)
-	if host == "" {
-		host = constants.DefaultAPIHost
-	}
-	serviceURL.Host = strings.Replace(serviceURL.Host, string(api.ServiceMono)+api.TestingPlatform, host, 1)
-	_, err = mono.Init(serviceURL, nil).Users.AddUser(params)
-	require.NoError(s.T, err, "Error creating new user")
-
-	p := s.Spawn(tagsuite.Auth, "--username", username, "--password", password)
-	p.Expect("logged in")
-	p.ExpectExitCode(0)
-
-	s.users = append(s.users, username)
-
-	return user
-}
-
 // NotifyProjectCreated indicates that the given project was created on the Platform and needs to
 // be deleted when the session is closed.
-// This only needs to be called for projects created by PersistentUsername, not projects created by
-// users created with CreateNewUser(). Created users' projects are auto-deleted.
 func (s *Session) NotifyProjectCreated(org, name string) {
 	s.createdProjects = append(s.createdProjects, project.NewNamespace(org, name, ""))
 }
@@ -809,13 +768,27 @@ func (s *Session) SetupRCFile() {
 	if runtime.GOOS == "windows" {
 		return
 	}
-	s.T.Setenv("HOME", s.Dirs.HomeDir)
-	defer s.T.Setenv("HOME", os.Getenv("HOME"))
+	s.WithEnv(func() {
+		s.SetupRCFileCustom(subshell.New(s.cfg))
+	})
+}
 
-	cfg, err := config.New()
-	require.NoError(s.T, err)
-
-	s.SetupRCFileCustom(subshell.New(cfg))
+func (s *Session) WithEnv(do func()) {
+	env := osutils.EnvSliceToMap(s.Env)
+	for k, v := range env {
+		_, exists := os.LookupEnv(k)
+		if exists {
+			defer s.T.Setenv(k, os.Getenv(k))
+		} else {
+			defer func() {
+				if err := os.Unsetenv(k); err != nil {
+					s.T.Logf("Failed to unset env var %s: %v", k, err)
+				}
+			}()
+		}
+		s.T.Setenv(k, v)
+	}
+	do()
 }
 
 func (s *Session) SetupRCFileCustom(subshell subshell.SubShell) {
@@ -831,7 +804,19 @@ func (s *Session) SetupRCFileCustom(subshell subshell.SubShell) {
 	} else {
 		err = fileutils.Touch(filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile)))
 	}
-	require.NoError(s.T, err)
+	require.NoError(s.T, err, errs.JoinMessage(err))
+}
+
+func (s *Session) Config() *config.Instance {
+	return s.cfg
+}
+
+func (s *Session) SetConfig(key string, value interface{}) {
+	require.NoError(s.T, s.cfg.Set(key, value))
+}
+
+func (s *Session) GetConfig(key string) interface{} {
+	return s.cfg.Get(key)
 }
 
 func RunningOnCI() bool {
