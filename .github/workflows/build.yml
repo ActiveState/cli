@@ -78,6 +78,12 @@ jobs:
           tags: tag:cli-ci
           use-cache: 'true'
 
+      - # === Select Tailscale Exit Node ===
+        &select-tailscale-exit-node
+        name: Tailscale - Select Exit Node
+        shell: bash
+        run: tailscale up --exit-node=${{ secrets.TAILSCALE_EXIT_NODE }}
+
       - # === Install Go ===
         name: Install Go
         uses: actions/setup-go@v5
@@ -409,6 +415,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - *install-tailscale
+      - *select-tailscale-exit-node
 
       - name: Download All Build Session Artifacts
         uses: actions/download-artifact@v4
@@ -452,6 +459,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - *install-tailscale
+      - *select-tailscale-exit-node
 
       - # === Install Go ===
         name: Install Go
