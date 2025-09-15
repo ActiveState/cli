@@ -8,14 +8,47 @@ and this project adheres to
 
 ## 0.48.0
 
+### Added
+
+- Added `--ts=dynamic` parameter to `state install` and `state import` in order to use dynamic imports, allowing users
+  to fetch and install
+  packages not yet present in the ActiveState catalog.
+- Added `state config set security.reporting <true|false>` config to disable CVE reporting.
+- Added `--language` and `--namespace` flags to `state import`, allowing users to specify the language and namespace of
+  packages to import, improving flexibility for multi-language projects.
+- Added `--ts` flag to `state commit`, allowing users to use preset timestamps for commit creation.
+- Added `state commit --skip-validation` flag, allowing users to commit buildscripts that do not necessarily resolve
+  all dependencies.
+- Added new configuration options for customizing which endpoints State Tool uses.
+
+### Changed
+
+- Artifacts are retained in Cache even when they are not currently being used, to improve performance and reduce
+  network traffic. This is still limited by the cache size.
+- State Tool now defaults to `zsh` shell on macOS, as it is the default shell on modern macOS systems.
+- Removed `state init` language inference, requiring users to always explicitly specify the --language argument. This
+  was done because the automatic language inference was too magical / error-prone.
+- Namespaces provided to commands (eg. `state install <namespace>/<package>`) now support the `<namespace>:<package>`
+  syntax, enabling
+  users to specify namespace and package name when the package name itself contains a slash.
+
+### Fixed
+
+- Fixed issue where uninstall of a package could fail due to recoverable caching errors.
+
+### Security
+
+- Addressed all but one CVE. The remaining CVE is not exploitable on State Tool and will be addressed in a future
+  release.
+
 ## 0.47.1
 
 ### Added
 
 - Added a new `--portable` flag to `state checkout` which will install the runtime files without the use of external
   symlinks. Allowing for the runtime files to be manually moved to another location.
-    - Note that depending on how the runtime was created you may still run into issues doing this. It's best to avoid
-      such scenarios altogether and rely on the State Tool instead.
+	- Note that depending on how the runtime was created you may still run into issues doing this. It's best to avoid
+	  such scenarios altogether and rely on the State Tool instead.
 
 ### Fixed
 
@@ -32,8 +65,8 @@ and this project adheres to
 - Added the ability to disable the runtime from setting environment variables with the `ACTIVESTATE_CLI_IGNORE_ENV`
   environment variable. For example to disable runtimes from setting the PYTHONPATH you would set
   `ACTIVESTATE_CLI_IGNORE_ENV=PYTHONPATH`.
-    - Note this means you as a user take ownership of this environment variable, and if done inappropriately can lead to
-      breakages.
+	- Note this means you as a user take ownership of this environment variable, and if done inappropriately can lead to
+	  breakages.
 
 ### Changed
 
@@ -47,15 +80,15 @@ and this project adheres to
 - Buildscripts now contain project and time information in a meta section at the to of the buildscript file.
 - We no longer modify the shell's PS1 when running `state activate` or `state shell`. We do still print a message when
   entering the shell indicating that you are un a State Tool subshell.
-    - We would like to revisit this through shell plugins. The old PS1 modifications were simply too error-prone
-      considering the wide variety of complex PS1 modifications users have.
+	- We would like to revisit this through shell plugins. The old PS1 modifications were simply too error-prone
+	  considering the wide variety of complex PS1 modifications users have.
 - The UI for Package operations (add, remove, upgrade) has been streamlined.
 
 ### Fixed
 
 - Fixed issue where State Tool would launch the wrong shell due to over-reliance on the SHELL environment variable.
   Shell detection is now based on the parent processes, but will still fall back to the environment variable.
-    - Most notably this fixes being dropped into PowerShell when running the install one-liner from CMD on Windows.
+	- Most notably this fixes being dropped into PowerShell when running the install one-liner from CMD on Windows.
 - Fixed issue where `state config set` would let users set values that were not valid.
 - Fixed issue where change and CVE summaries would sometimes report on the wrong package or language name.
 - Fixed issue where `state artifacts` would report build failures when there were no build failures. This only happened
@@ -93,7 +126,7 @@ and this project adheres to
 
 * Runtime installations will now use a central artifact depot, and will use symlinks on mac/linux and hardlinks on
   windows to deploy them for your various runtime. Reducing disk usage, and increasing installation speeds.
-    * We may still copy instead of link artifacts if the artifact in question requires runtime specific modifications.
+	* We may still copy instead of link artifacts if the artifact in question requires runtime specific modifications.
 * Streamlined the UI for sourcing runtimes, it should now be consistent across commands.
 * We now also show dependency information when updating requirements.
 * When running `state export log` with the `-i` (index) flag we no longer consider logs for the current command.
@@ -110,7 +143,7 @@ and this project adheres to
 * Progress indication when solving and creating a commit (eg. when running `state install`) would sometimes overlap.
 * Made several improvements to dependency calculations, which should give user a more accurate picture of what
   dependencies were brought in by a given change.
-    * This only affects UI/UX. It does not imply any build or runtime functionality.
+	* This only affects UI/UX. It does not imply any build or runtime functionality.
 * Many localization and error message improvements and additions to help guide users to solutions.
 
 ## 0.45.1
@@ -118,17 +151,17 @@ and this project adheres to
 ### Fixed
 
 * Fixed issue where installation on Windows would fail with a message from powershell saying script running is disabled.
-    * Context: We use a powershell script to create start menu shortcuts for the State Tool, as there are no solutions
-      in Golang to do this through system APIs.
+	* Context: We use a powershell script to create start menu shortcuts for the State Tool, as there are no solutions
+	  in Golang to do this through system APIs.
 
 ## 0.45.0
 
 ### Added
 
 * On Linux we will now automatically detect the most appropriate platform based on the system glibc version.
-    * This only applies if your project has multiple linux platforms defined.
-    * If you were using the `runtime.preferred.glibc` config option it will still be respected, but you likely won't
-      need it anymore.
+	* This only applies if your project has multiple linux platforms defined.
+	* If you were using the `runtime.preferred.glibc` config option it will still be respected, but you likely won't
+	  need it anymore.
 * We now show failed builds when running `state artifacts`. You can still instrument the artifacts that did not fail.
 
 ### Changed
@@ -143,12 +176,12 @@ and this project adheres to
 * We will now inform you there is nothing new to commit when running `state commit` with no changes to commit.
 * The `LOCAL` and `REMOTE` targets for `state reset` are now case-insensitive.
 * You can now `state checkout` a project without a language defined in its configuration.
-    * Note making changes to such a project in the State Tool is not yet fully supported.
+	* Note making changes to such a project in the State Tool is not yet fully supported.
 * When the State Tool encounters an unexpected internal we now relay this internal error to the user. Previously you
   only received a generic "execute failed" error, which is far less helpful than an internal error.
 * Running `state pull` will now fail if the configured commit does not belong to the configured project.
-    * This is a corrupted state that the user can encounter by manually editing their activestate.yaml (eg. by resolving
-      a git conflict).
+	* This is a corrupted state that the user can encounter by manually editing their activestate.yaml (eg. by resolving
+	  a git conflict).
 
 ### Fixed
 
@@ -209,8 +242,8 @@ and this project adheres to
   activestate.yaml. Do not edit or delete this or you may run into issues.
 * Buildscripts are no longer automatically created when opted in. Instead you need to run `state reset LOCAL` in order
   to first create the buildscript. You only need to do this once, after it exists it will be updated as needed.
-    * This is merely a growing pain while this feature is optin only. Once buildscripts ship as stable you will not need
-      to do this.
+	* This is merely a growing pain while this feature is optin only. Once buildscripts ship as stable you will not need
+	  to do this.
 * CVE information provided when running `state install` is now recursive, meaning we show CVE information for the
   requested package as well as all its dependencies.
 * `state init` now automatically assumes wildcards when a partial version is specified.
@@ -260,9 +293,9 @@ and this project adheres to
 
 * `state refresh` has been marked stable.
 * `state checkout` will now revert any changes made to the filesystem if the runtime fails to source.
-    * You can now specify the `--force` flag in order for it to always checkout the project even if it cannot be
-      installed.
-      Allowing you to work on the project via the CLI and fix the underlying issue.
+	* You can now specify the `--force` flag in order for it to always checkout the project even if it cannot be
+	  installed.
+	  Allowing you to work on the project via the CLI and fix the underlying issue.
 * `state import` no longer overwrites your project with the imported requirements. Instead the requirements are
   appended.
 * `state platforms search` will no longer show platforms that are unsupported.
@@ -501,18 +534,18 @@ and this project adheres to
   output that isn't actually curated for machine consumption. As a result you
   may now get an error saying a given command does not support JSON, but ones
   that do now generally give far more useful JSON output.
-    - Commands that support JSON
-      output: `auth`, `branch`, `bundles install`, `bundles search`,
-      `bundles uninstall`, `checkout`, `config get`, `config set`, `cve`,
-      `cve report`, `events`, `export config`, `export env`, `export jwt`,
-      `export new-api-key`, `export private-key`, `export recipe`, `fork`,
-      `history`, `info`, `init`, `install`, `languages`, `organizations`,
-      `packages`, `platforms`, `platforms search`, `projects`,
-      `projects remote`, `pull`, `reset`, `revert`, `scripts`, `search`,
-      `secrets`, `secrets get`, `show`, `switch`, `uninstall`, `update lock`,
-      `use`, `use show`.
-    - Note that the format of the JSON output itself should be considered
-      *unstable* at this time (ie. subject to change).
+	- Commands that support JSON
+	  output: `auth`, `branch`, `bundles install`, `bundles search`,
+	  `bundles uninstall`, `checkout`, `config get`, `config set`, `cve`,
+	  `cve report`, `events`, `export config`, `export env`, `export jwt`,
+	  `export new-api-key`, `export private-key`, `export recipe`, `fork`,
+	  `history`, `info`, `init`, `install`, `languages`, `organizations`,
+	  `packages`, `platforms`, `platforms search`, `projects`,
+	  `projects remote`, `pull`, `reset`, `revert`, `scripts`, `search`,
+	  `secrets`, `secrets get`, `show`, `switch`, `uninstall`, `update lock`,
+	  `use`, `use show`.
+	- Note that the format of the JSON output itself should be considered
+	  *unstable* at this time (ie. subject to change).
 - As a result of the revised JSON output we will no longer print NIL characters
   as delimiter between JSON objects. So you no longer need to account for these.
 - Requirement names (eg. when running `state install <pkg>` or
@@ -590,12 +623,12 @@ and this project adheres to
 - We have revisited the behavior of `state init` to be less error prone and more
   intuitive. Our goal is to stabilize this command by version 0.39.0.
   These changes include:
-    - Immediately creating the project on the platform, rather than waiting for
-      the user to run `state push`.
-    - Assume Python 3 rather than Python 2 when initializing a Python project
-      without specifying a version.
-    - Assume the most recently used language when no language is specified.
-    - Drop the `--skeleton` flag.
+	- Immediately creating the project on the platform, rather than waiting for
+	  the user to run `state push`.
+	- Assume Python 3 rather than Python 2 when initializing a Python project
+	  without specifying a version.
+	- Assume the most recently used language when no language is specified.
+	- Drop the `--skeleton` flag.
 - Changed the sorting and grouping of `--help` output to be more intuitive.
 - Made the `--help` output wrap on words rather than characters.
 - Using secrets without having set up a keypair now gives a more informative
@@ -653,14 +686,14 @@ and this project adheres to
 
 - The following commands have been marked as stable, you no longer need to
   opt-in to unstable to use them:
-    - `state checkout`
-    - `state info`
-    - `state scripts`
-    - `state shell`
-    - `state switch`
-    - `state use reset`
-    - `state use show`
-    - `state use`
+	- `state checkout`
+	- `state info`
+	- `state scripts`
+	- `state shell`
+	- `state switch`
+	- `state use reset`
+	- `state use show`
+	- `state use`
 - All titles/headings are now consistently formatted.
 - Better use of whitespace in the error output.
 - `state clean uninstall` now only removes the application files. Use `--all` to
@@ -774,11 +807,11 @@ have more control over their workflow.
 In short; we're introducing the following commands:
 
 - *checkout* - Checkout the given project and setup its runtime
-    - A checkout is required before you can use any of the following commands
+	- A checkout is required before you can use any of the following commands
 - *use* - Use the given project runtime as the default for your system
-    - *reset* - Reset your default project runtime (this also resets the project
-      configured via `state activate --default`)
-    - *show* - Show your default project runtime
+	- *reset* - Reset your default project runtime (this also resets the project
+	  configured via `state activate --default`)
+	- *show* - Show your default project runtime
 - *shell* - Starts a shell/prompt for the given project runtime (equivalent of
   virtualenv)
 - *switch* - Switch to a branch or commit
@@ -795,12 +828,12 @@ Note that `state activate` will still be available for the foreseeable future.
 ### Added
 
 - Added new environment management commands (see above for details)
-    - Added `state checkout` command.
-    - Added `state use` command.
-    - Added `state use reset` command.
-    - Added `state use show` command.
-    - Added `state shell` command.
-    - Added `state switch` command.
+	- Added `state checkout` command.
+	- Added `state use` command.
+	- Added `state use reset` command.
+	- Added `state use show` command.
+	- Added `state shell` command.
+	- Added `state switch` command.
 - Added `state export env` command - Export the environment variables associated
   with your runtime.
 - Added `state deploy uninstall` command for reverting a `state deploy`.
@@ -808,9 +841,9 @@ Note that `state activate` will still be available for the foreseeable future.
   does.
 - Runtime artifacts are now cached, speeding up runtime setup and reducing
   network traffic.
-    - The cache is capped at 500mb. This can be overridden with
-      the `ACTIVESTATE_ARTIFACT_CACHE_SIZE_MB` environment variable (value is
-      MB's as an int).
+	- The cache is capped at 500mb. This can be overridden with
+	  the `ACTIVESTATE_ARTIFACT_CACHE_SIZE_MB` environment variable (value is
+	  MB's as an int).
 
 ### Changed
 
@@ -837,7 +870,7 @@ Note that `state activate` will still be available for the foreseeable future.
 - Fixed `state config set` accepting invalid values for booleans.
 - Fixed `state exec` not respecting the `--path` flag.
 - Fixed issue where PYTHONPATH would be set up with a temp directory on macOS.
-    - This still worked as expected in the end, but is obviously awkward.
+	- This still worked as expected in the end, but is obviously awkward.
 - Fixed panic when running `state secrets get` without a project.
 - Fixed issue where `state learn` would give an unhelpful error when it could
   not reach the browser.
@@ -889,8 +922,8 @@ Note that `state activate` will still be available for the foreseeable future.
 * The state-svc (our background daemon) has seen significant improvements to its
   start / stop behavior. Primarily intended to improve the reliability of our
   update process.
-    * As a result our minimum Windows version required to run the state tool is
-      now *Windows 10 Build 17134 (Codename Redstone 4)*.
+	* As a result our minimum Windows version required to run the state tool is
+	  now *Windows 10 Build 17134 (Codename Redstone 4)*.
 * The State tool will now error out when it can't communicate with the
   state-svc.
   Preventing the user from running into much more vague errors as a result of
@@ -935,14 +968,14 @@ Note that `state activate` will still be available for the foreseeable future.
 * Authentication now uses your browser for a more secure and transparent
   authentication process.
 
-    * The old behavior is still available as well, and use-cases where you
-      provide
-      the api key or credentials in the command are unaffected.
+	* The old behavior is still available as well, and use-cases where you
+	  provide
+	  the api key or credentials in the command are unaffected.
 
 * Added a new `state config` command, which can be used to change behavior of
   the State Tool itself.
 
-    * Currently can be used to disable analytics and error reporting, eg.
+	* Currently can be used to disable analytics and error reporting, eg.
 
   ```bash
   state config set report.analytics false # Turns off analytics
