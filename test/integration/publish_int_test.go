@@ -136,7 +136,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 			},
 				expect{
 					[]string{},
-					"Expected file extension to be either",
+					"Expected file extension:",
 					true,
 					1,
 					true,
