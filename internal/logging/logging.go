@@ -38,9 +38,9 @@ const (
 	WARNING  = 4
 	WARN     = 4
 	ERROR    = 8
-	NOTICE   = 16 //notice is like info but for really important stuff ;)
+	NOTICE   = 16 // notice is like info but for really important stuff ;)
 	CRITICAL = 32
-	QUIET    = ERROR | NOTICE | CRITICAL               //setting for errors only
+	QUIET    = ERROR | NOTICE | CRITICAL               // setting for errors only
 	NORMAL   = INFO | WARN | ERROR | NOTICE | CRITICAL // default setting - all besides debug
 	ALL      = 255
 	NOTHING  = 0
@@ -158,7 +158,9 @@ func (l *standardHandler) Printf(msg string, args ...interface{}) {
 	l.Emit(getContext("DBG", 1), logMsg, args...)
 }
 
-func (l *standardHandler) Close() {}
+func (l *standardHandler) Close() {
+	l.Emit(getContext("DEBUG", 1), "Closing logging handler")
+}
 
 var currentHandler LoggingHandler = &standardHandler{
 	DefaultFormatter,
