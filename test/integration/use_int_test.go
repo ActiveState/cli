@@ -123,13 +123,14 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	python3Exe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExtension)
 	suite.True(fileutils.TargetExists(python3Exe), python3Exe+" not found")
 
-	var rcfile string
-	ts.WithEnv(func() {
-		var err error
-		rcfile, err = subshell.New(ts.Config()).RcFile()
-		suite.NoError(err)
-	})
-	if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
+	if runtime.GOOS != "windows" {
+		var rcfile string
+		ts.WithEnv(func() {
+			var err error
+			rcfile, err = subshell.New(ts.Config()).RcFile()
+			suite.NoError(err)
+		})
+		suite.Require().FileExists(rcfile)
 		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, ts.DebugMessage("PATH does not have your project in it"))
 	}
 
