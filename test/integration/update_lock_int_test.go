@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -16,6 +17,9 @@ import (
 )
 
 func (suite *UpdateIntegrationTestSuite) TestLocked() {
+	if runtime.GOARCH == "arm64" {
+		suite.T().Skip("There is no official ARM release for install.sh yet")
+	}
 	suite.OnlyRunForTags(tagsuite.Update)
 	suite.T().Skip("Requires https://www.pivotaltracker.com/story/show/177827538 and needs to be adapted.")
 	pjfile := projectfile.Project{
@@ -44,6 +48,9 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
+	if runtime.GOARCH == "arm64" {
+		suite.T().Skip("There is no official ARM release for install.sh yet")
+	}
 	suite.OnlyRunForTags(tagsuite.Update)
 	targetBranch := "release"
 	if constants.ChannelName == "release" {
@@ -203,6 +210,7 @@ func (suite *UpdateIntegrationTestSuite) TestLockUnlock() {
 		e2e.OptArgs("update", "unlock", "-n"),
 		e2e.OptAppendEnv(suite.env(false, false)...),
 	)
+	cp.Expect("Continuing because State Tool is running in non-interactive mode")
 	cp.Expect("unlocked")
 
 	data, err = os.ReadFile(pjfile.Path())

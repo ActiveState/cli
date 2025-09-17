@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -48,6 +49,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 	}
 
 	for _, tt := range tests {
+		if runtime.GOARCH == "arm64" && strings.Contains(tt.Name, "activate") {
+			continue // ARM platform projects are not supported yet
+		}
 		suite.Run(fmt.Sprintf("%s (%s@%s)", tt.Name, tt.Version, tt.Channel), func() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
@@ -114,6 +118,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 			cp := ts.SpawnCmdWithOpts(cmd, opts...)
 			cp.Expect("Preparing Installer for State Tool Package Manager")
+			if runtime.GOOS == "windows" {
+				cp.Expect("Continuing because the '--force' flag is set") // admin prompt
+			}
 			cp.Expect("Installation Complete", e2e.RuntimeSourcingTimeoutOpt)
 
 			if tt.Activate != "" || tt.ActivateByCommand != "" {
@@ -272,6 +279,117 @@ func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Se
 	if expectedChannel != "" {
 		suite.Equal(expectedChannel, actual.Channel)
 	}
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) TestInstall_ConfigSet() {
+	suite.OnlyRunForTags(tagsuite.InstallScripts)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	baseUrl := "https://state-tool.s3.amazonaws.com/update/state/"
+	scriptBaseName := "install."
+	if runtime.GOOS != "windows" {
+		scriptBaseName += "sh"
+	} else {
+		scriptBaseName += "ps1"
+	}
+	scriptUrl := baseUrl + constants.ChannelName + "/" + scriptBaseName
+
+	b, err := httputil.GetDirect(scriptUrl)
+	suite.Require().NoError(err)
+	script := filepath.Join(ts.Dirs.Work, scriptBaseName)
+	suite.Require().NoError(fileutils.WriteFile(script, b))
+
+	installDir := filepath.Join(ts.Dirs.Work, "install")
+	args := []string{script}
+	args = append(args, "-t", installDir)
+	args = append(args, "-n") // non-interactive
+	args = append(args, "-f") // force (like other working tests)
+	args = append(args, "-b", constants.ChannelName)
+
+	args = append(args, "--config-set", "analytics.enabled=false")
+	args = append(args, "--config-set", "output.format=json")
+	args = append(args, "--config-set", "test.key1=value1")
+	args = append(args, "--config-set", "test.key2=value2")
+
+	appInstallDir := filepath.Join(ts.Dirs.Work, "app")
+	suite.NoError(fileutils.Mkdir(appInstallDir))
+
+	cmd := "bash"
+	opts := []e2e.SpawnOptSetter{
+		e2e.OptArgs(args...),
+		e2e.OptAppendEnv(constants.DisableRuntime + "=false"),
+		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
+		e2e.OptAppendEnv(fmt.Sprintf("%s=FOO", constants.OverrideSessionTokenEnvVarName)),
+		e2e.OptAppendEnv(fmt.Sprintf("%s=false", constants.DisableActivateEventsEnvVarName)),
+	}
+	if runtime.GOOS == "windows" {
+		cmd = "powershell.exe"
+		opts = append(opts,
+			e2e.OptAppendEnv("SHELL="),
+			e2e.OptAppendEnv(constants.OverrideShellEnvVarName+"="),
+		)
+	}
+	cp := ts.SpawnCmdWithOpts(cmd, opts...)
+	cp.Expect("Preparing Installer for State Tool Package Manager")
+	if runtime.GOOS == "windows" {
+		cp.Expect("Continuing because the '--force' flag is set") // admin prompt
+	}
+	cp.Expect("Installation Complete", e2e.RuntimeSourcingTimeoutOpt)
+
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	stateExec, err := installation.StateExecFromDir(installDir)
+	suite.NoError(err)
+	suite.FileExists(stateExec)
+
+	suite.verifyConfigValue(ts, stateExec, "analytics.enabled", "false")
+	suite.verifyConfigValue(ts, stateExec, "output.format", "json")
+	suite.verifyConfigValue(ts, stateExec, "test.key1", "value1")
+	suite.verifyConfigValue(ts, stateExec, "test.key2", "value2")
+
+	suite.verifyConfigValueDirect(ts, "analytics.enabled", "false")
+	suite.verifyConfigValueDirect(ts, "output.format", "json")
+	suite.verifyConfigValueDirect(ts, "test.key1", "value1")
+	suite.verifyConfigValueDirect(ts, "test.key2", "value2")
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) verifyConfigValue(ts *e2e.Session, stateExec, key, expectedValue string) {
+	cp := ts.SpawnCmd(stateExec, "config", "get", key, "--output=json")
+	cp.ExpectExitCode(0)
+	output := strings.TrimSpace(cp.StrippedSnapshot())
+
+	var result map[string]interface{}
+	err := json.Unmarshal([]byte(output), &result)
+	suite.Require().NoError(err, "Failed to parse JSON output: %s", output)
+
+	// Extract the value field from the JSON object
+	value, exists := result["value"]
+	suite.Require().True(exists, "JSON output missing 'value' field: %s", output)
+
+	var actualValue string
+	switch v := value.(type) {
+	case string:
+		actualValue = v
+	case bool:
+		actualValue = fmt.Sprintf("%t", v)
+	case float64:
+		actualValue = fmt.Sprintf("%.0f", v)
+	default:
+		actualValue = fmt.Sprintf("%v", v)
+	}
+
+	suite.Equal(expectedValue, actualValue, "Config value for key %s should be %s, got %s", key, expectedValue, actualValue)
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) verifyConfigValueDirect(ts *e2e.Session, key, expectedValue string) {
+	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+	suite.Require().NoError(err)
+	defer cfg.Close()
+
+	actualValue := cfg.GetString(key)
+	suite.Equal(expectedValue, actualValue, "Config value for key %s should be %s, got %s (via config library)", key, expectedValue, actualValue)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) assertAnalytics(ts *e2e.Session) {

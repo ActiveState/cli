@@ -46,7 +46,9 @@ type Opts struct {
 	PreferredLibcVersion string
 	EventHandlers        []events.HandlerFunc
 	BuildlogFilePath     string
+	BuildProgressUrl     string
 	Portable             bool
+	CacheSize            int
 
 	FromArchive *fromArchive
 
@@ -66,6 +68,7 @@ type setup struct {
 	path              string
 	opts              *Opts
 	depot             *depot
+	ecosystems        []ecosystem
 	supportsHardLinks bool
 	env               *envdef.Collection
 	buildplan         *buildplan.BuildPlan
@@ -88,10 +91,11 @@ type setup struct {
 	toInstall buildplan.ArtifactIDMap
 
 	// toUninstall encompasses all artifacts that will need to be uninstalled for this runtime.
-	toUninstall map[strfmt.UUID]struct{}
+	toUninstall map[strfmt.UUID]bool
 }
 
 func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depot *depot, opts *Opts) (*setup, error) {
+	depot.SetCacheSize(opts.CacheSize)
 	installedArtifacts := depot.List(path)
 
 	var platformID strfmt.UUID
@@ -124,10 +128,10 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 
 	// Identify which artifacts we can uninstall
 	installableArtifactsMap := installableArtifacts.ToIDMap()
-	artifactsToUninstall := map[strfmt.UUID]struct{}{}
+	artifactsToUninstall := map[strfmt.UUID]bool{}
 	for id := range installedArtifacts {
 		if _, required := installableArtifactsMap[id]; !required {
-			artifactsToUninstall[id] = struct{}{}
+			artifactsToUninstall[id] = true
 		}
 	}
 
@@ -135,7 +139,8 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 	// by definition we'll need to download it (unless we're setting up the runtime from an archive).
 	// We also calculate which artifacts are immediately ready to be installed, as its the inverse condition of the above.
 	artifactsToDownload := artifactsToInstall.Filter(func(a *buildplan.Artifact) bool {
-		return !depot.Exists(a.ArtifactID)
+		exists, _ := depot.Exists(a.ArtifactID)
+		return !exists
 	})
 	artifactsToUnpack := artifactsToDownload
 	if opts.FromArchive != nil {
@@ -164,6 +169,16 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 		}
 	}
 
+	// Load all ecosystems
+	var ecosystems []ecosystem
+	for _, e := range availableEcosystems {
+		ecosystem := e()
+		if err := ecosystem.Init(path, bp); err != nil {
+			return nil, errs.Wrap(err, "Could not create ecosystem")
+		}
+		ecosystems = append(ecosystems, ecosystem)
+	}
+
 	return &setup{
 		path:              path,
 		opts:              opts,
@@ -176,6 +191,7 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 		toUnpack:          artifactsToUnpack.ToIDMap(),
 		toInstall:         artifactsToInstall.ToIDMap(),
 		toUninstall:       artifactsToUninstall,
+		ecosystems:        ecosystems,
 	}, nil
 }
 
@@ -201,6 +217,7 @@ func (s *setup) RunAndWait() (rerr error) {
 		RecipeID:            s.buildplan.LegacyRecipeID(),
 		RequiresBuild:       s.buildplan.IsBuildInProgress() && len(s.toDownload) > 0,
 		LogFilePath:         s.opts.BuildlogFilePath,
+		ProgressUrl:         s.opts.BuildProgressUrl,
 		ArtifactsToBuild:    s.toBuild,
 		ArtifactsToDownload: s.toDownload,
 		ArtifactsToUnpack:   s.toUnpack,
@@ -269,7 +286,7 @@ func (s *setup) update() error {
 	wp = workerpool.New(maxConcurrency)
 	for _, a := range s.toInstall {
 		wp.Submit(func() error {
-			if err := s.install(a.ArtifactID); err != nil {
+			if err := s.install(a); err != nil {
 				return errs.Wrap(err, "Could not install artifact")
 			}
 			return nil
@@ -443,7 +460,8 @@ func (s *setup) updateExecutors() error {
 	return nil
 }
 
-func (s *setup) install(id strfmt.UUID) (rerr error) {
+func (s *setup) install(artifact *buildplan.Artifact) (rerr error) {
+	id := artifact.ArtifactID
 	defer func() {
 		if rerr == nil {
 			if err := s.fireEvent(events.ArtifactInstallSuccess{id}); err != nil {
@@ -461,13 +479,33 @@ func (s *setup) install(id strfmt.UUID) (rerr error) {
 	}
 
 	artifactDepotPath := s.depot.Path(id)
+
+	if ecosys := filterEcosystemMatchingArtifact(artifact, s.ecosystems); ecosys != nil {
+		files, err := ecosys.Add(artifact, artifactDepotPath)
+		if err != nil {
+			return errs.Wrap(err, "Ecosystem unable to add artifact")
+		}
+
+		err = s.depot.Track(artifact, &deployment{
+			Type:  deploymentTypeEcosystem,
+			Path:  s.path,
+			Files: files,
+		})
+		if err != nil {
+			return errs.Wrap(err, "Could not track deployment")
+		}
+		return nil
+	}
+
 	envDef, err := s.env.Load(artifactDepotPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not get env")
 	}
 
+	var deploy *deployment
 	if envDef.NeedsTransforms() || !s.supportsHardLinks || s.opts.Portable {
-		if err := s.depot.DeployViaCopy(id, envDef.InstallDir, s.path); err != nil {
+		deploy, err = s.depot.DeployViaCopy(id, envDef.InstallDir, s.path)
+		if err != nil {
 			return errs.Wrap(err, "Could not deploy artifact via copy")
 		}
 		if envDef.NeedsTransforms() {
@@ -476,9 +514,14 @@ func (s *setup) install(id strfmt.UUID) (rerr error) {
 			}
 		}
 	} else {
-		if err := s.depot.DeployViaLink(id, envDef.InstallDir, s.path); err != nil {
+		deploy, err = s.depot.DeployViaLink(id, envDef.InstallDir, s.path)
+		if err != nil {
 			return errs.Wrap(err, "Could not deploy artifact via link")
 		}
+	}
+	err = s.depot.Track(artifact, deploy)
+	if err != nil {
+		return errs.Wrap(err, "Could not track deployment")
 	}
 
 	return nil
@@ -502,6 +545,7 @@ func (s *setup) uninstall(id strfmt.UUID) (rerr error) {
 	}
 
 	artifactDepotPath := s.depot.Path(id)
+
 	envDef, err := s.env.Load(artifactDepotPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not get env")
@@ -509,6 +553,31 @@ func (s *setup) uninstall(id strfmt.UUID) (rerr error) {
 
 	if err := s.env.Unload(artifactDepotPath); err != nil {
 		return errs.Wrap(err, "Could not unload artifact envdef")
+	}
+
+	// If this is a dynamically imported artifact, tell the ecosystem to remove/undeploy it.
+	if exists, artifact := s.depot.Exists(id); exists && artifact != nil && artifact.Namespace != "" {
+		if ecosys := filterEcosystemMatchingNamespace(s.ecosystems, artifact.Namespace); ecosys != nil {
+			installedFiles := []string{}
+			// Find record of our deployment
+			deployments := sliceutils.Filter(s.depot.Deployments(id), func(d deployment) bool { return d.Path == s.path })
+			if len(deployments) > 0 {
+				installedFiles = deployments[0].Files
+			}
+
+			// Convert relative install locations to absolute paths.
+			for i, file := range installedFiles {
+				installedFiles[i] = filepath.Join(s.path, file)
+			}
+
+			// Remove/undeploy the artifact.
+			err := ecosys.Remove(artifact.Name, artifact.Version, installedFiles)
+			if err != nil {
+				return errs.Wrap(err, "Ecosystem unable to remove artifact")
+			}
+			s.depot.Untrack(id, filepath.Join(s.path, id.String()))
+			return nil
+		}
 	}
 
 	if err := s.depot.Undeploy(id, envDef.InstallDir, s.path); err != nil {
@@ -534,6 +603,13 @@ func (s *setup) postProcess() (rerr error) {
 			}
 		}
 	}()
+
+	// Tell applicable ecosystems to apply changes.
+	for _, e := range s.ecosystems {
+		if err := e.Apply(); err != nil {
+			return errs.Wrap(err, "Could not apply ecosystem changes")
+		}
+	}
 
 	// Update executors
 	if err := s.updateExecutors(); err != nil {

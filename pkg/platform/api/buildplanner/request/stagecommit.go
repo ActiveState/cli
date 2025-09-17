@@ -67,6 +67,7 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID!, $descri
               namespace
               version
               licenses
+              url
             }
           }
           steps: steps {
@@ -159,14 +160,14 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID!, $descri
           }
         }
         ... on Error {
+          __typename
           message
         }
-        ... on PlanningError {
-          message
+        ... on ErrorWithSubErrors {
+          __typename
           subErrors {
             __typename
             ... on GenericSolveError {
-              path
               message
               isTransient
               validationErrors {
@@ -175,7 +176,6 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID!, $descri
               }
             }
             ... on RemediableSolveError {
-              path
               message
               isTransient
               errorType
@@ -183,16 +183,6 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID!, $descri
                 error
                 jsonPath
               }
-              suggestedRemediations {
-                remediationType
-                command
-                parameters
-              }
-            }
-            ... on TargetNotFound {
-              message
-              requestedTarget
-              possibleTargets
             }
           }
         }
@@ -202,41 +192,27 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID!, $descri
       __typename
       message
     }
-    ... on NotFound {
-      __typename
-      message
-      type
-      resource
-      mayNeedAuthentication
-    }
-    ... on ParseError {
-      __typename
-      message
-      path
-    }
-    ... on Forbidden {
-      __typename
-      operation
-      message
-      resource
-    }
-    ... on HeadOnBranchMoved {
-      __typename
-      commitId
-      branchId
-      message
-    }
-    ... on NoChangeSinceLastCommit {
-      __typename
-      commitId
-      message
-    }
-    ... on ValidationError {
+    ... on ErrorWithSubErrors {
       __typename
       subErrors {
         __typename
-        message
-        buildExprPath
+        ... on GenericSolveError {
+          message
+          isTransient
+          validationErrors {
+            error
+            jsonPath
+          }
+        }
+        ... on RemediableSolveError {
+          message
+          isTransient
+          errorType
+          validationErrors {
+            error
+            jsonPath
+          }
+        }
       }
     }
   }

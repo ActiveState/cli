@@ -52,6 +52,10 @@ func (m *Mediator) Notice(v interface{}) {
 	m.Outputer.Notice(v)
 }
 
+func (m *Mediator) History() *OutputHistory {
+	return m.Outputer.History()
+}
+
 func mediatorValue(v interface{}, format Format) interface{} {
 	if format.IsStructured() {
 		if vt, ok := v.(StructuredMarshaller); ok {

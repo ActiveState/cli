@@ -123,6 +123,8 @@ func (u *UsersValue) Type() string {
 // - <name>
 // - <namespace>/<name>
 // - <namespace>/<name>@<version>
+// - <namespace>:<name>
+// - <namespace>:<name>@<version>
 type PackageValue struct {
 	Namespace string `json:"namespace"`
 	Name      string `json:"name"`
@@ -137,7 +139,7 @@ func (p *PackageValue) String() string {
 	}
 	name := p.Name
 	if p.Namespace != "" {
-		name = fmt.Sprintf("%s/%s", p.Namespace, p.Name)
+		name = fmt.Sprintf("%s:%s", p.Namespace, p.Name)
 	}
 	if p.Version == "" {
 		return name
@@ -151,13 +153,18 @@ func (p *PackageValue) Set(s string) error {
 		p.Version = strings.TrimSpace(v[1])
 		s = v[0]
 	}
-	if !strings.Contains(s, "/") {
+	switch {
+	case strings.Contains(s, ":"):
+		namespace, name, _ := strings.Cut(s, ":")
+		p.Namespace = strings.TrimSpace(namespace)
+		p.Name = strings.TrimSpace(name)
+	case strings.Contains(s, "/"):
+		v := strings.Split(s, "/")
+		p.Namespace = strings.TrimSpace(strings.Join(v[0:len(v)-1], "/"))
+		p.Name = strings.TrimSpace(v[len(v)-1])
+	default:
 		p.Name = strings.TrimSpace(s)
-		return nil
 	}
-	v := strings.Split(s, "/")
-	p.Namespace = strings.TrimSpace(strings.Join(v[0:len(v)-1], "/"))
-	p.Name = strings.TrimSpace(v[len(v)-1])
 	return nil
 }
 
@@ -257,10 +264,15 @@ func (p *PackagesValueNoVersion) Type() string {
 	return "packages"
 }
 
+const (
+	tsNow     = "now"     // Bleeding edge - ie. time of most recent revision
+	tsDynamic = "dynamic" // Beyond bleeding edge - ie. pull in ingredients as needed
+	tsPresent = "present" // Platform present - ie. when BE moved the timestamp forward
+)
+
 type TimeValue struct {
 	raw  string
 	Time *time.Time
-	now  bool
 }
 
 var _ FlagMarshaler = &TimeValue{}
@@ -271,14 +283,13 @@ func (u *TimeValue) String() string {
 
 func (u *TimeValue) Set(v string) error {
 	u.raw = v
-	if v != "now" {
+	if v != tsNow && v != tsDynamic && v != tsPresent {
 		tsv, err := time.Parse(time.RFC3339, v)
 		if err != nil {
 			return locale.WrapInputError(err, "timeflag_format", "Invalid timestamp: Should be RFC3339 formatted.")
 		}
 		u.Time = &tsv
 	}
-	u.now = v == "now"
 	return nil
 }
 
@@ -286,8 +297,20 @@ func (u *TimeValue) Type() string {
 	return "timestamp"
 }
 
-func (u *TimeValue) Now() bool {
-	return u.now
+func (u *TimeValue) IsValid() bool {
+	return u.raw != "" || u.Time != nil
+}
+
+func (u *TimeValue) IsNow() bool {
+	return u.raw == tsNow
+}
+
+func (u *TimeValue) IsDynamic() bool {
+	return u.raw == tsDynamic
+}
+
+func (u *TimeValue) IsPresent() bool {
+	return u.raw == tsPresent || u.raw == ""
 }
 
 type IntValue struct {

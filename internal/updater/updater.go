@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils"
@@ -33,6 +34,10 @@ const (
 	CfgKeyInstallVersion = "state_tool_installer_version"
 	InstallerName        = "state-installer" + osutils.ExeExtension
 )
+
+func init() {
+	configMediator.RegisterOption(constants.UpdateEndpointConfig, configMediator.String, "")
+}
 
 type ErrorInProgress struct{ *locale.LocalizedError }
 
@@ -101,22 +106,40 @@ type UpdateInstaller struct {
 
 // NewUpdateInstallerByOrigin returns an instance of Update. Allowing origin to
 // be set is useful for testing.
-func NewUpdateInstallerByOrigin(an analytics.Dispatcher, origin *Origin, avUpdate *AvailableUpdate) *UpdateInstaller {
-	apiUpdateURL := constants.APIUpdateURL
-	if url, ok := os.LookupEnv("_TEST_UPDATE_URL"); ok {
-		apiUpdateURL = url
-	}
-
-	return &UpdateInstaller{
+func NewUpdateInstallerByOrigin(cfg Configurable, an analytics.Dispatcher, origin *Origin, avUpdate *AvailableUpdate) *UpdateInstaller {
+	updater := &UpdateInstaller{
 		AvailableUpdate: avUpdate,
 		Origin:          origin,
-		url:             apiUpdateURL + "/" + avUpdate.Path,
+		url:             getAPIUpdateURL(cfg, avUpdate.Path),
 		an:              an,
 	}
+
+	configMediator.AddListener(constants.UpdateEndpointConfig, func() {
+		updater.url = getAPIUpdateURL(cfg, avUpdate.Path)
+	})
+
+	return updater
 }
 
-func NewUpdateInstaller(an analytics.Dispatcher, avUpdate *AvailableUpdate) *UpdateInstaller {
-	return NewUpdateInstallerByOrigin(an, NewOriginDefault(), avUpdate)
+func NewUpdateInstaller(cfg Configurable, an analytics.Dispatcher, avUpdate *AvailableUpdate) *UpdateInstaller {
+	return NewUpdateInstallerByOrigin(cfg, an, NewOriginDefault(), avUpdate)
+}
+
+func getAPIUpdateURL(cfg Configurable, path string) string {
+	var apiUpdateURL string
+
+	envUrl := os.Getenv(constants.TestUpdateURLEnvVarName)
+	cfgUrl := cfg.GetString(constants.UpdateEndpointConfig)
+	switch {
+	case envUrl != "":
+		apiUpdateURL = envUrl
+	case cfgUrl != "":
+		apiUpdateURL = cfgUrl
+	default:
+		apiUpdateURL = constants.APIUpdateURL
+	}
+
+	return apiUpdateURL + "/" + path
 }
 
 func (u *UpdateInstaller) ShouldInstall() bool {
@@ -207,10 +230,7 @@ func (u *UpdateInstaller) InstallBlocking(installTargetPath string, args ...stri
 		return errs.Wrap(err, "Could not check if State Tool was installed as admin")
 	}
 
-	appdata, err := storage.AppDataPath()
-	if err != nil {
-		return errs.Wrap(err, "Could not detect appdata path")
-	}
+	appdata := storage.AppDataPath()
 
 	// Protect against multiple updates happening simultaneously
 	lockFile := filepath.Join(appdata, "install.lock")

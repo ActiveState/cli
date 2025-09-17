@@ -36,11 +36,13 @@ jobs:
     strategy:
       matrix:
         go-version:
-          - 1.22.12
+          - 1.24.6
         sys:
-          - {os: ubuntu-latest}
-          - {os: macos-13, shell: zsh}
-          - {os: windows-2019}
+          - { os: ubuntu-latest }
+          - { os: macos-13, shell: zsh }
+          - { os: macos-latest, shell: zsh }
+          - { os: windows-2025 }
+          - { os: ubuntu-24.04-arm }
       fail-fast: false
     runs-on: ${{ matrix.sys.os }}
     env:
@@ -74,29 +76,30 @@ jobs:
 
       # === Install gotestfmt ===
       - name: Set up gotestfmt
-        uses: gotesttools/gotestfmt-action@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@latest
 
       - # === Install State Tool ===
         name: Install State Tool
         uses: ActiveState/setup-state-tool@v1
-        if: runner.os != 'Windows'
+        if: "!contains(matrix.sys.os, 'arm')"
 
-      - # === Install State Tool (Windows) ===
-        name: Install State Tool (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
+      - # === Install State Tool (ARM64) ===
+        name: Install State Tool (ARM64)
+        if: contains(matrix.sys.os, 'arm')
+        shell: bash
         run: |
-          Invoke-Expression -Command ".\installers\install.ps1 -n"
-          echo "$env:LOCALAPPDATA\ActiveState\StateTool\release\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          Invoke-Expression "$env:LOCALAPPDATA\ActiveState\StateTool\release\bin\state config set optin.unstable true"
+          ./installers/install.sh -b beta
+          echo "$HOME/.local/ActiveState/StateTool/beta/bin" >> $GITHUB_PATH
+          "$HOME/.local/ActiveState/StateTool/beta/bin/state" config set optin.unstable true
 
       - # === Setup ===
         name: Setup
         shell: bash
         run: |
-          bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+          arch="amd64"
+          if [[ ${{ contains(matrix.sys.os, 'arm') }} = true ]]; then arch="arm64"; fi
+          bin=$(pwd)/.github/deps/${{ runner.os }}/$arch/bin
           echo "Adding $bin to PATH"
           echo "$bin" >> $GITHUB_PATH
 
@@ -135,7 +138,6 @@ jobs:
         shell: bash
         timeout-minutes: 15
         run: |
-          export PATH="$(pwd)/.github/deps/${{ runner.os }}/bin:$PATH"
           parallelize "$(cat <<'EOF'
           [
             {
@@ -169,13 +171,15 @@ jobs:
             {
                 "ID": "Build-Executor",
                 "Args": ["state", "run", "build-exec"]
+            },
+            {
+                "ID": "Build-MCP",
+                "Args": ["state", "run", "build-mcp"]
             }
           ]
           EOF
           )"
         env:
-          CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
-          MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
@@ -187,12 +191,19 @@ jobs:
         if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\", \"refs/heads/master\"]'), github.ref) && !startsWith(github.event.pull_request.head.ref, 'version/')"
         run: parallelize results Check-Format
 
+      - # === Raw Unit Tests ===
+        name: Raw Unit Tests
+        id: raw_unit_tests
+        shell: bash
+        run: parallelize results Unit-Tests
+        continue-on-error: true
+
       - # === Unit Tests ===
         name: Unit Tests
         id: unit_tests
         shell: bash
         run: parallelize results Unit-Tests | gotestfmt -hide empty-packages
-        continue-on-error: ${{ github.event_name != 'schedule' }}
+        continue-on-error: true # This is captured by the "Check if Unit Tests Failed" step
 
       - # === "Build: CLI" ===
         name: "Build: CLI"
@@ -224,41 +235,10 @@ jobs:
         shell: bash
         run: parallelize results Build-Executor
 
-      - # === Prepare Windows Cert ===
-        name: Prepare Windows Cert
+      - # === "Build: MCP" ===
+        name: "Build: MCP"
         shell: bash
-        if: runner.os == 'Windows'
-        run: |
-          echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
-        env:
-          MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
-
-      - # === Sign Binaries (Windows only) ===
-        name: Sign Binaries (Windows only)
-        shell: bash
-        if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
-        run: |
-          export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
-
-          signtool.exe sign -d "ActiveState State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state.exe
-          signtool.exe sign -d "ActiveState State Service" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe
-          signtool.exe sign -d "ActiveState State Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe
-          signtool.exe sign -d "ActiveState State Tool Remote Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-remote-installer.exe
-        env:
-          CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
-
-      - # === Sign Install Scripts (Windows only) ===
-        name: Sign Install Scripts (Windows only)
-        shell: powershell
-        if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
-        run: |
-          $branchInfix = $Env:GITHUB_REF.Replace("refs/heads/", "").Replace("release", "")
-          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-          $cert.Import('Cert.p12',$env:CODE_SIGNING_PASSWD,'DefaultKeySet')
-          Set-AuthenticodeSignature -FilePath build\installers\$branchInfix\install.ps1 -Certificate $cert
-          Set-AuthenticodeSignature -FilePath build\installers\$branchInfix\legacy-install.ps1 -Certificate $cert
-        env:
-          CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
+        run: parallelize results Build-MCP
 
       - # === Generate Update ===
         name: Generate Update
@@ -299,6 +279,7 @@ jobs:
             fi
           fi
 
+          echo "Deploying for integration tests"
           state run deploy-updates
           state run deploy-installers
           state run deploy-remote-installer
@@ -335,6 +316,10 @@ jobs:
             fi
           else
             TEST_SUITE_TAGS="all"
+            if [[ ${{ contains(matrix.sys.os, 'arm') }} = true ]]; then
+              echo "Skipping integration tests on ARM"
+              exit 0
+            fi
           fi
 
           echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means every test not specifically tagged)"
@@ -352,9 +337,9 @@ jobs:
           INTEGRATION_TEST_TOKEN: ${{ secrets.INTEGRATION_TEST_TOKEN }}
           PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
 
-      - # === Fail If Unscheduled Unit Tests Failed (Expand 'Unit Tests' above for more information) ===
-        name: Fail If Unscheduled Unit Tests Failed
-        if: github.event_name != 'schedule' && steps.unit_tests.outcome == 'failure'
+      - # === Check if Unit Tests Failed ===
+        name: Check if Unit Tests Failed
+        if: steps.unit_tests.outcome == 'failure'
         shell: bash
         run: exit 1
 
@@ -436,7 +421,7 @@ jobs:
     name: Deploy
     needs:
       - scan
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       ACTIVESTATE_CI: true
       SHELL: bash
@@ -458,7 +443,7 @@ jobs:
         name: Install Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.22.x
+          go-version: 1.23.x
 
       - # === Install State Tool ===
         name: Install State Tool
@@ -508,15 +493,26 @@ jobs:
         name: Deploy
         shell: bash
         run: |
-          state run deploy-updates
-          state run deploy-installers
-          state run deploy-remote-installer
+          # Deploy to staging for release branches, regular deploy for others
+          if [[ "$GITHUB_REF" == "refs/heads/beta" || "$GITHUB_REF" == "refs/heads/release" || "$GITHUB_REF" =~ ^refs/heads/LTS ]]; then
+            echo "Deploying to staging directory for release branch: $GITHUB_REF"
+            DEPLOY_TO_STAGING=true state run deploy-updates
+            DEPLOY_TO_STAGING=true state run deploy-installers
+            DEPLOY_TO_STAGING=true state run deploy-remote-installer
+          else
+            echo "Deploying normally for non-release branch: $GITHUB_REF"
+            state run deploy-updates
+            state run deploy-installers
+            state run deploy-remote-installer
+          fi
 
       - # === Cleanup Session Artifacts ===
         name: Cleanup Session Artifacts
         uses: geekyeggo/delete-artifact@v5
         with:
           name: |
-            session-build-ubuntu-20.04
-            session-build-macos-11
-            session-build-windows-2019
+            session-build-ubuntu-latest
+            session-build-macos-13
+            session-build-macos-latest
+            session-build-windows-2025
+            session-build-ubuntu-24.04-arm

@@ -109,6 +109,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 
 // Test pushing without permission, and choosing to create a new project
 func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
+	suite.T().Skip("Cannot create new unprivileged users") // DX-3190
 	if runtime.GOOS == "windows" {
 		suite.T().Skip("Skipped on Windows for now because SendKeyDown() doesnt work (regardless of bash/cmd)")
 	}
@@ -116,7 +117,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	suite.OnlyRunForTags(tagsuite.Push)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	user := ts.CreateNewUser()
+	ts.LoginAsPersistentUser()
 	pname := strutils.UUID()
 
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
@@ -155,12 +156,11 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	cp.SendLine(pname.String())
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
-	// Note: no need for ts.NotifyProjectCreated because newly created users and their projects are
-	// auto-cleaned by e2e.
+	ts.NotifyProjectCreated(e2e.PersistentUsername, pname.String())
 
 	pjfile, err = projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	suite.Require().Contains(pjfile.Project, user.Username)
+	suite.Require().Contains(pjfile.Project, e2e.PersistentUsername)
 	suite.Require().Contains(pjfile.Project, pname.String())
 }
 
@@ -259,12 +259,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoChanges() {
 	ts.LoginAsPersistentUser()
 	cp := ts.Spawn("push")
 	cp.Expect("no local changes to push")
-	cp.ExpectExitCode(1)
-	ts.IgnoreLogErrors()
-
-	if strings.Count(cp.Snapshot(), " x ") != 1 {
-		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
-	}
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PushIntegrationTestSuite) TestPush_NameInUse() {

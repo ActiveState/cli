@@ -13,12 +13,20 @@ func WithBuildlogFilePath(path string) SetOpt {
 	return func(opts *Opts) { opts.BuildlogFilePath = path }
 }
 
+func WithBuildProgressUrl(url string) SetOpt {
+	return func(opts *Opts) { opts.BuildProgressUrl = url }
+}
+
 func WithPreferredLibcVersion(version string) SetOpt {
 	return func(opts *Opts) { opts.PreferredLibcVersion = version }
 }
 
 func WithPortable() SetOpt {
 	return func(opts *Opts) { opts.Portable = true }
+}
+
+func WithCacheSize(mb int) SetOpt {
+	return func(opts *Opts) { opts.CacheSize = mb }
 }
 
 func WithArchive(dir string, platformID strfmt.UUID, ext string) SetOpt {

@@ -33,6 +33,9 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 		shells = []e2e.Shell{e2e.Bash, e2e.Fish, e2e.Tcsh, e2e.Zsh}
 	case "darwin":
 		shells = []e2e.Shell{e2e.Bash, e2e.Fish, e2e.Zsh, e2e.Tcsh}
+		if runtime.GOARCH == "arm64" {
+			shells = []e2e.Shell{e2e.Bash, e2e.Zsh, e2e.Tcsh} // DX-3257
+		}
 	case "windows":
 		shells = []e2e.Shell{e2e.Bash, e2e.Cmd}
 	}
@@ -63,7 +66,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 				e2e.OptAppendEnv(constants.OverrideShellEnvVarName+"="),
 			)
 			cp.SendLine(e2e.QuoteCommand(shell, ts.ExecutablePath(), "checkout", "ActiveState-CLI/small-python", string(shell)))
-			cp.Expect("Checked out project")
+			cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 			cp.SendLine("exit")
 			if shell != e2e.Cmd {
 				cp.ExpectExitCode(0)

@@ -29,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/updater"
+	"golang.org/x/term"
 )
 
 type Params struct {
@@ -36,6 +37,7 @@ type Params struct {
 	force          bool
 	version        string
 	nonInteractive bool
+	configSettings []string
 }
 
 func newParams() *Params {
@@ -57,13 +59,18 @@ func main() {
 			exitCode = 1
 		}
 
-		if err := cfg.Close(); err != nil {
-			logging.Error("Failed to close config: %w", err)
+		ev := []func(){rollbar.Wait, logging.Close}
+		if an != nil {
+			ev = append(ev, an.Wait)
 		}
-
-		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, an.Wait, logging.Close); err != nil {
+		if err := events.WaitForEvents(5*time.Second, ev...); err != nil {
 			logging.Warning("state-remote-installer failed to wait for events: %v", err)
 		}
+
+		if cfg != nil {
+			events.Close("config", cfg.Close)
+		}
+
 		os.Exit(exitCode)
 	}()
 
@@ -83,6 +90,18 @@ func main() {
 		exitCode = 1
 	}
 
+	// Set config as early as possible to ensure we respect the values
+	configArgs := []string{}
+	for i, arg := range os.Args[1:] {
+		if arg == "--config-set" && i+1 < len(os.Args[1:]) {
+			configArgs = append(configArgs, os.Args[1:][i+1])
+		}
+	}
+
+	if err := cfg.ApplyArgs(configArgs); err != nil {
+		logging.Warning("Could not apply config settings before analytics: %s", errs.JoinMessage(err))
+	}
+
 	rollbar.SetConfig(cfg)
 
 	// Set up output handler
@@ -90,7 +109,7 @@ func main() {
 		OutWriter:   os.Stdout,
 		ErrWriter:   os.Stderr,
 		Colored:     true,
-		Interactive: false,
+		Interactive: term.IsTerminal(int(os.Stdin.Fd())),
 	})
 	if err != nil {
 		logging.Error("Could not set up output handler: " + errs.JoinMessage(err))
@@ -116,7 +135,7 @@ func main() {
 	an = sync.New(anaConst.SrcStateRemoteInstaller, cfg, nil, out)
 
 	// Set up prompter
-	prompter := prompt.New(true, an)
+	prompter := prompt.New(out, an)
 
 	params := newParams()
 	cmd := captain.NewCommand(
@@ -153,6 +172,11 @@ func main() {
 				Hidden:    true,
 				Value:     &params.nonInteractive,
 			},
+			{
+				Name:        "config-set",
+				Description: "Set config values in 'key=value' format, can be specified multiple times",
+				Value:       &params.configSettings,
+			},
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
@@ -172,11 +196,15 @@ func main() {
 }
 
 func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
+	if params.nonInteractive {
+		prompt.SetInteractive(false)
+	}
+	defaultChoice := params.nonInteractive
 	msg := locale.Tr("tos_disclaimer", constants.TermsOfServiceURLLatest)
 	msg += locale.Tr("tos_disclaimer_prompt", constants.TermsOfServiceURLLatest)
-	cont, err := prompt.Confirm(locale.Tr("install_remote_title"), msg, ptr.To(true))
+	cont, err := prompt.Confirm(locale.Tr("install_remote_title"), msg, &defaultChoice, nil)
 	if err != nil {
-		return errs.Wrap(err, "Could not prompt for confirmation")
+		return errs.Wrap(err, "Not confirmed")
 	}
 
 	if !cont {
@@ -203,7 +231,7 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 		version = fmt.Sprintf("%s (%s)", version, channel)
 	}
 
-	update := updater.NewUpdateInstaller(an, availableUpdate)
+	update := updater.NewUpdateInstaller(cfg, an, availableUpdate)
 	out.Fprint(os.Stdout, locale.Tl("remote_install_downloading", "• Downloading State Tool version [NOTICE]{{.V0}}[/RESET]... ", version))
 	tmpDir, err := update.DownloadAndUnpack()
 	if err != nil {
@@ -218,6 +246,11 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	}
 	if params.force {
 		args = append(args, "--force") // forward to installer
+	}
+	if len(params.configSettings) > 0 {
+		for _, setting := range params.configSettings {
+			args = append(args, "--config-set", setting)
+		}
 	}
 	env := []string{
 		constants.InstallerNoSubshell + "=true",

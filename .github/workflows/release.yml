@@ -29,9 +29,9 @@ jobs:
 
       - # === Install Go ===
         name: Install Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.22.x'
+          go-version: '1.23.x'
 
       - # === Install State Tool ===
         name: Install State Tool
@@ -48,11 +48,7 @@ jobs:
         shell: bash
         timeout-minutes: 15
         run: |
-          echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
-          export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
-
           GOOS=windows state run build-remote-installer
-          signtool.exe sign -d "ActiveState State Tool Remote Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-remote-installer.exe
           state run generate-remote-install-deployment windows amd64
 
           GOOS=linux state run build-remote-installer
@@ -60,13 +56,10 @@ jobs:
 
           GOOS=darwin state run build-remote-installer
           state run generate-remote-install-deployment darwin amd64
-        env:
-          CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
-          MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
 
       - # === Configure AWS credentials ==
         name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: ${{ env.AWS_ROLE_SESSION_NAME }}

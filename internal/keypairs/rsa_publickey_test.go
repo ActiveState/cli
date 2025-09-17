@@ -50,7 +50,7 @@ func (suite *RSAPublicKeyTestSuite) TestEncryptsAndEncodes() {
 }
 
 func (suite *RSAPublicKeyTestSuite) TestParsePublicKey() {
-	kp, err := keypairs.GenerateRSA(1024)
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
 	suite.Require().Nil(err)
 	pubKeyPEM, err := kp.EncodePublicKey()
 	suite.Require().Nil(err)

@@ -10,6 +10,8 @@ constants:
     value: ./cmd/state-installer
   - name: EXECUTOR_PKGS
     value: ./cmd/state-exec
+  - name: MCP_PKGS
+    value: ./cmd/state-mcp
   - name: BUILD_TARGET_PREFIX_DIR
     value: ./build
   - name: BUILD_TARGET
@@ -29,6 +31,9 @@ constants:
     value: state-installer
   - name: BUILD_REMOTE_INSTALLER_TARGET
     value: state-remote-installer
+  - name: BUILD_MCP_TARGET
+    if: ne .OS.Name "Windows"
+    value: state-mcp
   - name: INTEGRATION_TEST_REGEX
     value: 'integration\|automation'
   - name: SET_ENV
@@ -39,9 +44,7 @@ constants:
       export CGO_ENABLED=0
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
       BUILD_EXEC_TARGET=$constants.BUILD_EXEC_TARGET
-
-      # add the GOARCH as infix to BUILD_TARGET_DIR if not amd64
-      BUILD_TARGET_DIR=$constants.BUILD_TARGET_PREFIX_DIR/${GOARCH#amd64}
+      BUILD_TARGET_DIR=$constants.BUILD_TARGET_PREFIX_DIR/
   - name: SCRIPT_EXT
     if: ne .OS.Name "Windows"
     value: .sh
@@ -52,7 +55,7 @@ scripts:
     if: ne .Shell "cmd"
     value: |
       if ! type "go" &> /dev/null; then
-        echo "go is not installed. Please install Go version 1.22 or above."
+        echo "go is not installed. Please install Go version 1.23 or above."
         exit 1
       fi
       if ! type "golangci-lint" &> /dev/null; then
@@ -72,12 +75,6 @@ scripts:
         echo "goversioninfo was not found on your PATH. Installing .."
         GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.0
       fi
-  - name: install-deps-os
-    language: bash
-    standalone: true
-    if: ne .OS.Name "Linux"
-    description: Install OS specific deps
-    value: ""
   - name: install-deps-ci
     language: bash
     standalone: true
@@ -112,18 +109,9 @@ scripts:
         go generate
         popd > /dev/null
       fi
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
-  - name: build-for
-    language: bash
-    standalone: true
-    description: Builds the project with the specified OS as the target OS. (valid values darwin, linux, windows)
-    value: |
-      set -e
-      $constants.SET_ENV
-      export GOOS=${1}
-      export GOARCH=amd64
-      [ -z "${2}" ] && >&2 echo "must provide output file as 2nd arg" && exit 1
-      go build -tags "internal $GO_BUILD_TAGS" -o ${2} $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
+      TARGET=$BUILD_TARGET_DIR/$constants.BUILD_TARGET
+      echo "Building $TARGET"
+      go build -tags "$GO_BUILD_TAGS" -o $TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-svc
     language: bash
     standalone: true
@@ -138,7 +126,9 @@ scripts:
         go generate
         popd > /dev/null
       fi
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.SVC_BUILDFLAGS $constants.DAEMON_PKGS
+      TARGET=$BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET
+      echo "Building $TARGET"
+      go build -tags "$GO_BUILD_TAGS" -o $TARGET $constants.SVC_BUILDFLAGS $constants.DAEMON_PKGS
   - name: build-exec
     description: Builds the State Executor application
     language: bash
@@ -146,8 +136,19 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
-
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_EXEC_TARGET $constants.CLI_BUILDFLAGS $constants.EXECUTOR_PKGS
+      TARGET=$BUILD_TARGET_DIR/$constants.BUILD_EXEC_TARGET
+      echo "Building $TARGET"
+      go build -tags "$GO_BUILD_TAGS" -o $TARGET $constants.CLI_BUILDFLAGS $constants.EXECUTOR_PKGS
+  - name: build-mcp
+    description: Builds the State MCP application
+    language: bash
+    standalone: true
+    value: |
+      set -e
+      $constants.SET_ENV
+      TARGET=$BUILD_TARGET_DIR/$constants.BUILD_MCP_TARGET
+      echo "Building $TARGET"
+      go build -tags "$GO_BUILD_TAGS" -o $TARGET $constants.CLI_BUILDFLAGS $constants.MCP_PKGS
   - name: build-all
     description: Builds all our tools
     language: bash
@@ -164,6 +165,8 @@ scripts:
       $scripts.build-svc.path()
       echo "Building State Executor"
       $scripts.build-exec.path()
+      echo "Building State MCP"
+      $scripts.build-mcp.path()
   - name: build-installer
     language: bash
     standalone: true
@@ -205,7 +208,15 @@ scripts:
 
       echo "If using tokens make sure to run 'go run extras/aws-mfa-auth/main.go' on TheHomeRepot first."
 
-      go run scripts/ci/s3-deployer/main.go ${constants.BUILD_TARGET_PREFIX_DIR}/update us-east-1 state-tool update/state
+      PREFIX="update/state"
+      if [ "$DEPLOY_TO_STAGING" = "true" ]; then
+        PREFIX="staging/$PREFIX"
+        echo "Deploying updates to staging: $PREFIX"
+      else
+        echo "Deploying updates to production: $PREFIX"
+      fi
+
+      go run scripts/ci/s3-deployer/main.go ${constants.BUILD_TARGET_PREFIX_DIR}/update us-east-1 state-tool $PREFIX
   - name: build-install-scripts
     language: bash
     standalone: true
@@ -244,67 +255,64 @@ scripts:
   - name: deploy-installers
     language: bash
     standalone: true
-    description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
+    description: Deploys installer files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
-      go run scripts/ci/s3-deployer/main.go build/installers us-east-1 state-tool update/state
+      PREFIX="update/state"
+      if [ "$DEPLOY_TO_STAGING" = "true" ]; then
+        PREFIX="staging/$PREFIX"
+        echo "Deploying installers to staging: $PREFIX"
+      else
+        echo "Deploying installers to production: $PREFIX"
+      fi
+
+      go run scripts/ci/s3-deployer/main.go build/installers us-east-1 state-tool $PREFIX
   - name: deploy-remote-installer
     language: bash
     standalone: true
     value: |
       set -e
       $constants.SET_ENV
-      go run scripts/ci/s3-deployer/main.go $BUILD_TARGET_DIR/remote-installer us-east-1 state-tool remote-installer
+      
+      PREFIX="remote-installer"
+      if [ "$DEPLOY_TO_STAGING" = "true" ]; then
+        PREFIX="staging/$PREFIX"
+        echo "Deploying remote installer to staging: $PREFIX"
+      else
+        echo "Deploying remote installer to production: $PREFIX"
+      fi
+      
+      go run scripts/ci/s3-deployer/main.go $BUILD_TARGET_DIR/remote-installer us-east-1 state-tool $PREFIX
+  - name: promote-staging-to-production
+    language: bash
+    standalone: true
+    description: Promotes files from staging directory to production. This should be run manually after Windows binaries have been signed.
+    value: |
+      set -e
+      echo "Promoting staging files to production..."
+      echo "WARNING: This will move all files from staging/ to production. Make sure Windows binaries have been signed!"
+      read -p "Are you sure you want to continue? (y/N): " -n 1 -r
+      echo
+      if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Promotion cancelled."
+        exit 1
+      fi
+      
+      go run scripts/ci/s3-promoter/main.go us-east-1 state-tool
   - name: build-workflow-assets
     language: bash
     standalone: true
     description: Generates our github workflows
     value: |
-      $scripts.build-for.path() "windows" ./.github/deps/Windows/bin/state.exe
-      $scripts.build-for.path() "linux" ./.github/deps/Linux/bin/state
-      $scripts.build-for.path() "darwin" ./.github/deps/macOS/bin/state
-
-      GOOS=windows go build -o .github/deps/Windows/bin/parallelize.exe github.com/ActiveState/cli/scripts/ci/parallelize/
-      GOOS=linux go build -o .github/deps/Linux/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
-      GOOS=darwin go build -o .github/deps/macOS/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
-  - name: update-workflow-assets
-    language: bash
-    standalone: true
-    description: Generates our github workflows
-    value: |
-      [ -z "${2}" ] && >&2 echo "Usage: update-workflow-assets [branch] [version]" && exit 1
-
-      tmpDir=$(mktemp -d)
-      pushd $tmpDir
-      wget https://state-tool.s3.amazonaws.com/update/state/${1}/${2}/darwin-amd64/state-darwin-amd64-${2}.tar.gz
-      tar xzf state-darwin-amd64-${2}.tar.gz
-      cp -Rfv state-install/bin/state $project.path()/.github/deps/macOS/bin
-      cp -Rfv state-install/bin/state-svc $project.path()/.github/deps/macOS/bin
-      popd
-      rm -Rf $tmpDir
-
-      tmpDir=$(mktemp -d)
-      pushd $tmpDir
-      wget https://state-tool.s3.amazonaws.com/update/state/${1}/${2}/linux-amd64/state-linux-amd64-${2}.tar.gz
-      tar xzf state-linux-amd64-${2}.tar.gz
-      cp -Rfv state-install/bin/state $project.path()/.github/deps/Linux/bin
-      cp -Rfv state-install/bin/state-svc $project.path()/.github/deps/Linux/bin
-      popd
-      rm -Rf $tmpDir
-
-      tmpDir=$(mktemp -d)
-      pushd $tmpDir
-      wget https://state-tool.s3.amazonaws.com/update/state/${1}/${2}/windows-amd64/state-windows-amd64-${2}.zip
-      unzip state-windows-amd64-${2}.zip
-      cp -Rfv state-install/bin/state.exe $project.path()/.github/deps/Windows/bin
-      cp -Rfv state-install/bin/state-svc.exe $project.path()/.github/deps/Windows/bin
-      popd
-      rm -Rf $tmpDir
+      GOOS=windows go build -o .github/deps/Windows/amd64/bin/parallelize.exe github.com/ActiveState/cli/scripts/ci/parallelize/
+      GOOS=linux go build -o .github/deps/Linux/amd64/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
+      GOOS=linux GOARCH=arm64 go build -o .github/deps/Linux/arm64/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
+      GOOS=darwin GOARCH=amd64 go build -o .github/deps/macOS/amd64/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
   - name: test
     language: bash
     standalone: true
     description: Runs unit tests (not integration tests)
     value: |
-      go test -v `go list ./... | grep -v integration | grep -v automation | grep -v expect | grep -v state-svc | grep -v state-offline` $@
+      go test -vet=off -v `go list ./... | grep -v integration | grep -v automation | grep -v expect | grep -v state-svc | grep -v state-offline` $@
   - name: integration-tests
     language: bash
     standalone: true
@@ -313,14 +321,14 @@ scripts:
       unset ACTIVESTATE_ACTIVATED
       export INTEGRATION_TEST_USERNAME=$secrets.project.INTEGRATION_TEST_USERNAME
       export INTEGRATION_TEST_PASSWORD=$secrets.project.INTEGRATION_TEST_PASSWORD
-      go test `go list ./... | grep "${INTEGRATION_TEST_REGEX}"` -v "${@:1}" -timeout 20m
+      go test -vet=off `go list ./... | grep "${INTEGRATION_TEST_REGEX}"` -v "${@:1}" -timeout 20m
   - name: integration-tests-build-check
     language: bash
     standalone: true
     description: Builds integration tests and removes the executable artifact(s).
     value: |
       out="x.test"
-      go list ./... | grep "${INTEGRATION_TEST_REGEX}" | xargs -L 1 go test -o $out -c
+      go list ./... | grep "${INTEGRATION_TEST_REGEX}" | xargs -L 1 go test -vet=off -o $out -c
       [ -f $out ] && rm $out
   - name: clean
     language: bash
@@ -395,6 +403,11 @@ scripts:
         TARGET_BRANCH="master"
       fi
 
+      if [ "$TARGET_BRANCH" == "master" ]; then
+        echo "Target branch is master, not checking for newlines"
+        exit 0
+      fi
+
       git fetch --quiet origin $TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH
 
       CHANGED=$(git diff --name-only origin/$TARGET_BRANCH | grep -v testdata | grep -v vendor)
@@ -414,54 +427,6 @@ scripts:
       else
           echo "Success: All modified text files end with a newline."
       fi
-  - name: grab-mergecommits
-    language: bash
-    standalone: true
-    value: |
-      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
-      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
-      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
-      go run $project.path()/scripts/grab-mergecommits/main.go $1
-  - name: target-version-pr
-    language: bash
-    standalone: true
-    value: |
-      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
-      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
-      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
-      go run $project.path()/scripts/ci/target-version-pr/main.go $1
-  - name: create-version-pr
-    language: bash
-    standalone: true
-    value: |
-      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
-      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
-      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
-      go run $project.path()/scripts/create-version-pr/main.go $1
-  - name: propagate-pr
-    language: bash
-    standalone: true
-    value: |
-      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
-      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
-      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
-      go run $project.path()/scripts/ci/propagate-pr/main.go $1
-  - name: verify-pr
-    language: bash
-    standalone: true
-    value: |
-      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
-      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
-      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
-      go run $project.path()/scripts/ci/verify-pr/main.go $1
-  - name: start-story
-    language: bash
-    standalone: true
-    value: |
-      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
-      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
-      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
-      go run $project.path()/scripts/start-story/main.go "$@"
   - name: ghapi
     language: bash
     standalone: true

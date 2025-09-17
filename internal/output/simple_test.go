@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSimple_Notice(t *testing.T) {
@@ -29,12 +30,13 @@ func TestSimple_Notice(t *testing.T) {
 			outWriter := &bytes.Buffer{}
 			errWriter := &bytes.Buffer{}
 
-			f := Simple{Plain{&Config{
+			f, err := NewSimple(&Config{
 				OutWriter:   outWriter,
 				ErrWriter:   errWriter,
 				Colored:     false,
 				Interactive: false,
-			}}}
+			})
+			require.NoError(t, err)
 
 			f.Notice(tt.args.value)
 			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
