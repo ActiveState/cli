@@ -151,6 +151,8 @@ func (l *fileHandler) Close() {
 		return
 	}
 
+	l.Emit(getContext("DEBUG", 1), "Closing logging handler")
+
 	close(l.quit)
 	l.wg.Wait()
 
