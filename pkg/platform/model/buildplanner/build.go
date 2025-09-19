@@ -182,28 +182,45 @@ func isWildcardVersion(version string) bool {
 	return strings.Contains(version, ".x") || strings.Contains(version, ".X")
 }
 
+func normalizeLeadingV(version string) string {
+	if version == "" {
+		return version
+	}
+	if version[0] == 'v' || version[0] == 'V' {
+		return version[1:]
+	}
+	return version
+}
+
 func VersionStringToRequirements(version string) ([]types.VersionRequirement, error) {
-	if isExactVersion(version) {
+	original := version
+	normalized := normalizeLeadingV(version)
+	originalHasV := len(original) > 0 && (original[0] == 'v' || original[0] == 'V')
+	if isExactVersion(normalized) {
 		return []types.VersionRequirement{{
 			types.VersionRequirementComparatorKey: "eq",
-			types.VersionRequirementVersionKey:    version,
+			types.VersionRequirementVersionKey:    original,
 		}}, nil
 	}
 
-	if !isWildcardVersion(version) {
+	if !isWildcardVersion(normalized) {
 		// Ask the Platform to translate a string like ">=1.2,<1.3" into a list of requirements.
 		// Note that:
 		// - The given requirement name does not matter; it is not looked up.
-		changeset, err := reqsimport.Init().Changeset([]byte("name "+version), "", "", "")
+		changeset, err := reqsimport.Init().Changeset([]byte("name "+normalized), "", "", "")
 		if err != nil {
 			return nil, locale.WrapInputError(err, "err_invalid_version_string", "Invalid version string")
 		}
 		requirements := []types.VersionRequirement{}
 		for _, change := range changeset {
 			for _, constraint := range change.VersionConstraints {
+				vr := constraint.Version
+				if originalHasV && vr != "" && vr[0] != 'v' && vr[0] != 'V' {
+					vr = "v" + vr
+				}
 				requirements = append(requirements, types.VersionRequirement{
 					types.VersionRequirementComparatorKey: constraint.Comparator,
-					types.VersionRequirementVersionKey:    constraint.Version,
+					types.VersionRequirementVersionKey:    vr,
 				})
 			}
 		}
@@ -214,7 +231,7 @@ func VersionStringToRequirements(version string) ([]types.VersionRequirement, er
 	// For example, given a version number of 3.10.x, constraints should be >= 3.10, < 3.11.
 	// Given 2.x, constraints should be >= 2, < 3.
 	requirements := []types.VersionRequirement{}
-	parts := strings.Split(version, ".")
+	parts := strings.Split(normalized, ".")
 	for i, part := range parts {
 		if part != "x" && part != "X" {
 			continue
@@ -222,18 +239,26 @@ func VersionStringToRequirements(version string) ([]types.VersionRequirement, er
 		if i == 0 {
 			return nil, locale.NewInputError("err_version_wildcard_start", "A version number cannot start with a wildcard")
 		}
+		gte := strings.Join(parts[:i], ".")
+		if originalHasV {
+			gte = "v" + gte
+		}
 		requirements = append(requirements, types.VersionRequirement{
 			types.VersionRequirementComparatorKey: types.ComparatorGTE,
-			types.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
+			types.VersionRequirementVersionKey:    gte,
 		})
 		previousPart, err := strconv.Atoi(parts[i-1])
 		if err != nil {
 			return nil, locale.WrapInputError(err, "err_version_number_expected", "Version parts are expected to be numeric")
 		}
 		parts[i-1] = strconv.Itoa(previousPart + 1)
+		lt := strings.Join(parts[:i], ".")
+		if originalHasV {
+			lt = "v" + lt
+		}
 		requirements = append(requirements, types.VersionRequirement{
 			types.VersionRequirementComparatorKey: types.ComparatorLT,
-			types.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
+			types.VersionRequirementVersionKey:    lt,
 		})
 	}
 	return requirements, nil

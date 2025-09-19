@@ -188,6 +188,10 @@ func (b *BuildPlan) IsBuildInProgress() bool {
 	return b.raw.Status == raw.Started || b.raw.Status == raw.Planned
 }
 
+func (b *BuildPlan) Status() string {
+	return b.raw.Status
+}
+
 // RequestedIngredients returns the resolved requirements of the buildplan as ingredients
 func (b *BuildPlan) RequestedIngredients() Ingredients {
 	ingredients := Ingredients{}

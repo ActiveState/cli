@@ -208,6 +208,9 @@ func Update(
 		}
 		buildPlan = commit.BuildPlan()
 
+		// Log build plan status
+		logging.Debug("Build plan status: %s", buildPlan.Status())
+
 		solveSpinner.Stop(locale.T("progress_success"))
 	}
 
