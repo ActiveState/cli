@@ -75,6 +75,12 @@ func UpdateAndReload(prime primeable, script *buildscript.BuildScript, oldCommit
 		if err := script.SetDynamic(false); err != nil {
 			return errs.Wrap(err, "Setting dynamic failed")
 		}
+		// StageCommitAndPoll needs to be called with atTime=now, not the previous script's atTime.
+		latest, err := model.FetchLatestRevisionTimeStamp(prime.Auth())
+		if err != nil {
+			return errs.Wrap(err, "Failed to fetch latest timestamp")
+		}
+		script.SetAtTime(latest, true)
 	}
 
 	commitParams := buildplanner.StageCommitParams{
