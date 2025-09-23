@@ -13,7 +13,7 @@ import (
 func ProcessBuildError(build *BuildResponse, fallbackMessage string) error {
 	logging.Debug("ProcessBuildError: build.Type=%s", build.Type)
 	if build.Type == types.PlanningErrorType {
-		return processPlanningError(build.Message, build.SubErrors)
+		return ProcessPlanningError(build.Message, build.SubErrors)
 	} else if build.Error == nil {
 		return errs.New(fallbackMessage)
 	}
@@ -21,7 +21,7 @@ func ProcessBuildError(build *BuildResponse, fallbackMessage string) error {
 	return locale.NewInputError("err_buildplanner_build", "Encountered error processing build response")
 }
 
-func processPlanningError(message string, subErrors []*BuildExprError) error {
+func ProcessPlanningError(message string, subErrors []*BuildExprError) error {
 	var errs []string
 	var isTransient bool
 

@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/pkg/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/response"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 )
 
 func (bp *BuildPlanner) Evaluate(org, project string, script *buildscript.BuildScript) error {
@@ -30,6 +31,12 @@ func (bp *BuildPlanner) Evaluate(org, project string, script *buildscript.BuildS
 			err = bp.client.Run(req, resp)
 			if err != nil {
 				return processBuildPlannerError(err, "Failed to evaluate build expression")
+			}
+			if response.IsErrorResponse(resp.Type) {
+				if resp.Type == types.PlanningErrorType {
+					return response.ProcessPlanningError(resp.Message, resp.SubErrors)
+				}
+				return locale.NewError("err_buildplanner_evaluate", "Encountered error evaluating build plan: {{.V0}}", resp.Message)
 			}
 			sessionId = resp.SessionID
 			if resp.Status != raw.Planning && resp.Status != raw.Started {
