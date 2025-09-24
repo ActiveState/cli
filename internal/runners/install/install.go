@@ -3,7 +3,6 @@ package install
 import (
 	"errors"
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
@@ -269,8 +268,6 @@ func (i *Install) resolveRequirements(packages captain.PackagesValue, ts time.Ti
 	return reqs, nil
 }
 
-var versionRe = regexp.MustCompile(`^\d(\.\d+)*$`)
-
 func resolveVersion(req *requirement) error {
 	version := req.Requested.Version
 
@@ -283,7 +280,7 @@ func resolveVersion(req *requirement) error {
 	// Verify that the version provided can be resolved
 	// Note: if the requirement does not have an ingredient, it is being dynamically imported, so
 	// we cannot resolve its versions yet.
-	if versionRe.MatchString(version) && req.Resolved.ingredient != nil {
+	if req.Resolved.ingredient != nil {
 		match := false
 		for _, knownVersion := range req.Resolved.ingredient.Versions {
 			if knownVersion.Version == version {
