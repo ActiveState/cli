@@ -40,7 +40,7 @@ First run `state run install-deps-dev` followed by `state run preprocess` if you
 * **Building:** `state run build`
   * The built executable will be stored in the `build` directory
   * If you modified assets or switched branches, you need to re-run `state run preprocess` first
-  * The firs time you are building, or if you modified modules outside the primary state binary, run `state run build-all` instead
+  * The first time you are building, or if you modified modules outside the primary state binary, run `state run build-all`
 * **Testing:**
   * **Unit tests\*:** `state run test`
   * **Integration tests:** `state run integration-tests`
