@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"runtime"
 	"testing"
 	"time"
 
@@ -31,6 +32,14 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 
 	// For development convenience, should not be committed without commenting out..
 	// os.Setenv(constants.APIHostEnvVarName, "pr13375.activestate.build")
+
+	// Set EDITOR environment variable for testing purposes
+	if runtime.GOOS == "windows" {
+		suite.Require().NoError(os.Setenv("EDITOR", "notepad.exe"))
+	} else {
+		suite.Require().NoError(os.Setenv("EDITOR", "nano"))
+	}
+	defer os.Unsetenv("EDITOR")
 
 	type input struct {
 		args          []string
@@ -136,7 +145,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 			},
 				expect{
 					[]string{},
-					"Expected file extension:",
+					"Expected file extension",
 					true,
 					1,
 					true,
