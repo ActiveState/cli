@@ -8,6 +8,7 @@ name: Build-Test-Deploy
       - beta
       - release
       - LTS*
+      - mcp
   pull_request:
     types:
       - labeled
@@ -188,7 +189,7 @@ jobs:
         name: Check Format
         id: check_format
         shell: bash
-        if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\", \"refs/heads/master\"]'), github.ref) && !startsWith(github.event.pull_request.head.ref, 'version/')"
+        if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\", \"refs/heads/master\", \"refs/heads/mcp\"]'), github.ref) && !startsWith(github.event.pull_request.head.ref, 'version/')"
         run: parallelize results Check-Format
 
       - # === Raw Unit Tests ===
@@ -261,7 +262,7 @@ jobs:
 
       - # === Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments. ===
         name: Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments.
-        if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\"]'), github.ref)"
+        if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\", \"refs/heads/mcp\"]'), github.ref)"
         shell: bash
         run: |
           if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
@@ -287,7 +288,7 @@ jobs:
       - # === Integration Tests ===
         name: Integration Tests
         id: integration_tests
-        if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\"]'), github.ref)"
+        if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\", \"refs/heads/mcp\"]'), github.ref)"
         shell: bash
         run: |
           if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
@@ -428,7 +429,7 @@ jobs:
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_SHA_OVERRIDE: ${{ github.event.pull_request.head.sha || github.sha }}
     timeout-minutes: 10
-    if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref) || startsWith(github.event.pull_request.head.ref, 'version/')
+    if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/LTS", "refs/heads/mcp"]'), github.ref) || startsWith(github.event.pull_request.head.ref, 'version/')
 
     # === Deploy Steps ===
     steps:
