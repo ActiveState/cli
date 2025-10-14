@@ -25,10 +25,10 @@ func (suite *CveIntegrationTestSuite) TestCve() {
 	cp.Expect("0b87e7a4-dc62-46fd-825b-9c35a53fe0a2")
 
 	cp.Expect("Vulnerabilities")
-	cp.Expect("CRITICAL")
+	cp.Expect("critical")
 	cp.Expect("Affected Packages")
 	cp.Expect("tensorflow")
-	cp.Expect("CRITICAL")
+	cp.Expect("critical")
 	cp.Expect("CVE-2019-16778")
 	cp.ExpectExitCode(0)
 
