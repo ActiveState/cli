@@ -27,6 +27,10 @@ var (
 		TagDependency,
 		false,
 	}
+	WalkViaBuilder = WalkStrategy{
+		TagBuilder,
+		true,
+	}
 )
 
 // WalkViaSteps walks the graph and reports on nodes it encounters
