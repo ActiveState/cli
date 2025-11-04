@@ -37,10 +37,14 @@ func (b *BuildPlan) hydrate() error {
 		}
 
 		// We have all the artifacts we're interested in now, but we still want to relate them to a source; ie. an ingredient.
+		// We also want to relate artifacts to their builders, because dynamically imported ingredients have a special installation process.
 		// This will also hydrate our requirements, because they are based on the source ID.
 		for _, artifact := range b.artifacts {
 			if err := b.hydrateWithIngredients(artifact, platformID, ingredientLookup); err != nil {
 				return errs.Wrap(err, "hydrating with ingredients failed")
+			}
+			if err := b.hydrateWithBuilders(artifact, artifactLookup); err != nil {
+				return errs.Wrap(err, "hydrating with builders failed")
 			}
 		}
 	}
@@ -197,6 +201,30 @@ func (b *BuildPlan) hydrateWithIngredients(artifact *Artifact, platformID *strfm
 		})
 	if err != nil {
 		return errs.Wrap(err, "error hydrating ingredients")
+	}
+
+	return nil
+}
+
+func (b *BuildPlan) hydrateWithBuilders(artifact *Artifact, artifactLookup map[strfmt.UUID]*Artifact) error {
+	err := b.raw.WalkViaSteps([]strfmt.UUID{artifact.ArtifactID}, raw.WalkViaBuilder, func(node interface{}, parent *raw.Artifact) error {
+		v, ok := node.(*raw.Artifact)
+		if !ok {
+			return nil // continue
+		}
+
+		builder, ok := artifactLookup[v.NodeID]
+		if !ok {
+			builder = createArtifact(v)
+			b.artifacts = append(b.artifacts, builder)
+			artifactLookup[v.NodeID] = builder
+		}
+
+		artifact.Builder = builder
+		return nil
+	})
+	if err != nil {
+		return errs.Wrap(err, "error hydrating builders")
 	}
 
 	return nil
