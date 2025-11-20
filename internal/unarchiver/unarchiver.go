@@ -67,7 +67,8 @@ func (ua *Unarchiver) Unarchive(archiveStream io.Reader, destination string) err
 			if file.Mode()&os.ModeSymlink != 0 {
 				return writeNewSymbolicLink(path, file.LinkTarget)
 			}
-			return writeNewHardLink(path, file.LinkTarget)
+			target := filepath.Join(destination, file.LinkTarget)
+			return writeNewHardLink(path, target)
 		}
 
 		f, err := file.Open()
@@ -130,6 +131,20 @@ func writeNewHardLink(fpath string, target string) error {
 	err := os.MkdirAll(filepath.Dir(fpath), 0755)
 	if err != nil {
 		return fmt.Errorf("%s: making directory for file: %v", fpath, err)
+	}
+
+	// The unarchiving process is unordered, and a hardlinked file's target may not yet exist.
+	// Create it. writeNewFile() will overwrite it later, which is okay.
+	if !fileExists(target) {
+		err = os.MkdirAll(filepath.Dir(target), 0755)
+		if err != nil {
+			return fmt.Errorf("%s: making directory for file: %v", target, err)
+		}
+		f, err := os.Create(target)
+		if err != nil {
+			return fmt.Errorf("%s: creating target file: %v", target, err)
+		}
+		f.Close()
 	}
 
 	err = os.Link(target, fpath)
