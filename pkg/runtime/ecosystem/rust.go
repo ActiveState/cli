@@ -68,11 +68,11 @@ func (e *Rust) Add(artifact *buildplan.Artifact, artifactSrcPath string) ([]stri
 		// That folder needs to be renamed to just <name> for Cargo to recognize it.
 		ua := unarchiver.NewTarGz()
 		unpackDir := filepath.Join(e.runtimeDir, e.vendorDir)
-		f, size, err := ua.PrepareUnpacking(file.AbsolutePath(), unpackDir)
+		f, err := ua.PrepareUnpacking(file.AbsolutePath(), unpackDir)
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to prepare for unpacking downloaded crate")
 		}
-		err = ua.Unarchive(f, size, unpackDir)
+		err = ua.Unarchive(f, unpackDir)
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to unpack downloaded crate")
 		}
