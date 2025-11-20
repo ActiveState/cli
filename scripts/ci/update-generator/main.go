@@ -11,7 +11,8 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/ActiveState/cli/internal/archiver"
+	"github.com/mholt/archiver/v3"
+
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -57,16 +58,20 @@ func generateSha256(path string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
+func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
+	if runtime.GOOS == "windows" {
+		return archiver.NewZip(), ".zip"
+	}
+	return archiver.NewTarGz(), ".tar.gz"
+}
+
 func createUpdate(outputPath, channel, version, versionNumber, platform, target string) error {
 	relChannelPath := filepath.Join(channel, platform)
 	relVersionedPath := filepath.Join(channel, versionNumber, platform)
 	_ = os.MkdirAll(filepath.Join(outputPath, relChannelPath), 0o755)
 	_ = os.MkdirAll(filepath.Join(outputPath, relVersionedPath), 0o755)
 
-	archiveExt := ".tar.gz"
-	if runtime.GOOS == "windows" {
-		archiveExt = ".zip"
-	}
+	archive, archiveExt := archiveMeta()
 	relArchivePath := filepath.Join(relVersionedPath, fmt.Sprintf("state-%s-%s%s", platform, version, archiveExt))
 	archivePath := filepath.Join(outputPath, relArchivePath)
 
@@ -74,11 +79,7 @@ func createUpdate(outputPath, channel, version, versionNumber, platform, target 
 	_ = os.Remove(archivePath)
 	// Create main archive
 	fmt.Printf("Creating %s\n", archivePath)
-	archive := archiver.CreateTgz
-	if runtime.GOOS == "windows" {
-		archive = archiver.CreateZip
-	}
-	if err := archive(archivePath, "", []archiver.FileMap{{Source: target, Target: filepath.Base(target)}}); err != nil {
+	if err := archive.Archive([]string{target}, archivePath); err != nil {
 		return errs.Wrap(err, "Archiving failed")
 	}
 
@@ -109,10 +110,7 @@ func createInstaller(buildPath, outputPath, channel, platform string) error {
 		return errs.New("state-installer does not exist in build dir")
 	}
 
-	archiveExt := ".tar.gz"
-	if runtime.GOOS == "windows" {
-		archiveExt = ".zip"
-	}
+	archive, archiveExt := archiveMeta()
 	relArchivePath := filepath.Join(channel, platform, "state-installer"+archiveExt)
 	archivePath := filepath.Join(outputPath, relArchivePath)
 
@@ -120,11 +118,7 @@ func createInstaller(buildPath, outputPath, channel, platform string) error {
 	_ = os.Remove(archivePath)
 	// Create main archive
 	fmt.Printf("Creating %s\n", archivePath)
-	archive := archiver.CreateTgz
-	if runtime.GOOS == "windows" {
-		archive = archiver.CreateZip
-	}
-	err := archive(archivePath, "", []archiver.FileMap{{Source: installer, Target: filepath.Base(installer)}})
+	err := archive.Archive([]string{installer}, archivePath)
 	if err != nil {
 		return errs.Wrap(err, "Archiving failed")
 	}

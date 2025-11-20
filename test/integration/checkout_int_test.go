@@ -9,7 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/archiver"
+	"github.com/mholt/archiver/v3"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -375,11 +376,8 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutFromArchive() {
 	tgz := fileutils.TempFilePath("", runtime.GOOS+".tar.gz")
 	files, err := fileutils.ListDirSimple(dir, false)
 	suite.Require().NoError(err)
-	fileMaps := make([]archiver.FileMap, len(files))
-	for i, file := range files {
-		fileMaps[i] = archiver.FileMap{Source: file, Target: filepath.Base(file)} // strip all leading dirs
-	}
-	suite.Require().NoError(archiver.CreateTgz(tgz, "", fileMaps))
+	gz := archiver.TarGz{Tar: &archiver.Tar{StripComponents: 1000}} // use a big number to strip all leading dirs
+	suite.Require().NoError(gz.Archive(files, tgz))
 	defer os.Remove(tgz)
 
 	cp := ts.SpawnWithOpts(
