@@ -27,16 +27,13 @@ func NewTarGz() Unarchiver {
 
 func NewZip() Unarchiver {
 	return Unarchiver{
-		archives.CompressedArchive{
-			Extraction: archives.Zip{},
-		},
+		archives.Zip{},
 	}
 }
 
 // PrepareUnpacking prepares the destination directory and the archive for unpacking
 // Returns the opened file
 func (ua *Unarchiver) PrepareUnpacking(source, destination string) (archiveFile *os.File, err error) {
-
 	if !fileutils.DirExists(destination) {
 		err := mkdir(destination)
 		if err != nil {
@@ -50,7 +47,6 @@ func (ua *Unarchiver) PrepareUnpacking(source, destination string) (archiveFile 
 	}
 
 	return archiveFile, nil
-
 }
 
 // Unarchive unarchives an archive file and unpacks it in `destination`

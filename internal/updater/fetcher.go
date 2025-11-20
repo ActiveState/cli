@@ -80,7 +80,7 @@ func (f *Fetcher) Fetch(update *UpdateInstaller, targetDir string) error {
 	if runtime.GOOS == "windows" {
 		ua = unarchiver.NewZip()
 	}
-	if err := ua.Unarchive(bytes.NewBuffer(b), targetDir); err != nil {
+	if err := ua.Unarchive(bytes.NewReader(b), targetDir); err != nil {
 		msg := "Unarchiving failed"
 		f.analyticsEvent(update.AvailableUpdate.Version, msg)
 		return errs.Wrap(err, msg)
