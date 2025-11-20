@@ -15,17 +15,16 @@ type FileMap struct {
 	Target string // Note: Target paths should always be relative to the archive root, do not use absolute paths
 }
 
-func CreateTgz(archivePath string, workDir string, fileMaps []FileMap) error {
+func CreateArchive(archive archiver.Writer, archivePath string, workDir string, fileMaps []FileMap) error {
 	f, err := os.OpenFile(archivePath, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return errs.Wrap(err, "Could not create temp file")
 	}
 	defer f.Close()
-	tgz := archiver.NewTarGz()
-	if err := tgz.Create(f); err != nil {
+	if err := archive.Create(f); err != nil {
 		return errs.Wrap(err, "Could not create tar.gz")
 	}
-	defer tgz.Close()
+	defer archive.Close()
 
 	for _, fileMap := range fileMaps {
 		source := fileMap.Source
@@ -45,7 +44,7 @@ func CreateTgz(archivePath string, workDir string, fileMaps []FileMap) error {
 		}
 
 		// write it to the archive
-		err = tgz.Write(archiver.File{
+		err = archive.Write(archiver.File{
 			FileInfo: archiver.FileInfo{
 				FileInfo:   fileInfo,
 				CustomName: fileMap.Target,
@@ -59,6 +58,14 @@ func CreateTgz(archivePath string, workDir string, fileMaps []FileMap) error {
 	}
 
 	return nil
+}
+
+func CreateTgz(archivePath string, workDir string, fileMaps []FileMap) error {
+	return CreateArchive(archiver.NewTarGz(), archivePath, workDir, fileMaps)
+}
+
+func CreateZip(archivePath string, workDir string, fileMaps []FileMap) error {
+	return CreateArchive(archiver.NewZip(), archivePath, workDir, fileMaps)
 }
 
 func FilesWithCommonParent(filepaths ...string) []FileMap {
