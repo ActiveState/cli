@@ -64,11 +64,10 @@ func (ua *Unarchiver) Unarchive(archiveStream io.Reader, destination string) err
 		}
 
 		if file.LinkTarget != "" {
-			target := filepath.Join(destination, file.LinkTarget)
 			if file.Mode()&os.ModeSymlink != 0 {
-				return writeNewSymbolicLink(path, target)
+				return writeNewSymbolicLink(path, file.LinkTarget)
 			}
-			return writeNewHardLink(path, target)
+			return writeNewHardLink(path, file.LinkTarget)
 		}
 
 		f, err := file.Open()
