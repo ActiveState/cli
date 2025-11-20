@@ -2,6 +2,7 @@ package tagsuite
 
 import (
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/thoas/go-funk"
@@ -112,4 +113,11 @@ func (suite *Suite) OnlyRunForTags(tags ...string) {
 	}
 
 	suite.T().Skipf("Run only if any of the following tags are set: %s", strings.Join(tags, ", "))
+}
+
+// SkipUnsupportedArchitectures will skip tests for unsupported system architectures
+func (suite *Suite) SkipUnsupportedArchitectures() {
+	if runtime.GOOS == "linux" && runtime.GOARCH == "arm64" {
+		suite.T().Skip("Skipping test on Linux/arm64 - platform not configured")
+	}
 }
