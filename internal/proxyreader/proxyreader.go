@@ -52,3 +52,11 @@ func (pr *ProxyReader) ReadAt(p []byte, offset int64) (int, error) {
 	}
 	return n, err
 }
+
+func (pr *ProxyReader) Seek(offset int64, whence int) (int64, error) {
+	seekAt, ok := pr.r.(io.Seeker)
+	if !ok {
+		return 0, errs.New("This proxied reader needs to implement io.Seeker")
+	}
+	return seekAt.Seek(offset, whence)
+}

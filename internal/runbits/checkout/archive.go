@@ -59,7 +59,7 @@ func NewArchive(archivePath string) (_ *Archive, rerr error) {
 
 	// Prepare.
 	ua := unarchiver.NewTarGz()
-	f, size, err := ua.PrepareUnpacking(archivePath, dir)
+	f, err := ua.PrepareUnpacking(archivePath, dir)
 	if err != nil {
 		if err2 := os.RemoveAll(dir); err2 != nil {
 			err = errs.Pack(err, errs.Wrap(err2, "Unable to delete temporary directory"))
@@ -68,7 +68,7 @@ func NewArchive(archivePath string) (_ *Archive, rerr error) {
 	}
 
 	// Unpack.
-	err = ua.Unarchive(f, size, dir)
+	err = ua.Unarchive(f, dir)
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to extract archive")
 	}

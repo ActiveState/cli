@@ -18,23 +18,6 @@ func (suite *UnarchiverTestSuite) TestUnarchiveWithProgress() {
 	// p := progress.New()
 }
 
-type mockCounter struct {
-	Files     []string
-	Count     int
-	ByteCount int64
-}
-
-func (mc *mockCounter) Notify(fileName string, size int64, isDir bool) {
-	if !isDir {
-		mc.Count++
-		mc.ByteCount += size
-	}
-	if fileName == "." {
-		return
-	}
-	mc.Files = append(mc.Files, fileName)
-}
-
 func (suite *UnarchiverTestSuite) TestUnarchive() {
 
 	cases := []struct {
@@ -70,30 +53,19 @@ func (suite *UnarchiverTestSuite) TestUnarchive() {
 			suite.Require().NoError(err)
 			destination := filepath.Join(tempDir, "destination")
 
-			f, siz, err := tc.ua.PrepareUnpacking(testfile, destination)
+			f, err := tc.ua.PrepareUnpacking(testfile, destination)
 			suite.Assert().NoError(err)
 			suite.Assert().NotNil(f)
-			suite.True(siz > int64(0))
 
-			counter := &mockCounter{}
-
-			tc.ua.SetNotifier(counter.Notify)
-
-			err = tc.ua.Unarchive(f, siz, destination)
+			err = tc.ua.Unarchive(f, destination)
 			suite.Assert().NoError(err)
-
-			suite.Assert().Equal(9, counter.Count, "nine files unpacked")
-			// For this example the byte count will be very low, but maybe OS / file system dependent on how big exactly, so we just compare to zero
-			suite.True(counter.ByteCount > int64(0))
 
 			installedFiles, err := listFilesRecursively(destination)
 			suite.Require().NoError(err)
 
 			sort.Strings(installedFiles)
-			sort.Strings(counter.Files)
 
 			suite.Assert().Len(installedFiles, 12)
-			suite.Assert().Equal(installedFiles, counter.Files)
 		})
 	}
 }
@@ -141,9 +113,8 @@ func (suite *UnarchiverTestSuite) TestPrepareUnpackingWithError() {
 			destination := filepath.Join(tempDir, "destination")
 			tc.prep(destination)
 
-			f, siz, err := ua.PrepareUnpacking(testfile, destination)
+			f, err := ua.PrepareUnpacking(testfile, destination)
 			suite.Assert().Nil(f)
-			suite.Assert().Zero(siz)
 			suite.Assert().Error(err)
 		})
 	}

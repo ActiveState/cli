@@ -11,8 +11,9 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/mholt/archiver/v3"
+	"github.com/mholt/archives"
 
+	"github.com/ActiveState/cli/internal/archiver"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -58,11 +59,16 @@ func generateSha256(path string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
+func archiveMeta() (archiveMethod archives.CompressedArchive, ext string) {
 	if runtime.GOOS == "windows" {
-		return archiver.NewZip(), ".zip"
+		return archives.CompressedArchive{
+			Archival: archives.Zip{},
+		}, ".zip"
 	}
-	return archiver.NewTarGz(), ".tar.gz"
+	return archives.CompressedArchive{
+		Compression: archives.Gz{},
+		Archival:    archives.Tar{},
+	}, ".tar.gz"
 }
 
 func createUpdate(outputPath, channel, version, versionNumber, platform, target string) error {
@@ -79,7 +85,10 @@ func createUpdate(outputPath, channel, version, versionNumber, platform, target 
 	_ = os.Remove(archivePath)
 	// Create main archive
 	fmt.Printf("Creating %s\n", archivePath)
-	if err := archive.Archive([]string{target}, archivePath); err != nil {
+	files := []archiver.FileMap{
+		{Source: target, Target: filepath.Base(target)},
+	}
+	if err := archiver.CreateArchive(archive, archivePath, "", files); err != nil {
 		return errs.Wrap(err, "Archiving failed")
 	}
 
@@ -118,7 +127,10 @@ func createInstaller(buildPath, outputPath, channel, platform string) error {
 	_ = os.Remove(archivePath)
 	// Create main archive
 	fmt.Printf("Creating %s\n", archivePath)
-	err := archive.Archive([]string{installer}, archivePath)
+	files := []archiver.FileMap{
+		{Source: installer, Target: filepath.Base(installer)},
+	}
+	err := archiver.CreateArchive(archive, archivePath, "", files)
 	if err != nil {
 		return errs.Wrap(err, "Archiving failed")
 	}

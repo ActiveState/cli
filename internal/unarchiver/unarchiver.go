@@ -1,112 +1,82 @@
-// Package unarchiver provides a method to unarchive tar.gz or zip archives with progress bar feedback
-// Currently, this implementation copies a lot of methods that are internal to the ActiveState/archiver dependency.
 package unarchiver
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/mholt/archiver/v3"
+	"github.com/mholt/archives"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 )
 
-// SingleUnarchiver is an interface for an unarchiver that can unpack the next file
-// It extends the existing archiver.Reader with a method to extract a single file from the archive
-type SingleUnarchiver interface {
-	archiver.Reader
-
-	// ExtractNext extracts the next file in the archive
-	ExtractNext(destination string) (f archiver.File, err error)
-
-	// CheckExt checks that the file extension is appropriate for the archive
-	CheckExt(archiveName string) error
-
-	// Ext returns a valid file name extension for this archiver
-	Ext() string
-}
-
-// ExtractNotifier gets called when a new file has been extracted from the archive
-type ExtractNotifier func(fileName string, size int64, isDir bool)
-
-// Unarchiver wraps an implementation of an unarchiver that can unpack one file at a time.
 type Unarchiver struct {
-	// wraps a struct that can unpack one file at a time.
-	impl SingleUnarchiver
-
-	notifier ExtractNotifier
+	archives.Extraction
 }
 
-func (ua *Unarchiver) Ext() string {
-	return ua.impl.Ext()
+func NewTarGz() Unarchiver {
+	return Unarchiver{archives.CompressedArchive{
+		Compression: archives.Gz{},
+		Extraction:  archives.Tar{},
+	}}
 }
 
-// SetNotifier sets the notification function to be called after extracting a file
-func (ua *Unarchiver) SetNotifier(cb ExtractNotifier) {
-	ua.notifier = cb
+func NewZip() Unarchiver {
+	return Unarchiver{
+		archives.Zip{},
+	}
 }
 
 // PrepareUnpacking prepares the destination directory and the archive for unpacking
-// Returns the opened file and its size
-func (ua *Unarchiver) PrepareUnpacking(source, destination string) (archiveFile *os.File, fileSize int64, err error) {
-
+// Returns the opened file
+func (ua *Unarchiver) PrepareUnpacking(source, destination string) (archiveFile *os.File, err error) {
 	if !fileutils.DirExists(destination) {
 		err := mkdir(destination)
 		if err != nil {
-			return nil, 0, fmt.Errorf("preparing destination: %v", err)
+			return nil, fmt.Errorf("preparing destination: %v", err)
 		}
 	}
 
 	archiveFile, err = os.Open(source)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
-	fileInfo, err := archiveFile.Stat()
-	if err != nil {
-		archiveFile.Close()
-		return nil, 0, fmt.Errorf("statting source file: %v", err)
-	}
-
-	return archiveFile, fileInfo.Size(), nil
-
+	return archiveFile, nil
 }
 
-// CheckExt checks that the file extension is appropriate for the given unarchiver
-func (ua *Unarchiver) CheckExt(archiveName string) error {
-	return ua.impl.CheckExt(archiveName)
-}
+// Unarchive unarchives an archive file and unpacks it in `destination`
+func (ua *Unarchiver) Unarchive(archiveStream io.Reader, destination string) error {
+	ctx := context.Background()
+	err := ua.Extract(ctx, archiveStream, func(_ context.Context, file archives.FileInfo) error {
+		path := filepath.Join(destination, file.NameInArchive)
 
-// Unarchive unarchives an archive file ` and unpacks it in `destination`
-func (ua *Unarchiver) Unarchive(archiveStream io.Reader, archiveSize int64, destination string) (err error) {
-	// impl is the actual implementation of the unarchiver (tar.gz or zip)
-	impl := ua.impl
-
-	// read one file at a time from the archive
-	err = impl.Open(archiveStream, archiveSize)
-	if err != nil {
-		return
-	}
-	// note: that this is obviously not thread-safe
-	defer impl.Close()
-
-	for {
-		// extract one file at a time
-		var f archiver.File
-		f, err = impl.ExtractNext(destination)
-		if err == io.EOF {
-			break
+		if file.IsDir() {
+			return mkdir(path)
 		}
+
+		if file.LinkTarget != "" {
+			if file.Mode()&os.ModeSymlink != 0 {
+				return writeNewSymbolicLink(path, file.LinkTarget)
+			}
+			target := filepath.Join(destination, file.LinkTarget)
+			return writeNewHardLink(path, target)
+		}
+
+		f, err := file.Open()
 		if err != nil {
-			return errs.Wrap(err, "error extracting next file")
+			return err
 		}
+		defer f.Close()
 
-		// logging.Debug("Extracted %s File size: %d", f.Name(), f.Size())
-		ua.notifier(f.Name(), f.Size(), f.IsDir())
+		return writeNewFile(path, f, file.Mode())
+	})
+	if err != nil {
+		return errs.Wrap(err, "Unable to extract files")
 	}
 
 	return nil
@@ -157,6 +127,20 @@ func writeNewHardLink(fpath string, target string) error {
 	err := os.MkdirAll(filepath.Dir(fpath), 0755)
 	if err != nil {
 		return fmt.Errorf("%s: making directory for file: %v", fpath, err)
+	}
+
+	// The unarchiving process is unordered, and a hardlinked file's target may not yet exist.
+	// Create it. writeNewFile() will overwrite it later, which is okay.
+	if !fileExists(target) {
+		err = os.MkdirAll(filepath.Dir(target), 0755)
+		if err != nil {
+			return fmt.Errorf("%s: making directory for file: %v", target, err)
+		}
+		f, err := os.Create(target)
+		if err != nil {
+			return fmt.Errorf("%s: creating target file: %v", target, err)
+		}
+		f.Close()
 	}
 
 	err = os.Link(target, fpath)

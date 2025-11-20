@@ -91,11 +91,11 @@ func (e *Golang) Add(artifact *buildplan.Artifact, artifactSrcPath string) (_ []
 		// Extract the go.mod from the zip and copy it into the @v directory with a versioned name.
 		ua := unarchiver.NewZip()
 		unpackDir := fileutils.TempFilePath("", "")
-		f, size, err := ua.PrepareUnpacking(file.AbsolutePath(), unpackDir)
+		f, err := ua.PrepareUnpacking(file.AbsolutePath(), unpackDir)
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to prepare for unpacking downloaded module")
 		}
-		err = ua.Unarchive(f, size, unpackDir)
+		err = ua.Unarchive(f, unpackDir)
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to unpack downloaded module")
 		}

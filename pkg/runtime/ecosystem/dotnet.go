@@ -84,11 +84,11 @@ func (e *DotNet) Add(artifact *buildplan.Artifact, artifactSrcPath string) ([]st
 
 		// Unpack the nupkg into a <version> folder inside the <name> folder.
 		ua := unarchiver.NewZip()
-		f, size, err := ua.PrepareUnpacking(file.AbsolutePath(), absNupkgDir)
+		f, err := ua.PrepareUnpacking(file.AbsolutePath(), absNupkgDir)
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to prepare for unpacking downloaded nupkg")
 		}
-		err = ua.Unarchive(f, size, absNupkgDir)
+		err = ua.Unarchive(f, absNupkgDir)
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to unpack downloaded nupkg")
 		}

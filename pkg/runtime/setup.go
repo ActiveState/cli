@@ -406,7 +406,7 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 			return nil
 		},
 	}, bytes.NewReader(b))
-	if err := ua.Unarchive(proxy, int64(len(b)), s.depot.Path(artifact.ArtifactID)); err != nil {
+	if err := ua.Unarchive(proxy, s.depot.Path(artifact.ArtifactID)); err != nil {
 		return errs.Wrap(err, "unpack failed")
 	}
 
