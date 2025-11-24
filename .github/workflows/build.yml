@@ -40,7 +40,7 @@ jobs:
           - 1.24.6
         sys:
           - { os: ubuntu-latest }
-          - { os: macos-13, shell: zsh }
+          - { os: macos-15-intel, shell: zsh }
           - { os: macos-latest, shell: zsh }
           - { os: windows-2025 }
           - { os: ubuntu-24.04-arm }
@@ -513,7 +513,7 @@ jobs:
         with:
           name: |
             session-build-ubuntu-latest
-            session-build-macos-13
+            session-build-macos-15-intel
             session-build-macos-latest
             session-build-windows-2025
             session-build-ubuntu-24.04-arm
