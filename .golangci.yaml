@@ -1,53 +1,57 @@
-issues:
-  exclude-dirs:
-    - vendor
-  exclude-rules:
-    - linters:
-        - staticcheck
-      text: "SA9004"
-
-linters-settings:
-  errcheck:
-    exclude-functions:
-      - fmt.Fprintln
-      - (*github.com/ActiveState/termtest.TermTest).Expect
-      - (*github.com/ActiveState/termtest.TermTest).ExpectExitCode
-      - (*github.com/ActiveState/termtest.TermTest).ExpectNotExitCode
-      - (*github.com/ActiveState/termtest.TermTest).ExpectRe
-      - (*github.com/ActiveState/termtest.TermTest).Expect
-      - (*github.com/ActiveState/termtest.TermTest).WaitForInput
-      - (*github.com/ActiveState/termtest.TermTest).SendLine
-      - (*github.com/ActiveState/termtest.TermTest).ExpectInput
-      - (*github.com/ActiveState/termtest.TermTest).ExpectExit
-      - (*github.com/ActiveState/termtest.TermTest).Wait
-      - (*github.com/ActiveState/logging.fileHandler).Printf
-      - (*github.com/ActiveState/logging.standardHandler).Printf
-      - (*github.com/ActiveState/cli/internal/testhelpers/e2e.Session).Close
-      - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).ExpectInput
-      - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).Send
-      - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).SendLine
-      - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).SendEnter
-      - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).SendKeyDown
-      - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).ExpectRe
-      - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).Wait
-      - (*github.com/ActiveState/cli/internal/testhelpers/e2e.Session).ClearCache
-      - (*github.com/ActiveState/cli/internal/testhelpers/e2e.Dirs).Close
-      - github.com/ActiveState/cli/internal/testhelpers/osutil.RemoveConfigFile
-      - (*github.com/ActiveState/cli/internal/logging.standardHandler).Emit
-      - (*github.com/ActiveState/cli/internal/logging.fileHandler).Emit
-  govet:
-    disable:
-      - composites
-
-# When issues occur with linting us the snippet below to help with debugging
-# linters:
-#   # Disable all and re-enable the default linters as a starting point.
-#   disable-all: true
-#   enable:
-#     - errcheck
-#     - gosimple
-#     - govet
-#     - ineffassign
-#     - staticcheck
-#     - typecheck
-#     - unused
+version: "2"
+linters:
+  settings:
+    errcheck:
+      exclude-functions:
+        - fmt.Fprintln
+        - (*github.com/ActiveState/termtest.TermTest).Expect
+        - (*github.com/ActiveState/termtest.TermTest).ExpectExitCode
+        - (*github.com/ActiveState/termtest.TermTest).ExpectNotExitCode
+        - (*github.com/ActiveState/termtest.TermTest).ExpectRe
+        - (*github.com/ActiveState/termtest.TermTest).Expect
+        - (*github.com/ActiveState/termtest.TermTest).WaitForInput
+        - (*github.com/ActiveState/termtest.TermTest).SendLine
+        - (*github.com/ActiveState/termtest.TermTest).ExpectInput
+        - (*github.com/ActiveState/termtest.TermTest).ExpectExit
+        - (*github.com/ActiveState/termtest.TermTest).Wait
+        - (*github.com/ActiveState/logging.fileHandler).Printf
+        - (*github.com/ActiveState/logging.standardHandler).Printf
+        - (*github.com/ActiveState/cli/internal/testhelpers/e2e.Session).Close
+        - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).ExpectInput
+        - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).Send
+        - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).SendLine
+        - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).SendEnter
+        - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).SendKeyDown
+        - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).ExpectRe
+        - (*github.com/ActiveState/cli/internal/testhelpers/e2e.SpawnedCmd).Wait
+        - (*github.com/ActiveState/cli/internal/testhelpers/e2e.Session).ClearCache
+        - (*github.com/ActiveState/cli/internal/testhelpers/e2e.Dirs).Close
+        - github.com/ActiveState/cli/internal/testhelpers/osutil.RemoveConfigFile
+        - (*github.com/ActiveState/cli/internal/logging.standardHandler).Emit
+        - (*github.com/ActiveState/cli/internal/logging.fileHandler).Emit
+    govet:
+      disable:
+        - composites
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - staticcheck
+        text: SA9004
+    paths:
+      - vendor
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
