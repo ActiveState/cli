@@ -23,6 +23,7 @@ type UseIntegrationTestSuite struct {
 
 func (suite *UseIntegrationTestSuite) TestUse() {
 	suite.OnlyRunForTags(tagsuite.Use)
+	suite.SkipUnsupportedArchitectures()
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -77,6 +78,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 
 func (suite *UseIntegrationTestSuite) TestUseCwd() {
 	suite.OnlyRunForTags(tagsuite.Use)
+	suite.SkipUnsupportedArchitectures()
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -107,6 +109,7 @@ func (suite *UseIntegrationTestSuite) TestUseCwd() {
 
 func (suite *UseIntegrationTestSuite) TestReset() {
 	suite.OnlyRunForTags(tagsuite.Use)
+	suite.SkipUnsupportedArchitectures()
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -124,13 +127,16 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	python3Exe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExtension)
 	suite.True(fileutils.TargetExists(python3Exe), python3Exe+" not found")
 
-	cfg, err := config.New()
-	suite.NoError(err)
-	rcfile, err := subshell.New(cfg).RcFile()
-	if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
+	var rcfile string
+	ts.WithEnv(func() {
+		cfg, err := config.New()
 		suite.NoError(err)
-		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
-	}
+		rcfile, err := subshell.New(cfg).RcFile()
+		if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
+			suite.NoError(err)
+			suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
+		}
+	})
 
 	cp = ts.Spawn("use", "reset")
 	cp.Expect("Continue?")
@@ -157,6 +163,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 
 func (suite *UseIntegrationTestSuite) TestShow() {
 	suite.OnlyRunForTags(tagsuite.Use)
+	suite.SkipUnsupportedArchitectures()
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -211,6 +218,7 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 
 func (suite *UseIntegrationTestSuite) TestSetupNotice() {
 	suite.OnlyRunForTags(tagsuite.Use)
+	suite.SkipUnsupportedArchitectures()
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -233,6 +241,8 @@ func (suite *UseIntegrationTestSuite) TestSetupNotice() {
 
 func (suite *UseIntegrationTestSuite) TestJSON() {
 	suite.OnlyRunForTags(tagsuite.Use, tagsuite.JSON)
+	suite.SkipUnsupportedArchitectures()
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

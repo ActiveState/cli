@@ -12,7 +12,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -68,6 +67,7 @@ func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string, tar
 
 func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 	suite.OnlyRunForTags(tagsuite.Perl, tagsuite.Deploy)
+	suite.SkipUnsupportedArchitectures()
 	if !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping DeployIntegrationTestSuite when not running on CI, as it modifies bashrc/registry")
 	}
@@ -144,6 +144,7 @@ func (suite *DeployIntegrationTestSuite) checkSymlink(name string, binDir, targe
 
 func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 	suite.OnlyRunForTags(tagsuite.Deploy, tagsuite.Python, tagsuite.Critical)
+	suite.SkipUnsupportedArchitectures()
 	if !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping DeployIntegrationTestSuite when not running on CI, as it modifies bashrc/registry")
 	}
@@ -205,11 +206,14 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
-	suite.AssertConfig(ts, targetID.String())
+	ts.WithEnv(func() {
+		suite.AssertConfig(ts, targetID.String())
+	})
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployInstall() {
 	suite.OnlyRunForTags(tagsuite.Deploy)
+	suite.SkipUnsupportedArchitectures()
 	if !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping DeployIntegrationTestSuite when not running on CI, as it modifies bashrc/registry")
 	}
@@ -243,6 +247,7 @@ func (suite *DeployIntegrationTestSuite) InstallAndAssert(ts *e2e.Session, targe
 
 func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 	suite.OnlyRunForTags(tagsuite.Deploy)
+	suite.SkipUnsupportedArchitectures()
 	if !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping TestDeployConfigure when not running on CI, as it modifies bashrc/registry")
 	}
@@ -290,17 +295,17 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session, targetID string) {
 	if runtime.GOOS != "windows" {
 		// Test config file
-		cfg, err := config.New()
-		suite.Require().NoError(err)
 
-		subshell := subshell.New(cfg)
-		rcFile, err := subshell.RcFile()
-		suite.Require().NoError(err)
+		ts.WithEnv(func() {
+			subshell := subshell.New(ts.Config())
+			rcFile, err := subshell.RcFile()
+			suite.Require().NoError(err)
 
-		bashContents := fileutils.ReadFileUnsafe(rcFile)
-		suite.Contains(string(bashContents), constants.RCAppendDeployStartLine, "config file should contain our RC Append Start line")
-		suite.Contains(string(bashContents), constants.RCAppendDeployStopLine, "config file should contain our RC Append Stop line")
-		suite.Contains(string(bashContents), targetID, "config file should contain our target dir")
+			bashContents := fileutils.ReadFileUnsafe(rcFile)
+			suite.Contains(string(bashContents), constants.RCAppendDeployStartLine, "config file should contain our RC Append Start line")
+			suite.Contains(string(bashContents), constants.RCAppendDeployStopLine, "config file should contain our RC Append Stop line")
+			suite.Contains(string(bashContents), targetID, "config file should contain our target dir")
+		})
 	} else {
 		// Test registry
 		out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
@@ -311,6 +316,7 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session, targetID 
 
 func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	suite.OnlyRunForTags(tagsuite.Deploy)
+	suite.SkipUnsupportedArchitectures()
 	if runtime.GOOS != "windows" && !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping TestDeploySymlink when not running on CI, as it modifies PATH")
 	}
@@ -348,6 +354,7 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 
 func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 	suite.OnlyRunForTags(tagsuite.Deploy)
+	suite.SkipUnsupportedArchitectures()
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -376,6 +383,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 
 func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 	suite.OnlyRunForTags(tagsuite.Deploy)
+	suite.SkipUnsupportedArchitectures()
 	if runtime.GOOS == "darwin" || !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping TestDeployTwice when not running on CI or on MacOS, as it modifies PATH")
 	}
@@ -411,6 +419,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 
 func (suite *DeployIntegrationTestSuite) TestDeployUninstall() {
 	suite.OnlyRunForTags(tagsuite.Deploy)
+	suite.SkipUnsupportedArchitectures()
 	if !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping TestDeployUninstall when not running on CI, as it modifies bashrc/registry")
 	}
