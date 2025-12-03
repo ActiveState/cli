@@ -1,10 +1,12 @@
 package updater
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"io"
 	"net"
+	"runtime"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
@@ -16,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/unarchiver"
 )
 
 const CfgUpdateTag = "update_tag"
@@ -73,8 +76,11 @@ func (f *Fetcher) Fetch(update *UpdateInstaller, targetDir string) error {
 		return errs.Wrap(err, msg)
 	}
 
-	a := blobUnarchiver(b)
-	if err := a.Unarchive(targetDir); err != nil {
+	ua := unarchiver.NewTarGz()
+	if runtime.GOOS == "windows" {
+		ua = unarchiver.NewZip()
+	}
+	if err := ua.Unarchive(bytes.NewReader(b), targetDir); err != nil {
 		msg := "Unarchiving failed"
 		f.analyticsEvent(update.AvailableUpdate.Version, msg)
 		return errs.Wrap(err, msg)

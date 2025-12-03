@@ -69,9 +69,9 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 		}
 		cp := ts.SpawnWithOpts(opts...)
 		if expect != "" {
-			cp.Expect(expect)
+			cp.Expect(expect, termtest.OptExpectTimeout(1*time.Minute))
 		}
-		cp.ExpectExitCode(0)
+		cp.ExpectExitCode(0, termtest.OptExpectTimeout(1*time.Minute))
 		logs, err := io.ReadAll(termtestLogs)
 		suite.NoError(err)
 		v := rx.FindStringSubmatch(cp.Output())
