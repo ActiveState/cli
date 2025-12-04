@@ -23,7 +23,6 @@ type UseIntegrationTestSuite struct {
 
 func (suite *UseIntegrationTestSuite) TestUse() {
 	suite.OnlyRunForTags(tagsuite.Use)
-	suite.SkipUnsupportedArchitectures()
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -78,7 +77,6 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 
 func (suite *UseIntegrationTestSuite) TestUseCwd() {
 	suite.OnlyRunForTags(tagsuite.Use)
-	suite.SkipUnsupportedArchitectures()
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -109,7 +107,6 @@ func (suite *UseIntegrationTestSuite) TestUseCwd() {
 
 func (suite *UseIntegrationTestSuite) TestReset() {
 	suite.OnlyRunForTags(tagsuite.Use)
-	suite.SkipUnsupportedArchitectures()
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -163,7 +160,6 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 
 func (suite *UseIntegrationTestSuite) TestShow() {
 	suite.OnlyRunForTags(tagsuite.Use)
-	suite.SkipUnsupportedArchitectures()
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -218,7 +214,6 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 
 func (suite *UseIntegrationTestSuite) TestSetupNotice() {
 	suite.OnlyRunForTags(tagsuite.Use)
-	suite.SkipUnsupportedArchitectures()
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -241,7 +236,6 @@ func (suite *UseIntegrationTestSuite) TestSetupNotice() {
 
 func (suite *UseIntegrationTestSuite) TestJSON() {
 	suite.OnlyRunForTags(tagsuite.Use, tagsuite.JSON)
-	suite.SkipUnsupportedArchitectures()
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
