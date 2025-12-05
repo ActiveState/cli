@@ -76,7 +76,7 @@ func (suite *CommitIntegrationTestSuite) TestCommitAtTimeChange() {
 	suite.Require().NoError(err) // verify validity
 
 	// Update top-level at_time variable.
-	dateTime := "2023-06-21T12:34:56Z"
+	dateTime := "2025-12-05T16:08:55.440Z"
 	buildScriptFile := filepath.Join(proj.Dir(), constants.BuildScriptFileName)
 	contents, err := fileutils.ReadFile(buildScriptFile)
 	suite.Require().NoError(err)
