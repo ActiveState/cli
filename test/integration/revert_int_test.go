@@ -24,10 +24,10 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	defer ts.Close()
 
 	namespace := "ActiveState-CLI/Revert"
-	ts.PrepareProject(namespace, "903bf49a-6719-47f0-ae70-450d69532ece")
+	ts.PrepareProject(namespace, "c9444988-2761-4b39-8c4c-eb5fdaaa8dca")
 
 	// Revert the commit that added urllib3.
-	commitID := "1f4f4f7d-7883-400e-b2ad-a5803c018ecd"
+	commitID := "d105e865-d12f-4c42-a1a0-6767590d87da"
 	cp := ts.Spawn("revert", commitID)
 	cp.Expect(fmt.Sprintf("Operating on project %s", namespace))
 	cp.Expect("You are about to revert the following commit:")
@@ -106,13 +106,13 @@ func (suite *RevertIntegrationTestSuite) TestRevertTo() {
 	defer ts.Close()
 
 	namespace := "ActiveState-CLI/Revert"
-	ts.PrepareProject(namespace, "903bf49a-6719-47f0-ae70-450d69532ece")
+	ts.PrepareProject(namespace, "c9444988-2761-4b39-8c4c-eb5fdaaa8dca")
 
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
 	// Revert the commit that added urllib3.
-	commitID := "1f4f4f7d-7883-400e-b2ad-a5803c018ecd"
+	commitID := "d105e865-d12f-4c42-a1a0-6767590d87da"
 	cp = ts.Spawn("revert", "--to", commitID)
 	cp.Expect(fmt.Sprintf("Operating on project %s", namespace))
 	cp.Expect("You are about to revert to the following commit:")
@@ -153,12 +153,12 @@ func (suite *RevertIntegrationTestSuite) TestJSON() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/Revert", "903bf49a-6719-47f0-ae70-450d69532ece")
+	ts.PrepareProject("ActiveState-CLI/Revert", "c9444988-2761-4b39-8c4c-eb5fdaaa8dca")
 
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("revert", "--to", "1f4f4f7d-7883-400e-b2ad-a5803c018ecd", "-o", "json")
+	cp = ts.Spawn("revert", "--to", "d105e865-d12f-4c42-a1a0-6767590d87da", "-o", "json")
 	cp.Expect(`{"current_commit_id":`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
