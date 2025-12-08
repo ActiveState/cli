@@ -940,6 +940,10 @@ err_read_projectfile:
   other: The activestate.yaml at {{.V0}} could not be read.
 err_auth_fail_totp:
   other: A two-factor authentication code is required.
+err_invalid_token:
+  other: Invalid API token.
+err_invalid_credentials:
+  other: Invalid credentials
 cve_title:
   other: Vulnerability Summary
 cve_description:
