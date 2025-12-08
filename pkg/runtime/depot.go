@@ -160,6 +160,9 @@ func (d *depot) SetCacheSize(mb int) {
 // Artifact metadata comes from the depot's cache, and may not exist for installed artifacts that
 // predate the cache.
 func (d *depot) Exists(id strfmt.UUID) (bool, *artifactInfo) {
+	d.mapMutex.Lock()
+	defer d.mapMutex.Unlock()
+
 	if _, ok := d.artifacts[id]; ok {
 		if artifact, exists := d.config.Cache[id]; exists {
 			return true, artifact
