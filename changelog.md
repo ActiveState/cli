@@ -10,7 +10,11 @@ and this project adheres to
 
 ### Security
 
-Addressed all known, fixable CVEs.
+- Addressed all known, fixable CVEs.
+
+### Fixed
+
+- Fixed occasional panic due to a concurrent map read/write during runtime setup.
 
 ## 0.48.0
 
