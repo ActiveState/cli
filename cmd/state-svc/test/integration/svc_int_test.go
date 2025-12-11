@@ -183,6 +183,7 @@ func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
 		// with due to other integration tests not always waiting for state-svc to have fully shut down before running the next test
 		suite.Fail(fmt.Sprintf("spawning multiple state processes should only result in one more state-svc process at most, newCount: %d, oldCount: %d", newCount, oldCount))
 	}
+	suite.T().Log("oldCount:", oldCount, "newCount:", newCount)
 
 	// ts.Close() has logic to stop state-svc if ts.SvcExe exists.
 	// It does this by invoking `state-svc stop`.
