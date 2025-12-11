@@ -163,10 +163,9 @@ func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
 	time.Sleep(2 * time.Second) // allow for some time to stop the existing available process
 
 	oldCount := suite.GetNumStateSvcProcesses() // may be non-zero due to non-test state-svc processes (using different sock file)
-	suite.T().Log("oldCount: ", oldCount)
 	for i := 1; i <= 10; i++ {
 		go ts.SpawnCmdWithOpts(ts.Exe, e2e.OptArgs("--version"))
-		time.Sleep(100 * time.Millisecond) // do not spam CPU
+		time.Sleep(50 * time.Millisecond) // do not spam CPU
 	}
 	time.Sleep(2 * time.Second) // allow for some time to spawn the processes
 
@@ -183,6 +182,16 @@ func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
 		// We only care if we end up with more services than anticipated. We can actually end up with less than we started
 		// with due to other integration tests not always waiting for state-svc to have fully shut down before running the next test
 		suite.Fail(fmt.Sprintf("spawning multiple state processes should only result in one more state-svc process at most, newCount: %d, oldCount: %d", newCount, oldCount))
+	}
+
+	// ts.Close() has logic to stop state-svc if ts.SvcExe exists.
+	// It does this by invoking `state-svc stop`.
+	// However, in the event we end up with less services than anticipated, `state-svc stop` will
+	// fail with a non-zero exit code because there is no service to stop, and this will cause a
+	// timeout error in ts.Close().
+	// In order to prevent this, change ts.SvcExe to something that doesn't exist.
+	if newCount < oldCount+1 {
+		ts.SvcExe = "does-not-exist"
 	}
 }
 
