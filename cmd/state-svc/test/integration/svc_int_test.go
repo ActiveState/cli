@@ -191,7 +191,7 @@ func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
 	// fail with a non-zero exit code because there is no service to stop, and this will cause a
 	// timeout error in ts.Close().
 	// In order to prevent this, change ts.SvcExe to something that doesn't exist.
-	if newCount < oldCount+1 {
+	if newCount < oldCount {
 		ts.SvcExe = "does-not-exist"
 	}
 }
