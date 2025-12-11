@@ -165,7 +165,7 @@ func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
 	oldCount := suite.GetNumStateSvcProcesses() // may be non-zero due to non-test state-svc processes (using different sock file)
 	for i := 1; i <= 10; i++ {
 		go ts.SpawnCmdWithOpts(ts.Exe, e2e.OptArgs("--version"))
-		time.Sleep(50 * time.Millisecond) // do not spam CPU
+		time.Sleep(100 * time.Millisecond) // do not spam CPU
 	}
 	time.Sleep(2 * time.Second) // allow for some time to spawn the processes
 
