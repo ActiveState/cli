@@ -137,10 +137,15 @@ func LogFileName(ipComm IPCommunicator) (string, error) {
 }
 
 func StopServer(ipComm IPCommunicator) error {
+	_, err := LocateHTTP(ipComm)
+	if err != nil {
+		return nil // service is not up and running, so nothing to do
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), commonTimeout)
 	defer cancel()
 
-	err := stopAndWait(ctx, ipComm)
+	err = stopAndWait(ctx, ipComm)
 	var errServerDown *ipc.ServerDownError
 	if err != nil && !errors.As(err, &errServerDown) {
 		return errs.Wrap(err, "Cannot stop service")
