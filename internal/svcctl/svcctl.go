@@ -140,7 +140,7 @@ func StopServer(ipComm IPCommunicator) error {
 	ctx, cancel := context.WithTimeout(context.Background(), commonTimeout)
 	defer cancel()
 
-	err = stopAndWait(ctx, ipComm)
+	err := stopAndWait(ctx, ipComm)
 	var errServerDown *ipc.ServerDownError
 	if err != nil && !errors.As(err, &errServerDown) {
 		return errs.Wrap(err, "Cannot stop service")
