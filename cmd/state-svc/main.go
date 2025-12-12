@@ -54,9 +54,11 @@ func main() {
 			events.Close("config", cfg.Close)
 		}
 
+		logging.Debug("wait for events")
 		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, authentication.LegacyClose, logging.Close); err != nil {
 			logging.Warning("Failing to wait events")
 		}
+		logging.Debug("exiting with code %d", exitCode)
 		os.Exit(exitCode)
 	}()
 
