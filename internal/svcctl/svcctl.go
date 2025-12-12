@@ -139,8 +139,10 @@ func LogFileName(ipComm IPCommunicator) (string, error) {
 func StopServer(ipComm IPCommunicator) error {
 	_, err := LocateHTTP(ipComm)
 	if err != nil {
+		logging.Debug("service is not running")
 		return nil // service is not up and running, so nothing to do
 	}
+	logging.Debug("service is running")
 
 	ctx, cancel := context.WithTimeout(context.Background(), commonTimeout)
 	defer cancel()
