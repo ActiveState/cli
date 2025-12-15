@@ -157,7 +157,10 @@ func (suite *SvcIntegrationTestSuite) TestStartDuplicateErrorOutput() {
 func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
 	suite.OnlyRunForTags(tagsuite.Service)
 	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
+	// TODO: CP-1268 should remove this conditional.
+	if runtime.GOOS != "windows" || !condition.OnCI() {
+		defer ts.Close()
+	}
 
 	ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("stop"))
 	time.Sleep(2 * time.Second) // allow for some time to stop the existing available process
