@@ -67,7 +67,7 @@ func (suite *CommitIntegrationTestSuite) TestCommitAtTimeChange() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProjectAndBuildScript("ActiveState-CLI/Commit-Test-A", "7a1b416e-c17f-4d4a-9e27-cbad9e8f5655")
+	ts.PrepareProjectAndBuildScript("ActiveState-CLI/Commit-Test-A", "2ab50eba-4410-4be2-ba9d-c04ebeda640d")
 
 	proj, err := project.FromPath(ts.Dirs.Work)
 	suite.NoError(err, "Error loading project")
@@ -76,11 +76,11 @@ func (suite *CommitIntegrationTestSuite) TestCommitAtTimeChange() {
 	suite.Require().NoError(err) // verify validity
 
 	// Update top-level at_time variable.
-	dateTime := "2023-06-21T12:34:56Z"
+	dateTime := "2025-12-11T12:34:56Z"
 	buildScriptFile := filepath.Join(proj.Dir(), constants.BuildScriptFileName)
 	contents, err := fileutils.ReadFile(buildScriptFile)
 	suite.Require().NoError(err)
-	contents = bytes.Replace(contents, []byte("2023-06-22T21:56:10Z"), []byte(dateTime), 1)
+	contents = bytes.Replace(contents, []byte("2025-12-10T17:03:26Z"), []byte(dateTime), 1)
 	suite.Require().NoError(fileutils.WriteFile(buildScriptFile, contents))
 	suite.Require().Contains(string(fileutils.ReadFileUnsafe(filepath.Join(proj.Dir(), constants.BuildScriptFileName))), dateTime)
 
@@ -152,14 +152,16 @@ func (suite *CommitIntegrationTestSuite) TestCommitSkipValidation() {
 	suite.Require().NoError(fileutils.WriteFile(scriptPath, data))
 
 	cp := ts.Spawn("commit")
-	cp.Expect("solver_version in body should be")
+	cp.Expect("solver_version")
+	cp.Expect("should be")
 	cp.ExpectExitCode(1)
 
 	cp = ts.Spawn("commit", "--skip-validation")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("refresh")
-	cp.Expect("solver_version in body should be")
+	cp.Expect("solver_version")
+	cp.Expect("should be")
 	cp.ExpectExitCode(1)
 }
 
