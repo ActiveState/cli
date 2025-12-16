@@ -24,10 +24,10 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	defer ts.Close()
 
 	namespace := "ActiveState-CLI/Revert"
-	ts.PrepareProject(namespace, "c9444988-2761-4b39-8c4c-eb5fdaaa8dca")
+	ts.PrepareProject(namespace, "ca615135-ef95-4392-aff5-85b6c7132789")
 
 	// Revert the commit that added urllib3.
-	commitID := "d105e865-d12f-4c42-a1a0-6767590d87da"
+	commitID := "c44885ee-af0e-4f52-b8ef-63c56fe255c6"
 	cp := ts.Spawn("revert", commitID)
 	cp.Expect(fmt.Sprintf("Operating on project %s", namespace))
 	cp.Expect("You are about to revert the following commit:")
@@ -48,7 +48,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	cp = ts.Spawn("shell", "Revert")
 	cp.ExpectInput(e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("python3")
-	cp.Expect("3.9.15")
+	cp.Expect("3.11.12")
 	cp.SendLine("import urllib3")
 	cp.Expect("No module named 'urllib3'")
 	cp.SendLine("import argparse")
@@ -63,7 +63,7 @@ func (suite *RevertIntegrationTestSuite) TestRevertRemote() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/Revert", "75ae9c67-df55-4a95-be6f-b7975e5bb523")
+	ts.PrepareProject("ActiveState-CLI/Revert", "ca615135-ef95-4392-aff5-85b6c7132789")
 
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
@@ -106,13 +106,13 @@ func (suite *RevertIntegrationTestSuite) TestRevertTo() {
 	defer ts.Close()
 
 	namespace := "ActiveState-CLI/Revert"
-	ts.PrepareProject(namespace, "c9444988-2761-4b39-8c4c-eb5fdaaa8dca")
+	ts.PrepareProject(namespace, "ca615135-ef95-4392-aff5-85b6c7132789")
 
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
 	// Revert the commit that added urllib3.
-	commitID := "d105e865-d12f-4c42-a1a0-6767590d87da"
+	commitID := "c44885ee-af0e-4f52-b8ef-63c56fe255c6"
 	cp = ts.Spawn("revert", "--to", commitID)
 	cp.Expect(fmt.Sprintf("Operating on project %s", namespace))
 	cp.Expect("You are about to revert to the following commit:")
@@ -153,12 +153,12 @@ func (suite *RevertIntegrationTestSuite) TestJSON() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/Revert", "c9444988-2761-4b39-8c4c-eb5fdaaa8dca")
+	ts.PrepareProject("ActiveState-CLI/Revert", "ca615135-ef95-4392-aff5-85b6c7132789")
 
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("revert", "--to", "d105e865-d12f-4c42-a1a0-6767590d87da", "-o", "json")
+	cp = ts.Spawn("revert", "--to", "c44885ee-af0e-4f52-b8ef-63c56fe255c6", "-o", "json")
 	cp.Expect(`{"current_commit_id":`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
