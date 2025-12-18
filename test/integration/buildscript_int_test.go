@@ -179,7 +179,7 @@ func (suite *BuildScriptIntegrationTestSuite) TestBuildScriptRequirementVersionA
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "dotenv")
-	cp.Expect("Added: language/python/dotenv@Auto")
+	cp.Expect("Added: language/python/dotenv@Auto", e2e.RuntimeSolvingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 
