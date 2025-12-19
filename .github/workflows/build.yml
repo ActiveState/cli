@@ -335,7 +335,6 @@ jobs:
           INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
           INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
           INTEGRATION_TEST_TOKEN: ${{ secrets.INTEGRATION_TEST_TOKEN }}
-          PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
 
       - # === Check if Unit Tests Failed ===
         name: Check if Unit Tests Failed

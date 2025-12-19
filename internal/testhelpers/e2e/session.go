@@ -56,8 +56,6 @@ type Session struct {
 	Env             []string
 	retainDirs      bool
 	createdProjects []*project.Namespaced
-	// users created during session
-	users           []string
 	T               *testing.T
 	Exe             string
 	SvcExe          string
@@ -542,11 +540,6 @@ func (s *Session) Close() error {
 
 	s.spawned = []*SpawnedCmd{}
 
-	if os.Getenv("PLATFORM_API_TOKEN") == "" {
-		s.T.Log("PLATFORM_API_TOKEN env var not set, not running suite tear down")
-		return nil
-	}
-
 	auth := authentication.New(cfg)
 
 	if os.Getenv(constants.APIHostEnvVarName) == "" {
@@ -560,9 +553,11 @@ func (s *Session) Close() error {
 	}
 
 	err = auth.AuthenticateWithModel(&mono_models.Credentials{
-		Token: os.Getenv("PLATFORM_API_TOKEN"),
+		Username: PersistentUsername,
+		Password: PersistentPassword,
 	})
 	if err != nil {
+		s.T.Errorf("Could not login: %v", errs.JoinMessage(err))
 		return err
 	}
 
@@ -586,14 +581,7 @@ func (s *Session) Close() error {
 	for _, proj := range s.createdProjects {
 		err := model.DeleteProject(proj.Owner, proj.Project, auth)
 		if err != nil {
-			s.T.Errorf("Could not delete project %s: %v", proj.Project, errs.JoinMessage(err))
-		}
-	}
-
-	for _, user := range s.users {
-		err := cleanUser(s.T, user, auth)
-		if err != nil {
-			s.T.Errorf("Could not delete user %s: %v", user, errs.JoinMessage(err))
+			s.T.Errorf("Could not delete project %s/%s: %v", proj.Owner, proj.Project, errs.JoinMessage(err))
 		}
 	}
 
