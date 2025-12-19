@@ -56,8 +56,6 @@ type Session struct {
 	Env             []string
 	retainDirs      bool
 	createdProjects []*project.Namespaced
-	// users created during session
-	users           []string
 	T               *testing.T
 	Exe             string
 	SvcExe          string
@@ -584,13 +582,6 @@ func (s *Session) Close() error {
 		err := model.DeleteProject(proj.Owner, proj.Project, auth)
 		if err != nil {
 			s.T.Errorf("Could not delete project %s/%s: %v", proj.Owner, proj.Project, errs.JoinMessage(err))
-		}
-	}
-
-	for _, user := range s.users {
-		err := cleanUser(s.T, user, auth)
-		if err != nil {
-			s.T.Errorf("Could not delete user %s: %v", user, errs.JoinMessage(err))
 		}
 	}
 
