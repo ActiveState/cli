@@ -69,7 +69,7 @@ func (m *Notifier) OnExecStop(cmd *captain.Command, _ []string) error {
 	}
 
 	if err := m.PrintByPlacement(graph.NotificationPlacementTypeAfterCmd); err != nil {
-		return errs.Wrap(err, "notification error occurred before cmd")
+		return errs.Wrap(err, "notification error occurred after cmd")
 	}
 
 	return nil
