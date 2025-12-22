@@ -46,15 +46,15 @@ func run() {
 
 	createClient()
 
-	// List all objects with <basePrefix>staging/ prefix
-	allObjects, err := listObjectsWithPrefix(basePrefix + "staging/")
+	// List all objects with staging/<basePrefix> prefix
+	stagingPrefix := "staging/" + basePrefix
+	allObjects, err := listObjectsWithPrefix(stagingPrefix)
 	if err != nil {
 		log.Fatalf("Failed to list staging objects: %v", err)
 	}
 
 	// Filter out the root staging directory itself (but keep subdirectories)
 	var stagingObjects []types.Object
-	stagingPrefix := basePrefix + "staging/"
 	for _, obj := range allObjects {
 		if *obj.Key == stagingPrefix {
 			continue
@@ -75,8 +75,8 @@ func run() {
 	// Copy each staging object to production location and delete the staging version
 	for _, obj := range stagingObjects {
 		stagingKey := *obj.Key
-		relativeKey := strings.TrimPrefix(stagingKey, basePrefix+"staging/")
-		destinationKey := basePrefix + "release/" + relativeKey
+		relativeKey := strings.TrimPrefix(stagingKey, stagingPrefix)
+		destinationKey := basePrefix + relativeKey
 
 		fmt.Printf("Promoting %s -> %s\n", stagingKey, destinationKey)
 
