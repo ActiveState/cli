@@ -55,7 +55,7 @@ func main() {
 		}
 
 		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, authentication.LegacyClose, logging.Close); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to wait for events")
+			//fmt.Fprintf(os.Stderr, "Warning: failed to wait for events")
 		}
 		os.Exit(exitCode)
 	}()
