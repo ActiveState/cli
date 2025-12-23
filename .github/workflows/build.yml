@@ -32,7 +32,7 @@ jobs:
   # === OS Specific Job (runs on each OS) ===
   os_specific:
     name: ${{ matrix.sys.os }}
-    timeout-minutes: 90
+    timeout-minutes: 120
     strategy:
       matrix:
         go-version:
