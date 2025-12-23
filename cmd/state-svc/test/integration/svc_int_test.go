@@ -157,9 +157,15 @@ func (suite *SvcIntegrationTestSuite) TestStartDuplicateErrorOutput() {
 func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
 	suite.OnlyRunForTags(tagsuite.Service)
 	ts := e2e.New(suite.T(), false)
-	// TODO: CP-1268 should remove this conditional.
+	// TODO: CP-1268 should remove this conditional and just keep the defer.
 	if runtime.GOOS != "windows" || !condition.OnCI() {
 		defer ts.Close()
+	} else {
+		defer func() {
+			cp := ts.SpawnCmd(ts.SvcExe, "stop")
+			time.Sleep(500 * time.Millisecond)
+			cp.SendCtrlC() // if this ends up as a foreground process, then try to halt it
+		}()
 	}
 
 	ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("stop"))
