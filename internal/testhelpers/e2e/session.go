@@ -787,7 +787,7 @@ func (s *Session) SetupRCFileCustom(subshell subshell.SubShell) {
 	rcFile, err := subshell.RcFile()
 	require.NoError(s.T, err)
 
-	if fileutils.TargetExists(filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile))) {
+	if fileutils.TargetExists(rcFile) && fileutils.TargetExists(filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile))) {
 		err = fileutils.CopyFile(rcFile, filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile)))
 	} else {
 		err = fileutils.Touch(filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile)))
