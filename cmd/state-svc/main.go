@@ -55,7 +55,10 @@ func main() {
 		}
 
 		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, authentication.LegacyClose, logging.Close); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to wait for events")
+			// Note: logger is closed, so cannot log here. Also, the activate integration tests seem to be
+			// affected by a write to os.Stderr. Regardless, since state-svc runs in the background for
+			// the most part, we realistically will not see this error.
+			//fmt.Fprintf(os.Stderr, "Warning: failed to wait for events")
 		}
 		os.Exit(exitCode)
 	}()
