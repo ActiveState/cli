@@ -272,7 +272,7 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
-      
+
       PREFIX="remote-installer"
       if [ "$DEPLOY_TO_STAGING" = "true" ]; then
         PREFIX="staging/$PREFIX"
@@ -280,7 +280,7 @@ scripts:
       else
         echo "Deploying remote installer to production: $PREFIX"
       fi
-      
+
       go run scripts/ci/s3-deployer/main.go $BUILD_TARGET_DIR/remote-installer us-east-1 state-tool $PREFIX
   - name: promote-staging-to-production
     language: bash
@@ -296,8 +296,8 @@ scripts:
         echo "Promotion cancelled."
         exit 1
       fi
-      
-      go run scripts/ci/s3-promoter/main.go us-east-1 state-tool
+
+      go run scripts/ci/s3-promoter/main.go us-east-1 state-tool update/state
   - name: build-workflow-assets
     language: bash
     standalone: true
