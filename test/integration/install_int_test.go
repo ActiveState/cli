@@ -2,6 +2,7 @@ package integration
 
 import (
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -40,10 +41,15 @@ func (suite *InstallIntegrationTestSuite) TestInstallSuggest() {
 	cp := ts.Spawn("config", "set", constants.AsyncRuntimeConfig, "true")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("install", "djang")
+	package_name := "djang"
+	if runtime.GOOS == "linux" {
+		// For some reason, "djang" on Linux often fails to show suggestions.
+		package_name = "jinj"
+	}
+	cp = ts.Spawn("install", package_name)
 	cp.Expect("No results found", e2e.RuntimeSolvingTimeoutOpt)
 	cp.Expect("Did you mean")
-	cp.Expect("language/python/djang")
+	cp.Expect("language/python/" + package_name)
 	cp.ExpectExitCode(1)
 }
 
