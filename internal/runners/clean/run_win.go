@@ -7,12 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	"github.com/ActiveState/cli/internal/assets"
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation"
@@ -159,19 +157,12 @@ func removePaths(logFile string, paths ...string) error {
 		return locale.WrapError(err, "err_clean_executable", "Could not get executable name")
 	}
 
-	args := []string{"/C", sf.Filename(), logFile, fmt.Sprintf("%d", os.Getpid()), filepath.Base(exe)}
+	args := []string{"/C", "start", "", sf.Filename(), logFile, fmt.Sprintf("%d", os.Getpid()), filepath.Base(exe)}
 	args = append(args, paths...)
 
-	if !condition.OnCI() {
-		_, err = osutils.ExecuteAndForget("cmd.exe", args)
-	} else {
-		var cmd *exec.Cmd
-		if _, cmd, err = osutils.Execute("cmd.exe", args, nil); err == nil {
-			err = cmd.Wait()
-		}
-	}
+	_, err = osutils.ExecuteAndForget("cmd.exe", args)
 	if err != nil {
-		return locale.WrapError(err, "err_clean_start", "Could not start remove directory script")
+		return locale.WrapError(err, "err_clean_start", "Could not start remove direcotry script")
 	}
 
 	return nil
