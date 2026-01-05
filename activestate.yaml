@@ -273,6 +273,22 @@ scripts:
       set -e
       $constants.SET_ENV
       
+      if [ "$GITHUB_HEAD_REF" != "" ]; then
+        BRANCH=${GITHUB_HEAD_REF}
+      elif [ "$GITHUB_REF" != "" ]; then
+        BRANCH=$(echo $GITHUB_REF | awk -F'/' '{print $NF}')
+      else
+        BRANCH=$(git rev-parse --abbrev-ref HEAD)
+      fi
+
+      if [ "$BRANCH" == "" ]; then
+        echo "Branch cannot be empty"
+        exit 1
+      fi
+      if [ "$BRANCH" == "release" ]; then
+        BRANCH=""
+      fi
+
       PREFIX="remote-installer"
       if [ "$DEPLOY_TO_STAGING" = "true" ]; then
         PREFIX="staging/$PREFIX"
@@ -281,6 +297,10 @@ scripts:
         echo "Deploying remote installer to production: $PREFIX"
       fi
       
+      if [ "$BRANCH" != "" ]; then
+        PREFIX="$PREFIX/$BRANCH"
+      fi
+
       go run scripts/ci/s3-deployer/main.go $BUILD_TARGET_DIR/remote-installer us-east-1 state-tool $PREFIX
   - name: promote-staging-to-production
     language: bash
