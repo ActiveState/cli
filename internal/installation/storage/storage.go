@@ -105,7 +105,13 @@ func CachePath() string {
 		return path
 	}
 
-	return filepath.Join(BaseCachePath(), relativeCachePath())
+	cachePath = filepath.Join(BaseCachePath(), relativeCachePath())
+	if runtime.GOOS == "windows" {
+		// Explicitly append "cache" dir as the cachedir on Windows.
+		// It is the same as the local appdata dir (conflicts with config)
+		cachePath = filepath.Join(cachePath, "cache")
+	}
+	return cachePath
 }
 
 func GlobalBinDir() string {
