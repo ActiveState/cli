@@ -406,7 +406,11 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 			return nil
 		},
 	}, bytes.NewReader(b))
-	if err := ua.Unarchive(proxy, s.depot.Path(artifact.ArtifactID)); err != nil {
+	unpackPath := s.depot.Path(artifact.ArtifactID)
+	if err := ua.Unarchive(proxy, unpackPath); err != nil {
+		if err2 := os.RemoveAll(unpackPath); err2 != nil {
+			return errs.Pack(err, errs.Wrap(err2, "unable to remove partially-unpacked directory"))
+		}
 		return errs.Wrap(err, "unpack failed")
 	}
 
