@@ -59,16 +59,21 @@ type BuildLog struct {
 	eventHandlers        []events.HandlerFunc
 	logFilePath          string
 	onArtifactReadyFuncs map[strfmt.UUID][]func()
+	// authToken is the platform JWT forwarded to the build-log-streamer WS so
+	// the server can authorize the stream. Empty for unauthenticated callers.
+	authToken string
 }
 
 // New creates a new BuildLog instance that allows us to wait for incoming build log information
 // artifactMap comprises all artifacts (from the runtime closure) that are in the recipe, alreadyBuilt is set of artifact IDs that have already been built in the past
-func New(recipeID strfmt.UUID, artifactMap buildplan.ArtifactIDMap) *BuildLog {
+// authToken is the platform JWT forwarded to the build-log-streamer WS (empty if unauthenticated).
+func New(recipeID strfmt.UUID, artifactMap buildplan.ArtifactIDMap, authToken string) *BuildLog {
 	return &BuildLog{
 		recipeID:             recipeID,
 		artifactMap:          artifactMap,
 		eventHandlers:        []events.HandlerFunc{},
 		onArtifactReadyFuncs: map[strfmt.UUID][]func(){},
+		authToken:            authToken,
 	}
 }
 
@@ -94,7 +99,7 @@ func (b *BuildLog) OnArtifactReady(id strfmt.UUID, cb func()) {
 
 // NewWithCustomConnections creates a new BuildLog instance with all physical connections managed by the caller
 func (b *BuildLog) Wait(ctx context.Context) error {
-	conn, err := buildlogstream.Connect(ctx)
+	conn, err := buildlogstream.Connect(ctx, b.authToken)
 	if err != nil {
 		return errs.Wrap(err, "Could not connect to build-log streamer build updates")
 	}

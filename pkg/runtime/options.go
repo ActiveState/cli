@@ -9,6 +9,12 @@ func WithEventHandlers(handlers ...events.HandlerFunc) SetOpt {
 	return func(opts *Opts) { opts.EventHandlers = handlers }
 }
 
+// WithAuthToken forwards the platform JWT to the build-log-streamer WebSocket
+// so the server can authorize the stream (ENG-1372). Empty token = anonymous.
+func WithAuthToken(token string) SetOpt {
+	return func(opts *Opts) { opts.AuthToken = token }
+}
+
 func WithBuildlogFilePath(path string) SetOpt {
 	return func(opts *Opts) { opts.BuildlogFilePath = path }
 }

@@ -50,6 +50,10 @@ type Opts struct {
 	Portable             bool
 	CacheSize            int
 
+	// AuthToken is the platform JWT forwarded to the build-log-streamer WS so
+	// the server can authorize the stream. Empty for unauthenticated callers.
+	AuthToken string
+
 	FromArchive *fromArchive
 
 	// Annotations are used strictly to pass information for the purposes of analytics
@@ -238,7 +242,7 @@ func (s *setup) update() error {
 		return errs.Wrap(err, "Could not create runtime config dir")
 	}
 
-	blog := buildlog.New(s.buildplan.LegacyRecipeID(), s.toBuild).
+	blog := buildlog.New(s.buildplan.LegacyRecipeID(), s.toBuild, s.opts.AuthToken).
 		WithEventHandler(s.opts.EventHandlers...).
 		WithLogFile(filepath.Join(s.path, configDir, buildLogFile))
 
