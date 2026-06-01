@@ -27,6 +27,10 @@ func Connect(ctx context.Context, jwt string) (*websocket.Conn, error) {
 	url := api.GetServiceURL(api.BuildLogStreamer)
 	header := make(http.Header)
 	header.Add("Origin", "https://"+url.Host)
+	// Send the versioned State Tool User-Agent so the server can monitor which
+	// State Tool versions are connecting (e.g. to size the unauthenticated tail
+	// before tightening the gate). See ENG-1372.
+	header.Set("User-Agent", api.UserAgent())
 
 	dialer := *websocket.DefaultDialer // copy so we don't mutate the package global
 	dialer.Subprotocols = []string{wsSubprotocol}

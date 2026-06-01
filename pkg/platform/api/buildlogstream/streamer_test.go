@@ -13,14 +13,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// startMockBLS stands up a real WebSocket server that records the
-// Sec-WebSocket-Protocol values offered on the Upgrade, and redirects
-// Connect's resolved service URL at it via the per-service override env var
-// honored by api.GetServiceURL. Returns a pointer that holds the offered
-// subprotocols after Connect runs.
-func startMockBLS(t *testing.T) *[]string {
+// upgradeRequest captures the headers the build-log-streamer server saw on the
+// WS Upgrade.
+type upgradeRequest struct {
+	protocols []string
+	userAgent string
+}
+
+// startMockBLS stands up a real WebSocket server that records the Upgrade
+// request headers, and redirects Connect's resolved service URL at it via the
+// per-service override env var honored by api.GetServiceURL. Returns a pointer
+// populated after Connect runs.
+func startMockBLS(t *testing.T) *upgradeRequest {
 	t.Helper()
-	offered := &[]string{}
+	got := &upgradeRequest{}
 
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(*http.Request) bool { return true },
@@ -29,7 +35,8 @@ func startMockBLS(t *testing.T) *[]string {
 		Subprotocols: []string{wsSubprotocol},
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		*offered = r.Header.Values("Sec-WebSocket-Protocol")
+		got.protocols = r.Header.Values("Sec-WebSocket-Protocol")
+		got.userAgent = r.Header.Get("User-Agent")
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			return
@@ -42,33 +49,37 @@ func startMockBLS(t *testing.T) *[]string {
 	wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
 	t.Setenv(constants.APIServiceOverrideEnvVarName+"BUILDLOG_STREAMER", wsURL)
 
-	return offered
+	return got
 }
 
 func TestConnect_ForwardsJWTViaSubprotocol(t *testing.T) {
-	offered := startMockBLS(t)
+	got := startMockBLS(t)
 
 	conn, err := Connect(context.Background(), "header.payload.signature")
 	require.NoError(t, err)
 	_ = conn.Close()
 
-	joined := strings.Join(*offered, ",")
+	joined := strings.Join(got.protocols, ",")
 	assert.Contains(t, joined, "bearer.header.payload.signature",
 		"client must offer the JWT as a bearer.<jwt> subprotocol")
 	assert.Contains(t, joined, wsSubprotocol,
 		"client must still offer the real subprotocol the server echoes back")
+	assert.Contains(t, got.userAgent, "state/",
+		"client must send the versioned State Tool User-Agent so the server can monitor versions")
 }
 
 func TestConnect_AnonymousOffersNoBearer(t *testing.T) {
-	offered := startMockBLS(t)
+	got := startMockBLS(t)
 
 	conn, err := Connect(context.Background(), "")
 	require.NoError(t, err)
 	_ = conn.Close()
 
-	joined := strings.Join(*offered, ",")
+	joined := strings.Join(got.protocols, ",")
 	assert.NotContains(t, joined, "bearer.",
 		"anonymous Connect must not offer a bearer subprotocol")
 	assert.Contains(t, joined, wsSubprotocol,
 		"anonymous Connect must still offer the real subprotocol")
+	assert.Contains(t, got.userAgent, "state/",
+		"client must send the versioned State Tool User-Agent even when anonymous")
 }
