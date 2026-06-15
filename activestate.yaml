@@ -73,7 +73,7 @@ scripts:
       fi
       if { [[ "$GOOS" == "windows" ]] || [[ "$OS" == "Windows_NT" ]]; } && ! type "goversioninfo" &> /dev/null; then
         echo "goversioninfo was not found on your PATH. Installing .."
-        GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.0
+        GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.7.0
       fi
   - name: install-deps-ci
     language: bash
@@ -81,7 +81,7 @@ scripts:
     value: |
       if { [[ "$GOOS" == "windows" ]] || [[ "$OS" == "Windows_NT" ]]; } && ! type "goversioninfo" &> /dev/null; then
         echo "goversioninfo was not found on your PATH. Installing .."
-        GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.0
+        GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.7.0
       fi
   - name: preprocess
     language: bash
@@ -187,7 +187,7 @@ scripts:
       if [[ "$GOOS" == "windows" || "$OS" == "Windows_NT" ]]; then
         TARGET="${constants.BUILD_REMOTE_INSTALLER_TARGET}.exe"
       fi
-      GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.0
+      GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.7.0
       cd cmd/state-remote-installer
       go generate
       go build -tags "$GO_BUILD_TAGS" -o ../../$BUILD_TARGET_DIR/$TARGET .

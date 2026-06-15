@@ -37,7 +37,7 @@ jobs:
     strategy:
       matrix:
         go-version:
-          - 1.24.11
+          - 1.26.4
         sys:
           - { os: ubuntu-latest }
           - { os: macos-15-intel, shell: zsh }
@@ -443,7 +443,7 @@ jobs:
         name: Install Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.24.x
+          go-version: 1.26.x
 
       - # === Install State Tool ===
         name: Install State Tool

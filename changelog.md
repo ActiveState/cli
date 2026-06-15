@@ -15,6 +15,7 @@ and this project adheres to
 ### Fixed
 
 - Fixed occasional panic due to a concurrent map read/write during runtime setup.
+- Fixed `state clean cache` from accidentally deleting State Tool binaries on Windows.
 
 ## 0.48.0
 
