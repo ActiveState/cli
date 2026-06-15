@@ -257,6 +257,7 @@ func Update(
 		runtime.WithAnnotations(proj.Owner(), proj.Name(), commitID),
 		runtime.WithEventHandlers(pg.Handle, ah.handle),
 		runtime.WithPreferredLibcVersion(prime.Config().GetString(constants.PreferredGlibcVersionConfig)),
+		runtime.WithAuthToken(prime.Auth().BearerToken()),
 	}
 	if opts.Archive != nil {
 		rtOpts = append(rtOpts, runtime.WithArchive(opts.Archive.Dir, opts.Archive.PlatformID, checkout.ArtifactExt))
