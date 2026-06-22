@@ -529,3 +529,31 @@ const BuildProgressUrlPathName = "distributions"
 
 // RuntimeCacheSizeConfigKey is the config key for the runtime cache size.
 const RuntimeCacheSizeConfigKey = "runtime.cache.size"
+
+// PrivateIngredientKeyServiceURLConfig is the config key holding the URL of the
+// customer-hosted org key service (the GET .../v1/org-key endpoint).
+const PrivateIngredientKeyServiceURLConfig = "privateingredient.key_service_url"
+
+// PrivateIngredientKeyServiceCAConfig is the config key holding the path to the
+// CA bundle (or pinned certificate) used to verify the key service's TLS certificate.
+const PrivateIngredientKeyServiceCAConfig = "privateingredient.key_service_ca"
+
+// PrivateIngredientMTLSCertConfig is the config key holding the path to the mTLS
+// client certificate used to authenticate to the key service.
+const PrivateIngredientMTLSCertConfig = "privateingredient.mtls_cert"
+
+// PrivateIngredientMTLSKeyConfig is the config key holding the path to the mTLS
+// client private key used to authenticate to the key service.
+const PrivateIngredientMTLSKeyConfig = "privateingredient.mtls_key"
+
+// PrivateIngredientBearerTokenEnvConfig is the config key holding the name of the
+// environment variable from which to read a bearer token for the key service.
+const PrivateIngredientBearerTokenEnvConfig = "privateingredient.bearer_token_env"
+
+// PrivateIngredientBearerTokenFileConfig is the config key holding the path to a
+// file from which to read a bearer token for the key service.
+const PrivateIngredientBearerTokenFileConfig = "privateingredient.bearer_token_file"
+
+// PrivateIngredientCacheKeyConfig is the config key that opts into caching the
+// fetched org key on disk (0600) for headless/offline/CI reuse.
+const PrivateIngredientCacheKeyConfig = "privateingredient.cache_key_on_disk"
