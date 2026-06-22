@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/mholt/archives"
 
@@ -16,19 +17,42 @@ import (
 
 type Unarchiver struct {
 	archives.Extraction
+
+	untrusted bool
 }
 
-func NewTarGz() Unarchiver {
-	return Unarchiver{archives.CompressedArchive{
+// Option configures an Unarchiver.
+type Option func(*Unarchiver)
+
+// WithUntrustedSource marks the archive as coming from an untrusted source, so
+// every extracted path, symlink target, and hardlink target is confined under
+// the destination root and anything that would escape aborts extraction. Use it
+// for untrusted archives such as private ingredient wheels.
+//
+// It is off by default: trusted Platform artifacts may legitimately contain
+// absolute symlinks (for example into /usr/share), which would otherwise be
+// rejected.
+func WithUntrustedSource() Option {
+	return func(ua *Unarchiver) { ua.untrusted = true }
+}
+
+func NewTarGz(opts ...Option) Unarchiver {
+	return newUnarchiver(archives.CompressedArchive{
 		Compression: archives.Gz{},
 		Extraction:  archives.Tar{},
-	}}
+	}, opts)
 }
 
-func NewZip() Unarchiver {
-	return Unarchiver{
-		archives.Zip{},
+func NewZip(opts ...Option) Unarchiver {
+	return newUnarchiver(archives.Zip{}, opts)
+}
+
+func newUnarchiver(extraction archives.Extraction, opts []Option) Unarchiver {
+	ua := Unarchiver{Extraction: extraction}
+	for _, opt := range opts {
+		opt(&ua)
 	}
+	return ua
 }
 
 // PrepareUnpacking prepares the destination directory and the archive for unpacking
@@ -49,37 +73,74 @@ func (ua *Unarchiver) PrepareUnpacking(source, destination string) (archiveFile 
 	return archiveFile, nil
 }
 
-// Unarchive unarchives an archive file and unpacks it in `destination`
+// Unarchive unarchives an archive file and unpacks it in `destination`. For an
+// archive from an untrusted source (see WithUntrustedSource), every entry path,
+// symlink target, and hardlink target is confined under destination and anything
+// that would escape aborts extraction; otherwise paths are trusted as-is.
 func (ua *Unarchiver) Unarchive(archiveStream io.Reader, destination string) error {
+	root := filepath.Clean(destination)
 	ctx := context.Background()
 	err := ua.Extract(ctx, archiveStream, func(_ context.Context, file archives.FileInfo) error {
-		path := filepath.Join(destination, file.NameInArchive)
+		path := filepath.Join(root, file.NameInArchive)
+		if ua.untrusted && !isContainedPath(root, path) {
+			return errs.New("entry %q escapes the extraction root", file.NameInArchive)
+		}
 
 		if file.IsDir() {
-			return mkdir(path)
+			if err := mkdir(path); err != nil {
+				return errs.Wrap(err, "could not create directory")
+			}
+			return nil
 		}
 
 		if file.LinkTarget != "" {
 			if file.Mode()&os.ModeSymlink != 0 {
-				return writeNewSymbolicLink(path, file.LinkTarget)
+				if ua.untrusted {
+					if filepath.IsAbs(file.LinkTarget) {
+						return errs.New("symlink target %q is absolute", file.LinkTarget)
+					}
+					resolved := filepath.Join(filepath.Dir(path), file.LinkTarget)
+					if !isContainedPath(root, resolved) {
+						return errs.New("symlink target %q escapes the extraction root", file.LinkTarget)
+					}
+				}
+				if err := writeNewSymbolicLink(path, file.LinkTarget); err != nil {
+					return errs.Wrap(err, "could not write symlink")
+				}
+				return nil
 			}
-			target := filepath.Join(destination, file.LinkTarget)
-			return writeNewHardLink(path, target)
+			target := filepath.Join(root, file.LinkTarget)
+			if ua.untrusted && !isContainedPath(root, target) {
+				return errs.New("hardlink target %q escapes the extraction root", file.LinkTarget)
+			}
+			if err := writeNewHardLink(path, target); err != nil {
+				return errs.Wrap(err, "could not write hardlink")
+			}
+			return nil
 		}
 
 		f, err := file.Open()
 		if err != nil {
-			return err
+			return errs.Wrap(err, "could not open archived file")
 		}
 		defer f.Close()
 
-		return writeNewFile(path, f, file.Mode())
+		if err := writeNewFile(path, f, file.Mode()); err != nil {
+			return errs.Wrap(err, "could not write file")
+		}
+		return nil
 	})
 	if err != nil {
 		return errs.Wrap(err, "Unable to extract files")
 	}
 
 	return nil
+}
+
+// isContainedPath reports whether path is at or under root. Both are expected to
+// be cleaned (filepath.Join cleans its result).
+func isContainedPath(root, path string) bool {
+	return path == root || strings.HasPrefix(path, root+string(os.PathSeparator))
 }
 
 // the following files are just copied from the ActiveState/archiver repository
