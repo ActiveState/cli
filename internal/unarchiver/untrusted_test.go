@@ -54,6 +54,7 @@ func TestUntrustedSourceRejectsEscapes(t *testing.T) {
 	}{
 		{"path traversal", []tarEntry{{name: "../escape.txt", typeflag: tar.TypeReg, body: "x"}}},
 		{"absolute symlink", []tarEntry{{name: "link", typeflag: tar.TypeSymlink, linkname: "/etc/passwd"}}},
+		{"backslash-rooted symlink", []tarEntry{{name: "link", typeflag: tar.TypeSymlink, linkname: `\Windows\System32`}}},
 		{"symlink escapes root", []tarEntry{{name: "sub/link", typeflag: tar.TypeSymlink, linkname: "../../outside"}}},
 		{"hardlink escapes root", []tarEntry{{name: "link", typeflag: tar.TypeLink, linkname: "../outside"}}},
 	}

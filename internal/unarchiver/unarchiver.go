@@ -96,7 +96,7 @@ func (ua *Unarchiver) Unarchive(archiveStream io.Reader, destination string) err
 		if file.LinkTarget != "" {
 			if file.Mode()&os.ModeSymlink != 0 {
 				if ua.untrusted {
-					if filepath.IsAbs(file.LinkTarget) {
+					if hasAbsoluteTarget(file.LinkTarget) {
 						return errs.New("symlink target %q is absolute", file.LinkTarget)
 					}
 					resolved := filepath.Join(filepath.Dir(path), file.LinkTarget)
@@ -141,6 +141,14 @@ func (ua *Unarchiver) Unarchive(archiveStream io.Reader, destination string) err
 // be cleaned (filepath.Join cleans its result).
 func isContainedPath(root, path string) bool {
 	return path == root || strings.HasPrefix(path, root+string(os.PathSeparator))
+}
+
+// hasAbsoluteTarget reports whether an archive link target is rooted on any
+// platform. filepath.IsAbs alone is host-specific, so a Unix-style "/etc/passwd"
+// reads as relative on Windows; this checks for a leading separator (Unix "/" or
+// Windows "\") or a volume name ("C:") instead.
+func hasAbsoluteTarget(target string) bool {
+	return target != "" && (target[0] == '/' || target[0] == '\\' || filepath.VolumeName(target) != "")
 }
 
 // the following files are just copied from the ActiveState/archiver repository
