@@ -178,8 +178,14 @@ func TestPackIsDeterministic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b1, _ := os.ReadFile(p1)
-	b2, _ := os.ReadFile(p2)
+	b1, err := os.ReadFile(p1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b2, err := os.ReadFile(p2)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !bytes.Equal(b1, b2) {
 		t.Errorf("wheels differ across runs (%d vs %d bytes)", len(b1), len(b2))
 	}
