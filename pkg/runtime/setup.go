@@ -54,6 +54,12 @@ type Opts struct {
 	// the server can authorize the stream. Empty for unauthenticated callers.
 	AuthToken string
 
+	// OrgKey is the organization AES-256 key used to decrypt private artifacts
+	// during install, with OrgKeyID identifying which key it is. Both are empty
+	// when the runtime has no private ingredients.
+	OrgKey   []byte
+	OrgKeyID string
+
 	FromArchive *fromArchive
 
 	// Annotations are used strictly to pass information for the purposes of analytics
