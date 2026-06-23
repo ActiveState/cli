@@ -296,7 +296,7 @@ func Update(
 		key, keyID, err := orgKeyProvider.Key(context.Background())
 		if err != nil {
 			prime.Output().Notice(locale.Tl("warn_orgkey_unavailable",
-				"[WARNING]Warning:[/RESET] Could not fetch the organization key: {{.V0}}. Encrypted private ingredients will be skipped and retried once the key service is reachable.",
+				"[WARNING]Warning:[/RESET] Could not fetch the organization key: {{.V0}}. Encrypted private artifacts will be skipped. Ensure the key is available and run '[ACTIONABLE]state refresh[/RESET]' to try installing them again.",
 				errs.JoinMessage(err)))
 		} else {
 			rtOpts = append(rtOpts, runtime.WithDecryptionKey(key, keyID))
