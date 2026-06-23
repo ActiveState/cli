@@ -178,8 +178,11 @@ func (p *provider) httpClient() (*http.Client, error) {
 	}
 
 	return &http.Client{
-		Timeout:   fetchTimeout,
-		Transport: &http.Transport{TLSClientConfig: tlsCfg},
+		Timeout: fetchTimeout,
+		Transport: &http.Transport{
+			TLSClientConfig: tlsCfg,
+			Proxy:           http.ProxyFromEnvironment,
+		},
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return errs.New("key service redirects are not allowed")
 		},

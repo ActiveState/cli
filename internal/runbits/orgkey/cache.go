@@ -27,6 +27,9 @@ func (p *provider) readDiskCache() ([]byte, bool) {
 	path := p.cachePath()
 	info, err := os.Stat(path)
 	if err != nil {
+		if !os.IsNotExist(err) {
+			logging.Warning("Ignoring on-disk org key cache: %v", errs.JoinMessage(err))
+		}
 		return nil, false
 	}
 	if err := checkCacheMode(info); err != nil {
