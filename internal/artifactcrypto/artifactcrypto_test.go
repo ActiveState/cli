@@ -121,6 +121,33 @@ func TestRoundTripPreservesZip(t *testing.T) {
 	}
 }
 
+func TestIsEncrypted(t *testing.T) {
+	payload := encryptToBytes(t, []byte("secret"), "kid")
+
+	cases := []struct {
+		name string
+		data []byte
+		want bool
+	}{
+		{"encrypted payload", payload, true},
+		{"json plaintext", []byte(`{"schema":"x"}`), false},
+		{"short input", []byte{0x00, 0x01}, false},
+		{"empty", nil, false},
+		{"marker present but truncated body", payload[:4+len(magicMarker)], true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := IsEncrypted(bytes.NewReader(tc.data))
+			if err != nil {
+				t.Fatalf("IsEncrypted: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("IsEncrypted = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestFingerprint(t *testing.T) {
 	fp := Fingerprint(testKey)
 	if len(fp) != len("sha256:")+64 {

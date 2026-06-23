@@ -99,6 +99,30 @@ func (h Header) CheckKey(key []byte) error {
 	return nil
 }
 
+// IsEncrypted reports whether src begins with the v1 payload marker. It reads
+// only the leading length prefix and magic, so a non-payload stream (or one too
+// short to be a payload) returns false without error. A stream whose marker
+// matches but whose body is malformed still returns true here; that is caught
+// when the payload is actually parsed or decrypted, so detection and validation
+// stay distinct.
+func IsEncrypted(src io.Reader) (bool, error) {
+	var lenBuf [4]byte
+	if _, err := io.ReadFull(src, lenBuf[:]); err != nil {
+		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+			return false, nil
+		}
+		return false, errs.Wrap(err, "reading payload prefix")
+	}
+	magic := make([]byte, len(magicMarker))
+	if _, err := io.ReadFull(src, magic); err != nil {
+		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+			return false, nil
+		}
+		return false, errs.Wrap(err, "reading payload marker")
+	}
+	return string(magic) == magicMarker, nil
+}
+
 // ParseHeader reads the header from src, consuming exactly the header bytes and
 // leaving src positioned at the first chunk.
 func ParseHeader(src io.Reader) (Header, error) {

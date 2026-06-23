@@ -1,6 +1,7 @@
 package runtime_runbit
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"os"
@@ -22,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/checkout"
+	"github.com/ActiveState/cli/internal/runbits/orgkey"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
@@ -36,7 +38,6 @@ import (
 	"github.com/ActiveState/cli/pkg/runtime_helpers"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
-	"golang.org/x/net/context"
 )
 
 func init() {
@@ -284,6 +285,20 @@ func Update(
 		rtOpts = append(rtOpts, runtime.WithPortable())
 	}
 	rtOpts = append(rtOpts, runtime.WithCacheSize(prime.Config().GetInt(constants.RuntimeCacheSizeConfigKey)))
+
+	// Fetch the organization key for private ingredients, if a key service is configured.
+	orgKeyProvider := orgkey.New(prime.Config(), proj.Owner())
+	if orgKeyProvider.Configured() {
+		defer orgKeyProvider.Close()
+		key, keyID, err := orgKeyProvider.Key(context.Background())
+		if err != nil {
+			prime.Output().Notice(locale.Tl("warn_orgkey_unavailable",
+				"[WARNING]Warning:[/RESET] Could not fetch the organization key: {{.V0}}. Encrypted private ingredients will be skipped and retried once the key service is reachable.",
+				errs.JoinMessage(err)))
+		} else {
+			rtOpts = append(rtOpts, runtime.WithDecryptionKey(key, keyID))
+		}
+	}
 
 	if isArmPlatform(buildPlan) {
 		prime.Output().Notice(locale.Tl("warning_arm_unstable", "[WARNING]Warning:[/RESET] You are using an ARM64 architecture, which is currently unstable. While it may work, you might encounter issues."))
