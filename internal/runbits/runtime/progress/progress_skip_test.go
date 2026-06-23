@@ -25,7 +25,7 @@ func TestInstallSkippedCompletesBar(t *testing.T) {
 		handle(t, p, events.Start{ArtifactsToInstall: expected})
 		handle(t, p, events.ArtifactInstallStarted{installed})
 		handle(t, p, events.ArtifactInstallSuccess{installed})
-		handle(t, p, events.ArtifactInstallSkipped{skipped})
+		handle(t, p, events.ArtifactInstallSkipped{skipped, "pkg"})
 
 		if got, want := p.installBar.Current(), int64(len(expected)); got != want {
 			t.Errorf("install bar at %d/%d; want %d (a skipped artifact must still advance the bar)", got, p.installBar.total, want)
@@ -39,7 +39,7 @@ func TestInstallSkippedCompletesBar(t *testing.T) {
 		// No Started event fires, so the skip event itself must create the bar.
 		expected := buildplan.ArtifactIDMap{skipped: nil}
 		handle(t, p, events.Start{ArtifactsToInstall: expected})
-		handle(t, p, events.ArtifactInstallSkipped{skipped})
+		handle(t, p, events.ArtifactInstallSkipped{skipped, "pkg"})
 
 		if p.installBar == nil {
 			t.Fatal("install bar was never created for an all-skipped install")

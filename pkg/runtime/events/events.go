@@ -159,6 +159,7 @@ func (ArtifactInstallSuccess) IsEvent() {}
 // private artifact with no org key available) and so is never installed.
 type ArtifactInstallSkipped struct {
 	ArtifactID strfmt.UUID
+	Name       string
 }
 
 func (ArtifactInstallSkipped) IsEvent() {}

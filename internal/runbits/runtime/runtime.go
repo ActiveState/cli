@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
@@ -254,9 +255,11 @@ func Update(
 	pg := progress.NewRuntimeProgressIndicator(prime.Output())
 	defer rtutils.Closer(pg.Close, &rerr)
 
+	skipped := &skipReporter{}
+
 	rtOpts := []runtime.SetOpt{
 		runtime.WithAnnotations(proj.Owner(), proj.Name(), commitID),
-		runtime.WithEventHandlers(pg.Handle, ah.handle),
+		runtime.WithEventHandlers(pg.Handle, ah.handle, skipped.handle),
 		runtime.WithPreferredLibcVersion(prime.Config().GetString(constants.PreferredGlibcVersionConfig)),
 		runtime.WithAuthToken(prime.Auth().BearerToken()),
 	}
@@ -306,6 +309,12 @@ func Update(
 
 	if err := rt.Update(buildPlan, rtHash, rtOpts...); err != nil {
 		return nil, locale.WrapError(err, "err_packages_update_runtime_install")
+	}
+
+	if len(skipped.names) > 0 {
+		prime.Output().Notice(locale.Tl("warn_private_artifacts_skipped",
+			"[WARNING]Warning:[/RESET] These private ingredients were skipped because the organization key was unavailable: {{.V0}}. They will be installed on the next run once the key is available.",
+			strings.Join(skipped.names, ", ")))
 	}
 
 	return rt, nil
@@ -418,5 +427,21 @@ func (h *analyticsHandler) handle(event events.Event) error {
 		h.fire(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimePostprocess, nil)
 	}
 
+	return nil
+}
+
+// skipReporter collects the names of artifacts skipped during runtime setup so
+// the caller can report them once the update completes.
+type skipReporter struct {
+	mutex sync.Mutex
+	names []string
+}
+
+func (r *skipReporter) handle(event events.Event) error {
+	if e, ok := event.(events.ArtifactInstallSkipped); ok {
+		r.mutex.Lock()
+		defer r.mutex.Unlock()
+		r.names = append(r.names, e.Name)
+	}
 	return nil
 }

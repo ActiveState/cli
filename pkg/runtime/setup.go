@@ -664,7 +664,7 @@ func (s *setup) install(artifact *buildplan.Artifact) (rerr error) {
 	// Artifacts skipped during unpack are not in the depot. Report the skip so
 	// the install progress bar still accounts for them.
 	if s.wasSkipped(id) {
-		if err := s.fireEvent(events.ArtifactInstallSkipped{id}); err != nil {
+		if err := s.fireEvent(events.ArtifactInstallSkipped{id, artifact.Name()}); err != nil {
 			return errs.Wrap(err, "Could not handle ArtifactInstallSkipped event")
 		}
 		return nil
