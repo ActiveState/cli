@@ -58,6 +58,9 @@ type artifactInfo struct {
 	Name      string `json:"name,omitempty"`
 	Version   string `json:"version,omitempty"`
 
+	// For private decrypted artifacts.
+	Private bool `json:"private,omitempty"`
+
 	id strfmt.UUID // for convenience when removing stale artifacts; should NOT have json tag
 }
 
@@ -189,6 +192,23 @@ func (d *depot) Put(id strfmt.UUID) error {
 		return errs.New("could not put %s, as dir does not exist: %s", id, d.Path(id))
 	}
 	d.artifacts[id] = struct{}{}
+	return nil
+}
+
+// MarkPrivate flags an artifact as a decrypted private artifact, ensuring a
+// cache entry exists for it. Private artifacts are exempt from stale removal.
+func (d *depot) MarkPrivate(id strfmt.UUID) error {
+	d.mapMutex.Lock()
+	defer d.mapMutex.Unlock()
+
+	if _, exists := d.config.Cache[id]; !exists {
+		size, err := fileutils.GetDirSize(d.Path(id))
+		if err != nil {
+			return errs.Wrap(err, "Could not get artifact size on disk")
+		}
+		d.config.Cache[id] = &artifactInfo{Size: size, id: id}
+	}
+	d.config.Cache[id].Private = true
 	return nil
 }
 
@@ -530,14 +550,14 @@ func someFilesExist(filePaths []string, basePath string) bool {
 	return false
 }
 
-// removeStaleArtifacts iterates over all unused artifacts in the depot, sorts them by last access
-// time, and removes them until the size of cached artifacts is under the limit.
+// removeStaleArtifacts iterates over all unused, non-private artifacts in the depot, sorts
+// them by last access time, and removes them until the size of cached artifacts is under the limit.
 func (d *depot) removeStaleArtifacts() error {
 	var totalSize int64
 	unusedArtifacts := make([]*artifactInfo, 0)
 
 	for id, info := range d.config.Cache {
-		if !info.InUse {
+		if !info.InUse && !info.Private {
 			totalSize += info.Size
 			unusedInfo := *info
 			unusedInfo.id = id // id is not set in cache since info is keyed by id
