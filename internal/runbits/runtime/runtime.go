@@ -313,7 +313,7 @@ func Update(
 
 	if len(skipped.names) > 0 {
 		prime.Output().Notice(locale.Tl("warn_private_artifacts_skipped",
-			"[WARNING]Warning:[/RESET] These private ingredients were skipped because the organization key was unavailable: {{.V0}}. They will be installed on the next run once the key is available.",
+			"[WARNING]Warning:[/RESET] These private packages were skipped because the organization key was unavailable: {{.V0}}. Ensure the key is available and run '[ACTIONABLE]state refresh[/RESET]' to try installing them again.",
 			strings.Join(skipped.names, ", ")))
 	}
 
