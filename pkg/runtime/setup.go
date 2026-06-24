@@ -61,9 +61,14 @@ type Opts struct {
 
 	// OrgKey is the organization AES-256 key used to decrypt private artifacts
 	// during install, with OrgKeyID identifying which key it is. Both are empty
-	// when the runtime has no private ingredients.
+	// when the runtime has no private artifacts.
 	OrgKey   []byte
 	OrgKeyID string
+
+	// CheckForPrivateArtifactUpdates makes the update re-solve and re-check
+	// content even when the commit hash is unchanged, so a private artifact
+	// re-published under the same artifact ID is detected.
+	CheckForPrivateArtifactUpdates bool
 
 	FromArchive *fromArchive
 
@@ -142,7 +147,7 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 	installableArtifactsMap := installableArtifacts.ToIDMap()
 
 	// Identify installed private artifacts whose depot content no longer matches
-	// the build plan: a private ingredient re-published under the same artifact ID.
+	// the build plan: a private artifact re-published under the same artifact ID.
 	statePrivateArtifacts := map[strfmt.UUID]bool{}
 	for id := range installedArtifacts {
 		a, required := installableArtifactsMap[id]

@@ -218,7 +218,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		})
 	}
 
-	_, err = runtime_runbit.Update(p.prime, trigger.TriggerPull)
+	_, err = runtime_runbit.Update(p.prime, trigger.TriggerPull, runtime_runbit.WithCheckForPrivateArtifactUpdates())
 	if err != nil {
 		return locale.WrapError(err, "err_pull_refresh", "Could not refresh runtime after pull")
 	}

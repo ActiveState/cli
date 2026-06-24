@@ -92,11 +92,19 @@ func (r *Refresh) Run(params *Params) error {
 	}
 
 	if !needsUpdate {
-		r.out.Notice(locale.T("refresh_runtime_uptodate"))
-		return nil
+		// Even when the commit hash is unchanged, a private artifact may have been
+		// re-published under the same artifact ID; those runtimes still need a refresh.
+		hasPrivate, err := runtime_helpers.HasPrivateArtifacts(proj)
+		if err != nil {
+			return errs.Wrap(err, "could not determine if runtime has private artifacts")
+		}
+		if !hasPrivate {
+			r.out.Notice(locale.T("refresh_runtime_uptodate"))
+			return nil
+		}
 	}
 
-	rti, err := runtime_runbit.Update(r.prime, trigger.TriggerRefresh, runtime_runbit.WithoutHeaders(), runtime_runbit.WithIgnoreAsync())
+	rti, err := runtime_runbit.Update(r.prime, trigger.TriggerRefresh, runtime_runbit.WithoutHeaders(), runtime_runbit.WithIgnoreAsync(), runtime_runbit.WithCheckForPrivateArtifactUpdates())
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime_new", "Could not update runtime for this project.")
 	}

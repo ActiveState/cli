@@ -57,6 +57,8 @@ type Opts struct {
 
 	ValidateBuildscript bool
 	IgnoreAsync         bool
+
+	CheckForPrivateArtifactUpdates bool
 }
 
 type SetOpt func(*Opts)
@@ -102,6 +104,15 @@ func WithArchive(archive *checkout.Archive) SetOpt {
 func WithIgnoreAsync() SetOpt {
 	return func(opts *Opts) {
 		opts.IgnoreAsync = true
+	}
+}
+
+// WithCheckForPrivateArtifactUpdates re-checks private artifact content even when
+// the commit hash is unchanged, so re-published private artifacts are picked
+// up.
+func WithCheckForPrivateArtifactUpdates() SetOpt {
+	return func(opts *Opts) {
+		opts.CheckForPrivateArtifactUpdates = true
 	}
 }
 
@@ -186,7 +197,7 @@ func Update(
 		prime.Output().Notice(output.Title(locale.T("install_runtime")))
 	}
 
-	if rt.Hash() == rtHash {
+	if rt.Hash() == rtHash && (!opts.CheckForPrivateArtifactUpdates || !rt.HasPrivateArtifacts()) {
 		prime.Output().Notice(locale.T("pkg_already_uptodate"))
 		return rt, nil
 	}
@@ -288,8 +299,11 @@ func Update(
 		rtOpts = append(rtOpts, runtime.WithPortable())
 	}
 	rtOpts = append(rtOpts, runtime.WithCacheSize(prime.Config().GetInt(constants.RuntimeCacheSizeConfigKey)))
+	if opts.CheckForPrivateArtifactUpdates {
+		rtOpts = append(rtOpts, runtime.WithCheckForPrivateArtifactUpdates())
+	}
 
-	// Fetch the organization key for private ingredients, if a key service is configured.
+	// Fetch the organization key for private artifacts, if a key service is configured.
 	orgKeyProvider := orgkey.New(prime.Config(), proj.Owner())
 	if orgKeyProvider.Configured() {
 		defer orgKeyProvider.Close()

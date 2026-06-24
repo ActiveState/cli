@@ -24,6 +24,12 @@ func WithDecryptionKey(key []byte, keyID string) SetOpt {
 	}
 }
 
+// WithCheckForPrivateArtifactUpdates makes the update re-check private artifact
+// content even when the commit hash is unchanged (re-published content).
+func WithCheckForPrivateArtifactUpdates() SetOpt {
+	return func(opts *Opts) { opts.CheckForPrivateArtifactUpdates = true }
+}
+
 func WithBuildlogFilePath(path string) SetOpt {
 	return func(opts *Opts) { opts.BuildlogFilePath = path }
 }

@@ -218,6 +218,29 @@ func (d *depot) MarkPrivate(id strfmt.UUID, checksum string) error {
 	return nil
 }
 
+// HasPrivateArtifacts reports whether any artifact deployed at path is a private
+// artifact. A runtime with private artifacts cannot be trusted as up-to-date
+// by commit hash alone, since the same artifact ID may point at re-published
+// content.
+func (d *depot) HasPrivateArtifacts(path string) bool {
+	d.mapMutex.Lock()
+	defer d.mapMutex.Unlock()
+
+	resolved := fileutils.ResolvePathIfPossible(path)
+	for id, deploys := range d.config.Deployments {
+		info, ok := d.config.Cache[id]
+		if !ok || !info.Private {
+			continue
+		}
+		for _, dep := range deploys {
+			if fileutils.ResolvePathIfPossible(dep.Path) == resolved {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // PrivateContentChanged reports whether the depot holds a private artifact for id
 // whose stored content checksum differs from the given build-plan checksum — the
 // timeless/re-published case where a fixed artifact ID now points at new content.

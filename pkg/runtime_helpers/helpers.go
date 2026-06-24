@@ -45,6 +45,14 @@ func NeedsUpdate(proj *project.Project, overrideCommitID *strfmt.UUID) (bool, er
 	return hash != rt.Hash(), nil
 }
 
+func HasPrivateArtifacts(proj *project.Project) (bool, error) {
+	rt, err := FromProject(proj)
+	if err != nil {
+		return false, errs.Wrap(err, "Could not obtain runtime")
+	}
+	return rt.HasPrivateArtifacts(), nil
+}
+
 func Hash(proj *project.Project, overrideCommitID *strfmt.UUID) (string, error) {
 	var err error
 	var commitID strfmt.UUID

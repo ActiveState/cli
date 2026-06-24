@@ -286,6 +286,52 @@ func TestPrivateContentChanged(t *testing.T) {
 	}
 }
 
+func TestHasPrivateArtifacts(t *testing.T) {
+	const (
+		priv   = strfmt.UUID("aaaaaaaa-0000-0000-0000-000000000000")
+		public = strfmt.UUID("bbbbbbbb-0000-0000-0000-000000000000")
+	)
+	path := t.TempDir()
+	other := t.TempDir()
+
+	newDepotWith := func(cache map[strfmt.UUID]*artifactInfo, deps map[strfmt.UUID][]deployment) *depot {
+		return &depot{
+			config:    depotConfig{Cache: cache, Deployments: deps},
+			artifacts: map[strfmt.UUID]struct{}{},
+		}
+	}
+
+	t.Run("private deployed at path", func(t *testing.T) {
+		d := newDepotWith(
+			map[strfmt.UUID]*artifactInfo{priv: {Private: true}},
+			map[strfmt.UUID][]deployment{priv: {{Path: path}}},
+		)
+		if !d.HasPrivateArtifacts(path) {
+			t.Error("expected the private deployment to be detected")
+		}
+	})
+
+	t.Run("only public deployed", func(t *testing.T) {
+		d := newDepotWith(
+			map[strfmt.UUID]*artifactInfo{public: {}},
+			map[strfmt.UUID][]deployment{public: {{Path: path}}},
+		)
+		if d.HasPrivateArtifacts(path) {
+			t.Error("a public-only runtime should not report private deployments")
+		}
+	})
+
+	t.Run("private deployed only at another path", func(t *testing.T) {
+		d := newDepotWith(
+			map[strfmt.UUID]*artifactInfo{priv: {Private: true}},
+			map[strfmt.UUID][]deployment{priv: {{Path: other}}},
+		)
+		if d.HasPrivateArtifacts(path) {
+			t.Error("a private deployment at another path should not match")
+		}
+	})
+}
+
 func exists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil

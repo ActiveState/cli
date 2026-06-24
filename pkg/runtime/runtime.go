@@ -77,15 +77,21 @@ func (r *Runtime) HasCache() bool {
 	return r.hash != ""
 }
 
-func (r *Runtime) Update(bp *buildplan.BuildPlan, hash string, setOpts ...SetOpt) error {
-	if r.hash == hash {
-		logging.Debug("Runtime is already up to date")
-		return nil
-	}
+// HasPrivateArtifacts reports whether this runtime has any private (decrypted)
+// artifacts deployed, whose content may change under an unchanged commit hash.
+func (r *Runtime) HasPrivateArtifacts() bool {
+	return r.depot.HasPrivateArtifacts(r.path)
+}
 
+func (r *Runtime) Update(bp *buildplan.BuildPlan, hash string, setOpts ...SetOpt) error {
 	opts := &Opts{}
 	for _, setOpt := range setOpts {
 		setOpt(opts)
+	}
+
+	if r.hash == hash && (!opts.CheckForPrivateArtifactUpdates || !r.HasPrivateArtifacts()) {
+		logging.Debug("Runtime is already up to date")
+		return nil
 	}
 
 	if opts.BuildlogFilePath == "" {
