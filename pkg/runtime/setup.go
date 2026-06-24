@@ -2,6 +2,8 @@ package runtime
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 	"path/filepath"
 	"strings"
@@ -374,6 +376,11 @@ func (s *setup) obtain(artifact *buildplan.Artifact) (rerr error) {
 		}
 	}
 
+	// Verify checksum.
+	if err := s.verifyArtifact(artifact, b); err != nil {
+		return errs.Wrap(err, "Artifact checksum validation failed")
+	}
+
 	// Unpack artifact
 	if err := s.unpack(artifact, b); err != nil {
 		return errs.Wrap(err, "unpack failed")
@@ -413,6 +420,29 @@ func (s *setup) download(artifact *buildplan.Artifact) (_ []byte, rerr error) {
 	}
 
 	return b, nil
+}
+
+// verifyArtifact verifies the checksum of the downloaded artifact matches the checksum given by the
+// platform, and returns an error if the verification fails.
+func (s *setup) verifyArtifact(artifact *buildplan.Artifact, b []byte) error {
+	if artifact.Checksum != "" {
+		logging.Debug("Validating checksum for %s", artifact.NameAndVersion())
+	} else {
+		logging.Debug("Skipping checksum validation for %s because the Platform did not provide a checksum to validate against.", artifact.NameAndVersion())
+		return nil
+	}
+
+	hasher := sha256.New()
+	hasher.Write(b)
+	checksum := hex.EncodeToString(hasher.Sum(nil))
+	artifactChecksum := strings.TrimPrefix(artifact.Checksum, "sha256:")
+	if checksum != artifactChecksum {
+		logging.Debug("Checksum validation failed. Expected '%s', but was '%s'", artifactChecksum, checksum)
+		// Note: the artifact name will be reported higher up the chain
+		return locale.NewError("artifact_checksum_failed", "Checksum validation failed")
+	}
+
+	return nil
 }
 
 func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
