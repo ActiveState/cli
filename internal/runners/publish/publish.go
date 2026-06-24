@@ -97,7 +97,7 @@ func (r *Runner) Run(params *Params) error {
 		if err != nil {
 			return errs.Wrap(err, "Could not build private ingredient")
 		}
-		defer cleanup() // remove artifact.tar.gz and temporary build dir
+		defer cleanup() // remove the temporary build directory
 	}
 
 	if params.Filepath != "" {
@@ -136,6 +136,14 @@ func (r *Runner) Run(params *Params) error {
 		reqVars.Namespace = params.Namespace
 	} else if reqVars.Namespace == "" && r.project != nil && r.project.Owner() != "" {
 		reqVars.Namespace = model.NewNamespaceOrg(r.project.Owner(), "").String()
+	}
+
+	// A --build publish is encrypted under the project org's key, so its resolved
+	// namespace (flag, meta file, or default) must stay within that org.
+	if params.Build != "" {
+		if err := requireOrgNamespace(reqVars.Namespace, r.project.Owner()); err != nil {
+			return err
+		}
 	}
 
 	// Name

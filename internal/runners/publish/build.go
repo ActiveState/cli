@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/python/wheel"
 	"github.com/ActiveState/cli/internal/runbits/orgkey"
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 // generateEncryptedArtifact validates the --build inputs, fetches and validates
@@ -28,9 +29,6 @@ func (r *Runner) generateEncryptedArtifact(params *Params) (cleanup func(), rerr
 	}
 	if r.project == nil {
 		return nil, locale.NewInputError("err_publish_build_no_project", "The '[ACTIONABLE]--build[/RESET]' flag requires a project so the organization can be determined.")
-	}
-	if params.Namespace != "" && !strings.HasPrefix(params.Namespace, "private/") {
-		return nil, locale.NewInputError("err_publish_build_namespace", "The '[ACTIONABLE]--build[/RESET]' flag requires a '[ACTIONABLE]private/[/RESET]' namespace.")
 	}
 
 	meta, err := wheel.ResolveMetadata(params.Build, wheel.Metadata{Name: params.Name, Version: params.Version})
@@ -69,6 +67,18 @@ func (r *Runner) generateEncryptedArtifact(params *Params) (cleanup func(), rerr
 	return cleanup, nil
 }
 
+// requireOrgNamespace ensures ns belongs to the project owner's private org, so
+// an artifact encrypted under that org's key is published under that same org
+// and stays decryptable by its consumers.
+func requireOrgNamespace(ns, owner string) error {
+	org := model.NewNamespaceOrg(owner, "").String()
+	if ns == org || strings.HasPrefix(ns, org+"/") {
+		return nil
+	}
+	return locale.NewInputError("err_publish_build_namespace",
+		"The '[ACTIONABLE]--build[/RESET]' flag requires a namespace under '[ACTIONABLE]{{.V0}}[/RESET]'.", org)
+}
+
 // payloadInstallDir is the directory inside the wrapped artifact that holds the
 // deployable payload; the cleartext runtime.json points the consume side at it.
 const payloadInstallDir = "install"
@@ -96,7 +106,7 @@ func buildWrappedArtifact(srcDir string, meta wheel.Metadata, key []byte, keyID 
 
 	wheelPath, err := wheel.Pack(srcDir, meta, tmpDir)
 	if err != nil {
-		return "", nil, locale.WrapInputError(err, "err_publish_build_pack", "Could not build a wheel from '{{.V0}}': {{.V1}}", srcDir, errs.JoinMessage(err))
+		return "", nil, errs.Wrap(err, "Could not build a wheel from %s", srcDir)
 	}
 
 	// Assemble the tar.gz that becomes the encrypted payload, placing the wheel

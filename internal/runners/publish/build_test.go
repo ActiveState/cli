@@ -42,6 +42,7 @@ func readTarGz(t *testing.T, path string) map[string][]byte {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer gz.Close()
 	tr := tar.NewReader(gz)
 	out := map[string][]byte{}
 	for {
@@ -71,6 +72,22 @@ func keysOf(m map[string][]byte) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+func TestRequireOrgNamespace(t *testing.T) {
+	const owner = "myorg" // org namespace is private/myorg
+	ok := []string{"private/myorg", "private/myorg/sub", "private/myorg/a/b"}
+	bad := []string{"private/other", "private/myorg2", "public/myorg", "private", ""}
+	for _, ns := range ok {
+		if err := requireOrgNamespace(ns, owner); err != nil {
+			t.Errorf("requireOrgNamespace(%q) = %v, want nil", ns, err)
+		}
+	}
+	for _, ns := range bad {
+		if err := requireOrgNamespace(ns, owner); err == nil {
+			t.Errorf("requireOrgNamespace(%q) = nil, want an error", ns)
+		}
+	}
 }
 
 func TestBuildWrappedArtifact(t *testing.T) {
