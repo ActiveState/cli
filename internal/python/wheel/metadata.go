@@ -10,31 +10,24 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-// resolvedMetadata is the metadata after merging caller overrides with
-// pyproject.toml, with name and version guaranteed non-empty.
-type resolvedMetadata struct {
-	Name    string
-	Version string
-	Summary string
-}
-
-// resolveMetadata fills empty fields of override from srcDir's pyproject.toml and
-// returns the result, erroring if name or version is set by neither source.
-func resolveMetadata(srcDir string, override Metadata) (resolvedMetadata, error) {
+// ResolveMetadata reads srcDir's pyproject.toml [project] table and applies the
+// non-empty fields of override on top, producing the metadata to pack with. It
+// errors when neither source supplies a name or version.
+func ResolveMetadata(srcDir string, override Metadata) (*Metadata, error) {
 	proj, err := readPyProject(filepath.Join(srcDir, "pyproject.toml"))
 	if err != nil {
-		return resolvedMetadata{}, err
+		return nil, err
 	}
 
-	res := resolvedMetadata{
+	meta := Metadata{
 		Name:    firstNonEmpty(override.Name, proj.Name),
 		Version: firstNonEmpty(override.Version, proj.Version),
 		Summary: firstNonEmpty(override.Summary, proj.Description),
 	}
-	if res.Name == "" || res.Version == "" {
-		return resolvedMetadata{}, ErrMissingMetadata
+	if meta.Name == "" || meta.Version == "" {
+		return nil, ErrMissingMetadata
 	}
-	return res, nil
+	return &meta, nil
 }
 
 type pyProject struct {

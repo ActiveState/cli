@@ -18,7 +18,7 @@ func TestResolveMetadata(t *testing.T) {
 	t.Run("pyproject fills empty fields", func(t *testing.T) {
 		dir := t.TempDir()
 		writePyproject(t, dir, "[project]\nname = \"proj\"\nversion = \"3.1\"\ndescription = \"from toml\"\n")
-		res, err := resolveMetadata(dir, Metadata{})
+		res, err := ResolveMetadata(dir, Metadata{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -30,7 +30,7 @@ func TestResolveMetadata(t *testing.T) {
 	t.Run("caller overrides pyproject", func(t *testing.T) {
 		dir := t.TempDir()
 		writePyproject(t, dir, "[project]\nname = \"proj\"\nversion = \"3.1\"\n")
-		res, err := resolveMetadata(dir, Metadata{Name: "override", Version: "9.9"})
+		res, err := ResolveMetadata(dir, Metadata{Name: "override", Version: "9.9"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -41,7 +41,7 @@ func TestResolveMetadata(t *testing.T) {
 
 	t.Run("missing name and version errors", func(t *testing.T) {
 		dir := t.TempDir() // no pyproject.toml
-		if _, err := resolveMetadata(dir, Metadata{Name: "only-name"}); !errors.Is(err, ErrMissingMetadata) {
+		if _, err := ResolveMetadata(dir, Metadata{Name: "only-name"}); !errors.Is(err, ErrMissingMetadata) {
 			t.Errorf("error = %v, want ErrMissingMetadata", err)
 		}
 	})

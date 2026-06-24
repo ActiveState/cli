@@ -20,6 +20,9 @@ func Encrypt(src io.Reader, dst io.Writer, key []byte, keyID string) error {
 	}
 
 	raw := serializeHeader(keyID, Fingerprint(key), uint32(encChunkSize))
+	if len(raw) > maxHeaderLen {
+		return ErrHeaderTooLarge
+	}
 	var lenBuf [4]byte
 	binary.BigEndian.PutUint32(lenBuf[:], uint32(len(raw)))
 	if _, err := dst.Write(lenBuf[:]); err != nil {

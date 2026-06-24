@@ -276,3 +276,11 @@ type failingReader struct{}
 func (failingReader) Read([]byte) (int, error) {
 	return 0, errors.New("body should not have been read")
 }
+
+func TestEncryptRejectsOversizeHeader(t *testing.T) {
+	oversizeKeyID := string(bytes.Repeat([]byte("k"), maxHeaderLen+1))
+	err := Encrypt(failingReader{}, io.Discard, testKey, oversizeKeyID)
+	if !errors.Is(err, ErrHeaderTooLarge) {
+		t.Fatalf("error = %v, want ErrHeaderTooLarge", err)
+	}
+}
