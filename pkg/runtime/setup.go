@@ -139,20 +139,36 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 
 	// Start off with the full range of artifacts relevant to our platform
 	installableArtifacts := bp.Artifacts(filterInstallable...)
+	installableArtifactsMap := installableArtifacts.ToIDMap()
 
-	// Identify which artifacts we'll need to install, this filters out any artifacts that are already installed.
+	// Identify installed private artifacts whose depot content no longer matches
+	// the build plan: a private ingredient re-published under the same artifact ID.
+	statePrivateArtifacts := map[strfmt.UUID]bool{}
+	for id := range installedArtifacts {
+		a, required := installableArtifactsMap[id]
+		if required && depot.PrivateContentChanged(id, a.Checksum) {
+			logging.Debug("Private artifact %s content changed; re-fetching", id)
+			statePrivateArtifacts[id] = true
+		}
+	}
+
+	// Identify which artifacts we'll need to install. This filters out artifacts
+	// that are already installed, except stale private artifacts which must be
+	// re-installed with their new content.
 	artifactsToInstall := installableArtifacts.Filter(func(a *buildplan.Artifact) bool {
 		_, installed := installedArtifacts[a.ArtifactID]
-		return !installed
+		return !installed || statePrivateArtifacts[a.ArtifactID]
 	})
 
 	// Identify which artifacts we can uninstall
-	installableArtifactsMap := installableArtifacts.ToIDMap()
 	artifactsToUninstall := map[strfmt.UUID]bool{}
 	for id := range installedArtifacts {
 		if _, required := installableArtifactsMap[id]; !required {
 			artifactsToUninstall[id] = true
 		}
+	}
+	for id := range statePrivateArtifacts {
+		artifactsToUninstall[id] = true
 	}
 
 	// Calculate which artifacts need to be downloaded; if an artifact we want to install is not in our depot then
@@ -160,7 +176,7 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 	// We also calculate which artifacts are immediately ready to be installed, as its the inverse condition of the above.
 	artifactsToDownload := artifactsToInstall.Filter(func(a *buildplan.Artifact) bool {
 		exists, _ := depot.Exists(a.ArtifactID)
-		return !exists
+		return !exists || statePrivateArtifacts[a.ArtifactID]
 	})
 	artifactsToUnpack := artifactsToDownload
 	if opts.FromArchive != nil {
@@ -476,6 +492,12 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 		},
 	}, bytes.NewReader(b))
 	unpackPath := s.depot.Path(artifact.ArtifactID)
+	if fileutils.DirExists(unpackPath) {
+		// Clear prior private artifact that is being updated.
+		if err := os.RemoveAll(unpackPath); err != nil {
+			return errs.Wrap(err, "could not clear private artifact directory")
+		}
+	}
 	if err := ua.Unarchive(proxy, unpackPath); err != nil {
 		if err2 := os.RemoveAll(unpackPath); err2 != nil {
 			return errs.Pack(err, errs.Wrap(err2, "unable to remove partially-unpacked directory"))
@@ -505,7 +527,7 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 	}
 	if outcome == decryptDone {
 		logging.Debug("Decrypted private artifact %s (%s)", artifact.ArtifactID, artifact.Name())
-		if err := s.depot.MarkPrivate(artifact.ArtifactID); err != nil {
+		if err := s.depot.MarkPrivate(artifact.ArtifactID, artifact.Checksum); err != nil {
 			return errs.Wrap(err, "Could not mark decrypted artifact as private")
 		}
 	}

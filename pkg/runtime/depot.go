@@ -60,6 +60,9 @@ type artifactInfo struct {
 
 	// For private decrypted artifacts.
 	Private bool `json:"private,omitempty"`
+	// Checksum is the build-plan content checksum a private artifact was stored
+	// under, used to detect re-published content for a fixed artifact ID.
+	Checksum string `json:"checksum,omitempty"`
 
 	id strfmt.UUID // for convenience when removing stale artifacts; should NOT have json tag
 }
@@ -195,9 +198,11 @@ func (d *depot) Put(id strfmt.UUID) error {
 	return nil
 }
 
-// MarkPrivate flags an artifact as a decrypted private artifact, ensuring a
-// cache entry exists for it. Private artifacts are exempt from stale removal.
-func (d *depot) MarkPrivate(id strfmt.UUID) error {
+// MarkPrivate flags an artifact as a decrypted private artifact and records the
+// build-plan checksum its content was stored under, ensuring a cache entry
+// exists for it. Private artifacts are exempt from stale removal, and the stored
+// checksum lets the next update detect re-published content.
+func (d *depot) MarkPrivate(id strfmt.UUID, checksum string) error {
 	d.mapMutex.Lock()
 	defer d.mapMutex.Unlock()
 
@@ -209,7 +214,22 @@ func (d *depot) MarkPrivate(id strfmt.UUID) error {
 		d.config.Cache[id] = &artifactInfo{Size: size, id: id}
 	}
 	d.config.Cache[id].Private = true
+	d.config.Cache[id].Checksum = checksum
 	return nil
+}
+
+// PrivateContentChanged reports whether the depot holds a private artifact for id
+// whose stored content checksum differs from the given build-plan checksum — the
+// timeless/re-published case where a fixed artifact ID now points at new content.
+func (d *depot) PrivateContentChanged(id strfmt.UUID, checksum string) bool {
+	d.mapMutex.Lock()
+	defer d.mapMutex.Unlock()
+
+	info, exists := d.config.Cache[id]
+	if !exists || !info.Private || checksum == "" {
+		return false
+	}
+	return info.Checksum != checksum
 }
 
 // DeployViaLink will take an artifact from the depot and link it to the target path.

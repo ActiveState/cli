@@ -226,6 +226,66 @@ func TestPrivateArtifactSurvivesEviction(t *testing.T) {
 	}
 }
 
+func TestMarkPrivateStoresChecksum(t *testing.T) {
+	id := strfmt.UUID("11111111-1111-1111-1111-111111111111")
+	d := &depot{
+		config: depotConfig{
+			Deployments: map[strfmt.UUID][]deployment{},
+			Cache:       map[strfmt.UUID]*artifactInfo{id: {Size: 1}}, // pre-seeded so no on-disk size lookup
+		},
+		depotPath: t.TempDir(),
+		artifacts: map[strfmt.UUID]struct{}{},
+	}
+
+	if err := d.MarkPrivate(id, "sha256:abc"); err != nil {
+		t.Fatalf("MarkPrivate: %v", err)
+	}
+	info := d.config.Cache[id]
+	if !info.Private {
+		t.Error("artifact was not marked private")
+	}
+	if info.Checksum != "sha256:abc" {
+		t.Errorf("stored checksum = %q, want sha256:abc", info.Checksum)
+	}
+}
+
+func TestPrivateContentChanged(t *testing.T) {
+	const (
+		privFresh = strfmt.UUID("aaaaaaaa-0000-0000-0000-000000000000")
+		privStale = strfmt.UUID("bbbbbbbb-0000-0000-0000-000000000000")
+		public    = strfmt.UUID("cccccccc-0000-0000-0000-000000000000")
+		absent    = strfmt.UUID("dddddddd-0000-0000-0000-000000000000")
+	)
+	d := &depot{
+		config: depotConfig{
+			Cache: map[strfmt.UUID]*artifactInfo{
+				privFresh: {Private: true, Checksum: "sha256:aaa"},
+				privStale: {Private: true, Checksum: "sha256:old"},
+				public:    {Checksum: "sha256:pub"}, // not private
+			},
+		},
+		artifacts: map[strfmt.UUID]struct{}{},
+	}
+
+	cases := []struct {
+		name     string
+		id       strfmt.UUID
+		checksum string
+		want     bool
+	}{
+		{"fresh private matches", privFresh, "sha256:aaa", false},
+		{"stale private mismatches", privStale, "sha256:new", true},
+		{"public artifact is never stale", public, "sha256:different", false},
+		{"absent entry", absent, "sha256:any", false},
+		{"empty build-plan checksum does not churn", privStale, "", false},
+	}
+	for _, tc := range cases {
+		if got := d.PrivateContentChanged(tc.id, tc.checksum); got != tc.want {
+			t.Errorf("%s: PrivateContentChanged = %v, want %v", tc.name, got, tc.want)
+		}
+	}
+}
+
 func exists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
