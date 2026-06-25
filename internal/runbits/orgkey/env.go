@@ -13,4 +13,5 @@ func SanitizeChildEnv(cfg stringConfigReader, env map[string]string) {
 	if tokenEnv := cfg.GetString(constants.PrivateIngredientBearerTokenEnvConfig); tokenEnv != "" {
 		delete(env, tokenEnv)
 	}
+	delete(env, constants.PrivateIngredientKeyContractEnvVarName)
 }

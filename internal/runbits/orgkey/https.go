@@ -43,7 +43,18 @@ func New(cfg configurable, owner string) Provider {
 }
 
 func (p *provider) Configured() bool {
-	return p.cfg.GetString(constants.PrivateIngredientKeyServiceURLConfig) != ""
+	return p.cfg.GetString(constants.PrivateIngredientKeyServiceURLConfig) != "" || len(envContract()) > 0
+}
+
+// envContract returns an org-key contract supplied directly via the environment,
+// or nil if none is set. This bypasses the HTTPS key service for development and
+// integration testing; the contract is still validated like one fetched from the
+// service (see load).
+func envContract() []byte {
+	if v := os.Getenv(constants.PrivateIngredientKeyContractEnvVarName); v != "" {
+		return []byte(v)
+	}
+	return nil
 }
 
 // Key fetches and validates the org key on first call and returns the cached
@@ -71,6 +82,10 @@ func (p *provider) Close() {
 func (p *provider) load(ctx context.Context) (key []byte, keyID string, err error) {
 	if !p.Configured() {
 		return nil, "", ErrNotConfigured
+	}
+
+	if raw := envContract(); len(raw) > 0 {
+		return validateContract(raw, p.owner)
 	}
 
 	if p.diskCacheEnabled() {

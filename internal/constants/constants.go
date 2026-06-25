@@ -557,3 +557,10 @@ const PrivateIngredientBearerTokenFileConfig = "privateingredient.bearer_token_f
 // PrivateIngredientCacheKeyConfig is the config key that opts into caching the
 // fetched org key on disk (0600) for headless/offline/CI reuse.
 const PrivateIngredientCacheKeyConfig = "privateingredient.cache_key_on_disk"
+
+// PrivateIngredientKeyContractEnvVarName is the name of an environment variable
+// that may carry an org-key contract (the same JSON document the HTTPS key
+// service serves). When set, the org key is read from it and validated exactly
+// like a fetched contract, bypassing the network. It exists for development and
+// integration testing where standing up a TLS key service is impractical.
+const PrivateIngredientKeyContractEnvVarName = "ACTIVESTATE_CLI_PRIVATE_INGREDIENT_KEY_CONTRACT"
