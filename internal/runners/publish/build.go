@@ -116,7 +116,7 @@ func buildWrappedArtifact(srcDir string, meta wheel.Metadata, key []byte, keyID 
 		return "", nil, errs.Wrap(err, "Could not assemble payload")
 	}
 
-	ciphertextPath := filepath.Join(tmpDir, "payload.enc")
+	ciphertextPath := filepath.Join(tmpDir, artifactcrypto.PayloadFilename)
 	if err := encryptFile(plaintextPayload, ciphertextPath, key, keyID); err != nil {
 		return "", nil, errs.Wrap(err, "Could not encrypt payload")
 	}
@@ -131,7 +131,7 @@ func buildWrappedArtifact(srcDir string, meta wheel.Metadata, key []byte, keyID 
 
 	archivePath = filepath.Join(tmpDir, "ingredient.tar.gz")
 	if err := archiver.CreateTgz(archivePath, tmpDir, []archiver.FileMap{
-		{Source: ciphertextPath, Target: "payload.enc"},
+		{Source: ciphertextPath, Target: artifactcrypto.PayloadFilename},
 	}); err != nil {
 		return "", nil, errs.Wrap(err, "Could not wrap artifact")
 	}

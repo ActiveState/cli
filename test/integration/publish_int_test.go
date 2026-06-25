@@ -558,29 +558,16 @@ func (suite *PublishIntegrationTestSuite) TestPublishBuildEncrypted() {
 
 	// Decryption proof: the decrypted content must be present in the depot and
 	// contain our sentinel. A failed decrypt would skip the artifact, leaving the
-	// sentinel absent. This is inlined (rather than in a helper) so a failure
-	// surfaces the spawned-command output and state logs the e2e harness dumps.
-	// The search is deliberately broad — any wheel or file anywhere under the
-	// depot — because the exact on-disk path depends on how the artifact is
-	// packaged on install.
-	depot := filepath.Join(ts.Dirs.Cache, "depot")
+	// sentinel absent.
+	suite.assertDecryptedPayloadContains(ts, sentinel)
+}
 
-	// Log the depot's top two levels so a failure shows how the artifact landed
-	// (e.g. an "install" dir with a wheel vs. a leftover "payload.enc").
-	if entries, err := os.ReadDir(depot); err == nil {
-		for _, e := range entries {
-			suite.T().Logf("depot/%s", e.Name())
-			if e.IsDir() {
-				if sub, err := os.ReadDir(filepath.Join(depot, e.Name())); err == nil {
-					for _, s := range sub {
-						suite.T().Logf("depot/%s/%s", e.Name(), s.Name())
-					}
-				}
-			}
-		}
-	} else {
-		suite.T().Logf("could not read depot %s: %v", depot, err)
-	}
+// assertDecryptedPayloadContains fails the test unless a decrypted artifact under
+// the depot contains sentinel. It scans every wheel (as a zip) and every small
+// plaintext file, since the exact on-disk path depends on how the artifact is
+// packaged on install.
+func (suite *PublishIntegrationTestSuite) assertDecryptedPayloadContains(ts *e2e.Session, sentinel string) {
+	depot := filepath.Join(ts.Dirs.Cache, "depot")
 
 	var wheels []string
 	fileCount := 0
@@ -597,22 +584,8 @@ func (suite *PublishIntegrationTestSuite) TestPublishBuildEncrypted() {
 		// A decrypted wheel is a zip; scan its entries for the sentinel.
 		if strings.HasSuffix(d.Name(), ".whl") {
 			wheels = append(wheels, path)
-			zr, err := zip.OpenReader(path)
-			if err != nil {
-				suite.T().Logf("could not open wheel %s as zip: %v", path, err)
-				return nil
-			}
-			defer zr.Close()
-			for _, f := range zr.File {
-				rc, err := f.Open()
-				if err != nil {
-					continue
-				}
-				content, _ := io.ReadAll(rc)
-				rc.Close()
-				if strings.Contains(string(content), sentinel) {
-					found = true
-				}
+			if suite.wheelContains(path, sentinel) {
+				found = true
 			}
 			return nil
 		}
@@ -632,6 +605,30 @@ func (suite *PublishIntegrationTestSuite) TestPublishBuildEncrypted() {
 	suite.Require().NoError(walkErr, "could not walk depot %s", depot)
 	suite.T().Logf("searched %d files under the depot; wheels found: %v", fileCount, wheels)
 	suite.Require().True(found, "sentinel %q not found in the depot; the artifact was likely not decrypted", sentinel)
+}
+
+// wheelContains reports whether any file inside the wheel (a zip) contains
+// sentinel. A wheel that failed to decrypt would not be a readable zip, so an
+// unreadable wheel is logged and treated as not containing the sentinel.
+func (suite *PublishIntegrationTestSuite) wheelContains(wheelPath, sentinel string) bool {
+	zr, err := zip.OpenReader(wheelPath)
+	if err != nil {
+		suite.T().Logf("could not open wheel %s as zip: %v", wheelPath, err)
+		return false
+	}
+	defer zr.Close()
+	for _, f := range zr.File {
+		rc, err := f.Open()
+		if err != nil {
+			continue
+		}
+		content, _ := io.ReadAll(rc)
+		rc.Close()
+		if strings.Contains(string(content), sentinel) {
+			return true
+		}
+	}
+	return false
 }
 
 // orgKeyContract builds the org-key contract JSON the key service would serve for

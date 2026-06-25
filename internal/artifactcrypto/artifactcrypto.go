@@ -54,6 +54,10 @@ const (
 	formatVersion = 1
 	// DefaultChunkSize is the plaintext size of every chunk except the last.
 	DefaultChunkSize = 1 << 20 // 1 MiB
+	// PayloadFilename is the conventional name of the encrypted payload file
+	// inside a private-ingredient artifact. The publish (produce) and runtime
+	// (consume) sides share it so they agree on what to write and look for.
+	PayloadFilename = "payload.enc"
 	// maxChunkSize is the largest chunk size accepted from a parsed header.
 	maxChunkSize = 64 << 20 // 64 MiB
 	// maxHeaderLen is the largest serialized header accepted from a stream.
