@@ -2,9 +2,7 @@ package publish
 
 import (
 	"context"
-	"encoding/json"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -79,19 +77,19 @@ func requireOrgNamespace(ns, owner string) error {
 		"The '[ACTIONABLE]--build[/RESET]' flag requires a namespace under '[ACTIONABLE]{{.V0}}[/RESET]'.", org)
 }
 
-// payloadInstallDir is the directory inside the wrapped artifact that holds the
-// deployable payload; the cleartext runtime.json points the consume side at it.
-const payloadInstallDir = "install"
+const (
+	privateBuilderNamespace = "builder"
+	privateBuilderName      = "private-builder"
+)
 
 // buildWrappedArtifact packs srcDir into a wheel under the given metadata,
-// encrypts it under the org key, and wraps the ciphertext together with a
-// cleartext runtime.json into a tar.gz ready for upload. It returns the wrapped
-// archive path and a cleanup function the caller must invoke once the upload is
-// done.
+// encrypts it under the org key, and wraps the ciphertext in a tar.gz ready for
+// upload. It returns the wrapped archive path and a cleanup function the caller
+// must invoke once the upload is done.
 //
-// Only ciphertext plus the cleartext envdef ever reaches the wrapped archive:
-// the plaintext wheel and payload are removed before the function returns, so no
-// plaintext outlives the build.
+// Only the ciphertext ever reaches the wrapped archive: the plaintext wheel and
+// payload are removed before the function returns, so no plaintext outlives the
+// build.
 func buildWrappedArtifact(srcDir string, meta wheel.Metadata, key []byte, keyID string) (archivePath string, cleanup func(), rerr error) {
 	tmpDir, err := os.MkdirTemp("", "state-publish-build-")
 	if err != nil {
@@ -109,11 +107,11 @@ func buildWrappedArtifact(srcDir string, meta wheel.Metadata, key []byte, keyID 
 		return "", nil, errs.Wrap(err, "Could not build a wheel from %s", srcDir)
 	}
 
-	// Assemble the tar.gz that becomes the encrypted payload, placing the wheel
-	// under the install dir the consume side deploys.
+	// Assemble the tar.gz that becomes the encrypted payload, with the wheel at
+	// its root.
 	plaintextPayload := filepath.Join(tmpDir, "payload.tar.gz")
 	if err := archiver.CreateTgz(plaintextPayload, tmpDir, []archiver.FileMap{
-		{Source: wheelPath, Target: path.Join(payloadInstallDir, filepath.Base(wheelPath))},
+		{Source: wheelPath, Target: filepath.Base(wheelPath)},
 	}); err != nil {
 		return "", nil, errs.Wrap(err, "Could not assemble payload")
 	}
@@ -131,15 +129,9 @@ func buildWrappedArtifact(srcDir string, meta wheel.Metadata, key []byte, keyID 
 		}
 	}
 
-	runtimeJSONPath := filepath.Join(tmpDir, "runtime.json")
-	if err := writeRuntimeJSON(runtimeJSONPath); err != nil {
-		return "", nil, errs.Wrap(err, "Could not write runtime.json")
-	}
-
 	archivePath = filepath.Join(tmpDir, "ingredient.tar.gz")
 	if err := archiver.CreateTgz(archivePath, tmpDir, []archiver.FileMap{
 		{Source: ciphertextPath, Target: "payload.enc"},
-		{Source: runtimeJSONPath, Target: "runtime.json"},
 	}); err != nil {
 		return "", nil, errs.Wrap(err, "Could not wrap artifact")
 	}
@@ -176,28 +168,6 @@ func encryptFile(srcPath, dstPath string, key []byte, keyID string) (rerr error)
 
 	if err := artifactcrypto.Encrypt(src, dst, key, keyID); err != nil {
 		return errs.Wrap(err, "Could not encrypt")
-	}
-	return nil
-}
-
-// writeRuntimeJSON writes the minimal cleartext envdef the consume side reads to
-// deploy the decrypted payload.
-func writeRuntimeJSON(destPath string) error {
-	def := struct {
-		Env        []json.RawMessage `json:"env"`
-		Transforms []json.RawMessage `json:"file_transforms"`
-		InstallDir string            `json:"installdir"`
-	}{
-		Env:        []json.RawMessage{},
-		Transforms: []json.RawMessage{},
-		InstallDir: payloadInstallDir,
-	}
-	b, err := json.Marshal(def)
-	if err != nil {
-		return errs.Wrap(err, "Could not marshal runtime.json")
-	}
-	if err := os.WriteFile(destPath, b, 0644); err != nil {
-		return errs.Wrap(err, "Could not write runtime.json")
 	}
 	return nil
 }

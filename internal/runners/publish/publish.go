@@ -222,6 +222,19 @@ func (r *Runner) Run(params *Params) error {
 		return errs.Wrap(err, "Could not prepare request from params")
 	}
 
+	if params.Build != "" {
+		// A --build publish must be ingested by the private-builder. Without a
+		// builder dependency the platform falls back to the noop-builder, which
+		// produces an empty artifact.
+		reqVars.Dependencies = append(reqVars.Dependencies, request.PublishVariableDep{
+			Dependency: request.Dependency{
+				Name:                privateBuilderName,
+				Namespace:           privateBuilderNamespace,
+				VersionRequirements: ">=0",
+			},
+		})
+	}
+
 	if params.Editor {
 		if !r.out.Config().Interactive {
 			return locale.NewInputError("err_uploadingredient_editor_not_supported", "Opening in editor is not supported in non-interactive mode")

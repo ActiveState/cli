@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
-	"encoding/json"
 	"io"
 	"os"
 	"path/filepath"
@@ -110,21 +109,10 @@ func TestBuildWrappedArtifact(t *testing.T) {
 	}
 	defer cleanup()
 
-	// The wrapped archive contains exactly the ciphertext and the cleartext envdef.
+	// The wrapped archive contains exactly the ciphertext.
 	entries := readTarGz(t, archivePath)
-	if got, want := keysOf(entries), []string{"payload.enc", "runtime.json"}; !equalStrings(got, want) {
+	if got, want := keysOf(entries), []string{"payload.enc"}; !equalStrings(got, want) {
 		t.Fatalf("wrapped entries = %v, want %v", got, want)
-	}
-
-	// runtime.json is the minimal envdef pointing at the install dir.
-	var def struct {
-		InstallDir string `json:"installdir"`
-	}
-	if err := json.Unmarshal(entries["runtime.json"], &def); err != nil {
-		t.Fatal(err)
-	}
-	if def.InstallDir != payloadInstallDir {
-		t.Errorf("installdir = %q, want %q", def.InstallDir, payloadInstallDir)
 	}
 
 	// The payload is encrypted before it is wrapped.
@@ -143,19 +131,19 @@ func TestBuildWrappedArtifact(t *testing.T) {
 		}
 	}
 
-	// The ciphertext decrypts to a tar.gz holding the wheel under the install dir.
+	// The ciphertext decrypts to a tar.gz holding the wheel.
 	innerPath := filepath.Join(t.TempDir(), "inner.tar.gz")
 	if err := artifactcrypto.Decrypt(bytes.NewReader(entries["payload.enc"]), innerPath, key); err != nil {
 		t.Fatalf("Decrypt: %v", err)
 	}
 	foundWheel := false
 	for _, name := range keysOf(readTarGz(t, innerPath)) {
-		if strings.HasPrefix(name, payloadInstallDir+"/") && strings.HasSuffix(name, ".whl") {
+		if strings.HasSuffix(name, ".whl") {
 			foundWheel = true
 		}
 	}
 	if !foundWheel {
-		t.Error("decrypted payload does not contain the wheel under the install dir")
+		t.Error("decrypted payload does not contain the wheel")
 	}
 
 	// cleanup removes the build temp dir.
