@@ -554,7 +554,7 @@ func (suite *PublishIntegrationTestSuite) TestPublishBuildEncrypted() {
 		"install", ingredientNamespace+":"+ingredientName, "--ts=now",
 	))
 	cp.Expect("All dependencies have been installed and verified", e2e.RuntimeBuildSourcingTimeoutOpt)
-	cp.ExpectExitCode(1)
+	cp.ExpectExitCode(0)
 
 	// Decryption proof: the decrypted content must be present in the depot and
 	// contain our sentinel. A failed decrypt would skip the artifact, leaving the
