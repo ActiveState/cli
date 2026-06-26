@@ -576,6 +576,9 @@ func (suite *PublishIntegrationTestSuite) assertDecryptedPayloadContains(ts *e2e
 		if err != nil {
 			return err
 		}
+		if found {
+			return filepath.SkipAll // sentinel located; no need to walk the rest of the depot
+		}
 		if d.IsDir() {
 			return nil
 		}
@@ -622,8 +625,11 @@ func (suite *PublishIntegrationTestSuite) wheelContains(wheelPath, sentinel stri
 		if err != nil {
 			continue
 		}
-		content, _ := io.ReadAll(rc)
+		content, err := io.ReadAll(rc)
 		rc.Close()
+		if err != nil {
+			continue
+		}
 		if strings.Contains(string(content), sentinel) {
 			return true
 		}
