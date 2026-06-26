@@ -39,6 +39,8 @@ var (
 	ErrWrongKey = errs.New("key does not match payload fingerprint")
 	// ErrInvalidKeySize indicates the supplied key is not a 32-byte AES-256 key.
 	ErrInvalidKeySize = errs.New("key must be 32 bytes (AES-256)")
+	// ErrHeaderTooLarge indicates the serialized header (driven by the key id length) exceeds the readable maximum.
+	ErrHeaderTooLarge = errs.New("encrypted payload header exceeds the maximum size")
 )
 
 const (

@@ -49,22 +49,20 @@ type sourceFile struct {
 	abs string
 }
 
-// Pack builds a pure-Python wheel from srcDir, writes it into outDir as
+// Pack builds a pure-Python wheel from the already-resolved meta (use
+// ResolveMetadata to derive it from pyproject.toml), writes it into outDir as
 // {normalized_name}-{version}-py3-none-any.whl, and returns the wheel path.
 //
 // The wheel root mirrors srcDir: the caller points srcDir at the directory whose
-// children are the importable packages. The top-level pyproject.toml (read for
-// metadata), __pycache__ directories, *.pyc/*.pyo files, and version-control
-// directories are not packed. Compiled files (.so/.pyd/.dylib) are rejected.
-// Values in meta override those read from pyproject.toml; the name and version
-// must resolve from one source or the other.
+// children are the importable packages. The top-level pyproject.toml, __pycache__
+// directories, *.pyc/*.pyo files, and version-control directories are not packed.
+// Compiled files (.so/.pyd/.dll/.dylib) are rejected.
 //
 // Output is byte-reproducible: identical input trees produce identical wheels
 // regardless of file timestamps. On any failure no wheel is left at the path.
-func Pack(srcDir string, meta Metadata, outDir string) (_ string, rerr error) {
-	resolved, err := resolveMetadata(srcDir, meta)
-	if err != nil {
-		return "", errs.Wrap(err, "could not resolve package metadata")
+func Pack(srcDir string, meta Metadata, outDir string) (string, error) {
+	if meta.Name == "" || meta.Version == "" {
+		return "", ErrMissingMetadata
 	}
 
 	files, err := collectFiles(srcDir)
@@ -72,8 +70,8 @@ func Pack(srcDir string, meta Metadata, outDir string) (_ string, rerr error) {
 		return "", errs.Wrap(err, "could not scan source tree")
 	}
 
-	outPath := filepath.Join(outDir, wheelFilename(resolved.Name, resolved.Version))
-	if err := writeWheel(files, resolved, outPath); err != nil {
+	outPath := filepath.Join(outDir, wheelFilename(meta.Name, meta.Version))
+	if err := writeWheel(files, meta, outPath); err != nil {
 		return "", errs.Wrap(err, "could not write wheel")
 	}
 	return outPath, nil
@@ -157,7 +155,7 @@ func isNativeFile(rel string) bool {
 
 // writeWheel writes the wheel to a sibling temp file and renames it onto outPath
 // only after the whole archive is written, so a failure leaves outPath untouched.
-func writeWheel(files []sourceFile, meta resolvedMetadata, outPath string) (rerr error) {
+func writeWheel(files []sourceFile, meta Metadata, outPath string) (rerr error) {
 	tmp, err := os.CreateTemp(filepath.Dir(outPath), filepath.Base(outPath)+".tmp-*")
 	if err != nil {
 		return errs.Wrap(err, "could not create temp wheel")

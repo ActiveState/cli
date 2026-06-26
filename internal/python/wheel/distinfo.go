@@ -18,7 +18,7 @@ type record struct {
 }
 
 // buildMetadata returns the dist-info METADATA contents.
-func buildMetadata(meta resolvedMetadata) []byte {
+func buildMetadata(meta Metadata) []byte {
 	var b bytes.Buffer
 	b.WriteString("Metadata-Version: 2.1\n")
 	b.WriteString("Name: " + meta.Name + "\n")

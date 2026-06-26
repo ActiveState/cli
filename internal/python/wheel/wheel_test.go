@@ -93,10 +93,10 @@ func TestPackProducesValidWheel(t *testing.T) {
 	}
 
 	// METADATA / WHEEL contents.
-	meta := string(entries[di+"/METADATA"])
+	metaFile := string(entries[di+"/METADATA"])
 	for _, want := range []string{"Metadata-Version: 2.1", "Name: My.Pkg-Name", "Version: 1.0", "Summary: a pkg"} {
-		if !bytes.Contains([]byte(meta), []byte(want)) {
-			t.Errorf("METADATA missing %q; got:\n%s", want, meta)
+		if !bytes.Contains([]byte(metaFile), []byte(want)) {
+			t.Errorf("METADATA missing %q; got:\n%s", want, metaFile)
 		}
 	}
 	wheelFile := string(entries[di+"/WHEEL"])
