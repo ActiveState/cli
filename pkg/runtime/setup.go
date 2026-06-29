@@ -21,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/proxyreader"
+	"github.com/ActiveState/cli/internal/python/wheelinstall"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
@@ -478,6 +479,18 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 		if err := s.depot.MarkPrivate(artifact.ArtifactID); err != nil {
 			return errs.Wrap(err, "Could not mark decrypted artifact as private")
 		}
+		switch {
+		case s.isPrivateWheel(unpackPath):
+			if err := s.installPrivateWheel(unpackPath); err != nil {
+				rerr := errs.Wrap(err, "Could not install private wheel")
+				if err2 := os.RemoveAll(unpackPath); err2 != nil {
+					return errs.Pack(rerr, errs.Wrap(err2, "unable to remove artifact directory"))
+				}
+				return rerr
+			}
+		default:
+			logging.Error("Decrypted private artifact %s (%s) is of an unknown type; cannot install it", artifact.ArtifactID, artifact.Name())
+		}
 	}
 
 	// Camel artifacts do not have runtime.json, so in order to not have multiple paths of logic we generate one based
@@ -636,6 +649,80 @@ func readPayloadHeader(path string) (header artifactcrypto.Header, rerr error) {
 		}
 	}()
 	return artifactcrypto.ParseHeader(f)
+}
+
+// isPrivateWheel reports whether the decrypted payload under dir is a wheel. We
+// control the payload via `state publish --build`, so a .whl extension is a
+// sufficient test.
+func (s *setup) isPrivateWheel(dir string) bool {
+	wheelPath, err := findWheel(dir)
+	return err == nil && wheelPath != ""
+}
+
+// installPrivateWheel installs the decrypted wheel found under artifactDir into a
+// site-packages directory and adds it to PYTHONPATH in the artifact's
+// runtime.json.
+func (s *setup) installPrivateWheel(artifactDir string) error {
+	wheelPath, err := findWheel(artifactDir)
+	if err != nil {
+		return errs.Wrap(err, "could not locate decrypted wheel")
+	}
+	if wheelPath == "" {
+		return errs.New("decrypted private artifact contains no wheel")
+	}
+
+	// site-packages sits in the deploy tree, so the deploy links it into the
+	// runtime where ${INSTALLDIR}/site-packages resolves it.
+	sitePackages := filepath.Join(filepath.Dir(wheelPath), "site-packages")
+	if err := wheelinstall.Install(wheelPath, sitePackages); err != nil {
+		return errs.Wrap(err, "could not install wheel")
+	}
+	if err := os.Remove(wheelPath); err != nil {
+		return errs.Wrap(err, "could not remove installed wheel")
+	}
+
+	return s.exposeSitePackages(artifactDir)
+}
+
+// exposeSitePackages adds the installed site-packages directory to PYTHONPATH in
+// the artifact's runtime.json.
+func (s *setup) exposeSitePackages(artifactDir string) error {
+	rtPath := filepath.Join(artifactDir, envdef.EnvironmentDefinitionFilename)
+	envDef, err := envdef.NewEnvironmentDefinition(rtPath)
+	if err != nil {
+		return errs.Wrap(err, "could not load runtime definition")
+	}
+	envDef.Env = append(envDef.Env, envdef.EnvironmentVariable{
+		Name:      "PYTHONPATH",
+		Values:    []string{"${INSTALLDIR}/site-packages"},
+		Join:      envdef.Prepend,
+		Inherit:   true,
+		Separator: string(os.PathListSeparator),
+	})
+	if err := envDef.Save(artifactDir); err != nil {
+		return errs.Wrap(err, "could not save runtime definition")
+	}
+	return nil
+}
+
+// findWheel returns the path of the single .whl under dir (searched recursively),
+// or "" if none is present.
+func findWheel(dir string) (string, error) {
+	var found string
+	err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !d.IsDir() && strings.HasSuffix(d.Name(), ".whl") {
+			found = path
+			return filepath.SkipAll
+		}
+		return nil
+	})
+	if err != nil {
+		return "", errs.Wrap(err, "could not scan for wheel")
+	}
+	return found, nil
 }
 
 func (s *setup) updateExecutors() error {

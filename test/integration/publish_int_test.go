@@ -1,15 +1,12 @@
 package integration
 
 import (
-	"archive/zip"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 	"testing"
 	"time"
 
@@ -556,85 +553,14 @@ func (suite *PublishIntegrationTestSuite) TestPublishBuildEncrypted() {
 	cp.Expect("All dependencies have been installed and verified", e2e.RuntimeBuildSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
-	// Decryption proof: the decrypted content must be present in the depot and
-	// contain our sentinel. A failed decrypt would skip the artifact, leaving the
-	// sentinel absent.
-	suite.assertDecryptedPayloadContains(ts, sentinel)
-}
-
-// assertDecryptedPayloadContains fails the test unless a decrypted artifact under
-// the depot contains sentinel. It scans every wheel (as a zip) and every small
-// plaintext file, since the exact on-disk path depends on how the artifact is
-// packaged on install.
-func (suite *PublishIntegrationTestSuite) assertDecryptedPayloadContains(ts *e2e.Session, sentinel string) {
-	depot := filepath.Join(ts.Dirs.Cache, "depot")
-
-	var wheels []string
-	fileCount := 0
-	found := false
-	walkErr := filepath.WalkDir(depot, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if found {
-			return filepath.SkipAll // sentinel located; no need to walk the rest of the depot
-		}
-		if d.IsDir() {
-			return nil
-		}
-		fileCount++
-
-		// A decrypted wheel is a zip; scan its entries for the sentinel.
-		if strings.HasSuffix(d.Name(), ".whl") {
-			wheels = append(wheels, path)
-			if suite.wheelContains(path, sentinel) {
-				found = true
-			}
-			return nil
-		}
-
-		// Otherwise scan the raw file, in case the payload was delivered unpacked
-		// rather than as a wheel. Skip large files (the sentinel lives in a tiny
-		// Python source file).
-		if info, err := d.Info(); err != nil || info.Size() > 5<<20 {
-			return nil
-		}
-		content, err := os.ReadFile(path)
-		if err == nil && strings.Contains(string(content), sentinel) {
-			found = true
-		}
-		return nil
-	})
-	suite.Require().NoError(walkErr, "could not walk depot %s", depot)
-	suite.T().Logf("searched %d files under the depot; wheels found: %v", fileCount, wheels)
-	suite.Require().True(found, "sentinel %q not found in the depot; the artifact was likely not decrypted", sentinel)
-}
-
-// wheelContains reports whether any file inside the wheel (a zip) contains
-// sentinel. A wheel that failed to decrypt would not be a readable zip, so an
-// unreadable wheel is logged and treated as not containing the sentinel.
-func (suite *PublishIntegrationTestSuite) wheelContains(wheelPath, sentinel string) bool {
-	zr, err := zip.OpenReader(wheelPath)
-	if err != nil {
-		suite.T().Logf("could not open wheel %s as zip: %v", wheelPath, err)
-		return false
-	}
-	defer zr.Close()
-	for _, f := range zr.File {
-		rc, err := f.Open()
-		if err != nil {
-			continue
-		}
-		content, err := io.ReadAll(rc)
-		rc.Close()
-		if err != nil {
-			continue
-		}
-		if strings.Contains(string(content), sentinel) {
-			return true
-		}
-	}
-	return false
+	// Installation proof: the decrypted wheel is installed into the runtime's
+	// site-packages and is importable. Importing the package runs its
+	// __init__.py, which prints the unique sentinel — a value only the decrypted
+	// plaintext contains, so this confirms decrypt + install + PYTHONPATH wiring
+	// end to end.
+	cp = ts.SpawnWithOpts(e2e.OptArgs("exec", "python3", "--", "-c", "import greeting"))
+	cp.Expect(sentinel)
+	cp.ExpectExitCode(0)
 }
 
 // orgKeyContract builds the org-key contract JSON the key service would serve for
