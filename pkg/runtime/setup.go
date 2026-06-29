@@ -696,8 +696,8 @@ func (s *setup) exposeSitePackages(artifactDir string) error {
 		Name:      "PYTHONPATH",
 		Values:    []string{"${INSTALLDIR}/site-packages"},
 		Join:      envdef.Prepend,
-		Inherit:   true,
-		Separator: string(os.PathListSeparator),
+		Inherit:   false,
+		Separator: ":", // OS-independent
 	})
 	if err := envDef.Save(artifactDir); err != nil {
 		return errs.Wrap(err, "could not save runtime definition")
