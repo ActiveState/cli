@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/python/wheelinstall"
@@ -489,7 +490,7 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 				return rerr
 			}
 		default:
-			logging.Error("Decrypted private artifact %s (%s) is of an unknown type; cannot install it", artifact.ArtifactID, artifact.Name())
+			multilog.Error("Decrypted private artifact %s (%s) is of an unknown type; cannot install it", artifact.ArtifactID, artifact.Name())
 		}
 	}
 
