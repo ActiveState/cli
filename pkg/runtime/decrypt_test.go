@@ -72,6 +72,9 @@ func makeTarGz(t *testing.T, files, symlinks map[string]string) []byte {
 
 func writeFile(t *testing.T, path string, data []byte) {
 	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.WriteFile(path, data, 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -96,7 +99,7 @@ func TestFindEncryptedPayload(t *testing.T) {
 	t.Run("finds the encrypted file", func(t *testing.T) {
 		dir := t.TempDir()
 		writeFile(t, filepath.Join(dir, "runtime.json"), []byte(`{"installDir":"."}`))
-		payload := filepath.Join(dir, "anything.bin")
+		payload := filepath.Join(dir, artifactcrypto.PayloadFilename)
 		writeFile(t, payload, encryptToBytes(t, []byte("secret"), key))
 		got, err := findEncryptedPayload(dir)
 		if err != nil {
@@ -104,6 +107,35 @@ func TestFindEncryptedPayload(t *testing.T) {
 		}
 		if got != payload {
 			t.Errorf("got %q, want %q", got, payload)
+		}
+	})
+
+	// Installed payload is under top-level "installdir/" directory.
+	t.Run("finds encrypted payload", func(t *testing.T) {
+		dir := t.TempDir()
+		writeFile(t, filepath.Join(dir, "runtime.json"), []byte(`{"installDir":"installdir"}`))
+		payload := filepath.Join(dir, "installdir", artifactcrypto.PayloadFilename)
+		writeFile(t, payload, encryptToBytes(t, []byte("secret"), key))
+		got, err := findEncryptedPayload(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got != payload {
+			t.Errorf("got %q, want %q", got, payload)
+		}
+	})
+
+	// A plaintext file that happens to be named payload.enc is not treated as a
+	// payload.
+	t.Run("ignores a plaintext payload.enc", func(t *testing.T) {
+		dir := t.TempDir()
+		writeFile(t, filepath.Join(dir, artifactcrypto.PayloadFilename), []byte("not encrypted"))
+		got, err := findEncryptedPayload(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got != "" {
+			t.Errorf("found a payload for a plaintext file: %q", got)
 		}
 	})
 }
@@ -123,7 +155,7 @@ func TestDecryptPayload(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		dir := t.TempDir()
 		writeFile(t, filepath.Join(dir, "runtime.json"), []byte(`{"installDir":"."}`))
-		writeFile(t, filepath.Join(dir, "payload"), encryptToBytes(t, payload, key))
+		writeFile(t, filepath.Join(dir, artifactcrypto.PayloadFilename), encryptToBytes(t, payload, key))
 
 		s := &setup{opts: &Opts{OrgKey: key}}
 		outcome, err := s.decryptPayload("pkg", dir)
@@ -134,7 +166,7 @@ func TestDecryptPayload(t *testing.T) {
 			t.Fatalf("outcome = %v, want decryptDone", outcome)
 		}
 		// Ciphertext is removed.
-		if _, err := os.Stat(filepath.Join(dir, "payload")); !os.IsNotExist(err) {
+		if _, err := os.Stat(filepath.Join(dir, artifactcrypto.PayloadFilename)); !os.IsNotExist(err) {
 			t.Error("ciphertext was not removed")
 		}
 		// Archive contents extracted in place; the cleartext runtime.json survives.
@@ -163,7 +195,7 @@ func TestDecryptPayload(t *testing.T) {
 
 	t.Run("missing key skips", func(t *testing.T) {
 		dir := t.TempDir()
-		writeFile(t, filepath.Join(dir, "payload"), encryptToBytes(t, payload, key))
+		writeFile(t, filepath.Join(dir, artifactcrypto.PayloadFilename), encryptToBytes(t, payload, key))
 
 		s := &setup{opts: &Opts{}} // no OrgKey
 		outcome, err := s.decryptPayload("pkg", dir)
@@ -177,7 +209,7 @@ func TestDecryptPayload(t *testing.T) {
 
 	t.Run("wrong key fails closed", func(t *testing.T) {
 		dir := t.TempDir()
-		writeFile(t, filepath.Join(dir, "payload"), encryptToBytes(t, payload, key))
+		writeFile(t, filepath.Join(dir, artifactcrypto.PayloadFilename), encryptToBytes(t, payload, key))
 
 		wrong := make([]byte, artifactcrypto.KeySize) // all zeros
 		s := &setup{opts: &Opts{OrgKey: wrong}}
@@ -197,6 +229,30 @@ func TestDecryptPayload(t *testing.T) {
 		}
 		if outcome != decryptNotEncrypted {
 			t.Fatalf("outcome = %v, want decryptNotEncrypted", outcome)
+		}
+	})
+
+	// Ensure the decrypted contents land in that same dir so the runtime.json installdir resolves.
+	t.Run("nested payload extracts in place", func(t *testing.T) {
+		dir := t.TempDir()
+		writeFile(t, filepath.Join(dir, "runtime.json"), []byte(`{"installDir":"installdir"}`))
+		writeFile(t, filepath.Join(dir, "installdir", artifactcrypto.PayloadFilename), encryptToBytes(t, payload, key))
+
+		s := &setup{opts: &Opts{OrgKey: key}}
+		outcome, err := s.decryptPayload("pkg", dir)
+		if err != nil {
+			t.Fatalf("decryptPayload: %v", err)
+		}
+		if outcome != decryptDone {
+			t.Fatalf("outcome = %v, want decryptDone", outcome)
+		}
+		// Ciphertext is removed and the archive is extracted alongside it, under
+		// the install dir.
+		if _, err := os.Stat(filepath.Join(dir, "installdir", artifactcrypto.PayloadFilename)); !os.IsNotExist(err) {
+			t.Error("ciphertext was not removed")
+		}
+		if got, _ := os.ReadFile(filepath.Join(dir, "installdir", "pkg", "__init__.py")); string(got) != "print('private')\n" {
+			t.Errorf("payload not extracted under the install dir: got %q", got)
 		}
 	})
 }

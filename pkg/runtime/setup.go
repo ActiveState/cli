@@ -535,9 +535,10 @@ const (
 	decryptSkipped                            // encrypted, but no org key available
 )
 
-// decryptPayload finds an encrypted private-ingredient payload among the
-// artifact's top-level files (identified by envelope magic, not filename),
-// decrypts it, and extracts the inner tar.gz archive in place of the ciphertext.
+// decryptPayload finds the encrypted private-ingredient payload within the
+// unpacked artifact (located by name and confirmed by envelope magic),
+// decrypts it, and extracts the inner tar.gz archive in place of the
+// ciphertext so it lands where the runtime.json points.
 //
 // A missing key returns decryptSkipped; a wrong key or corrupt payload returns
 // an error.
@@ -602,8 +603,10 @@ func (s *setup) decryptPayload(artifactName, unpackPath string) (outcome decrypt
 			rerr = errs.Pack(rerr, errs.Wrap(err, "could not close decrypted payload"))
 		}
 	}()
+	// Extract alongside the ciphertext so the decrypted contents land where the
+	// runtime.json points.
 	archiveUA := unarchiver.NewTarGz(unarchiver.WithUntrustedSource())
-	if err := archiveUA.Unarchive(archive, unpackPath); err != nil {
+	if err := archiveUA.Unarchive(archive, filepath.Dir(payloadPath)); err != nil {
 		return decryptNotEncrypted, errs.Wrap(err, "could not extract decrypted artifact %s", artifactName)
 	}
 
@@ -615,35 +618,41 @@ func (s *setup) decryptPayload(artifactName, unpackPath string) (outcome decrypt
 	return decryptDone, nil
 }
 
-// findEncryptedPayload returns the path of the single top-level file in dir that
-// is an artifactcrypto envelope, or "" if none is. Subdirectories and plaintext
-// files are ignored.
+// findEncryptedPayload returns the path of the encrypted private payload within
+// dir, searched recursively, or "" if none is present. The payload is located by
+// its conventional name (artifactcrypto.PayloadFilename) and confirmed by its
+// artifactcrypto envelope magic, so a plaintext file that happens to share the
+// name is ignored.
 func findEncryptedPayload(dir string) (string, error) {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return "", errs.Wrap(err, "could not read artifact directory")
-	}
-	for _, e := range entries {
-		if e.IsDir() {
-			continue
+	var found string
+	walkErr := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
 		}
-		path := filepath.Join(dir, e.Name())
+		if d.IsDir() || d.Name() != artifactcrypto.PayloadFilename {
+			return nil
+		}
 		f, err := os.Open(path)
 		if err != nil {
-			return "", errs.Wrap(err, "could not open artifact file")
+			return errs.Wrap(err, "could not open artifact file")
 		}
 		encrypted, err := artifactcrypto.IsEncrypted(f)
 		if cerr := f.Close(); cerr != nil {
 			err = errs.Pack(err, errs.Wrap(cerr, "could not close artifact file"))
 		}
 		if err != nil {
-			return "", errs.Wrap(err, "could not detect encrypted payload")
+			return errs.Wrap(err, "could not detect encrypted payload")
 		}
 		if encrypted {
-			return path, nil
+			found = path
+			return filepath.SkipAll
 		}
+		return nil
+	})
+	if walkErr != nil {
+		return "", errs.Wrap(walkErr, "could not scan artifact directory")
 	}
-	return "", nil
+	return found, nil
 }
 
 func readPayloadHeader(path string) (header artifactcrypto.Header, rerr error) {
