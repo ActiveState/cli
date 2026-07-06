@@ -28,8 +28,12 @@ func LinkContents(src, dest string) error {
 	if err != nil {
 		return errs.Wrap(err, "Reading dir %s failed", src)
 	}
+	// src and dest are already resolved above, so recurse via link() which does not
+	// re-resolve each entry. On Windows resolving a path is a syscall (GetLongPathName),
+	// so resolving once per tree instead of once per file is a large speed-up when
+	// installing runtimes that contain many files.
 	for _, entry := range entries {
-		if err := Link(filepath.Join(src, entry.Name()), filepath.Join(dest, entry.Name())); err != nil {
+		if err := link(filepath.Join(src, entry.Name()), filepath.Join(dest, entry.Name())); err != nil {
 			return errs.Wrap(err, "Link failed")
 		}
 	}
@@ -40,23 +44,37 @@ func LinkContents(src, dest string) error {
 // Link creates a link from src to target. MS decided to support Symlinks but only if you opt into developer mode (go figure),
 // which we cannot reasonably force on our users. So on Windows we will instead create dirs and hardlinks.
 func Link(src, dest string) error {
-	originalSrc := src
-
-	var err error
-	src, dest, err = resolvePaths(src, dest)
+	resolvedDest, err := fileutils.ResolveUniquePath(dest)
 	if err != nil {
-		return errs.Wrap(err, "Could not resolve src and dest paths")
+		return errs.Wrap(err, "Could not resolve dest path")
 	}
 
+	// Resolve the parent of src rather than src itself and rejoin the base name. ResolveUniquePath
+	// dereferences symlinks, but link() needs to see whether the leaf is itself a symlink, so we must
+	// not dereference it here. For a non-symlink leaf this is equivalent to resolving src directly.
+	srcParent, err := fileutils.ResolveUniquePath(filepath.Dir(src))
+	if err != nil {
+		return errs.Wrap(err, "Could not resolve src path")
+	}
+
+	return link(filepath.Join(srcParent, filepath.Base(src)), resolvedDest)
+}
+
+// link recursively links src into dest. Unlike Link, it assumes src and dest are already resolved to
+// unique paths and does NOT re-resolve them for every entry it visits. Path resolution is a syscall
+// per path on Windows (GetLongPathName), so resolving once per tree rather than once per file makes
+// installing runtimes with many files dramatically faster. Descendant paths are constructed by joining
+// already-resolved parents with real (long) entry names, so they need no further resolution.
+func link(src, dest string) error {
 	if fileutils.IsDir(src) {
-		if fileutils.IsSymlink(originalSrc) {
-			// If the original src is a symlink, the resolved src is no longer a symlink and could point
+		if fileutils.IsSymlink(src) {
+			// If src is a symlink, the resolved src is no longer a symlink and could point
 			// to a parent directory, resulting in a recursive directory structure.
-			// Avoid any potential problems by simply linking the original link to the target.
+			// Avoid any potential problems by simply linking the symlink to the target.
 			// Links to directories are okay on Linux and macOS, but will fail on Windows.
 			// If we ever get here on Windows, the artifact being deployed is bad and there's nothing we
 			// can do about it except receive the report from Rollbar and report it internally.
-			return linkFile(originalSrc, dest)
+			return linkFile(src, dest)
 		}
 
 		if err := fileutils.Mkdir(dest); err != nil {
@@ -67,11 +85,20 @@ func Link(src, dest string) error {
 			return errs.Wrap(err, "could not read directory %s", src)
 		}
 		for _, entry := range entries {
-			if err := Link(filepath.Join(src, entry.Name()), filepath.Join(dest, entry.Name())); err != nil {
+			if err := link(filepath.Join(src, entry.Name()), filepath.Join(dest, entry.Name())); err != nil {
 				return errs.Wrap(err, "sub link failed")
 			}
 		}
 		return nil
+	}
+
+	// A symlink whose target is a file: link to the resolved target to preserve pre-existing behavior.
+	if fileutils.IsSymlink(src) {
+		resolvedSrc, err := fileutils.ResolveUniquePath(src)
+		if err != nil {
+			return errs.Wrap(err, "could not resolve src path %s", src)
+		}
+		src = resolvedSrc
 	}
 
 	destDir := filepath.Dir(dest)
@@ -87,6 +114,12 @@ func Link(src, dest string) error {
 	}
 
 	if err := linkFile(src, dest); err != nil {
+		// Another artifact may have created the same file concurrently between the check above and now.
+		// Treat that the same as the "already exists" case rather than failing the whole install.
+		if os.IsExist(err) {
+			logging.Warning("Skipping linking '%s' to '%s' as it already exists", src, dest)
+			return nil
+		}
 		return errs.Wrap(err, "could not link %s to %s", src, dest)
 	}
 	return nil
