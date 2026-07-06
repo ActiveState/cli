@@ -2,22 +2,29 @@ package runtime
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/pkg/executors"
 	"github.com/go-openapi/strfmt"
 	"golang.org/x/net/context"
 
+	"github.com/ActiveState/cli/internal/artifactcrypto"
 	"github.com/ActiveState/cli/internal/chanutils/workerpool"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/proxyreader"
+	"github.com/ActiveState/cli/internal/python/wheelinstall"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
@@ -53,6 +60,12 @@ type Opts struct {
 	// AuthToken is the platform JWT forwarded to the build-log-streamer WS so
 	// the server can authorize the stream. Empty for unauthenticated callers.
 	AuthToken string
+
+	// OrgKey is the organization AES-256 key used to decrypt private artifacts
+	// during install, with OrgKeyID identifying which key it is. Both are empty
+	// when the runtime has no private ingredients.
+	OrgKey   []byte
+	OrgKeyID string
 
 	FromArchive *fromArchive
 
@@ -96,6 +109,11 @@ type setup struct {
 
 	// toUninstall encompasses all artifacts that will need to be uninstalled for this runtime.
 	toUninstall map[strfmt.UUID]bool
+
+	// skipped records encrypted artifacts that were skipped because no org key
+	// was available to decrypt them.
+	skipMutex sync.Mutex
+	skipped   map[strfmt.UUID]struct{}
 }
 
 func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depot *depot, opts *Opts) (*setup, error) {
@@ -196,7 +214,28 @@ func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depo
 		toInstall:         artifactsToInstall.ToIDMap(),
 		toUninstall:       artifactsToUninstall,
 		ecosystems:        ecosystems,
+		skipped:           map[strfmt.UUID]struct{}{},
 	}, nil
+}
+
+func (s *setup) markSkipped(id strfmt.UUID) {
+	s.skipMutex.Lock()
+	defer s.skipMutex.Unlock()
+	s.skipped[id] = struct{}{}
+}
+
+func (s *setup) wasSkipped(id strfmt.UUID) bool {
+	s.skipMutex.Lock()
+	defer s.skipMutex.Unlock()
+	_, ok := s.skipped[id]
+	return ok
+}
+
+// skippedAny reports whether any artifact was skipped this run.
+func (s *setup) skippedAny() bool {
+	s.skipMutex.Lock()
+	defer s.skipMutex.Unlock()
+	return len(s.skipped) > 0
 }
 
 func (s *setup) RunAndWait() (rerr error) {
@@ -339,6 +378,11 @@ func (s *setup) obtain(artifact *buildplan.Artifact) (rerr error) {
 		}
 	}
 
+	// Verify checksum.
+	if err := s.verifyArtifact(artifact, b); err != nil {
+		return errs.Wrap(err, "Artifact checksum validation failed")
+	}
+
 	// Unpack artifact
 	if err := s.unpack(artifact, b); err != nil {
 		return errs.Wrap(err, "unpack failed")
@@ -380,6 +424,29 @@ func (s *setup) download(artifact *buildplan.Artifact) (_ []byte, rerr error) {
 	return b, nil
 }
 
+// verifyArtifact verifies the checksum of the downloaded artifact matches the checksum given by the
+// platform, and returns an error if the verification fails.
+func (s *setup) verifyArtifact(artifact *buildplan.Artifact, b []byte) error {
+	if artifact.Checksum != "" {
+		logging.Debug("Validating checksum for %s", artifact.NameAndVersion())
+	} else {
+		logging.Debug("Skipping checksum validation for %s because the Platform did not provide a checksum to validate against.", artifact.NameAndVersion())
+		return nil
+	}
+
+	hasher := sha256.New()
+	hasher.Write(b)
+	checksum := hex.EncodeToString(hasher.Sum(nil))
+	artifactChecksum := strings.TrimPrefix(artifact.Checksum, "sha256:")
+	if checksum != artifactChecksum {
+		logging.Debug("Checksum validation failed. Expected '%s', but was '%s'", artifactChecksum, checksum)
+		// Note: the artifact name will be reported higher up the chain
+		return locale.NewError("artifact_checksum_failed", "Checksum validation failed")
+	}
+
+	return nil
+}
+
 func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 	defer func() {
 		if rerr != nil {
@@ -418,8 +485,43 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 		return errs.Wrap(err, "unpack failed")
 	}
 
+	// Decrypt and extract an encrypted private-ingredient payload, if present.
+	outcome, err := s.decryptPayload(artifact.Name(), unpackPath)
+	if err != nil {
+		if err2 := os.RemoveAll(unpackPath); err2 != nil {
+			return errs.Pack(err, errs.Wrap(err2, "unable to remove partially-unpacked directory"))
+		}
+		return errs.Wrap(err, "decrypt failed")
+	}
+	if outcome == decryptSkipped {
+		s.markSkipped(artifact.ArtifactID)
+		if err := os.RemoveAll(unpackPath); err != nil {
+			return errs.Wrap(err, "unable to remove skipped artifact directory")
+		}
+		logging.Warning("Skipping encrypted artifact %s (%s): no org key available", artifact.ArtifactID, artifact.Name())
+		return nil
+	}
+
 	if err := s.depot.Put(artifact.ArtifactID); err != nil {
 		return errs.Wrap(err, "Could not put artifact in depot")
+	}
+	if outcome == decryptDone {
+		logging.Debug("Decrypted private artifact %s (%s)", artifact.ArtifactID, artifact.Name())
+		if err := s.depot.MarkPrivate(artifact.ArtifactID); err != nil {
+			return errs.Wrap(err, "Could not mark decrypted artifact as private")
+		}
+		switch {
+		case s.isPrivateWheel(unpackPath):
+			if err := s.installPrivateWheel(unpackPath); err != nil {
+				rerr := errs.Wrap(err, "Could not install private wheel")
+				if err2 := os.RemoveAll(unpackPath); err2 != nil {
+					return errs.Pack(rerr, errs.Wrap(err2, "unable to remove artifact directory"))
+				}
+				return rerr
+			}
+		default:
+			multilog.Error("Decrypted private artifact %s (%s) is of an unknown type; cannot install it", artifact.ArtifactID, artifact.Name())
+		}
 	}
 
 	// Camel artifacts do not have runtime.json, so in order to not have multiple paths of logic we generate one based
@@ -437,6 +539,221 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 	}
 
 	return nil
+}
+
+type decryptOutcome int
+
+const (
+	decryptNotEncrypted decryptOutcome = iota // no encrypted payload present
+	decryptDone                               // payload decrypted and extracted in place
+	decryptSkipped                            // encrypted, but no org key available
+)
+
+// decryptPayload finds the encrypted private-ingredient payload within the
+// unpacked artifact (located by name and confirmed by envelope magic),
+// decrypts it, and extracts the inner tar.gz archive in place of the
+// ciphertext so it lands where the runtime.json points.
+//
+// A missing key returns decryptSkipped; a wrong key or corrupt payload returns
+// an error.
+func (s *setup) decryptPayload(artifactName, unpackPath string) (outcome decryptOutcome, rerr error) {
+	payloadPath, err := findEncryptedPayload(unpackPath)
+	if err != nil {
+		return decryptNotEncrypted, errs.Wrap(err, "could not scan for encrypted payload")
+	}
+	if payloadPath == "" {
+		return decryptNotEncrypted, nil
+	}
+	logging.Debug("Detected encrypted payload in artifact %s", artifactName)
+
+	if len(s.opts.OrgKey) == 0 {
+		return decryptSkipped, nil
+	}
+
+	// Confirm the key matches the payload header.
+	header, err := readPayloadHeader(payloadPath)
+	if err != nil {
+		return decryptNotEncrypted, errs.Wrap(err, "could not read encrypted payload header")
+	}
+	if err := header.CheckKey(s.opts.OrgKey); err != nil {
+		return decryptNotEncrypted, errs.Wrap(err, "org key does not match encrypted artifact %s", artifactName)
+	}
+
+	// Decrypt to a private temp dir, then extract the archive in place.
+	tmpDir, err := os.MkdirTemp(filepath.Dir(unpackPath), ".decrypt-")
+	if err != nil {
+		return decryptNotEncrypted, errs.Wrap(err, "could not create decrypt temp dir")
+	}
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			rerr = errs.Pack(rerr, errs.Wrap(err, "could not remove decrypt temp dir"))
+		}
+	}()
+
+	archivePath := filepath.Join(tmpDir, "payload")
+	src, err := os.Open(payloadPath)
+	if err != nil {
+		return decryptNotEncrypted, errs.Wrap(err, "could not open encrypted payload")
+	}
+	err = artifactcrypto.Decrypt(src, archivePath, s.opts.OrgKey)
+	if cerr := src.Close(); cerr != nil {
+		err = errs.Pack(err, errs.Wrap(cerr, "could not close encrypted payload"))
+	}
+	if err != nil {
+		return decryptNotEncrypted, errs.Wrap(err, "could not decrypt artifact %s", artifactName)
+	}
+
+	// Remove the ciphertext from the artifact directory.
+	if err := os.Remove(payloadPath); err != nil {
+		return decryptNotEncrypted, errs.Wrap(err, "could not remove ciphertext")
+	}
+
+	archive, err := os.Open(archivePath)
+	if err != nil {
+		return decryptNotEncrypted, errs.Wrap(err, "could not open decrypted payload")
+	}
+	defer func() {
+		if err := archive.Close(); err != nil {
+			rerr = errs.Pack(rerr, errs.Wrap(err, "could not close decrypted payload"))
+		}
+	}()
+	// Extract alongside the ciphertext so the decrypted contents land where the
+	// runtime.json points.
+	archiveUA := unarchiver.NewTarGz(unarchiver.WithUntrustedSource())
+	if err := archiveUA.Unarchive(archive, filepath.Dir(payloadPath)); err != nil {
+		return decryptNotEncrypted, errs.Wrap(err, "could not extract decrypted artifact %s", artifactName)
+	}
+
+	// Restrict the decrypted artifact directory to owner-only (0700).
+	if err := os.Chmod(unpackPath, 0700); err != nil {
+		return decryptNotEncrypted, errs.Wrap(err, "could not restrict decrypted artifact directory")
+	}
+
+	return decryptDone, nil
+}
+
+// findEncryptedPayload returns the path of the encrypted private payload within
+// dir, searched recursively, or "" if none is present. The payload is located by
+// its conventional name (artifactcrypto.PayloadFilename) and confirmed by its
+// artifactcrypto envelope magic, so a plaintext file that happens to share the
+// name is ignored.
+func findEncryptedPayload(dir string) (string, error) {
+	var found string
+	walkErr := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() || d.Name() != artifactcrypto.PayloadFilename {
+			return nil
+		}
+		f, err := os.Open(path)
+		if err != nil {
+			return errs.Wrap(err, "could not open artifact file")
+		}
+		encrypted, err := artifactcrypto.IsEncrypted(f)
+		if cerr := f.Close(); cerr != nil {
+			err = errs.Pack(err, errs.Wrap(cerr, "could not close artifact file"))
+		}
+		if err != nil {
+			return errs.Wrap(err, "could not detect encrypted payload")
+		}
+		if encrypted {
+			found = path
+			return filepath.SkipAll
+		}
+		return nil
+	})
+	if walkErr != nil {
+		return "", errs.Wrap(walkErr, "could not scan artifact directory")
+	}
+	return found, nil
+}
+
+func readPayloadHeader(path string) (header artifactcrypto.Header, rerr error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return artifactcrypto.Header{}, errs.Wrap(err, "could not open encrypted payload")
+	}
+	defer func() {
+		if cerr := f.Close(); cerr != nil {
+			rerr = errs.Pack(rerr, errs.Wrap(cerr, "could not close encrypted payload"))
+		}
+	}()
+	return artifactcrypto.ParseHeader(f)
+}
+
+// isPrivateWheel reports whether the decrypted payload under dir is a wheel. We
+// control the payload via `state publish --build`, so a .whl extension is a
+// sufficient test.
+func (s *setup) isPrivateWheel(dir string) bool {
+	wheelPath, err := findWheel(dir)
+	return err == nil && wheelPath != ""
+}
+
+// installPrivateWheel installs the decrypted wheel found under artifactDir into a
+// site-packages directory and adds it to PYTHONPATH in the artifact's
+// runtime.json.
+func (s *setup) installPrivateWheel(artifactDir string) error {
+	wheelPath, err := findWheel(artifactDir)
+	if err != nil {
+		return errs.Wrap(err, "could not locate decrypted wheel")
+	}
+	if wheelPath == "" {
+		return errs.New("decrypted private artifact contains no wheel")
+	}
+
+	// site-packages sits in the deploy tree, so the deploy links it into the
+	// runtime where ${INSTALLDIR}/site-packages resolves it.
+	sitePackages := filepath.Join(filepath.Dir(wheelPath), "site-packages")
+	if err := wheelinstall.Install(wheelPath, sitePackages); err != nil {
+		return errs.Wrap(err, "could not install wheel")
+	}
+	if err := os.Remove(wheelPath); err != nil {
+		return errs.Wrap(err, "could not remove installed wheel")
+	}
+
+	return s.exposeSitePackages(artifactDir)
+}
+
+// exposeSitePackages adds the installed site-packages directory to PYTHONPATH in
+// the artifact's runtime.json.
+func (s *setup) exposeSitePackages(artifactDir string) error {
+	rtPath := filepath.Join(artifactDir, envdef.EnvironmentDefinitionFilename)
+	envDef, err := envdef.NewEnvironmentDefinition(rtPath)
+	if err != nil {
+		return errs.Wrap(err, "could not load runtime definition")
+	}
+	envDef.Env = append(envDef.Env, envdef.EnvironmentVariable{
+		Name:      "PYTHONPATH",
+		Values:    []string{"${INSTALLDIR}/site-packages"},
+		Join:      envdef.Prepend,
+		Inherit:   false,
+		Separator: ":", // OS-independent
+	})
+	if err := envDef.Save(artifactDir); err != nil {
+		return errs.Wrap(err, "could not save runtime definition")
+	}
+	return nil
+}
+
+// findWheel returns the path of the single .whl under dir (searched recursively),
+// or "" if none is present.
+func findWheel(dir string) (string, error) {
+	var found string
+	err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !d.IsDir() && strings.HasSuffix(d.Name(), ".whl") {
+			found = path
+			return filepath.SkipAll
+		}
+		return nil
+	})
+	if err != nil {
+		return "", errs.Wrap(err, "could not scan for wheel")
+	}
+	return found, nil
 }
 
 func (s *setup) updateExecutors() error {
@@ -470,6 +787,16 @@ func (s *setup) updateExecutors() error {
 
 func (s *setup) install(artifact *buildplan.Artifact) (rerr error) {
 	id := artifact.ArtifactID
+
+	// Artifacts skipped during unpack are not in the depot. Report the skip so
+	// the install progress bar still accounts for them.
+	if s.wasSkipped(id) {
+		if err := s.fireEvent(events.ArtifactInstallSkipped{id, artifact.Name()}); err != nil {
+			return errs.Wrap(err, "Could not handle ArtifactInstallSkipped event")
+		}
+		return nil
+	}
+
 	defer func() {
 		if rerr == nil {
 			if err := s.fireEvent(events.ArtifactInstallSuccess{id}); err != nil {
