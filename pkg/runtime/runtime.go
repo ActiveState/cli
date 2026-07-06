@@ -101,7 +101,9 @@ func (r *Runtime) Update(bp *buildplan.BuildPlan, hash string, setOpts ...SetOpt
 		return errs.Wrap(err, "Failed to install runtime")
 	}
 
-	if err := r.saveHash(hash); err != nil {
+	if setup.skippedAny() {
+		logging.Debug("Runtime has skipped artifacts; not saving hash so the next update retries them")
+	} else if err := r.saveHash(hash); err != nil {
 		return errs.Wrap(err, "Failed to save hash")
 	}
 

@@ -1,10 +1,12 @@
 package runtime_runbit
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
@@ -22,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	buildscript_runbit "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/checkout"
+	"github.com/ActiveState/cli/internal/runbits/orgkey"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
 	"github.com/ActiveState/cli/internal/runbits/runtime/trigger"
@@ -36,7 +39,6 @@ import (
 	"github.com/ActiveState/cli/pkg/runtime_helpers"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
-	"golang.org/x/net/context"
 )
 
 func init() {
@@ -253,10 +255,13 @@ func Update(
 	pg := progress.NewRuntimeProgressIndicator(prime.Output())
 	defer rtutils.Closer(pg.Close, &rerr)
 
+	skipped := &skipReporter{}
+
 	rtOpts := []runtime.SetOpt{
 		runtime.WithAnnotations(proj.Owner(), proj.Name(), commitID),
-		runtime.WithEventHandlers(pg.Handle, ah.handle),
+		runtime.WithEventHandlers(pg.Handle, ah.handle, skipped.handle),
 		runtime.WithPreferredLibcVersion(prime.Config().GetString(constants.PreferredGlibcVersionConfig)),
+		runtime.WithAuthToken(prime.Auth().BearerToken()),
 	}
 	if opts.Archive != nil {
 		rtOpts = append(rtOpts, runtime.WithArchive(opts.Archive.Dir, opts.Archive.PlatformID, checkout.ArtifactExt))
@@ -284,12 +289,32 @@ func Update(
 	}
 	rtOpts = append(rtOpts, runtime.WithCacheSize(prime.Config().GetInt(constants.RuntimeCacheSizeConfigKey)))
 
+	// Fetch the organization key for private ingredients, if a key service is configured.
+	orgKeyProvider := orgkey.New(prime.Config(), proj.Owner())
+	if orgKeyProvider.Configured() {
+		defer orgKeyProvider.Close()
+		key, keyID, err := orgKeyProvider.Key(context.Background())
+		if err != nil {
+			prime.Output().Notice(locale.Tl("warn_orgkey_unavailable",
+				"[WARNING]Warning:[/RESET] Could not fetch the organization key: {{.V0}}. Encrypted private artifacts will be skipped. Ensure the key is available and run '[ACTIONABLE]state refresh[/RESET]' to try installing them again.",
+				errs.JoinMessage(err)))
+		} else {
+			rtOpts = append(rtOpts, runtime.WithDecryptionKey(key, keyID))
+		}
+	}
+
 	if isArmPlatform(buildPlan) {
 		prime.Output().Notice(locale.Tl("warning_arm_unstable", "[WARNING]Warning:[/RESET] You are using an ARM64 architecture, which is currently unstable. While it may work, you might encounter issues."))
 	}
 
 	if err := rt.Update(buildPlan, rtHash, rtOpts...); err != nil {
 		return nil, locale.WrapError(err, "err_packages_update_runtime_install")
+	}
+
+	if len(skipped.names) > 0 {
+		prime.Output().Notice(locale.Tl("warn_private_artifacts_skipped",
+			"[WARNING]Warning:[/RESET] These private packages were skipped because the organization key was unavailable: {{.V0}}. Ensure the key is available and run '[ACTIONABLE]state refresh[/RESET]' to try installing them again.",
+			strings.Join(skipped.names, ", ")))
 	}
 
 	return rt, nil
@@ -402,5 +427,21 @@ func (h *analyticsHandler) handle(event events.Event) error {
 		h.fire(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimePostprocess, nil)
 	}
 
+	return nil
+}
+
+// skipReporter collects the names of artifacts skipped during runtime setup so
+// the caller can report them once the update completes.
+type skipReporter struct {
+	mutex sync.Mutex
+	names []string
+}
+
+func (r *skipReporter) handle(event events.Event) error {
+	if e, ok := event.(events.ArtifactInstallSkipped); ok {
+		r.mutex.Lock()
+		defer r.mutex.Unlock()
+		r.names = append(r.names, e.Name)
+	}
 	return nil
 }

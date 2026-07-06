@@ -9,6 +9,21 @@ func WithEventHandlers(handlers ...events.HandlerFunc) SetOpt {
 	return func(opts *Opts) { opts.EventHandlers = handlers }
 }
 
+// WithAuthToken forwards the platform JWT to the build-log-streamer WebSocket
+// so the server can authorize the stream. Empty token = anonymous.
+func WithAuthToken(token string) SetOpt {
+	return func(opts *Opts) { opts.AuthToken = token }
+}
+
+// WithDecryptionKey supplies the organization AES-256 key (and its id) used to
+// decrypt private artifacts during install.
+func WithDecryptionKey(key []byte, keyID string) SetOpt {
+	return func(opts *Opts) {
+		opts.OrgKey = key
+		opts.OrgKeyID = keyID
+	}
+}
+
 func WithBuildlogFilePath(path string) SetOpt {
 	return func(opts *Opts) { opts.BuildlogFilePath = path }
 }
