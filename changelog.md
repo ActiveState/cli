@@ -8,14 +8,31 @@ and this project adheres to
 
 ## 0.48.1
 
-### Security
+### Added
 
-- Addressed all known, fixable CVEs.
+- Added `state publish --build <path>`, which builds, encrypts, and publishes a private ingredient directly from a local
+  source directory. The ingredient's name, version, and namespace remain visible to the ActiveState Platform, but its
+  source contents do not — only the encrypted artifact is uploaded. (At this time, this feature only builds pure Python
+  wheels from a given source directory.)
+- Private ingredients are now automatically decrypted and installed into your runtime on `state install`, `state pull`,
+  and `state checkout`, using the encryption key served by your organization's key service.
+	- Connecting to the key service is configured with new `state config` keys:
+		- `privateingredient.key_service_url`: the HTTPS URL of the key service.
+		- `privateingredient.key_service_ca`: path to a CA bundle or pinned certificate for verifying the service's TLS certificate.
+		- `privateingredient.mtls_cert`: path to a client certificate for mTLS authentication to the service.
+		- `privateingredient.mtls_key`: path to the client private key for mTLS authentication.
+		- `privateingredient.bearer_token_env`: name of an environment variable to read a bearer token from.
+		- `privateingredient.bearer_token_file`: path to a file to read a bearer token from.
+		- `privateingredient.cache_key_on_disk`: whether to cache the fetched key on disk for headless or offline reuse.
 
 ### Fixed
 
 - Fixed occasional panic due to a concurrent map read/write during runtime setup.
 - Fixed `state clean cache` from accidentally deleting State Tool binaries on Windows.
+
+### Security
+
+- Addressed all known, fixable CVEs.
 
 ## 0.48.0
 
