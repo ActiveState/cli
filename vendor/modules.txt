@@ -436,9 +436,6 @@ github.com/go-openapi/swag
 # github.com/go-openapi/validate v0.20.2
 ## explicit; go 1.14
 github.com/go-openapi/validate
-# github.com/go-stack/stack v1.8.0
-## explicit
-github.com/go-stack/stack
 # github.com/gofrs/flock v0.8.1
 ## explicit
 github.com/gofrs/flock
@@ -771,8 +768,8 @@ github.com/yusufpapurcu/wmi
 # github.com/zijiren233/yaml-comment v0.2.1
 ## explicit; go 1.18
 github.com/zijiren233/yaml-comment
-# go.mongodb.org/mongo-driver v1.5.3
-## explicit; go 1.10
+# go.mongodb.org/mongo-driver v1.17.7
+## explicit; go 1.18
 go.mongodb.org/mongo-driver/bson
 go.mongodb.org/mongo-driver/bson/bsoncodec
 go.mongodb.org/mongo-driver/bson/bsonoptions
@@ -783,7 +780,7 @@ go.mongodb.org/mongo-driver/x/bsonx/bsoncore
 # go4.org v0.0.0-20230225012048-214862532bf5
 ## explicit; go 1.13
 go4.org/readerutil
-# golang.org/x/crypto v0.50.0
+# golang.org/x/crypto v0.52.0
 ## explicit; go 1.25.0
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
@@ -803,10 +800,10 @@ golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/agent
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 golang.org/x/crypto/ssh/knownhosts
-# golang.org/x/mod v0.34.0
+# golang.org/x/mod v0.35.0
 ## explicit; go 1.25.0
 golang.org/x/mod/semver
-# golang.org/x/net v0.53.0
+# golang.org/x/net v0.55.0
 ## explicit; go 1.25.0
 golang.org/x/net/context
 golang.org/x/net/http/httpguts
@@ -821,7 +818,7 @@ golang.org/x/net/proxy
 # golang.org/x/sync v0.20.0
 ## explicit; go 1.25.0
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.43.0
+# golang.org/x/sys v0.45.0
 ## explicit; go 1.25.0
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
@@ -829,10 +826,10 @@ golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
-# golang.org/x/term v0.42.0
+# golang.org/x/term v0.43.0
 ## explicit; go 1.25.0
 golang.org/x/term
-# golang.org/x/text v0.36.0
+# golang.org/x/text v0.37.0
 ## explicit; go 1.25.0
 golang.org/x/text/cases
 golang.org/x/text/encoding
@@ -854,7 +851,7 @@ golang.org/x/text/width
 # golang.org/x/time v0.12.0
 ## explicit; go 1.23.0
 golang.org/x/time/rate
-# golang.org/x/tools v0.43.0
+# golang.org/x/tools v0.44.0
 ## explicit; go 1.25.0
 golang.org/x/tools/go/ast/edge
 golang.org/x/tools/go/ast/inspector
