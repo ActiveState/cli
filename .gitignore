@@ -19,3 +19,4 @@ cmd/state/versioninfo.json
 cmd/state/resource.syso
 cmd/state-svc/versioninfo.json
 cmd/state-svc/resource.syso
+test/ssl/
