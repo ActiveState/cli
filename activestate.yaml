@@ -459,6 +459,34 @@ scripts:
     language: bash
     standalone: true
     value: go run $project.path()/scripts/to-buildexpression/main.go $@
+  - name: serve-org-keys
+    language: bash
+    description: Runs a server that serves org keys for testing encrypted private ingredients
+    standalone: true
+    value: |
+      org="$1"
+      if [ -z "$org" ]; then
+        echo "Usage: state run serve-org-keys <org-name> [<key>]"
+        echo "Error: missing organization name"
+        exit 1
+      fi
+      key="$2"
+      
+      echo "Generating HTTPS certificate."
+      if [ ! -d test/ssl ]; then mkdir test/ssl; fi
+      rm -f test/ssl/{key,cert}.pem
+      state exec openssl -- req -x509 -newkey rsa:2048 -nodes -days 365 \
+        -keyout test/ssl/key.pem -out test/ssl/cert.pem \
+        -subj "/CN=localhost" \
+        -addext "subjectAltName=DNS:localhost,IP:127.0.0.1" 2> /dev/null
+        
+      echo "Starting org key server."
+      if [ -z "$key" ]; then
+        echo "Using random encryption key (see below)"
+        state exec python3 -- scripts/orgkeyserver.py --tls-cert test/ssl/cert.pem --tls-key test/ssl/key.pem --org $org
+      else
+        state exec python3 -- scripts/orgkeyserver.py --tls-cert test/ssl/cert.pem --tls-key test/ssl/key.pem --org "$org" --key "$key"
+      fi
 
 events:
   - name: activate
