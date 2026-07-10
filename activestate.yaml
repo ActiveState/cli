@@ -473,7 +473,6 @@ scripts:
       
       echo "Generating HTTPS certificate."
       if [ ! -d test/ssl ]; then mkdir test/ssl; fi
-      rm -f test/ssl/{key,cert}.pem
       openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
         -keyout test/ssl/key.pem -out test/ssl/cert.pem \
         -subj "/CN=localhost" \
