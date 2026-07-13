@@ -29,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/runtime/events"
@@ -303,6 +304,14 @@ func (s *setup) update() error {
 	// Wait for build to finish
 	if !s.buildplan.IsBuildReady() && len(s.toBuild) > 0 {
 		if err := blog.Wait(context.Background()); err != nil {
+			if buildlogstream.IsStreamDenied(err) {
+				if s.opts.AuthToken == "" {
+					return locale.WrapExternalError(err, "err_buildlog_stream_denied_unauthenticated",
+						"Could not monitor in-progress build. Please authenticate by running '[ACTIONABLE]state auth[/RESET]' and try again.")
+				}
+				return locale.WrapExternalError(err, "err_buildlog_stream_denied_unauthorized",
+					"Could not monitor in-progress build. If this is a private project, make sure your account has access to it.")
+			}
 			return errs.Wrap(err, "errors occurred during buildlog streaming")
 		}
 	}
