@@ -499,19 +499,21 @@ scripts:
       )
       set "key=%~2"
 
-      echo Generating HTTPS certificate.
-      if not exist test\ssl mkdir test\ssl
-      openssl req -x509 -newkey rsa:2048 -nodes -days 365 ^
-        -keyout test\ssl\key.pem -out test\ssl\cert.pem ^
-        -subj "/CN=localhost" ^
-        -addext "subjectAltName=DNS:localhost,IP:127.0.0.1" 2> nul
+      set "PY="
+      where python >nul 2>nul && set "PY=python"
+      if not defined PY (where py >nul 2>nul && set "PY=py -3")
+      if not defined PY (where python3 >nul 2>nul && set "PY=python3")
+      if not defined PY (
+        echo Error: no Python interpreter found on PATH ^(tried python, py, python3^).
+        exit /b 1
+      )
 
-      echo Starting org key server.
+      echo Generating HTTPS certificate and starting org key server.
       if "%key%"=="" (
         echo Using random encryption key ^(see below^)
-        python3 -- scripts\orgkeyserver.py --tls-cert test\ssl\cert.pem --tls-key test\ssl\key.pem --org %org%
+        %PY% scripts\orgkeyserver.py --gen-cert --tls-cert test\ssl\cert.pem --tls-key test\ssl\key.pem --org %org%
       ) else (
-        python3 -- scripts\orgkeyserver.py --tls-cert test\ssl\cert.pem --tls-key test\ssl\key.pem --org "%org%" --key "%key%"
+        %PY% scripts\orgkeyserver.py --gen-cert --tls-cert test\ssl\cert.pem --tls-key test\ssl\key.pem --org "%org%" --key "%key%"
       )
 
 events:
