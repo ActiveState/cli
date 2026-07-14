@@ -1,4 +1,4 @@
-project: https://platform.activestate.com/ActiveState/cli?branch=main&commitID=bac333be-be69-4334-bfeb-f326f49af681
+project: https://platform.activestate.com/ActiveState/cli?branch=main&commitID=ce30761b-3c98-4d7a-b737-bcb1beeef87c
 constants:
   - name: CLI_BUILDFLAGS
     value: -ldflags="-s -w"
@@ -461,6 +461,7 @@ scripts:
     value: go run $project.path()/scripts/to-buildexpression/main.go $@
   - name: serve-org-keys
     language: bash
+    if: ne .Shell "cmd"
     description: Runs a server that serves org keys for testing encrypted private ingredients
     value: |
       org="$1"
@@ -470,21 +471,43 @@ scripts:
         exit 1
       fi
       key="$2"
-      
-      echo "Generating HTTPS certificate."
-      if [ ! -d test/ssl ]; then mkdir test/ssl; fi
-      openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
-        -keyout test/ssl/key.pem -out test/ssl/cert.pem \
-        -subj "/CN=localhost" \
-        -addext "subjectAltName=DNS:localhost,IP:127.0.0.1" 2> /dev/null
-        
+
       echo "Starting org key server."
       if [ -z "$key" ]; then
         echo "Using random encryption key (see below)"
-        python3 -- scripts/orgkeyserver.py --tls-cert test/ssl/cert.pem --tls-key test/ssl/key.pem --org $org
+        python3 -- scripts/orgkeyserver.py --org "$org"
       else
-        python3 -- scripts/orgkeyserver.py --tls-cert test/ssl/cert.pem --tls-key test/ssl/key.pem --org "$org" --key "$key"
+        python3 -- scripts/orgkeyserver.py --org "$org" --key "$key"
       fi
+  - name: serve-org-keys
+    language: batch
+    if: eq .Shell "cmd"
+    description: Runs a server that serves org keys for testing encrypted private ingredients
+    value: |
+      set "org=%~1"
+      if "%org%"=="" (
+        echo Usage: state run serve-org-keys ^<org-name^> [^<key^>]
+        echo Error: missing organization name
+        exit /b 1
+      )
+      set "key=%~2"
+
+      set "PY="
+      where python >nul 2>nul && set "PY=python"
+      if not defined PY (where py >nul 2>nul && set "PY=py -3")
+      if not defined PY (where python3 >nul 2>nul && set "PY=python3")
+      if not defined PY (
+        echo Error: no Python interpreter found on PATH ^(tried python, py, python3^).
+        exit /b 1
+      )
+
+      echo Starting org key server.
+      if "%key%"=="" (
+        echo Using random encryption key ^(see below^)
+        %PY% scripts\orgkeyserver.py --org "%org%"
+      ) else (
+        %PY% scripts\orgkeyserver.py --org "%org%" --key "%key%"
+      )
 
 events:
   - name: activate
