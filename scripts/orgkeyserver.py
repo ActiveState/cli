@@ -104,6 +104,11 @@ def generate_self_signed(cert_path, key_path, host):
             serialization.PrivateFormat.TraditionalOpenSSL,
             serialization.NoEncryption(),
         ))
+    # Restrict the private key to owner-only; no-op-ish on Windows.
+    try:
+        os.chmod(key_path, 0o600)
+    except OSError:
+        pass
     with open(cert_path, "wb") as f:
         f.write(cert.public_bytes(serialization.Encoding.PEM))
 

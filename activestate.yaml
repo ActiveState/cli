@@ -482,7 +482,7 @@ scripts:
       echo "Starting org key server."
       if [ -z "$key" ]; then
         echo "Using random encryption key (see below)"
-        python3 -- scripts/orgkeyserver.py --tls-cert test/ssl/cert.pem --tls-key test/ssl/key.pem --org $org
+        python3 -- scripts/orgkeyserver.py --tls-cert test/ssl/cert.pem --tls-key test/ssl/key.pem --org "$org"
       else
         python3 -- scripts/orgkeyserver.py --tls-cert test/ssl/cert.pem --tls-key test/ssl/key.pem --org "$org" --key "$key"
       fi
@@ -511,7 +511,7 @@ scripts:
       echo Generating HTTPS certificate and starting org key server.
       if "%key%"=="" (
         echo Using random encryption key ^(see below^)
-        %PY% scripts\orgkeyserver.py --gen-cert --tls-cert test\ssl\cert.pem --tls-key test\ssl\key.pem --org %org%
+        %PY% scripts\orgkeyserver.py --gen-cert --tls-cert test\ssl\cert.pem --tls-key test\ssl\key.pem --org "%org%"
       ) else (
         %PY% scripts\orgkeyserver.py --gen-cert --tls-cert test\ssl\cert.pem --tls-key test\ssl\key.pem --org "%org%" --key "%key%"
       )
