@@ -4,26 +4,18 @@
 Serves the organization encryption key over HTTPS at GET /v1/org-key in the
 contract the State Tool expects. For local testing only; not a shipped artifact.
 
-Generate a self-signed certificate (the SAN must cover the host you connect to):
-
-    openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
-        -keyout key.pem -out cert.pem \
-        -subj "/CN=localhost" \
-        -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
-
-Or let this script generate one for you (needs the 'cryptography' package, no
-openssl binary required -- useful on native Windows / cmd):
-
-    python3 scripts/orgkeyserver.py --gen-cert --tls-cert cert.pem --tls-key key.pem
+A self-signed certificate/key pair (SAN covering localhost + 127.0.0.1) is
+generated automatically into test/ssl/ on startup, so no openssl binary is
+needed.
 
 Run:
 
-    python3 scripts/orgkeyserver.py --tls-cert cert.pem --tls-key key.pem
+    python3 scripts/orgkeyserver.py
 
 Point the State Tool at it (the base URL only; the tool appends /v1/org-key):
 
     state config set privateingredient.key_service_url https://127.0.0.1:8443
-    state config set privateingredient.key_service_ca   /path/to/cert.pem
+    state config set privateingredient.key_service_ca   test/ssl/cert.pem
     # Optional bearer auth (start the server with --token <token>):
     state config set privateingredient.bearer_token_env ORGKEY_TOKEN
     export ORGKEY_TOKEN=<token>
@@ -44,27 +36,25 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 KEY_SIZE = 32  # AES-256
 ENDPOINT = "/v1/org-key"
+CERT_DIR = "test/ssl"
 
 
-def generate_self_signed(cert_path, key_path, host):
-    """Write a self-signed cert/key pair to the given paths.
+def generate_self_signed(host, cert_dir=CERT_DIR):
+    """Write a self-signed cert/key pair into cert_dir; return their paths.
 
-    Uses the 'cryptography' package so no external openssl binary is required
-    (openssl is frequently unavailable on native Windows / cmd environments).
+    Uses the 'cryptography' package (bundled in the project runtime) so no
+    external openssl binary is required.
     """
-    try:
-        import datetime
-        import ipaddress
+    import datetime
+    import ipaddress
 
-        from cryptography import x509
-        from cryptography.hazmat.primitives import hashes, serialization
-        from cryptography.hazmat.primitives.asymmetric import rsa
-        from cryptography.x509.oid import NameOID
-    except ImportError:
-        raise SystemExit(
-            "--gen-cert requires the 'cryptography' package (pip install "
-            "cryptography), or supply --tls-cert/--tls-key generated with openssl."
-        )
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.x509.oid import NameOID
+
+    cert_path = os.path.join(cert_dir, "cert.pem")
+    key_path = os.path.join(cert_dir, "key.pem")
 
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "localhost")])
@@ -92,12 +82,8 @@ def generate_self_signed(cert_path, key_path, host):
         .sign(key, hashes.SHA256())
     )
 
-    cert_dir = os.path.dirname(cert_path)
     if cert_dir:
         os.makedirs(cert_dir, exist_ok=True)
-    key_dir = os.path.dirname(key_path)
-    if key_dir:
-        os.makedirs(key_dir, exist_ok=True)
     with open(key_path, "wb") as f:
         f.write(key.private_bytes(
             serialization.Encoding.PEM,
@@ -111,6 +97,8 @@ def generate_self_signed(cert_path, key_path, host):
         pass
     with open(cert_path, "wb") as f:
         f.write(cert.public_bytes(serialization.Encoding.PEM))
+
+    return cert_path, key_path
 
 
 def build_contract(org, key_id, raw_key):
@@ -154,11 +142,6 @@ def parse_key(encoded):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    p.add_argument("--tls-cert", required=True, help="server TLS certificate (PEM)")
-    p.add_argument("--tls-key", required=True, help="server TLS private key (PEM)")
-    p.add_argument("--gen-cert", action="store_true",
-                   help="generate a self-signed cert/key at --tls-cert/--tls-key "
-                        "before serving (no openssl binary required)")
     p.add_argument("--org", default="ActiveState-CLI-Testing",
                    help="organization the key belongs to; must match the project owner")
     p.add_argument("--key", help="base64-encoded 32-byte AES key; generated and printed if omitted")
@@ -174,12 +157,11 @@ def main():
         raw_key = secrets.token_bytes(KEY_SIZE)
         print("--key", base64.standard_b64encode(raw_key).decode("ascii"), file=sys.stderr)
 
-    if args.gen_cert:
-        generate_self_signed(args.tls_cert, args.tls_key, args.host)
+    cert_path, key_path = generate_self_signed(args.host)
 
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ctx.minimum_version = ssl.TLSVersion.TLSv1_2
-    ctx.load_cert_chain(certfile=args.tls_cert, keyfile=args.tls_key)
+    ctx.load_cert_chain(certfile=cert_path, keyfile=key_path)
 
     handler = make_handler(build_contract(args.org, args.key_id, raw_key), args.token)
     httpd = HTTPServer((args.host, args.port), handler)

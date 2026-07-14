@@ -472,19 +472,12 @@ scripts:
       fi
       key="$2"
 
-      echo "Generating HTTPS certificate."
-      if [ ! -d test/ssl ]; then mkdir test/ssl; fi
-      openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
-        -keyout test/ssl/key.pem -out test/ssl/cert.pem \
-        -subj "/CN=localhost" \
-        -addext "subjectAltName=DNS:localhost,IP:127.0.0.1" 2> /dev/null
-
       echo "Starting org key server."
       if [ -z "$key" ]; then
         echo "Using random encryption key (see below)"
-        python3 -- scripts/orgkeyserver.py --tls-cert test/ssl/cert.pem --tls-key test/ssl/key.pem --org "$org"
+        python3 -- scripts/orgkeyserver.py --org "$org"
       else
-        python3 -- scripts/orgkeyserver.py --tls-cert test/ssl/cert.pem --tls-key test/ssl/key.pem --org "$org" --key "$key"
+        python3 -- scripts/orgkeyserver.py --org "$org" --key "$key"
       fi
   - name: serve-org-keys
     language: batch
@@ -508,12 +501,12 @@ scripts:
         exit /b 1
       )
 
-      echo Generating HTTPS certificate and starting org key server.
+      echo Starting org key server.
       if "%key%"=="" (
         echo Using random encryption key ^(see below^)
-        %PY% scripts\orgkeyserver.py --gen-cert --tls-cert test\ssl\cert.pem --tls-key test\ssl\key.pem --org "%org%"
+        %PY% scripts\orgkeyserver.py --org "%org%"
       ) else (
-        %PY% scripts\orgkeyserver.py --gen-cert --tls-cert test\ssl\cert.pem --tls-key test\ssl\key.pem --org "%org%" --key "%key%"
+        %PY% scripts\orgkeyserver.py --org "%org%" --key "%key%"
       )
 
 events:
