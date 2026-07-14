@@ -12,10 +12,11 @@ Run:
 
     python3 scripts/orgkeyserver.py
 
-Point the State Tool at it (the base URL only; the tool appends /v1/org-key):
+Point the State Tool at it (the base URL only; the tool appends /v1/org-key).
+Use the absolute cert path the server prints on startup, e.g.:
 
     state config set privateingredient.key_service_url https://127.0.0.1:8443
-    state config set privateingredient.key_service_ca   test/ssl/cert.pem
+    state config set privateingredient.key_service_ca   /path/to/test/ssl/cert.pem
     # Optional bearer auth (start the server with --token <token>):
     state config set privateingredient.bearer_token_env ORGKEY_TOKEN
     export ORGKEY_TOKEN=<token>
@@ -53,6 +54,7 @@ def generate_self_signed(host, cert_dir=CERT_DIR):
     from cryptography.hazmat.primitives.asymmetric import rsa
     from cryptography.x509.oid import NameOID
 
+    cert_dir = os.path.abspath(cert_dir)
     cert_path = os.path.join(cert_dir, "cert.pem")
     key_path = os.path.join(cert_dir, "key.pem")
 
@@ -158,6 +160,7 @@ def main():
         print("--key", base64.standard_b64encode(raw_key).decode("ascii"), file=sys.stderr)
 
     cert_path, key_path = generate_self_signed(args.host)
+    print("key_service_ca", cert_path, file=sys.stderr)
 
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ctx.minimum_version = ssl.TLSVersion.TLSv1_2
