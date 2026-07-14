@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/artifactcrypto"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -157,7 +158,7 @@ func TestDecryptPayload(t *testing.T) {
 		writeFile(t, filepath.Join(dir, "runtime.json"), []byte(`{"installDir":"."}`))
 		writeFile(t, filepath.Join(dir, artifactcrypto.PayloadFilename), encryptToBytes(t, payload, key))
 
-		s := &setup{opts: &Opts{OrgKey: key}}
+		s := &setup{opts: &Opts{OrgKey: func() ([]byte, error) { return key, nil }}}
 		outcome, err := s.decryptPayload("pkg", dir)
 		if err != nil {
 			t.Fatalf("decryptPayload: %v", err)
@@ -207,12 +208,26 @@ func TestDecryptPayload(t *testing.T) {
 		}
 	})
 
+	t.Run("key fetch error skips", func(t *testing.T) {
+		dir := t.TempDir()
+		writeFile(t, filepath.Join(dir, artifactcrypto.PayloadFilename), encryptToBytes(t, payload, key))
+
+		s := &setup{opts: &Opts{OrgKey: func() ([]byte, error) { return nil, errs.New("key service unreachable") }}}
+		outcome, err := s.decryptPayload("pkg", dir)
+		if err != nil {
+			t.Fatalf("decryptPayload: %v", err)
+		}
+		if outcome != decryptSkipped {
+			t.Fatalf("outcome = %v, want decryptSkipped", outcome)
+		}
+	})
+
 	t.Run("wrong key fails closed", func(t *testing.T) {
 		dir := t.TempDir()
 		writeFile(t, filepath.Join(dir, artifactcrypto.PayloadFilename), encryptToBytes(t, payload, key))
 
 		wrong := make([]byte, artifactcrypto.KeySize) // all zeros
-		s := &setup{opts: &Opts{OrgKey: wrong}}
+		s := &setup{opts: &Opts{OrgKey: func() ([]byte, error) { return wrong, nil }}}
 		_, err := s.decryptPayload("pkg", dir)
 		if err == nil {
 			t.Fatal("expected a wrong-key error, got nil")
@@ -222,7 +237,7 @@ func TestDecryptPayload(t *testing.T) {
 	t.Run("plaintext artifact is untouched", func(t *testing.T) {
 		dir := t.TempDir()
 		writeFile(t, filepath.Join(dir, "runtime.json"), []byte(`{"installDir":"."}`))
-		s := &setup{opts: &Opts{OrgKey: key}}
+		s := &setup{opts: &Opts{OrgKey: func() ([]byte, error) { return key, nil }}}
 		outcome, err := s.decryptPayload("pkg", dir)
 		if err != nil {
 			t.Fatal(err)
@@ -238,7 +253,7 @@ func TestDecryptPayload(t *testing.T) {
 		writeFile(t, filepath.Join(dir, "runtime.json"), []byte(`{"installDir":"installdir"}`))
 		writeFile(t, filepath.Join(dir, "installdir", artifactcrypto.PayloadFilename), encryptToBytes(t, payload, key))
 
-		s := &setup{opts: &Opts{OrgKey: key}}
+		s := &setup{opts: &Opts{OrgKey: func() ([]byte, error) { return key, nil }}}
 		outcome, err := s.decryptPayload("pkg", dir)
 		if err != nil {
 			t.Fatalf("decryptPayload: %v", err)
