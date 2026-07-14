@@ -28,6 +28,9 @@ func (r *Runner) generateEncryptedArtifact(params *Params) (cleanup func(), rerr
 	if r.project == nil {
 		return nil, locale.NewInputError("err_publish_build_no_project", "The '[ACTIONABLE]--build[/RESET]' flag requires a project so the organization can be determined.")
 	}
+	if !fileutils.DirExists(params.Build) {
+		return nil, locale.NewInputError("err_publish_build_dir_not_found", "The '[ACTIONABLE]--build[/RESET]' source directory does not exist: [ACTIONABLE]{{.V0}}[/RESET]", params.Build)
+	}
 
 	meta, err := wheel.ResolveMetadata(params.Build, wheel.Metadata{Name: params.Name, Version: params.Version})
 	if err != nil {
@@ -95,12 +98,13 @@ func buildWrappedArtifact(srcDir string, meta wheel.Metadata, key []byte, keyID 
 	if err != nil {
 		return "", nil, errs.Wrap(err, "Could not create temp dir")
 	}
-	cleanup = func() { _ = os.RemoveAll(tmpDir) }
+	removeTmpDir := func() { _ = os.RemoveAll(tmpDir) }
 	defer func() {
 		if rerr != nil {
-			cleanup()
+			removeTmpDir()
 		}
 	}()
+	cleanup = removeTmpDir
 
 	wheelPath, err := wheel.Pack(srcDir, meta, tmpDir)
 	if err != nil {
