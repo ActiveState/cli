@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	configMediator.RegisterOption(constants.AnalyticsPixelOverrideConfig, configMediator.String, "")
+	configMediator.RegisterOptionWithEnv(constants.AnalyticsPixelOverrideConfig, configMediator.String, "", constants.AnalyticsPixelOverrideEnv)
 }
 
 // Dispatcher describes a struct that can send analytics event in the background

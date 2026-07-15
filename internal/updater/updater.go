@@ -36,7 +36,7 @@ const (
 )
 
 func init() {
-	configMediator.RegisterOption(constants.UpdateEndpointConfig, configMediator.String, "")
+	configMediator.RegisterOptionWithEnv(constants.UpdateEndpointConfig, configMediator.String, "", constants.TestUpdateURLEnvVarName)
 }
 
 type ErrorInProgress struct{ *locale.LocalizedError }

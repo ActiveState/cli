@@ -23,6 +23,9 @@ func NewGet(prime primeable) *Get {
 
 func (g *Get) Run(params GetParams) error {
 	key := params.Key.String()
+
+	// cfg.Get already applies any environment-variable override for the key, so the value reported
+	// here is the one the State Tool will actually use.
 	value := g.cfg.Get(key)
 	if value == nil {
 		return locale.NewInputError("err_config_not_found", "No config value for key: {{.V0}}", key)
