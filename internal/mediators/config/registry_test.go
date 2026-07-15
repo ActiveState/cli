@@ -69,3 +69,30 @@ func TestEnvOverrideEmptyIgnored(t *testing.T) {
 	_, _, ok := EnvOverride(GetOption("test.empty.key"))
 	assert.False(t, ok, "an empty env var should be treated as unset")
 }
+
+func TestEnvOverrideInvalidIgnored(t *testing.T) {
+	RegisterOption("test.invalid.bool", Bool, false)
+	RegisterOption("test.invalid.int", Int, 0)
+	RegisterOption("test.invalid.enum", Enum, NewEnum([]string{"low", "high"}, "low"))
+
+	// An unparseable bool must be ignored rather than coerced to false.
+	t.Setenv("ACTIVESTATE_CONFIG_TEST_INVALID_BOOL", "notabool")
+	_, _, ok := EnvOverride(GetOption("test.invalid.bool"))
+	assert.False(t, ok, "an unparseable bool env var must not apply")
+
+	// An unparseable int must be ignored rather than coerced to 0.
+	t.Setenv("ACTIVESTATE_CONFIG_TEST_INVALID_INT", "notanint")
+	_, _, ok = EnvOverride(GetOption("test.invalid.int"))
+	assert.False(t, ok, "an unparseable int env var must not apply")
+
+	// An enum value outside the allowed set must be ignored.
+	t.Setenv("ACTIVESTATE_CONFIG_TEST_INVALID_ENUM", "banana")
+	_, _, ok = EnvOverride(GetOption("test.invalid.enum"))
+	assert.False(t, ok, "an out-of-set enum env var must not apply")
+
+	// A valid enum value still applies.
+	t.Setenv("ACTIVESTATE_CONFIG_TEST_INVALID_ENUM", "high")
+	value, _, ok := EnvOverride(GetOption("test.invalid.enum"))
+	assert.True(t, ok)
+	assert.Equal(t, "high", value)
+}

@@ -114,27 +114,54 @@ func EnvVarNames(opt Option) []string {
 }
 
 // EnvOverride returns the effective override value for the option when one of its environment
-// variables is currently set to a non-empty value, coerced to the option's type. The second return
-// value is the name of the variable in effect; the bool reports whether an override applies.
+// variables is currently set to a non-empty, valid value, coerced to the option's type. The second
+// return value is the name of the variable in effect; the bool reports whether an override applies.
+//
+// A variable whose value cannot be strictly coerced to the option's type (an unparseable bool/int
+// or an enum value outside the allowed set) is ignored, so a mis-typed variable falls back to the
+// stored/default value rather than silently changing behavior to a zero value.
 func EnvOverride(opt Option) (interface{}, string, bool) {
 	for _, name := range EnvVarNames(opt) {
-		if v, ok := os.LookupEnv(name); ok && v != "" {
-			return coerceToType(opt.Type, v), name, true
+		raw, ok := os.LookupEnv(name)
+		if !ok || raw == "" {
+			continue
+		}
+		if value, valid := coerceToType(opt, raw); valid {
+			return value, name, true
 		}
 	}
 	return nil, "", false
 }
 
 // coerceToType converts a raw environment-variable string to the option's configured type so that
-// callers receive the same Go type they would get from a stored value.
-func coerceToType(t Type, raw string) interface{} {
-	switch t {
+// callers receive the same Go type they would get from a stored value. The bool result reports
+// whether the raw value is valid for the option's type; invalid values must not be applied.
+func coerceToType(opt Option, raw string) (interface{}, bool) {
+	switch opt.Type {
 	case Bool:
-		return cast.ToBool(raw)
+		v, err := cast.ToBoolE(raw)
+		if err != nil {
+			return nil, false
+		}
+		return v, true
 	case Int:
-		return cast.ToInt(raw)
-	default: // String, Enum
-		return raw
+		v, err := cast.ToIntE(raw)
+		if err != nil {
+			return nil, false
+		}
+		return v, true
+	case Enum:
+		if enums, ok := opt.Default.(*Enums); ok {
+			for _, option := range enums.Options {
+				if option == raw {
+					return raw, true
+				}
+			}
+			return nil, false
+		}
+		return raw, true
+	default: // String
+		return raw, true
 	}
 }
 
