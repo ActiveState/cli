@@ -2,6 +2,7 @@ package buildlog
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -102,6 +103,10 @@ func (b *BuildLog) OnArtifactReady(id strfmt.UUID, cb func()) {
 func (b *BuildLog) Wait(ctx context.Context) error {
 	conn, err := buildlogstream.Connect(ctx, b.authToken)
 	if err != nil {
+		var denied *buildlogstream.StreamDeniedError
+		if errors.As(err, &denied) {
+			return denied
+		}
 		return errs.Wrap(err, "Could not connect to build-log streamer build updates")
 	}
 
@@ -123,6 +128,10 @@ func (b *BuildLog) Wait(ctx context.Context) error {
 	for err := range errCh {
 		if err == nil {
 			continue
+		}
+		var denied *buildlogstream.StreamDeniedError
+		if errors.As(err, &denied) {
+			return denied // this is a singular error that arrives alone
 		}
 		if rerr == nil {
 			rerr = errs.New("failed build")
@@ -223,16 +232,24 @@ func (b *BuildLog) waitForBuildLog(ctx context.Context, conn *websocket.Conn, er
 		}
 	}
 
+	receivedFrame := false
 	var artifactErr error
 	for {
 		var msg Message
 		err := conn.ReadJSON(&msg)
 		if err != nil {
+			// At this time, the server can either deny the websocket connect, or accept it and close it
+			// without sending any frames. We handle the latter here.
+			if !receivedFrame && websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
+				errCh <- &buildlogstream.StreamDeniedError{errs.Wrap(err, "build-log stream soft-closed with no frames")}
+				return
+			}
 			// This should bubble up and logging it is just an extra measure to help with debugging
 			logging.Debug("Encountered error: %s", errs.JoinMessage(err))
 			errCh <- err
 			return
 		}
+		receivedFrame = true
 		if verboseLogging {
 			logging.Debug("Received response: %s", msg.MessageTypeValue())
 		}
