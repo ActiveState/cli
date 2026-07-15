@@ -20,3 +20,13 @@ func BaseCachePath() string {
 
 	return filepath.Join(homeDir, "AppData", "Local")
 }
+
+// BaseSystemAppDataPath returns the machine-wide (all users) config base dir. On Windows this is
+// %PROGRAMDATA% (typically C:\ProgramData), which is shared across all users.
+func BaseSystemAppDataPath() string {
+	if programData := os.Getenv("ProgramData"); programData != "" {
+		return programData
+	}
+
+	return filepath.Join("C:\\", "ProgramData")
+}

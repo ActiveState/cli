@@ -37,6 +37,9 @@ const HomeEnvVarName = "ACTIVESTATE_HOME"
 // ConfigEnvVarName is the env var used to override the config dir that the State Tool uses
 const ConfigEnvVarName = "ACTIVESTATE_CLI_CONFIGDIR"
 
+// SystemConfigDirEnvVarName is the env var used to override the machine-wide (all users) config dir
+const SystemConfigDirEnvVarName = "ACTIVESTATE_CLI_SYSTEM_CONFIGDIR"
+
 // CacheEnvVarName is the env var used to override the cache dir that the State Tool uses
 const CacheEnvVarName = "ACTIVESTATE_CLI_CACHEDIR"
 
@@ -69,6 +72,11 @@ const InternalConfigFileNameLegacy = "config.yaml"
 
 // InternalConfigFileName is the filename used for our sqlite based settings db
 const InternalConfigFileName = "config.db"
+
+// SystemConfigFileName is the filename used for the machine-wide (all users) config file.
+// It is a plain YAML file so that administrators can author it by hand. It only provides
+// values for registered config options and is never used to store credentials.
+const SystemConfigFileName = "config.yaml"
 
 // AutoUpdateTimeoutEnvVarName is the name of the environment variable that can be set to override the allowed timeout to check for an available auto-update
 const AutoUpdateTimeoutEnvVarName = "ACTIVESTATE_CLI_UPDATE_TIMEOUT"

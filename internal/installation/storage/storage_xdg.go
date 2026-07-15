@@ -23,3 +23,9 @@ func BaseCachePath() string {
 
 	return filepath.Join(homeDir, ".cache")
 }
+
+// BaseSystemAppDataPath returns the machine-wide (all users) config base dir. On Linux this is
+// /etc, so machine-wide config lives at /etc/activestate/cli-<channel>/.
+func BaseSystemAppDataPath() string {
+	return "/etc"
+}

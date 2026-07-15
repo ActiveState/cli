@@ -69,6 +69,17 @@ func appDataPathInTest() (string, error) {
 	return localPath, nil
 }
 
+// SystemAppDataPath returns the machine-wide (all users) appdata dir. Unlike AppDataPath this
+// is not rooted in a user's home directory, so a single file placed here applies to every user
+// on the machine. It is used exclusively for read-only config defaults; credentials are never
+// stored or read here. The location can be overridden with the SystemConfigDirEnvVarName env var.
+func SystemAppDataPath() string {
+	if localPath, envSet := os.LookupEnv(constants.SystemConfigDirEnvVarName); envSet {
+		return localPath
+	}
+	return filepath.Join(BaseSystemAppDataPath(), relativeAppDataPath())
+}
+
 func AppDataPathWithParent(parentDir string) string {
 	dir := filepath.Join(parentDir, relativeAppDataPath())
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {

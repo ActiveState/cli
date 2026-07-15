@@ -29,6 +29,10 @@ type Instance struct {
 	closeThread bool
 	db          *sql.DB
 	closed      bool
+	// systemConfig holds machine-wide (all users) config values, loaded read-only at startup.
+	// It only ever provides values for registered config options, which structurally excludes
+	// credentials such as the auth token (apiToken is not a registered option).
+	systemConfig map[string]interface{}
 }
 
 func New() (*Instance, error) {
@@ -73,7 +77,36 @@ func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) 
 	}
 	profile.Measure("config.createTable", t)
 
+	// Load machine-wide config. A failure here must never prevent the CLI from starting, so we
+	// log and continue with an empty system config on error.
+	i.loadSystemConfig()
+
 	return i, nil
+}
+
+// loadSystemConfig reads the optional machine-wide (all users) config file into memory. The file
+// is a plain YAML map of registered config keys to values. It is entirely optional: a missing
+// file is not an error. Values here act as defaults for users who have not set the key themselves,
+// and are only ever surfaced for registered config options, so credentials are never read here.
+func (i *Instance) loadSystemConfig() {
+	path := filepath.Join(storage.SystemAppDataPath(), C.SystemConfigFileName)
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			multilog.Error("config: could not read system config at %s: %s", path, errs.JoinMessage(err))
+		}
+		return
+	}
+
+	parsed := map[string]interface{}{}
+	if err := yaml.Unmarshal(data, &parsed); err != nil {
+		multilog.Error("config: could not parse system config at %s: %s", path, errs.JoinMessage(err))
+		return
+	}
+
+	i.systemConfig = parsed
+	logging.Debug("Loaded machine-wide config from %s (%d keys)", path, len(parsed))
 }
 
 func (i *Instance) Close() error {
@@ -178,11 +211,19 @@ func (i *Instance) rawGet(key string) interface{} {
 }
 
 func (i *Instance) Get(key string) interface{} {
+	// A value the user explicitly set always wins, so machine-wide config acts as a default only.
 	result := i.rawGet(key)
 	if result != nil {
 		return result
 	}
+
+	// Machine-wide config and built-in defaults only apply to registered options. Because the auth
+	// token (apiToken) is not a registered option, this branch structurally prevents credentials
+	// from ever being read from the shared, all-users config file.
 	if opt := mediator.GetOption(key); mediator.KnownOption(opt) {
+		if v, ok := i.systemConfig[key]; ok {
+			return v
+		}
 		return mediator.GetDefault(opt)
 	}
 	return nil
