@@ -309,9 +309,15 @@ func Update(
 	}
 
 	if len(skipped.names) > 0 {
+		// The fetch is memoized, so this returns the error that caused the skip
+		// without contacting the key service again.
+		reason := ""
+		if _, _, err := orgKeyProvider.Key(context.Background()); err != nil {
+			reason = ": " + errs.JoinMessage(err)
+		}
 		prime.Output().Notice(locale.Tl("warn_private_artifacts_skipped",
-			"[WARNING]Warning:[/RESET] These private packages were skipped because the organization key was unavailable: {{.V0}}. Ensure the key is available and run '[ACTIONABLE]state refresh[/RESET]' to try installing them again.",
-			strings.Join(skipped.names, ", ")))
+			"[WARNING]Warning:[/RESET] These private packages were skipped because the organization key was unavailable{{.V1}}. Private packages: {{.V0}}. Ensure the key is available and run '[ACTIONABLE]state refresh[/RESET]' to try installing them again.",
+			strings.Join(skipped.names, ", "), reason))
 	}
 
 	return rt, nil
