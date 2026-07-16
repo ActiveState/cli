@@ -25,7 +25,7 @@ import (
 )
 
 func init() {
-	configMediator.RegisterOptionWithEnv(constants.NotificationsURLConfig, configMediator.String, "", constants.NotificationsOverrideEnvVarName)
+	configMediator.RegisterOption(constants.NotificationsURLConfig, configMediator.String, "", constants.NotificationsOverrideEnvVarName)
 }
 
 const ConfigKeyLastReport = "notifications.last_reported"

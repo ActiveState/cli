@@ -35,7 +35,7 @@ var (
 )
 
 func init() {
-	configMediator.RegisterOptionWithEnv(constants.UpdateInfoEndpointConfig, configMediator.String, "", constants.TestUpdateInfoURLEnvVarName)
+	configMediator.RegisterOption(constants.UpdateInfoEndpointConfig, configMediator.String, "", constants.TestUpdateInfoURLEnvVarName)
 }
 
 type Checker struct {

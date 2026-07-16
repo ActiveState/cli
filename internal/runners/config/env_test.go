@@ -17,7 +17,7 @@ func TestEffectiveValueEnvOverride(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
 
-	configMediator.RegisterOptionWithEnv("test.env.host", configMediator.String, "default-host", "TEST_ENV_HOST_OVERRIDE")
+	configMediator.RegisterOption("test.env.host", configMediator.String, "default-host", "TEST_ENV_HOST_OVERRIDE")
 	opt := configMediator.GetOption("test.env.host")
 
 	// No env, no stored value -> default, not overridden.
@@ -50,7 +50,7 @@ func TestGetEnvOverride(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
 
-	configMediator.RegisterOptionWithEnv("test.env.get", configMediator.String, "", "TEST_ENV_GET_OVERRIDE")
+	configMediator.RegisterOption("test.env.get", configMediator.String, "", "TEST_ENV_GET_OVERRIDE")
 	require.NoError(t, cfg.Set("test.env.get", "stored-value"))
 
 	outputer := outputhelper.NewCatcher()

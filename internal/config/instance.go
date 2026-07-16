@@ -180,9 +180,7 @@ func (i *Instance) rawGet(key string) interface{} {
 func (i *Instance) Get(key string) interface{} {
 	opt := mediator.GetOption(key)
 
-	// An environment variable override takes precedence over any stored or default value, so that
-	// config can be applied machine-wide (all users) via the environment. Only registered options
-	// can be overridden this way, which keeps unregistered keys (e.g. credentials) out of scope.
+	// An environment variable override takes precedence over any stored or default value.
 	if mediator.KnownOption(opt) {
 		if value, _, ok := mediator.EnvOverride(opt); ok {
 			return value

@@ -14,8 +14,8 @@ const EnvVarPrefix = "ACTIVESTATE_CONFIG_"
 var envVarReplacer = strings.NewReplacer(".", "_", "-", "_")
 
 // CanonicalEnvVarName returns the environment variable that overrides the given config key. Every
-// registered config option can be overridden this way, e.g. "update.info.endpoint" maps to
-// "ACTIVESTATE_CONFIG_UPDATE_INFO_ENDPOINT".
+// registered config option can be overridden this way, e.g. "api.host" maps to
+// "ACTIVESTATE_CONFIG_API_HOST".
 func CanonicalEnvVarName(key string) string {
 	return EnvVarPrefix + strings.ToUpper(envVarReplacer.Replace(key))
 }
@@ -79,20 +79,17 @@ func GetOption(key string) Option {
 	return rule
 }
 
-// Registers a config option without get/set events.
-func RegisterOption(key string, t Type, defaultValue interface{}) {
-	registerOption(key, t, defaultValue, nil, EmptyEvent, EmptyEvent, false)
+// RegisterOption registers a config option without get/set events. Any envAliases are additional
+// legacy/bespoke environment variables that override the option, in addition to its canonical
+// ACTIVESTATE_CONFIG_* variable. They exist only for env vars that predate and do not use the
+// canonical prefix (e.g. ACTIVESTATE_API_HOST).
+func RegisterOption(key string, t Type, defaultValue interface{}, envAliases ...string) {
+	registerOption(key, t, defaultValue, envAliases, EmptyEvent, EmptyEvent, false)
 }
 
 // Registers a hidden config option without get/set events.
 func RegisterHiddenOption(key string, t Type, defaultValue interface{}) {
 	registerOption(key, t, defaultValue, nil, EmptyEvent, EmptyEvent, true)
-}
-
-// RegisterOptionWithEnv registers a config option along with one or more legacy/bespoke environment
-// variables that override it, in addition to its canonical ACTIVESTATE_CONFIG_* variable.
-func RegisterOptionWithEnv(key string, t Type, defaultValue interface{}, envAliases ...string) {
-	registerOption(key, t, defaultValue, envAliases, EmptyEvent, EmptyEvent, false)
 }
 
 // Registers a config option with get/set events.

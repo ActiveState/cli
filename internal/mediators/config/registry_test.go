@@ -9,7 +9,7 @@ import (
 func TestCanonicalEnvVarName(t *testing.T) {
 	assert.Equal(t, "ACTIVESTATE_CONFIG_API_HOST", CanonicalEnvVarName("api.host"))
 	assert.Equal(t, "ACTIVESTATE_CONFIG_AUTOUPDATE", CanonicalEnvVarName("autoupdate"))
-	assert.Equal(t, "ACTIVESTATE_CONFIG_UPDATE_INFO_ENDPOINT", CanonicalEnvVarName("update.info.endpoint"))
+	assert.Equal(t, "ACTIVESTATE_CONFIG_SECURITY_PROMPT_LEVEL", CanonicalEnvVarName("security.prompt.level"))
 	assert.Equal(t, "ACTIVESTATE_CONFIG_PRIVATEINGREDIENT_MTLS_CERT", CanonicalEnvVarName("privateingredient.mtls_cert"))
 }
 
@@ -30,7 +30,7 @@ func TestEnvOverrideCanonical(t *testing.T) {
 }
 
 func TestEnvOverrideAliasAndPrecedence(t *testing.T) {
-	RegisterOptionWithEnv("test.alias.key", String, "default", "LEGACY_ALIAS_VAR")
+	RegisterOption("test.alias.key", String, "default", "LEGACY_ALIAS_VAR")
 	opt := GetOption("test.alias.key")
 
 	// A legacy alias applies when the canonical var is unset.
