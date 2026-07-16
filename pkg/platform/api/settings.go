@@ -15,7 +15,7 @@ import (
 )
 
 func init() {
-	configMediator.RegisterOption(constants.APIHostConfig, configMediator.String, "")
+	configMediator.RegisterOption(constants.APIHostConfig, configMediator.String, "", constants.APIHostEnvVarName)
 }
 
 // Service records available api services
