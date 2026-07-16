@@ -96,6 +96,7 @@ func (suite *ConfigIntegrationTestSuite) TestList() {
 	cp := ts.Spawn("config")
 	cp.Expect("Key")
 	cp.Expect("Value")
+	cp.Expect("Source")
 	cp.Expect("Default")
 	cp.Expect("optin.buildscripts")
 	cp.Expect("false")
@@ -108,9 +109,12 @@ func (suite *ConfigIntegrationTestSuite) TestList() {
 	cp = ts.Spawn("config")
 	cp.Expect("Key")
 	cp.Expect("Value")
+	cp.Expect("Source")
 	cp.Expect("Default")
 	cp.Expect("optin.buildscripts")
-	cp.Expect("true*")
+	// The value is set locally (via `state config set`), so the Source column reads "local".
+	cp.Expect("true")
+	cp.Expect("local")
 	cp.ExpectExitCode(0)
 
 	suite.Require().NotContains(cp.Snapshot(), constants.AsyncRuntimeConfig)
