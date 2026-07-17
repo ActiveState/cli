@@ -24,11 +24,16 @@ and this project adheres to
 		- `privateingredient.bearer_token_env`: name of an environment variable to read a bearer token from.
 		- `privateingredient.bearer_token_file`: path to a file to read a bearer token from.
 		- `privateingredient.cache_key_on_disk`: whether to cache the fetched key on disk for headless or offline reuse.
+- `state config` now shows where a configured value comes from (set locally, set by environment variable, or the default).
+	- All configuration keys can be overridden by a corresponding `ACTIVESTATE_CONFIG_*` environment variable, where all
+		characters are in upper-case, and '.' is replaced with '_'. For example, the "security.prompt.level" key is 
+		controlled using `ACTIVESTATE_CONFIG_SECURITY_PROMPT_LEVEL`.
 
 ### Fixed
 
 - Fixed occasional panic due to a concurrent map read/write during runtime setup.
 - Fixed `state clean cache` from accidentally deleting State Tool binaries on Windows.
+- Fixed unnecessary Windows installer UAC elevation prompt.
 
 ### Security
 

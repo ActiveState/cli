@@ -283,24 +283,33 @@ func Update(
 		q.Set("commitID", commitID.String())
 		u.RawQuery = q.Encode()
 		rtOpts = append(rtOpts, runtime.WithBuildProgressUrl(u.String()))
+		// Fallback for when the build-log stream is unavailable.
+		rtOpts = append(rtOpts, runtime.WithBuildPlanPoller(func() (*buildplan.BuildPlan, error) {
+			bpm := bpModel.NewBuildPlannerModel(prime.Auth(), prime.SvcModel())
+			if err := bpm.WaitForBuild(commitID, proj.Owner(), proj.Name(), nil); err != nil {
+				return nil, errs.Wrap(err, "Could not wait for the in-progress build to complete")
+			}
+			c, err := bpm.FetchCommit(commitID, proj.Owner(), proj.Name(), nil)
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not fetch the completed build plan")
+			}
+			return c.BuildPlan(), nil
+		}))
 	}
 	if proj.IsPortable() {
 		rtOpts = append(rtOpts, runtime.WithPortable())
 	}
 	rtOpts = append(rtOpts, runtime.WithCacheSize(prime.Config().GetInt(constants.RuntimeCacheSizeConfigKey)))
 
-	// Fetch the organization key for private ingredients, if a key service is configured.
+	// If a key service is configured, provide a lazy fetch of the organization key upon encountering
+	// an encrypted private artifact.
 	orgKeyProvider := orgkey.New(prime.Config(), proj.Owner())
 	if orgKeyProvider.Configured() {
 		defer orgKeyProvider.Close()
-		key, keyID, err := orgKeyProvider.Key(context.Background())
-		if err != nil {
-			prime.Output().Notice(locale.Tl("warn_orgkey_unavailable",
-				"[WARNING]Warning:[/RESET] Could not fetch the organization key: {{.V0}}. Encrypted private artifacts will be skipped. Ensure the key is available and run '[ACTIONABLE]state refresh[/RESET]' to try installing them again.",
-				errs.JoinMessage(err)))
-		} else {
-			rtOpts = append(rtOpts, runtime.WithDecryptionKey(key, keyID))
-		}
+		rtOpts = append(rtOpts, runtime.WithDecryptionKey(func() ([]byte, error) {
+			key, _, err := orgKeyProvider.Key(context.Background())
+			return key, err
+		}))
 	}
 
 	if isArmPlatform(buildPlan) {
@@ -312,9 +321,15 @@ func Update(
 	}
 
 	if len(skipped.names) > 0 {
+		// The fetch is memoized, so this returns the error that caused the skip
+		// without contacting the key service again.
+		reason := ""
+		if _, _, err := orgKeyProvider.Key(context.Background()); err != nil {
+			reason = ": " + errs.JoinMessage(err)
+		}
 		prime.Output().Notice(locale.Tl("warn_private_artifacts_skipped",
-			"[WARNING]Warning:[/RESET] These private packages were skipped because the organization key was unavailable: {{.V0}}. Ensure the key is available and run '[ACTIONABLE]state refresh[/RESET]' to try installing them again.",
-			strings.Join(skipped.names, ", ")))
+			"[WARNING]Warning:[/RESET] These private packages were skipped because the organization key was unavailable{{.V1}}. Private packages: {{.V0}}. Ensure the key is available and run '[ACTIONABLE]state refresh[/RESET]' to try installing them again.",
+			strings.Join(skipped.names, ", "), reason))
 	}
 
 	return rt, nil

@@ -96,6 +96,7 @@ func (suite *ConfigIntegrationTestSuite) TestList() {
 	cp := ts.Spawn("config")
 	cp.Expect("Key")
 	cp.Expect("Value")
+	cp.Expect("Source")
 	cp.Expect("Default")
 	cp.Expect("optin.buildscripts")
 	cp.Expect("false")
@@ -108,12 +109,50 @@ func (suite *ConfigIntegrationTestSuite) TestList() {
 	cp = ts.Spawn("config")
 	cp.Expect("Key")
 	cp.Expect("Value")
+	cp.Expect("Source")
 	cp.Expect("Default")
 	cp.Expect("optin.buildscripts")
-	cp.Expect("true*")
+	// The value is set locally (via `state config set`), so the Source column reads "local".
+	cp.Expect("true")
+	cp.Expect("local")
 	cp.ExpectExitCode(0)
 
 	suite.Require().NotContains(cp.Snapshot(), constants.AsyncRuntimeConfig)
+}
+
+func (suite *ConfigIntegrationTestSuite) TestListEnvSource() {
+	suite.OnlyRunForTags(tagsuite.Config)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// optin.buildscripts defaults to false. Override it via its canonical environment variable
+	// (without ever running `state config set`), so any non-default value proves the environment
+	// override took effect.
+	envVar := "ACTIVESTATE_CONFIG_OPTIN_BUILDSCRIPTS"
+
+	// Human-readable table: the value reflects the environment override.
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("config"),
+		e2e.OptAppendEnv(envVar+"=true"),
+	)
+	cp.Expect("Key")
+	cp.Expect("Value")
+	cp.Expect("Source")
+	cp.Expect("Default")
+	cp.Expect("optin.buildscripts")
+	cp.Expect("true")
+	cp.ExpectExitCode(0)
+
+	// JSON output reliably exposes the source metadata (the table wraps long env var names). The
+	// "environment" source and the overriding variable name are both reported.
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("config", "-o", "json"),
+		e2e.OptAppendEnv(envVar+"=true"),
+	)
+	cp.Expect(`"source":"environment"`)
+	cp.Expect(`"env":"` + envVar + `"`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func (suite *ConfigIntegrationTestSuite) TestAPIHostConfig() {

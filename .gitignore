@@ -19,3 +19,10 @@ cmd/state/versioninfo.json
 cmd/state/resource.syso
 cmd/state-svc/versioninfo.json
 cmd/state-svc/resource.syso
+cmd/state-installer/versioninfo.json
+cmd/state-installer/resource.syso
+cmd/state-exec/versioninfo.json
+cmd/state-exec/resource.syso
+cmd/state-mcp/versioninfo.json
+cmd/state-mcp/resource.syso
+test/ssl/

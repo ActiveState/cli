@@ -29,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/buildplan"
+	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/types"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/runtime/events"
@@ -61,11 +62,12 @@ type Opts struct {
 	// the server can authorize the stream. Empty for unauthenticated callers.
 	AuthToken string
 
-	// OrgKey is the organization AES-256 key used to decrypt private artifacts
-	// during install, with OrgKeyID identifying which key it is. Both are empty
-	// when the runtime has no private ingredients.
-	OrgKey   []byte
-	OrgKeyID string
+	// PollBuildPlan waits for an in-progress build when the build-log stream is unavailable.
+	PollBuildPlan func() (*buildplan.BuildPlan, error)
+
+	// OrgKey lazily fetches the organization AES-256 key used to decrypt private
+	// artifacts during install. It is nil when no key service is configured.
+	OrgKey func() ([]byte, error)
 
 	FromArchive *fromArchive
 
@@ -303,7 +305,12 @@ func (s *setup) update() error {
 	// Wait for build to finish
 	if !s.buildplan.IsBuildReady() && len(s.toBuild) > 0 {
 		if err := blog.Wait(context.Background()); err != nil {
-			return errs.Wrap(err, "errors occurred during buildlog streaming")
+			if !buildlogstream.IsStreamDenied(err) {
+				return errs.Wrap(err, "errors occurred during buildlog streaming")
+			}
+			if err := s.completeWithoutStream(wp); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -346,6 +353,55 @@ func (s *setup) update() error {
 	}
 
 	return nil
+}
+
+// completeWithoutStream finishes an in-progress build without the build-log
+// stream: it polls the build to completion, reads the resolved artifact
+// download URLs, and drives the normal download/install path off them.
+func (s *setup) completeWithoutStream(wp *workerpool.WorkerPool) error {
+	if s.opts.PollBuildPlan == nil {
+		return errs.New("no build plan poller configured")
+	}
+
+	logging.Debug("completing the in-progress build without the build-log stream")
+	resolved, err := s.opts.PollBuildPlan()
+	if err != nil {
+		return errs.Wrap(err, "Could not complete the in-progress build without the build-log stream")
+	}
+
+	toObtain, err := s.resolveDownloads(resolved.Artifacts().ToIDMap())
+	if err != nil {
+		return err
+	}
+	for _, a := range toObtain {
+		wp.Submit(func() error {
+			if err := s.obtain(a); err != nil {
+				return errs.Wrap(err, "obtain failed")
+			}
+			return nil
+		})
+	}
+	return nil
+}
+
+// resolveDownloads dresses each still-building artifact with the download URL
+// from the completed build plan and returns the artifacts to obtain. Artifacts
+// that weren't waiting on the build are left untouched (they were obtained
+// already). It errors if a still-building artifact has no resolved URL.
+func (s *setup) resolveDownloads(resolved buildplan.ArtifactIDMap) ([]*buildplan.Artifact, error) {
+	var toObtain []*buildplan.Artifact
+	for _, a := range s.toUnpack {
+		if _, building := s.toBuild[a.ArtifactID]; !building {
+			continue
+		}
+		ra, ok := resolved[a.ArtifactID]
+		if !ok || ra.URL == "" {
+			return nil, errs.New("completed build plan is missing a download URL for artifact %s", a.ArtifactID.String())
+		}
+		a.SetDownload(ra.URL, ra.Checksum)
+		toObtain = append(toObtain, a)
+	}
+	return toObtain, nil
 }
 
 func (s *setup) onArtifactBuildReady(blog *buildlog.BuildLog, artifact *buildplan.Artifact, cb func()) {
@@ -566,7 +622,15 @@ func (s *setup) decryptPayload(artifactName, unpackPath string) (outcome decrypt
 	}
 	logging.Debug("Detected encrypted payload in artifact %s", artifactName)
 
-	if len(s.opts.OrgKey) == 0 {
+	if s.opts.OrgKey == nil {
+		return decryptSkipped, nil
+	}
+	key, err := s.opts.OrgKey()
+	if err != nil {
+		logging.Debug("Could not obtain org key for artifact %s; skipping: %v", artifactName, errs.JoinMessage(err))
+		return decryptSkipped, nil
+	}
+	if len(key) == 0 {
 		return decryptSkipped, nil
 	}
 
@@ -575,7 +639,7 @@ func (s *setup) decryptPayload(artifactName, unpackPath string) (outcome decrypt
 	if err != nil {
 		return decryptNotEncrypted, errs.Wrap(err, "could not read encrypted payload header")
 	}
-	if err := header.CheckKey(s.opts.OrgKey); err != nil {
+	if err := header.CheckKey(key); err != nil {
 		return decryptNotEncrypted, errs.Wrap(err, "org key does not match encrypted artifact %s", artifactName)
 	}
 
@@ -595,7 +659,7 @@ func (s *setup) decryptPayload(artifactName, unpackPath string) (outcome decrypt
 	if err != nil {
 		return decryptNotEncrypted, errs.Wrap(err, "could not open encrypted payload")
 	}
-	err = artifactcrypto.Decrypt(src, archivePath, s.opts.OrgKey)
+	err = artifactcrypto.Decrypt(src, archivePath, key)
 	if cerr := src.Close(); cerr != nil {
 		err = errs.Pack(err, errs.Wrap(cerr, "could not close encrypted payload"))
 	}

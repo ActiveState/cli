@@ -39,5 +39,5 @@
     }
   },
   "IconPath": "../../internal/assets/contents/icon.ico",
-  "ManifestPath": ""
+  "ManifestPath": "../../internal/assets/contents/asInvoker.manifest"
 }

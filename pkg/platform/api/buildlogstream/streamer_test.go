@@ -2,6 +2,7 @@ package buildlogstream
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -9,10 +10,19 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestIsStreamDenied(t *testing.T) {
+	denied := &StreamDeniedError{errs.New("denied")}
+	assert.True(t, IsStreamDenied(denied), "a StreamDeniedError must be recognized")
+	assert.True(t, IsStreamDenied(errs.Wrap(denied, "wrapped")), "denial must be recognized through wrapping")
+	assert.False(t, IsStreamDenied(errs.New("some other failure")), "an unrelated error must not be a denial")
+	assert.False(t, IsStreamDenied(nil), "nil must not be a denial")
+}
 
 // upgradeRequest captures the headers the build-log-streamer server saw on the
 // WS Upgrade. The mock handler writes the fields from the server goroutine and
@@ -91,6 +101,46 @@ func TestConnect_ForwardsJWTViaSubprotocol(t *testing.T) {
 		"client must still offer the real subprotocol the server echoes back")
 	assert.Contains(t, got.userAgent, "state/",
 		"client must send the versioned State Tool User-Agent so the server can monitor versions")
+}
+
+// startDenyingBLS stands up a server that refuses the WS Upgrade with the given
+// HTTP status, and redirects Connect's resolved service URL at it.
+func startDenyingBLS(t *testing.T, status int) {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(status)
+	}))
+	t.Cleanup(srv.Close)
+
+	wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+	t.Setenv(constants.APIServiceOverrideEnvVarName+"BUILDLOG_STREAMER", wsURL)
+}
+
+func TestConnect_UpgradeDeniedReturnsTypedError(t *testing.T) {
+	for _, status := range []int{http.StatusUnauthorized, http.StatusForbidden} {
+		status := status
+		t.Run(http.StatusText(status), func(t *testing.T) {
+			startDenyingBLS(t, status)
+
+			_, err := Connect(context.Background(), "header.payload.signature")
+			require.Error(t, err)
+			var denied *StreamDeniedError
+			assert.Truef(t, errors.As(err, &denied),
+				"a %d Upgrade response must be classified as denial, got: %v", status, err)
+		})
+	}
+}
+
+func TestConnect_NonAuthDialErrorNotDenied(t *testing.T) {
+	// A handshake failure that isn't an auth rejection is a genuine error and
+	// must not be mistaken for a denial (the run should still surface it).
+	startDenyingBLS(t, http.StatusInternalServerError)
+
+	_, err := Connect(context.Background(), "")
+	require.Error(t, err)
+	var denied *StreamDeniedError
+	assert.False(t, errors.As(err, &denied),
+		"a non-auth handshake failure must not be classified as denial")
 }
 
 func TestConnect_AnonymousOffersNoBearer(t *testing.T) {
