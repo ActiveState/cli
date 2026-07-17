@@ -1,0 +1,29 @@
+{
+  "name": "activestate-cli-preview",
+  "version": "0.34.0-SHA4436f67-RC7",
+  "description": "State Tool is the Command Line Interface for accessing [ActiveState Platform](https://www.activestate.com/products/platform/) functionality. It is a cross-platform tool written in Go supporting Windows, Linux and Mac. We're working on extending support to more  versions and distributions in tandem with the Platform (feel free to let us know if you have issues in your favorite OS).",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ActiveState/cli.git",
+    "directory": "installers/npm"
+  },
+  "preferGlobal": true,
+  "author": "ActiveState",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/ActiveState/cli/issues"
+  },
+  "homepage": "https://github.com/ActiveState/cli#readme",
+  "bin": {
+    "state": "./bin/state"
+  },
+  "dependencies": {
+    "decompress": "^4.2.1",
+    "js-sha256": "^0.9.0",
+    "request-promise": "^4.2.6",
+    "which": "^2.0.2"
+  },
+  "scripts": {
+    "postinstall": "node scripts/install.js"
+  }
+}
