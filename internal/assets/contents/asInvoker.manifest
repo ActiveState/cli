@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <!--
+    Shared Windows application manifest for all State Tool executables.
+
+    Declaring an explicit requestedExecutionLevel of asInvoker opts every
+    binary out of Windows' legacy UAC "installer detection" heuristic, which
+    otherwise auto-flags executables (especially ones whose filename contains
+    "install") for elevation. Without this, state-remote-installer.exe was
+    triggering a UAC prompt; authenticating it installed the State Tool under
+    the admin account instead of the invoking user. asInvoker makes every
+    binary run with the token of the user that launched it.
+
+    Note: a user/helpdesk "Run as administrator" choice cached under
+    AppCompatFlags\Layers (RUNASADMIN) overrides this manifest and must be
+    cleared separately.
+  -->
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+    <security>
+      <requestedPrivileges>
+        <requestedExecutionLevel level="asInvoker" uiAccess="false" />
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+</assembly>
