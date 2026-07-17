@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 	"github.com/ActiveState/termtest"
 	"github.com/google/uuid"
@@ -110,6 +111,27 @@ func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
 	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.JSON)
 	suite.authOutput("json")
+}
+
+func (suite *AuthIntegrationTestSuite) TestAuth_InvalidToken() {
+	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.Critical)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(constants.APIKeyEnvVarName+"=bad-token"))
+	// Message is displayed
+	cp.Expect("Warning: Invalid API token")
+	// The version information is still displayed
+	cp.Expect("ActiveState CLI")
+	cp.Expect("Version")
+	cp.ExpectExitCode(0)
+
+	// Running the command again shows no error message as the token has been cleared
+	cp = ts.SpawnWithOpts(e2e.OptArgs("--version"))
+	cp.ExpectExitCode(0)
+	cp.Expect("ActiveState CLI")
+	cp.Expect("Version")
+	ts.IgnoreLogErrors()
 }
 
 func TestAuthIntegrationTestSuite(t *testing.T) {

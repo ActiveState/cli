@@ -34,6 +34,8 @@ type ErrUnauthorized struct{ *locale.LocalizedError }
 
 type ErrTokenRequired struct{ *locale.LocalizedError }
 
+type ErrInvalidToken struct{ *locale.LocalizedError }
+
 var errNotYetGranted = locale.NewInputError("err_auth_device_noauth")
 
 // jwtLifetime is the lifetime of the JWT. This is defined by the API, but the API doesn't communicate this.
@@ -45,6 +47,7 @@ type Auth struct {
 	client      *mono_client.Mono
 	clientAuth  *runtime.ClientAuthInfoWriter
 	bearerToken string
+	envToken    string
 	user        *mono_models.User
 	cfg         Configurable
 	lastRenewal *time.Time
@@ -93,6 +96,7 @@ func New(cfg Configurable) *Auth {
 	auth := &Auth{
 		cfg:         cfg,
 		jwtLifetime: jwtLifetime,
+		envToken:    os.Getenv(constants.APIKeyEnvVarName),
 	}
 
 	return auth
@@ -249,6 +253,11 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 			return errs.AddTips(&ErrUnauthorized{locale.WrapExternalError(err, "err_unauthorized")}, tips...)
 		case *apiAuth.PostLoginRetryWith:
 			return errs.AddTips(&ErrTokenRequired{locale.WrapExternalError(err, "err_auth_fail_totp")}, tips...)
+		case *apiAuth.PostLoginBadRequest:
+			if credentials.Token != "" {
+				return errs.AddTips(&ErrInvalidToken{locale.WrapExternalError(err, "err_invalid_token")}, tips...)
+			}
+			return errs.AddTips(locale.WrapExternalError(err, "err_invalid_credentials"), tips...)
 		default:
 			if os.IsTimeout(err) {
 				return locale.NewExternalError("err_api_auth_timeout", "Timed out waiting for authentication response. Please try again.")
@@ -303,9 +312,20 @@ func (s *Auth) AuthenticateWithDevicePolling(deviceCode strfmt.UUID, interval ti
 // AuthenticateWithToken will try to authenticate using the given token
 func (s *Auth) AuthenticateWithToken(token string) error {
 	logging.Debug("AuthenticateWithToken")
-	return s.AuthenticateWithModel(&mono_models.Credentials{
+	err := s.AuthenticateWithModel(&mono_models.Credentials{
 		Token: token,
 	})
+	if err != nil {
+		var invalidTokenErr *ErrInvalidToken
+		if errors.As(err, &invalidTokenErr) && s.envToken != "" {
+			logging.Debug("Invalid token, clearing stored token")
+			s.envToken = ""
+			return errs.Wrap(err, "Invalid API token")
+		}
+		return errs.Wrap(err, "Failed to authenticate with token")
+	}
+
+	return nil
 }
 
 // UpdateSession authenticates with the given access token obtained via a Platform
@@ -464,9 +484,9 @@ func (s *Auth) NewAPIKey(name string) (string, error) {
 }
 
 func (s *Auth) AvailableAPIToken() (v string) {
-	if tkn := os.Getenv(constants.APIKeyEnvVarName); tkn != "" {
+	if s.envToken != "" {
 		logging.Debug("Using API token passed via env var")
-		return tkn
+		return s.envToken
 	}
 	return s.cfg.GetString(ApiTokenConfigKey)
 }
