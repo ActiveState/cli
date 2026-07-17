@@ -65,11 +65,9 @@ type Opts struct {
 	// PollBuildPlan waits for an in-progress build when the build-log stream is unavailable.
 	PollBuildPlan func() (*buildplan.BuildPlan, error)
 
-	// OrgKey is the organization AES-256 key used to decrypt private artifacts
-	// during install, with OrgKeyID identifying which key it is. Both are empty
-	// when the runtime has no private ingredients.
-	OrgKey   []byte
-	OrgKeyID string
+	// OrgKey lazily fetches the organization AES-256 key used to decrypt private
+	// artifacts during install. It is nil when no key service is configured.
+	OrgKey func() ([]byte, error)
 
 	FromArchive *fromArchive
 
@@ -624,7 +622,15 @@ func (s *setup) decryptPayload(artifactName, unpackPath string) (outcome decrypt
 	}
 	logging.Debug("Detected encrypted payload in artifact %s", artifactName)
 
-	if len(s.opts.OrgKey) == 0 {
+	if s.opts.OrgKey == nil {
+		return decryptSkipped, nil
+	}
+	key, err := s.opts.OrgKey()
+	if err != nil {
+		logging.Debug("Could not obtain org key for artifact %s; skipping: %v", artifactName, errs.JoinMessage(err))
+		return decryptSkipped, nil
+	}
+	if len(key) == 0 {
 		return decryptSkipped, nil
 	}
 
@@ -633,7 +639,7 @@ func (s *setup) decryptPayload(artifactName, unpackPath string) (outcome decrypt
 	if err != nil {
 		return decryptNotEncrypted, errs.Wrap(err, "could not read encrypted payload header")
 	}
-	if err := header.CheckKey(s.opts.OrgKey); err != nil {
+	if err := header.CheckKey(key); err != nil {
 		return decryptNotEncrypted, errs.Wrap(err, "org key does not match encrypted artifact %s", artifactName)
 	}
 
@@ -653,7 +659,7 @@ func (s *setup) decryptPayload(artifactName, unpackPath string) (outcome decrypt
 	if err != nil {
 		return decryptNotEncrypted, errs.Wrap(err, "could not open encrypted payload")
 	}
-	err = artifactcrypto.Decrypt(src, archivePath, s.opts.OrgKey)
+	err = artifactcrypto.Decrypt(src, archivePath, key)
 	if cerr := src.Close(); cerr != nil {
 		err = errs.Pack(err, errs.Wrap(cerr, "could not close encrypted payload"))
 	}

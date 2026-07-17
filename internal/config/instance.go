@@ -178,11 +178,20 @@ func (i *Instance) rawGet(key string) interface{} {
 }
 
 func (i *Instance) Get(key string) interface{} {
+	opt := mediator.GetOption(key)
+
+	// An environment variable override takes precedence over any stored or default value.
+	if mediator.KnownOption(opt) {
+		if value, _, ok := mediator.EnvOverride(opt); ok {
+			return value
+		}
+	}
+
 	result := i.rawGet(key)
 	if result != nil {
 		return result
 	}
-	if opt := mediator.GetOption(key); mediator.KnownOption(opt) {
+	if mediator.KnownOption(opt) {
 		return mediator.GetDefault(opt)
 	}
 	return nil
