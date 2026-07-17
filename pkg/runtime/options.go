@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"github.com/ActiveState/cli/pkg/buildplan"
 	"github.com/ActiveState/cli/pkg/runtime/events"
 	"github.com/go-openapi/strfmt"
 )
@@ -13,6 +14,11 @@ func WithEventHandlers(handlers ...events.HandlerFunc) SetOpt {
 // so the server can authorize the stream. Empty token = anonymous.
 func WithAuthToken(token string) SetOpt {
 	return func(opts *Opts) { opts.AuthToken = token }
+}
+
+// WithBuildPlanPoller polls for a buildplan when the build-log stream is unavailable.
+func WithBuildPlanPoller(poll func() (*buildplan.BuildPlan, error)) SetOpt {
+	return func(opts *Opts) { opts.PollBuildPlan = poll }
 }
 
 // WithDecryptionKey supplies a function that lazily fetches the organization

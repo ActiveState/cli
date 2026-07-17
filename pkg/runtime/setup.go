@@ -62,6 +62,9 @@ type Opts struct {
 	// the server can authorize the stream. Empty for unauthenticated callers.
 	AuthToken string
 
+	// PollBuildPlan waits for an in-progress build when the build-log stream is unavailable.
+	PollBuildPlan func() (*buildplan.BuildPlan, error)
+
 	// OrgKey lazily fetches the organization AES-256 key used to decrypt private
 	// artifacts during install. It is nil when no key service is configured.
 	OrgKey func() ([]byte, error)
@@ -302,15 +305,12 @@ func (s *setup) update() error {
 	// Wait for build to finish
 	if !s.buildplan.IsBuildReady() && len(s.toBuild) > 0 {
 		if err := blog.Wait(context.Background()); err != nil {
-			if buildlogstream.IsStreamDenied(err) {
-				if s.opts.AuthToken == "" {
-					return locale.WrapExternalError(err, "err_buildlog_stream_denied_unauthenticated",
-						"Could not monitor in-progress build. Please authenticate by running '[ACTIONABLE]state auth[/RESET]' and try again.")
-				}
-				return locale.WrapExternalError(err, "err_buildlog_stream_denied_unauthorized",
-					"Could not monitor in-progress build. If this is a private project, make sure your account has access to it.")
+			if !buildlogstream.IsStreamDenied(err) {
+				return errs.Wrap(err, "errors occurred during buildlog streaming")
 			}
-			return errs.Wrap(err, "errors occurred during buildlog streaming")
+			if err := s.completeWithoutStream(wp); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -353,6 +353,55 @@ func (s *setup) update() error {
 	}
 
 	return nil
+}
+
+// completeWithoutStream finishes an in-progress build without the build-log
+// stream: it polls the build to completion, reads the resolved artifact
+// download URLs, and drives the normal download/install path off them.
+func (s *setup) completeWithoutStream(wp *workerpool.WorkerPool) error {
+	if s.opts.PollBuildPlan == nil {
+		return errs.New("no build plan poller configured")
+	}
+
+	logging.Debug("completing the in-progress build without the build-log stream")
+	resolved, err := s.opts.PollBuildPlan()
+	if err != nil {
+		return errs.Wrap(err, "Could not complete the in-progress build without the build-log stream")
+	}
+
+	toObtain, err := s.resolveDownloads(resolved.Artifacts().ToIDMap())
+	if err != nil {
+		return err
+	}
+	for _, a := range toObtain {
+		wp.Submit(func() error {
+			if err := s.obtain(a); err != nil {
+				return errs.Wrap(err, "obtain failed")
+			}
+			return nil
+		})
+	}
+	return nil
+}
+
+// resolveDownloads dresses each still-building artifact with the download URL
+// from the completed build plan and returns the artifacts to obtain. Artifacts
+// that weren't waiting on the build are left untouched (they were obtained
+// already). It errors if a still-building artifact has no resolved URL.
+func (s *setup) resolveDownloads(resolved buildplan.ArtifactIDMap) ([]*buildplan.Artifact, error) {
+	var toObtain []*buildplan.Artifact
+	for _, a := range s.toUnpack {
+		if _, building := s.toBuild[a.ArtifactID]; !building {
+			continue
+		}
+		ra, ok := resolved[a.ArtifactID]
+		if !ok || ra.URL == "" {
+			return nil, errs.New("completed build plan is missing a download URL for artifact %s", a.ArtifactID.String())
+		}
+		a.SetDownload(ra.URL, ra.Checksum)
+		toObtain = append(toObtain, a)
+	}
+	return toObtain, nil
 }
 
 func (s *setup) onArtifactBuildReady(blog *buildlog.BuildLog, artifact *buildplan.Artifact, cb func()) {

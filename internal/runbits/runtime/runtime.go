@@ -283,6 +283,18 @@ func Update(
 		q.Set("commitID", commitID.String())
 		u.RawQuery = q.Encode()
 		rtOpts = append(rtOpts, runtime.WithBuildProgressUrl(u.String()))
+		// Fallback for when the build-log stream is unavailable.
+		rtOpts = append(rtOpts, runtime.WithBuildPlanPoller(func() (*buildplan.BuildPlan, error) {
+			bpm := bpModel.NewBuildPlannerModel(prime.Auth(), prime.SvcModel())
+			if err := bpm.WaitForBuild(commitID, proj.Owner(), proj.Name(), nil); err != nil {
+				return nil, errs.Wrap(err, "Could not wait for the in-progress build to complete")
+			}
+			c, err := bpm.FetchCommit(commitID, proj.Owner(), proj.Name(), nil)
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not fetch the completed build plan")
+			}
+			return c.BuildPlan(), nil
+		}))
 	}
 	if proj.IsPortable() {
 		rtOpts = append(rtOpts, runtime.WithPortable())
