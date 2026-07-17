@@ -214,10 +214,14 @@ func (d *depot) MarkPrivate(id strfmt.UUID) error {
 
 // DeployViaLink will take an artifact from the depot and link it to the target path.
 // It should return deployment info to be used for tracking the artifact.
+//
+// Unlike DeployViaCopy this does NOT hold d.fsMutex for the duration of the operation, so multiple
+// artifacts can be linked into the runtime concurrently (the install worker pool runs several at once).
+// This is safe because linking touches no shared in-memory depot state (d.Exists guards its own access
+// via mapMutex, and d.depotPath is immutable after construction), directory creation is idempotent, and
+// smartlink treats an already-existing target as a skip. This is a major win on Windows where each file
+// link is an individual, relatively expensive syscall.
 func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) (*deployment, error) {
-	d.fsMutex.Lock()
-	defer d.fsMutex.Unlock()
-
 	if exists, _ := d.Exists(id); !exists {
 		return nil, errs.New("artifact not found in depot")
 	}
@@ -262,6 +266,11 @@ func (d *depot) DeployViaLink(id strfmt.UUID, relativeSrc, absoluteDest string) 
 
 // DeployViaCopy will take an artifact from the depot and copy it to the target path.
 // It should return deployment info to be used for tracking the artifact.
+//
+// This intentionally holds d.fsMutex for the duration of the copy. Unlike linking, copying a file that
+// two artifacts both provide would race on os.Create and could corrupt the destination, so copies are
+// serialized. The copy path is only used when an artifact needs file transforms, hard links are
+// unsupported, or portable mode is requested, so it is the less common case.
 func (d *depot) DeployViaCopy(id strfmt.UUID, relativeSrc, absoluteDest string) (*deployment, error) {
 	d.fsMutex.Lock()
 	defer d.fsMutex.Unlock()
