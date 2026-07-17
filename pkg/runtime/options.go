@@ -15,12 +15,11 @@ func WithAuthToken(token string) SetOpt {
 	return func(opts *Opts) { opts.AuthToken = token }
 }
 
-// WithDecryptionKey supplies the organization AES-256 key (and its id) used to
-// decrypt private artifacts during install.
-func WithDecryptionKey(key []byte, keyID string) SetOpt {
+// WithDecryptionKey supplies a function that lazily fetches the organization
+// AES-256 key used to decrypt private artifacts during install.
+func WithDecryptionKey(fetch func() ([]byte, error)) SetOpt {
 	return func(opts *Opts) {
-		opts.OrgKey = key
-		opts.OrgKeyID = keyID
+		opts.OrgKey = fetch
 	}
 }
 
