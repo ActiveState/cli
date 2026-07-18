@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 
@@ -115,6 +116,13 @@ type setup struct {
 	// was available to decrypt them.
 	skipMutex sync.Mutex
 	skipped   map[strfmt.UUID]struct{}
+
+	// privateWheels records the depot directories of decrypted private wheels
+	// whose installation into site-packages is deferred until every artifact is
+	// unpacked, so the Python runtime's site-packages layout can be located on
+	// disk rather than guessed.
+	privateWheelMutex sync.Mutex
+	privateWheels     []string
 }
 
 func newSetup(path string, bp *buildplan.BuildPlan, env *envdef.Collection, depot *depot, opts *Opts) (*setup, error) {
@@ -321,6 +329,12 @@ func (s *setup) update() error {
 		return errs.Wrap(err, "errors occurred during obtain")
 	}
 
+	// Install any decrypted private wheels now that every artifact is unpacked,
+	// so the Python runtime's site-packages directory can be located on disk.
+	if err := s.installPrivateWheels(); err != nil {
+		return errs.Wrap(err, "Could not install private wheels")
+	}
+
 	// Now we start modifying the runtime directory
 	// This happens AFTER all the download steps are finished, and should be very fast because installing is mostly just
 	// creating links to the depot.
@@ -521,13 +535,10 @@ func (s *setup) unpack(artifact *buildplan.Artifact, b []byte) (rerr error) {
 		}
 		switch {
 		case s.isPrivateWheel(unpackPath):
-			if err := s.installPrivateWheel(unpackPath); err != nil {
-				rerr := errs.Wrap(err, "Could not install private wheel")
-				if err2 := os.RemoveAll(unpackPath); err2 != nil {
-					return errs.Pack(rerr, errs.Wrap(err2, "unable to remove artifact directory"))
-				}
-				return rerr
-			}
+			// Defer installation into site-packages until all artifacts are
+			// unpacked; only then can we locate the Python runtime's
+			// site-packages layout on disk (see installPrivateWheels).
+			s.recordPrivateWheel(unpackPath)
 		default:
 			multilog.Error("Decrypted private artifact %s (%s) is of an unknown type; cannot install it", artifact.ArtifactID, artifact.Name())
 		}
@@ -699,10 +710,62 @@ func (s *setup) isPrivateWheel(dir string) bool {
 	return err == nil && wheelPath != ""
 }
 
-// installPrivateWheel installs the decrypted wheel found under artifactDir into a
-// site-packages directory and adds it to PYTHONPATH in the artifact's
-// runtime.json.
-func (s *setup) installPrivateWheel(artifactDir string) error {
+// recordPrivateWheel notes a decrypted private wheel's depot directory for
+// deferred installation into site-packages once all artifacts are unpacked.
+func (s *setup) recordPrivateWheel(dir string) {
+	s.privateWheelMutex.Lock()
+	defer s.privateWheelMutex.Unlock()
+	s.privateWheels = append(s.privateWheels, dir)
+}
+
+// installPrivateWheels installs each recorded private wheel into the Python
+// runtime's site-packages directory. It runs after every artifact is unpacked
+// so the site-packages location -- which varies by platform and Python version
+// (usr/lib/pythonX.Y/site-packages on Linux and macOS, Lib/site-packages on
+// Windows) -- can be discovered on disk rather than guessed.
+func (s *setup) installPrivateWheels() (rerr error) {
+	// s.privateWheels is written by recordPrivateWheel from the unpack worker
+	// pool; this runs only after wp.Wait() has drained that pool, so the slice is
+	// complete and no longer written concurrently -- no lock needed here.
+	if len(s.privateWheels) == 0 {
+		return nil
+	}
+
+	// On failure, remove the decrypted wheel artifact directories: this keeps no
+	// private plaintext on disk, and -- because the depot treats a present
+	// directory as already obtained -- lets a later run re-download and retry
+	// instead of leaving an uninstalled wheel wedged in the depot.
+	defer func() {
+		if rerr == nil {
+			return
+		}
+		for _, dir := range s.privateWheels {
+			if err := os.RemoveAll(dir); err != nil {
+				rerr = errs.Pack(rerr, errs.Wrap(err, "could not remove private wheel directory %s", dir))
+			}
+		}
+	}()
+
+	relSitePackages, err := s.locateSitePackages()
+	if err != nil {
+		return errs.Wrap(err, "could not locate the Python runtime's site-packages directory")
+	}
+
+	for _, dir := range s.privateWheels {
+		if err := s.installPrivateWheel(dir, relSitePackages); err != nil {
+			return errs.Wrap(err, "could not install private wheel in %s", dir)
+		}
+	}
+	return nil
+}
+
+// installPrivateWheel installs the decrypted wheel found under artifactDir into
+// the runtime's site-packages directory (relSitePackages, relative to the
+// install root) and adds that directory to PYTHONPATH in the artifact's
+// runtime.json. Laying the wheel out at the same relative path the Python
+// runtime uses means the deploy merges its contents into
+// ${INSTALLDIR}/<relSitePackages>, where Python already resolves them.
+func (s *setup) installPrivateWheel(artifactDir, relSitePackages string) error {
 	wheelPath, err := findWheel(artifactDir)
 	if err != nil {
 		return errs.Wrap(err, "could not locate decrypted wheel")
@@ -711,9 +774,16 @@ func (s *setup) installPrivateWheel(artifactDir string) error {
 		return errs.New("decrypted private artifact contains no wheel")
 	}
 
-	// site-packages sits in the deploy tree, so the deploy links it into the
-	// runtime where ${INSTALLDIR}/site-packages resolves it.
-	sitePackages := filepath.Join(filepath.Dir(wheelPath), "site-packages")
+	rtPath := filepath.Join(artifactDir, envdef.EnvironmentDefinitionFilename)
+	envDef, err := envdef.NewEnvironmentDefinition(rtPath)
+	if err != nil {
+		return errs.Wrap(err, "could not load runtime definition")
+	}
+
+	// InstallDir is the subtree of the artifact that gets deployed onto the
+	// install root, so the site-packages must sit beneath it for the deploy to
+	// place it at ${INSTALLDIR}/<relSitePackages>.
+	sitePackages := filepath.Join(artifactDir, envDef.InstallDir, relSitePackages)
 	if err := wheelinstall.Install(wheelPath, sitePackages); err != nil {
 		return errs.Wrap(err, "could not install wheel")
 	}
@@ -721,20 +791,12 @@ func (s *setup) installPrivateWheel(artifactDir string) error {
 		return errs.Wrap(err, "could not remove installed wheel")
 	}
 
-	return s.exposeSitePackages(artifactDir)
-}
-
-// exposeSitePackages adds the installed site-packages directory to PYTHONPATH in
-// the artifact's runtime.json.
-func (s *setup) exposeSitePackages(artifactDir string) error {
-	rtPath := filepath.Join(artifactDir, envdef.EnvironmentDefinitionFilename)
-	envDef, err := envdef.NewEnvironmentDefinition(rtPath)
-	if err != nil {
-		return errs.Wrap(err, "could not load runtime definition")
-	}
+	// Match the Python runtime's own PYTHONPATH directives (":" separator,
+	// inherit=false) or the cross-artifact environment merge fails with
+	// "incompatible separator or inherit directives".
 	envDef.Env = append(envDef.Env, envdef.EnvironmentVariable{
 		Name:      "PYTHONPATH",
-		Values:    []string{"${INSTALLDIR}/site-packages"},
+		Values:    []string{"${INSTALLDIR}/" + filepath.ToSlash(relSitePackages)},
 		Join:      envdef.Prepend,
 		Inherit:   false,
 		Separator: ":", // OS-independent
@@ -743,6 +805,91 @@ func (s *setup) exposeSitePackages(artifactDir string) error {
 		return errs.Wrap(err, "could not save runtime definition")
 	}
 	return nil
+}
+
+// locateSitePackages discovers the Python runtime's site-packages directory by
+// scanning the unpacked non-private artifacts, and returns its path relative to
+// the install root. Searching for the directory that the Python runtime already
+// provides keeps us correct across platforms and Python versions instead of
+// hard-coding a layout.
+func (s *setup) locateSitePackages() (string, error) {
+	// Collect the install roots of every candidate artifact (all non-private
+	// artifacts that deploy something). The Python runtime is among them.
+	var installRoots []string
+	for _, artifact := range s.buildplan.Artifacts() {
+		artifactDir := s.depot.Path(artifact.ArtifactID)
+		if !fileutils.DirExists(artifactDir) {
+			continue
+		}
+		// Skip decrypted private artifacts: they are the wheels being installed,
+		// not the Python runtime that owns site-packages.
+		if _, info := s.depot.Exists(artifact.ArtifactID); info != nil && info.Private {
+			continue
+		}
+		envDef, err := envdef.NewEnvironmentDefinition(filepath.Join(artifactDir, envdef.EnvironmentDefinitionFilename))
+		if err != nil {
+			continue // no runtime.json; nothing this artifact deploys can be site-packages
+		}
+		installRoots = append(installRoots, filepath.Join(artifactDir, envDef.InstallDir))
+	}
+
+	candidates := globSitePackages(installRoots)
+	if len(candidates) == 0 {
+		return "", errs.New("no Python site-packages directory found in the runtime; a Python runtime is required to install a private wheel")
+	}
+
+	// Prefer the shortest path (the canonical purelib site-packages), then order
+	// lexicographically, so the choice is deterministic.
+	sort.Slice(candidates, func(i, j int) bool {
+		if len(candidates[i]) != len(candidates[j]) {
+			return len(candidates[i]) < len(candidates[j])
+		}
+		return candidates[i] < candidates[j]
+	})
+	if len(candidates) > 1 {
+		logging.Debug("Multiple site-packages directories found (%v); using %s", candidates, candidates[0])
+	}
+	return candidates[0], nil
+}
+
+// sitePackagesGlob is the relative location of the Python runtime's
+// site-packages directory for the current OS. Windows uses a flat, unversioned
+// Lib/site-packages (the filesystem is case-insensitive, so "lib" matches too);
+// every other OS uses usr/lib/pythonX.Y/site-packages, with the version segment
+// left as a wildcard to be resolved on disk.
+func sitePackagesGlob() string {
+	if sysinfo.OS() == sysinfo.Windows {
+		return filepath.Join("Lib", "site-packages")
+	}
+	return filepath.Join("usr", "lib", "python*", "site-packages")
+}
+
+// globSitePackages returns the distinct site-packages directories (relative to
+// their root) found under the given roots using the OS-specific glob pattern.
+func globSitePackages(roots []string) []string {
+	glob := sitePackagesGlob()
+	var candidates []string
+	seen := map[string]struct{}{}
+	for _, root := range roots {
+		matches, err := filepath.Glob(filepath.Join(root, glob))
+		if err != nil {
+			continue // only ErrBadPattern, and our pattern is static
+		}
+		for _, match := range matches {
+			if !fileutils.DirExists(match) {
+				continue
+			}
+			rel, err := filepath.Rel(root, match)
+			if err != nil {
+				continue
+			}
+			if _, ok := seen[rel]; !ok {
+				seen[rel] = struct{}{}
+				candidates = append(candidates, rel)
+			}
+		}
+	}
+	return candidates
 }
 
 // findWheel returns the path of the single .whl under dir (searched recursively),
