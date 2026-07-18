@@ -815,17 +815,7 @@ func (s *setup) locateSitePackages() (string, error) {
 		installRoots = append(installRoots, filepath.Join(artifactDir, envDef.InstallDir))
 	}
 
-	// First try the known layouts via cheap globs. Only if none of them match
-	// (an unexpected layout) do we fall back to a full walk of every root.
 	candidates := globSitePackages(installRoots)
-	if len(candidates) == 0 {
-		var err error
-		candidates, err = walkSitePackages(installRoots)
-		if err != nil {
-			return "", errs.Wrap(err, "could not scan for site-packages")
-		}
-	}
-
 	if len(candidates) == 0 {
 		return "", errs.New("no Python site-packages directory found in the runtime; a Python runtime is required to install a private wheel")
 	}
@@ -882,37 +872,6 @@ func globSitePackages(roots []string) []string {
 		}
 	}
 	return candidates
-}
-
-// walkSitePackages returns the distinct site-packages directories (relative to
-// their root) found by fully walking each root. It is the fallback for layouts
-// the globs do not cover.
-func walkSitePackages(roots []string) ([]string, error) {
-	var candidates []string
-	seen := map[string]struct{}{}
-	for _, root := range roots {
-		err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			if d.IsDir() && d.Name() == "site-packages" {
-				rel, err := filepath.Rel(root, path)
-				if err != nil {
-					return err
-				}
-				if _, ok := seen[rel]; !ok {
-					seen[rel] = struct{}{}
-					candidates = append(candidates, rel)
-				}
-				return filepath.SkipDir
-			}
-			return nil
-		})
-		if err != nil {
-			return nil, errs.Wrap(err, "could not scan %s for site-packages", root)
-		}
-	}
-	return candidates, nil
 }
 
 // findWheel returns the path of the single .whl under dir (searched recursively),
