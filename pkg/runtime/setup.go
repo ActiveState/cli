@@ -723,10 +723,28 @@ func (s *setup) recordPrivateWheel(dir string) {
 // so the site-packages location -- which varies by platform and Python version
 // (usr/lib/pythonX.Y/site-packages on Linux and macOS, Lib/site-packages on
 // Windows) -- can be discovered on disk rather than guessed.
-func (s *setup) installPrivateWheels() error {
+func (s *setup) installPrivateWheels() (rerr error) {
+	// s.privateWheels is written by recordPrivateWheel from the unpack worker
+	// pool; this runs only after wp.Wait() has drained that pool, so the slice is
+	// complete and no longer written concurrently -- no lock needed here.
 	if len(s.privateWheels) == 0 {
 		return nil
 	}
+
+	// On failure, remove the decrypted wheel artifact directories: this keeps no
+	// private plaintext on disk, and -- because the depot treats a present
+	// directory as already obtained -- lets a later run re-download and retry
+	// instead of leaving an uninstalled wheel wedged in the depot.
+	defer func() {
+		if rerr == nil {
+			return
+		}
+		for _, dir := range s.privateWheels {
+			if err := os.RemoveAll(dir); err != nil {
+				rerr = errs.Pack(rerr, errs.Wrap(err, "could not remove private wheel directory %s", dir))
+			}
+		}
+	}()
 
 	relSitePackages, err := s.locateSitePackages()
 	if err != nil {
