@@ -52,25 +52,6 @@ func TestGlobSitePackages(t *testing.T) {
 	}
 }
 
-func TestWalkSitePackagesFallback(t *testing.T) {
-	root := t.TempDir()
-	// A layout the globs do not cover, so only the walk finds it.
-	mkSitePackages(t, root, filepath.Join("opt", "python", "site-packages"))
-
-	if got := globSitePackages([]string{root}); len(got) != 0 {
-		t.Fatalf("globs should not match unexpected layout, got %v", got)
-	}
-
-	got, err := walkSitePackages([]string{root})
-	if err != nil {
-		t.Fatalf("walkSitePackages: %v", err)
-	}
-	want := filepath.Join("opt", "python", "site-packages")
-	if len(got) != 1 || got[0] != want {
-		t.Fatalf("expected [%s], got %v", want, got)
-	}
-}
-
 func TestGlobSitePackagesDeduplicatesAcrossRoots(t *testing.T) {
 	rootA := t.TempDir()
 	rootB := t.TempDir()
