@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/ActiveState/cli/pkg/sysinfo"
 )
 
 func mkSitePackages(t *testing.T, root, rel string) {
@@ -14,16 +16,18 @@ func mkSitePackages(t *testing.T, root, rel string) {
 }
 
 func TestGlobSitePackages(t *testing.T) {
+	// The expected layout is OS-specific (see sitePackagesGlob).
+	layout := filepath.Join("usr", "lib", "python3.10", "site-packages")
+	if sysinfo.OS() == sysinfo.Windows {
+		layout = filepath.Join("Lib", "site-packages")
+	}
+
 	tests := []struct {
 		name   string
 		layout string // relative dir to create under the root, "" for none
 		want   string // expected relative site-packages path, "" for no match
 	}{
-		{"linux versioned", filepath.Join("lib", "python3.10", "site-packages"), filepath.Join("lib", "python3.10", "site-packages")},
-		{"linux lib64", filepath.Join("lib64", "python3.11", "site-packages"), filepath.Join("lib64", "python3.11", "site-packages")},
-		{"macos unversioned", filepath.Join("lib", "site-packages"), filepath.Join("lib", "site-packages")},
-		{"usr prefixed", filepath.Join("usr", "lib", "python3.9", "site-packages"), filepath.Join("usr", "lib", "python3.9", "site-packages")},
-		{"windows", filepath.Join("Lib", "site-packages"), filepath.Join("Lib", "site-packages")},
+		{"matching layout", layout, layout},
 		{"no site-packages", filepath.Join("bin"), ""},
 		{"unexpected layout not globbed", filepath.Join("opt", "python", "site-packages"), ""},
 	}
@@ -70,7 +74,10 @@ func TestWalkSitePackagesFallback(t *testing.T) {
 func TestGlobSitePackagesDeduplicatesAcrossRoots(t *testing.T) {
 	rootA := t.TempDir()
 	rootB := t.TempDir()
-	rel := filepath.Join("lib", "python3.10", "site-packages")
+	rel := filepath.Join("usr", "lib", "python3.10", "site-packages")
+	if sysinfo.OS() == sysinfo.Windows {
+		rel = filepath.Join("Lib", "site-packages")
+	}
 	mkSitePackages(t, rootA, rel)
 	mkSitePackages(t, rootB, rel)
 

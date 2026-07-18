@@ -721,8 +721,8 @@ func (s *setup) recordPrivateWheel(dir string) {
 // installPrivateWheels installs each recorded private wheel into the Python
 // runtime's site-packages directory. It runs after every artifact is unpacked
 // so the site-packages location -- which varies by platform and Python version
-// (e.g. lib/pythonX.Y/site-packages on Linux, lib/site-packages on macOS) -- can
-// be discovered on disk rather than guessed.
+// (usr/lib/pythonX.Y/site-packages on Linux and macOS, Lib/site-packages on
+// Windows) -- can be discovered on disk rather than guessed.
 func (s *setup) installPrivateWheels() error {
 	if len(s.privateWheels) == 0 {
 		return nil
@@ -844,41 +844,40 @@ func (s *setup) locateSitePackages() (string, error) {
 	return candidates[0], nil
 }
 
-// sitePackagesGlobs are the known relative locations of a Python runtime's
-// site-packages directory, with a wildcard for the version-specific segment.
-// They cover the Linux, macOS, and Windows layouts the platform produces.
-var sitePackagesGlobs = []string{
-	filepath.Join("lib", "python*", "site-packages"),
-	filepath.Join("lib64", "python*", "site-packages"),
-	filepath.Join("lib", "site-packages"),
-	filepath.Join("usr", "lib", "python*", "site-packages"),
-	filepath.Join("usr", "lib64", "python*", "site-packages"),
-	filepath.Join("Lib", "site-packages"),
+// sitePackagesGlob is the relative location of the Python runtime's
+// site-packages directory for the current OS. Windows uses a flat, unversioned
+// Lib/site-packages (the filesystem is case-insensitive, so "lib" matches too);
+// every other OS uses usr/lib/pythonX.Y/site-packages, with the version segment
+// left as a wildcard to be resolved on disk.
+func sitePackagesGlob() string {
+	if sysinfo.OS() == sysinfo.Windows {
+		return filepath.Join("Lib", "site-packages")
+	}
+	return filepath.Join("usr", "lib", "python*", "site-packages")
 }
 
 // globSitePackages returns the distinct site-packages directories (relative to
-// their root) found under the given roots using the known glob patterns.
+// their root) found under the given roots using the OS-specific glob pattern.
 func globSitePackages(roots []string) []string {
+	glob := sitePackagesGlob()
 	var candidates []string
 	seen := map[string]struct{}{}
 	for _, root := range roots {
-		for _, glob := range sitePackagesGlobs {
-			matches, err := filepath.Glob(filepath.Join(root, glob))
-			if err != nil {
-				continue // only ErrBadPattern, and our patterns are static
+		matches, err := filepath.Glob(filepath.Join(root, glob))
+		if err != nil {
+			continue // only ErrBadPattern, and our pattern is static
+		}
+		for _, match := range matches {
+			if !fileutils.DirExists(match) {
+				continue
 			}
-			for _, match := range matches {
-				if !fileutils.DirExists(match) {
-					continue
-				}
-				rel, err := filepath.Rel(root, match)
-				if err != nil {
-					continue
-				}
-				if _, ok := seen[rel]; !ok {
-					seen[rel] = struct{}{}
-					candidates = append(candidates, rel)
-				}
+			rel, err := filepath.Rel(root, match)
+			if err != nil {
+				continue
+			}
+			if _, ok := seen[rel]; !ok {
+				seen[rel] = struct{}{}
+				candidates = append(candidates, rel)
 			}
 		}
 	}
