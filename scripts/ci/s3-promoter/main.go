@@ -75,8 +75,7 @@ func run() {
 	// Copy each staging object to production location and delete the staging version
 	for _, obj := range stagingObjects {
 		stagingKey := *obj.Key
-		relativeKey := strings.TrimPrefix(stagingKey, basePrefix+"staging/")
-		destinationKey := basePrefix + "release/" + relativeKey
+		destinationKey := productionKey(stagingKey, basePrefix)
 
 		fmt.Printf("Promoting %s -> %s\n", stagingKey, destinationKey)
 
@@ -92,6 +91,14 @@ func run() {
 	}
 
 	fmt.Printf("Successfully promoted %d files from staging to production.\n", len(stagingObjects))
+}
+
+// productionKey maps a staging object key to its production location. The
+// channel (beta, release, ...) is already encoded in the key, so promotion only
+// drops the staging/ segment and adds no prefix of its own.
+func productionKey(stagingKey, basePrefix string) string {
+	relativeKey := strings.TrimPrefix(stagingKey, basePrefix+"staging/")
+	return basePrefix + relativeKey
 }
 
 func createClient() {
