@@ -335,8 +335,7 @@ scripts:
     standalone: true
     description: Runs unit tests (not integration tests)
     value: |
-      # Disable CGo to prevent clang warnings from crashing gotestfmt.
-      export CGO_ENABLED=0
+      $constants.SET_ENV
       go test -vet=off -v `go list ./... | grep -v integration | grep -v automation | grep -v expect | grep -v state-svc | grep -v state-offline` $@
   - name: integration-tests
     language: bash
