@@ -37,7 +37,7 @@ jobs:
     strategy:
       matrix:
         go-version:
-          - 1.26.5
+          - 1.26.6
         sys:
           - { os: ubuntu-latest }
           - { os: macos-15-intel, shell: zsh }
@@ -291,6 +291,7 @@ jobs:
         if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\", \"refs/heads/mcp\"]'), github.ref)"
         shell: bash
         run: |
+          export CGO_ENABLED=0
           if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
             LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
             IFS=',' read -r -a TESTS <<< "$LABELS"
