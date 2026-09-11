@@ -2,6 +2,7 @@ package buildlog
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -59,16 +60,21 @@ type BuildLog struct {
 	eventHandlers        []events.HandlerFunc
 	logFilePath          string
 	onArtifactReadyFuncs map[strfmt.UUID][]func()
+	// authToken is the platform JWT forwarded to the build-log-streamer WS so
+	// the server can authorize the stream. Empty for unauthenticated callers.
+	authToken string
 }
 
 // New creates a new BuildLog instance that allows us to wait for incoming build log information
-// artifactMap comprises all artifacts (from the runtime closure) that are in the recipe, alreadyBuilt is set of artifact IDs that have already been built in the past
-func New(recipeID strfmt.UUID, artifactMap buildplan.ArtifactIDMap) *BuildLog {
+// artifactMap comprises all artifacts (from the runtime closure) that are in the recipe.
+// authToken is the platform JWT forwarded to the build-log-streamer WS (empty if unauthenticated).
+func New(recipeID strfmt.UUID, artifactMap buildplan.ArtifactIDMap, authToken string) *BuildLog {
 	return &BuildLog{
 		recipeID:             recipeID,
 		artifactMap:          artifactMap,
 		eventHandlers:        []events.HandlerFunc{},
 		onArtifactReadyFuncs: map[strfmt.UUID][]func(){},
+		authToken:            authToken,
 	}
 }
 
@@ -92,10 +98,15 @@ func (b *BuildLog) OnArtifactReady(id strfmt.UUID, cb func()) {
 	b.onArtifactReadyFuncs[id] = append(b.onArtifactReadyFuncs[id], cb)
 }
 
-// NewWithCustomConnections creates a new BuildLog instance with all physical connections managed by the caller
+// Wait connects to the build-log streamer and blocks until the build completes,
+// dispatching build events to the registered handlers as they arrive.
 func (b *BuildLog) Wait(ctx context.Context) error {
-	conn, err := buildlogstream.Connect(ctx)
+	conn, err := buildlogstream.Connect(ctx, b.authToken)
 	if err != nil {
+		var denied *buildlogstream.StreamDeniedError
+		if errors.As(err, &denied) {
+			return denied
+		}
 		return errs.Wrap(err, "Could not connect to build-log streamer build updates")
 	}
 
@@ -117,6 +128,10 @@ func (b *BuildLog) Wait(ctx context.Context) error {
 	for err := range errCh {
 		if err == nil {
 			continue
+		}
+		var denied *buildlogstream.StreamDeniedError
+		if errors.As(err, &denied) {
+			return denied // this is a singular error that arrives alone
 		}
 		if rerr == nil {
 			rerr = errs.New("failed build")
@@ -217,16 +232,24 @@ func (b *BuildLog) waitForBuildLog(ctx context.Context, conn *websocket.Conn, er
 		}
 	}
 
+	receivedFrame := false
 	var artifactErr error
 	for {
 		var msg Message
 		err := conn.ReadJSON(&msg)
 		if err != nil {
+			// At this time, the server can either deny the websocket connect, or accept it and close it
+			// without sending any frames. We handle the latter here.
+			if !receivedFrame && websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
+				errCh <- &buildlogstream.StreamDeniedError{errs.Wrap(err, "build-log stream soft-closed with no frames")}
+				return
+			}
 			// This should bubble up and logging it is just an extra measure to help with debugging
 			logging.Debug("Encountered error: %s", errs.JoinMessage(err))
 			errCh <- err
 			return
 		}
+		receivedFrame = true
 		if verboseLogging {
 			logging.Debug("Received response: %s", msg.MessageTypeValue())
 		}

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -43,6 +44,7 @@ type Params struct {
 	Features       captain.PackagesValue
 	Filepath       string
 	MetaFilepath   string
+	Build          string
 	Edit           bool
 	Editor         bool
 }
@@ -52,6 +54,7 @@ type Runner struct {
 	out     output.Outputer
 	prompt  prompt.Prompter
 	project *project.Project
+	cfg     *config.Instance
 	bp      *buildplanner.BuildPlanner
 }
 
@@ -60,6 +63,7 @@ type primeable interface {
 	primer.Auther
 	primer.Projecter
 	primer.Prompter
+	primer.Configurer
 	primer.SvcModeler
 }
 
@@ -69,6 +73,7 @@ func New(prime primeable) *Runner {
 		out:     prime.Output(),
 		prompt:  prime.Prompt(),
 		project: prime.Project(),
+		cfg:     prime.Config(),
 		bp:      buildplanner.NewBuildPlannerModel(prime.Auth(), prime.SvcModel()),
 	}
 }
@@ -87,6 +92,14 @@ func (r *Runner) Run(params *Params) error {
 		return locale.NewInputError("err_auth_required")
 	}
 
+	if params.Build != "" {
+		cleanup, err := r.generateEncryptedArtifact(params) // note: this function also mutates params
+		if err != nil {
+			return errs.Wrap(err, "Could not build private ingredient")
+		}
+		defer cleanup() // remove the temporary build directory
+	}
+
 	if params.Filepath != "" {
 		if !fileutils.FileExists(params.Filepath) {
 			return locale.NewInputError("err_uploadingredient_file_not_found", "File not found: {{.V0}}", params.Filepath)
@@ -94,7 +107,7 @@ func (r *Runner) Run(params *Params) error {
 		if !strings.HasSuffix(strings.ToLower(params.Filepath), ".zip") &&
 			!strings.HasSuffix(strings.ToLower(params.Filepath), ".tar.gz") &&
 			!strings.HasSuffix(strings.ToLower(params.Filepath), ".whl") {
-				return locale.NewInputError("err_uploadingredient_file_not_supported", "Expected file extension: .zip, .tar.gz or .whl: '{{.V0}}'", params.Filepath)
+			return locale.NewInputError("err_uploadingredient_file_not_supported", "Expected file extension: .zip, .tar.gz or .whl: '{{.V0}}'", params.Filepath)
 		}
 	} else if !params.Edit {
 		return locale.NewInputError("err_uploadingredient_file_required", "You have to supply the source archive unless editing.")
@@ -123,6 +136,14 @@ func (r *Runner) Run(params *Params) error {
 		reqVars.Namespace = params.Namespace
 	} else if reqVars.Namespace == "" && r.project != nil && r.project.Owner() != "" {
 		reqVars.Namespace = model.NewNamespaceOrg(r.project.Owner(), "").String()
+	}
+
+	// A --build publish is encrypted under the project org's key, so its resolved
+	// namespace (flag, meta file, or default) must stay within that org.
+	if params.Build != "" {
+		if err := requireOrgNamespace(reqVars.Namespace, r.project.Owner()); err != nil {
+			return err
+		}
 	}
 
 	// Name
@@ -199,6 +220,19 @@ func (r *Runner) Run(params *Params) error {
 
 	if err := prepareRequestFromParams(&reqVars, params, isRevision); err != nil {
 		return errs.Wrap(err, "Could not prepare request from params")
+	}
+
+	if params.Build != "" {
+		// A --build publish must be ingested by the private-builder. Without a
+		// builder dependency the platform falls back to the noop-builder, which
+		// produces an empty artifact.
+		reqVars.Dependencies = append(reqVars.Dependencies, request.PublishVariableDep{
+			Dependency: request.Dependency{
+				Name:                privateBuilderName,
+				Namespace:           privateBuilderNamespace,
+				VersionRequirements: ">=0",
+			},
+		})
 	}
 
 	if params.Editor {

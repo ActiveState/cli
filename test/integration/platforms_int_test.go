@@ -44,11 +44,12 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_listSimple() {
 		{"platforms"},
 		{"platforms", "search"},
 	}
+
 	for _, cmd := range cmds {
 		cp := ts.Spawn(cmd...)
 		expectations := []string{
-			"Linux",
-			"4.18.0",
+			"Windows",
+			"10",
 			"x86",
 			"64",
 		}

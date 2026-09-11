@@ -18,46 +18,50 @@ func (suite *UnarchiverTestSuite) TestUnarchiveWithProgress() {
 	// p := progress.New()
 }
 
-type mockCounter struct {
-	Files     []string
-	Count     int
-	ByteCount int64
-}
-
-func (mc *mockCounter) Notify(fileName string, size int64, isDir bool) {
-	if !isDir {
-		mc.Count++
-		mc.ByteCount += size
-	}
-	if fileName == "." {
-		return
-	}
-	mc.Files = append(mc.Files, fileName)
-}
-
 func (suite *UnarchiverTestSuite) TestUnarchive() {
 
 	cases := []struct {
-		name     string
-		ua       unarchiver.Unarchiver
-		testfile string
-		prep     func(destination string)
+		name      string
+		ua        unarchiver.Unarchiver
+		testfile  string
+		wantErr   bool
+		wantFiles int
 	}{
 		{
-			"successful unpacking targz",
+			// testfile.tar.gz is fully contained.
+			"successful tar.gz unpacking",
 			unarchiver.NewTarGz(),
-			"testfile.tar.gz", func(destination string) {
-				err := os.WriteFile(destination, []byte{}, 0666)
-				suite.Require().NoError(err)
-			},
+			"testfile.tar.gz",
+			false,
+			11,
 		},
 		{
-			"successful unpacking zip",
+			// testfile-escapes.tar.gz has a root-level symlink (symlink-to-file3 ->
+			// ../b/c/file3) whose target resolves outside the destination, so it is
+			// rejected when treated as untrusted.
+			"escaping tar.gz rejected when untrusted",
+			unarchiver.NewTarGz(unarchiver.WithUntrustedSource()),
+			"testfile-escapes.tar.gz",
+			true,
+			0,
+		},
+		{
+			// When trusted (the default), the same archive extracts as before
+			// (Platform artifacts may legitimately link outside the destination).
+			"escaping tar.gz extracts when trusted",
+			unarchiver.NewTarGz(),
+			"testfile-escapes.tar.gz",
+			false,
+			12,
+		},
+		{
+			// The zip fixture stores its symlinks as ordinary files, so every entry is
+			// contained and extraction succeeds.
+			"successful zip unpacking",
 			unarchiver.NewZip(),
-			"testfile.zip", func(destination string) {
-				err := os.WriteFile(destination, []byte{}, 0666)
-				suite.Require().NoError(err)
-			},
+			"testfile.zip",
+			false,
+			12,
 		},
 	}
 
@@ -70,30 +74,23 @@ func (suite *UnarchiverTestSuite) TestUnarchive() {
 			suite.Require().NoError(err)
 			destination := filepath.Join(tempDir, "destination")
 
-			f, siz, err := tc.ua.PrepareUnpacking(testfile, destination)
+			f, err := tc.ua.PrepareUnpacking(testfile, destination)
+			suite.Require().NoError(err)
+			suite.Require().NotNil(f)
+
+			err = tc.ua.Unarchive(f, destination)
+			if tc.wantErr {
+				suite.Assert().Error(err)
+				return
+			}
 			suite.Assert().NoError(err)
-			suite.Assert().NotNil(f)
-			suite.True(siz > int64(0))
-
-			counter := &mockCounter{}
-
-			tc.ua.SetNotifier(counter.Notify)
-
-			err = tc.ua.Unarchive(f, siz, destination)
-			suite.Assert().NoError(err)
-
-			suite.Assert().Equal(9, counter.Count, "nine files unpacked")
-			// For this example the byte count will be very low, but maybe OS / file system dependent on how big exactly, so we just compare to zero
-			suite.True(counter.ByteCount > int64(0))
 
 			installedFiles, err := listFilesRecursively(destination)
 			suite.Require().NoError(err)
 
 			sort.Strings(installedFiles)
-			sort.Strings(counter.Files)
 
-			suite.Assert().Len(installedFiles, 12)
-			suite.Assert().Equal(installedFiles, counter.Files)
+			suite.Assert().Len(installedFiles, tc.wantFiles)
 		})
 	}
 }
@@ -141,9 +138,8 @@ func (suite *UnarchiverTestSuite) TestPrepareUnpackingWithError() {
 			destination := filepath.Join(tempDir, "destination")
 			tc.prep(destination)
 
-			f, siz, err := ua.PrepareUnpacking(testfile, destination)
+			f, err := ua.PrepareUnpacking(testfile, destination)
 			suite.Assert().Nil(f)
-			suite.Assert().Zero(siz)
 			suite.Assert().Error(err)
 		})
 	}

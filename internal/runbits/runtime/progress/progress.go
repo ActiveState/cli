@@ -299,6 +299,20 @@ func (p *ProgressDigester) Handle(ev events.Event) error {
 		}
 		p.installBar.Increment()
 
+	case events.ArtifactInstallSkipped:
+		// A skipped artifact fires no Started event, so create the bar on demand,
+		// then advance it as if installed so it still reaches completion.
+		if p.installBar == nil {
+			p.installBar = p.addTotalBar(locale.Tl("progress_installing", "Installing"), int64(len(p.installsExpected)), mpb.BarPriority(StepInstall.priority))
+		}
+		if _, ok := p.installsExpected[v.ArtifactID]; !ok {
+			return errs.New("ArtifactInstallSkipped called for an artifact that was not expected: %s", v.ArtifactID.String())
+		}
+		if p.installBar.Current() == p.installBar.total {
+			return errs.New("Install bar is already complete, this should not happen")
+		}
+		p.installBar.Increment()
+
 	}
 
 	return nil

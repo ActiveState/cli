@@ -1,6 +1,24 @@
 package config
 
-import "sort"
+import (
+	"os"
+	"sort"
+	"strings"
+
+	"github.com/spf13/cast"
+)
+
+// EnvVarPrefix is prepended to a config key to derive its canonical environment-variable override.
+const EnvVarPrefix = "ACTIVESTATE_CONFIG_"
+
+var envVarReplacer = strings.NewReplacer(".", "_", "-", "_")
+
+// CanonicalEnvVarName returns the environment variable that overrides the given config key. Every
+// registered config option can be overridden this way, e.g. "api.host" maps to
+// "ACTIVESTATE_CONFIG_API_HOST".
+func CanonicalEnvVarName(key string) string {
+	return EnvVarPrefix + strings.ToUpper(envVarReplacer.Replace(key))
+}
 
 type Type int
 
@@ -25,9 +43,13 @@ var EmptyEvent = func(value interface{}) (interface{}, error) {
 
 // Option defines what a config value's name and type should be, along with any get/set events
 type Option struct {
-	Name         string
-	Type         Type
-	Default      interface{}
+	Name    string
+	Type    Type
+	Default interface{}
+	// EnvAliases are additional (legacy/bespoke) environment variables that override this option, in
+	// addition to its canonical CanonicalEnvVarName. They are kept for backwards compatibility with
+	// env vars that predate the canonical ACTIVESTATE_CONFIG_* scheme (e.g. ACTIVESTATE_API_HOST).
+	EnvAliases   []string
 	GetEvent     Event
 	SetEvent     Event
 	isRegistered bool
@@ -52,28 +74,92 @@ func NewEnum(options []string, default_ string) *Enums {
 func GetOption(key string) Option {
 	rule, ok := registry[key]
 	if !ok {
-		return Option{key, String, "", EmptyEvent, EmptyEvent, false, false}
+		return Option{key, String, "", nil, EmptyEvent, EmptyEvent, false, false}
 	}
 	return rule
 }
 
-// Registers a config option without get/set events.
-func RegisterOption(key string, t Type, defaultValue interface{}) {
-	registerOption(key, t, defaultValue, EmptyEvent, EmptyEvent, false)
+// RegisterOption registers a config option without get/set events. Any envAliases are additional
+// legacy/bespoke environment variables that override the option, in addition to its canonical
+// ACTIVESTATE_CONFIG_* variable. They exist only for env vars that predate and do not use the
+// canonical prefix (e.g. ACTIVESTATE_API_HOST).
+func RegisterOption(key string, t Type, defaultValue interface{}, envAliases ...string) {
+	registerOption(key, t, defaultValue, envAliases, EmptyEvent, EmptyEvent, false)
 }
 
 // Registers a hidden config option without get/set events.
 func RegisterHiddenOption(key string, t Type, defaultValue interface{}) {
-	registerOption(key, t, defaultValue, EmptyEvent, EmptyEvent, true)
+	registerOption(key, t, defaultValue, nil, EmptyEvent, EmptyEvent, true)
 }
 
 // Registers a config option with get/set events.
 func RegisterOptionWithEvents(key string, t Type, defaultValue interface{}, get, set Event) {
-	registerOption(key, t, defaultValue, get, set, false)
+	registerOption(key, t, defaultValue, nil, get, set, false)
 }
 
-func registerOption(key string, t Type, defaultValue interface{}, get, set Event, hidden bool) {
-	registry[key] = Option{key, t, defaultValue, get, set, true, hidden}
+func registerOption(key string, t Type, defaultValue interface{}, envAliases []string, get, set Event, hidden bool) {
+	registry[key] = Option{key, t, defaultValue, envAliases, get, set, true, hidden}
+}
+
+// EnvVarNames returns every environment variable that can override this option: its canonical
+// ACTIVESTATE_CONFIG_* variable first, followed by any legacy aliases.
+func EnvVarNames(opt Option) []string {
+	names := make([]string, 0, len(opt.EnvAliases)+1)
+	names = append(names, CanonicalEnvVarName(opt.Name))
+	names = append(names, opt.EnvAliases...)
+	return names
+}
+
+// EnvOverride returns the effective override value for the option when one of its environment
+// variables is currently set to a non-empty, valid value, coerced to the option's type. The second
+// return value is the name of the variable in effect; the bool reports whether an override applies.
+//
+// A variable whose value cannot be strictly coerced to the option's type (an unparseable bool/int
+// or an enum value outside the allowed set) is ignored, so a mis-typed variable falls back to the
+// stored/default value rather than silently changing behavior to a zero value.
+func EnvOverride(opt Option) (interface{}, string, bool) {
+	for _, name := range EnvVarNames(opt) {
+		raw, ok := os.LookupEnv(name)
+		if !ok || raw == "" {
+			continue
+		}
+		if value, valid := coerceToType(opt, raw); valid {
+			return value, name, true
+		}
+	}
+	return nil, "", false
+}
+
+// coerceToType converts a raw environment-variable string to the option's configured type so that
+// callers receive the same Go type they would get from a stored value. The bool result reports
+// whether the raw value is valid for the option's type; invalid values must not be applied.
+func coerceToType(opt Option, raw string) (interface{}, bool) {
+	switch opt.Type {
+	case Bool:
+		v, err := cast.ToBoolE(raw)
+		if err != nil {
+			return nil, false
+		}
+		return v, true
+	case Int:
+		v, err := cast.ToIntE(raw)
+		if err != nil {
+			return nil, false
+		}
+		return v, true
+	case Enum:
+		if enums, ok := opt.Default.(*Enums); ok {
+			for _, option := range enums.Options {
+				if option == raw {
+					return raw, true
+				}
+			}
+			return nil, false
+		}
+		return raw, true
+	default: // String
+		return raw, true
+	}
 }
 
 func KnownOption(rule Option) bool {

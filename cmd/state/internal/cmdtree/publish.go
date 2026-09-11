@@ -111,6 +111,11 @@ func newPublish(prime *primer.Values) *captain.Command {
 				Description: locale.Tl("author_upload_metafile_description", "A yaml file expressing the ingredient meta information. Use --editor to review the file format."),
 				Value:       &params.MetaFilepath,
 			},
+			{
+				Name:        "build",
+				Description: locale.Tl("author_upload_build_description", "Build, encrypt, and publish a private ingredient from a local source directory. The ingredient name, version, and namespace remain visible to the platform; the source contents do not."),
+				Value:       &params.Build,
+			},
 		},
 		[]*captain.Argument{
 			{

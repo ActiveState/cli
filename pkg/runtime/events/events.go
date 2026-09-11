@@ -154,6 +154,16 @@ type ArtifactInstallSuccess struct {
 
 func (ArtifactInstallSuccess) IsEvent() {}
 
+// ArtifactInstallSkipped is fired in place of ArtifactInstallStarted/Success
+// for an artifact that was skipped during unpack (for example an encrypted
+// private artifact with no org key available) and so is never installed.
+type ArtifactInstallSkipped struct {
+	ArtifactID strfmt.UUID
+	Name       string
+}
+
+func (ArtifactInstallSkipped) IsEvent() {}
+
 type ArtifactUninstallStarted struct {
 	ArtifactID strfmt.UUID
 }

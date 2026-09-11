@@ -114,14 +114,15 @@ type Error struct {
 }
 
 func (e *Error) Error() string {
-	str := fmt.Sprintf("%d %s: %s", e.StatusCode, e.ProblemType, e.Detail)
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "%d %s: %s", e.StatusCode, e.ProblemType, e.Detail)
 	if len(e.Subproblems) > 0 {
-		str += fmt.Sprintf("; subproblems:")
+		sb.WriteString("; subproblems:")
 		for _, sp := range e.Subproblems {
-			str += fmt.Sprintf("\n\t%s", sp)
+			fmt.Fprintf(&sb, "\n\t%s", sp)
 		}
 	}
-	return str
+	return sb.String()
 }
 
 // AuthorizationError indicates that an authorization for an identifier
@@ -154,17 +155,24 @@ func (a *AuthorizationError) Error() string {
 
 // OrderError is returned from Client's order related methods.
 // It indicates the order is unusable and the clients should start over with
-// AuthorizeOrder.
+// AuthorizeOrder. A Problem description may be provided with details on
+// what caused the order to become unusable.
 //
 // The clients can still fetch the order object from CA using GetOrder
 // to inspect its state.
 type OrderError struct {
 	OrderURL string
 	Status   string
+	// Problem is the error that occurred while processing the order.
+	Problem *Error
 }
 
 func (oe *OrderError) Error() string {
-	return fmt.Sprintf("acme: order %s status: %s", oe.OrderURL, oe.Status)
+	str := fmt.Sprintf("acme: order %s status: %s", oe.OrderURL, oe.Status)
+	if oe.Problem != nil {
+		str += fmt.Sprintf("; problem: %s", oe.Problem)
+	}
+	return str
 }
 
 // RateLimit reports whether err represents a rate limit error and
