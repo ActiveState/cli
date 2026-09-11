@@ -137,6 +137,14 @@ func (m *SvcModel) CheckNotifications(ctx context.Context, command string, flags
 	return resp, nil
 }
 
+func (m *SvcModel) CheckMessages(ctx context.Context) ([]*graph.Message, error) {
+	resp := []*graph.Message{}
+	if err := m.request(ctx, request.NewMessageRequest(), &resp); err != nil {
+		return nil, errs.Wrap(err, "Error sending messages request")
+	}
+	return resp, nil
+}
+
 func (m *SvcModel) ConfigChanged(ctx context.Context, key string) error {
 	defer profile.Measure("svc:ConfigChanged", time.Now())
 

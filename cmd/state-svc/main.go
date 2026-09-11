@@ -212,9 +212,6 @@ func run(cfg *config.Instance) error {
 			},
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdForeground")
-				if err := auth.Sync(); err != nil {
-					logging.Warning("Could not sync authenticated state: %s", err.Error())
-				}
 				return runForeground(cfg, an, auth, foregroundArgText)
 			},
 		),
