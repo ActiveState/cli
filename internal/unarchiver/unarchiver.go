@@ -1,115 +1,154 @@
-// Package unarchiver provides a method to unarchive tar.gz or zip archives with progress bar feedback
-// Currently, this implementation copies a lot of methods that are internal to the ActiveState/archiver dependency.
 package unarchiver
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
+
+	"github.com/mholt/archives"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/mholt/archiver/v3"
-
 	"github.com/ActiveState/cli/internal/fileutils"
 )
 
-// SingleUnarchiver is an interface for an unarchiver that can unpack the next file
-// It extends the existing archiver.Reader with a method to extract a single file from the archive
-type SingleUnarchiver interface {
-	archiver.Reader
-
-	// ExtractNext extracts the next file in the archive
-	ExtractNext(destination string) (f archiver.File, err error)
-
-	// CheckExt checks that the file extension is appropriate for the archive
-	CheckExt(archiveName string) error
-
-	// Ext returns a valid file name extension for this archiver
-	Ext() string
-}
-
-// ExtractNotifier gets called when a new file has been extracted from the archive
-type ExtractNotifier func(fileName string, size int64, isDir bool)
-
-// Unarchiver wraps an implementation of an unarchiver that can unpack one file at a time.
 type Unarchiver struct {
-	// wraps a struct that can unpack one file at a time.
-	impl SingleUnarchiver
+	archives.Extraction
 
-	notifier ExtractNotifier
+	untrusted bool
 }
 
-func (ua *Unarchiver) Ext() string {
-	return ua.impl.Ext()
+// Option configures an Unarchiver.
+type Option func(*Unarchiver)
+
+// WithUntrustedSource marks the archive as coming from an untrusted source, so
+// every extracted path, symlink target, and hardlink target is confined under
+// the destination root and anything that would escape aborts extraction. Use it
+// for untrusted archives such as private ingredient wheels.
+//
+// It is off by default: trusted Platform artifacts may legitimately contain
+// absolute symlinks (for example into /usr/share), which would otherwise be
+// rejected.
+func WithUntrustedSource() Option {
+	return func(ua *Unarchiver) { ua.untrusted = true }
 }
 
-// SetNotifier sets the notification function to be called after extracting a file
-func (ua *Unarchiver) SetNotifier(cb ExtractNotifier) {
-	ua.notifier = cb
+func NewTarGz(opts ...Option) Unarchiver {
+	return newUnarchiver(archives.CompressedArchive{
+		Compression: archives.Gz{},
+		Extraction:  archives.Tar{},
+	}, opts)
+}
+
+func NewZip(opts ...Option) Unarchiver {
+	return newUnarchiver(archives.Zip{}, opts)
+}
+
+func newUnarchiver(extraction archives.Extraction, opts []Option) Unarchiver {
+	ua := Unarchiver{Extraction: extraction}
+	for _, opt := range opts {
+		opt(&ua)
+	}
+	return ua
 }
 
 // PrepareUnpacking prepares the destination directory and the archive for unpacking
-// Returns the opened file and its size
-func (ua *Unarchiver) PrepareUnpacking(source, destination string) (archiveFile *os.File, fileSize int64, err error) {
-
+// Returns the opened file
+func (ua *Unarchiver) PrepareUnpacking(source, destination string) (archiveFile *os.File, err error) {
 	if !fileutils.DirExists(destination) {
 		err := mkdir(destination)
 		if err != nil {
-			return nil, 0, fmt.Errorf("preparing destination: %v", err)
+			return nil, fmt.Errorf("preparing destination: %v", err)
 		}
 	}
 
 	archiveFile, err = os.Open(source)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
-	fileInfo, err := archiveFile.Stat()
-	if err != nil {
-		archiveFile.Close()
-		return nil, 0, fmt.Errorf("statting source file: %v", err)
-	}
-
-	return archiveFile, fileInfo.Size(), nil
-
+	return archiveFile, nil
 }
 
-// CheckExt checks that the file extension is appropriate for the given unarchiver
-func (ua *Unarchiver) CheckExt(archiveName string) error {
-	return ua.impl.CheckExt(archiveName)
-}
-
-// Unarchive unarchives an archive file ` and unpacks it in `destination`
-func (ua *Unarchiver) Unarchive(archiveStream io.Reader, archiveSize int64, destination string) (err error) {
-	// impl is the actual implementation of the unarchiver (tar.gz or zip)
-	impl := ua.impl
-
-	// read one file at a time from the archive
-	err = impl.Open(archiveStream, archiveSize)
-	if err != nil {
-		return
-	}
-	// note: that this is obviously not thread-safe
-	defer impl.Close()
-
-	for {
-		// extract one file at a time
-		var f archiver.File
-		f, err = impl.ExtractNext(destination)
-		if err == io.EOF {
-			break
+// Unarchive unarchives an archive file and unpacks it in `destination`. For an
+// archive from an untrusted source (see WithUntrustedSource), every entry path,
+// symlink target, and hardlink target is confined under destination and anything
+// that would escape aborts extraction; otherwise paths are trusted as-is.
+func (ua *Unarchiver) Unarchive(archiveStream io.Reader, destination string) error {
+	root := filepath.Clean(destination)
+	ctx := context.Background()
+	err := ua.Extract(ctx, archiveStream, func(_ context.Context, file archives.FileInfo) error {
+		path := filepath.Join(root, file.NameInArchive)
+		if ua.untrusted && !isContainedPath(root, path) {
+			return errs.New("entry %q escapes the extraction root", file.NameInArchive)
 		}
+
+		if file.IsDir() {
+			if err := mkdir(path); err != nil {
+				return errs.Wrap(err, "could not create directory")
+			}
+			return nil
+		}
+
+		if file.LinkTarget != "" {
+			if file.Mode()&os.ModeSymlink != 0 {
+				if ua.untrusted {
+					if hasAbsoluteTarget(file.LinkTarget) {
+						return errs.New("symlink target %q is absolute", file.LinkTarget)
+					}
+					resolved := filepath.Join(filepath.Dir(path), file.LinkTarget)
+					if !isContainedPath(root, resolved) {
+						return errs.New("symlink target %q escapes the extraction root", file.LinkTarget)
+					}
+				}
+				if err := writeNewSymbolicLink(path, file.LinkTarget); err != nil {
+					return errs.Wrap(err, "could not write symlink")
+				}
+				return nil
+			}
+			target := filepath.Join(root, file.LinkTarget)
+			if ua.untrusted && !isContainedPath(root, target) {
+				return errs.New("hardlink target %q escapes the extraction root", file.LinkTarget)
+			}
+			if err := writeNewHardLink(path, target); err != nil {
+				return errs.Wrap(err, "could not write hardlink")
+			}
+			return nil
+		}
+
+		f, err := file.Open()
 		if err != nil {
-			return errs.Wrap(err, "error extracting next file")
+			return errs.Wrap(err, "could not open archived file")
 		}
+		defer f.Close()
 
-		// logging.Debug("Extracted %s File size: %d", f.Name(), f.Size())
-		ua.notifier(f.Name(), f.Size(), f.IsDir())
+		if err := writeNewFile(path, f, file.Mode()); err != nil {
+			return errs.Wrap(err, "could not write file")
+		}
+		return nil
+	})
+	if err != nil {
+		return errs.Wrap(err, "Unable to extract files")
 	}
 
 	return nil
+}
+
+// isContainedPath reports whether path is at or under root. Both are expected to
+// be cleaned (filepath.Join cleans its result).
+func isContainedPath(root, path string) bool {
+	return path == root || strings.HasPrefix(path, root+string(os.PathSeparator))
+}
+
+// hasAbsoluteTarget reports whether an archive link target is rooted on any
+// platform. filepath.IsAbs alone is host-specific, so a Unix-style "/etc/passwd"
+// reads as relative on Windows; this checks for a leading separator (Unix "/" or
+// Windows "\") or a volume name ("C:") instead.
+func hasAbsoluteTarget(target string) bool {
+	return target != "" && (target[0] == '/' || target[0] == '\\' || filepath.VolumeName(target) != "")
 }
 
 // the following files are just copied from the ActiveState/archiver repository
@@ -157,6 +196,20 @@ func writeNewHardLink(fpath string, target string) error {
 	err := os.MkdirAll(filepath.Dir(fpath), 0755)
 	if err != nil {
 		return fmt.Errorf("%s: making directory for file: %v", fpath, err)
+	}
+
+	// The unarchiving process is unordered, and a hardlinked file's target may not yet exist.
+	// Create it. writeNewFile() will overwrite it later, which is okay.
+	if !fileExists(target) {
+		err = os.MkdirAll(filepath.Dir(target), 0755)
+		if err != nil {
+			return fmt.Errorf("%s: making directory for file: %v", target, err)
+		}
+		f, err := os.Create(target)
+		if err != nil {
+			return fmt.Errorf("%s: creating target file: %v", target, err)
+		}
+		f.Close()
 	}
 
 	err = os.Link(target, fpath)

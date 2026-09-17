@@ -1,13 +1,14 @@
 package archiver
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/mholt/archiver/v3"
+	"github.com/mholt/archives"
 )
 
 type FileMap struct {
@@ -15,18 +16,14 @@ type FileMap struct {
 	Target string // Note: Target paths should always be relative to the archive root, do not use absolute paths
 }
 
-func CreateTgz(archivePath string, workDir string, fileMaps []FileMap) error {
+func CreateArchive(format archives.CompressedArchive, archivePath string, workDir string, fileMaps []FileMap) error {
 	f, err := os.OpenFile(archivePath, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return errs.Wrap(err, "Could not create temp file")
 	}
 	defer f.Close()
-	tgz := archiver.NewTarGz()
-	if err := tgz.Create(f); err != nil {
-		return errs.Wrap(err, "Could not create tar.gz")
-	}
-	defer tgz.Close()
 
+	filesMap := make(map[string]string)
 	for _, fileMap := range fileMaps {
 		source := fileMap.Source
 		if !filepath.IsAbs(source) {
@@ -34,31 +31,34 @@ func CreateTgz(archivePath string, workDir string, fileMaps []FileMap) error {
 			// we're not interested in.
 			source = filepath.Join(workDir, source)
 		}
-		file, err := os.Open(source)
-		if err != nil {
-			return errs.Wrap(err, "Could not open file")
-		}
+		filesMap[source] = fileMap.Target
+	}
 
-		fileInfo, err := file.Stat()
-		if err != nil {
-			return errs.Wrap(err, "Could not stat file")
-		}
+	ctx := context.Background()
+	files, err := archives.FilesFromDisk(ctx, nil, filesMap)
+	if err != nil {
+		return errs.Wrap(err, "Could not create file info structs")
+	}
 
-		// write it to the archive
-		err = tgz.Write(archiver.File{
-			FileInfo: archiver.FileInfo{
-				FileInfo:   fileInfo,
-				CustomName: fileMap.Target,
-			},
-			ReadCloser: file,
-		})
-		file.Close()
-		if err != nil {
-			return errs.Wrap(err, "Could not write file to tar.gz")
-		}
+	err = format.Archive(ctx, f, files)
+	if err != nil {
+		return errs.Wrap(err, "Could not create archive")
 	}
 
 	return nil
+}
+
+func CreateTgz(archivePath string, workDir string, fileMaps []FileMap) error {
+	return CreateArchive(archives.CompressedArchive{
+		Compression: archives.Gz{},
+		Archival:    archives.Tar{},
+	}, archivePath, workDir, fileMaps)
+}
+
+func CreateZip(archivePath string, workDir string, fileMaps []FileMap) error {
+	return CreateArchive(archives.CompressedArchive{
+		Archival: archives.Zip{},
+	}, archivePath, workDir, fileMaps)
 }
 
 func FilesWithCommonParent(filepaths ...string) []FileMap {

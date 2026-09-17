@@ -679,12 +679,14 @@ func (suite *PackageIntegrationTestSuite) TestChangeSummary() {
 	cp.Expect("Successfully set")
 	cp.ExpectExitCode(0)
 
-	ts.PrepareProject("ActiveState-CLI/small-python", "5a1e49e5-8ceb-4a09-b605-ed334474855b")
+	ts.PrepareProject("ActiveState-CLI/small-python", "66f0259d-5d7a-48ce-a814-fd9db46c5ce6")
 
 	cp = ts.Spawn("install", "requests@2.31.0")
 	cp.Expect("Resolving Dependencies")
 	cp.Expect("Done")
-	cp.Expect("Installing requests@2.31.0 includes 4 direct dependencies")
+	cp.Expect("Installing")
+	cp.Expect("requests@2.31.0")
+	cp.Expect("includes 4 direct dependencies")
 	cp.Expect("├─ ")
 	cp.Expect("├─ ")
 	cp.Expect("├─ ")

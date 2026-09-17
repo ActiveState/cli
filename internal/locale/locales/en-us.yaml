@@ -1545,6 +1545,12 @@ value:
   other: Value
 default:
   other: Default
+source:
+  other: Source
+config_source_local:
+  other: local
+config_source_default:
+  other: default
 vulnerabilities:
   other: Vulnerabilities (CVEs)
 dependency_row:

@@ -18,5 +18,5 @@ func BaseCachePath() string {
 		return cache
 	}
 
-	return filepath.Join(homeDir, "AppData", "Local", "cache")
+	return filepath.Join(homeDir, "AppData", "Local")
 }

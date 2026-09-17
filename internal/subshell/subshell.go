@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/runbits/orgkey"
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/subshell/fish"
@@ -123,7 +124,10 @@ func New(cfg sscommon.Configurable) SubShell {
 	logging.Debug("Using binary: %s", path)
 	subs.SetBinary(path)
 
-	err := subs.SetEnv(osutils.EnvSliceToMap(os.Environ()))
+	env := osutils.EnvSliceToMap(os.Environ())
+	orgkey.SanitizeChildEnv(cfg, env)
+
+	err := subs.SetEnv(env)
 	if err != nil {
 		// We cannot error here, but this error will resurface when activating a runtime, so we can
 		// notify the user at that point.

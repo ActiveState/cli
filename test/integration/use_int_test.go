@@ -126,10 +126,10 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 
 	cfg, err := config.New()
 	suite.NoError(err)
+	rcfile, err := subshell.New(cfg).RcFile()
+	suite.NoError(err)
 	if runtime.GOOS != "windows" {
-		rcfile, err := subshell.New(cfg).RcFile()
 		fileutils.FileExists(rcfile)
-		suite.NoError(err)
 		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
 	}
 
