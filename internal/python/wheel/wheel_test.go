@@ -68,7 +68,7 @@ func TestPackProducesValidWheel(t *testing.T) {
 	})
 
 	out := t.TempDir()
-	wheelPath, err := Pack(src, Metadata{Name: "My.Pkg-Name", Version: "1.0", Summary: "a pkg"}, out)
+	wheelPath, err := Pack(src, Metadata{Name: "My.Pkg-Name", Version: "1.0", Summary: "a pkg", Requires: []string{"requests>=2"}}, out)
 	if err != nil {
 		t.Fatalf("Pack: %v", err)
 	}
@@ -94,7 +94,7 @@ func TestPackProducesValidWheel(t *testing.T) {
 
 	// METADATA / WHEEL contents.
 	metaFile := string(entries[di+"/METADATA"])
-	for _, want := range []string{"Metadata-Version: 2.1", "Name: My.Pkg-Name", "Version: 1.0", "Summary: a pkg"} {
+	for _, want := range []string{"Metadata-Version: 2.1", "Name: My.Pkg-Name", "Version: 1.0", "Summary: a pkg", "Requires-Dist: requests>=2"} {
 		if !bytes.Contains([]byte(metaFile), []byte(want)) {
 			t.Errorf("METADATA missing %q; got:\n%s", want, metaFile)
 		}
