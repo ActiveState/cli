@@ -26,6 +26,9 @@ func buildMetadata(meta Metadata) []byte {
 	if meta.Summary != "" {
 		b.WriteString("Summary: " + meta.Summary + "\n")
 	}
+	for _, req := range meta.Requires {
+		b.WriteString("Requires-Dist: " + req + "\n")
+	}
 	return b.Bytes()
 }
 

@@ -12,7 +12,8 @@ import (
 
 // ResolveMetadata reads srcDir's pyproject.toml [project] table and applies the
 // non-empty fields of override on top, producing the metadata to pack with. It
-// errors when neither source supplies a name or version.
+// errors when neither source supplies a name or version. Requires always comes
+// from pyproject.toml's dependencies.
 func ResolveMetadata(srcDir string, override Metadata) (*Metadata, error) {
 	proj, err := readPyProject(filepath.Join(srcDir, "pyproject.toml"))
 	if err != nil {
@@ -20,9 +21,10 @@ func ResolveMetadata(srcDir string, override Metadata) (*Metadata, error) {
 	}
 
 	meta := Metadata{
-		Name:    firstNonEmpty(override.Name, proj.Name),
-		Version: firstNonEmpty(override.Version, proj.Version),
-		Summary: firstNonEmpty(override.Summary, proj.Description),
+		Name:     firstNonEmpty(override.Name, proj.Name),
+		Version:  firstNonEmpty(override.Version, proj.Version),
+		Summary:  firstNonEmpty(override.Summary, proj.Description),
+		Requires: proj.Dependencies,
 	}
 	if meta.Name == "" || meta.Version == "" {
 		return nil, ErrMissingMetadata
@@ -31,9 +33,10 @@ func ResolveMetadata(srcDir string, override Metadata) (*Metadata, error) {
 }
 
 type pyProject struct {
-	Name        string
-	Version     string
-	Description string
+	Name         string
+	Version      string
+	Description  string
+	Dependencies []string
 }
 
 // readPyProject reads the [project] table from a pyproject.toml. A missing file
@@ -49,18 +52,20 @@ func readPyProject(path string) (pyProject, error) {
 
 	var parsed struct {
 		Project struct {
-			Name        string `toml:"name"`
-			Version     string `toml:"version"`
-			Description string `toml:"description"`
+			Name         string   `toml:"name"`
+			Version      string   `toml:"version"`
+			Description  string   `toml:"description"`
+			Dependencies []string `toml:"dependencies"`
 		} `toml:"project"`
 	}
 	if err := toml.Unmarshal(data, &parsed); err != nil {
 		return pyProject{}, errs.Wrap(err, "could not parse pyproject.toml")
 	}
 	return pyProject{
-		Name:        parsed.Project.Name,
-		Version:     parsed.Project.Version,
-		Description: parsed.Project.Description,
+		Name:         parsed.Project.Name,
+		Version:      parsed.Project.Version,
+		Description:  parsed.Project.Description,
+		Dependencies: parsed.Project.Dependencies,
 	}, nil
 }
 

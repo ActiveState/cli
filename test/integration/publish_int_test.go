@@ -518,7 +518,13 @@ func (suite *PublishIntegrationTestSuite) TestPublishBuildEncrypted() {
 	suite.Require().NoError(os.MkdirAll(filepath.Join(srcDir, "greeting"), 0755))
 	suite.Require().NoError(fileutils.WriteFile(
 		filepath.Join(srcDir, "greeting", "__init__.py"),
-		[]byte(fmt.Sprintf("print(%q)\n", sentinel)),
+		[]byte(fmt.Sprintf("import six\nprint(%q)\n", sentinel)),
+	))
+	// A pyproject.toml dependency must be published as an ingredient dependency
+	// and installed alongside the private ingredient, or the import above fails.
+	suite.Require().NoError(fileutils.WriteFile(
+		filepath.Join(srcDir, "pyproject.toml"),
+		[]byte("[project]\ndependencies = [\"six>=1\"]\n"),
 	))
 
 	// Create a fresh project under the testing org. `state publish --build`
