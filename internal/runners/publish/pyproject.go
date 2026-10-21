@@ -196,6 +196,20 @@ func bumpRelease(parts []string) (string, error) {
 	return strings.Join(bumped, "."), nil
 }
 
+// applyPyprojectDependencies replaces reqVars' dependencies with those translated from pyproject.toml. When none
+// remain (there are none, or every one was skipped), the existing dependencies are kept: for --edit those are the
+// ones inherited from the previous revision.
+func (r *Runner) applyPyprojectDependencies(reqVars *request.PublishVariables, requires []string) error {
+	deps, err := r.pyprojectDependencies(requires)
+	if err != nil {
+		return err
+	}
+	if len(deps) > 0 {
+		reqVars.Dependencies = deps
+	}
+	return nil
+}
+
 // pyprojectDependencies translates pyproject.toml dependencies into runtime
 // dependencies on the platform's Python packages. Requirements that cannot be
 // translated are skipped with a notice so the user can add them with --depend.

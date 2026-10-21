@@ -1,6 +1,7 @@
 package publish
 
 import (
+	"cmp"
 	"errors"
 	"path/filepath"
 	"regexp"
@@ -113,6 +114,10 @@ func (r *Runner) Run(params *Params) error {
 	}
 	metaFileHasDeps := len(reqVars.Dependencies) > 0
 
+	// A meta file's version selects the version to publish or edit, just like --version (which takes precedence).
+	// Without this, an exported meta file passed back with --edit would edit the latest version instead of its own.
+	params.Version = cmp.Or(params.Version, reqVars.Version)
+
 	if params.Build != "" {
 		meta, cleanup, err := r.generateEncryptedArtifact(params, reqVars) // note: this function also mutates params
 		if err != nil {
@@ -224,21 +229,18 @@ func (r *Runner) Run(params *Params) error {
 
 	// pyproject.toml dependencies apply unless the meta file lists its own;
 	// --depend flags still take precedence over both.
-	if wheelMeta != nil && len(wheelMeta.Requires) > 0 && !metaFileHasDeps {
-		deps, err := r.pyprojectDependencies(wheelMeta.Requires)
-		if err != nil {
+	if wheelMeta != nil && !metaFileHasDeps {
+		if err := r.applyPyprojectDependencies(&reqVars, wheelMeta.Requires); err != nil {
 			return errs.Wrap(err, "Could not read pyproject.toml dependencies")
 		}
-		reqVars.Dependencies = deps
 	}
 
 	if err := prepareRequestFromParams(&reqVars, params, isRevision); err != nil {
 		return errs.Wrap(err, "Could not prepare request from params")
 	}
 
-	if params.Edit && isRevision && (len(reqVars.Authors) > 0 || reqVars.Description != "") {
-		return locale.NewInputError("err_uploadingredient_edit_identity",
-			"Authors and description cannot be changed when editing an existing version. Remove them from the meta file and flags.")
+	if err := checkEditKeepsIdentity(&reqVars, params.Edit, isRevision); err != nil {
+		return err
 	}
 
 	if params.Build != "" {
@@ -334,6 +336,16 @@ Do you want to publish this ingredient?
 }
 
 var versionRegexp = regexp.MustCompile(`\d+\.\d+(\.\d+)?`)
+
+// checkEditKeepsIdentity rejects author and description changes on a revision of an existing version, which the
+// platform does not allow; it would otherwise fail the publish with an unclear API error.
+func checkEditKeepsIdentity(r *request.PublishVariables, edit, isRevision bool) error {
+	if edit && isRevision && (len(r.Authors) > 0 || r.Description != "") {
+		return locale.NewInputError("err_uploadingredient_edit_identity",
+			"Authors and description cannot be changed when editing an existing version. Remove them from the meta file and flags.")
+	}
+	return nil
+}
 
 func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRevision bool) error {
 	if params.Version != "" {
