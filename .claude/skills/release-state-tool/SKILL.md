@@ -46,7 +46,10 @@ git merge --no-edit origin/master
   the commit bodies of `git log --no-merges origin/beta..HEAD`. Describe the user-visible
   behaviour, not the internals, and leave out test and CI-only commits. One section per
   X.Y.Z. Later RCs of the same version edit that section rather than adding a new one.
-- Push the branch.
+- `version/*` branches are protected, and a direct push is rejected with "protected branch hook
+  declined". Push to a personal branch instead and open a PR into `version/X-Y-Z-RCn`. If the RC
+  branch doesn't exist yet, ask someone with rights to create it from `master`. Once that PR
+  merges, move on to step 2.
 
 ## 2. PR into beta
 
