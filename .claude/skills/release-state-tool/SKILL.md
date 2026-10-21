@@ -8,10 +8,16 @@ description: Cut a State Tool beta (RC) or stable release from this repo — ref
 Releases move along a branch ladder. Each rung is a PR; merging it is what deploys.
 
 ```
-feature PRs ─▶ master ─▶ version/X-Y-Z-RCn ─PR▶ beta ─PR▶ release
-                         (version.txt = X.Y.Z-RCn)  (beta channel)  (stable channel)
+                beta ─▶ version/X-Y-Z-RCn ─PR▶ beta ─PR▶ release
+master ─cherry-pick─▶   (version.txt = X.Y.Z-RCn)  (beta channel)  (stable channel)
 ```
 
+- **A release is cut from `beta`, not from `master`.** `master` and `beta` have diverged:
+  `master` carries work that was never released (much of it CI and test churn, some of it
+  behaviour changes), plus merge-backs of every RC branch. So **never merge `master` into a
+  version branch.** That pulls in all of that unreleased work, and the PR shows close to a
+  hundred commits. Pick the specific changes this release ships from `master`. Each feature PR
+  lands on `master` as a single squash commit, so `git cherry-pick <sha>` works.
 - `version.txt` holds the version being built. `master` carries the *next* RC
   (e.g. `0.48.2-RC1` once 0.48.1 has shipped).
 - Branch names use dashes: version `0.48.2-RC1` → branch `version/0-48-2-RC1`.
@@ -24,19 +30,25 @@ git fetch origin
 for b in master beta release; do echo "== $b: $(git show origin/$b:version.txt)"; git log -1 --format='%h %ad %s' --date=short origin/$b; done
 git branch -r | grep 'version/' | sort -V | tail -5
 gh pr list --base beta --state open      # stale RC PRs must be closed, not merged by accident
-git log --oneline --no-merges origin/beta..origin/master   # what this release ships
+# candidates: master commits since the last release. Hashes differ between the branches,
+# so match on subject; anything already in changelog.md's last section has shipped.
+git log --oneline --no-merges --since="<date beta was last cut>" origin/master
 ```
 
-Confirm with the user which version is being cut (`X.Y.Z-RCn`) before you push anything.
+Confirm two things with the user before you push anything: the version being cut
+(`X.Y.Z-RCn`) and **the list of master commits it ships**.
 
-## 1. Prepare the version branch
+## 1. Prepare the release branch
 
-Work in a separate worktree, not someone's checkout:
+Work in a separate worktree, not someone's checkout. Start from `beta`. If a
+`version/X-Y-Z-RCn` branch already exists, check that it is `beta` plus a `version.txt` bump
+(`git log --oneline origin/beta..origin/version/X-Y-Z-RCn`):
 
 ```bash
-git worktree add ~/work/cli-X-Y-Z -B version/X-Y-Z-RCn origin/version/X-Y-Z-RCn   # or origin/master if the branch doesn't exist
+git worktree add ~/work/cli-X-Y-Z -b <you>/release-X-Y-Z origin/beta
 cd ~/work/cli-X-Y-Z
-git merge --no-edit origin/master
+git cherry-pick <sha> <sha> ...      # the agreed master commits, oldest first
+git diff --stat origin/beta HEAD     # must show only those changes, the changelog and version.txt
 ```
 
 - `version.txt` must read exactly `X.Y.Z-RCn` (no trailing text). Fix it in its own commit
@@ -47,20 +59,21 @@ git merge --no-edit origin/master
   behaviour, not the internals, and leave out test and CI-only commits. One section per
   X.Y.Z. Later RCs of the same version edit that section rather than adding a new one.
 - `version/*` branches are protected, and a direct push is rejected with "protected branch hook
-  declined". Push to a personal branch instead and open a PR into `version/X-Y-Z-RCn`. If the RC
-  branch doesn't exist yet, ask someone with rights to create it from `master`. Once that PR
-  merges, move on to step 2.
+  declined". Push the personal branch and open the PR from it.
 
 ## 2. PR into beta
 
 ```bash
-gh pr create --base beta --head version/X-Y-Z-RCn --title "X.Y.Z-RCn" --body "<changelog section>"
+gh pr create --base beta --head <you>/release-X-Y-Z --title "X.Y.Z-RCn" --body "<changelog section>"
 ```
 
-PRs from `version/*` run the full integration suite on all five OS runners and a
-branch-channel deploy (`.github/workflows/build.yml`). Red integration tests block the
-release. Look at the failure before re-running; some suites are known to be flaky on macOS and Windows.
-Fixes go to `master` (or straight onto the version branch, then merge it back to `master`).
+Any PR targeting `beta` runs the full integration suite on all five OS runners
+(`.github/workflows/build.yml`). The PR-time branch-channel deploy only happens when the head
+branch is named `version/*`, so a personal head branch skips it. That deploy isn't needed for
+the release, because the push to `beta` after merge is what stages it. Red integration tests
+block the release. Look at the failure before re-running; some suites are known to be flaky on
+macOS and Windows. Land fixes on `master` first and cherry-pick them, so the two branches don't
+drift further apart.
 
 Merging is the release decision. **Do not merge without the user's go-ahead.**
 
@@ -87,16 +100,21 @@ Run this from a checkout of the merged commit, with AWS credentials for the `sta
 state run promote-staging-to-production   # interactive y/N prompt
 ```
 
-`scripts/ci/s3-promoter` **moves** everything under `staging/update/state/` to `update/state/`.
-That covers every channel staged there, so if `release` was also staged and not yet promoted,
-it goes live too. List the staging prefix first:
+`scripts/ci/s3-promoter` **moves** staged objects to production, and how much it moves depends
+on the branch you run it from. Read the `promote-staging-to-production` line in
+`activestate.yaml` first:
+
+- `... s3-promoter/main.go us-east-1 state-tool` (`beta`/`release` as of 0.48.x) moves
+  **everything** under `staging/`. That includes the remote installer, and any other channel that
+  was staged and not yet promoted.
+- `... state-tool update/state` (master's fix 589d443b4, not yet released) moves only
+  `staging/update/state/`. `staging/remote-installer` then has to be promoted separately.
+
+Either way, list what is staged before running it:
 
 ```bash
-aws s3 ls --recursive s3://state-tool/staging/update/state/ | head
+aws s3 ls --recursive s3://state-tool/staging/ | head -50
 ```
-
-The promoter does not touch `staging/remote-installer`. If the remote installer changed,
-it has to be promoted separately.
 
 ## 6. Verify
 
@@ -109,8 +127,10 @@ An existing install can switch with `state update --set-channel beta`.
 
 ## 7. Merge back to master
 
-Merge the version branch into `master` (`Merge branch 'version/X-Y-Z-RCn'`) so that
-changelog and RC fixes are not lost. Then bump `master`'s `version.txt` to the next RC
+Merge `beta` into `master` once the release has merged, as was done for each earlier RC
+(`Merge branch 'version/...'`). This keeps the changelog and RC-only fixes, and keeps `beta`'s
+history an ancestor of `master`. The merge goes one way only: `beta` into `master`, never the
+reverse. Then bump `master`'s `version.txt` to the next RC
 if a further RC is expected.
 
 ## Stable release (beta → release)
