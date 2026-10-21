@@ -40,6 +40,8 @@ type Metadata struct {
 	Name    string
 	Version string
 	Summary string
+	// Requires holds PEP 508 requirement strings, recorded as Requires-Dist.
+	Requires []string
 }
 
 // sourceFile is one file destined for the wheel, identified by its slash path
