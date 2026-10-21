@@ -1,6 +1,7 @@
 package publish
 
 import (
+	"cmp"
 	"errors"
 	"path/filepath"
 	"regexp"
@@ -18,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/python/wheel"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
@@ -92,28 +94,8 @@ func (r *Runner) Run(params *Params) error {
 		return locale.NewInputError("err_auth_required")
 	}
 
-	if params.Build != "" {
-		cleanup, err := r.generateEncryptedArtifact(params) // note: this function also mutates params
-		if err != nil {
-			return errs.Wrap(err, "Could not build private ingredient")
-		}
-		defer cleanup() // remove the temporary build directory
-	}
-
-	if params.Filepath != "" {
-		if !fileutils.FileExists(params.Filepath) {
-			return locale.NewInputError("err_uploadingredient_file_not_found", "File not found: {{.V0}}", params.Filepath)
-		}
-		if !strings.HasSuffix(strings.ToLower(params.Filepath), ".zip") &&
-			!strings.HasSuffix(strings.ToLower(params.Filepath), ".tar.gz") &&
-			!strings.HasSuffix(strings.ToLower(params.Filepath), ".whl") {
-			return locale.NewInputError("err_uploadingredient_file_not_supported", "Expected file extension: .zip, .tar.gz or .whl: '{{.V0}}'", params.Filepath)
-		}
-	} else if !params.Edit {
-		return locale.NewInputError("err_uploadingredient_file_required", "You have to supply the source archive unless editing.")
-	}
-
 	reqVars := request.PublishVariables{}
+	var wheelMeta *wheel.Metadata
 
 	// Pass input from meta file
 	if params.MetaFilepath != "" {
@@ -129,6 +111,33 @@ func (r *Runner) Run(params *Params) error {
 		if err := yaml.Unmarshal(b, &reqVars); err != nil {
 			return locale.WrapExternalError(err, "err_uploadingredient_file_read", "Failed to unmarshal meta file. Error received: {{.V0}}", err.Error())
 		}
+	}
+	metaFileHasDeps := len(reqVars.Dependencies) > 0
+
+	// A meta file's version selects the version to publish or edit, just like --version (which takes precedence).
+	// Without this, an exported meta file passed back with --edit would edit the latest version instead of its own.
+	params.Version = cmp.Or(params.Version, reqVars.Version)
+
+	if params.Build != "" {
+		meta, cleanup, err := r.generateEncryptedArtifact(params, reqVars) // note: this function also mutates params
+		if err != nil {
+			return errs.Wrap(err, "Could not build private ingredient")
+		}
+		defer cleanup() // remove the temporary build directory
+		wheelMeta = meta
+	}
+
+	if params.Filepath != "" {
+		if !fileutils.FileExists(params.Filepath) {
+			return locale.NewInputError("err_uploadingredient_file_not_found", "File not found: {{.V0}}", params.Filepath)
+		}
+		if !strings.HasSuffix(strings.ToLower(params.Filepath), ".zip") &&
+			!strings.HasSuffix(strings.ToLower(params.Filepath), ".tar.gz") &&
+			!strings.HasSuffix(strings.ToLower(params.Filepath), ".whl") {
+			return locale.NewInputError("err_uploadingredient_file_not_supported", "Expected file extension: .zip, .tar.gz or .whl: '{{.V0}}'", params.Filepath)
+		}
+	} else if !params.Edit {
+		return locale.NewInputError("err_uploadingredient_file_required", "You have to supply the source archive unless editing.")
 	}
 
 	// Namespace
@@ -218,21 +227,24 @@ func (r *Runner) Run(params *Params) error {
 		}
 	}
 
+	// pyproject.toml dependencies apply unless the meta file lists its own;
+	// --depend flags still take precedence over both.
+	if wheelMeta != nil && !metaFileHasDeps {
+		if err := r.applyPyprojectDependencies(&reqVars, wheelMeta.Requires); err != nil {
+			return errs.Wrap(err, "Could not read pyproject.toml dependencies")
+		}
+	}
+
 	if err := prepareRequestFromParams(&reqVars, params, isRevision); err != nil {
 		return errs.Wrap(err, "Could not prepare request from params")
 	}
 
+	if err := checkEditKeepsIdentity(&reqVars, params.Edit, isRevision); err != nil {
+		return err
+	}
+
 	if params.Build != "" {
-		// A --build publish must be ingested by the private-builder. Without a
-		// builder dependency the platform falls back to the noop-builder, which
-		// produces an empty artifact.
-		reqVars.Dependencies = append(reqVars.Dependencies, request.PublishVariableDep{
-			Dependency: request.Dependency{
-				Name:                privateBuilderName,
-				Namespace:           privateBuilderNamespace,
-				VersionRequirements: ">=0",
-			},
-		})
+		addPrivateBuilderDependency(&reqVars)
 	}
 
 	if params.Editor {
@@ -324,6 +336,16 @@ Do you want to publish this ingredient?
 }
 
 var versionRegexp = regexp.MustCompile(`\d+\.\d+(\.\d+)?`)
+
+// checkEditKeepsIdentity rejects author and description changes on a revision of an existing version, which the
+// platform does not allow; it would otherwise fail the publish with an unclear API error.
+func checkEditKeepsIdentity(r *request.PublishVariables, edit, isRevision bool) error {
+	if edit && isRevision && (len(r.Authors) > 0 || r.Description != "") {
+		return locale.NewInputError("err_uploadingredient_edit_identity",
+			"Authors and description cannot be changed when editing an existing version. Remove them from the meta file and flags.")
+	}
+	return nil
+}
 
 func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRevision bool) error {
 	if params.Version != "" {
@@ -417,11 +439,12 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRev
 
 // prepareEditRequest inherits meta data from the previous ingredient revision if it exists. This should really happen
 // on the API, but at the time of implementation we did this client side as the API side requires significant refactorings
-// to enable this behavior.
+// to enable this behavior. Authors and dependencies already supplied by a meta file are kept rather than inherited.
+// The version is always the edited ingredient's: an edit never changes it.
 func prepareEditRequest(ingredient *ParentIngredient, r *request.PublishVariables, isRevision bool, auth *authentication.Auth) error {
 	r.Version = ingredient.Version
 
-	if !isRevision {
+	if !isRevision && len(r.Authors) == 0 {
 		authors, err := model.FetchAuthors(&ingredient.IngredientID, &ingredient.IngredientVersionID, auth)
 		if err != nil {
 			return locale.WrapError(err, "err_uploadingredient_fetch_authors", "Could not fetch authors for ingredient")
@@ -442,16 +465,25 @@ func prepareEditRequest(ingredient *ParentIngredient, r *request.PublishVariable
 		}
 	}
 
-	if len(ingredient.Dependencies) > 0 {
+	if len(ingredient.Dependencies) > 0 && len(r.Dependencies) == 0 {
 		r.Dependencies = []request.PublishVariableDep{}
 		for _, dep := range ingredient.Dependencies {
+			conditions := []request.Dependency{}
+			for _, c := range dep.Conditions {
+				conditions = append(conditions, request.Dependency{
+					Name:                ptr.From(c.Feature, ""),
+					Namespace:           ptr.From(c.Namespace, ""),
+					VersionRequirements: model.InventoryRequirementsToString(c.Requirements, true),
+				})
+			}
 			r.Dependencies = append(
 				r.Dependencies,
-				request.PublishVariableDep{request.Dependency{
+				request.PublishVariableDep{Dependency: request.Dependency{
 					Name:                ptr.From(dep.Feature, ""),
 					Namespace:           ptr.From(dep.Namespace, ""),
 					VersionRequirements: model.InventoryRequirementsToString(dep.Requirements, true),
-				}, []request.Dependency{}},
+					Type:                request.DependencyType(dep.Type),
+				}, Conditions: conditions},
 			)
 		}
 	}

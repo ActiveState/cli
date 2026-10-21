@@ -650,19 +650,33 @@ func FetchLatestRevisionTimeStamp(auth *authentication.Auth) (time.Time, error) 
 }
 
 func FetchNormalizedName(namespace Namespace, name string, auth *authentication.Auth) (string, error) {
-	client := inventory.Get(auth)
-	params := inventory_operations.NewNormalizeNamesParams()
-	params.SetNamespace(namespace.String())
-	params.SetNames(&inventory_models.UnnormalizedNames{Names: []string{name}})
-	params.SetHTTPClient(api.NewHTTPClient())
-	res, err := client.NormalizeNames(params, auth.ClientAuth())
+	normalized, err := FetchNormalizedNames(namespace, []string{name}, auth)
 	if err != nil {
 		return "", errs.Wrap(err, "NormalizeName failed")
 	}
-	if len(res.Payload.NormalizedNames) == 0 {
+	if _, ok := normalized[name]; !ok {
 		return "", errs.New("Normalized name for %s not found", name)
 	}
-	return *res.Payload.NormalizedNames[0].Normalized, nil
+	return normalized[name], nil
+}
+
+// FetchNormalizedNames normalizes names within namespace in a single request,
+// returning a map from each requested name to its normalized form.
+func FetchNormalizedNames(namespace Namespace, names []string, auth *authentication.Auth) (map[string]string, error) {
+	client := inventory.Get(auth)
+	params := inventory_operations.NewNormalizeNamesParams()
+	params.SetNamespace(namespace.String())
+	params.SetNames(&inventory_models.UnnormalizedNames{Names: names})
+	params.SetHTTPClient(api.NewHTTPClient())
+	res, err := client.NormalizeNames(params, auth.ClientAuth())
+	if err != nil {
+		return nil, errs.Wrap(err, "NormalizeNames failed")
+	}
+	normalized := make(map[string]string, len(res.Payload.NormalizedNames))
+	for _, n := range res.Payload.NormalizedNames {
+		normalized[*n.RequestedAs] = *n.Normalized
+	}
+	return normalized, nil
 }
 
 func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID, preferredLibcVersion string) (strfmt.UUID, error) {
