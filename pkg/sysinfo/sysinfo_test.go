@@ -1,6 +1,7 @@
 package sysinfo
 
 import (
+	"runtime"
 	"testing"
 	"time"
 
@@ -24,6 +25,11 @@ func TestPerformance(t *testing.T) {
 
 	t.Run("OSVersion", func(t *testing.T) {
 		maxDuration := 10 * time.Millisecond
+		if runtime.GOOS == "darwin" {
+			// The first, uncached call shells out to sw_vers, which takes 100ms-1s on macOS CI
+			// runners and dominates the average. Cached calls take nanoseconds.
+			maxDuration = 100 * time.Millisecond
+		}
 		err := performance.TimeIt(t, func() {
 			_, err := OSVersion()
 			assert.NoError(t, err)
