@@ -62,6 +62,11 @@ type NotificationInfo {
     placement: NotificationPlacementType!
 }
 
+type Message {
+    topic: String!
+    message: String!
+}
+
 type Organization {
     URLname: String!
     role: String!
@@ -97,6 +102,7 @@ type Query {
     analyticsEvent(category: String!, action: String!, source: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
     reportRuntimeUsage(pid: Int!, exec: String!, source: String!, dimensionsJson: String!): ReportRuntimeUsageResponse
     checkNotifications(command: String!, flags: [String!]!): [NotificationInfo!]!
+    checkMessages: [Message!]!
     configChanged(key: String!): ConfigChangedResponse
     fetchLogTail: String!
     getProcessesInUse(execDir: String!): [ProcessInfo!]!
