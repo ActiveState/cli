@@ -34,6 +34,7 @@ and this project adheres to
 ### Security
 
 - Updated `github.com/klauspost/compress` to v1.18.7 to remediate CVE-2026-63209 (GHSA-259r-337f-4rfw).
+- Updated to Go 1.26.10 and `golang.org/x/net` v0.60.0 to remediate 14 CVEs in the Go standard library and HTTP/2 handling.
 
 ## 0.48.1
 

@@ -434,7 +434,7 @@ scripts:
 
       git fetch --quiet origin $TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH
 
-      CHANGED=$(git diff --name-only origin/$TARGET_BRANCH | grep -v testdata | grep -v vendor)
+      CHANGED=$(git diff --name-only origin/$TARGET_BRANCH | grep -v testdata | grep -v vendor || true)
       NO_NEWLINE=0
       for FILE in $CHANGED; do
           if file "$FILE" | grep -q -E 'text|ASCII'; then

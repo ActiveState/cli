@@ -1,6 +1,6 @@
 module github.com/ActiveState/cli
 
-go 1.26.6
+go 1.26.10
 
 require (
 	github.com/99designs/gqlgen v0.17.54
@@ -52,7 +52,7 @@ require (
 	github.com/vbauerster/mpb/v7 v7.1.5
 	github.com/vektah/gqlparser/v2 v2.5.16
 	golang.org/x/crypto v0.57.0 // indirect
-	golang.org/x/net v0.58.0
+	golang.org/x/net v0.60.0
 	golang.org/x/sys v0.48.0
 	golang.org/x/term v0.46.0
 	golang.org/x/text v0.42.0
