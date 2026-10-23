@@ -1,6 +1,7 @@
 package publish
 
 import (
+	"cmp"
 	"context"
 	"os"
 	"path/filepath"
@@ -14,44 +15,51 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/python/wheel"
 	"github.com/ActiveState/cli/internal/runbits/orgkey"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 // generateEncryptedArtifact validates the --build inputs, fetches and validates
 // the org key, builds the wrapped, encrypted artifact, and points the publish
 // flow at it. It fails closed before producing any artifact if the key is
-// unavailable, and returns a cleanup function the caller must defer.
-func (r *Runner) generateEncryptedArtifact(params *Params) (cleanup func(), rerr error) {
+// unavailable, and returns the resolved wheel metadata and a cleanup function
+// the caller must defer. Flags take precedence over the meta file, which takes
+// precedence over pyproject.toml.
+func (r *Runner) generateEncryptedArtifact(params *Params, metaFile request.PublishVariables) (_ *wheel.Metadata, cleanup func(), rerr error) {
 	if params.Filepath != "" {
-		return nil, locale.NewInputError("err_publish_build_and_file", "The '[ACTIONABLE]--build[/RESET]' flag cannot be combined with a source archive filepath.")
+		return nil, nil, locale.NewInputError("err_publish_build_and_file", "The '[ACTIONABLE]--build[/RESET]' flag cannot be combined with a source archive filepath.")
 	}
 	if r.project == nil {
-		return nil, locale.NewInputError("err_publish_build_no_project", "The '[ACTIONABLE]--build[/RESET]' flag requires a project so the organization can be determined.")
+		return nil, nil, locale.NewInputError("err_publish_build_no_project", "The '[ACTIONABLE]--build[/RESET]' flag requires a project so the organization can be determined.")
 	}
 	if !fileutils.DirExists(params.Build) {
-		return nil, locale.NewInputError("err_publish_build_dir_not_found", "The '[ACTIONABLE]--build[/RESET]' source directory does not exist: [ACTIONABLE]{{.V0}}[/RESET]", params.Build)
+		return nil, nil, locale.NewInputError("err_publish_build_dir_not_found", "The '[ACTIONABLE]--build[/RESET]' source directory does not exist: [ACTIONABLE]{{.V0}}[/RESET]", params.Build)
 	}
 
-	meta, err := wheel.ResolveMetadata(params.Build, wheel.Metadata{Name: params.Name, Version: params.Version})
+	meta, err := wheel.ResolveMetadata(params.Build, wheel.Metadata{
+		Name:    cmp.Or(params.Name, metaFile.Name),
+		Version: cmp.Or(params.Version, metaFile.Version),
+		Summary: cmp.Or(params.Description, metaFile.Description),
+	})
 	if err != nil {
-		return nil, locale.WrapInputError(err, "err_publish_build_metadata", "Could not determine the ingredient name and version: {{.V0}}", errs.JoinMessage(err))
+		return nil, nil, locale.WrapInputError(err, "err_publish_build_metadata", "Could not determine the ingredient name and version: {{.V0}}", errs.JoinMessage(err))
 	}
 
 	// Fetch and validate the org key before building anything: a private publish
 	// is encrypted-required, so fail closed before any byte could be uploaded.
 	provider := orgkey.New(r.cfg, r.project.Owner())
 	if !provider.Configured() {
-		return nil, locale.NewInputError("err_publish_orgkey_unconfigured", "No organization key service is configured, so this private ingredient cannot be encrypted.")
+		return nil, nil, locale.NewInputError("err_publish_orgkey_unconfigured", "No organization key service is configured, so this private ingredient cannot be encrypted.")
 	}
 	defer provider.Close()
 	key, keyID, err := provider.Key(context.Background())
 	if err != nil {
-		return nil, locale.WrapInputError(err, "err_publish_orgkey_unavailable", "Could not obtain the organization key, so nothing was uploaded: {{.V0}}", errs.JoinMessage(err))
+		return nil, nil, locale.WrapInputError(err, "err_publish_orgkey_unavailable", "Could not obtain the organization key, so nothing was uploaded: {{.V0}}", errs.JoinMessage(err))
 	}
 
 	archivePath, cleanup, err := buildWrappedArtifact(params.Build, *meta, key, keyID)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not build encrypted artifact")
+		return nil, nil, errs.Wrap(err, "Could not build encrypted artifact")
 	}
 
 	// TODO(ENG-1641): once the platform supports the genesis/timeless publish
@@ -65,7 +73,11 @@ func (r *Runner) generateEncryptedArtifact(params *Params) (cleanup func(), rerr
 	if params.Version == "" {
 		params.Version = meta.Version
 	}
-	return cleanup, nil
+	// The platform rejects description changes on existing ingredients.
+	if params.Description == "" && !params.Edit {
+		params.Description = meta.Summary
+	}
+	return meta, cleanup, nil
 }
 
 // requireOrgNamespace ensures ns belongs to the project owner's private org, so
@@ -84,6 +96,25 @@ const (
 	privateBuilderNamespace = "builder"
 	privateBuilderName      = "private-builder"
 )
+
+// addPrivateBuilderDependency makes a --build publish depend on the
+// private-builder. Without a builder dependency the platform falls back to the
+// noop-builder, which produces an empty artifact. An --edit revision already
+// inherits it from the previous revision, so it is only added when missing.
+func addPrivateBuilderDependency(reqVars *request.PublishVariables) {
+	for _, dep := range reqVars.Dependencies {
+		if dep.Namespace == privateBuilderNamespace && dep.Name == privateBuilderName {
+			return
+		}
+	}
+	reqVars.Dependencies = append(reqVars.Dependencies, request.PublishVariableDep{
+		Dependency: request.Dependency{
+			Name:                privateBuilderName,
+			Namespace:           privateBuilderNamespace,
+			VersionRequirements: ">=0",
+		},
+	})
+}
 
 // buildWrappedArtifact packs srcDir into a wheel under the given metadata,
 // encrypts it under the org key, and wraps the ciphertext in a tar.gz ready for

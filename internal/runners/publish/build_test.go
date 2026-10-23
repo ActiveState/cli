@@ -13,6 +13,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/artifactcrypto"
 	"github.com/ActiveState/cli/internal/python/wheel"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 )
 
 func testKey() []byte {
@@ -172,4 +173,23 @@ func equalStrings(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+func TestAddPrivateBuilderDependency(t *testing.T) {
+	userDep := request.PublishVariableDep{Dependency: request.Dependency{Name: "requests", Namespace: "language/python"}}
+	reqVars := request.PublishVariables{Dependencies: []request.PublishVariableDep{userDep}}
+
+	addPrivateBuilderDependency(&reqVars)
+	if len(reqVars.Dependencies) != 2 {
+		t.Fatalf("expected user dependency plus private-builder, got %+v", reqVars.Dependencies)
+	}
+	if reqVars.Dependencies[0].Dependency != userDep.Dependency {
+		t.Errorf("user dependency was not preserved: %+v", reqVars.Dependencies[0])
+	}
+
+	// An --edit revision inherits the private-builder; it must not be added twice.
+	addPrivateBuilderDependency(&reqVars)
+	if len(reqVars.Dependencies) != 2 {
+		t.Errorf("private-builder was added twice: %+v", reqVars.Dependencies)
+	}
 }

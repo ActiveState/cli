@@ -6,6 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.48.2
+
+### Added
+
+- `state publish --build` now reads `[project].dependencies` from `pyproject.toml` and publishes them as runtime
+  dependencies of the encrypted private ingredient. Version ranges carry over, and OS and Python version markers become
+  dependency conditions (unsupported markers are skipped with a notice).
+- Added `state export ingredient-meta <namespace>/<name>[@version]`, which writes an existing ingredient's meta file for
+  use with `state publish --edit --meta`.
+
+### Changed
+
+- Installing runtimes on Windows is significantly faster: link paths are resolved once per tree instead of once per
+  file, and artifacts are linked concurrently.
+- A `--meta` file's name, version, and description now feed the built wheel (flags take precedence over the meta file,
+  which takes precedence over `pyproject.toml`).
+
+### Fixed
+
+- `state publish --edit` no longer overwrites the meta file's dependencies and authors with the previous revision's,
+  keeps inherited dependency types and conditions, and rejects author or description changes on an existing version
+  up front.
+- `state publish --edit --meta` with an exported meta file now edits the version named in the file rather than the
+  latest version.
+
+### Security
+
+- Updated `github.com/klauspost/compress` to v1.18.7 to remediate CVE-2026-63209 (GHSA-259r-337f-4rfw).
+- Updated to Go 1.26.10 and `golang.org/x/net` v0.60.0 to remediate 14 CVEs in the Go standard library and HTTP/2 handling.
+
 ## 0.48.1
 
 ### Added
