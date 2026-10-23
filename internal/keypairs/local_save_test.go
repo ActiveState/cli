@@ -37,7 +37,7 @@ func (suite *KeypairLocalSaveTestSuite) TestSave_Success() {
 
 	kp2, err := keypairs.Load(suite.cfg, "save-testing")
 	suite.Require().Nil(err)
-	suite.Equal(kp, kp2)
+	requireSameRSAKey(suite.T(), kp, kp2)
 
 	fileInfo := suite.statConfigDirFile("save-testing.key")
 	if runtime.GOOS != "windows" {
@@ -54,7 +54,7 @@ func (suite *KeypairLocalSaveTestSuite) TestSaveWithDefaults_Success() {
 
 	kp2, err := keypairs.Load(suite.cfg, constants.KeypairLocalFileName)
 	suite.Require().Nil(err)
-	suite.Equal(kp, kp2)
+	requireSameRSAKey(suite.T(), kp, kp2)
 
 	fileInfo := suite.statConfigDirFile(constants.KeypairLocalFileName + ".key")
 	if runtime.GOOS != "windows" {

@@ -85,7 +85,7 @@ func (suite *RSAKeypairTestSuite) TestParseRSA_ParsesKeypair() {
 	kp2, err := keypairs.ParseRSA(encPrivKey)
 	suite.Require().Nil(err)
 	suite.Implements((*keypairs.Keypair)(nil), kp2)
-	suite.Equal(kp, kp2)
+	requireSameRSAKey(suite.T(), kp, kp2)
 }
 
 func (suite *RSAKeypairTestSuite) TestParseRSA_EncodingNotOfPrivateKey() {
@@ -137,7 +137,7 @@ func (suite *RSAKeypairTestSuite) TestParseRSA_EmptyPassphraseButStillEncrypted(
 	kp2, err := keypairs.ParseRSA(encrPrivKey)
 	suite.Require().Nil(err)
 	suite.Implements((*keypairs.Keypair)(nil), kp2)
-	suite.Equal(kp, kp2)
+	requireSameRSAKey(suite.T(), kp, kp2)
 }
 
 func (suite *RSAKeypairTestSuite) TestParseRSA_KeypairNotPEMEncoded() {
@@ -156,7 +156,7 @@ func (suite *RSAKeypairTestSuite) TestParseEncryptedRSA_ParsesKeypair() {
 	kp2, err := keypairs.ParseEncryptedRSA(keyPEM, "abc123")
 	suite.Require().Nil(err)
 	suite.Implements((*keypairs.Keypair)(nil), kp2)
-	suite.Equal(kp, kp2)
+	requireSameRSAKey(suite.T(), kp, kp2)
 }
 
 func (suite *RSAKeypairTestSuite) TestParseEncryptedRSA_KeypairNotPEMEncoded() {

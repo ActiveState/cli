@@ -58,7 +58,7 @@ func (suite *KeypairGenerateTestSuite) TestGenerate_NoPassphrase() {
 	validationKeypair, err := keypairs.ParseRSA(encKeypair.EncodedPrivateKey)
 	suite.Require().Nil(err)
 	suite.Require().NotNil(validationKeypair)
-	suite.Equal(encKeypair.Keypair, validationKeypair)
+	requireSameRSAKey(suite.T(), encKeypair.Keypair, validationKeypair)
 
 	// verify encoded public key matches generated keypair's public key
 	validationPublicKey, err := keypairs.ParseRSAPublicKey(encKeypair.EncodedPublicKey)
@@ -79,7 +79,7 @@ func (suite *KeypairGenerateTestSuite) TestGenerate_WithPassphrase() {
 	validationKeypair, err := keypairs.ParseEncryptedRSA(encKeypair.EncodedPrivateKey, "tuxedomoon")
 	suite.Require().Nil(err)
 	suite.Require().NotNil(validationKeypair)
-	suite.Equal(encKeypair.Keypair, validationKeypair)
+	requireSameRSAKey(suite.T(), encKeypair.Keypair, validationKeypair)
 
 	// verify encoded public key matches generated keypair's public key
 	validationPublicKey, err := keypairs.ParseRSAPublicKey(encKeypair.EncodedPublicKey)
@@ -123,7 +123,7 @@ func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Success_NoPassphrase(
 	validationKeypair, err := keypairs.ParseRSA(encKeypair.EncodedPrivateKey)
 	suite.Require().Nil(err)
 	suite.Require().NotNil(validationKeypair)
-	suite.Equal(encKeypair.Keypair, validationKeypair)
+	requireSameRSAKey(suite.T(), encKeypair.Keypair, validationKeypair)
 
 	// verify encoded public key matches generated keypair's public key
 	validationPublicKey, err := keypairs.ParseRSAPublicKey(encKeypair.EncodedPublicKey)
@@ -149,7 +149,7 @@ func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Success_WithPassphras
 	validationKeypair, err := keypairs.ParseEncryptedRSA(encKeypair.EncodedPrivateKey, "bauhaus")
 	suite.Require().Nil(err)
 	suite.Require().NotNil(validationKeypair)
-	suite.Equal(encKeypair.Keypair, validationKeypair)
+	requireSameRSAKey(suite.T(), encKeypair.Keypair, validationKeypair)
 
 	// verify encoded public key matches generated keypair's public key
 	validationPublicKey, err := keypairs.ParseRSAPublicKey(encKeypair.EncodedPublicKey)
