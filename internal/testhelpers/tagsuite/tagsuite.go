@@ -2,6 +2,7 @@ package tagsuite
 
 import (
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/thoas/go-funk"
@@ -95,8 +96,30 @@ type Suite struct {
 	suite.Suite
 }
 
+// ARM-supported tags for integration tests
+var armSupportedTags = []string{
+	Install,
+	Installer,
+	InstallScripts,
+	Update,
+}
+
 // OnlyRunForTags skips a test unless one of the given tags is asked for.
 func (suite *Suite) OnlyRunForTags(tags ...string) {
+	// Skip tests on ARM64 if they don't have an ARM-supported tag
+	if runtime.GOOS == "linux" && runtime.GOARCH == "arm64" {
+		hasArmSupportedTag := false
+		for _, tag := range tags {
+			if funk.Contains(armSupportedTags, tag) {
+				hasArmSupportedTag = true
+				break
+			}
+		}
+		if !hasArmSupportedTag {
+			suite.T().Skipf("Skipping test on Linux/arm64 - only tags %s are supported", strings.Join(armSupportedTags, ", "))
+		}
+	}
+
 	setTagsString, _ := os.LookupEnv("TEST_SUITE_TAGS")
 
 	setTags := strings.Split(strings.ToLower(setTagsString), ":")

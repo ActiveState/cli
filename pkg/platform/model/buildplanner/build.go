@@ -3,7 +3,6 @@ package buildplanner
 import (
 	"encoding/json"
 	"errors"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -172,10 +171,8 @@ func processBuildPlannerError(bpErr error, fallbackMessage string) error {
 	return &response.BuildPlannerError{Err: locale.NewExternalError("err_buildplanner", "{{.V0}}: Encountered unexpected error: {{.V1}}", fallbackMessage, bpErr.Error())}
 }
 
-var versionRe = regexp.MustCompile(`^\d+(\.\d+)*$`)
-
-func isExactVersion(version string) bool {
-	return versionRe.MatchString(version)
+func isRangeVersion(version string) bool {
+	return strings.Contains(version, "=") || strings.Contains(version, "<") || strings.Contains(version, ">")
 }
 
 func isWildcardVersion(version string) bool {
@@ -183,14 +180,7 @@ func isWildcardVersion(version string) bool {
 }
 
 func VersionStringToRequirements(version string) ([]types.VersionRequirement, error) {
-	if isExactVersion(version) {
-		return []types.VersionRequirement{{
-			types.VersionRequirementComparatorKey: "eq",
-			types.VersionRequirementVersionKey:    version,
-		}}, nil
-	}
-
-	if !isWildcardVersion(version) {
+	if isRangeVersion(version) {
 		// Ask the Platform to translate a string like ">=1.2,<1.3" into a list of requirements.
 		// Note that:
 		// - The given requirement name does not matter; it is not looked up.
@@ -210,33 +200,41 @@ func VersionStringToRequirements(version string) ([]types.VersionRequirement, er
 		return requirements, nil
 	}
 
-	// Construct version constraints to be >= given version, and < given version's last part + 1.
-	// For example, given a version number of 3.10.x, constraints should be >= 3.10, < 3.11.
-	// Given 2.x, constraints should be >= 2, < 3.
-	requirements := []types.VersionRequirement{}
-	parts := strings.Split(version, ".")
-	for i, part := range parts {
-		if part != "x" && part != "X" {
-			continue
+	if isWildcardVersion(version) {
+		// Construct version constraints to be >= given version, and < given version's last part + 1.
+		// For example, given a version number of 3.10.x, constraints should be >= 3.10, < 3.11.
+		// Given 2.x, constraints should be >= 2, < 3.
+		requirements := []types.VersionRequirement{}
+		parts := strings.Split(version, ".")
+		for i, part := range parts {
+			if part != "x" && part != "X" {
+				continue
+			}
+			if i == 0 {
+				return nil, locale.NewInputError("err_version_wildcard_start", "A version number cannot start with a wildcard")
+			}
+			requirements = append(requirements, types.VersionRequirement{
+				types.VersionRequirementComparatorKey: types.ComparatorGTE,
+				types.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
+			})
+			previousPart, err := strconv.Atoi(parts[i-1])
+			if err != nil {
+				return nil, locale.WrapInputError(err, "err_version_number_expected", "Version parts are expected to be numeric")
+			}
+			parts[i-1] = strconv.Itoa(previousPart + 1)
+			requirements = append(requirements, types.VersionRequirement{
+				types.VersionRequirementComparatorKey: types.ComparatorLT,
+				types.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
+			})
 		}
-		if i == 0 {
-			return nil, locale.NewInputError("err_version_wildcard_start", "A version number cannot start with a wildcard")
-		}
-		requirements = append(requirements, types.VersionRequirement{
-			types.VersionRequirementComparatorKey: types.ComparatorGTE,
-			types.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
-		})
-		previousPart, err := strconv.Atoi(parts[i-1])
-		if err != nil {
-			return nil, locale.WrapInputError(err, "err_version_number_expected", "Version parts are expected to be numeric")
-		}
-		parts[i-1] = strconv.Itoa(previousPart + 1)
-		requirements = append(requirements, types.VersionRequirement{
-			types.VersionRequirementComparatorKey: types.ComparatorLT,
-			types.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
-		})
+		return requirements, nil
 	}
-	return requirements, nil
+
+	return []types.VersionRequirement{{
+		types.VersionRequirementComparatorKey: "eq",
+		types.VersionRequirementVersionKey:    version,
+	}}, nil
+
 }
 
 // pollBuildPlanned polls the buildplan until it has passed the planning stage (ie. it's either planned or further along).

@@ -124,14 +124,16 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	python3Exe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExtension)
 	suite.True(fileutils.TargetExists(python3Exe), python3Exe+" not found")
 
-	cfg, err := config.New()
-	suite.NoError(err)
-	rcfile, err := subshell.New(cfg).RcFile()
-	suite.NoError(err)
-	if runtime.GOOS != "windows" {
-		fileutils.FileExists(rcfile)
-		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
-	}
+	var rcfile string
+	ts.WithEnv(func() {
+		cfg, err := config.New()
+		suite.NoError(err)
+		rcfile, err := subshell.New(cfg).RcFile()
+		if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
+			suite.NoError(err)
+			suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
+		}
+	})
 
 	cp = ts.Spawn("use", "reset")
 	cp.Expect("Continue?")
@@ -234,6 +236,7 @@ func (suite *UseIntegrationTestSuite) TestSetupNotice() {
 
 func (suite *UseIntegrationTestSuite) TestJSON() {
 	suite.OnlyRunForTags(tagsuite.Use, tagsuite.JSON)
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

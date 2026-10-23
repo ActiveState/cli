@@ -3,6 +3,7 @@ package ecosystem
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -76,7 +77,15 @@ func (e *Rust) Add(artifact *buildplan.Artifact, artifactSrcPath string) ([]stri
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to unpack downloaded crate")
 		}
-		err = os.Rename(filepath.Join(unpackDir, artifact.Name()+"-"+artifact.Version()), absVendored)
+		unpackedDir := filepath.Join(unpackDir, artifact.Name()+"-"+artifact.Version())
+		if !fileutils.DirExists(unpackedDir) {
+			// Some crates use hyphens instead of underscores in their packaged directory names.
+			unpackedDir = filepath.Join(unpackDir, strings.ReplaceAll(artifact.Name(), "_", "-")+"-"+artifact.Version())
+		}
+		if !fileutils.DirExists(unpackedDir) {
+			return nil, errs.New("Downloaded crate (%s) uses an unknown, top-level directory name", artifact.Name())
+		}
+		err = os.Rename(unpackedDir, absVendored)
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to rename unpacked crate")
 		}

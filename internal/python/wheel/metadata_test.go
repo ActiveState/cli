@@ -27,6 +27,18 @@ func TestResolveMetadata(t *testing.T) {
 		}
 	})
 
+	t.Run("pyproject dependencies become Requires", func(t *testing.T) {
+		dir := t.TempDir()
+		writePyproject(t, dir, "[project]\nname = \"proj\"\nversion = \"3.1\"\ndependencies = [\"requests>=2\", \"click\"]\n")
+		res, err := ResolveMetadata(dir, Metadata{Name: "override"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(res.Requires) != 2 || res.Requires[0] != "requests>=2" || res.Requires[1] != "click" {
+			t.Errorf("Requires = %q", res.Requires)
+		}
+	})
+
 	t.Run("caller overrides pyproject", func(t *testing.T) {
 		dir := t.TempDir()
 		writePyproject(t, dir, "[project]\nname = \"proj\"\nversion = \"3.1\"\n")

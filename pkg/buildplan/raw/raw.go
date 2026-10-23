@@ -18,6 +18,7 @@ type StepInputTag string
 const (
 	// Tag types
 	TagSource     StepInputTag = "src"
+	TagBuilder    StepInputTag = "builder"
 	TagDependency StepInputTag = "deps"
 )
 

@@ -29,6 +29,8 @@ type Artifact struct {
 	IsRuntimeDependency   bool
 	IsBuildtimeDependency bool
 
+	Builder *Artifact
+
 	platforms []strfmt.UUID
 	children  []ArtifactRelation
 }

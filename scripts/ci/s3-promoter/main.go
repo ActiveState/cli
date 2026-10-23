@@ -46,15 +46,15 @@ func run() {
 
 	createClient()
 
-	// List all objects with <basePrefix>staging/ prefix
-	allObjects, err := listObjectsWithPrefix(basePrefix + "staging/")
+	// List all objects with staging/<basePrefix> prefix
+	stagingPrefix := "staging/" + basePrefix
+	allObjects, err := listObjectsWithPrefix(stagingPrefix)
 	if err != nil {
 		log.Fatalf("Failed to list staging objects: %v", err)
 	}
 
 	// Filter out the root staging directory itself (but keep subdirectories)
 	var stagingObjects []types.Object
-	stagingPrefix := basePrefix + "staging/"
 	for _, obj := range allObjects {
 		if *obj.Key == stagingPrefix {
 			continue

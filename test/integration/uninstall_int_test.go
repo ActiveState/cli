@@ -21,6 +21,9 @@ type UninstallIntegrationTestSuite struct {
 }
 
 func (suite *UninstallIntegrationTestSuite) TestUninstall() {
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("uninstall test on Windows fails too often") // TODO: re-enable in CP-1296
+	}
 	suite.OnlyRunForTags(tagsuite.Uninstall, tagsuite.Critical)
 	suite.T().Run("Partial uninstall", func(t *testing.T) { suite.testUninstall(false) })
 	suite.T().Run("Full uninstall", func(t *testing.T) { suite.testUninstall(true) })

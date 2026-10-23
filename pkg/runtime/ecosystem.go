@@ -5,6 +5,8 @@ import (
 	ecosys "github.com/ActiveState/cli/pkg/runtime/ecosystem"
 )
 
+const starBuilder = "star-builder"
+
 type ecosystem interface {
 	Init(runtimePath string, buildplan *buildplan.BuildPlan) error
 	Namespaces() []string
@@ -27,6 +29,10 @@ func init() {
 }
 
 func artifactMatchesEcosystem(a *buildplan.Artifact, e ecosystem) bool {
+	if a.Builder != nil && a.Builder.DisplayName != starBuilder {
+		return false
+	}
+
 	for _, namespace := range e.Namespaces() {
 		for _, i := range a.Ingredients {
 			if i.Namespace == namespace {
