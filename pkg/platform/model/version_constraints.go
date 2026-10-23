@@ -21,9 +21,13 @@ func InventoryRequirementsToString(requirements inventory_models.Requirements, f
 		return ""
 	}
 
-	constraints := make([]*versionConstraints, len(requirements))
-	for i, req := range requirements {
-		constraints[i] = &versionConstraints{*req.Comparator, *req.Version}
+	constraints := make([]*versionConstraints, 0, len(requirements))
+	for _, req := range requirements {
+		// A requirement without a version (e.g. on a condition) places no constraint.
+		if req.Comparator == nil || req.Version == nil {
+			continue
+		}
+		constraints = append(constraints, &versionConstraints{*req.Comparator, *req.Version})
 	}
 	return versionConstraintsToString(constraints, forAPI)
 }

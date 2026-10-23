@@ -370,3 +370,27 @@ func newExportDepTreeIngredientsCommand(prime *primer.Values) *captain.Command {
 	cmd.SetUnstable(true)
 	return cmd
 }
+
+func newExportIngredientMetaCommand(prime *primer.Values) *captain.Command {
+	runner := export.NewIngredientMeta(prime)
+	params := &export.IngredientMetaParams{}
+
+	return captain.NewCommand(
+		"ingredient-meta",
+		locale.Tl("export_ingredient_meta_title", "Exporting Ingredient Meta File"),
+		locale.Tl("export_ingredient_meta_description", "Export the meta file of a published ingredient, to modify and pass to '[ACTIONABLE]state publish --edit --meta[/RESET]'"),
+		prime,
+		[]*captain.Flag{},
+		[]*captain.Argument{
+			{
+				Name:        "namespace/name[@version]",
+				Description: locale.Tl("export_ingredient_meta_arg_description", "The ingredient to export, e.g. private/<org>/python/mypkg@1.0. Defaults to the latest version."),
+				Value:       &params.Ingredient,
+				Required:    true,
+			},
+		},
+		func(_ *captain.Command, _ []string) error {
+			return runner.Run(params)
+		},
+	)
+}

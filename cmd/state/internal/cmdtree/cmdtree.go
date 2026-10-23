@@ -55,6 +55,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newExportLogCommand(prime),
 		newExportRuntimeCommand(prime),
 		newExportBuildPlanCommand(prime),
+		newExportIngredientMetaCommand(prime),
 		deptree,
 	)
 
