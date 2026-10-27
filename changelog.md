@@ -39,12 +39,14 @@ and this project adheres to
 - Dependencies and conditions without a version range (such as a bare `requests` in `pyproject.toml`) are now published
   as accepting any version instead of failing with "Expecting an OBJECT with a field named 'versionRequirements'".
 - Fields removed in the `state publish --editor` file are now removed from the publish instead of keeping their
-  previous values, and publish API errors are shown instead of `<no value>`.
+  previous values.
 
 ### Security
 
 - Updated `github.com/klauspost/compress` to v1.18.7 to remediate CVE-2026-63209 (GHSA-259r-337f-4rfw).
 - Updated to Go 1.26.10 and `golang.org/x/net` v0.60.0 to remediate 14 CVEs in the Go standard library and HTTP/2 handling.
+- Updated `github.com/labstack/echo/v4` to v4.16.1 to remediate GHSA-cxf3-9h37-7rr8, GHSA-9969-6676-49h5,
+  GHSA-f48p-c9v4-h7xv and GHSA-h7wr-284f-5qvc.
 
 ## 0.48.1
 

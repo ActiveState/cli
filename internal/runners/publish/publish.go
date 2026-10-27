@@ -300,7 +300,7 @@ Do you want to publish this ingredient? Answer 'n' to edit it or save it to a fi
 
 	publishResult, err := r.bp.Publish(reqVars, params.Filepath)
 	if err != nil {
-		return locale.WrapError(err, "err_uploadingredient_publish", "Could not create publish request", errs.JoinMessage(err))
+		return locale.WrapError(err, "err_uploadingredient_publish", "Could not create publish request")
 	}
 
 	if publishResult.Error != "" {
