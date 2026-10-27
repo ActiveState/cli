@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runners/publish"
+	"gopkg.in/yaml.v3"
 )
 
 type IngredientMetaParams struct {
@@ -30,11 +31,15 @@ func (i *IngredientMeta) Run(params *IngredientMetaParams) error {
 		return errs.Wrap(err, "Could not fetch ingredient meta data")
 	}
 
-	b, err := meta.MarshalYaml(false)
+	// Plain yaml rather than meta.MarshalYaml, whose field help comments would end up in the exported file.
+	b, err := yaml.Marshal(meta)
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal ingredient meta data")
 	}
 
-	i.prime.Output().Print(string(b))
+	// Written as-is: Print would word-wrap long lines and interpret [TAGS], producing a file --meta can't read.
+	if _, err := i.prime.Output().Config().OutWriter.Write(b); err != nil {
+		return errs.Wrap(err, "Could not write ingredient meta data")
+	}
 	return nil
 }

@@ -52,5 +52,6 @@ func FetchMeta(namespace, name, version string, auth *authentication.Auth) (*req
 	if err := prepareEditRequest(ingredient, meta, true, auth); err != nil {
 		return nil, errs.Wrap(err, "Could not read ingredient meta data")
 	}
+	fillVersionRequirements(meta)
 	return meta, nil
 }
