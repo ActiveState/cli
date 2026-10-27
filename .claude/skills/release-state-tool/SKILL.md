@@ -5,10 +5,9 @@ description: Cut a State Tool beta (RC) or stable release from this repo — con
 
 # Releasing the State Tool
 
-> **Status:** steps 0–6 were worked through for 0.48.2-RC1 (PROD-240). Steps 7–10 (staging,
-> Windows signing, promotion, verification, merge-back) come from the CI config and
-> `activestate.yaml`, and have **not** been run end to end yet. Confirm them with the release
-> owner and update this file after the next release.
+> **Status:** steps 0–10 were worked through for the 0.48.2-RC1 beta (PROD-240, 2026-10-23 to
+> 10-26), except the merge back into `master`. The stable (beta → release) path hasn't been run
+> with this skill yet.
 
 ## How the branches fit together
 
@@ -110,6 +109,7 @@ Failures seen on 0.48.2, all unrelated to the release's own changes:
 | Scan: stdlib and `golang.org/x/net` CVEs | CVEs published since the last release | bump the `go` line in `go.mod` **and** the `build.yml` matrix `go-version`, `go get <mod>@<fixed>`, `go mod tidy`, `go mod vendor`; add a changelog Security line |
 | `internal/keypairs` tests fail intermittently after a Go bump | deep struct equality on `*rsa.PrivateKey` internals | compare with `rsa.PrivateKey.Equal` (fixed in 0.48.2) |
 | `pkg/sysinfo` `TestPerformance/OSVersion` on `macos-latest` | the cold `sw_vers` call (100 ms–1 s) dominates a 10 ms average | larger budget on darwin (#3866). Before that, it failed 3 of 4 runs |
+| `internal/hail` `TestOpen` on Windows: "The process cannot access the file because it is being used by another process" | the temp dir is still locked at cleanup | flake; re-run the failed job (`gh run rerun <run-id> --failed`) |
 
 Check Scan locally before pushing a Go or dependency bump. Use the same Trivy version as
 `build.yml` and pass its `--ignore-unfixed`:
@@ -157,6 +157,9 @@ gh pr create -R ActiveState/cli --base beta --head version/X-Y-Z-RCn --title "X.
 It needs a review approval and green CI, including Scan. **Merging it is the release decision. Don't
 merge without the user's go-ahead.**
 
+#3864 (0.48.2-RC1) was squash-merged, as earlier releases were. So `beta` again has a commit the
+next version branch lacks, and the next release repeats step 4.
+
 ## 6. Before merging: check S3
 
 Check that staging is empty, so a promote moves only this release, and record what the beta channel
@@ -167,41 +170,108 @@ aws s3 ls --recursive s3://state-tool/staging/ | head        # expect nothing
 for p in linux-amd64 windows-amd64 darwin-arm64; do aws s3 cp s3://state-tool/update/state/beta/$p/info.json - | jq -c '{version}'; done
 ```
 
-`version` reads `X.Y.Z-RCn-SHA<7-char commit>`. Before 0.48.2 it was `0.48.1-SHA5650ae1`.
+The served `version` is `X.Y.Z-SHA<7-char commit>`. It has **no `-RCn`**: 0.48.2-RC1 shipped as
+`0.48.2-SHA89954c6`, under `beta/0.48.2/`. Before that, beta served `0.48.1-SHA5650ae1`.
 
-## 7. After merge: staging (not yet verified)
+## 7. After merge: staging
 
-The push to `beta` runs Deploy with `DEPLOY_TO_STAGING=true`. That uploads updates and installers under
-`s3://state-tool/staging/update/state/…` and the remote installer under `staging/remote-installer`.
-Check the `beta` run is green (`gh run list -R ActiveState/cli --branch beta --limit 3`) and that
-staging now holds the new build.
+The push to `beta` runs Deploy with `DEPLOY_TO_STAGING=true`. Wait for the run to be green
+(`gh run list -R ActiveState/cli --branch beta --limit 3`). For 0.48.2 Deploy staged 37 objects:
 
-## 8. Sign Windows binaries (unknown)
-
-This is a manual step that isn't recorded in the repo. Ask the release owner (historically mitchell-as)
-and write the procedure here.
-
-## 9. Promote (not yet verified)
-
-Run from a checkout of the merged `beta`, with AWS credentials for `state-tool`:
+- `staging/update/state/beta/<platform>/info.json` and `staging/update/state/beta/<version>/<platform>/info.json`
+  (two copies of each platform's `info.json`, both written by `scripts/ci/update-generator`)
+- `staging/update/state/beta/<version>/<platform>/state-<platform>-<version>-SHA<sha>.{tar.gz,zip}`
+- `staging/update/state/beta/<platform>/state-installer.{tar.gz,zip}`, the `install*.sh/ps1` and
+  `stop.*` scripts, and `staging/update/state/versions.json`
+- `staging/remote-installer/beta/{,0.1.0/}<platform>/state-remote-installer[.exe]`
 
 ```bash
-state run promote-staging-to-production   # interactive y/N
+aws s3 ls --recursive s3://state-tool/staging/
 ```
 
-`scripts/ci/s3-promoter` **moves** staged objects. How far it reaches depends on that checkout's
-`promote-staging-to-production` line in `activestate.yaml`:
+## 8. Sign Windows binaries (TI team)
+
+The TI team holds the Authenticode certificate (ActiveState Software, Sectigo). File a Linear
+issue for them; Linear has no TI team, so it goes on the Product team as a sub-issue of the
+release story (0.48.2: PROD-1352, done by Pablo Bleck). Give them:
+
+- the staged update zip's S3 path and its sha256
+- the four exes inside it to sign: `state-install/bin/state.exe`, `state-svc.exe`, `state-exec.exe`
+  and `state-install/state-installer.exe`
+
+For 0.48.2 TI returned a re-signed zip of the same name in a `sign/` folder next to the original
+(`staging/update/state/beta/<version>/windows-amd64/sign/`). Earlier releases (0.48.1) also signed
+only the update zip: the beta zip, both channels' `state-installer.zip` and the remote installer
+were not signed.
+
+**Check the returned zip** before using it:
+
+```bash
+unzip -Z1 unsigned.zip | sort > a; unzip -Z1 signed.zip | sort > b; diff a b   # same file list
+osslsigncode verify -in state.exe          # or check the PE certificate table; all 4 exes signed
+# every non-.exe file byte-identical to the unsigned zip
+```
+
+**Then fix staging.** The updater checks the zip against `info.json`'s `sha256`
+(`internal/updater/fetcher.go`, "sha256 did not match"), so a new zip without a new hash breaks
+every Windows update:
+
+1. Save both Windows `info.json` files and keep the unsigned zip locally, so this can be undone.
+2. Copy the signed zip over `staging/update/state/beta/<version>/windows-amd64/<zip>`.
+3. Set `.sha256` to the signed zip's hash in **both** `staging/update/state/beta/windows-amd64/info.json`
+   and `staging/update/state/beta/<version>/windows-amd64/info.json`
+   (`jq --arg s $SHA '.sha256=$s'`, upload with `--content-type application/json`). Read both back.
+4. Delete the `sign/` folder once its hash matches the copy at the normal path. The promoter moves
+   everything under `staging/`, so a leftover `sign/` ends up in production.
+
+## 9. Promote
+
+The promote changes what every beta user gets, so run it only on the user's go-ahead. Claude Code's
+auto mode blocks it as a production deploy, so the user runs it (`! <command>` at the prompt).
+
+Use a clean checkout of the merged `beta`. The promoter imports `internal/condition`, which needs the
+gitignored generated constants, or it fails with `undefined: constants.ChannelName`:
+
+```bash
+git worktree add --detach ~/work/cli-beta-promote origin/beta
+cd ~/work/cli-beta-promote
+go run scripts/constants-generator/main.go -- internal/constants/generated.go
+go build -o /dev/null ./scripts/ci/s3-promoter/    # check it compiles first
+state run promote-staging-to-production           # interactive y/N, then the go run below
+# equivalent, without the prompt:
+go run scripts/ci/s3-promoter/main.go us-east-1 state-tool
+```
+
+It ends with `Successfully promoted <n> files from staging to production.` An AWS SSO PowerUser
+role was enough for it.
+
+`scripts/ci/s3-promoter` **moves** staged objects (copy, then delete the staging copy). How far
+it reaches depends on that checkout's `promote-staging-to-production` line in `activestate.yaml`:
 - `... state-tool`, the RC line as of 0.48.x: everything under `staging/`, including the
   remote installer and any other staged channel.
 - `... state-tool update/state`, `master` since 589d443b4: only `staging/update/state/`. The
   remote installer then needs promoting separately.
 
-## 10. Verify and merge back (not yet verified)
+## 10. Verify and merge back
+
+Staging must now be empty. Check what the update service serves, which is what installs and
+auto-updates read, and that the Windows binaries are signed:
 
 ```bash
-for p in linux-amd64 windows-amd64 darwin-arm64; do aws s3 cp s3://state-tool/update/state/beta/$p/info.json - | jq -c '{version}'; done
-sh <(curl -q https://platform.activestate.com/dl/cli/install.sh) -b beta && ~/.local/ActiveState/StateTool/beta/bin/state --version
+aws s3 ls --recursive s3://state-tool/staging/ | wc -l          # 0
+for pa in "linux amd64" "linux arm64" "darwin amd64" "darwin arm64" "windows amd64"; do set -- $pa
+  for src in install update; do
+    curl -sS "https://platform.activestate.com/sv/state-update/api/v1/info?channel=beta&source=$src&platform=$1&arch=$2" | jq -c '{version,sha256}'
+  done; done
+curl -sSfLO https://state-tool.s3.amazonaws.com/update/state/beta/<version>/windows-amd64/<zip>
+sha256sum <zip>                       # = the windows info.json sha256
+unzip <zip> && osslsigncode verify -in state-install/bin/state.exe   # each of the 4 exes
+curl -sSfLO https://state-tool.s3.amazonaws.com/update/state/beta/<version>/linux-amd64/<tar.gz>
+tar xzf <tar.gz> && state-install/bin/state --version   # Version X.Y.Z-SHA<sha>, Channel beta
 ```
+
+Running the downloaded binary checks the build without running `install.sh -b beta`, which edits
+the user's shell profile and their real install.
 
 Then merge the version branch back into `master` (`Merge branch 'version/X-Y-Z-RCn'`). The next
 release's version branch is cut from this RC's tip plus a `version.txt` bump.
