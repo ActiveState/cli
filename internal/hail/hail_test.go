@@ -52,11 +52,16 @@ func TestOpen(t *testing.T) {
 
 	file = tempFile.Name()
 	rcvs, err := Open(ctx, file)
+	require.NoError(t, err)
 	defer func() {
+		// Stop the watcher and wait for it to finish before removing the file: it reads the file on every event, and
+		// on Windows a file that is still open can't be removed.
+		cancel()
+		for range rcvs {
+		}
 		_ = tempFile.Close()
 		assert.NoError(t, os.Remove(file))
 	}()
-	require.NoError(t, err)
 
 	postOpen := time.Now()
 	data := []byte("some data")
