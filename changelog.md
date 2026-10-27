@@ -39,7 +39,7 @@ and this project adheres to
 - Dependencies and conditions without a version range (such as a bare `requests` in `pyproject.toml`) are now published
   as accepting any version instead of failing with "Expecting an OBJECT with a field named 'versionRequirements'".
 - Fields removed in the `state publish --editor` file are now removed from the publish instead of keeping their
-  previous values.
+  previous values, and publish API errors are shown instead of `<no value>`.
 
 ### Security
 

@@ -300,7 +300,10 @@ Do you want to publish this ingredient? Answer 'n' to edit it or save it to a fi
 
 	publishResult, err := r.bp.Publish(reqVars, params.Filepath)
 	if err != nil {
-		return locale.WrapError(err, "err_uploadingredient_publish", "Could not create publish request")
+		// en-us.yaml's err_uploadingredient_publish ends in "Error received: {{.V0}}" and overrides the fallback text, so
+		// the message must be passed in: without it the user sees "<no value>", and the wrapped API error is not
+		// user-facing, so it would otherwise only appear in the log.
+		return locale.WrapError(err, "err_uploadingredient_publish", "Could not create publish request", errs.JoinMessage(err))
 	}
 
 	if publishResult.Error != "" {
