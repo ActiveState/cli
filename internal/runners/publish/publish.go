@@ -239,52 +239,28 @@ func (r *Runner) Run(params *Params) error {
 		return errs.Wrap(err, "Could not prepare request from params")
 	}
 
-	if err := checkEditKeepsIdentity(&reqVars, params.Edit, isRevision); err != nil {
-		return err
-	}
-
-	if params.Build != "" {
-		addPrivateBuilderDependency(&reqVars)
-	}
-
 	if params.Editor {
 		if !r.out.Config().Interactive {
 			return locale.NewInputError("err_uploadingredient_editor_not_supported", "Opening in editor is not supported in non-interactive mode")
 		}
-		if err := r.OpenInEditor(&reqVars); err != nil {
+		if err := r.editRequest(&reqVars, params); err != nil {
 			return err
 		}
 	}
 
-	if reqVars.Namespace == "" {
-		return locale.NewInputError("err_uploadingredient_namespace_required", "You have to supply the namespace when working outside of a project context")
-	}
-
-	b, err := reqVars.MarshalYaml(false)
+	publish, err := r.confirmRequest(&reqVars, params, isRevision)
 	if err != nil {
-		return errs.Wrap(err, "Could not marshal publish variables")
+		return err
 	}
-
-	cont, err := r.prompt.Confirm(
-		"",
-		locale.Tl("uploadingredient_confirm", `Prepared the following ingredient:
-
-{{.V0}}
-
-Do you want to publish this ingredient?
-`, string(b)), ptr.To(true), nil)
-	if err != nil {
-		return errs.Wrap(err, "Not confirmed")
-	}
-	if !cont {
-		return locale.NewInputError("uploadingredient_cancel", "Publish cancelled")
+	if !publish {
+		return nil // saved to a meta file instead
 	}
 
 	r.out.Notice(locale.Tl("uploadingredient_uploading", "Publishing ingredient..."))
 
 	publishResult, err := r.bp.Publish(reqVars, params.Filepath)
 	if err != nil {
-		return locale.WrapError(err, "err_uploadingredient_publish", "Could not create publish request")
+		return publishFailedError(err)
 	}
 
 	if publishResult.Error != "" {
@@ -491,6 +467,183 @@ func prepareEditRequest(ingredient *ParentIngredient, r *request.PublishVariable
 	return nil
 }
 
+// confirmRequest shows the prepared request and asks the user to publish it. Until they confirm, they can edit it or
+// save it to a meta file and start over with it. Each pass completes and validates the request again, since an edit
+// can undo what was done to it before. It reports whether to publish: false means the request was saved instead.
+func (r *Runner) confirmRequest(reqVars *request.PublishVariables, params *Params, isRevision bool) (bool, error) {
+	for {
+		if params.Build != "" {
+			addPrivateBuilderDependency(reqVars)
+		}
+		fillVersionRequirements(reqVars)
+		if reqVars.Namespace == "" {
+			return false, locale.NewInputError("err_uploadingredient_namespace_required", "You have to supply the namespace when working outside of a project context")
+		}
+		if err := checkEditKeepsIdentity(reqVars, params.Edit, isRevision); err != nil {
+			return false, err
+		}
+
+		b, err := reqVars.MarshalYaml(false)
+		if err != nil {
+			return false, errs.Wrap(err, "Could not marshal publish variables")
+		}
+
+		cont, err := r.prompt.Confirm(
+			"",
+			locale.Tl("uploadingredient_confirm", `Prepared the following ingredient:
+
+{{.V0}}
+
+Do you want to publish this ingredient? Answer 'n' to edit it or save it to a file instead.
+`, string(b)), ptr.To(true), nil)
+		if err != nil {
+			return false, errs.Wrap(err, "Not confirmed")
+		}
+		if cont {
+			return true, nil
+		}
+
+		saved, err := r.reviseRequest(reqVars, params)
+		if err != nil {
+			return false, err
+		}
+		if saved {
+			return false, nil
+		}
+	}
+}
+
+// publishFailedError wraps a failed publish request. en-us.yaml's err_uploadingredient_publish ends in
+// "Error received: {{.V0}}" and overrides the fallback text, so the message must be passed in, or the user sees
+// "<no value>". It is also the only place some failures are shown: an error the API reports in its publish result
+// (e.g. "File to upload was not provided") is a plain errs.New, which is not printed beneath this message the way a
+// user-facing BuildPlannerError is.
+func publishFailedError(err error) error {
+	return locale.WrapError(err, "err_uploadingredient_publish", "Could not create publish request", errs.JoinMessage(err))
+}
+
+// reviseRequest lets the user edit a request they did not confirm, or save it to a meta file to edit and publish later.
+// It reports whether the request was saved, in which case nothing is published.
+func (r *Runner) reviseRequest(reqVars *request.PublishVariables, params *Params) (bool, error) {
+	edit := locale.Tl("uploadingredient_choice_edit", "Edit it in my editor")
+	save := locale.Tl("uploadingredient_choice_save", "Save it to a meta file to edit and publish later")
+	cancel := locale.Tl("uploadingredient_choice_cancel", "Cancel")
+	choice, err := r.prompt.Select("", locale.Tl("uploadingredient_choice", "What would you like to do instead?"),
+		[]string{edit, save, cancel}, &cancel, nil)
+	if err != nil {
+		return false, errs.Wrap(err, "Not selected")
+	}
+
+	switch choice {
+	case edit:
+		return false, r.editRequest(reqVars, params)
+	case save:
+		path, err := r.saveMetaFile(reqVars)
+		if err != nil {
+			return false, err
+		}
+		r.out.Notice(locale.Tl("uploadingredient_saved",
+			"Saved the ingredient meta data to [ACTIONABLE]{{.V0}}[/RESET]. Edit it, then publish it with:\n\n  [ACTIONABLE]{{.V1}}[/RESET]\n\n"+
+				"The meta file takes precedence over pyproject.toml, so the dependencies it lists replace the ones there.",
+			path, rerunCommand(params, path)))
+		return true, nil
+	}
+	return false, locale.NewInputError("uploadingredient_cancel", "Publish cancelled")
+}
+
+// editRequest opens the request in the user's editor. With --build or --edit, the name, namespace and version were
+// already used to build the package or find the ingredient, so changing them here would publish something
+// inconsistent: the edits are saved to a meta file instead, and the user is told to start over with it.
+func (r *Runner) editRequest(reqVars *request.PublishVariables, params *Params) error {
+	before := *reqVars
+	if err := r.OpenInEditor(reqVars); err != nil {
+		return err
+	}
+	if params.Build == "" && !params.Edit {
+		return nil
+	}
+	if reqVars.Name == before.Name && reqVars.Namespace == before.Namespace && reqVars.Version == before.Version {
+		return nil
+	}
+
+	path, err := r.saveMetaFile(reqVars)
+	if err != nil {
+		return err
+	}
+	return locale.NewInputError("err_uploadingredient_edit_identity_changed",
+		"The name, namespace or version can't be changed at this point, because they were already used to build the package "+
+			"or find the ingredient. Your changes were saved to [ACTIONABLE]{{.V0}}[/RESET]. Publish them with:\n\n  [ACTIONABLE]{{.V1}}[/RESET]",
+		path, rerunCommand(params, path))
+}
+
+// saveMetaFile writes the request to <name>-<version>.meta.yaml in the working directory, in the format --meta reads,
+// and returns its path. An existing file is only replaced if the user agrees.
+func (r *Runner) saveMetaFile(reqVars *request.PublishVariables) (string, error) {
+	path, err := filepath.Abs(reqVars.Name + "-" + reqVars.Version + ".meta.yaml")
+	if err != nil {
+		return "", errs.Wrap(err, "Could not determine meta file path")
+	}
+	if fileutils.TargetExists(path) {
+		overwrite, err := r.prompt.Confirm("", locale.Tl("uploadingredient_meta_overwrite",
+			"[ACTIONABLE]{{.V0}}[/RESET] already exists. Do you want to replace it?", path), ptr.To(false), nil)
+		if err != nil {
+			return "", errs.Wrap(err, "Not confirmed")
+		}
+		if !overwrite {
+			return "", locale.NewInputError("uploadingredient_cancel", "Publish cancelled")
+		}
+	}
+
+	// Plain yaml rather than MarshalYaml, whose field help comments don't belong in a file the user keeps.
+	b, err := yaml.Marshal(reqVars)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not marshal publish variables")
+	}
+	if err := fileutils.WriteFile(path, b); err != nil {
+		return "", locale.WrapExternalError(err, "err_uploadingredient_meta_write", "Could not write meta file: {{.V0}}", path)
+	}
+	return path, nil
+}
+
+// rerunCommand is the publish command that picks up a saved meta file. Other flags are left out: their values are in
+// the file already.
+func rerunCommand(params *Params, metaPath string) string {
+	args := []string{"state", "publish"}
+	if params.Edit {
+		args = append(args, "--edit")
+	}
+	if params.Build != "" {
+		args = append(args, "--build", quoteArg(params.Build))
+	} else if params.Filepath != "" {
+		args = append(args, quoteArg(params.Filepath))
+	}
+	args = append(args, "--meta", quoteArg(metaPath))
+	return strings.Join(args, " ")
+}
+
+func quoteArg(arg string) string {
+	if strings.ContainsAny(arg, " \t") {
+		return `"` + arg + `"`
+	}
+	return arg
+}
+
+// anyVersion is the version requirement the platform uses for a dependency or condition on any version.
+const anyVersion = ">=0"
+
+// fillVersionRequirements gives every dependency and condition without a version requirement the any-version one. The
+// platform rejects them otherwise, and they come about easily: a pyproject.toml dependency without a version range, a
+// --depend flag without a version, or a condition inherited from a revision that has no requirements.
+func fillVersionRequirements(r *request.PublishVariables) {
+	for i := range r.Dependencies {
+		dep := &r.Dependencies[i]
+		dep.VersionRequirements = cmp.Or(dep.VersionRequirements, anyVersion)
+		for j := range dep.Conditions {
+			dep.Conditions[j].VersionRequirements = cmp.Or(dep.Conditions[j].VersionRequirements, anyVersion)
+		}
+	}
+}
+
 func (r *Runner) OpenInEditor(pr *request.PublishVariables) error {
 	// Prepare file for editing
 	b, err := pr.MarshalYaml(true)
@@ -520,10 +673,13 @@ func (r *Runner) OpenInEditor(pr *request.PublishVariables) error {
 		return errs.Wrap(err, "Could not read file")
 	}
 
-	// Write changes to request
-	if err := pr.UnmarshalYaml(eb); err != nil {
-		return locale.WrapError(err, "err_uploadingredient_publish", "Could not unmarshal publish request")
+	// Write changes to request. Unmarshal into a fresh value, so that fields removed in the editor are removed from the
+	// request too instead of keeping their previous values.
+	var edited request.PublishVariables
+	if err := edited.UnmarshalYaml(eb); err != nil {
+		return locale.WrapInputError(err, "err_uploadingredient_editor_yaml", "The edited file [ACTIONABLE]{{.V0}}[/RESET] is not valid: {{.V1}}", fn, err.Error())
 	}
+	*pr = edited
 
 	return nil
 }

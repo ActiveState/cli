@@ -3,8 +3,10 @@ package publish
 import (
 	"cmp"
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/archiver"
@@ -42,7 +44,11 @@ func (r *Runner) generateEncryptedArtifact(params *Params, metaFile request.Publ
 		Summary: cmp.Or(params.Description, metaFile.Description),
 	})
 	if err != nil {
-		return nil, nil, locale.WrapInputError(err, "err_publish_build_metadata", "Could not determine the ingredient name and version: {{.V0}}", errs.JoinMessage(err))
+		var missing *wheel.MissingMetadataError
+		if errors.As(err, &missing) {
+			return nil, nil, missingMetadataError(missing, params.Build)
+		}
+		return nil, nil, locale.WrapInputError(err, "err_publish_build_metadata", "Could not read the ingredient metadata: {{.V0}}", errs.JoinMessage(err))
 	}
 
 	// Fetch and validate the org key before building anything: a private publish
@@ -78,6 +84,30 @@ func (r *Runner) generateEncryptedArtifact(params *Params, metaFile request.Publ
 		params.Description = meta.Summary
 	}
 	return meta, cleanup, nil
+}
+
+// missingMetadataError tells the user which of name and version are missing, why pyproject.toml did not supply them,
+// and where to set them instead.
+func missingMetadataError(missing *wheel.MissingMetadataError, srcDir string) error {
+	var lines []string
+	for _, field := range missing.Fields {
+		var reason string
+		switch {
+		case missing.Pyproject == "":
+			reason = locale.Tl("publish_metadata_no_pyproject", "there is no pyproject.toml in {{.V0}}", srcDir)
+		case slices.Contains(missing.Dynamic, field):
+			reason = locale.Tl("publish_metadata_dynamic",
+				"{{.V0}} lists it in [project].dynamic, so it is computed by a build backend and cannot be read from the file",
+				missing.Pyproject)
+		default:
+			reason = locale.Tl("publish_metadata_absent", "{{.V0}} has no '{{.V1}}' in its [project] table", missing.Pyproject, field)
+		}
+		lines = append(lines, locale.Tl("publish_metadata_missing_field",
+			" - [ACTIONABLE]{{.V0}}[/RESET]: {{.V1}}. Set it in pyproject.toml, with '[ACTIONABLE]--{{.V0}}[/RESET]', or as '[ACTIONABLE]{{.V0}}:[/RESET]' in a '[ACTIONABLE]--meta[/RESET]' file.",
+			field, reason))
+	}
+	return locale.NewInputError("err_publish_build_metadata_missing",
+		"Could not determine the ingredient {{.V0}}:\n{{.V1}}", strings.Join(missing.Fields, " and "), strings.Join(lines, "\n"))
 }
 
 // requireOrgNamespace ensures ns belongs to the project owner's private org, so

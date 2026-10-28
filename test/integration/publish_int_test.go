@@ -450,6 +450,8 @@ authors:
 						cp.SendLine("Y")
 					} else {
 						cp.SendLine("n")
+						cp.Expect("What would you like to do instead?")
+						cp.SendLine("") // the default choice: Cancel
 						cp.Expect("Publish cancelled")
 						return
 					}

@@ -22,6 +22,10 @@ and this project adheres to
   file, and artifacts are linked concurrently.
 - A `--meta` file's name, version, and description now feed the built wheel (flags take precedence over the meta file,
   which takes precedence over `pyproject.toml`).
+- Answering `n` when `state publish` asks to confirm now offers to edit the ingredient meta data in your editor or save
+  it to a meta file to edit and publish later with `--meta`, instead of only cancelling.
+- When `state publish --build` cannot determine the ingredient name or version, the error now says which is missing,
+  why `pyproject.toml` did not provide it (for example, a version listed in `[project].dynamic`), and how to set it.
 
 ### Fixed
 
@@ -30,11 +34,19 @@ and this project adheres to
   up front.
 - `state publish --edit --meta` with an exported meta file now edits the version named in the file rather than the
   latest version.
+- `state export ingredient-meta` now writes plain YAML without help comments or line wrapping, so its output can be
+  passed back with `--meta` as is.
+- Dependencies and conditions without a version range (such as a bare `requests` in `pyproject.toml`) are now published
+  as accepting any version instead of failing with "Expecting an OBJECT with a field named 'versionRequirements'".
+- Fields removed in the `state publish --editor` file are now removed from the publish instead of keeping their
+  previous values, and publish API errors are shown instead of `<no value>`.
 
 ### Security
 
 - Updated `github.com/klauspost/compress` to v1.18.7 to remediate CVE-2026-63209 (GHSA-259r-337f-4rfw).
 - Updated to Go 1.26.10 and `golang.org/x/net` v0.60.0 to remediate 14 CVEs in the Go standard library and HTTP/2 handling.
+- Updated `github.com/labstack/echo/v4` to v4.16.1 to remediate GHSA-cxf3-9h37-7rr8, GHSA-9969-6676-49h5,
+  GHSA-f48p-c9v4-h7xv and GHSA-h7wr-284f-5qvc.
 
 ## 0.48.1
 
