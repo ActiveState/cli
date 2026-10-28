@@ -94,10 +94,9 @@ func TestCheckEditKeepsIdentity(t *testing.T) {
 		wantErr          bool
 	}{
 		{"author on revision", withAuthor, true, true, true},
-		{"description on revision", withDescription, true, true, true},
+		{"description on revision is left to keepDescription", withDescription, true, true, false},
 		{"no identity change on revision", plain, true, true, false},
 		{"author on new version via edit", withAuthor, true, false, false},
-		{"description on new ingredient", withDescription, false, false, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

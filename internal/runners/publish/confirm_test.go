@@ -93,7 +93,7 @@ func TestConfirmRequestFillsVersionRequirements(t *testing.T) {
 	r := &Runner{out: outputhelper.NewCatcher(), prompt: p}
 	reqVars := newRequest()
 
-	publish, err := r.confirmRequest(reqVars, &Params{}, false)
+	publish, err := r.confirmRequest(reqVars, &Params{}, false, "")
 	if err != nil || !publish {
 		t.Fatalf("publish = %v, err = %v", publish, err)
 	}
@@ -103,6 +103,9 @@ func TestConfirmRequestFillsVersionRequirements(t *testing.T) {
 	}
 	if !strings.Contains(p.messages[0], "versionRequirements: '>=0'") {
 		t.Errorf("confirmation does not show the filled in requirements:\n%s", p.messages[0])
+	}
+	if strings.Contains(p.messages[0], "#") {
+		t.Errorf("confirmation shows comments:\n%s", p.messages[0])
 	}
 }
 
@@ -130,7 +133,7 @@ func TestConfirmRequestEditor(t *testing.T) {
 		r := &Runner{out: outputhelper.NewCatcher(), prompt: p}
 		reqVars := newRequest()
 
-		publish, err := r.confirmRequest(reqVars, &Params{}, false)
+		publish, err := r.confirmRequest(reqVars, &Params{}, false, "")
 		if err != nil || !publish {
 			t.Fatalf("publish = %v, err = %v", publish, err)
 		}
@@ -139,25 +142,110 @@ func TestConfirmRequestEditor(t *testing.T) {
 		}
 	})
 
-	t.Run("cleared namespace is rejected", func(t *testing.T) {
-		useTestEditor(t, "name: mypkg\nversion: 1.0.0\n")
-		p := &fakePrompter{confirms: []bool{false}, selects: []int{choiceEdit}}
-		r := &Runner{out: outputhelper.NewCatcher(), prompt: p}
+	t.Run("namespace change is kept", func(t *testing.T) {
+		useTestEditor(t, "name: mypkg\nnamespace: private/org/other\nversion: 1.0.0\n")
+		p := &fakePrompter{confirms: []bool{false, true}, selects: []int{choiceEdit}}
+		r := &Runner{out: outputhelper.NewCatcher(), prompt: p, versionExists: noVersions}
+		reqVars := newRequest()
 
-		_, err := r.confirmRequest(newRequest(), &Params{}, false)
-		if err == nil || !strings.Contains(err.Error(), "namespace") {
-			t.Errorf("err = %v, want the namespace error", err)
+		publish, err := r.confirmRequest(reqVars, &Params{}, false, "")
+		if err != nil || !publish {
+			t.Fatalf("publish = %v, err = %v", publish, err)
+		}
+		if reqVars.Namespace != "private/org/other" {
+			t.Errorf("namespace = %q, want the edited one", reqVars.Namespace)
 		}
 	})
 
-	t.Run("description added on a revision is rejected", func(t *testing.T) {
-		useTestEditor(t, "name: mypkg\nnamespace: private/org/python\nversion: 1.0.0\ndescription: changed\n")
+	for name, tt := range map[string]struct {
+		namespace string
+		params    Params
+		exists    bool
+		reason    string
+	}{
+		"cleared namespace is put back":          {"", Params{}, false, "namespace is required"},
+		"namespace with the version is put back": {"private/org/other", Params{}, true, "already exists"},
+		"namespace outside the org is put back":  {"private/other/python", Params{Build: "src"}, false, "requires a namespace under"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			useTestEditor(t, "name: mypkg\nnamespace: "+tt.namespace+"\nversion: 1.0.0\n")
+			out := outputhelper.NewCatcher()
+			p := &fakePrompter{confirms: []bool{false, true}, selects: []int{choiceEdit}}
+			r := &Runner{out: out, prompt: p, versionExists: func(_, _, _ string) (bool, error) { return tt.exists, nil }}
+			reqVars := newRequest()
+
+			publish, err := r.confirmRequest(reqVars, &tt.params, false, "")
+			if err != nil || !publish {
+				t.Fatalf("publish = %v, err = %v", publish, err)
+			}
+			if reqVars.Namespace != "private/org/python" {
+				t.Errorf("namespace = %q, want the original one put back", reqVars.Namespace)
+			}
+			if !strings.Contains(out.CombinedOutput(), tt.reason) {
+				t.Errorf("output does not explain why (%q):\n%s", tt.reason, out.CombinedOutput())
+			}
+		})
+	}
+
+	t.Run("name change with --build is saved instead", func(t *testing.T) {
+		t.Chdir(t.TempDir())
+		useTestEditor(t, "name: otherpkg\nnamespace: private/org/python\nversion: 1.0.0\n")
 		p := &fakePrompter{confirms: []bool{false}, selects: []int{choiceEdit}}
 		r := &Runner{out: outputhelper.NewCatcher(), prompt: p}
 
-		_, err := r.confirmRequest(newRequest(), &Params{Edit: true}, true)
-		if err == nil || !strings.Contains(err.Error(), "cannot be changed") {
-			t.Errorf("err = %v, want the identity error", err)
+		_, err := r.confirmRequest(newRequest(), &Params{Build: "src"}, false, "")
+		if err == nil || !strings.Contains(err.Error(), "The name can't be changed") {
+			t.Fatalf("err = %v, want the name named as fixed", err)
+		}
+		if !strings.Contains(p.messages[0], "name and version are built into the package") {
+			t.Errorf("confirmation does not say up front what is fixed:\n%s", p.messages[0])
+		}
+		if _, err := os.Stat("otherpkg-1.0.0.meta.yaml"); err != nil {
+			t.Errorf("edits were not saved: %v", err)
+		}
+	})
+
+	t.Run("namespace change with --edit is saved instead", func(t *testing.T) {
+		t.Chdir(t.TempDir())
+		useTestEditor(t, "name: mypkg\nnamespace: private/org/other\nversion: 1.0.0\n")
+		p := &fakePrompter{confirms: []bool{false}, selects: []int{choiceEdit}}
+		r := &Runner{out: outputhelper.NewCatcher(), prompt: p}
+
+		_, err := r.confirmRequest(newRequest(), &Params{Edit: true}, true, "")
+		if err == nil || !strings.Contains(err.Error(), "The namespace can't be changed") {
+			t.Errorf("err = %v, want the namespace named as fixed", err)
+		}
+	})
+
+	t.Run("changed description on a revision is ignored", func(t *testing.T) {
+		useTestEditor(t, "name: mypkg\nnamespace: private/org/python\nversion: 1.0.0\ndescription: changed\n")
+		p := &fakePrompter{confirms: []bool{false, true}, selects: []int{choiceEdit}}
+		r := &Runner{out: outputhelper.NewCatcher(), prompt: p}
+		reqVars := newRequest()
+
+		publish, err := r.confirmRequest(reqVars, &Params{Edit: true}, true, "current")
+		if err != nil || !publish {
+			t.Fatalf("publish = %v, err = %v, want it still published", publish, err)
+		}
+		if reqVars.Description != "current" {
+			t.Errorf("description = %q, want the current one kept", reqVars.Description)
+		}
+		if !strings.Contains(p.messages[1], "changed[/RESET]' is ignored and it stays '[ACTIONABLE]current") {
+			t.Errorf("confirmation does not say the change is ignored:\n%s", p.messages[1])
+		}
+	})
+
+	t.Run("unchanged description on a revision is accepted", func(t *testing.T) {
+		useTestEditor(t, "name: mypkg\nnamespace: private/org/python\nversion: 1.0.0\ndescription: current\n")
+		p := &fakePrompter{confirms: []bool{false, true}, selects: []int{choiceEdit}}
+		r := &Runner{out: outputhelper.NewCatcher(), prompt: p}
+
+		publish, err := r.confirmRequest(newRequest(), &Params{Edit: true}, true, "current")
+		if err != nil || !publish {
+			t.Errorf("publish = %v, err = %v, want the unchanged description accepted", publish, err)
+		}
+		if strings.Contains(p.messages[1], "is ignored") {
+			t.Errorf("confirmation notes an ignored description that wasn't changed:\n%s", p.messages[1])
 		}
 	})
 
@@ -167,7 +255,7 @@ func TestConfirmRequestEditor(t *testing.T) {
 		r := &Runner{out: outputhelper.NewCatcher(), prompt: p}
 		reqVars := newRequest()
 
-		if _, err := r.confirmRequest(reqVars, &Params{Build: "src"}, false); err != nil {
+		if _, err := r.confirmRequest(reqVars, &Params{Build: "src"}, false, ""); err != nil {
 			t.Fatal(err)
 		}
 		if len(reqVars.Dependencies) != 1 || reqVars.Dependencies[0].Name != privateBuilderName {
@@ -176,12 +264,31 @@ func TestConfirmRequestEditor(t *testing.T) {
 	})
 }
 
+// noVersions is a versionExists for a platform where nothing is published yet.
+func noVersions(_, _, _ string) (bool, error) { return false, nil }
+
+func TestDefaultNamespace(t *testing.T) {
+	withPyproject := t.TempDir()
+	if err := os.WriteFile(filepath.Join(withPyproject, "pyproject.toml"), nil, 0644); err != nil {
+		t.Fatal(err)
+	}
+	for _, tt := range []struct{ buildDir, want string }{
+		{"", "private/org"},
+		{t.TempDir(), "private/org"},
+		{withPyproject, "private/org/python"},
+	} {
+		if got := defaultNamespace("org", tt.buildDir); got != tt.want {
+			t.Errorf("defaultNamespace(%q) = %q, want %q", tt.buildDir, got, tt.want)
+		}
+	}
+}
+
 func TestConfirmRequestSave(t *testing.T) {
 	t.Chdir(t.TempDir())
 	p := &fakePrompter{confirms: []bool{false}, selects: []int{choiceSave}}
 	r := &Runner{out: outputhelper.NewCatcher(), prompt: p}
 
-	publish, err := r.confirmRequest(newRequest(), &Params{Build: "src"}, false)
+	publish, err := r.confirmRequest(newRequest(), &Params{Build: "src"}, false, "")
 	if err != nil || publish {
 		t.Fatalf("publish = %v, err = %v, want saved", publish, err)
 	}
@@ -207,7 +314,7 @@ func TestConfirmRequestCancel(t *testing.T) {
 	p := &fakePrompter{confirms: []bool{false}, selects: []int{choiceCancel}}
 	r := &Runner{out: outputhelper.NewCatcher(), prompt: p}
 
-	if _, err := r.confirmRequest(newRequest(), &Params{}, false); err == nil || !strings.Contains(err.Error(), "cancelled") {
+	if _, err := r.confirmRequest(newRequest(), &Params{}, false, ""); err == nil || !strings.Contains(err.Error(), "cancelled") {
 		t.Errorf("err = %v, want cancelled", err)
 	}
 }
@@ -222,7 +329,7 @@ func TestPublishFailedError(t *testing.T) {
 func TestMetaFromIngredient(t *testing.T) {
 	ingredient := &ParentIngredient{Version: "1.0.0", Dependencies: windowsOnlyDependency()}
 
-	meta, err := metaFromIngredient("private/org/python", "mypkg", ingredient)
+	meta, err := metaFromIngredient("private/org/python", "mypkg", ingredient, "Internal helpers")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,6 +338,9 @@ func TestMetaFromIngredient(t *testing.T) {
 	}
 	if got := meta.Dependencies[0].Conditions[0].VersionRequirements; got != ">=0" {
 		t.Errorf("condition without requirements exported as %q, want >=0", got)
+	}
+	if meta.Description != "Internal helpers" {
+		t.Errorf("description exported as %q", meta.Description)
 	}
 }
 

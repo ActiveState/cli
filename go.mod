@@ -76,7 +76,6 @@ require (
 	github.com/gowebpki/jcs v1.0.1
 	github.com/mark3labs/mcp-go v0.33.0
 	github.com/mholt/archives v0.1.5
-	github.com/zijiren233/yaml-comment v0.2.1
 )
 
 require (
@@ -118,7 +117,6 @@ require (
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/kr/pty v1.1.8 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
-	github.com/maruel/natural v1.1.0 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/mikelolasagasti/xz v1.0.1 // indirect
 	github.com/minio/minlz v1.0.1 // indirect
