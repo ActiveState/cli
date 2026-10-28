@@ -26,6 +26,12 @@ and this project adheres to
   it to a meta file to edit and publish later with `--meta`, instead of only cancelling.
 - When `state publish --build` cannot determine the ingredient name or version, the error now says which is missing,
   why `pyproject.toml` did not provide it (for example, a version listed in `[project].dynamic`), and how to set it.
+- Without `--namespace`, `state publish --build` now defaults to `private/<org>/python` when the source has a
+  `pyproject.toml` (otherwise `private/<org>`, as before).
+- The namespace of a new ingredient can now be changed in the `state publish` editor. The new namespace is checked like
+  one passed with `--namespace`; if it can't be used, the previous one is kept and the reason is shown. The confirmation
+  and the editor now say up front which fields can't be changed and why, and when one of them is edited anyway (the
+  name or version with `--build`, or the namespace, name or version with `--edit`), the error names it.
 
 ### Fixed
 

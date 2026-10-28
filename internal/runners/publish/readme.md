@@ -78,7 +78,8 @@ From the project checkout:
 state publish --build ./mypkg-src --namespace private/<org>/python
 ```
 
-The namespace must be under `private/<org>`, the organization that owns the project. Before uploading, the State Tool
+The namespace must be under `private/<org>`, the organization that owns the project. Without `--namespace`, it is
+`private/<org>/python` when the source directory has a `pyproject.toml`, and `private/<org>` otherwise. Before uploading, the State Tool
 shows the ingredient it is about to publish and asks for confirmation:
 
 ```
@@ -112,6 +113,9 @@ dependencies:
         namespace: builder
         versionRequirements: '>=0'
 
+The name and version are built into the package, so they can't be changed. To change them, publish again with
+'--name' or '--version'.
+
 Do you want to publish this ingredient? Answer 'n' to edit it or save it to a file instead. (Y/n)
 ```
 
@@ -121,8 +125,10 @@ it is what decrypts and installs the package, so leave it in place.
 If something is wrong, answer `n` and choose one of:
 
 - **Edit it in my editor:** opens the meta data in `$EDITOR` (or the default program for `.yaml` files), then shows
-  the result for confirmation again. Name, namespace and version can't be changed this way, because the package was
-  already built with them: if you change them, your edits are saved to a meta file as below.
+  the result for confirmation again. You can change the namespace here: it is checked the same way as `--namespace`,
+  and if it can't be used (it is outside your organization, or the version already exists there), the previous one is
+  kept and the reason is shown. The name and version can't be changed this way, because the package was already built
+  with them: if you change them, your edits are saved to a meta file as below.
 - **Save it to a meta file to edit and publish later:** writes `mypkg-1.0.0.meta.yaml` to the current directory and
   prints the command to publish it, e.g. `state publish --build ./mypkg-src --meta mypkg-1.0.0.meta.yaml`. Edit the file,
   then run that command. The meta file takes precedence over `pyproject.toml`, so its name, version and dependency list

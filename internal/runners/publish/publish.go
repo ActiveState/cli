@@ -58,6 +58,8 @@ type Runner struct {
 	project *project.Project
 	cfg     *config.Instance
 	bp      *buildplanner.BuildPlanner
+	// versionExists reports whether a version of an ingredient is published; tests replace it.
+	versionExists func(namespace, name, version string) (bool, error)
 }
 
 type primeable interface {
@@ -70,7 +72,7 @@ type primeable interface {
 }
 
 func New(prime primeable) *Runner {
-	return &Runner{
+	r := &Runner{
 		auth:    prime.Auth(),
 		out:     prime.Output(),
 		prompt:  prime.Prompt(),
@@ -78,6 +80,8 @@ func New(prime primeable) *Runner {
 		cfg:     prime.Config(),
 		bp:      buildplanner.NewBuildPlannerModel(prime.Auth(), prime.SvcModel()),
 	}
+	r.versionExists = r.ingredientVersionExists
+	return r
 }
 
 type ParentIngredient struct {
@@ -144,7 +148,7 @@ func (r *Runner) Run(params *Params) error {
 	if params.Namespace != "" {
 		reqVars.Namespace = params.Namespace
 	} else if reqVars.Namespace == "" && r.project != nil && r.project.Owner() != "" {
-		reqVars.Namespace = model.NewNamespaceOrg(r.project.Owner(), "").String()
+		reqVars.Namespace = defaultNamespace(r.project.Owner(), params.Build)
 	}
 
 	// A --build publish is encrypted under the project org's key, so its resolved
@@ -312,6 +316,32 @@ func (r *Runner) Run(params *Params) error {
 }
 
 var versionRegexp = regexp.MustCompile(`\d+\.\d+(\.\d+)?`)
+
+// defaultNamespace is the namespace used when neither --namespace nor the meta file gives one: the owner's private
+// namespace, under python when a pyproject.toml in the --build directory makes the package a Python one.
+func defaultNamespace(owner, buildDir string) string {
+	if buildDir != "" && fileutils.FileExists(filepath.Join(buildDir, "pyproject.toml")) {
+		return model.NewNamespaceOrg(owner, "python").String()
+	}
+	return model.NewNamespaceOrg(owner, "").String()
+}
+
+// ingredientVersionExists reports whether the given version of an ingredient is published.
+func (r *Runner) ingredientVersionExists(namespace, name, version string) (bool, error) {
+	latestRevisionTime, err := model.FetchLatestRevisionTimeStamp(r.auth)
+	if err != nil {
+		return false, errs.Wrap(err, "Unable to determine latest revision time")
+	}
+	_, err = model.GetIngredientByNameAndVersion(namespace, name, version, &latestRevisionTime, r.auth)
+	var notFound *inventory_operations.GetNamespaceIngredientVersionNotFound
+	if errors.As(err, &notFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, errs.Wrap(err, "could not get ingredient version")
+	}
+	return true, nil
+}
 
 // checkEditKeepsIdentity rejects author and description changes on a revision of an existing version, which the
 // platform does not allow; it would otherwise fail the publish with an unclear API error.
@@ -493,9 +523,9 @@ func (r *Runner) confirmRequest(reqVars *request.PublishVariables, params *Param
 			locale.Tl("uploadingredient_confirm", `Prepared the following ingredient:
 
 {{.V0}}
-
+{{.V1}}
 Do you want to publish this ingredient? Answer 'n' to edit it or save it to a file instead.
-`, string(b)), ptr.To(true), nil)
+`, string(b), fixedFieldsNote(params)), ptr.To(true), nil)
 		if err != nil {
 			return false, errs.Wrap(err, "Not confirmed")
 		}
@@ -551,18 +581,44 @@ func (r *Runner) reviseRequest(reqVars *request.PublishVariables, params *Params
 	return false, locale.NewInputError("uploadingredient_cancel", "Publish cancelled")
 }
 
-// editRequest opens the request in the user's editor. With --build or --edit, the name, namespace and version were
-// already used to build the package or find the ingredient, so changing them here would publish something
-// inconsistent: the edits are saved to a meta file instead, and the user is told to start over with it.
+// editRequest opens the request in the user's editor. A new namespace is checked again and put back if it can't be
+// used. Other fields that were already used can't be changed here: --build packed the name and version into the
+// package, and --edit found the ingredient to revise by its namespace, name and version. Changing them would publish
+// something inconsistent, so the edits are saved to a meta file instead, and the user is told to start over with it.
 func (r *Runner) editRequest(reqVars *request.PublishVariables, params *Params) error {
+	if note := fixedFieldsNote(params); note != "" {
+		r.out.Notice(note + locale.Tl("uploadingredient_edit_fixed_saved",
+			"If you change them in the editor, your edits are saved to a meta file to publish from instead."))
+	}
+
 	before := *reqVars
 	if err := r.OpenInEditor(reqVars); err != nil {
 		return err
 	}
+
+	if !params.Edit && reqVars.Namespace != before.Namespace {
+		if err := r.checkNamespaceEdit(reqVars, params); err != nil {
+			r.out.Notice(locale.Tl("uploadingredient_namespace_kept",
+				"Kept the namespace '[ACTIONABLE]{{.V0}}[/RESET]', because '[ACTIONABLE]{{.V1}}[/RESET]' can't be used: {{.V2}}",
+				before.Namespace, reqVars.Namespace, errs.JoinMessage(err)))
+			reqVars.Namespace = before.Namespace
+		}
+	}
+
 	if params.Build == "" && !params.Edit {
 		return nil
 	}
-	if reqVars.Name == before.Name && reqVars.Namespace == before.Namespace && reqVars.Version == before.Version {
+	var changed []string
+	if params.Edit && reqVars.Namespace != before.Namespace {
+		changed = append(changed, "namespace")
+	}
+	if reqVars.Name != before.Name {
+		changed = append(changed, "name")
+	}
+	if reqVars.Version != before.Version {
+		changed = append(changed, "version")
+	}
+	if len(changed) == 0 {
 		return nil
 	}
 
@@ -570,10 +626,54 @@ func (r *Runner) editRequest(reqVars *request.PublishVariables, params *Params) 
 	if err != nil {
 		return err
 	}
+	reason := locale.Tl("uploadingredient_fixed_reason_build", "it was already built into the package")
+	if params.Edit {
+		reason = locale.Tl("uploadingredient_fixed_reason_edit", "it identifies the ingredient you are editing")
+	}
 	return locale.NewInputError("err_uploadingredient_edit_identity_changed",
-		"The name, namespace or version can't be changed at this point, because they were already used to build the package "+
-			"or find the ingredient. Your changes were saved to [ACTIONABLE]{{.V0}}[/RESET]. Publish them with:\n\n  [ACTIONABLE]{{.V1}}[/RESET]",
-		path, rerunCommand(params, path))
+		"The {{.V0}} can't be changed at this point, because {{.V1}}. Your changes were saved to [ACTIONABLE]{{.V2}}[/RESET]. "+
+			"Publish them with:\n\n  [ACTIONABLE]{{.V3}}[/RESET]",
+		strings.Join(changed, " and "), reason, path, rerunCommand(params, path))
+}
+
+// fixedFieldsNote tells the user up front which fields can't be changed before publishing, and why, ending in a
+// newline; it is empty when every field can be.
+func fixedFieldsNote(params *Params) string {
+	switch {
+	case params.Edit:
+		return locale.Tl("uploadingredient_fixed_edit",
+			"The namespace, name and version identify the ingredient you are editing, so they can't be changed.") + "\n"
+	case params.Build != "":
+		return locale.Tl("uploadingredient_fixed_build",
+			"The name and version are built into the package, so they can't be changed. To change them, publish again with '[ACTIONABLE]--name[/RESET]' or '[ACTIONABLE]--version[/RESET]'.") + "\n"
+	}
+	return ""
+}
+
+// checkNamespaceEdit checks a namespace changed in the editor the way Run checked the original one: a --build package
+// must stay in the organization whose key encrypted it, and a new ingredient's version must not already exist in it.
+func (r *Runner) checkNamespaceEdit(reqVars *request.PublishVariables, params *Params) error {
+	if reqVars.Namespace == "" {
+		return locale.NewInputError("err_uploadingredient_namespace_empty", "a namespace is required")
+	}
+	if params.Build != "" {
+		owner := ""
+		if r.project != nil {
+			owner = r.project.Owner()
+		}
+		if err := requireOrgNamespace(reqVars.Namespace, owner); err != nil {
+			return err
+		}
+	}
+	exists, err := r.versionExists(reqVars.Namespace, reqVars.Name, reqVars.Version)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return locale.NewInputError("err_uploadingredient_namespace_version_exists",
+			"version {{.V0}} of '{{.V1}}' already exists in it", reqVars.Version, reqVars.Name)
+	}
+	return nil
 }
 
 // saveMetaFile writes the request to <name>-<version>.meta.yaml in the working directory, in the format --meta reads,
