@@ -48,8 +48,15 @@ func FetchMeta(namespace, name, version string, auth *authentication.Auth) (*req
 		ingredient = &ParentIngredient{*i.IngredientID, *i.IngredientVersionID, *i.Version, i.Dependencies}
 	}
 
+	return metaFromIngredient(namespace, name, ingredient)
+}
+
+// metaFromIngredient builds the meta file contents of an existing ingredient version, complete enough to be published
+// back as is: dependencies and conditions without a version requirement get the any-version one.
+func metaFromIngredient(namespace, name string, ingredient *ParentIngredient) (*request.PublishVariables, error) {
 	meta := &request.PublishVariables{Name: name, Namespace: namespace}
-	if err := prepareEditRequest(ingredient, meta, true, auth); err != nil {
+	// As a revision, prepareEditRequest doesn't fetch authors, so it needs no auth.
+	if err := prepareEditRequest(ingredient, meta, true, nil); err != nil {
 		return nil, errs.Wrap(err, "Could not read ingredient meta data")
 	}
 	fillVersionRequirements(meta)

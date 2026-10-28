@@ -239,14 +239,6 @@ func (r *Runner) Run(params *Params) error {
 		return errs.Wrap(err, "Could not prepare request from params")
 	}
 
-	if err := checkEditKeepsIdentity(&reqVars, params.Edit, isRevision); err != nil {
-		return err
-	}
-
-	if params.Build != "" {
-		addPrivateBuilderDependency(&reqVars)
-	}
-
 	if params.Editor {
 		if !r.out.Config().Interactive {
 			return locale.NewInputError("err_uploadingredient_editor_not_supported", "Opening in editor is not supported in non-interactive mode")
@@ -256,55 +248,19 @@ func (r *Runner) Run(params *Params) error {
 		}
 	}
 
-	if reqVars.Namespace == "" {
-		return locale.NewInputError("err_uploadingredient_namespace_required", "You have to supply the namespace when working outside of a project context")
+	publish, err := r.confirmRequest(&reqVars, params, isRevision)
+	if err != nil {
+		return err
 	}
-
-	// Until the user confirms, they can edit the prepared meta data or save it to a file and start over with it.
-	for {
-		if params.Build != "" {
-			addPrivateBuilderDependency(&reqVars) // again, in case it was removed in the editor
-		}
-		fillVersionRequirements(&reqVars)
-
-		b, err := reqVars.MarshalYaml(false)
-		if err != nil {
-			return errs.Wrap(err, "Could not marshal publish variables")
-		}
-
-		cont, err := r.prompt.Confirm(
-			"",
-			locale.Tl("uploadingredient_confirm", `Prepared the following ingredient:
-
-{{.V0}}
-
-Do you want to publish this ingredient? Answer 'n' to edit it or save it to a file instead.
-`, string(b)), ptr.To(true), nil)
-		if err != nil {
-			return errs.Wrap(err, "Not confirmed")
-		}
-		if cont {
-			break
-		}
-
-		saved, err := r.reviseRequest(&reqVars, params)
-		if err != nil {
-			return err
-		}
-		if saved {
-			return nil
-		}
+	if !publish {
+		return nil // saved to a meta file instead
 	}
 
 	r.out.Notice(locale.Tl("uploadingredient_uploading", "Publishing ingredient..."))
 
 	publishResult, err := r.bp.Publish(reqVars, params.Filepath)
 	if err != nil {
-		// en-us.yaml's err_uploadingredient_publish ends in "Error received: {{.V0}}" and overrides the fallback text, so
-		// the message must be passed in, or the user sees "<no value>". It is also the only place some failures are
-		// shown: an error the API reports in its publish result (e.g. "File to upload was not provided") is a plain
-		// errs.New, which is not printed beneath this message the way a user-facing BuildPlannerError is.
-		return locale.WrapError(err, "err_uploadingredient_publish", "Could not create publish request", errs.JoinMessage(err))
+		return publishFailedError(err)
 	}
 
 	if publishResult.Error != "" {
@@ -509,6 +465,61 @@ func prepareEditRequest(ingredient *ParentIngredient, r *request.PublishVariable
 	}
 
 	return nil
+}
+
+// confirmRequest shows the prepared request and asks the user to publish it. Until they confirm, they can edit it or
+// save it to a meta file and start over with it. Each pass completes and validates the request again, since an edit
+// can undo what was done to it before. It reports whether to publish: false means the request was saved instead.
+func (r *Runner) confirmRequest(reqVars *request.PublishVariables, params *Params, isRevision bool) (bool, error) {
+	for {
+		if params.Build != "" {
+			addPrivateBuilderDependency(reqVars)
+		}
+		fillVersionRequirements(reqVars)
+		if reqVars.Namespace == "" {
+			return false, locale.NewInputError("err_uploadingredient_namespace_required", "You have to supply the namespace when working outside of a project context")
+		}
+		if err := checkEditKeepsIdentity(reqVars, params.Edit, isRevision); err != nil {
+			return false, err
+		}
+
+		b, err := reqVars.MarshalYaml(false)
+		if err != nil {
+			return false, errs.Wrap(err, "Could not marshal publish variables")
+		}
+
+		cont, err := r.prompt.Confirm(
+			"",
+			locale.Tl("uploadingredient_confirm", `Prepared the following ingredient:
+
+{{.V0}}
+
+Do you want to publish this ingredient? Answer 'n' to edit it or save it to a file instead.
+`, string(b)), ptr.To(true), nil)
+		if err != nil {
+			return false, errs.Wrap(err, "Not confirmed")
+		}
+		if cont {
+			return true, nil
+		}
+
+		saved, err := r.reviseRequest(reqVars, params)
+		if err != nil {
+			return false, err
+		}
+		if saved {
+			return false, nil
+		}
+	}
+}
+
+// publishFailedError wraps a failed publish request. en-us.yaml's err_uploadingredient_publish ends in
+// "Error received: {{.V0}}" and overrides the fallback text, so the message must be passed in, or the user sees
+// "<no value>". It is also the only place some failures are shown: an error the API reports in its publish result
+// (e.g. "File to upload was not provided") is a plain errs.New, which is not printed beneath this message the way a
+// user-facing BuildPlannerError is.
+func publishFailedError(err error) error {
+	return locale.WrapError(err, "err_uploadingredient_publish", "Could not create publish request", errs.JoinMessage(err))
 }
 
 // reviseRequest lets the user edit a request they did not confirm, or save it to a meta file to edit and publish later.
