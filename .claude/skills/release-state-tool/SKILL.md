@@ -1,13 +1,14 @@
 ---
 name: release-state-tool
-description: Cut a State Tool beta (RC) or stable release from this repo — continue the last release's version branch, cherry-pick the master changes it ships, write the changelog, get the version branch green and in sync with beta, open the PR into beta, then stage, sign, promote and verify. Use when asked to "cut a beta", "make a release", "ship an RC", "release the state tool", or "promote beta to release".
+description: Cut a State Tool beta (RC) or stable release from this repo — continue the last release's version branch, cherry-pick the master changes it ships, write the changelog, get the version branch green and in sync with beta, open the PR into beta, then stage, sign, promote and verify; then test on beta and cut fix-up RCs. Use when asked to "cut a beta", "make a release", "ship an RC", "release the state tool", or "promote beta to release".
 ---
 
 # Releasing the State Tool
 
 > **Status:** steps 0–10 were worked through for the 0.48.2-RC1 beta (PROD-240, 2026-10-23 to
-> 10-26), except the merge back into `master`. The stable (beta → release) path hasn't been run
-> with this skill yet.
+> 10-26), except the merge back into `master`. Testing RC1 on beta found `state publish` bugs, so
+> 0.48.2-RC2 followed as a fix-up RC (step 11); it was in review on 2026-10-29. The stable
+> (beta → release) path hasn't been run with this skill yet.
 
 ## How the branches fit together
 
@@ -69,6 +70,11 @@ git show origin/version/X-Y-Z-RCn:version.txt                          # exactly
 
 If it doesn't exist, ask someone with rights to create it. You can't push `version/*`.
 
+A **fix-up RC** of a version already on beta (`X.Y.Z-RC2` after RC1) is cut from `beta`'s tip
+instead, since that tip *is* the squashed RC1. `version/0-48-2-RC2` is `89954c675` (the
+0.48.2-RC1 squash on `beta`) plus "Update version.txt". Because it starts at `beta`'s tip, its
+release PR isn't BEHIND, and step 4 is skipped unless something else lands on `beta` first.
+
 ## 2. PR the release contents into the version branch
 
 Work in a private worktree:
@@ -106,9 +112,10 @@ Failures seen on 0.48.2, all unrelated to the release's own changes:
 | Symptom | Cause | Fix |
 |---|---|---|
 | Check Format fails on every OS with an empty log | `check-format`'s `grep -v` exits 1 on an empty diff and `set -e` aborts | `\|\| true` (fixed on the RC line in 0.48.2; `master` still has the bug, but master PRs exit before reaching it) |
-| Scan: stdlib and `golang.org/x/net` CVEs | CVEs published since the last release | bump the `go` line in `go.mod` **and** the `build.yml` matrix `go-version`, `go get <mod>@<fixed>`, `go mod tidy`, `go mod vendor`; add a changelog Security line |
+| Scan: stdlib, `golang.org/x/net` or other module CVEs | CVEs published since the last release. They keep arriving during the release: a branch green one day can be red the next (0.48.2: Go 1.26.10 and x/net 0.60.0 on RC1; echo 4.16.1 on #3867; x/net 0.62.0 on #3868, all within a week) | bump the `go` line in `go.mod` **and** the `build.yml` matrix `go-version`, `go get <mod>@<fixed>`, `go mod tidy`, `go mod vendor`; add a changelog Security line. Re-check Scan on the release PR right before merging |
+| macOS: `TestPerformanceIntegrationTestSuite` fails in setup with `dial unix .../activestate/cli-<branch>/state-<…>.sock: connect: invalid argument` | the socket path includes the branch name and passes macOS's 104-byte `sun_path` limit. It fails when the head branch is longer than **21 characters**; seen on PRs into `master` (#3850, #3861) | use a short head branch, e.g. `marcg/rel-skill`. Renaming means a new PR. `version/X-Y-Z-RCn` (18) fits |
 | `internal/keypairs` tests fail intermittently after a Go bump | deep struct equality on `*rsa.PrivateKey` internals | compare with `rsa.PrivateKey.Equal` (fixed in 0.48.2) |
-| `pkg/sysinfo` `TestPerformance/OSVersion` on `macos-latest` | the cold `sw_vers` call (100 ms–1 s) dominates a 10 ms average | larger budget on darwin (#3866). Before that, it failed 3 of 4 runs |
+| `pkg/sysinfo` `TestPerformance/OSVersion` on `macos-latest` | the cold `sw_vers` call (100 ms–1 s) dominates a 10 ms average | larger budget on darwin (#3866). Before that, it failed 3 of 4 runs. #3866 is on the RC line only, so PRs into `master` still hit it until the merge-back |
 | `internal/hail` `TestOpen` on Windows: "The process cannot access the file because it is being used by another process" | the temp dir is still locked at cleanup | flake; re-run the failed job (`gh run rerun <run-id> --failed`) |
 
 Check Scan locally before pushing a Go or dependency bump. Use the same Trivy version as
@@ -273,8 +280,42 @@ tar xzf <tar.gz> && state-install/bin/state --version   # Version X.Y.Z-SHA<sha>
 Running the downloaded binary checks the build without running `install.sh -b beta`, which edits
 the user's shell profile and their real install.
 
-Then merge the version branch back into `master` (`Merge branch 'version/X-Y-Z-RCn'`). The next
-release's version branch is cut from this RC's tip plus a `version.txt` bump.
+Then merge the version branch back into `master` (`Merge branch 'version/X-Y-Z-RCn'`), through a
+PR from a personal branch with a short name (see the macOS row in step 3). Merge it as a merge
+commit, not a squash, so the next release's "what ships" range in step 0 starts after it. If a
+fix-up RC is coming (step 11), merge back only the last RC: it contains the earlier ones. The
+next release's version branch is cut from this RC's tip plus a `version.txt` bump.
+
+Tear down the promote worktree: `git worktree remove ~/work/cli-beta-promote`.
+
+## 11. Test on beta, then fix-up RCs
+
+Install the beta on each OS (`install.sh -b beta` / `install.ps1 -b beta`) and try what the release
+changed. Bugs found here go to a fix-up RC: step 1's note on cutting `version/X-Y-Z-RC(n+1)` from
+`beta`, then steps 2–10 again, including **re-signing** (step 8) because every Windows binary is
+rebuilt. The served version is still `X.Y.Z-SHA<sha>` in the same `beta/X.Y.Z/` folder, with a new
+SHA. Fix PRs target the new version branch; port them to `master` afterwards through the
+merge-back, not separately.
+
+**Testing encrypted private ingredients** (`state publish --build`, 0.48.2) needs an org key.
+Rather than run a key service, put a key contract in `ACTIVESTATE_CLI_PRIVATE_INGREDIENT_KEY_CONTRACT`.
+It works in release builds and takes precedence over the disk cache and the key service
+(`internal/runbits/orgkey/https.go`):
+
+```json
+{"schema":"activestate.pim.orgkey/v1","org":"<OrgName>","key_id":"test","algorithm":"AES-256-GCM",
+ "encoding":"base64","key":"<32 random bytes, base64>","fingerprint":"sha256:<hex sha256 of the raw key>"}
+```
+
+- `org` is the org **name** from the project URL in `activestate.yaml` (e.g. `ActiveStateBE`), compared
+  case-insensitively. The org UUID fails with "org key does not belong to this project's organization".
+- Keep the key file: everything published with it can only be installed with the same key.
+- On Windows `cmd`, write the contract to a file as one ASCII line with no BOM (PowerShell 5's
+  `Out-File` adds one; use `[IO.File]::WriteAllText` with `ASCIIEncoding`), then
+  `set /p ACTIVESTATE_CLI_PRIVATE_INGREDIENT_KEY_CONTRACT=<contract.json`.
+- `scripts/orgkeyserver.py` is the alternative: a local HTTPS key service for the
+  `privateingredient.key_service_url` config.
+- The publish, dependency and edit workflow is in `internal/runners/publish/readme.md`.
 
 ## Stable release (beta → release)
 
