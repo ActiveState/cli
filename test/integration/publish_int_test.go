@@ -389,8 +389,11 @@ authors:
 						args[k] = vp
 					}
 
+					// The test edits the file itself, so make sure no real editor is opened: on macOS `open` hands it to
+					// whatever app the runner has registered, which can leave the file as it was.
 					cp := ts.SpawnWithOpts(
 						e2e.OptArgs(append([]string{"publish"}, args...)...),
+						e2e.OptAppendEnv("EDITOR=state-test-no-editor"),
 					)
 
 					if inv.expect.immediateOutput != "" {
