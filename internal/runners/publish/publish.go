@@ -171,6 +171,10 @@ func (r *Runner) Run(params *Params) error {
 		reqVars.Name = name
 	}
 
+	// A new ingredient without a namespace yet has nothing to look up: a search across every namespace can time out,
+	// and its first match could be any ingredient with this name. The namespace is checked once it is filled in.
+	lookup := reqVars.Namespace != "" || params.Edit
+
 	var ingredient *ParentIngredient
 
 	latestRevisionTime, err := model.FetchLatestRevisionTimeStamp(r.auth)
@@ -179,7 +183,7 @@ func (r *Runner) Run(params *Params) error {
 	}
 
 	isRevision := false
-	if params.Version != "" {
+	if lookup && params.Version != "" {
 		// Attempt to get the version if it already exists, it not existing is not an error though
 		i, err := model.GetIngredientByNameAndVersion(reqVars.Namespace, reqVars.Name, params.Version, &latestRevisionTime, r.auth)
 		if err != nil {
@@ -193,7 +197,7 @@ func (r *Runner) Run(params *Params) error {
 		}
 	}
 
-	if ingredient == nil {
+	if lookup && ingredient == nil {
 		// Attempt to find the existing ingredient, if we didn't already get it from the version specific call above
 		ingredients, err := model.SearchIngredientsStrict(reqVars.Namespace, reqVars.Name, true, false, &latestRevisionTime, r.auth)
 		var errSearch404 *model.ErrSearch404

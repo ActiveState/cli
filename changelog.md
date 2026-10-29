@@ -36,6 +36,8 @@ and this project adheres to
   latest version.
 - `state export ingredient-meta` now writes plain YAML without help comments or line wrapping, so its output can be
   passed back with `--meta` as is.
+- `state publish` of a new ingredient without a namespace (such as with `--editor` outside a project) no longer searches
+  every namespace for its name, which could time out with "Could not search for ingredient" before the editor opened.
 - Dependencies and conditions without a version range (such as a bare `requests` in `pyproject.toml`) are now published
   as accepting any version instead of failing with "Expecting an OBJECT with a field named 'versionRequirements'".
 - Fields removed in the `state publish --editor` file are now removed from the publish instead of keeping their
