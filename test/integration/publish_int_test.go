@@ -25,7 +25,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 )
 
-var editorFileRx = regexp.MustCompile(`file:\s*?(.*?)\.\s`)
+var editorFileRx = regexp.MustCompile(`file:\s*(.*?)\.\s`)
 
 type PublishIntegrationTestSuite struct {
 	tagsuite.Suite
@@ -389,8 +389,8 @@ authors:
 						args[k] = vp
 					}
 
-					// The test edits the file itself, so make sure no real editor is opened: on macOS `open` hands it to
-					// whatever app the runner has registered, which can leave the file as it was.
+					// The test edits the file itself, so make sure no real editor is opened: otherwise `open` or
+					// `xdg-open` hands it to whatever app the runner has registered, if any.
 					cp := ts.SpawnWithOpts(
 						e2e.OptArgs(append([]string{"publish"}, args...)...),
 						e2e.OptAppendEnv("EDITOR=state-test-no-editor"),
