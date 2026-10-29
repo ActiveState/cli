@@ -662,9 +662,12 @@ func (r *Runner) OpenInEditor(pr *request.PublishVariables) error {
 
 	r.out.Notice(locale.Tr("uploadingredient_editor_opening", fn))
 
-	// Open file
+	// Open file. Without an editor (no $EDITOR and no xdg-open, as on many headless machines), the file can still be
+	// edited by hand, as the notice above says, so carry on to the confirmation instead of failing.
 	if err := osutils.OpenEditor(fn); err != nil {
-		return locale.WrapError(err, "err_uploadingredient_publish", "Could not open publish request file")
+		logging.Debug("Could not open editor: %v", errs.JoinMessage(err))
+		r.out.Notice(locale.Tl("uploadingredient_editor_open_failed",
+			"Could not open an editor, so edit the file above yourself, or set [ACTIONABLE]EDITOR[/RESET] to the editor to use."))
 	}
 
 	// Wait for confirmation

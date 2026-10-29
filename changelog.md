@@ -38,6 +38,9 @@ and this project adheres to
   passed back with `--meta` as is.
 - `state publish` of a new ingredient without a namespace (such as with `--editor` outside a project) no longer searches
   every namespace for its name, which could time out with "Could not search for ingredient" before the editor opened.
+- `state publish --editor` no longer fails with "Could not publish ingredient. Error received: <no value>" when no editor
+  can be opened (no `EDITOR` set and no `xdg-open`, as on many headless machines). It says so and waits for the file to
+  be edited by hand instead.
 - Dependencies and conditions without a version range (such as a bare `requests` in `pyproject.toml`) are now published
   as accepting any version instead of failing with "Expecting an OBJECT with a field named 'versionRequirements'".
 - Fields removed in the `state publish --editor` file are now removed from the publish instead of keeping their
