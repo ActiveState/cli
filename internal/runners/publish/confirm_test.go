@@ -106,6 +106,23 @@ func TestConfirmRequestFillsVersionRequirements(t *testing.T) {
 	}
 }
 
+func TestOpenInEditorWithoutEditor(t *testing.T) {
+	t.Setenv("EDITOR", filepath.Join(t.TempDir(), "no-such-editor"))
+	out := outputhelper.NewCatcher()
+	r := &Runner{out: out, prompt: &fakePrompter{}}
+	reqVars := newRequest()
+
+	if err := r.OpenInEditor(reqVars); err != nil {
+		t.Fatalf("OpenInEditor failed without an editor instead of waiting for the file to be edited: %v", err)
+	}
+	if reqVars.Name != newRequest().Name {
+		t.Errorf("name = %q, want it unchanged", reqVars.Name)
+	}
+	if !strings.Contains(out.CombinedOutput(), "Could not open an editor") {
+		t.Errorf("output does not say the editor could not be opened:\n%s", out.CombinedOutput())
+	}
+}
+
 func TestConfirmRequestEditor(t *testing.T) {
 	t.Run("removed fields are removed", func(t *testing.T) {
 		useTestEditor(t, "name: mypkg\nnamespace: private/org/python\nversion: 1.0.0\n")

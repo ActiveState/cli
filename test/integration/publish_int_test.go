@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"testing"
 	"time"
 
@@ -24,7 +25,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 )
 
-var editorFileRx = regexp.MustCompile(`file:\s*?(.*?)\.\s`)
+var editorFileRx = regexp.MustCompile(`file:\s*(.*?)\.\s`)
 
 type PublishIntegrationTestSuite struct {
 	tagsuite.Suite
@@ -388,8 +389,11 @@ authors:
 						args[k] = vp
 					}
 
+					// The test edits the file itself, so make sure no real editor is opened: otherwise `open` or
+					// `xdg-open` hands it to whatever app the runner has registered, if any.
 					cp := ts.SpawnWithOpts(
 						e2e.OptArgs(append([]string{"publish"}, args...)...),
+						e2e.OptAppendEnv("EDITOR=state-test-no-editor"),
 					)
 
 					if inv.expect.immediateOutput != "" {
@@ -491,6 +495,9 @@ authors:
 // The ingredient is published under a unique, random name. Published private
 // ingredients cannot be deleted, so the name must never collide across runs.
 func (suite *PublishIntegrationTestSuite) TestPublishBuildEncrypted() {
+	if runtime.GOOS == "linux" && runtime.GOARCH == "arm64" {
+		suite.T().Skip("The Python project this installs into has no Linux/arm64 platform")
+	}
 	suite.OnlyRunForTags(tagsuite.Publish)
 
 	ts := e2e.New(suite.T(), false)
