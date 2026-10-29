@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"testing"
 	"time"
 
@@ -491,6 +492,9 @@ authors:
 // The ingredient is published under a unique, random name. Published private
 // ingredients cannot be deleted, so the name must never collide across runs.
 func (suite *PublishIntegrationTestSuite) TestPublishBuildEncrypted() {
+	if runtime.GOOS == "linux" && runtime.GOARCH == "arm64" {
+		suite.T().Skip("The Python project this installs into has no Linux/arm64 platform")
+	}
 	suite.OnlyRunForTags(tagsuite.Publish)
 
 	ts := e2e.New(suite.T(), false)
