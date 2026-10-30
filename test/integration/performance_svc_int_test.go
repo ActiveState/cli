@@ -29,6 +29,9 @@ type PerformanceSvcIntegrationTestSuite struct {
 }
 
 func (suite *PerformanceIntegrationTestSuite) TearDownSuite() {
+	if !tagsuite.RunsForTags(tagsuite.Performance) {
+		return // no test started a service; a long branch channel's socket path can't even be dialed on macOS
+	}
 	ipcClient := svcctl.NewDefaultIPCClient()
 	err := svcctl.StopServer(ipcClient)
 	suite.Require().NoError(err)

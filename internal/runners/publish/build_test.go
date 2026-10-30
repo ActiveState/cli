@@ -193,3 +193,28 @@ func TestAddPrivateBuilderDependency(t *testing.T) {
 		t.Errorf("private-builder was added twice: %+v", reqVars.Dependencies)
 	}
 }
+
+func TestMissingMetadataError(t *testing.T) {
+	err := missingMetadataError(&wheel.MissingMetadataError{
+		Fields:    []string{"name", "version"},
+		Pyproject: "src/pyproject.toml",
+		Dynamic:   []string{"version"},
+	}, "src")
+	msg := err.Error()
+	for _, want := range []string{
+		"Could not determine the ingredient name and version",
+		"src/pyproject.toml has no 'name' in its [project] table",
+		"--name",
+		"src/pyproject.toml lists it in [project].dynamic",
+		"--version",
+	} {
+		if !strings.Contains(msg, want) {
+			t.Errorf("message does not contain %q:\n%s", want, msg)
+		}
+	}
+
+	msg = missingMetadataError(&wheel.MissingMetadataError{Fields: []string{"version"}}, "src").Error()
+	if !strings.Contains(msg, "there is no pyproject.toml in src") {
+		t.Errorf("message does not explain the missing pyproject.toml:\n%s", msg)
+	}
+}

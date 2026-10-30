@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 )
 
@@ -53,8 +54,32 @@ func TestResolveMetadata(t *testing.T) {
 
 	t.Run("missing name and version errors", func(t *testing.T) {
 		dir := t.TempDir() // no pyproject.toml
-		if _, err := ResolveMetadata(dir, Metadata{Name: "only-name"}); !errors.Is(err, ErrMissingMetadata) {
+		_, err := ResolveMetadata(dir, Metadata{Name: "only-name"})
+		if !errors.Is(err, ErrMissingMetadata) {
 			t.Errorf("error = %v, want ErrMissingMetadata", err)
+		}
+		var missing *MissingMetadataError
+		if !errors.As(err, &missing) {
+			t.Fatalf("error = %T, want *MissingMetadataError", err)
+		}
+		if !slices.Equal(missing.Fields, []string{"version"}) || missing.Pyproject != "" {
+			t.Errorf("got %+v, want only version missing and no pyproject.toml", missing)
+		}
+	})
+
+	t.Run("dynamic fields are reported", func(t *testing.T) {
+		dir := t.TempDir()
+		writePyproject(t, dir, "[project]\ndynamic = [\"version\"]\n")
+		_, err := ResolveMetadata(dir, Metadata{})
+		var missing *MissingMetadataError
+		if !errors.As(err, &missing) {
+			t.Fatalf("error = %v, want *MissingMetadataError", err)
+		}
+		if !slices.Equal(missing.Fields, []string{"name", "version"}) || !slices.Equal(missing.Dynamic, []string{"version"}) {
+			t.Errorf("got %+v", missing)
+		}
+		if missing.Pyproject != filepath.Join(dir, "pyproject.toml") {
+			t.Errorf("Pyproject = %q", missing.Pyproject)
 		}
 	})
 }

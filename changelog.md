@@ -22,19 +22,47 @@ and this project adheres to
   file, and artifacts are linked concurrently.
 - A `--meta` file's name, version, and description now feed the built wheel (flags take precedence over the meta file,
   which takes precedence over `pyproject.toml`).
+- Answering `n` when `state publish` asks to confirm now offers to edit the ingredient meta data in your editor or save
+  it to a meta file to edit and publish later with `--meta`, instead of only cancelling.
+- When `state publish --build` cannot determine the ingredient name or version, the error now says which is missing,
+  why `pyproject.toml` did not provide it (for example, a version listed in `[project].dynamic`), and how to set it.
+- Without `--namespace`, `state publish --build` now defaults to `private/<org>/python` when the source has a
+  `pyproject.toml` (otherwise `private/<org>`, as before).
+- The namespace of a new ingredient can now be changed in the `state publish` editor. The new namespace is checked like
+  one passed with `--namespace`; if it can't be used, the previous one is kept and the reason is shown. The confirmation
+  and the editor now say up front which fields can't be changed and why, and when one of them is edited anyway (the
+  name or version with `--build`, or the namespace, name or version with `--edit`), the error names it.
+- The ingredient meta data `state publish` shows for confirmation and opens in the editor no longer has a help comment
+  on each field. The fields are described in the publish guide instead.
 
 ### Fixed
 
 - `state publish --edit` no longer overwrites the meta file's dependencies and authors with the previous revision's,
-  keeps inherited dependency types and conditions, and rejects author or description changes on an existing version
-  up front.
+  keeps inherited dependency types and conditions, and rejects author changes on an existing version up front.
 - `state publish --edit --meta` with an exported meta file now edits the version named in the file rather than the
   latest version.
+- `state export ingredient-meta` now writes plain YAML without help comments or line wrapping, so its output can be
+  passed back with `--meta` as is.
+- `state export ingredient-meta` now includes the ingredient's description instead of leaving it empty. When
+  `state publish --edit` is given a different description for an existing version, it no longer refuses to publish:
+  the confirmation says the description can't be changed, shows the current one, and the change is ignored.
+- `state publish` of a new ingredient without a namespace (such as with `--editor` outside a project) no longer searches
+  every namespace for its name, which could time out with "Could not search for ingredient" before the editor opened.
+- `state publish --editor` no longer fails with "Could not publish ingredient. Error received: <no value>" when no editor
+  can be opened (no `EDITOR` set and no `xdg-open`, as on many headless machines). It says so and waits for the file to
+  be edited by hand instead.
+- Dependencies and conditions without a version range (such as a bare `requests` in `pyproject.toml`) are now published
+  as accepting any version instead of failing with "Expecting an OBJECT with a field named 'versionRequirements'".
+- Fields removed in the `state publish --editor` file are now removed from the publish instead of keeping their
+  previous values, and publish API errors are shown instead of `<no value>`.
 
 ### Security
 
 - Updated `github.com/klauspost/compress` to v1.18.7 to remediate CVE-2026-63209 (GHSA-259r-337f-4rfw).
 - Updated to Go 1.26.10 and `golang.org/x/net` v0.60.0 to remediate 14 CVEs in the Go standard library and HTTP/2 handling.
+- Updated `golang.org/x/net` to v0.62.0 to remediate CVE-2026-78661 and CVE-2026-97045.
+- Updated `github.com/labstack/echo/v4` to v4.16.1 to remediate GHSA-cxf3-9h37-7rr8, GHSA-9969-6676-49h5,
+  GHSA-f48p-c9v4-h7xv and GHSA-h7wr-284f-5qvc.
 
 ## 0.48.1
 
