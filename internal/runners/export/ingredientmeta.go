@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runners/publish"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
-	"gopkg.in/yaml.v3"
 )
 
 type IngredientMetaParams struct {
@@ -37,11 +36,10 @@ func (i *IngredientMeta) Run(params *IngredientMetaParams) error {
 	return writeIngredientMeta(i.prime.Output().Config().OutWriter, meta)
 }
 
-// writeIngredientMeta writes meta in the format --meta reads. It is plain yaml rather than meta.MarshalYaml, whose field
-// help comments would end up in the file, and written as is: the outputer's Print would word-wrap long lines and
-// interpret [TAGS].
+// writeIngredientMeta writes meta in the format --meta reads. It is written as is: the outputer's Print would word-wrap
+// long lines and interpret [TAGS].
 func writeIngredientMeta(w io.Writer, meta *request.PublishVariables) error {
-	b, err := yaml.Marshal(meta)
+	b, err := meta.MarshalYaml(false)
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal ingredient meta data")
 	}

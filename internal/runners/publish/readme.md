@@ -78,7 +78,8 @@ From the project checkout:
 state publish --build ./mypkg-src --namespace private/<org>/python
 ```
 
-The namespace must be under `private/<org>`, the organization that owns the project. Before uploading, the State Tool
+The namespace must be under `private/<org>`, the organization that owns the project. Without `--namespace`, it is
+`private/<org>/python` when the source directory has a `pyproject.toml`, and `private/<org>` otherwise. Before uploading, the State Tool
 shows the ingredient it is about to publish and asks for confirmation:
 
 ```
@@ -112,6 +113,9 @@ dependencies:
         namespace: builder
         versionRequirements: '>=0'
 
+The name and version are built into the package, so they can't be changed. To change them, publish again with
+'--name' or '--version'.
+
 Do you want to publish this ingredient? Answer 'n' to edit it or save it to a file instead. (Y/n)
 ```
 
@@ -121,8 +125,10 @@ it is what decrypts and installs the package, so leave it in place.
 If something is wrong, answer `n` and choose one of:
 
 - **Edit it in my editor:** opens the meta data in `$EDITOR` (or the default program for `.yaml` files), then shows
-  the result for confirmation again. Name, namespace and version can't be changed this way, because the package was
-  already built with them: if you change them, your edits are saved to a meta file as below.
+  the result for confirmation again. You can change the namespace here: it is checked the same way as `--namespace`,
+  and if it can't be used (it is outside your organization, or the version already exists there), the previous one is
+  kept and the reason is shown. The name and version can't be changed this way, because the package was already built
+  with them: if you change them, your edits are saved to a meta file as below.
 - **Save it to a meta file to edit and publish later:** writes `mypkg-1.0.0.meta.yaml` to the current directory and
   prints the command to publish it, e.g. `state publish --build ./mypkg-src --meta mypkg-1.0.0.meta.yaml`. Edit the file,
   then run that command. The meta file takes precedence over `pyproject.toml`, so its name, version and dependency list
@@ -165,7 +171,7 @@ complete dependency list:
 name: mypkg
 namespace: private/<org>/python
 version: 1.0.0
-description: ""
+description: Internal helpers for the data team
 dependencies:
     - dependency:
         name: private-builder
@@ -181,6 +187,18 @@ dependencies:
       conditions: []
     ...
 ```
+
+The meta file has these fields:
+
+| Field          | Meaning                                                                                              |
+|----------------|------------------------------------------------------------------------------------------------------|
+| `name`         | The name of the ingredient.                                                                          |
+| `namespace`    | Where the ingredient is published, under `private/<org>`, e.g. `private/<org>/python`.              |
+| `version`      | The version, following semantic versioning. It must match the version in the source file name, if any. |
+| `description`  | A short description of the ingredient. It can't be changed on an existing version.                  |
+| `authors`      | Optional. The people who contributed to it, each with `name`, `email` and `websites`. They can't be changed on an existing version. |
+| `dependencies` | Optional. The ingredients it requires, described below.                                              |
+| `features`     | Optional. The features it provides, each with `name`, `namespace` and `version`.                     |
 
 **Edit the `dependencies` list.** Change version ranges, remove entries, or add new ones. Each entry nests its fields
 under `dependency:`, with optional `conditions:` beside it:
@@ -215,9 +233,10 @@ Things to know about `--edit`:
   `pyproject.toml` lists any, the previous revision's dependencies are kept.
 - **Name, namespace and version identify what you are editing; they cannot be changed.** To publish under a new
   version, see step 6.
-- **Authors and description cannot be changed** on an existing version. The exported file leaves authors out and the
-  description empty. If you fill the description in, the publish is refused with "Authors and description cannot be
-  changed when editing an existing version."
+- **Authors and description cannot be changed** on an existing version. The exported file leaves authors out, and
+  adding any is refused with "Authors cannot be changed when editing an existing version." It includes the current
+  description. If you change it, the change is ignored: the confirmation shows the current description and says so,
+  and you can still publish the rest of your edits.
 - The `language/python` dependencies the platform adds by itself come back automatically, so it does no harm if they
   are missing from your file.
 
