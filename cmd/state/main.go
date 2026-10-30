@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/exechandlers/messages"
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/exechandlers/notifier"
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
@@ -252,6 +253,9 @@ func run(args []string, cfg *config.Instance, out output.Outputer) (rerr error) 
 	notifier := notifier.New(out, svcmodel)
 	cmds.OnExecStart(notifier.OnExecStart)
 	cmds.OnExecStop(notifier.OnExecStop)
+
+	messenger := messages.New(out, svcmodel)
+	cmds.OnExecStart(messenger.OnExecStart)
 
 	// Auto update to latest state tool version if possible.
 	if updated, err := autoUpdate(svcmodel, args, childCmd, cfg, an, out); err == nil && updated {
