@@ -104,6 +104,24 @@ var armSupportedTags = []string{
 	Update,
 }
 
+// RunsForTags reports whether tests for one of the given tags are asked for.
+func RunsForTags(tags ...string) bool {
+	setTagsString, _ := os.LookupEnv("TEST_SUITE_TAGS")
+
+	setTags := strings.Split(strings.ToLower(setTagsString), ":")
+	// if no tags are defined and we're not on CI; run the test
+	if funk.Contains(setTags, "all") || (setTagsString == "" && !condition.OnCI()) {
+		return true
+	}
+
+	for _, tag := range tags {
+		if funk.Contains(setTags, strings.ToLower(tag)) {
+			return true
+		}
+	}
+	return false
+}
+
 // OnlyRunForTags skips a test unless one of the given tags is asked for.
 func (suite *Suite) OnlyRunForTags(tags ...string) {
 	// Skip tests on ARM64 if they don't have an ARM-supported tag
@@ -120,19 +138,7 @@ func (suite *Suite) OnlyRunForTags(tags ...string) {
 		}
 	}
 
-	setTagsString, _ := os.LookupEnv("TEST_SUITE_TAGS")
-
-	setTags := strings.Split(strings.ToLower(setTagsString), ":")
-	// if no tags are defined and we're not on CI; run the test
-	if funk.Contains(setTags, "all") || (setTagsString == "" && !condition.OnCI()) {
-		return
+	if !RunsForTags(tags...) {
+		suite.T().Skipf("Run only if any of the following tags are set: %s", strings.Join(tags, ", "))
 	}
-
-	for _, tag := range tags {
-		if funk.Contains(setTags, strings.ToLower(tag)) {
-			return
-		}
-	}
-
-	suite.T().Skipf("Run only if any of the following tags are set: %s", strings.Join(tags, ", "))
 }

@@ -94,10 +94,9 @@ func TestCheckEditKeepsIdentity(t *testing.T) {
 		wantErr          bool
 	}{
 		{"author on revision", withAuthor, true, true, true},
-		{"description on revision", withDescription, true, true, true},
+		{"description on revision is left to keepDescription", withDescription, true, true, false},
 		{"no identity change on revision", plain, true, true, false},
 		{"author on new version via edit", withAuthor, true, false, false},
-		{"description on new ingredient", withDescription, false, false, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -106,5 +105,48 @@ func TestCheckEditKeepsIdentity(t *testing.T) {
 				t.Errorf("err = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestFillVersionRequirements(t *testing.T) {
+	r := &request.PublishVariables{Dependencies: []request.PublishVariableDep{
+		{
+			Dependency: request.Dependency{Name: "requests", Namespace: "language/python"},
+			Conditions: []request.Dependency{
+				{Name: "Windows", Namespace: "kernel"},
+				{Name: "python", Namespace: "language", VersionRequirements: "<3.11"},
+			},
+		},
+		{Dependency: request.Dependency{Name: "six", Namespace: "language/python", VersionRequirements: ">=1.16"}},
+	}}
+	fillVersionRequirements(r)
+
+	if got := r.Dependencies[0].VersionRequirements; got != ">=0" {
+		t.Errorf("dependency without a version = %q, want >=0", got)
+	}
+	if got := r.Dependencies[0].Conditions[0].VersionRequirements; got != ">=0" {
+		t.Errorf("condition without a version = %q, want >=0", got)
+	}
+	if got := r.Dependencies[0].Conditions[1].VersionRequirements; got != "<3.11" {
+		t.Errorf("condition version changed to %q", got)
+	}
+	if got := r.Dependencies[1].VersionRequirements; got != ">=1.16" {
+		t.Errorf("dependency version changed to %q", got)
+	}
+}
+
+func TestRerunCommand(t *testing.T) {
+	tests := []struct {
+		params *Params
+		want   string
+	}{
+		{&Params{Build: "./src", Filepath: "/tmp/built.tar.gz"}, "state publish --build ./src --meta m.yaml"},
+		{&Params{Edit: true, Build: "my src"}, `state publish --edit --build "my src" --meta m.yaml`},
+		{&Params{Filepath: "pkg.tar.gz", Name: "ignored"}, "state publish pkg.tar.gz --meta m.yaml"},
+	}
+	for _, tt := range tests {
+		if got := rerunCommand(tt.params, "m.yaml"); got != tt.want {
+			t.Errorf("rerunCommand(%+v) = %q, want %q", tt.params, got, tt.want)
+		}
 	}
 }
