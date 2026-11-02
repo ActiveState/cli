@@ -297,6 +297,11 @@ next release's version branch is cut from this RC's tip plus a `version.txt` bum
   touched, so they conflict. Check `git diff <earlier RC squash> origin/master -- <file>`: when it
   is empty, take beta's side (`git checkout --theirs`). Resolve the rest by hand, keeping both
   sides (0.48.2-RC2: master's linux/arm64 skip in `tagsuite.go`). Take beta's `version.txt`.
+- A note in the PR body is not enough to stop a squash: #3871 said to use a merge commit and was
+  squash-merged anyway. Ask the merger directly, and afterwards check with
+  `git log -1 --format=%p <merge sha>`. One parent means it was squashed, `beta` is still not an
+  ancestor of `master`, and the next merge-back hits the same conflicts again. Fix it with a
+  follow-up PR that merges `beta` with a merge commit; the tree diff should be empty.
 - Run unit tests as CI does, with `-vet=off`. Go 1.26's vet printf check fails some older packages
   (deptree, secrethelper, e2e) on every branch.
 
