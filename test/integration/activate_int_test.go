@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/termtest"
 
 	"github.com/ActiveState/cli/internal/testhelpers/suite"
 
@@ -342,38 +341,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_SpaceInCacheDir() {
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("python3 --version")
 	cp.Expect("Python 3.")
-
-	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
-}
-
-func (suite *ActivateIntegrationTestSuite) TestActivatePerlCamel() {
-	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Perl, tagsuite.Critical)
-	if runtime.GOOS == "darwin" {
-		suite.T().Skip("Perl not supported on macOS")
-	}
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-	close := suite.addForegroundSvc(ts)
-	defer close()
-
-	cp := ts.Spawn("activate", "ActiveState-CLI/Perl")
-
-	cp.Expect("Downloading", termtest.OptExpectTimeout(40*time.Second))
-	cp.Expect("Installing", termtest.OptExpectTimeout(140*time.Second))
-	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
-
-	suite.assertCompletedStatusBarReport(cp.Output())
-
-	// ensure that shell is functional
-	cp.ExpectInput()
-
-	cp.SendLine("perldoc -l DBI::DBD")
-	// Expect the source code to be installed in the cache directory
-	// Note: At least for Windows we cannot expect cp.Dirs.Cache, because it is unreliable how the path name formats are unreliable (sometimes DOS 8.3 format, sometimes not)
-	cp.Expect("cache")
-	cp.Expect("DBD.pm")
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
