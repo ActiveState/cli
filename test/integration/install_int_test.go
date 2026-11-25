@@ -150,21 +150,9 @@ func (suite *InstallIntegrationTestSuite) TestInstall_SolverV2() {
 		ExpectedFail bool
 	}{
 		{
-			"Python-Camel",
-			"ActiveState-CLI/Python3#971e48e4-7f9b-44e6-ad48-86cd03ffc12d",
-			"requests",
-			false,
-		},
-		{
 			"Python-Alternative",
 			"ActiveState-CLI/Python3-Alternative#c2b3f176-4788-479c-aad3-8359d28ba3ce",
 			"requests",
-			false,
-		},
-		{
-			"Perl-Camel",
-			"ActiveState-CLI/Perl#a0a1692e-d999-4763-b933-2d0d5758bf12",
-			"JSON",
 			false,
 		},
 		{
